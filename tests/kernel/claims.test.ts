@@ -86,6 +86,17 @@ test('the other scaffolding artifacts a dispatch names are refused by name', () 
   assert.equal(findScaffoldingCitations('Contractor signals. [cite: keyword map]').length, 1);
 });
 
+test('a legitimate citation to a user-supplied document named "outcome brief" still passes', () => {
+  // "brief" is deliberately excluded from the scaffolding names: a user's own
+  // material is legitimately called a brief, and some organizations name that
+  // document an "outcome brief" specifically. The fix for the tool's own
+  // engagement-evidence-as-outcome defect lives in the assignment the role is
+  // given (coordinator.ts), not in this deterministic gate — so a real
+  // citation to a real user document of that name must keep passing here.
+  const line = 'The engagement covers three workstreams. [cite: outcome brief]';
+  assert.equal(findScaffoldingCitations(line).length, 0);
+});
+
 test('legitimate citations and prose mentions of the catalog are not refused', () => {
   const fine = [
     'Fines reach 20 million EUR or 4% of turnover. [cite: GDPR Art. 83(5)]',

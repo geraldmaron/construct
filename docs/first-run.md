@@ -103,6 +103,32 @@ state and, where the domain calls for it, the licensed-review qualifier on the
 same screen as the text it qualifies. A deliverable you cannot read is not a
 deliverable, so this command exists.
 
+## Ask a question instead
+
+Not everything you want from a team is a piece of work. Sometimes you want to
+turn to whoever owns a thing and ask them:
+
+```bash
+construct ask --host=claude "what does our roadmap say about the billing migration"
+```
+
+This is the same spine — the same catalog choosing who answers, the same
+declared sources read before the dispatch, the same work log, the same citation
+check — with one concern answering instead of every concern that was touched,
+and the answer printed here rather than left for `construct show`. It is one
+model call, not four.
+
+You still never type a role name. If the question touches concerns beyond the
+one answering, they are named on screen so you can see what a full run would
+have added, and told how to get it. If it lands somewhere this tool rates high
+risk — privacy, contracts, employment, compliance — it says so before it
+answers, because one grounded pass is not a review and an answer shaped like an
+answer invites more trust than it has earned.
+
+Without `--host` the question is still recorded and routed, and nothing is
+answered: reading a question costs a model call, and Construct does not spend
+without being told to.
+
 ## Tell it what you work from
 
 Construct can hold what your project works from — a directory of docs, a git
@@ -110,14 +136,18 @@ repo, a GitHub or Jira project — so future runs can be held to what they
 actually read:
 
 ```bash
-construct source add --kind=jira --locator=PROJ
+construct source add --kind=directory --locator=./docs
+construct source add --kind=git --locator=/path/to/your/repo
 construct source list
 ```
 
-Declaring a source builds no connection and reads nothing by itself; the
-reading happens through your agent host when work runs, and every run records
-what it read from each source and how completely — including "unreachable,"
-which is an answer, not an omission. There is also an engagement mode:
+Declaring a source builds no connection and reads nothing by itself. When
+work runs, local ground (a directory, a git checkout) is surveyed first: the
+run records which documents it found and how completely, the roles receive
+them by name, and they may read further inside those roots and cite what they
+read by path. A remote source (`jira`, `github`, `docs`) is recorded as
+unreachable until a host can reach it — an answer, not an omission. There is
+also an engagement mode:
 
 ```bash
 construct mode --set=seat
@@ -126,6 +156,20 @@ construct mode --set=seat
 `team` (the default) means Construct is the whole team. `seat` means it fills
 one role on your human team and treats your tracker as the system of record —
 changes to it are proposed to you, never just made.
+
+Sources and the engagement mode both belong to a workspace, and every command
+that touches one takes `--workspace=<name>` — including `construct outcome`.
+That is how a run is pointed at a different ground without disturbing the one
+other runs were read against:
+
+```bash
+construct source add --kind=directory --locator=./docs/adr --workspace=architecture
+construct outcome --workspace=architecture "Decide whether the adapter seam absorbs retry state"
+```
+
+Everything defaults to a workspace called `default`, so you can ignore this
+until you need two grounds at once. The plan line names the workspace whenever
+it is not the default one.
 
 ## Read back what happened
 

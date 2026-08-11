@@ -14,10 +14,10 @@
  * dispatch. This module owns the grounded half.
  *
  * The protocol lives here rather than inside the assignment builder because the
- * scored runs over the fixture organization are graded on exactly this text. An
+ * scored runs over the fixture organizations are graded on exactly this text. An
  * instrument that measures a prompt the product does not send reports a number
  * nobody feels; rendering both the dispatch and the scored run from one export
- * is what keeps that instrument a measurement of shipped depth rather than of
+ * is what keeps that instrument a measurement of what ships rather than of
  * itself.
  */
 
@@ -82,13 +82,48 @@ export const GROUNDED_SYNTHESIS_PROTOCOL = [
 ].join('\n\n');
 
 /**
+ * What a role may report, as an instruction rather than a suggestion.
+ *
+ * A dispatched role can see findings that belong to other concerns, and saying
+ * so mildly does not stop it reporting them. Two things go wrong when it does.
+ * The reader gets a survey of the material instead of the concern they asked
+ * for, and attribution stops meaning anything — a work log in which every role
+ * reports everything cannot say in whose name a finding was written, which is
+ * the one thing it exists to say.
+ *
+ * The bound does NOT rest on a role reaching findings the others could not.
+ * That premise was tested over two fixture organizations and retired; a role's
+ * output is scoped here because its deliverable owes specific slots and its
+ * name goes on the answer, not because its question set grants it sight.
+ *
+ * Measured before it shipped, across a sweep of every lens over one fixture
+ * organization: making ownership binding cut what a role produced by roughly
+ * two fifths and cut findings belonging to other roles by about half, while
+ * every role that reached its own planted finding still reached it. That effect
+ * came from making the scope binding, which the wording below keeps; what it
+ * drops is a justifying clause since shown to be false.
+ */
+export const ROLE_OWNERSHIP_BOUND = [
+  'What belongs to you. A finding another role owns is not yours to report,',
+  'however real it is. Before you write each one, name which of your slots it',
+  'fills; if it fills none of them, drop it rather than reporting it as an',
+  'aside. Reporting everything you noticed is not thoroughness, it is declining',
+  'to exercise the judgment you were dispatched for, and it leaves the reader',
+  'unable to tell which concern actually answered. Fewer findings that are all',
+  'yours beat a survey of the material.',
+].join(' ');
+
+/**
  * The material block: what this dispatch was given, and what it was not.
  *
  * A source that could not be read is listed saying so rather than omitted. Its
  * silence would otherwise read as coverage, and a role that believes it saw
  * everything writes with a confidence the run did not earn.
  */
-export function groundedMaterialProtocol(material: readonly Material[]): string {
+export function groundedMaterialProtocol(
+  material: readonly Material[],
+  groundRoots: readonly string[] = [],
+): string {
   const lines = material.map(
     (m) => `- ${m.descriptor} (${m.source}) [${m.coverage}]: ${m.detail}`,
   );
@@ -100,10 +135,21 @@ export function groundedMaterialProtocol(material: readonly Material[]): string 
         ' above would have held as unknown, say so where a finding depends on ' +
         'it, and never let the gap pass as coverage.'
       : '';
+  // The listed documents are a survey, not a fence: the ground itself is the
+  // evidence, and a role whose host can open any file in it may go past the
+  // list — inside the named roots and nowhere else, citing only what it read.
+  const license =
+    groundRoots.length > 0
+      ? '\n\nThe list above is the survey, not the boundary. You may read and ' +
+        'cite any document under these declared roots, by its full path:\n' +
+        groundRoots.map((root) => `- ${root}`).join('\n') +
+        '\nNothing outside these roots is evidence, and a path you did not ' +
+        'actually read is not a citation.'
+      : '';
   return (
     'Your material for this task is these documents, and nothing else around ' +
     'you. Files that happen to sit near you are not evidence for it.\n' +
-    `${lines.join('\n')}${gap}\n\n` +
+    `${lines.join('\n')}${gap}${license}\n\n` +
     GROUNDED_SYNTHESIS_PROTOCOL
   );
 }

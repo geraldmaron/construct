@@ -25,6 +25,17 @@ import type { HostAdapter } from '../kernel/hosts/interface.ts';
 export const PRODUCER_ROLE = 'context-producer';
 export const CHALLENGER_ROLE = 'context-challenger';
 
+/**
+ * A delta may only record what the notes settled. Notes carry two shapes of
+ * material that both read like conclusions but are not: something explicitly
+ * parked for later, and something raised and left undecided. Writing either
+ * up as a delta records an agreement that was never reached, which is
+ * fabrication dressed as extraction. This is exported so the scored
+ * evaluation script under scripts/ renders it verbatim rather than keeping
+ * a copy that could drift from what the product actually asks a model to do.
+ */
+export const SETTLED_VS_PARKED_RULE = `A delta records what the notes SETTLED, and only that. Notes also carry items that were explicitly parked, deferred to an owner, or raised and left undecided — those are not decisions, and writing one up as a delta records a resolution nobody reached. Where the notes park something or say a question needs an owner, that is not yours to record as decided; leave it out of the deltas entirely. Before writing each delta, point at the words in the note that make it settled; if the words say "parking that", "needs an owner", "not deciding here", or anything of that shape, it is not a delta.`;
+
 function numbered(body: string): string {
   return body
     .split('\n')
@@ -64,6 +75,8 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     '- observations: places where two documents you know of contradict each',
     '  other, each {claim, citations: [{source: declared id, document}, ...]}',
     '  citing BOTH sides. An observation you cannot cite will be discarded.',
+    '',
+    SETTLED_VS_PARKED_RULE,
     '',
     'Empty lists are valid. Do not reach.',
     '',

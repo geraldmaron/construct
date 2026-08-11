@@ -1,0 +1,188 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap records a standing scope commitment that ordered or automated deletion of ApplicationSet children \"will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the PRD proposes exactly that capability as a new spec.strategy.deletionOrder field with a Reverse value that deletes in the reverse of the rollingSync step order and waits for each Application to be fully deleted before the next. Shipping the PRD reverses a recorded roadmap exclusion; nothing in either document acknowledges the other, so the reversal would land without ever being argued.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": true,
+        "by": {
+          "claim": "Succeeding at Reverse deletion forecloses the parallel-steps direction. The PRD states Reverse assumes rollingSync.steps stays a strictly sequential list of match groups, one deployed and deleted at a time, for as long as the feature exists, and that any change letting a step contain more than one match group evaluated concurrently removes the single ordering Reverse depends on. The parallel progressive sync steps ticket proposes precisely that, a parallel list of matchExpressions per step so independent cluster groups stop blocking each other. The Stable promotion scope call freezes the steps shape as the v1 backward-compatibility bar and requires any change to how a step is expressed to land as a new field before that point, so shipping Reverse and then promoting to Stable closes the window on the parallelism request without either document citing the other.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28755.md",
+            "tickets/T-28927.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": true,
+        "by": {
+          "claim": "Succeeding at Reverse deletion forecloses the parallel-steps direction. The PRD states Reverse assumes rollingSync.steps stays a strictly sequential list of match groups, one deployed and deleted at a time, for as long as the feature exists, and that any change letting a step contain more than one match group evaluated concurrently removes the single ordering Reverse depends on. The parallel progressive sync steps ticket proposes precisely that, a parallel list of matchExpressions per step so independent cluster groups stop blocking each other. The Stable promotion scope call freezes the steps shape as the v1 backward-compatibility bar and requires any change to how a step is expressed to land as a new field before that point, so shipping Reverse and then promoting to Stable closes the window on the parallelism request without either document citing the other.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28755.md",
+            "tickets/T-28927.md"
+          ]
+        }
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": true,
+        "by": {
+          "claim": "The evidence that would show the Stable-promotion bet is wrong is not observable before it is paid for. The progressive sync bug report states plainly that there is no counter incrementing when specChanged fires without a resulting sync operation, so the pilot fleet's silent-rollout-failure rate is a count of support pings rather than a measured rate. The ticket proposing exactly the missing instrumentation (time to trigger, time per step, refreshes caused, what a stalled sync is waiting on) sits in the enhancement backlog and is not named in the Stable promotion scope, so promotion can be declared on an unmeasured failure mode.",
+          "citations": [
+            "tickets/T-27949.md",
+            "tickets/T-27846.md",
+            "tickets/T-28927.md"
+          ]
+        }
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": true,
+        "by": {
+          "claim": "Displaced work, named: the roadmap states application controller capacity this quarter is committed to the Progressive Sync Stable-promotion punch list and that the pair who owns \"Sharding application controller\" is the same pair working that list, so sharding does not start until Stable promotion closes. The Stable-promotion ticket defines its remaining scope only as open backlog queries for progressive-sync bugs and enhancements, with no enumerated exit list, so the date sharding unblocks is set by an unbounded queue. Automatic controller scaling for high availability is the specific work that slips, and it slips for as long as that queue stays open.",
+          "citations": [
+            "strategy.md",
+            "tickets/T-28927.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

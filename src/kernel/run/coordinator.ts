@@ -37,7 +37,8 @@ import {
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
 import { sourceReadsFor } from '../store/sources.ts';
-import { groundedMaterialProtocol } from './grounding.ts';
+import { groundRootsFor } from './sourcereads.ts';
+import { ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
 import type { Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
@@ -47,10 +48,14 @@ import { DOMAINS, domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
+import { ASK_PROTOCOL, answeredAsksFor, frameAsk, parseAsk } from './asks.ts';
+import { answerDirective } from './ask.ts';
+import { RESEARCH_PROTOCOL } from './research.ts';
+import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
 import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
-import { getDecision, raiseDecision } from '../store/decisions.ts';
+import { getDecision, openDecisions as openDecisionsFor, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
 import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
@@ -221,7 +226,14 @@ function workProductDirective(role: string): string {
     `${slots}\n\n` +
     'Rules for the work product:\n' +
     '- Number every issue. Each issue states the problem in one sentence, then ' +
-    'the concrete step that resolves it.\n' +
+    'the concrete step that resolves it, then who takes that step.\n' +
+    // A resolving step with nobody attached is a step nobody takes. Naming a
+    // role, a team, or a named person all count; what does not count is
+    // leaving it out, so the honest answer when the material does not say gets
+    // its own marker rather than silence.
+    '- Every issue names an owner for its step — a role, a team, or a person. ' +
+    'If the material does not say who owns it, write [unowned] and say who ' +
+    'would have to decide.\n' +
     '- Missing information is never an issue. If something cannot be determined ' +
     'from the outcome, state the assumption you proceed on, label it [assumed], ' +
     'and deliver the work that assumption allows.\n' +
@@ -233,10 +245,12 @@ function workProductDirective(role: string): string {
 
 /**
  * The role's lens, spoken before the work: posture, the question set the role
- * works through, when to escalate, and any standing label or jurisdiction
- * boundary. Depth a role was never shown is depth it cannot apply; the lens is
- * data (plan/lenses.ts) so what a role knows is committed and testable rather
- * than living in whoever last edited a prompt.
+ * works through, when to escalate, the stated depth limit, and any standing
+ * label or jurisdiction boundary. Depth a role was never shown is depth it
+ * cannot apply, and the same is true of a limit: a ceiling the role never reads
+ * is a claim in a data file, not a boundary on the work. The lens is data
+ * (plan/lenses.ts) so what a role knows is committed and testable rather than
+ * living in whoever last edited a prompt.
  */
 function lensDirective(role: string): string {
   const lens = lensForDomain(role);
@@ -252,12 +266,15 @@ function lensDirective(role: string): string {
         `Outside them: ${lens.jurisdictions.outside}\n`
       : `${lens.jurisdictions.outside}\n`
     : '';
+  const ceiling = lens.ceiling ? `The limit of this role, which is the invariant and not a gap: ${lens.ceiling}\n` : '';
   return (
     `Your posture: ${lens.posture}\n\n` +
+    `${ROLE_OWNERSHIP_BOUND}\n\n` +
     'Work through these questions against the material; each finding cites what supports it:\n' +
     `${questions}\n\n` +
     'Escalate rather than push past your remit:\n' +
     `${escalation}\n` +
+    ceiling +
     labeling +
     jurisdictions +
     '\n'
@@ -291,6 +308,10 @@ export function assignmentFor(
      * ever spoken.
      */
     readonly material?: readonly Material[];
+    /** Local roots the role may read beyond the listed documents. */
+    readonly groundRoots?: readonly string[];
+    /** Requirements the user already answered for this run. */
+    readonly answers?: readonly AnsweredAsk[];
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
@@ -300,7 +321,12 @@ export function assignmentFor(
   // its own remit, and the evidence was sitting in the brief the whole time.
   const engagement = brief.engagement
     ? `You were engaged because: ${brief.engagement.evidence.join(' ')}\n` +
-      `(${howEngaged(brief.engagement.inferredBy)})\n\n`
+      `(${howEngaged(brief.engagement.inferredBy)})\n` +
+      'This is the tool telling you why it involved you — not the user\'s own ' +
+      'words, and not the outcome. If you quote it, cite it as ' +
+      '[cite:engagement], never as [cite:outcome] or [cite:outcome brief]: the ' +
+      "outcome above is the user's material, this is the tool's inference " +
+      'about it, and the two are not interchangeable evidence.\n\n'
     : '';
   // Whether the role holds the two writes is a fact about THIS dispatch, so the
   // assignment says which it is rather than describing tools that may not exist
@@ -324,20 +350,48 @@ export function assignmentFor(
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   const material =
     options.material && options.material.length > 0
-      ? groundedMaterialProtocol(options.material)
+      ? groundedMaterialProtocol(options.material, options.groundRoots ?? [])
       : MATERIAL_PROTOCOL;
+  // The acquisition ladder's second rung, defined where the role can read it.
+  // Spoken on every dispatch rather than only when a gap appears, because the
+  // role discovers the gap mid-work and there is no second turn in which to
+  // tell it the rules for what it is about to do.
+  const research = RESEARCH_PROTOCOL;
+  // Settled requirements reach every later dispatch of the run: an answer
+  // given once is a decision to build on, not a suggestion to reconsider.
+  const answered =
+    options.answers && options.answers.length > 0
+      ? 'The user has already answered these questions for this run. Each ' +
+        'answer is a decision — build on it and cite it as [cite:user answer]:\n' +
+        options.answers.map((a) => `- ${a.question}\n  answer: ${a.answer}`).join('\n') +
+        '\n\n'
+      : '';
+  // A question and an outcome are answered by the same role reading the same
+  // material, and they owe different things. An ask owes an answer with its
+  // sources; it does not owe a work product, and it must not be asked for a
+  // stance — the stance protocol exists so two roles can disagree in a shape
+  // the kernel can frame into a decision, and there is no second role in an
+  // ask. Asking anyway would put a position in the record that nothing will
+  // ever be weighed against.
+  const asking = brief.question !== undefined;
   return (
     `You are acting as the ${brief.role} role.${concern}\n\n` +
-    `The outcome the user asked for: ${brief.outcome}\n\n` +
+    (asking
+      ? `The question the user asked: ${brief.question}\n\n`
+      : `The outcome the user asked for: ${brief.outcome}\n\n`) +
     engagement +
     lensDirective(brief.role) +
-    workProductDirective(brief.role) +
+    (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
     '\n\n' +
+    research +
+    '\n\n' +
     obligations +
+    answered +
     `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
-    STANCE_PROTOCOL
+    (asking ? '' : `${STANCE_PROTOCOL}\n\n`) +
+    ASK_PROTOCOL
   );
 }
 
@@ -525,7 +579,15 @@ export function frameConflicts(
     const done = listTasks(store, run).filter((task) => task.state === 'done');
     const stances: RoleStance[] = [];
     for (const task of done) {
-      const declared = parseStance((task.result as { text?: unknown } | null)?.text);
+      // The deliverable of record, not the reply — the same rule the challenge
+      // checks already follow, for the same reason. A role that submits its
+      // draft through the write surface and replies with a summary restates its
+      // stance word there and drops the BECAUSE and CITE lines with it. Reading
+      // the reply then framed that role's position with no reason and no
+      // citation while its deliverable carried both, which is the one thing
+      // commitment 11 asks of a framed conflict. Observed on a live run: the
+      // security role cited three files and reached the inbox uncited.
+      const declared = parseStance(deliverableTextOf(store, task.id, task.result));
       if (declared) stances.push({ role: task.role, declared });
     }
 
@@ -594,6 +656,12 @@ export async function workRun(
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
 
+    // What the run read and where it may read further, fetched once: the
+    // assignment and the citation gate must judge against the same ground, or
+    // a role could be licensed one set of roots and graded on another.
+    const material = materialFor(store, task.run);
+    const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
+
     // What is about to run this, recorded before it runs. A
     // claim about what a run demonstrated is only as good as the record of what
     // executed it, and a host that will not say is written down as not saying
@@ -601,6 +669,12 @@ export async function workRun(
     // model identity.
     const model = host.model ?? null;
     const modelTier = host.modelTier?.(model ?? undefined) ?? null;
+    // Resolved once and recorded on the dispatch itself, not only on the
+    // best-effort note below. A host that names no model can still name the
+    // family it belongs to, and a log that records the family only when tuning
+    // is absent cannot answer "what ran this?" for the runs that went well —
+    // which are exactly the runs a later claim quotes.
+    const tuning = host.modelTuning?.(model ?? undefined) ?? null;
     appendWorkLog(store, {
       run: task.run,
       task: task.id,
@@ -611,6 +685,8 @@ export async function workRun(
         attempt: task.token,
         model,
         modelTier,
+        modelFamily: tuning?.family ?? null,
+        modelTuned: tuning?.tuned ?? null,
         // What the role was told about why it is here. Recorded because a
         // deliverable that opens from a concern can only be read against the
         // evidence the role actually received, not the evidence it might have.
@@ -664,7 +740,6 @@ export async function workRun(
     // its deliverable as if the producer prompts were validated for it. A host
     // that stays silent about tuning is recorded the same way — an unmeasured
     // family is best-effort, never assumed tuned.
-    const tuning = host.modelTuning?.(model ?? undefined) ?? null;
     if (!tuning?.tuned) {
       appendWorkLog(store, {
         run: task.run,
@@ -729,7 +804,9 @@ export async function workRun(
             // assignment asks it rather than taking a caller's word. A run
             // that read nothing hands back an empty list and the role is told
             // the no-material rule instead.
-            material: materialFor(store, task.run),
+            material,
+            groundRoots,
+            answers: answeredAsksFor(store, task.run),
           }),
         },
         { invocationId: task.id, roleEnv },
@@ -794,7 +871,7 @@ export async function workRun(
           });
         }
         if (deliverableText !== null && declaredChallenges.length > 0) {
-          const run = runStructuralChallenges(brief, deliverableText);
+          const run = runStructuralChallenges(brief, deliverableText, { groundRoots });
           for (const check of run.results) {
             recordVerdict(store, {
               task: task.id,
@@ -817,6 +894,43 @@ export async function workRun(
               role: 'construct',
               action: 'challenge-unanswered',
               detail: { unanswered: run.unanswered },
+              at: settledAt,
+            });
+          }
+        }
+
+        // The role's declared requirement, turned into an inbox decision by
+        // the kernel (commitment 14) — at most one open ask per run, so a
+        // four-role run cannot turn the inbox into a questionnaire. A second
+        // role's ask while one is open is recorded in the log and nowhere
+        // else; the deliverable already proceeds on its stated assumption.
+        const declaredAsk = parseAsk(deliverableText);
+        if (declaredAsk) {
+          const askId = `${task.id}:ask`;
+          const openAsk = openDecisionsFor(store, task.run).some((d) => d.id.endsWith(':ask'));
+          if (!getDecision(store, askId) && !openAsk) {
+            raiseDecision(store, frameAsk({
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              ask: declaredAsk,
+              at: settledAt,
+            }));
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              action: 'requirements-question-raised',
+              detail: { question: declaredAsk.question, default: declaredAsk.assuming },
+              at: settledAt,
+            });
+          } else if (!getDecision(store, askId)) {
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: task.role,
+              action: 'ask-suppressed-open-question',
+              detail: { question: declaredAsk.question, default: declaredAsk.assuming },
               at: settledAt,
             });
           }

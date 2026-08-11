@@ -29,6 +29,7 @@ const key = JSON.parse(
     expectedProposals: ReadonlyArray<{ target: string; gist: string; noteLineKeywords: string[] }>;
     expectedDeltas: ReadonlyArray<{ gist: string; noteLineKeywords: string[] }>;
   };
+  roleFindings: { findings: ReadonlyArray<{ id: string; documents: string[]; gist: string }> };
 };
 
 /** A line of note text that satisfies a plant's AND-of-OR line keywords. */
@@ -85,12 +86,29 @@ test('role coverage reports blindness without gating the rungs', () => {
   assert.equal(code, 0);
   const coverage = (report as unknown as { roleCoverage: Record<string, Array<{ found: boolean }>> })
     .roleCoverage;
-  // The earned run surfaces the rung plants but none of the role-lens
-  // findings: every role mapped only to those findings shows blind, and the
-  // run still passes — coverage is advisory.
+  // The earned run surfaces the rung plants and none of the role findings, so
+  // every role that owns one shows blind while the run still passes: coverage
+  // reports, it does not gate.
   assert.ok(coverage.analyst.every((h) => !h.found));
   assert.ok(coverage.legal.every((h) => !h.found));
-  assert.ok(coverage.pm.every((h) => h.found));
+  assert.ok(coverage.pm.every((h) => !h.found));
+  assert.equal(report.pass, true);
+});
+
+test('a role that does surface its own finding is reported found, and only that role', () => {
+  // The other half of the property above: blindness has to be a real reading of
+  // the run, not a column that is blind whatever happens. One role finding is
+  // added to the earned run, and exactly that role stops showing blind.
+  const owned = key.roleFindings.findings.find((f) => f.id === 'CP1');
+  assert.ok(owned, 'the compliance plant is the stable example this test reads');
+  const run = earnedRun() as { claims: Array<unknown> };
+  run.claims.push({ kind: 'risk', claim: owned.gist, citations: owned.documents });
+
+  const { report } = score(run);
+  const coverage = (report as unknown as { roleCoverage: Record<string, Array<{ found: boolean }>> })
+    .roleCoverage;
+  assert.ok(coverage.compliance.every((h) => h.found));
+  assert.ok(coverage.analyst.every((h) => !h.found));
 });
 
 test('every plant a run earns records the claim that earned it', () => {

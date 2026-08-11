@@ -278,6 +278,9 @@ export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdap
       return config.model ?? null;
     },
 
+    /** The wall every invocation runs into, stated so a caller can report it. */
+    invocationTimeoutMs: timeoutMs,
+
     /**
      * Tier membership is the pin's to declare, not the kernel's and not this
      * function's. An unrecognised model returns null, which

@@ -1,0 +1,37 @@
+{
+ "judgedBy": "Opus 5 (clean-context judge pass)",
+ "judgedFrom": "fixtures/org-harness/runs/2026-08-10-qwen36-35b-composed-grounded.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "X2",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The claim inverts the planted chain, blaming a narrow cluster credential lacking patch authority on the diff path rather than operations running as the scoped destination service account instead of the broad cluster-secret credential the reporter inspects."
+  },
+  {
+   "plant": "R1",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The claim is about audit-trail attribution (diff logging the control plane identity instead of the impersonated user), not about fleet-wide impersonation rollout silently breaking diff wherever the service account lacks patch on every resource type."
+  },
+  {
+   "plant": "R2",
+   "structuralFound": true,
+   "statesMechanism": false,
+   "why": "The claim attributes the ticket to an ApplicationSet status-promotion bug advancing to Healthy on pre-update child state, not to hydration commits on the deployed-from branch restarting progressive sync waves every cycle."
+  },
+  {
+   "plant": "C1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "Despite extra audit framing, the claim asserts the same contradiction: the strategy doc mandates manual teardown while the PRD's deletionOrder field automates ordered deletion."
+  }
+ ],
+ "falseCredits": [
+  "X2",
+  "R1",
+  "R2"
+ ]
+}

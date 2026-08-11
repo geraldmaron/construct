@@ -1,32 +1,33 @@
 /**
  * kernel/capabilities/postconditions.ts — hard binary postconditions per
- * producer role. Ported from construct-legacy lib/capabilities/postconditions.mjs.
+ * producer role.
  *
  * A brief carries postconditions for documentation purposes. This module adds
  * binary, programmatically-validated assertions that a producer's output packet
  * must satisfy before a handoff is allowed to proceed. Rules are pure functions
  * of the packet — no IO, no model calls — so they're deterministic and cheap.
  *
- * Two deliberate differences from the source:
- *   - It reports, it does not throw. v2's module already only returned a result
- *     object (the ContractViolationError/BLOCKED_CONTRACT throw lived in the
- *     dispatcher that called it); saying so here keeps the kernel boundary
- *     honest — deciding what a failure *means* is the host's job.
- *   - Rule ids are carried over verbatim — they are what already-logged
- *     violations are keyed by, so renaming one orphans its history. Packet
- *     FIELD names are not: v2's `contractStart` is `briefStart` here, because
- *     the field is a v3 surface and the glossary binds every surface. The
- *     behavior lock covers the rules, not v2's spelling of its inputs.
+ * It reports, it does not throw: deciding what a failure *means* is the host's
+ * job, and the kernel boundary stays honest by returning a result rather than
+ * raising.
  *
- * Producers covered:
- *   reviewer   — prevents silent rubber-stamp reviews
- *   security   — prevents post-hoc threat models
- *   debugger   — prevents symptom-only fixes
- *   operations — prevents stale-doc PRs (v2's docs-keeper, folded in)
- *   designer   — prevents post-hoc accessibility review
+ * A producer is a role a dispatch can actually emit, which in this kernel means
+ * a domain in the catalog. A rule keyed to anything else can never fire on a
+ * real brief, and — worse — a rule keyed to a name that LOOKS like a domain
+ * silently attaches itself to that domain's briefs through
+ * `describePostconditions`. Registrations are therefore keyed to catalog domain
+ * names and to nothing else; a pack that wants a rule ships it with the pack.
+ *
+ * The registry is caller-replaceable for the same reason the domain catalog is:
+ * a workspace carries its own without forking the kernel.
+ *
+ * What this module is NOT: the thing that verifies a prose deliverable. That is
+ * the challenge catalog and the template's required slots, which run on every
+ * dispatch. These rules are pure functions of a structured output packet, so
+ * they can only judge a producer that emits one. Registering a rule against a
+ * role whose deliverable is prose declares an obligation nothing can evaluate,
+ * which is worse than declaring none.
  */
-
-const ROOT_CAUSE_SOURCES = new Set(['reproduction', 'trace', 'test']);
 
 export interface PostconditionRule {
   /** Stable identifier — violations are logged and grepped by this. */
@@ -48,100 +49,32 @@ export interface PostconditionResult {
   readonly failures: readonly PostconditionFailure[];
 }
 
-function isNonEmptyArray(value: unknown): boolean {
-  return Array.isArray(value) && value.length > 0;
-}
-
-function isNonEmptyString(value: unknown): boolean {
-  return typeof value === 'string' && value.trim().length > 0;
-}
-
-function isLaterOrEqual(a: unknown, b: unknown): boolean {
-  const ta = a instanceof Date ? a.getTime() : Date.parse(String(a));
-  const tb = b instanceof Date ? b.getTime() : Date.parse(String(b));
-  if (!Number.isFinite(ta) || !Number.isFinite(tb)) return false;
-  return ta >= tb;
-}
-
 /** Field reads go through this so a rule stays total on an arbitrary packet. */
-function field(packet: unknown, key: string): unknown {
+export function packetField(packet: unknown, key: string): unknown {
   if (!packet || typeof packet !== 'object') return undefined;
   return (packet as Record<string, unknown>)[key];
 }
 
-export const POSTCONDITIONS: Readonly<Record<string, readonly PostconditionRule[]>> = {
-  reviewer: [
-    {
-      id: 'reviewer.findings-or-explicit-clear',
-      description:
-        'Reviewer must either return at least one finding or explicitly state "no issues found at: <paths>".',
-      check: (p) =>
-        isNonEmptyArray(field(p, 'findings')) ||
-        isNonEmptyArray(field(p, 'noIssuesFoundAt')) ||
-        isNonEmptyString(field(p, 'noIssuesFoundStatement')),
-      reason:
-        'Reviewer output rubber-stamped: empty findings and no explicit "no issues found at: <paths>" statement.',
-    },
-  ],
-  security: [
-    {
-      id: 'security.threat-model-not-post-hoc',
-      description:
-        'Threat model must be updated at or after the brief start (not retrofitted).',
-      check: (p) => {
-        const updatedAt = field(p, 'threatModelUpdatedAt');
-        const start = field(p, 'briefStart');
-        if (!updatedAt || !start) return false;
-        return isLaterOrEqual(updatedAt, start);
-      },
-      reason:
-        'Threat model missing or older than the brief start — likely retrofitted after implementation.',
-    },
-  ],
-  debugger: [
-    {
-      id: 'debugger.root-cause-confirmed-via',
-      description:
-        'Root cause must be confirmed via reproduction, trace, or test (not inferred).',
-      check: (p) => {
-        const via = field(p, 'rootCauseConfirmedVia');
-        return typeof via === 'string' && ROOT_CAUSE_SOURCES.has(via);
-      },
-      reason: `rootCauseConfirmedVia must be one of: ${[...ROOT_CAUSE_SOURCES].join(', ')}.`,
-    },
-  ],
-  operations: [
-    {
-      id: 'docs-keeper.cross-doc-coherence-check-ran',
-      description:
-        'Operations must run the cross-doc coherence check and attach a named diff.',
-      check: (p) =>
-        field(p, 'crossDocCoherenceCheckRan') === true && isNonEmptyString(field(p, 'coherenceDiff')),
-      reason:
-        'crossDocCoherenceCheckRan must be true AND coherenceDiff must be a non-empty named diff.',
-    },
-  ],
-  designer: [
-    {
-      id: 'designer.accessibility-check-ran',
-      description: 'Designer must run the accessibility check before handoff (no post-hoc a11y).',
-      check: (p) => field(p, 'accessibilityCheckRan') === true,
-      reason:
-        'accessibilityCheckRan must be true — accessibility review is a precondition for any visual deliverable.',
-    },
-  ],
-};
+/**
+ * No rules ship registered today. The five that used to live here were keyed to
+ * predecessor role names (reviewer, debugger, and three that collided with real
+ * or planned catalog domains), so they attached themselves to briefs whose
+ * packets could never carry the fields they demanded. A pack that needs a
+ * binary rule registers it with the pack, keyed to the domain it dispatches as.
+ */
+export const POSTCONDITIONS: Readonly<Record<string, readonly PostconditionRule[]>> = {};
 
 /**
  * Evaluate the binary postcondition rules for a producer's output packet. A
- * producer with no registered rules passes vacuously — the same open-world
- * default the source had, so adding a role never retroactively blocks it.
+ * producer with no registered rules passes vacuously — an open-world default,
+ * so adding a role never retroactively blocks it.
  */
 export function validateBinaryPostconditions(
   producer: string,
   packet: unknown,
+  registry: Readonly<Record<string, readonly PostconditionRule[]>> = POSTCONDITIONS,
 ): PostconditionResult {
-  const rules = POSTCONDITIONS[producer] ?? [];
+  const rules = registry[producer] ?? [];
   if (rules.length === 0) return { ok: true, producer, failures: [] };
   const failures: PostconditionFailure[] = [];
   for (const rule of rules) {
@@ -161,6 +94,7 @@ export function validateBinaryPostconditions(
 /** List the rule ids registered for a producer — for tests and for surfacing what a role must produce. */
 export function describePostconditions(
   producer: string,
+  registry: Readonly<Record<string, readonly PostconditionRule[]>> = POSTCONDITIONS,
 ): readonly { id: string; description: string }[] {
-  return (POSTCONDITIONS[producer] ?? []).map((r) => ({ id: r.id, description: r.description }));
+  return (registry[producer] ?? []).map((r) => ({ id: r.id, description: r.description }));
 }

@@ -1,0 +1,64 @@
+{
+  "claims": [
+    {
+      "kind": "cross-reference",
+      "claim": "The CI diff failure where argocd-server is refused permission to dry-run ClusterRole/cert-manager-cainjector is explained by the impersonation design, not by the cluster Secret: the RFC makes the feature a system-level switch (application.sync.impersonation.enabled in argocd-cm, 'applicable to all Argo CD Applications') and resolves the acting identity from the AppProject's destinationServiceAccounts by first-valid-match on server plus namespace. Once a project turns the flag on, the request runs as that mapped defaultServiceAccount, which holds only the namespaced Role granted to it, so the broad cluster credential the reporter is looking at is no longer the identity being authorized.",
+      "citations": ["tickets/T-26271.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Server-Side Diff ignoring destinationServiceAccounts on external clusters is the direct consequence of the RFC scoping impersonation to the sync path only: its GitOps Engine item is to honor the Impersonate configuration 'set in the Application sync context', and its Application Controller item sets Impersonate on the SyncContext (rawConfig/restConfig). No component item covers the comparison/diff path, so the server-side apply dry-run keeps using the cluster Secret credential and the API server authorizes it as a plain patch, which is why sync succeeds and diff fails on the same Application.",
+      "citations": ["tickets/T-28695.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The RFC's component list (GitOps Engine, ArgoCD API, Application Controller, UI, CLI, Documentation) and its 'Non-Goals: None' declaration leave the diff path unowned, and two symptoms are already filed against exactly that omission from opposite sides of the cluster boundary: the in-cluster CLI diff running as argocd-server and the application-controller reconcile diff on external clusters. The RFC's only named risk is Privilege Escalation, the over-privileged direction; both filed symptoms are the under-privileged direction the design never states.",
+      "citations": ["tickets/T-26271.md", "tickets/T-28695.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The request to let Applications create namespaces while being denied permission to sync kind: Namespace cannot be met by the impersonation feature as designed, because the RFC fixes the granularity: 'The service account to be used for impersonation is determined on a per Application level rather than on per resource level', keyed off Application.spec.destination.namespace for all resources in the Application. The ticket's proposal to have bootstrap run as the Argo CD SA and the sync run as the impersonated SA is a per-resource split, which the design explicitly ruled out; the AppProject clusterResourceWhitelist and RBAC policy the reporter tried are the surfaces the RFC leaves in place instead.",
+      "citations": ["tickets/T-27833.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The ask for Argo CD to honor the user's own Kubernetes RBAC for actions like pod deletion and exec is already answered by a recorded design decision rather than an oversight: the impersonation RFC states under Design considerations that it is 'Not supporting all impersonation options at the moment to keep the initial design to a minimum' and that impersonating users or groups can be added in future. The RFC's ImpersonationConfig alternative (user, uid, groups on the destination) is precisely the shape the ticket needs, and it was the option not taken.",
+      "citations": ["tickets/T-9095.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Auto-sync deploying stale hydrated manifests is a property of the hydrator's push-to-stage mode as designed: the RFC defines push-to-stage as writing to the hydrateTo.targetBranch and relying on 'some external system to move changes to the deployment branch', so the syncSource.targetBranch is by construction whatever the external promoter last moved there. The reporter observes the symptom only in push-to-stage; in push-to-deploy the two branches are the same and the window cannot open. The proposed timestamp annotation is a request to reintroduce the ordering guarantee the mode deliberately delegates outward.",
+      "citations": ["tickets/T-26443.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The reporter's aside that every hydration cycle lands a fresh commit picked up as a source change is the hydrator design working as specified, and it is what makes the RollingSync spec-only gap fire repeatedly: the RFC has the controller group Applications by drySource and syncSource.targetBranch and commit once per group per dry commit, so 'each commit to the dry branch will result in a commit to up to three branches' and child Applications deploying from a hydrated branch see a new revision on every cycle. Combined with specChanged being consumed while the child is still Synced/Healthy, each hydrated commit is another chance to lose the trigger.",
+      "citations": ["tickets/T-27949.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The hydrator pushing unsigned commits is not a missing implementation detail but the design's stated extent: the RFC's Push access section specifies write credentials only, as a Kubernetes secret labeled argocd.argoproj.io/secret-type: repository-write carrying a GitHub App key, and delegates the push to the commit server with no signing step in the CommitManifests message. Its Security Considerations section defers the question ('We'll need to consider what git permissions setup to recommend'), and the filed symptom is that Argo CD then rejects its own hydrated output when signature verification is enabled on the hydrated branch.",
+      "citations": ["tickets/T-28239.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The inability to point a DrySource at a chart in a Helm repository follows from two explicit RFC decisions rather than an unimplemented field: drySource is defined as containing 'only three fields: repoURL, targetRevision, and path', and the Opinions section rules out Helm chart dependencies on unpinned chart versions and multiple sources in one Application as nondeterministic configuration injection. The RFC's answer to the reporter's use case is the recommended umbrella chart approach, which is exactly the switch to Helm dependencies the ticket says breaks ApplicationSet-controlled chart versions across environments.",
+      "citations": ["tickets/T-24417.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The rollback ticket's core constraint, that 'the dry source in git does not fully capture the inputs to rendering, as the Application.spec may change', is a symptom of the RFC's partial centralization of hydration config: it moves helm/kustomize/directory settings into .argocd-source.yaml so all changes live in git, but keeps the new helm.apiVersions field on the Application's spec.source.helm and leaves spec.destination.namespace injected at apply time rather than written into the hydrated manifests. Those residual spec-side inputs are why checking out old rendered manifests is safer than re-rendering, which contradicts the RFC's determinism goal that 'the output for a given dry state will be the same next week as it is today'.",
+      "citations": ["tickets/T-27327.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The delete/re-create loop is the reverse deletionOrder semantics meeting a resource that never finishes deleting: the PRD defines Reverse as deleting in the reverse order of the RollingSync steps and 'waits for one application to be fully deleted before moving onto the next application'. The reproduction pins app-four in Progressing via a crashloop, so the wait for full deletion never returns and the wave restarts from the top. The PRD records 'No immediate Risks to consider' and its only stated implementation check is that Reverse requires rollingSync to list an order, which does not cover an application whose deletion cannot complete.",
+      "citations": ["tickets/T-28511.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The complaint that ApplicationSets shadow destroy ordering, forcing an app-of-apps-per-cluster workaround to get sync waves, is explained by a roadmap decision rather than a defect: the roadmap places ordered or automated deletion of ApplicationSet children explicitly out of scope for rollout orchestration under first-class ApplicationSet support, stating that teardown remains a manual operator action performed one Application at a time and that the UI/CLI/API cannot manage child deletion order. The reporter's custom Helm chart re-creating ApplicationSet templating is the cost of that out-of-scope line.",
+      "citations": ["tickets/T-24578.md", "strategy.md"]
+    }
+  ]
+}

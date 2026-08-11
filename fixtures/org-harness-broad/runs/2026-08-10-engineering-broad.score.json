@@ -1,0 +1,96 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": []
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": true,
+    "conflicts": [],
+    "proposals": [],
+    "deltas": []
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C-B1",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP-B1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A-B1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP-B1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L-B1",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA-B1",
+        "found": true,
+        "by": {
+          "claim": "rfc-003-cybersecurity-advisor.md's design decision to add a Senior Cybersecurity Advisor position in the Front Office — whose hours are explicitly 'not work assigned to a single engagement' and whose funding source the RFC says 'should be identified' rather than already secured — creates new headcount cost that lands in exactly the expense line policies/finance-and-billing.md flags as unmanageable: 'Overhead from TTS and GSA... is allocated and not under our control.' The RFC's own funding caveat is the unacknowledged symptom of adding non-billable capacity into a budget lever the finance document says TTS cannot directly adjust.",
+          "citations": [
+            "rfc-003-cybersecurity-advisor.md",
+            "policies/finance-and-billing.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD-B1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP-B1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX-B1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH-B1",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [],
+  "distractorGate": null,
+  "pass": true
+}

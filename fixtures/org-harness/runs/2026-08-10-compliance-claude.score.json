@@ -1,0 +1,220 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "Enabling impersonation narrows the sync identity but does not retire the privileged credential it was meant to replace. RFC-001's Example 3 relies on the argocd-manager service account with cluster-admin privileges that `argocd cluster add` creates in kube-system, keeping it as the cluster-config credential for control-plane operations. T-28695 shows that same standing cluster credential is exactly the identity the diff path acts as, and that it accretes real patch authority one resource kind at a time because RBAC has no dry-run verb, five rounds so far. So the credential the feature was designed to demote is still held by the control plane and is gaining write authority over more kinds as charts are added, while the least-privilege boundary the design claims applies only to sync.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The PRD's Non-Goals record that a user setting the custom deletion strategy gets 'a configuration field that accepts input but ignores it silently', while the strategy document states that the UI/CLI/API cannot manage the deletion order of child applications at all and that teardown remains a manual operator action performed one Application at a time. An auditor inspecting an ApplicationSet whose strategy carries deletionOrder: Custom would read it as evidence that an ordered teardown control is in force; the controller applied no such order, no error surfaced, and nothing in the spec or event stream records the divergence. The declared configuration is the only artifact, and it is not evidence of the behavior.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "strategy.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The PRD's Non-Goals record that a user setting the custom deletion strategy gets 'a configuration field that accepts input but ignores it silently', while the strategy document states that the UI/CLI/API cannot manage the deletion order of child applications at all and that teardown remains a manual operator action performed one Application at a time. An auditor inspecting an ApplicationSet whose strategy carries deletionOrder: Custom would read it as evidence that an ordered teardown control is in force; the controller applied no such order, no error surfaced, and nothing in the spec or event stream records the divergence. The declared configuration is the only artifact, and it is not evidence of the behavior.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "strategy.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": true,
+        "by": {
+          "claim": "T-9095 is an open access request asking Argo CD to honor the RBAC already configured for a user or group for actions like resource deletion and pod exec, so cluster RBAC becomes the single reviewed control. RFC-001 is the design that converges on that access model, but it declines it in two named ways: its design considerations defer impersonating users or groups ('support to impersonate users or groups can be added in future'), and the service account is determined per Application from the AppProject's destinationServiceAccounts entry matching the destination, not from the requesting principal. Governance consequence for the pair: if RFC-001 ships, the identity that acts remains a destination ServiceAccount, the Kubernetes audit trail names that ServiceAccount rather than the human who clicked, and access review stays on AppProject configuration held by Argo CD admins instead of the cluster RBAC that T-9095's requesters already administer, leaving the duplication T-9095 asks to remove.",
+          "citations": [
+            "tickets/T-9095.md",
+            "rfc-001-sync-impersonation.md"
+          ]
+        }
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "RFC-002 makes the hydrator push to git under a repository-write Secret holding a githubAppPrivateKey, and places the authorization check in-process ('it's the application controller's job to ensure that the user has write access to the repo before making the call'), so the actor recorded on the git side of every hydrated commit is the GitHub App, not the developer. T-28239 completes the picture on the signature side: one cluster-wide signing key, per-project keys explicitly out of scope, so every hydrated commit in every project carries the same GPG identity, and the project's SourceIntegrity policy verifies only that. Human authorship survives solely as the commitAuthor and commitMessage fields RFC-002 templates into README.md and hydrator.metadata, which are unsigned payload rather than verified provenance.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": true,
+        "by": {
+          "claim": "The PRD's Non-Goals record that a user setting the custom deletion strategy gets 'a configuration field that accepts input but ignores it silently', while the strategy document states that the UI/CLI/API cannot manage the deletion order of child applications at all and that teardown remains a manual operator action performed one Application at a time. An auditor inspecting an ApplicationSet whose strategy carries deletionOrder: Custom would read it as evidence that an ordered teardown control is in force; the controller applied no such order, no error surfaced, and nothing in the spec or event stream records the divergence. The declared configuration is the only artifact, and it is not evidence of the behavior.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "strategy.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": true,
+        "by": {
+          "claim": "The PRD's Non-Goals record that a user setting the custom deletion strategy gets 'a configuration field that accepts input but ignores it silently', while the strategy document states that the UI/CLI/API cannot manage the deletion order of child applications at all and that teardown remains a manual operator action performed one Application at a time. An auditor inspecting an ApplicationSet whose strategy carries deletionOrder: Custom would read it as evidence that an ordered teardown control is in force; the controller applied no such order, no error surfaced, and nothing in the spec or event stream records the divergence. The declared configuration is the only artifact, and it is not evidence of the behavior.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "strategy.md"
+          ]
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": true,
+        "by": {
+          "claim": "The recorded root cause for the CI diff failures and the ticket that analyses the same error disagree about which identity performs the diff. note-1 root-causes T-26271 as 'with impersonation on, diff runs as the destination service account which doesn't hold patch on cluster-scoped stuff'; T-28695 states the opposite mechanism, that the diff path does not honor destinationServiceAccounts and runs as the cluster credential, which is consistent with T-26271's own log naming user system:serviceaccount:argocd:argocd-server. The two root causes imply opposite remediations (grant patch to the destination ServiceAccount versus make the diff path impersonate), and note-1's rollout gate, which holds the per-project impersonation flag closed 'until the diff story is fixed', is anchored to the version T-28695 contradicts.",
+          "citations": [
+            "notes/note-1.md",
+            "tickets/T-28695.md",
+            "tickets/T-26271.md"
+          ]
+        }
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

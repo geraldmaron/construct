@@ -1,0 +1,54 @@
+{
+ "claims": [
+  {
+   "kind": "risk",
+   "claim": "Impersonation is rolled out per-project with no runbook connecting it to the diff path's permission model: when a CI diff job fails after impersonation is enabled on a project, the failure surfaces only as a Kubernetes RBAC error naming a service account, and the reporter chases the (broad) cluster Secret credential instead of the (narrow) destination service account the diff actually runs as, because the root cause — that diff always runs as the destination SA and may lack patch on cluster-scoped resources — exists only as an ad hoc note from a sync call, not as documented operator guidance.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-26271.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Server-Side Diff on external clusters does not honor AppProject destinationServiceAccounts the way sync does, so each new resource kind in a chart forces another unbounded `patch` RBAC grant onto the narrow cluster credential just to compute a diff (RBAC has no dry-run verb); the observable failure mode is the Application status flapping Synced/Unknown on every reconcile, and there is no owner positioned to close the gap since the fix requires the diff path to adopt the same impersonation config the sync path already uses.",
+   "citations": [
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "operability-gaps",
+   "claim": "The only mitigation for the ApplicationSet delete/recreate loop is a manual operator rule (switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand) with no controller-level check or alert enforcing it; an operator who instead uses the PRD's Reverse deletion order on a hydrated repo — the exact condition that reproduced the loop in staging — gets no warning before triggering the wave-restart instability, and the fix ships as an interim runbook practice rather than a guarded system behavior.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-28511.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "operability-gaps",
+   "claim": "Once hydrated-commit signing is enabled, a rollback that pushes to a SourceIntegrity-protected branch outside the commit server lands unsigned and gets rejected by the git host, but the History & Rollback UI just shows a failed push with no messaging tying it to signing and no retry path — the operator has to manually track down who owns the commit server's signing key config to unblock a rollback, which is exactly the moment an operator most needs a fast, self-service recovery path.",
+   "citations": [
+    "tickets/T-27327.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "operability-gaps",
+   "claim": "T-27949's spec-only RollingSync gap (child Application goes OutOfSync while ApplicationSet status stays Healthy and no sync operation is created) is currently detected only through support ticket volume on the pilot fleet, not instrumentation — the team can't tell if it's 1-in-6 or 1-in-60 — and the concurrently proposed progressive-sync metrics ticket, despite explicitly targeting questions like 'my sync is not starting, why,' does not include a counter for specChanged firing without a resulting sync operation, so the gap has no planned detection path either.",
+   "citations": [
+    "tickets/T-27949.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "operability-gaps",
+   "claim": "The hydrator design calls for storing git push credentials in a namespace isolated from the rest of the control plane for extra protection, but the commit-signing key secret is placed in the main Argo CD namespace instead; combined with the fail-fast startup behavior for a missing/invalid signing key, a single key rotation or expiry takes down commit-server startup fleet-wide, and whoever is on generic pod-health paging sees an undifferentiated CrashLoopBackOff with no signal that it's a signing-key problem, then has to separately find someone with access to the signing-key secret to resolve it.",
+   "citations": [
+    "tickets/T-28239.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  }
+ ]
+}

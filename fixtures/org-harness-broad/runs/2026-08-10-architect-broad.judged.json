@@ -1,0 +1,15 @@
+{
+ "judgedBy": "claude-opus-5",
+ "judgedFrom": "fixtures/org-harness-broad/runs/2026-08-10-architect-broad.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "SA-B1",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "States the nonbillable role against the cost-recovery model, names overhead as the lever TTS does not control, and names the deferred funding source: the planted chain."
+  }
+ ],
+ "falseCredits": []
+}

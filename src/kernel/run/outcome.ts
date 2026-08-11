@@ -29,6 +29,7 @@ import type { Store } from '../store/open.ts';
 import { SPINE_CHALLENGES } from '../challenge/catalog.ts';
 import { riskTierFor } from '../lessons/admission.ts';
 import type { Brief } from '../brief/schema.ts';
+import { askBriefFor, primaryImplication } from './ask.ts';
 
 export interface StartRunInput {
   readonly runId: string;
@@ -248,6 +249,46 @@ export function startRunSelected(store: Store, input: StartRunSelectedInput): St
   return record(store, input, implicated, 'user');
 }
 
+/**
+ * Record a question rather than an outcome: the same inference, the same work
+ * log, and one task instead of one per concern.
+ *
+ * Every concern the namer found is still recorded as implicated — the record of
+ * what a question touched is the accountability half, and dropping the ones
+ * that will not be dispatched would leave the log claiming the question was
+ * narrower than it was. What changes is what gets enqueued: the primary concern
+ * answers, and the others are written down as considered and not dispatched, so
+ * the user can see what a full run would have added and decide to pay for it.
+ */
+export async function startAskNamed(
+  store: Store,
+  input: StartRunNamedInput,
+): Promise<StartedRun> {
+  const map = await mapImplicationsNamed({
+    outcome: input.namerText ?? input.outcome,
+    catalog: input.catalog,
+    namer: input.namer,
+    cache: input.cache,
+  });
+  return record(
+    store,
+    input,
+    map.implicated,
+    map.inferredBy,
+    input.host,
+    map.namerFailure,
+    map.namerRetriedAfter,
+    'ask',
+  );
+}
+
+/**
+ * What is being recorded: work the user wants done, or a question they asked.
+ * The difference is entirely in what gets enqueued and under which brief; the
+ * inference, the evidence, and the log entries are the same spine either way.
+ */
+type RunShape = 'outcome' | 'ask';
+
 function record(
   store: Store,
   input: StartRunInput,
@@ -256,6 +297,7 @@ function record(
   host?: string,
   namerFailure?: string,
   namerRetriedAfter?: string,
+  shape: RunShape = 'outcome',
 ): StartedRun {
   return transact(store, () => {
     const logged: number[] = [];
@@ -331,12 +373,28 @@ function record(
     }
 
     const runHighTier = implicated.some((i) => riskTierFor(i.domain) === 'high');
+    // Who answers, on the ask path: one concern, chosen by the same rule the
+    // surface prints. Null on the outcome path, where every concern answers.
+    const answering = shape === 'ask' ? primaryImplication(implicated) : null;
     for (const implication of implicated) {
-      const brief = briefFor(input, implication, inferredBy, runHighTier);
+      const dispatched = shape === 'outcome' || implication === answering;
+      // Only a dispatched concern gets a brief, so no log entry names a task
+      // id that was never enqueued — a task reference pointing at nothing is
+      // the kind of record that reads as work having happened.
+      const brief = !dispatched
+        ? null
+        : shape === 'ask'
+          ? askBriefFor({
+              runId: input.runId,
+              question: input.outcome,
+              implication,
+              inferredBy,
+            })
+          : briefFor(input, implication, inferredBy, runHighTier);
       logged.push(
         appendWorkLog(store, {
           run: input.runId,
-          task: brief.id,
+          task: brief?.id ?? null,
           role: implication.domain,
           action: 'domain-implicated',
           detail: {
@@ -350,6 +408,27 @@ function record(
           at: input.at,
         }),
       );
+      // A concern a question touched and nobody was dispatched to is written
+      // down as exactly that. Silence would leave the log showing one concern
+      // where the inference found three, which is the shape of a coverage
+      // claim nobody made.
+      if (brief === null) {
+        logged.push(
+          appendWorkLog(store, {
+            run: input.runId,
+            task: null,
+            role: implication.domain,
+            action: 'concern-not-dispatched',
+            detail: {
+              concern: implication.concern,
+              why: 'a question is answered by one concern; this one was implicated and not asked',
+              answeredBy: answering?.domain ?? null,
+            },
+            at: input.at,
+          }),
+        );
+        continue;
+      }
       // False on a replay: the task is already queued, and enqueuing it again
       // would turn a resumed run into a duplicated one.
       if (

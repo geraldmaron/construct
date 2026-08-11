@@ -31,6 +31,27 @@ test('no two lenses claim the same domain', () => {
   }
 });
 
+test('a lens that no domain routes to says so itself — no silently unreachable lens', () => {
+  for (const lens of LENSES) {
+    if (lens.domains.length > 0) continue;
+    assert.ok(
+      lens.ceiling && lens.ceiling.length > 0,
+      `${lens.lens} is unreachable by dispatch and does not say why — either route it or state the ceiling`,
+    );
+  }
+});
+
+test('the analyst lens reaches dispatch through a catalog domain', () => {
+  const analyst = lensByName('analyst');
+  assert.ok(analyst, 'analyst lens exists');
+  assert.deepEqual(analyst.domains, ['measurement']);
+  assert.equal(lensForDomain('measurement')?.lens, 'analyst');
+  assert.ok(
+    playbookFor('measurement').template.slots.some((s) => s.name === 'measurement-gaps'),
+    'the lens slot reaches the measurement template',
+  );
+});
+
 test('every lens carries a posture, questions, and an escalation ladder', () => {
   for (const lens of LENSES) {
     assert.ok(lens.posture.length > 0, `${lens.lens} has no posture`);
@@ -39,7 +60,7 @@ test('every lens carries a posture, questions, and an escalation ladder', () => 
   }
 });
 
-test('a deepened domain template carries the lens slots, undoubled', () => {
+test('an equipped domain template carries the lens slots, undoubled', () => {
   const compliance = playbookFor('compliance').template;
   assert.ok(
     compliance.slots.some((s) => s.name === 'access-and-audit'),
@@ -59,10 +80,26 @@ test('a deepened domain template carries the lens slots, undoubled', () => {
   assert.ok(contracts.slots.some((s) => s.name === 'provenance-and-authorship'));
 });
 
-test('a domain no lens deepens keeps its template untouched', () => {
+test('a domain no lens equips keeps its template untouched', () => {
+  const commerce = playbookFor('commerce-tax').template;
+  assert.equal(lensForDomain('commerce-tax'), undefined);
+  assert.deepEqual(commerce, playbookFor('no-such-domain').template);
+});
+
+test('the security lens equips the domain that already routed without one', () => {
   const security = playbookFor('security').template;
-  assert.equal(lensForDomain('security'), undefined);
-  assert.ok(security.slots.some((s) => s.name === 'attack-surface'));
+  assert.equal(lensForDomain('security')?.lens, 'security');
+  assert.ok(security.slots.some((s) => s.name === 'attack-surface'), 'the base template survives');
+  assert.ok(security.slots.some((s) => s.name === 'threat-paths'), 'the lens slot is added');
+});
+
+test('the design lens equips both the new experience concern and accessibility', () => {
+  assert.equal(lensForDomain('user-experience')?.lens, 'design');
+  assert.equal(lensForDomain('accessibility')?.lens, 'design');
+  assert.ok(
+    playbookFor('accessibility').template.slots.some((s) => s.name === 'flow-dead-ends'),
+    'accessibility keeps its own concern and gains the lens slots',
+  );
 });
 
 test('the legal lens declares no covered jurisdiction until licensed review, and labels for review', () => {
@@ -78,7 +115,7 @@ test('the compliance lens is labeled dogfood-only until licensed review', () => 
   assert.match(lensByName('compliance')?.labeling ?? '', /dogfood-only/);
 });
 
-test('the engineering lens states its own ceiling and deepens no domain', () => {
+test('the engineering lens states its own ceiling and equips no domain', () => {
   const engineering = lensByName('engineering');
   assert.ok(engineering);
   assert.equal(engineering.domains.length, 0);

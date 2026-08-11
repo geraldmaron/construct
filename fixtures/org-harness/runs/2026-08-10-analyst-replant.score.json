@@ -1,0 +1,165 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": false
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": true,
+        "by": {
+          "claim": "The \"1 in 6 Helm-parameter-only RollingSync rollouts\" figure in T-27949 is unobservable in production: the ticket itself says there is no counter that increments when `specChanged` fires without a resulting sync operation, so the number is a headcount of support pings. The metrics request that would be the natural home for that counter, T-27846, asks for four progressive-sync measurements (time from detection to trigger, time to complete step X, how many Application refreshes the ApplicationSet caused, and which Applications a stalled sync is waiting for) and none of them counts a spec change that produced no sync operation. Shipping T-27846 as proposed therefore leaves the T-27949 failure mode exactly as unmeasured as it is today.",
+          "citations": [
+            "tickets/T-27949.md",
+            "tickets/T-27846.md"
+          ]
+        }
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": true,
+        "by": {
+          "claim": "The roadmap's sharding schedule depends on an unmeasured close condition without saying so: strategy.md states that application controller capacity is committed to the Progressive Sync Stable-promotion punch list and that sharding will not start until the Stable promotion closes, while T-28927 defines that punch list only as open enhancement and bug label queries. Because closure is judged from ticket queues rather than any observable behavior, and the progressive-sync observability that would tell anyone whether the feature is behaving, T-27846, is itself still an open request, there is no measurement that can say when the punch list is actually done, and therefore none that can date the start of sharding.",
+          "citations": [
+            "strategy.md",
+            "tickets/T-28927.md",
+            "tickets/T-27846.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

@@ -12,7 +12,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
@@ -29,9 +31,13 @@ import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
+import { ROLE_OWNERSHIP_BOUND } from '../../../src/kernel/run/grounding.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { HostAdapter, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
+
+/** The checkout this test runs from, so the prompt script is invoked where it lives. */
+const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..', '..', '..');
 
 const AT = '2026-08-03T00:00:00.000Z';
 const LATER = '2026-08-03T01:00:00.000Z';
@@ -389,7 +395,7 @@ test('the assignment states the role and its concern, and nothing it cannot supp
   assert.ok(!unknown.includes('Your concern:'));
 });
 
-test('a deepened role is shown its lens: posture, questions, escalation, labels', () => {
+test('an equipped role is shown its lens: posture, questions, escalation, labels', () => {
   const text = assignmentFor(brief('compliance'));
   assert.match(text, /Your posture: Controls and evidence over intent/);
   assert.match(text, /which identity acts/, 'the question set travels with the dispatch');
@@ -401,8 +407,37 @@ test('a deepened role is shown its lens: posture, questions, escalation, labels'
   assert.match(contracts, /template-for-review/);
   assert.match(contracts, /No jurisdiction is covered/);
 
-  // A domain no lens deepens gets no invented posture.
-  assert.ok(!assignmentFor(brief('security')).includes('Your posture:'));
+  // The security lens carries a stated ceiling, and the ceiling reaches the
+  // dispatch — a defensive-only limit the role never sees is not a limit.
+  const security = assignmentFor(brief('security'));
+  assert.match(security, /Your posture: Assume the interesting failure is deliberate/);
+  assert.match(security, /Defensive review only/);
+
+  // A domain no lens equips gets no invented posture.
+  assert.ok(!assignmentFor(brief('commerce-tax')).includes('Your posture:'));
+});
+
+test('an equipped role is told to drop findings another role owns, verbatim', () => {
+  // Stated as an instruction rather than a suggestion, because a mild version
+  // was measured and did not bind: roles reported other roles' findings freely,
+  // which buries what only this role would have reached.
+  const text = assignmentFor(brief('compliance'));
+  assert.ok(
+    text.includes(ROLE_OWNERSHIP_BOUND),
+    'the bound must reach the dispatch verbatim, not as a paraphrase that can drift',
+  );
+});
+
+test('the fixture-organization prompt states the same ownership bound as the product', () => {
+  // The instrument must not credit itself with a discipline the shipped
+  // dispatch never carries; that drift is what makes a measured number one no
+  // user feels.
+  const rendered = execFileSync(
+    process.execPath,
+    [join(REPO_ROOT, 'scripts', 'org-harness-producer-prompt.mjs'), '--lens', 'security'],
+    { encoding: 'utf8', cwd: REPO_ROOT },
+  );
+  assert.ok(rendered.includes(ROLE_OWNERSHIP_BOUND));
 });
 
 test('a role holding the two writes is told it has them, and what they are for', () => {
@@ -632,8 +667,13 @@ test('disagreeing roles become one inbox item, and agreement becomes none', asyn
     assert.equal(report.conflicts, 1, 'one run, one framed decision');
     const inbox = openDecisions(store, 'run-1');
     assert.equal(inbox.length, 1);
-    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+    // The two sides by name, then the reversible default, which is not a side.
+    assert.deepEqual(
+      inbox[0].positions.map((p) => p.role),
+      ['privacy', 'program-sequencing', 'construct'],
+    );
     assert.equal(inbox[0].positions[0].citation, 'GDPR Art. 28');
+    assert.match(inbox[0].positions[2].stance, /reversible default if you do nothing/);
     assert.equal(inbox[0].resolution, null, 'nothing auto-arbitrates');
 
     const raised = readWorkLog(store, 'run-1').find((e) => e.action === 'decision-raised');
@@ -746,6 +786,38 @@ test('a tuned family is not labeled best-effort', async () => {
   });
 });
 
+test('the dispatch itself records the family, not only the best-effort note', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    const tuned = {
+      ...fakeHost(),
+      model: 'claude-sonnet-5',
+      modelTuning: () => ({ family: 'claude', tuned: true }),
+    } as unknown as HostAdapter;
+    await workRun(store, tuned, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    // A record that names the family only when tuning is missing cannot answer
+    // "what ran this?" for the runs that succeeded, which are the runs a later
+    // claim quotes.
+    const dispatched = readWorkLog(store, 'run-1').find((e) => e.action === 'role-dispatched');
+    const detail = dispatched?.detail as { modelFamily: unknown; modelTuned: unknown };
+    assert.equal(detail.modelFamily, 'claude');
+    assert.equal(detail.modelTuned, true);
+  });
+});
+
+test('a host that will not say which family it is records that silence', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    await workRun(store, fakeHost(), { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+
+    const dispatched = readWorkLog(store, 'run-1').find((e) => e.action === 'role-dispatched');
+    const detail = dispatched?.detail as { modelFamily: unknown; modelTuned: unknown };
+    assert.equal(detail.modelFamily, null, 'an unknown family is written down as unknown');
+    assert.equal(detail.modelTuned, null);
+  });
+});
+
 test('a brief declaring no floor is never reported as degraded', async () => {
   await withStoreAsync(async (store) => {
     seed(store, ['privacy']);
@@ -803,7 +875,10 @@ test('a run that settled and then died still raises its decision', async () => {
     assert.equal(raised, 1, 'the framing is re-derived from the store');
     const inbox = openDecisions(store, 'run-1');
     assert.equal(inbox.length, 1);
-    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+    assert.deepEqual(
+      inbox[0].positions.map((p) => p.role),
+      ['privacy', 'program-sequencing', 'construct'],
+    );
 
     // The once-per-run rule has to survive being re-enterable, or the fix trades
     // a lost decision for one that rewrites itself under the reader.

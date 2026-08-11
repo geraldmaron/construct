@@ -197,8 +197,12 @@ test('a conflict frames both sides with citations and picks neither', () => {
 
   assert.deepEqual(
     decision.positions.map((p) => p.role),
-    ['privacy', 'program-sequencing'],
-    'ordered by name — any other order would be a precedence the user cannot see',
+    // The roles ordered by name — any other order would be a precedence the
+    // user cannot see — and then the reversible default, last because it is
+    // not a side. Commitment 11 as amended requires it on every decision: a
+    // framing that names the sides and stops has handed the user back the work
+    // they were delegating.
+    ['privacy', 'program-sequencing', 'construct'],
   );
   assert.deepEqual(decision.positions[0], {
     role: 'privacy',
@@ -209,6 +213,17 @@ test('a conflict frames both sides with citations and picks neither', () => {
     !JSON.stringify(decision).match(/recommend|suggest|should probably/i),
     'framing must not arbitrate',
   );
+
+  // The default is what silence costs, and it says so without becoming a
+  // recommendation: it names the branch that can still be undone, and names
+  // who argued each way so the default has an author rather than reading as
+  // the tool's own view.
+  const fallback = decision.positions.at(-1);
+  assert.equal(fallback?.role, 'construct');
+  assert.match(fallback!.stance, /reversible default if you do nothing: this holds/);
+  assert.match(fallback!.stance, /privacy argued for it, program-sequencing argued against/);
+  assert.match(fallback!.stance, /the call is yours/);
+  assert.match(decision.question, /Two concerns disagree/);
 });
 
 test('no disagreement produces no inbox item', () => {

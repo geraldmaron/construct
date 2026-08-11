@@ -176,6 +176,79 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     ],
   },
   {
+    path: 'strategy-alignment',
+    domain: 'strategy-alignment',
+    concern: 'whether the bet is worth its price — what it displaces, what was already promised, and who owns the call',
+    keywords: [
+      'strategy', 'strategic', 'okr', 'bet', 'priority', 'prioritize',
+      'deprioritize', 'competitor', 'competitive', 'market', 'pivot', 'invest',
+      'double down', 'sunset', 'trade-off', 'tradeoff', 'instead of',
+      // The plain words a leader uses when the real question is what gets
+      // dropped to pay for this.
+      'worth it', 'focus on', 'stop doing',
+    ],
+  },
+  {
+    path: 'system-design',
+    domain: 'system-design',
+    concern: 'whether the shape of the system survives the change — boundaries, coupling, and what becomes hard to undo',
+    keywords: [
+      'architecture', 'architectural', 'api design', 'schema', 'refactor',
+      'scalability', 'scale', 'coupling', 'monolith', 'microservice',
+      'microservices', 'platform', 'tech debt', 'technical debt',
+      'breaking change', 'backward compatible', 'backwards compatible',
+      'data model', 'integration',
+      // Ordinary words for the same worry: rebuilding a piece, splitting
+      // something apart, or standing a new service next to an old one.
+      'rewrite', 'split out', 'replace the',
+    ],
+  },
+  {
+    path: 'operations',
+    domain: 'operations',
+    concern: 'what happens after it ships — who answers when it breaks, how you find out, and what it costs to keep alive',
+    keywords: [
+      'support', 'on-call', 'oncall', 'incident', 'outage', 'downtime', 'sla',
+      'slo', 'runbook', 'rollback', 'monitoring', 'monitor', 'alerting',
+      'alert', 'escalation', 'ticket', 'customer complaint', 'maintenance',
+      'pager', 'postmortem', 'troubleshoot',
+      // What a non-expert says instead: it broke, who fixes it, at night.
+      'breaks', 'goes down', 'who fixes',
+    ],
+  },
+  {
+    path: 'user-experience',
+    domain: 'user-experience',
+    concern: 'whether people can find, understand, and finish what they came to do',
+    // "design" and "onboarding" are deliberately absent. "design" fires on any
+    // architecture sentence, and "onboarding" already earns employment (hiring)
+    // and product-scoping (onboard) — a third claimant on an ambiguous word
+    // buys over-fires without buying a finding.
+    keywords: [
+      'ux', 'user experience', 'usability', 'usable', 'wireframe', 'mockup',
+      'user flow', 'navigation', 'empty state', 'error message', 'microcopy',
+      'friction', 'confusing', 'confused', 'intuitive', 'drop off', 'drop-off',
+      'user testing', 'click through',
+      // How a user reports the same problem without the vocabulary.
+      'cannot find', "can't find", 'too many steps', 'gave up',
+    ],
+  },
+  {
+    path: 'measurement',
+    domain: 'measurement',
+    concern: 'how you would know — whether the claim about behavior can be observed at all',
+    // The words a non-expert writes when they are already thinking about
+    // numbers. "success metric" is deliberately shared with product-scoping:
+    // a sentence that names one is asking both what the promise is and
+    // whether anyone can check it, and both roles should answer.
+    keywords: [
+      'metric', 'metrics', 'kpi', 'dashboard', 'funnel', 'conversion',
+      'experiment', 'a/b test', 'ab test', 'retention', 'churn',
+      'instrumentation', 'telemetry', 'data quality', 'success metric',
+      'baseline', 'measure', 'track usage', 'analytics',
+    ],
+  },
+  {
     path: 'marketing-claims',
     domain: 'marketing-claims',
     concern: 'what you say publicly and whether you can back it up',

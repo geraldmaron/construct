@@ -1,0 +1,28 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "solutions-portfolio.md lists every SOL initiative (10x, cloud.gov, login.gov, USWDS, USA.gov, etc.) as a standing, funded-by-reimbursement commitment with no end date, but agreements.md establishes that TTS funding runs through IAAs/MOUs whose 7600A period of performance and 7600B obligated amounts are hard ceilings that cannot be exceeded — meaning every 'perpetual' SOL initiative is actually scheduled against agreements that, by rule, expire and must be re-executed, a mismatch between the program's presented permanence and the funding mechanism's finite period of performance.",
+   "citations": [
+    "org/solutions-portfolio.md",
+    "policies/agreements.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "project-lifecycle.md describes the Executed stage as auto-triggering the Needs IAA to Staffing Request label swap, with staffing leads scheduling a tentative start date against that transition, but agreements.md shows an IAA can take up to 90 days to execute depending on OGC review — so any staffing plan that assumes a start date shortly after an opportunity is Qualified/Scoped, rather than after the (unpredictable, up-to-90-day) Executed date, is scheduling against a date that is not yet real.",
+   "citations": [
+    "policies/project-lifecycle.md",
+    "policies/agreements.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "rfc-004-bucket-hiring.md caps the number of candidates a hiring manager can select to interview based on the hires they are trying to make in that action, and explicitly folds requests to replace someone already assigned to an engagement into that same capped pool rather than counting them separately — so a chapter needing an urgent backfill for a distressed or restaffed project (per projects-in-distress.md's staffing-change guidance) competes for interview slots against that manager's other net-new hiring needs, with no separate allocation or owner ensuring urgent replacement hires aren't crowded out by the cap.",
+   "citations": [
+    "rfc-004-bucket-hiring.md",
+    "policies/projects-in-distress.md"
+   ]
+  }
+ ]
+}

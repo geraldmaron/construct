@@ -1,0 +1,247 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "There is no Argo CD-side record of which identity performed a given operation, which is why the CI diff failures could not be diagnosed from the evidence available to the reporter. The impersonation RFC answers the audit question by pointing at Kubernetes audit events capturing both actual and impersonating users, but that record lives on the target cluster and keys on service account names, not on Application or tenant; the reporter, holding a broad cluster Secret credential, could only observe that \"the diff suddenly runs with a narrower identity\" without being able to attribute it, and the external-cluster report shows a second path attributing writes to plain User \"argocd\". An operator cannot answer from Argo CD which credential a sync or diff used, so a misrouted or maliciously reordered destinationServiceAccounts match would look identical to normal operation.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The deletion PRD's assertion that \"no additional roles or privileges are needed ... so no impact on the security aspects of Argo CD workloads\" and \"No immediate Risks to consider\" is refuted by the delete/recreate loop already reproduced against the shipped field. That report configures a RollingSync ApplicationSet with a deletionOrder and a child app deliberately stuck Progressing via crashloop, and the reverse order \"waits for one Application to be fully deleted before moving to the next\" so the wait never completes and the controller restarts the wave from the top. A tenant who controls the contents of one child path, or one finalizer, can hold an entire ApplicationSet teardown open and drive continuous re-creation of resources an operator is trying to remove: availability impact reachable by anyone with commit rights to a single generated path, with no privilege grant involved.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "Enabling impersonation can fail open silently because the RFC names two different settings for the same switch: the Application Controller implementation section specifies the argocd-cm key applicationcontroller.enable.impersonation (default false), while every worked example in the same RFC patches application.sync.impersonation.enabled, and the external-cluster bug report reproduces with application.sync.impersonation.enabled. An operator who sets the key the controller does not read gets no error and no warning path (the RFC only promises a reconciliation warning for using destinationServiceAccounts while the flag is off), so syncs keep running with the control-plane cluster credential while the AppProject's destinationServiceAccounts mapping is believed to be in force.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": true,
+        "by": {
+          "claim": "The hydrator pilot restriction and the progressive-sync bug describe the same wave-restart mechanism from two ends. The incident review confirmed that each hydrator push restarts the rolling sync wave and ruled that pilot repos must not use progressive sync until there is a debounce; the RollingSync ticket independently records that the reporting team is \"piloting the source hydrator on this repository: every hydration cycle lands a fresh commit on the hydrated branch that the child Applications deploy from, and each of those commits is picked up as a source change\". The hydrator RFC supplies the reason the pushes are continuous: on each new dry commit it commits and pushes to the syncSource targetBranch for every group of Applications sharing it, so a single dry commit produces a fresh hydrated commit under every child on that branch.",
+          "citations": [
+            "notes/note-2.md",
+            "tickets/T-27949.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "A deletion-ordering field exists in production CRDs that the roadmap says will not be built, so nothing owns its threat model. The strategy document states that \"ordered or automated deletion of ApplicationSet children will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the reproduction filed against v3.3.9 already sets strategy.deletionOrder: AllAtOnce in a live ApplicationSet, and the PRD specifies deletionOrder as a new ApplicationSetStrategy field with Reverse semantics. The PRD's own Non-Goals compound it: the unsupported custom value leaves \"a configuration field that accepts input but ignores it silently\", so an operator can believe an ordered teardown is enforced while the controller falls back to deleting everything at once.",
+          "citations": [
+            "strategy.md",
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "A deletion-ordering field exists in production CRDs that the roadmap says will not be built, so nothing owns its threat model. The strategy document states that \"ordered or automated deletion of ApplicationSet children will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the reproduction filed against v3.3.9 already sets strategy.deletionOrder: AllAtOnce in a live ApplicationSet, and the PRD specifies deletionOrder as a new ApplicationSetStrategy field with Reverse semantics. The PRD's own Non-Goals compound it: the unsupported custom value leaves \"a configuration field that accepts input but ignores it silently\", so an operator can believe an ordered teardown is enforced while the controller falls back to deleting everything at once.",
+          "citations": [
+            "strategy.md",
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The deletion PRD's assertion that \"no additional roles or privileges are needed ... so no impact on the security aspects of Argo CD workloads\" and \"No immediate Risks to consider\" is refuted by the delete/recreate loop already reproduced against the shipped field. That report configures a RollingSync ApplicationSet with a deletionOrder and a child app deliberately stuck Progressing via crashloop, and the reverse order \"waits for one Application to be fully deleted before moving to the next\" so the wait never completes and the controller restarts the wave from the top. A tenant who controls the contents of one child path, or one finalizer, can hold an entire ApplicationSet teardown open and drive continuous re-creation of resources an operator is trying to remove: availability impact reachable by anyone with commit rights to a single generated path, with no privilege grant involved.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": false
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "There is no Argo CD-side record of which identity performed a given operation, which is why the CI diff failures could not be diagnosed from the evidence available to the reporter. The impersonation RFC answers the audit question by pointing at Kubernetes audit events capturing both actual and impersonating users, but that record lives on the target cluster and keys on service account names, not on Application or tenant; the reporter, holding a broad cluster Secret credential, could only observe that \"the diff suddenly runs with a narrower identity\" without being able to attribute it, and the external-cluster report shows a second path attributing writes to plain User \"argocd\". An operator cannot answer from Argo CD which credential a sync or diff used, so a misrouted or maliciously reordered destinationServiceAccounts match would look identical to normal operation.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "Signing the hydrated commits, as proposed, concentrates rather than separates the two secrets that gate a forged deploy. The hydrator RFC already flags that the git push secret (the repository-write Secret holding githubAppPrivateKey) \"will need to be stored in a namespace separate from the other Argo CD components to provide a bit extra protection\"; the signing proposal mounts the GPG private key \"from a Secret in the Argo CD namespace\" and starts with one cluster-wide key. Whoever reads Secrets in the Argo CD namespace then holds both the push credential and the key whose public half operators are told to add to argocd-gpg-keys-cm and the project's SourceIntegrity policy, so forged commits pass the very control meant to detect them, on every hydrated branch at once.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": true,
+        "by": {
+          "claim": "A deletion-ordering field exists in production CRDs that the roadmap says will not be built, so nothing owns its threat model. The strategy document states that \"ordered or automated deletion of ApplicationSet children will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the reproduction filed against v3.3.9 already sets strategy.deletionOrder: AllAtOnce in a live ApplicationSet, and the PRD specifies deletionOrder as a new ApplicationSetStrategy field with Reverse semantics. The PRD's own Non-Goals compound it: the unsupported custom value leaves \"a configuration field that accepts input but ignores it silently\", so an operator can believe an ordered teardown is enforced while the controller falls back to deleting everything at once.",
+          "citations": [
+            "strategy.md",
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": true,
+        "by": {
+          "claim": "The root cause recorded for the CI diff failures is contradicted by the evidence in the ticket it was recorded against and by the external-cluster report, and the wrong cause points at the wrong fix. The note states that with impersonation on, diff runs as the destination service account which lacks patch on cluster-scoped resources; the ticket's own error names user \"system:serviceaccount:argocd:argocd-server\", the control-plane identity, and the external-cluster report states plainly that sync honors destinationServiceAccounts while the diff path does not and runs as the cluster credential from the cluster Secret. Acting on the note's cause means granting patch to destination service accounts, which widens exactly the identities impersonation exists to keep narrow, and leaves the diff path's real identity untouched.",
+          "citations": [
+            "notes/note-1.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

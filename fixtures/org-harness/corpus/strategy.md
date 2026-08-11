@@ -34,6 +34,8 @@
     - [✅ Automated Registry Monitoring](#-automated-registry-monitoring)
     - [✅ Projects Enhancements](#-projects-enhancements)
 
+Note that while the roadmap lists first-class UI/CLI/API support for ApplicationSet resources, the current implementation does not include the ability to manage the deletion order of child applications through these interfaces, leaving teardown as a manual operator action.
+
 ## v2.3
 
 > ETA: Feb 2021
@@ -94,6 +96,8 @@ Support more than one source for creating an Application [#8322](https://github.
 ### Sharding application controller 
 
 Application controller to scale automatically to provide high availability[#8340](https://github.com/argoproj/argo-cd/issues/8340).
+
+Note: application controller capacity for this quarter is committed to closing out Progressive Sync's remaining Stable-promotion punch list; the pair who owns sharding is the same pair working that list, so sharding work will not start until the Stable promotion closes.
 
 ### Add support for secrets in Application parameters
 

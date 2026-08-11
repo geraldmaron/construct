@@ -1,0 +1,219 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "Auto-sync deploying stale hydrated manifests is a property of the hydrator's push-to-stage mode as designed: the RFC defines push-to-stage as writing to the hydrateTo.targetBranch and relying on 'some external system to move changes to the deployment branch', so the syncSource.targetBranch is by construction whatever the external promoter last moved there. The reporter observes the symptom only in push-to-stage; in push-to-deploy the two branches are the same and the window cannot open. The proposed timestamp annotation is a request to reintroduce the ordering guarantee the mode deliberately delegates outward.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "The CI diff failure where argocd-server is refused permission to dry-run ClusterRole/cert-manager-cainjector is explained by the impersonation design, not by the cluster Secret: the RFC makes the feature a system-level switch (application.sync.impersonation.enabled in argocd-cm, 'applicable to all Argo CD Applications') and resolves the acting identity from the AppProject's destinationServiceAccounts by first-valid-match on server plus namespace. Once a project turns the flag on, the request runs as that mapped defaultServiceAccount, which holds only the namespaced Role granted to it, so the broad cluster credential the reporter is looking at is no longer the identity being authorized.",
+          "citations": [
+            "tickets/T-26271.md",
+            "rfc-001-sync-impersonation.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The delete/re-create loop is the reverse deletionOrder semantics meeting a resource that never finishes deleting: the PRD defines Reverse as deleting in the reverse order of the RollingSync steps and 'waits for one application to be fully deleted before moving onto the next application'. The reproduction pins app-four in Progressing via a crashloop, so the wait for full deletion never returns and the wave restarts from the top. The PRD records 'No immediate Risks to consider' and its only stated implementation check is that Reverse requires rollingSync to list an order, which does not cover an application whose deletion cannot complete.",
+          "citations": [
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "Server-Side Diff ignoring destinationServiceAccounts on external clusters is the direct consequence of the RFC scoping impersonation to the sync path only: its GitOps Engine item is to honor the Impersonate configuration 'set in the Application sync context', and its Application Controller item sets Impersonate on the SyncContext (rawConfig/restConfig). No component item covers the comparison/diff path, so the server-side apply dry-run keeps using the cluster Secret credential and the API server authorizes it as a plain patch, which is why sync succeeds and diff fails on the same Application.",
+          "citations": [
+            "tickets/T-28695.md",
+            "rfc-001-sync-impersonation.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "The delete/re-create loop is the reverse deletionOrder semantics meeting a resource that never finishes deleting: the PRD defines Reverse as deleting in the reverse order of the RollingSync steps and 'waits for one application to be fully deleted before moving onto the next application'. The reproduction pins app-four in Progressing via a crashloop, so the wait for full deletion never returns and the wave restarts from the top. The PRD records 'No immediate Risks to consider' and its only stated implementation check is that Reverse requires rollingSync to list an order, which does not cover an application whose deletion cannot complete.",
+          "citations": [
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "Auto-sync deploying stale hydrated manifests is a property of the hydrator's push-to-stage mode as designed: the RFC defines push-to-stage as writing to the hydrateTo.targetBranch and relying on 'some external system to move changes to the deployment branch', so the syncSource.targetBranch is by construction whatever the external promoter last moved there. The reporter observes the symptom only in push-to-stage; in push-to-deploy the two branches are the same and the window cannot open. The proposed timestamp annotation is a request to reintroduce the ordering guarantee the mode deliberately delegates outward.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "The CI diff failure where argocd-server is refused permission to dry-run ClusterRole/cert-manager-cainjector is explained by the impersonation design, not by the cluster Secret: the RFC makes the feature a system-level switch (application.sync.impersonation.enabled in argocd-cm, 'applicable to all Argo CD Applications') and resolves the acting identity from the AppProject's destinationServiceAccounts by first-valid-match on server plus namespace. Once a project turns the flag on, the request runs as that mapped defaultServiceAccount, which holds only the namespaced Role granted to it, so the broad cluster credential the reporter is looking at is no longer the identity being authorized.",
+          "citations": [
+            "tickets/T-26271.md",
+            "rfc-001-sync-impersonation.md"
+          ]
+        }
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "The hydrator pushing unsigned commits is not a missing implementation detail but the design's stated extent: the RFC's Push access section specifies write credentials only, as a Kubernetes secret labeled argocd.argoproj.io/secret-type: repository-write carrying a GitHub App key, and delegates the push to the commit server with no signing step in the CommitManifests message. Its Security Considerations section defers the question ('We'll need to consider what git permissions setup to recommend'), and the filed symptom is that Argo CD then rejects its own hydrated output when signature verification is enabled on the hydrated branch.",
+          "citations": [
+            "tickets/T-28239.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

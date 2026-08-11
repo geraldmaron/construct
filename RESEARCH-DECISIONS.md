@@ -1033,6 +1033,18 @@ and over 0.188 (15/80) vs 0.325 (27/83); A0 trails both at 0.634 miss. The namer
 miss less out-of-family, it also asserts less falsely — B's unspent over-rate (0.125) is the
 lowest over-rate measured anywhere in this document.
 
+> **Corrected 2026-08-10 by §18.** B's figures above were measured before
+> construct-rxah was found: every JSON-repaired reply was scored as a namer
+> failure and fell that outcome back to the keyword arm. Re-run single-tier on
+> the fixed instrument, the same shipped configuration reads **miss 0.280
+> (26/93)** and **over 0.374 (40/107)**. The miss moved two labels and is noise.
+> The over-rate did not, and its denominator differs (107 surfaced against 80),
+> so 0.188 is not a figure the current script can produce and the "lowest
+> over-rate measured anywhere in this document" sentence no longer holds. The
+> A0/A1 comparison and the adoption that rests on it are unaffected: A0 is
+> byte-identical across runs, and B still dominates it on miss. The run behind
+> the corrected pair is in `fixtures/namer-arms/shipped.json`, per outcome.
+
 **What this does not decide.** Neither configuration reaches the 0.15 miss target
 out-of-family (B: 0.325 on `unspent`); the inversion halves the miss, it does not close
 construct-4jq's gap, so adopting it re-opens the question of whether 0.15 was ever a defensible
@@ -1173,6 +1185,53 @@ first — this trigger sits behind the 25-runs-per-domain trigger above, by cons
 
 ---
 
+## 13. The orchestration landscape and where Construct sits — construct-v0d (2026-08-10)
+
+Asked by the stakeholder: how do CrewAI-class multi-agent frameworks and the claw-family agent
+runtimes relate to Construct — is orchestration a plugin, built in, or out of scope? Commitment 1
+already answers the build question (never a second runtime; MCP projection is presence). This
+section is the evidence pass behind that answer, from the 2026 landscape as published by the
+tools themselves and the surveys that compare them.
+
+**What each class of tool is, and the organizational assumption it makes:**
+
+- **Graph orchestrators (LangGraph).** Explicit state graphs with checkpointing and
+  human-in-the-loop primitives; the largest production footprint in 2026 surveys. Assumes an
+  engineer designs the workflow: the organizational process must already be known to be encoded.
+  (dev.to and tensoria.fr 2026 framework comparisons, read 2026-08-10.)
+- **Role-crew frameworks (CrewAI).** Role-based agent crews with the lowest barrier to entry;
+  strongest at prototypes, weaker on production observability per the same surveys. Assumes the
+  roles and their handoffs are named by the builder up front — the crew is cast, not inferred.
+- **Debate/conversation frameworks (AutoGen).** Research-strong multi-agent debate and
+  verification patterns; Microsoft has shifted it toward maintenance in favor of its broader
+  agent framework. Assumes evaluation-literate builders.
+- **Personal agent runtimes (OpenClaw, ZeroClaw).** Self-hosted autonomous agents driven from
+  messaging channels, with local memory and a skills directory model. Single-user by design;
+  governance is thin — OpenClaw's own maintainer warns non-CLI users off it, and its skill
+  repository was found to lack vetting against malicious submissions (Cisco, via the OpenClaw
+  Wikipedia entry, read 2026-08-10). ZeroClaw is the same shape minimized into a Rust binary
+  with command allowlists and workspace scoping. These are agent runtimes, the exact thing
+  commitment 1 forbids building, and therefore potential hosts, not competitors.
+
+**The common gap, which is Construct's lane.** Every tool above orchestrates *execution*: who
+runs, in what order, with what tools. None of them carries the organizational layer — which
+domains an outcome implicates, what a deliverable owes before anyone relies on it, where the
+tacit "of course legal sees this" knowledge lives, who decides when roles disagree, and what was
+actually read when a claim was made. Each assumes a human already encoded that process. That
+assumption is exactly the gap the stakeholder named: organizations trust AI to fill gaps their
+business processes used to fill, and nothing in the execution layer holds those gaps. One 2026
+survey says it plainly: the differentiator is never the framework but the eval pipeline,
+observability, and failure recovery around it — the contract layer, not the runtime.
+
+**Conclusion (plugin / built-in / out of scope):** building an orchestrator is out of scope,
+permanently (commitment 1, risk 4). Riding them is the projection path already committed:
+execution hosts behind the adapter seam, presence through one MCP surface. A CrewAI or
+LangGraph adapter is justified the day a real user's work already lives there and never before
+(Phase 4/5 gates); the claw-family runtimes are additionally gated by their own governance
+posture — a host whose skill supply chain is unvetted inherits lesson-poisoning risk 5, so any
+such adapter carries the same provenance ceiling ingested documents already have. No code
+changes from this pass.
+
 ## What this pass did not do
 
 - **Nothing in §§3–6 was fitted.** At the 85 labels from single-author corpora this pass began
@@ -1203,3 +1262,515 @@ Bayesian sequential design.
 These are named as the standard references for each method, and the methods are implemented from
 their standard closed forms — not quoted from, and not consulted as primary sources for this
 document's claims. The claims come from `scripts/measure-decisions.mjs` and the corpora.
+
+## 14. Corpus breadth does not rescue role differentiation (2026-08-10)
+
+**The question.** Measured over the original fixture organization, planted role
+findings do not isolate the lens that owns them: asked different questions over
+the same material, lenses return the same findings and name the same mechanisms,
+and a judge pass confirmed the collisions were real rather than shared
+vocabulary. Three explanations had been tested and rejected — keyword
+brittleness, unbounded per-role output, and badly keyed plants. One was left.
+That corpus is 22 documents from a single project's sync and hydration work,
+narrow enough that every role reading it might be forced onto the same few
+salient tensions. If so, convergence belongs to the material and the depth claim
+is recoverable per corpus.
+
+**The experiment.** A second fixture organization (`fixtures/org-harness-broad`)
+was built from 22 documents of a real organization's real operating
+documentation — what it sells work under, how it prices and bills, how it hires
+and staffs, who holds which accounts, what happens when delivery goes wrong —
+public domain under CC0, held to parity with the original on document count
+(22/22), corpus bytes (141,115 against 135,443) and measured prompt fit. Ten
+plants, one per depth-bearing role, each keyed to the territory only its owner
+asks about, on **twenty disjoint documents**: no two plants share a document
+pair, which excludes by construction the confound that a claim about a
+neighbouring mechanism collects another plant's credit. Every plant was verified
+to be credited by its own committed mechanism before any run existed, which
+excludes the keyword-brittleness failure the first batch suffered. Both were
+recorded in `PROVENANCE.md` before the sweep and committed ahead of it.
+
+Both corpora were then swept in the same sitting, same family
+(`claude-sonnet-5` through `claude -p`, the shape the product ships), same
+per-lens dispatch prompt, eleven lenses each, clean context — the binary run
+from an empty directory with no MCP servers, because started inside the project
+it could read the answer key it was being graded against.
+
+**The result.**
+
+| | broad corpus | original corpus |
+| --- | --- | --- |
+| owner lens found its own plant | 1/10 | 5/10 |
+| plants established as discriminating | **0/10** | **1/10** (`SD2`, architect) |
+| plants no lens found at all | 6/10 | 4/10 |
+
+Matrices: `fixtures/org-harness-broad/runs/2026-08-10-broad-sweep.judged-discrimination.json`
+and `fixtures/org-harness/runs/2026-08-10-narrow-sweep.judged-discrimination.json`.
+Of 23 structural credits, 22 were judged to state the planted mechanism and one
+was refused (`analyst` on `SA-B1`: a claim about the role's value being
+invisible to the utilization metric, where the plant is about the cost landing
+on overhead or utilization — same documents, different causal chain).
+
+**The verdict: breadth is rejected as the explanation.** Plants collide on
+material spanning agreements, billing, hiring, access and delivery exactly as
+they collide on one engineering programme. The depth claim is not recoverable by
+choosing a broader corpus.
+
+**Robustness, stated because the judge is the weakest link here.** This is the
+least independent verdict in the record: the plants were authored by a Claude
+model, the runs were produced by a Claude model, and a Claude model judged the
+credits. The direction of that bias is knowable, though. A lenient judge keeps
+foreign credits alive, and foreign credits are what suppress discrimination — so
+leniency biases *against* the depth claim, and 22 of 23 credits were accepted.
+The result therefore has to be read as "no plant was established as
+discriminating", not "every plant was proven non-discriminating". Against that,
+the collisions were checked for whether stricter judging could flip them: on
+three of the four broad collisions (`CP-B1`, `SA-B1`, `TH-B1`) the owning lens
+never found its own plant at all, so refusing every foreign credit turns them
+into misses rather than into discrimination. Only `L-B1` could flip. The finding
+survives its own worst case.
+
+**What is a confound, and is not being dressed up as a result.** The broad
+corpus was harder: 6 of 10 plants were found by no lens, against 4 of 10.
+Discrimination is only measurable among plants somebody found — 4 on the broad
+corpus, 6 on the original — so the broad arm rests on less evidence than the
+original arm, and the comparison licenses "breadth did not rescue
+discrimination" and nothing stronger. In particular it does **not** license
+"breadth makes convergence worse": that reading would need the two corpora to be
+equally findable, and they demonstrably are not. At these counts no rate is
+quoted; hits and misses are enumerated.
+
+**What this leaves.** Four explanations for the convergence have now been tested
+and rejected: keyword brittleness, output volume, plant keying, and corpus
+breadth. Each was a way for the result to be an artifact of the instrument. What
+remains is the premise itself — that role differentiation produces differentiated
+findings — and it is now the thing under suspicion rather than the thing being
+measured around. `STRATEGY.md`'s Phase 4 criterion is amended accordingly.
+
+## 15. The role premise, decided against external evidence (2026-08-10)
+
+§14 left the premise under suspicion and the Phase 4 criterion suspended. This
+section closes it, because the external record already answers the question and
+a further study here would have re-measured a settled result.
+
+**What the literature says.** Zheng et al. (2024), 162 personas across four LLM
+families and 2,410 questions: personas in system prompts do not improve
+performance, with small negative effects in places; domain-aligned personas (a
+"lawyer" for legal work) help negligibly. The paper's own abstract was revised
+in October 2024 from "consistently improves" to "does not improve" — the claim
+this project built a phase on is one the field already retracted.
+
+**The mechanism, and the number that matches ours.** The agent-scaling work
+(arXiv 2602.03794) separates four conditions: no diversity, persona-only,
+model-only, and both. Persona-only is the weak one. Even with distinct personas,
+mean pairwise output similarity stays high; personas produce surface variation
+without divergence in reasoning. Their construct is K*, the count of independent
+non-redundant reasoning paths — additional agents help only if they raise K*,
+and homogeneous agents produce correlated outputs at K* ≈ 1. Model diversity
+raises it substantially more than persona diversity: full diversity at 2 agents
+matches homogeneous at 16, while persona-only needs 8 to do the same.
+
+Construct's own sweep is that finding restated in this corpus. Eleven lenses,
+one model, one prompt shape: 0 of 10 plants isolate. We measured K* ≈ 1 without
+knowing the name for it.
+
+**Where the value actually is.** MAST (arXiv 2503.13657), 1,600+ annotated
+traces across seven multi-agent frameworks, finds 14 failure modes in three
+clusters — specification, coordination, verification. "Disobey role
+specification" is about 1.5% of failures; specification and verification gaps
+account for the overwhelming majority. Cognition's position paper reaches the
+same place from production: dispersed decision-making across agents is fragile,
+and context engineering beats role decomposition. Spotify's Xirp (launched
+2026-08-10) is the shape the market is converging on: sessions partitioned by
+worktree, organizational context — component architecture, dependency graphs,
+ownership topology, architectural decisions — injected at session start and
+captured back out. Explicitly not role personas. The failure it was built
+against is worth quoting for this project's benefit: institutional knowledge
+fragmenting into individual `CLAUDE.md` files, bespoke MCP setups, and personal
+prompt libraries, with engineers spending as much effort reconstructing context
+as building.
+
+**Decision.** The premise is rejected, not suspended.
+
+1. **Per-role depth is retired as a claim and as a phase criterion.** Differing
+   question sets over one model do not produce differentiated findings. No pack
+   is, or will be, described as at depth on that basis. The isolation criterion
+   is withdrawn rather than left suspended, because it is now known to be
+   measuring something that does not exist.
+2. **Roles keep the three jobs that never depended on differentiation:**
+   routing and coverage (which domains get looked at at all — the promise that
+   nobody is ambushed by a domain they did not know existed), attribution (who
+   flagged what, in the work log), and obligation (what a deliverable owes
+   before anyone relies on it). Every one of those is a property of the catalog
+   and the templates, and none needs a lens to see what other lenses cannot.
+3. **Where independence is genuinely required, buy it with model diversity, not
+   with personas.** This is the one intervention with a measured effect size,
+   and Construct already has the seam for it: the host adapter interface and
+   `TUNED_FAMILIES`. Cross-family dispatch is reserved for the places
+   independence is load-bearing — adversarial challenge, and any judge pass —
+   rather than spent on every dispatch.
+4. **Information partitioning replaces question partitioning where breadth is
+   needed.** Give dispatches different material, which raises K*; giving them
+   different questions over identical material does not.
+5. **The depth budget moves to verification and grounding**, where MAST puts the
+   failures and where this project's actual asset already is: no-fabrication,
+   the challenge catalog, the work log, and grounded sources.
+
+**What this costs, stated plainly.** The product's differentiator is no longer
+"a lens sees what others miss." It is coverage, obligation, and provenance — the
+tacit "of course legal sees this" knowledge, made explicit and auditable. That
+is a smaller claim than the one Phase 4 was written on, and it is the one the
+evidence supports.
+
+**Sources.** Zheng et al., *When "A Helpful Assistant" Is Not Really Helpful*,
+Findings of EMNLP 2024 (arXiv 2311.10054). *Understanding Agent Scaling in
+LLM-Based Multi-Agent Systems via Diversity*, arXiv 2602.03794. Cemri et al.,
+*Why Do Multi-Agent LLM Systems Fail?*, arXiv 2503.13657. Cognition, *Don't
+Build Multi-Agents*. Spotify, *Introducing Xirp*, portal.spotify.com, read
+2026-08-10.
+
+## 16. Xirp, and the ownership gap it exposes (2026-08-10)
+
+Read against §13's question — plugin, built-in, or out of scope — Spotify's Xirp
+(public beta 2026-08-10) is a **host**, not a competitor, and the one that most
+directly fits the projection path commitment 1 already commits to.
+
+**What it is, from its own documentation.** A macOS desktop application for
+running coding-agent sessions across Claude Code, Codex, and Gemini: persistent
+terminals, git worktree isolation per session, agents authenticated through
+their own CLIs, and an optional Spotify Portal (Backstage) connection that feeds
+component architecture, dependency graphs, ownership topology and architectural
+decisions into a session at start, then captures session output back into
+documentation. Portal is optional; the local session management works without
+it. Its docs state it does not address domain routing, legal or compliance
+review, or deliverable obligations.
+
+**So it does not overlap the remaining claim.** After §15, Construct's claim is
+coverage, obligation and provenance across the domains a cross-functional team
+owns. Xirp's scope is the coding session. The three CLIs it manages are the same
+ones `src/hosts/` already targets, which makes it a projection target beside
+OpenCode rather than a substitute for anything here. Adopting it is riding a
+host, which is the committed path, not building one, which is forbidden.
+
+**What it exposes, which is the useful part.** Xirp gets ownership from a real
+catalog. Construct infers it from keywords, and this document's own §4 records
+that 116 of 207 catalog keywords have never fired. The weakest joint in the
+coverage claim — knowing who owns what, so "of course legal sees this" is
+grounded rather than guessed — is precisely where Xirp is strong and Construct
+is weak. That is a gap in Construct's evidence, independent of whether Xirp is
+ever adopted, and it is now filed as its own work rather than left as a
+paragraph.
+
+**Two risks, recorded rather than absorbed.** Its documentation loop
+(auto-generated docs from sessions, fed back into later sessions) is a thinner
+form of the research → distill → operationalize loop, and would overlap
+materially if it ever grew obligations. And it is a day-one, macOS-only,
+Portal-coupled beta controlled by one vendor: usable now, not yet safe to depend
+on. No adapter is written against it until the host-breadth gates of Phase 4/5
+apply, exactly as for every other host.
+
+**The question this leaves open, which is a stakeholder decision and not a
+measurement.** With per-role depth retired, is coverage-obligation-provenance
+for non-engineering domains a product, or a feature of somebody else's? It has
+never been tested against an organization other than this one, and the standing
+"no external subjects" rule means it cannot be. That is the next decision worth
+making, and it is Gerald's, not a session's.
+
+## 17. Where ownership facts come from (2026-08-10)
+
+§16 recorded that Xirp reads ownership from a real catalog while Construct
+infers it from keywords, and called that the weakest joint in the coverage
+claim. That framing is half right, and the half it gets wrong is the load-bearing
+one. Two different relations are both called ownership, and separating them
+answers most of the question.
+
+**Relation A, component → team.** Which team owns which service. This is what a
+Backstage catalog holds and what Xirp injects at session start. It is a registry
+fact: somebody declared it, it can be looked up, it can go stale, but it is never
+inferred.
+
+**Relation B, outcome → concern.** Which concerns a piece of work implicates —
+whether an agreement is being made, whether information about a person is being
+handled, whether somebody will have to answer for this at 2am. This is what
+Construct's coverage claim rests on entirely.
+
+**No registry supplies B, and this is not a gap that better tooling closes.** A
+service catalog can say team-payments owns the billing service. It cannot say
+that changing how refunds work in Germany implicates tax treatment, a payment
+processor's terms, and a support path that does not exist yet. B is a judgment
+about a situation, and there are only two mechanisms that produce it: infer it,
+or have somebody state it who already knows. The second is not available, and not
+because of tooling — the entire promise is that a user is not ambushed by a
+domain they did not know existed, so the user cannot be the source of the list of
+domains they do not know exist. That is not a limitation to engineer around; it
+is what the product is for.
+
+So §16's comparison, read precisely, does not say Construct is weak where Xirp is
+strong. It says the two tools hold different facts. Xirp's catalog would not
+improve Construct's coverage by one percentage point, because it does not contain
+the relation coverage is made of.
+
+### The decision, against the three options the work item named
+
+1. **Read an existing catalog behind an adapter seam — refused for coverage,
+   left open as a different feature.** It answers relation A. Adopting it to
+   shore up a claim about relation B would be importing a dependency that cannot
+   affect the number, and doing so in a lane a host already occupies. Where A is
+   genuinely useful is *after* routing: once a concern is known, naming the human
+   who owns the affected component turns a finding into something somebody can
+   act on. That is notification, not coverage, and it is filed as its own work
+   rather than smuggled in here.
+2. **An optional declared-ownership file — accepted, scoped to relation A, not
+   built here.** Cheap, honest, unverified, and degrades to today's behavior when
+   absent. It improves who a finding reaches. It does not touch what gets found.
+3. **Accept inference for relation B and state its measured accuracy — accepted,
+   and made structural rather than promised.** Every surface that claims coverage
+   carries the measured routing figure or an explicit unverified tag. Asserted
+   completeness is a defect, and the README now quotes the miss rate in the same
+   breath as the coverage table.
+
+### Accepting inference is not the same as leaving it alone
+
+The catalog as it stood described each concern to the model in one line —
+`contracts: agreements with other parties and what they bind you to` — and then
+carried, in comments addressed to whoever next edited the file, everything
+actually known about when that concern does and does not apply. The comment
+explaining that `sign` was removed because it fired on "single sign-on" was
+written for a human maintainer. **The router never saw it.** The same is true of
+every precision lesson this document has recorded: `contract` firing five times
+and being right zero times (§3), `customers` at precision 0.176, `before` at
+0.357. Hard-won knowledge, sitting one layer away from the thing making the
+decision.
+
+So each concern now states two things as data rather than as prose for
+maintainers:
+
+- `implicatedWhen` — the conditions under which the concern genuinely applies,
+  written as situations rather than as phrases to look for, in language a
+  non-expert would recognize. "Somebody is engaged to do work, or stops being
+  engaged — hired, contracted, brought on, let go — whatever the arrangement is
+  called."
+- `notImplicatedWhen` — the near misses. "Signing refers to authentication rather
+  than to executing a document." "Users or customers are named only as who the
+  work is for." Each entry earns its place by naming a confusion that has
+  actually happened here, and this is where precision is bought.
+
+Both are required fields, not optional ones. A concern that omits them still
+routes — silently, and worse — and quietly added unmeasured surface area is a
+failure mode this catalog has already been burned by once (§3's 106 keywords that
+have never fired). The namer prompt renders both, and instructs the model to
+decide from the situation rather than the vocabulary, in both directions: an
+outcome that never says "personal data" can be squarely about it, and one that
+says "contract" may involve no agreement with anyone.
+
+Keywords stay, demoted and labeled: they are the zero-model fallback's evidence
+so that recording an outcome stays free and offline, and they are not the
+definition of anything.
+
+### Re-measured, because the adopted gate requires it
+
+§10's adoption is conditional: the shipped configuration must dominate the
+zero-model fallback on both axes on out-of-family corpora, **re-measured whenever
+the catalog, the namer prompt, or the serving tier changes.** This change is both
+of the first two, so the gate was re-run rather than assumed, by the command §10
+names.
+
+Run of 2026-08-10, same corpora, same seam, 126 consultations, 0 failed, mean
+latency 7,159 ms, served by `claude-sonnet-5` — the same tier §10 measured, so
+the difference below is the catalog and the prompt, not the model:
+
+```
+labeled-outcomes.json
+  A0 keywords   miss 0.027 (1/37,  CI [0.005, 0.138])   over 0.250 (12/48, CI [0.149, 0.388])
+  A1 +silence   miss 0.027 (1/37,  CI [0.005, 0.138])   over 0.250 (12/48, CI [0.149, 0.388])
+  B  namer-1st  miss 0.351 (13/37, CI [0.218, 0.512])   over 0.351 (13/37, CI [0.218, 0.512])
+held-out-outcomes.json
+  A0 keywords   miss 0.026 (1/38,  CI [0.005, 0.135])   over 0.229 (11/48, CI [0.133, 0.365])
+  A1 +silence   miss 0.026 (1/38,  CI [0.005, 0.135])   over 0.229 (11/48, CI [0.133, 0.365])
+  B  namer-1st  miss 0.421 (16/38, CI [0.279, 0.578])   over 0.083 (2/24,  CI [0.023, 0.258])
+fresh-outcomes.json
+  A0 keywords   miss 0.400 (4/10,  CI [0.168, 0.687])   over 0.500 (6/12,  CI [0.254, 0.746])
+  A1 +silence   miss 0.400 (4/10,  CI [0.168, 0.687])   over 0.500 (6/12,  CI [0.254, 0.746])
+  B  namer-1st  miss 0.500 (5/10,  CI [0.237, 0.763])   over 0.286 (2/7,   CI [0.082, 0.641])
+unspent-outcomes.json
+  A0 keywords   miss 0.663 (55/83, CI [0.556, 0.755])   over 0.462 (24/52, CI [0.333, 0.595])
+  A1 +silence   miss 0.590 (49/83, CI [0.483, 0.690])   over 0.424 (25/59, CI [0.306, 0.551])
+  B  namer-1st  miss 0.639 (53/83, CI [0.531, 0.734])   over 0.167 (6/36,  CI [0.079, 0.319])
+
+pooled out-of-family (fresh + unspent), which is the axis the gate is stated in
+  A0 keywords   miss 0.634 (59/93, CI [0.533, 0.725])   over 0.469 (30/64, CI [0.352, 0.589])
+  A1 +silence   miss 0.570 (53/93, CI [0.468, 0.666])   over 0.437 (31/71, CI [0.327, 0.552])
+  B  namer-1st  miss 0.624 (58/93, CI [0.522, 0.715])   over 0.186 (8/43,  CI [0.097, 0.326])
+```
+
+**The gate is met, and the reading underneath it is bad.** B dominates the
+zero-model fallback on both axes out-of-family — miss 0.624 against 0.634, over
+0.186 against 0.469 — so the shipped configuration still passes the condition
+adoption was made under. But the margin on miss is one label wide with intervals
+that almost entirely overlap, and against B's own prior measurement the
+direction is unmistakable: **out-of-family miss went 0.301 to 0.624 under this
+change.** The keyword arm is byte-identical across both runs (A0 miss 0.027,
+0.026, 0.400, 0.663 in both), which rules out corpus drift and points the whole
+difference at the catalog and the prompt. A1 moved the same way (0.398 to
+0.570), and A1 and B share only the namer, which is the same conclusion by a
+second route.
+
+Over-rates are **not** comparable across the two runs: the script's
+over-implication denominator changed between them (A0 on `labeled` reads 0.143
+in §10 and 0.250 here on an unchanged keyword arm), so the apparent
+over-implication win is unquantified. Only the miss figures carry across, and
+they carry the wrong way.
+
+**What the change did, most likely.** `notImplicatedWhen` is doing exactly what
+it says and doing too much of it. Handing a model a list of look-alikes to rule
+out makes it rule out, and the outcomes it now declines to route are
+disproportionately the ones written in vocabulary the catalog never anticipated
+— which is the population the whole inversion exists to serve. Precision bought
+with recall, at a price nobody set.
+
+**Held, not adopted (2026-08-10).** The mechanism — conditions and near misses
+as data the router reads, rather than comments the router never sees — survives
+the measurement; §3's lesson that hard-won precision knowledge sits one layer
+away from the decision is unaffected by this result. What does not survive is
+shipping this wording on these figures. The change is recorded here with its
+numbers rather than quietly kept or quietly reverted, and the calls that follow
+— whether the exclusions are pruned to the ones with a measured confusion behind
+them, whether the prompt's "do not reach" instruction is what is actually
+costing the recall, whether a union configuration is finally worth its 126
+consultations — are Gerald's on these figures, exactly as adoption was.
+
+> **Corrected 2026-08-10 by §18.** The 0.624 above was produced by an instrument
+> that scored every JSON-repaired reply as a namer failure and fell the outcome
+> back to the keyword arm (construct-rxah). Re-run unchanged on the fixed
+> instrument, this same configuration measures **0.548**, and the run above is
+> superseded as a figure while standing as a record of what was run. The three
+> candidate causes this section handed forward have since been separated in §18,
+> and two of them are refuted. A recorded run is never rescored to fit a later
+> rule — but a run whose *instrument* was defective is re-run, and both numbers
+> stay visible.
+
+
+## 18. What the catalog conditions actually cost, separated (2026-08-10)
+
+§17 handed forward three candidate causes for the regression it recorded and
+could not separate them, because the instrument that produced its figures
+reported four aggregate rates per run and threw the per-outcome answers away.
+Two runs compared that way are two independent proportions, and on these corpora
+the interval around a single rate is wide enough to hide any difference worth
+acting on — 0.624 carries [0.522, 0.715].
+
+Both arms of a prompt change score the *same* outcomes against the *same* gold,
+so the question is paired and the unit is the (outcome, expected label) pair,
+which is exactly what `miss = missed/expected` already counts. §10 now records
+each arm's per-outcome answers and compares arms with McNemar on the discordant
+pairs; the concordant ones carry no information about a difference, which is why
+the aggregate rates were the wrong thing to read. Records are refused for any
+run with a failure or with more than one tier in `modelsRan`, and each carries a
+fingerprint of the prompt that produced it.
+
+### Two instrument defects, both found by running it
+
+**Repaired replies were scored as failures** (construct-rxah). `createHostNamer`
+answers with a bare array normally and with a `NamerReply` object when
+`jsonrepair.ts` corrected the first reply; `escalate.ts` unwraps that before
+admitting anything and the measurement script did not. Every repaired outcome
+therefore counted as a namer failure and fell back to the keyword map, while the
+run reported its figures as the namer's. Six of 126 on the first baseline. The
+keyword arm misses far more out-of-family, so this inflated measured namer miss
+— and not equally across arms, because a longer prompt provokes more malformed
+first replies. §17's 0.624 is 0.548 on the fixed instrument.
+
+**The tier was never pinned** (construct-5l8l). The Claude path passed no model,
+so the session default served the run and could drift mid-run; one run was
+observed answered by two tiers at once. Every arm below is verified single-tier
+`claude-sonnet-5` — verified by what the envelopes *reported*, not by a pin: four
+of the five arm records in `fixtures/namer-arms/` carry `model: null` and only
+`armE` names the model it asked for. Observation after the fact is weaker
+evidence than a constraint before it, so as of 2026-08-11 recording an arm on
+this host requires `--namer-model` and is refused before any consultation is
+paid for. Four of these five arms could not be recorded today. They are kept
+because their `modelsRan` is single-valued and their per-outcome answers are on
+file, which is what a re-derivation needs; a future arm earns the stronger
+guarantee.
+
+Both were already being *printed*. Printing is not refusing: a warning dies with
+its terminal and the record file outlives it, gets read by the next comparison,
+and compares exactly like a clean arm.
+
+### The ablation, as a 2x2
+
+Five arms, one corpus set, one tier, every arm paired against the same recorded
+baseline. Miss is pooled out-of-family (fresh + unspent), the axis the §10 gate
+is stated in; over is the `unspent` rate.
+
+| arm | prompt | miss | over | paired vs shipped |
+|---|---|---|---|---|
+| shipped — one-line concerns | 1,224 ch | **0.280** | 0.376 | baseline |
+| D — 4 measured exclusions | 2,515 ch | 0.312 | 0.353 | 9 lost / 6 recovered, p = 0.61 |
+| E — 23 exclusions, no inclusions | 4,747 ch | 0.333 | **0.321** | 11 lost / 6 recovered, p = 0.33 |
+| A — 58 inclusions, no exclusions | 9,781 ch | 0.505 | 0.377 | 22 lost / 1 recovered, p < 0.0001 |
+| held — 58 inclusions + 23 exclusions | 12,883 ch | 0.548 | 0.190 | 26 lost / 1 recovered, p < 0.0001 |
+
+**Read D and E's rows with their p-values attached.** 0.61 and 0.33 on 168
+label-pairs mean *this corpus cannot tell*, not *these arms are free*; both
+moved the wrong way on miss and neither is exonerated. The caveat is repeated
+here rather than left to the recommendation below because a table is the most
+liftable thing in this document, and a row quoted without its p-value reads as
+a measured equivalence nobody measured. Only A and `held` are distinguishable
+from the baseline.
+
+**The two kinds of text do different things, and only one of them is the
+defect.** `implicatedWhen` clauses buy no precision whatsoever — arm A carries
+all 58 of them and its over-rate is 0.377 against the shipped 0.376 — while
+costing 0.225 of miss. `notImplicatedWhen` clauses buy real precision that
+scales with dose (0.376 → 0.353 → 0.321 → 0.190) and cost recall more gently.
+
+### The three candidate causes, settled
+
+1. **Exclusions too broad — refuted.** Removing all 23 from the held
+   configuration recovers 0.548 → 0.505. They are ~0.04 of a ~0.27 regression.
+2. **The "do not reach" instruction — refuted without spending a run.** That
+   line is byte-identical in shipped (0.280) and in arm A (0.505). A constant
+   cannot explain a difference. The ablation answered a question it was not
+   built to ask, which is the argument for laddering arms rather than testing
+   each hypothesis against the shipped path alone.
+3. **The conditions crowd out the model's own reading — confirmed, and it is
+   essentially the whole effect.**
+
+### The recommendation, and what is not being claimed
+
+**Revert stands, on a better reason than the one it was taken on.** No
+configuration tested beats the shipped router on both axes. Arms D and E buy
+precision and pay recall, and this project's promise is stated on recall — a
+user not ambushed by a domain they did not know existed — so a trade in that
+direction is a loss even where it is not statistically distinguishable.
+
+What is **not** claimed: that arms D and E cost nothing. Their p-values are 0.61
+and 0.33, which on 168 label-pairs means *this corpus cannot tell*, not *these
+are the same*. Both moved the wrong way on miss and neither is exonerated.
+
+The literature this was read against says the same thing from the other
+direction, and is recorded here because it predicted the result rather than
+explaining it afterward: verbose label definitions across a high-cardinality
+schema in a single prompt degrade classification badly (Banking77 with all 77
+labels and descriptions in-prompt collapses to 4.0 F1 on Mistral-7B,
+arXiv:2501.12332), and LLMs under-predict label counts with each generation step
+suppressing alternatives, with the prompt's own composition carrying through to
+the output rate (arXiv:2505.17510). Both are affect and intent corpora rather
+than outcome-to-concern judgments, so they are cited as why the hypothesis was
+ordered first, never as evidence for this catalog.
+
+### What this leaves for §3's lesson
+
+§3's finding is untouched and still unaddressed: the precision knowledge this
+project has bought sits in comments addressed to whoever next edits the catalog,
+one layer away from the router. §17 proposed to fix that by handing the router
+everything. The measurement says the router cannot be handed everything at this
+tier, and that the half worth handing it — the near misses — is also the half
+that is cheap to write and expensive to verify. Whether a smaller, measured
+exclusion set can be bought without a recall cost this corpus is too small to
+see is open, and needs a corpus that can see it before it is worth another run.
+
+Tracked as `construct-9933` (2026-08-11), with that corpus-power precondition
+written into its acceptance rather than left in this paragraph: a defect stated
+only in prose is a defect nobody is holding.

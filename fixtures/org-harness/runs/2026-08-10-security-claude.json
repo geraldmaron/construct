@@ -1,0 +1,119 @@
+{
+  "claims": [
+    {
+      "kind": "conflict",
+      "claim": "The impersonation rollout is being run as a per-project control it is not: the platform call recorded impersonation going behind a per-project flag, and the CI diff reporter describes it as enabled only in \"projects where we recently enabled the sync impersonation flag\", but the RFC's goals state the feature \"can be enabled/disabled only at the system level. Once enabled/disabled, it is applicable to all Argo CD Applications\" and the only switches specified are the cluster-wide argocd-cm key, the ARGOCD_APPLICATION_CONTROLLER_ENABLE_IMPERSONATION env var, and the --enable-impersonation flag. Anyone flipping that switch for one project changes the sync identity of every Application in the instance, so the blast-radius containment the rollout decision assumes does not exist.",
+      "citations": ["notes/note-1.md", "rfc-001-sync-impersonation.md", "tickets/T-26271.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Enabling impersonation can fail open silently because the RFC names two different settings for the same switch: the Application Controller implementation section specifies the argocd-cm key applicationcontroller.enable.impersonation (default false), while every worked example in the same RFC patches application.sync.impersonation.enabled, and the external-cluster bug report reproduces with application.sync.impersonation.enabled. An operator who sets the key the controller does not read gets no error and no warning path (the RFC only promises a reconciliation warning for using destinationServiceAccounts while the flag is off), so syncs keep running with the control-plane cluster credential while the AppProject's destinationServiceAccounts mapping is believed to be in force.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The root cause recorded for the CI diff failures is contradicted by the evidence in the ticket it was recorded against and by the external-cluster report, and the wrong cause points at the wrong fix. The note states that with impersonation on, diff runs as the destination service account which lacks patch on cluster-scoped resources; the ticket's own error names user \"system:serviceaccount:argocd:argocd-server\", the control-plane identity, and the external-cluster report states plainly that sync honors destinationServiceAccounts while the diff path does not and runs as the cluster credential from the cluster Secret. Acting on the note's cause means granting patch to destination service accounts, which widens exactly the identities impersonation exists to keep narrow, and leaves the diff path's real identity untouched.",
+      "citations": ["notes/note-1.md", "tickets/T-26271.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Server-Side Diff re-inflates the attack surface the impersonation RFC exists to remove. The RFC's stated motivation is that a control plane holding privileges matching its highest-privilege tenant \"creates a large attack surface since if Argo CD is compromised, attackers would have cluster-admin access\"; because the diff path ignores destinationServiceAccounts and Kubernetes RBAC has no dry-run verb (authorization happens before the dry-run flag is evaluated), every new resource kind forces another real patch rule onto the standing cluster credential, already five rounds deep and covering Secrets, ClusterRoles/ClusterRoleBindings, CRDs and webhook configurations. The safety story rests on Argo CD's convention of always sending dryRun=All, not on an enforced boundary, so the credential a compromise of the control plane yields is write authority on the whole set, restored precisely for the clusters the RFC promised to decouple.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Threat path from a tenant with repository write to code execution under the mapped destination service account: the AppProject RBAC deny policy on Namespace resources \"controls actions taken through ArgoCD's API/UI, but it does not prevent ArgoCD's Application controller from applying resources committed to the repository\", and the impersonation RFC answers that Sync hooks execute as the impersonation service account. Committing a hook Job to the synced repo therefore runs arbitrary containers with the privileges of whatever service account destinationServiceAccounts maps for that destination, and the external-cluster report's setup step is exactly to \"map the destination to a privileged SA\". The check that would stop it is enforced only at the API/UI seam, not at the point where the controller decides to apply.",
+      "citations": ["tickets/T-27833.md", "rfc-001-sync-impersonation.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The fix proposed for the namespace-escape ticket cannot be built on the impersonation RFC as designed. That ticket asks for an option splitting which resources the Argo CD control plane handles from which the impersonated SA handles, so the impersonated SA can be stripped of Namespace permissions; the RFC states the service account \"is determined on a per Application level rather than on per resource level\", with Application.spec.destination.namespace deciding one account for all resources in the Application, and the feature toggled only system-wide. With no per-resource identity, a tenant who commits a Namespace manifest whose name matches the clusterResourceWhitelist glob still overwrites the pod-security.kubernetes.io/enforce: baseline label the ApplicationSet set via managedNamespaceMetadata, and escapes into privileged workloads.",
+      "citations": ["tickets/T-27833.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "A tenant who omits spec.destination.namespace pulls the sync identity into the control-plane namespace. The RFC's special case states that when that optional field is unset, \"Application's namespace argocd is used for scoping the service account\", resolving to system:serviceaccount:argocd:<name>, and that with no matching entry the default service account of that namespace is used; the roadmap's multi-tenancy item drives toward end users creating Applications \"using Kubernetes directly without accessing Argo CD API\" and Applications outside the argocd namespace. The RFC's stated mitigation for privilege escalation is that only admins configure the service account at the AppProject level, but the field that selects the namespace here sits in the Application the tenant writes, not in the AppProject.",
+      "citations": ["rfc-001-sync-impersonation.md", "strategy.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The impersonated identity is chosen by first-valid-match over glob patterns in destinationServiceAccounts, and the RFC's own catch-all example puts server: '*', namespace: '*', defaultServiceAccount: default in the list. Because matching stops at the first valid entry rather than the most specific one, a catch-all or broad guestbook-* entry ordered ahead of a narrow one silently governs a destination the admin believes is pinned to its own deployer account, and the RFC states this is per-Application, not per-resource. The ordering is the whole enforcement, and nothing in the described validation rejects a broad entry placed first.",
+      "citations": ["rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The commit server's authorization check lives in its caller, not at the decision point. The hydrator RFC states \"it's the application controller's job to ensure that the user has write access to the repo before making the call\", and the CommitManifests message carries repoURL, targetBranch, drySHA, author, message and manifests with no caller identity or authorization field. Anything that can reach the commit server can therefore have arbitrary manifests written to any branch the mounted repository-write credential covers, and since the syncSource.targetBranch is what Argo CD deploys from, one accepted call is a deployment to every Application grouped on that branch.",
+      "citations": ["rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Signing the hydrated commits, as proposed, concentrates rather than separates the two secrets that gate a forged deploy. The hydrator RFC already flags that the git push secret (the repository-write Secret holding githubAppPrivateKey) \"will need to be stored in a namespace separate from the other Argo CD components to provide a bit extra protection\"; the signing proposal mounts the GPG private key \"from a Secret in the Argo CD namespace\" and starts with one cluster-wide key. Whoever reads Secrets in the Argo CD namespace then holds both the push credential and the key whose public half operators are told to add to argocd-gpg-keys-cm and the project's SourceIntegrity policy, so forged commits pass the very control meant to detect them, on every hydrated branch at once.",
+      "citations": ["rfc-002-manifest-hydrator.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Until hydrated commits are signed there is no provenance check anywhere on the path from git to cluster, and the stale-manifest bug shows what consumes the gap. The commit server \"always pushes unsigned commits, so if signature verification is enabled for the hydrated branch, Argo CD rejects its own hydrated output\", which forces operators to leave verification off on the branch Argo CD deploys from; on that same branch, when the hydrator sync source changes, auto-sync \"will immediately sync the existing manifest in the path, if any\" without waiting for fresh hydration. Whatever content the branch last held is applied with no signature test and no freshness test, which silently reinstates the older security posture of those manifests.",
+      "citations": ["tickets/T-28239.md", "tickets/T-26443.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Rollback as proposed turns an Argo CD UI permission into a direct git push onto the deployment branch, bypassing the promotion gate. The hydrator RFC's push-to-stage mode exists so manifests land on a separate branch and \"Argo CD relies on some external system to move changes to the deployment branch\", the designed integration point for promotion; the rollback proposal states that for both modes \"rollback directly updates the sync branch (bypassing the staging branch)\", executed as git checkout of an old revision, commit, and push to $sync_branch. The push carries the hydrator's repository-write credential, so anyone holding the rollback action in Argo CD can write the deployment branch without passing the external promoter, and the RFC's own open question about enforcing an argo/* branch naming convention, the prerequisite for branch protection distinguishing bot pushes, is still unanswered.",
+      "citations": ["tickets/T-27327.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Hydrating ApplicationSets to git, as requested for destroy ordering, promotes the hydrator's push credential from control over workload manifests to control over identity selection. The request is for ApplicationSets to render their resulting Applications into a Git repo the way the Application source hydrator does; under the impersonation RFC, an Application's spec.project and spec.destination.namespace are exactly what select the AppProject entry and therefore the service account impersonated for its sync. A write to the hydrated branch would then not merely change what gets deployed but which service account deploys it, and the commit server pushing those Application CRs today does so unsigned.",
+      "citations": ["tickets/T-24578.md", "rfc-001-sync-impersonation.md", "tickets/T-28239.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "The deletion PRD's assertion that \"no additional roles or privileges are needed ... so no impact on the security aspects of Argo CD workloads\" and \"No immediate Risks to consider\" is refuted by the delete/recreate loop already reproduced against the shipped field. That report configures a RollingSync ApplicationSet with a deletionOrder and a child app deliberately stuck Progressing via crashloop, and the reverse order \"waits for one Application to be fully deleted before moving to the next\" so the wait never completes and the controller restarts the wave from the top. A tenant who controls the contents of one child path, or one finalizer, can hold an entire ApplicationSet teardown open and drive continuous re-creation of resources an operator is trying to remove: availability impact reachable by anyone with commit rights to a single generated path, with no privilege grant involved.",
+      "citations": ["prd-progressive-sync-deletion.md", "tickets/T-28511.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The only control standing between the wave-restart loop and production is an unenforced human rule, and the telemetry that would show it firing does not exist. The incident review's mitigation is that operators must switch the ApplicationSet to AllAtOnce deletion by hand before deleting any child app, with no controller-level check or alert behind it; the metrics ticket states that \"getting a wide-eye view of progressive sync is difficult\" and asks for the not-yet-existing signals for how long a step took and which Applications a sync is waiting on. The strategy document's roadmap compounds it: first-class ApplicationSet support \"does not include the ability to manage the deletion order of child applications through these interfaces, leaving teardown as a manual operator action\", so the rule is applied one hand-edit at a time with nothing recording whether it was applied.",
+      "citations": ["notes/note-2.md", "tickets/T-27846.md", "strategy.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Making per-cluster QPS and Burst configurable inside the Cluster Secret's data.config, as the proposal's Option 2 does, widens who must hold write access to the object that carries the cluster's bearerToken, at the moment that same credential is being repeatedly granted broader patch authority to satisfy Server-Side Diff. Performance tuning is a routine operator activity and Option 1's annotation path keeps it in metadata, while Option 2 puts it in the same JSON payload as the token; whoever gets edit rights on that Secret to adjust throughput can read or replace the credential that, per the diff report, now holds real write authority across Namespaces, ClusterRoles/ClusterRoleBindings, CRDs, webhook configurations and Secrets on that cluster.",
+      "citations": ["tickets/T-29001.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "conflict",
+      "claim": "A deletion-ordering field exists in production CRDs that the roadmap says will not be built, so nothing owns its threat model. The strategy document states that \"ordered or automated deletion of ApplicationSet children will not be implemented\" and that teardown \"remains a manual operator action, performed one Application at a time\", while the reproduction filed against v3.3.9 already sets strategy.deletionOrder: AllAtOnce in a live ApplicationSet, and the PRD specifies deletionOrder as a new ApplicationSetStrategy field with Reverse semantics. The PRD's own Non-Goals compound it: the unsupported custom value leaves \"a configuration field that accepts input but ignores it silently\", so an operator can believe an ordered teardown is enforced while the controller falls back to deleting everything at once.",
+      "citations": ["strategy.md", "tickets/T-28511.md", "prd-progressive-sync-deletion.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "There is no Argo CD-side record of which identity performed a given operation, which is why the CI diff failures could not be diagnosed from the evidence available to the reporter. The impersonation RFC answers the audit question by pointing at Kubernetes audit events capturing both actual and impersonating users, but that record lives on the target cluster and keys on service account names, not on Application or tenant; the reporter, holding a broad cluster Secret credential, could only observe that \"the diff suddenly runs with a narrower identity\" without being able to attribute it, and the external-cluster report shows a second path attributing writes to plain User \"argocd\". An operator cannot answer from Argo CD which credential a sync or diff used, so a misrouted or maliciously reordered destinationServiceAccounts match would look identical to normal operation.",
+      "citations": ["rfc-001-sync-impersonation.md", "tickets/T-26271.md", "tickets/T-28695.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The documented workaround for the diff failure removes the reconcile-time check on external clusters entirely rather than narrowing it. The report's remedy is ServerSideDiff=false on all external-cluster Applications, at a measured cost of zero across ~20 charts; the auto-sync bug shows what the comparison layer is load-bearing for, since the controller decides whether to act on Status.Sync.Revision, the last compared revision rather than the last synced one, and skips syncing entirely when the two SHAs match. Turning off server-side comparison on exactly the clusters where the standing credential is deliberately narrow means the environments with the least privilege containment are also the ones whose drift detection is running on the weaker path.",
+      "citations": ["tickets/T-28695.md", "tickets/T-27875.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "Two roadmap items converge on the same unresolved question of which RBAC decides a UI-initiated cluster action. The roadmap schedules Web Shell, exec into a Kubernetes Pod straight from the Argo CD Web UI, while the K8s API RBAC request asks for a second OIDC integration proxying resource deletion and pod exec against the cluster API so \"the RBAC configured on the cluster, rather than the RBAC configured in ArgoCD\" governs them. Neither says so of the other, and the impersonation RFC deliberately scoped itself away from this: it covers only the sync path, states support to impersonate users or groups is deferred, and offers a single system-level on/off. Shipping exec through the UI before that identity question is settled means the exec authorization runs on whichever RBAC the shell path happens to use.",
+      "citations": ["strategy.md", "tickets/T-9095.md", "rfc-001-sync-impersonation.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "Progressive Sync is being promoted to Stable while the mechanism that decides whether a child Application gets synced can lose the trigger. The promotion ticket names the out-of-order sync blocker as resolved and defines the remaining maturity scope; the RollingSync report shows specChanged detected in updateApplicationSetApplicationStatus, then immediately promoted back to Healthy because the pre-update child is still Synced/Healthy, after which syncDesiredApplications never creates an operation because it only syncs Applications in Pending. The rollout reports complete while children sit OutOfSync, and the ApplicationSet controller logs at warn level emit no transition record, so a change that was never applied is indistinguishable from one that was: a stable-labelled control that can silently not converge is a weak base for anything gating on rollout completion.",
+      "citations": ["tickets/T-28927.md", "tickets/T-27949.md"]
+    },
+    {
+      "kind": "cross-reference",
+      "claim": "The hydrator pilot restriction and the progressive-sync bug describe the same wave-restart mechanism from two ends. The incident review confirmed that each hydrator push restarts the rolling sync wave and ruled that pilot repos must not use progressive sync until there is a debounce; the RollingSync ticket independently records that the reporting team is \"piloting the source hydrator on this repository: every hydration cycle lands a fresh commit on the hydrated branch that the child Applications deploy from, and each of those commits is picked up as a source change\". The hydrator RFC supplies the reason the pushes are continuous: on each new dry commit it commits and pushes to the syncSource targetBranch for every group of Applications sharing it, so a single dry commit produces a fresh hydrated commit under every child on that branch.",
+      "citations": ["notes/note-2.md", "tickets/T-27949.md", "rfc-002-manifest-hydrator.md"]
+    },
+    {
+      "kind": "risk",
+      "claim": "The hydrator's rollback gap and the deletion feature it was deprioritized for meet on the same failure. Rollback support for the source hydrator was pushed to next quarter with the dev pair moved onto the progressive sync deletion loop, and the rollback design that would have supplied the recovery path is the one that checks an old revision back onto the sync branch; meanwhile the deletion PRD's Reverse strategy deletes Applications one at a time, waiting for each to complete, and the reproduced loop shows that wait failing to terminate on a stuck child. A partially executed ordered teardown therefore has no automated route back to a known manifest state, on branches where signature enforcement is also unusable.",
+      "citations": ["notes/note-1.md", "tickets/T-27327.md", "prd-progressive-sync-deletion.md", "tickets/T-28511.md"]
+    }
+  ]
+}

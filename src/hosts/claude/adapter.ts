@@ -42,6 +42,15 @@ import type { RoleServeLaunch } from './mcpconfig.ts';
 
 export const HOST_NAME = 'claude';
 
+/**
+ * What this host's family looks like to the tuning table when no model was
+ * named. The binary cannot run another vendor's model, so family membership is
+ * a fact about the host rather than a guess about the session — but it is
+ * resolved through the same table every other answer comes from, so a family
+ * leaving TUNED_FAMILIES changes this answer too instead of stranding it.
+ */
+const HOST_FAMILY_PROBE = 'claude-';
+
 /** Killing the child genuinely interrupts; runs share nothing in-process. */
 export const CLAUDE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
 
@@ -206,6 +215,9 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       return config.model ?? null;
     },
 
+    /** The wall every invocation runs into, stated so a caller can report it. */
+    invocationTimeoutMs: timeoutMs,
+
     /**
      * Tier membership is the pin's to declare. Note the pin's
      * own recorded measurement: --model is a preference, not a constraint here,
@@ -216,8 +228,18 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
       return tierOfModel(model ?? config.model);
     },
 
+    /**
+     * Naming no model does not make the family unknown. This binary runs one
+     * vendor's models and no other, so an unnamed model is still that vendor's
+     * — and reporting it as untuned said something false about the run in order
+     * to sound careful. The tier stays unknown, because which model inside the
+     * family answered genuinely is unknown until the envelope reports it; that
+     * degradation is real and still fires.
+     */
     modelTuning(model?: string): ModelTuning {
-      return tuningOf(model ?? config.model);
+      const named = model ?? config.model;
+      if (named) return tuningOf(named);
+      return tuningOf(HOST_FAMILY_PROBE);
     },
 
     get observedVersion(): string | null {

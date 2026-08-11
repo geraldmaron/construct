@@ -1,0 +1,36 @@
+{
+ "claims": [
+  {
+   "kind": "risk",
+   "claim": "T-27949 shows ApplicationSet progressive-sync status can report a child Application 'Healthy' while it is actually OutOfSync, and the ticket itself notes there is no counter that fires when specChanged occurs without a resulting sync operation, so the reported ~1-in-6 pilot-fleet incidence is a headcount of support pings, not a measured rate; T-27846's requested progressive-sync metrics (App refresh counts caused by the ApplicationSet, and 'which Applications is it waiting for') remain an open ask that would be exactly the instrumentation needed to observe this failure mode in production, so today it is unobservable except by chasing individual complaints.",
+   "citations": [
+    "tickets/T-27949.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "T-28927 scopes 'maturity' for promoting Progressive Sync to Stable around execution-issue fixes (e.g. the out-of-order sync blocker) and freezing the rollingSync.steps API shape, but does not include the progressive-sync observability backlog from T-27846 as a promotion criterion; combined with T-27949's admission that no counter exists for specChanged-without-sync, the feature is on track to be declared 'tested and validated' under the argoproj feature-status bar without the metrics that would let anyone measure whether it actually behaves correctly at scale.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-27846.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "note-2.md's incident-review mitigation for the delete/recreate loop is a manual runbook rule (switch ApplicationSet to AllAtOnce before hand-deleting a child app) with explicitly no controller-level check or alert; T-28511's repro shows the underlying trigger is an Application stuck in Progressing status during a reverse-order deletion wait, a condition that is itself unmonitored, so the only thing standing between an operator and the infinite delete/recreate loop is recall of an undocumented-in-tooling operational rule, with no automated signal if it's skipped.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-28511.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "rfc-002-manifest-hydrator.md states the commitAuthor field recorded in the hydrated branch's README/hydrator.metadata is copied from the dry commit and is never cryptographically tied to whichever identity actually pushed the hydrated content; T-28239 adds commit signing as the mechanism that would make authorship verifiable, but it defaults to off (commitserver.sign.hydrated.commits: false) and is opt-in per operator, so for any repo that hasn't explicitly enabled it, 'who authored this hydrated commit' remains an unverifiable claim in production rather than an observable fact, with no metric or check flagging which hydrated branches are running unsigned.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  }
+ ]
+}

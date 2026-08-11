@@ -116,6 +116,13 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
     whyItMatters:
       "A FINDING, recorded rather than papered over. The Claude adapter can promise a role's tool reach is exactly two writes, because `--strict-mcp-config` makes it so. This host has no equivalent, and both documented config seams merge — measured against 1.15.4, where a one-server config listed that server alongside nine of the operator's. So a role dispatched to OpenCode CAN reach whatever MCP servers the operator has registered, and Construct cannot presently stop it. What is still true is the part Construct owns: the bearer is scoped to one run, one task and one lease, so a wider tool reach does not widen the role's authority over Construct's own store. Any claim that OpenCode dispatch confines a role to two tools is false today. If OpenCode ever adds a replace-don't-merge mode, this expectation is how we find out it is time to take it.",
   },
+  {
+    id: 'run-carries-no-response-format',
+    claim:
+      'neither `opencode run --help` nor `opencode --help` lists a response-format, json-schema, or structured-output flag, and `--format json` controls only how this CLI writes its own NDJSON transcript to stdout, not what is asked of the provider',
+    whyItMatters:
+      'namer.ts and densifier.ts ask a model for JSON in the prompt text alone, with no request-level JSON mode or schema ever reaching the provider — because nothing on the `run` command surface carries one there. Read against the packaged 1.15.4 binary: both the `ollama` and `openrouter` provider entries in OpenCode\'s own config route through the same `@ai-sdk/openai-compatible` chat provider, which only sets the outgoing `response_format` field from a per-call `responseFormat` parameter — a parameter that belongs to a structured-object call shape the running agent\'s own text/tool-calling reply never takes, so `run` never populates it regardless of flags. That provider\'s per-model config `options` object (`~/.config/opencode/opencode.json`, `provider.<id>.models.<model>.options`) recognises `user`, `reasoningEffort`, `textVerbosity`, and `strictJsonSchema` only — no response-format key — so there is no config knob to reach it through either. jsonrepair.ts\'s corrective retry is covering a real gap this pinned host leaves open, not parser slack. A future OpenCode version that adds a `--response-format`/`--schema` flag, or a providerOptions key that reaches `response_format`, is what would make this wireable; re-verify before believing it changed.',
+  },
 ];
 
 /**

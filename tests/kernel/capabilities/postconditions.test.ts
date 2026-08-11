@@ -1,123 +1,107 @@
 /**
- * tests/kernel/capabilities/postconditions.test.ts — behavior lock for the
- * postcondition harvest. fixtures/postconditions-golden.json is v2's own
- * output, captured by scripts/capture-legacy-kernel-golden.mjs.
+ * tests/kernel/capabilities/postconditions.test.ts — the postcondition
+ * machinery, exercised against an injected registry.
  *
- * The corpus deliberately includes the near-misses that make these rules worth
- * having: a whitespace-only "no issues found" statement, a threat model dated
- * before the brief started, a truthy-but-not-`true` flag. Those are the shapes
- * a producer emits when it is going through the motions.
+ * The predecessor's five rules and the golden corpus that locked them are gone:
+ * they were keyed to role names no dispatch emits, and three of those names
+ * collided with catalog domains, so the "lock" was preserving behavior that
+ * could only ever misfire. What is worth locking is the machinery a pack's own
+ * rule will run under — the open-world default, and the refusal to let a
+ * throwing rule count as a pass.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import {
   POSTCONDITIONS,
+  type PostconditionRule,
   describePostconditions,
+  packetField,
   validateBinaryPostconditions,
 } from '../../../src/kernel/capabilities/postconditions.ts';
 
-interface Golden {
-  readonly producers: Record<string, { id: string; description: string }[]>;
-  readonly cases: {
-    readonly name: string;
-    readonly producer: string;
-    readonly packet: unknown;
-    readonly result: { ok: boolean; producer: string; failures: { id: string; reason: string }[] };
-  }[];
-}
-
-const GOLDEN: Golden = JSON.parse(
-  readFileSync(new URL('../fixtures/postconditions-golden.json', import.meta.url), 'utf8'),
-);
-
-test('corpus exercises both outcomes for every registered producer', () => {
-  for (const producer of Object.keys(POSTCONDITIONS)) {
-    const cases = GOLDEN.cases.filter((c) => c.producer === producer);
-    assert.ok(
-      cases.some((c) => c.result.ok) && cases.some((c) => !c.result.ok),
-      `producer "${producer}" needs both a passing and a failing case`,
-    );
-  }
-});
-
-// The verdict — which producer, ok or not, and exactly which rules failed — is
-// compared to v2 verbatim. The failure `reason` is human-facing prose that was
-// reworded to v3 vocabulary (see the module note), so it is asserted to be
-// present and non-empty rather than byte-equal to v2's wording.
-for (const c of GOLDEN.cases) {
-  test(`validate matches v2 — ${c.name}`, () => {
-    const actual = validateBinaryPostconditions(c.producer, c.packet);
-    assert.equal(actual.ok, c.result.ok);
-    assert.equal(actual.producer, c.result.producer);
-    assert.deepEqual(
-      actual.failures.map((f) => f.id),
-      c.result.failures.map((f) => f.id),
-    );
-    for (const f of actual.failures) {
-      assert.ok(f.reason.trim().length > 0, `${f.id} must explain itself`);
-    }
-  });
-}
-
-// Ids are the contract; descriptions are prose. Two descriptions were reworded
-// to v3 vocabulary — v2's "docs-keeper" role is now "operations", and a
-// capability contract is now a brief — so the description text is asserted to
-// exist, not to match v2 byte-for-byte. The ids are asserted exactly, because
-// those are what already-logged violations are keyed by.
-for (const [producer, described] of Object.entries(GOLDEN.producers)) {
-  test(`rule set for "${producer}" is unchanged`, () => {
-    const actual = describePostconditions(producer);
-    assert.deepEqual(
-      actual.map((r) => r.id),
-      described.map((r) => r.id),
-    );
-    for (const rule of actual) {
-      assert.ok(rule.description.trim().length > 0, `${rule.id} needs a description`);
-    }
-  });
-}
-
-test('rule ids are stable — violations stay greppable across the rewrite', () => {
-  const ids = Object.values(POSTCONDITIONS).flatMap((rules) => rules.map((r) => r.id));
-  assert.deepEqual(
-    [...ids].sort(),
-    [
-      'debugger.root-cause-confirmed-via',
-      'designer.accessibility-check-ran',
-      'docs-keeper.cross-doc-coherence-check-ran',
-      'reviewer.findings-or-explicit-clear',
-      'security.threat-model-not-post-hoc',
-    ],
-    'renaming a rule id orphans every violation already logged under the old one',
-  );
-  assert.equal(new Set(ids).size, ids.length, 'rule ids must be unique');
-});
-
-test('a rule that throws counts as unsatisfied, not as an escape hatch', () => {
-  const hostile = new Proxy(
-    {},
+const REGISTRY: Readonly<Record<string, readonly PostconditionRule[]>> = {
+  'sample-domain': [
     {
-      get() {
-        throw new Error('packet exploded');
-      },
+      id: 'sample-domain.check-ran',
+      description: 'The check must have run before handoff.',
+      check: (p) => packetField(p, 'checkRan') === true,
+      reason: 'checkRan must be true.',
     },
+    {
+      id: 'sample-domain.explodes',
+      description: 'A rule that throws on a malformed packet.',
+      check: (p) => (packetField(p, 'nested') as { deep: boolean }).deep,
+      reason: 'nested.deep must be true.',
+    },
+  ],
+};
+
+test('no rules ship registered: a pack brings its own or the producer passes vacuously', () => {
+  assert.deepEqual(Object.keys(POSTCONDITIONS), []);
+  const result = validateBinaryPostconditions('product-scoping', {});
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.failures, []);
+});
+
+test('a packet satisfying every rule passes', () => {
+  const result = validateBinaryPostconditions(
+    'sample-domain',
+    { checkRan: true, nested: { deep: true } },
+    REGISTRY,
   );
-  const result = validateBinaryPostconditions('designer', hostile);
+  assert.equal(result.ok, true);
+  assert.equal(result.producer, 'sample-domain');
+  assert.deepEqual(result.failures, []);
+});
+
+test('a truthy-but-not-true flag is a violation: going through the motions is not passing', () => {
+  const result = validateBinaryPostconditions(
+    'sample-domain',
+    { checkRan: 'yes', nested: { deep: true } },
+    REGISTRY,
+  );
   assert.equal(result.ok, false);
   assert.deepEqual(
     result.failures.map((f) => f.id),
-    ['designer.accessibility-check-ran'],
+    ['sample-domain.check-ran'],
   );
-});
-
-test('validation reports; it does not throw', () => {
-  for (const producer of [...Object.keys(POSTCONDITIONS), 'nobody']) {
-    assert.doesNotThrow(() => validateBinaryPostconditions(producer, undefined));
+  for (const f of result.failures) {
+    assert.ok(f.reason.trim().length > 0, `${f.id} must explain itself`);
   }
 });
 
-test('describePostconditions returns nothing for an unregistered producer', () => {
-  assert.deepEqual(describePostconditions('nobody'), []);
+test('a rule that throws counts as unsatisfied, never as an escape hatch', () => {
+  const result = validateBinaryPostconditions('sample-domain', { checkRan: true }, REGISTRY);
+  assert.equal(result.ok, false);
+  assert.deepEqual(
+    result.failures.map((f) => f.id),
+    ['sample-domain.explodes'],
+  );
+});
+
+test('validation is total: no packet shape throws out of the validator', () => {
+  for (const packet of [undefined, null, 0, '', [], { nested: null }]) {
+    assert.doesNotThrow(() => validateBinaryPostconditions('sample-domain', packet, REGISTRY));
+  }
+});
+
+test('describePostconditions reports the registered ids and nothing for an unregistered producer', () => {
+  assert.deepEqual(
+    describePostconditions('sample-domain', REGISTRY).map((p) => p.id),
+    ['sample-domain.check-ran', 'sample-domain.explodes'],
+  );
+  assert.deepEqual(describePostconditions('nobody', REGISTRY), []);
+  assert.deepEqual(describePostconditions('sample-domain'), []);
+});
+
+test('every registered rule is keyed to a name a dispatch can actually emit', async () => {
+  const { DOMAINS } = await import('../../../src/kernel/implication/domains.ts');
+  const dispatchable = new Set(DOMAINS.map((d) => d.domain));
+  for (const producer of Object.keys(POSTCONDITIONS)) {
+    assert.ok(
+      dispatchable.has(producer),
+      `"${producer}" has postconditions but no dispatch emits it — the rule can only misfire`,
+    );
+  }
 });

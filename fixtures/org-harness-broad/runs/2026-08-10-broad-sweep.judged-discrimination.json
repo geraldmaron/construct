@@ -1,0 +1,112 @@
+{
+ "suite": "broad",
+ "lensesTested": [
+  "compliance",
+  "legal",
+  "program",
+  "product",
+  "strategy",
+  "architect",
+  "operations",
+  "design",
+  "security",
+  "analyst",
+  "engineering"
+ ],
+ "lensesMissing": [],
+ "results": [
+  {
+   "plant": "A-B1",
+   "owner": "analyst",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "C-B1",
+   "owner": "pm",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "CP-B1",
+   "owner": "compliance",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "legal"
+   ],
+   "foreignEarners": [
+    "legal"
+   ]
+  },
+  {
+   "plant": "L-B1",
+   "owner": "legal",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "legal",
+    "design",
+    "security"
+   ],
+   "foreignEarners": [
+    "design",
+    "security"
+   ]
+  },
+  {
+   "plant": "OP-B1",
+   "owner": "operations",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "SA-B1",
+   "owner": "strategy",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "product",
+    "architect",
+    "engineering"
+   ],
+   "foreignEarners": [
+    "product",
+    "architect",
+    "engineering"
+   ]
+  },
+  {
+   "plant": "SD-B1",
+   "owner": "architect",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "TH-B1",
+   "owner": "security",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "design"
+   ],
+   "foreignEarners": [
+    "design"
+   ]
+  },
+  {
+   "plant": "TP-B1",
+   "owner": "tpm",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "UX-B1",
+   "owner": "design",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  }
+ ]
+}

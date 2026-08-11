@@ -1,6 +1,6 @@
 [
   {
-    "name": "exact single-word keyword — adjacency trivially holds",
+    "name": "exact single-word keyword \u2014 adjacency trivially holds",
     "intent": "rotate the secrets",
     "routes": [
       {
@@ -42,7 +42,7 @@
     ]
   },
   {
-    "name": "multi-part phrase whose stopword-filtered parts are separated in the intent by the dropped stopword — no adjacency bonus",
+    "name": "multi-part phrase whose stopword-filtered parts are separated in the intent only by the dropped stopword \u2014 adjacency bonus granted",
     "intent": "please write a prd for this",
     "routes": [
       {
@@ -56,7 +56,7 @@
     ]
   },
   {
-    "name": "multi-part phrase present but far apart — same reduced score",
+    "name": "multi-part phrase present but far apart \u2014 same reduced score",
     "intent": "write the thing then later a prd",
     "routes": [
       {
@@ -70,7 +70,7 @@
     ]
   },
   {
-    "name": "partial phrase match — one part only",
+    "name": "partial phrase match \u2014 one part only",
     "intent": "write the document",
     "routes": [
       {
@@ -84,7 +84,7 @@
     ]
   },
   {
-    "name": "multi-part phrase truly adjacent — full bonus",
+    "name": "multi-part phrase truly adjacent \u2014 full bonus",
     "intent": "write prd now",
     "routes": [
       {
@@ -98,7 +98,7 @@
     ]
   },
   {
-    "name": "same phrase, parts split apart — adjacency bonus withheld",
+    "name": "same phrase, parts split apart \u2014 adjacency bonus withheld",
     "intent": "write something then prd",
     "routes": [
       {
@@ -126,7 +126,7 @@
     ]
   },
   {
-    "name": "no match at all — priority alone never earns a suggestion",
+    "name": "no match at all \u2014 priority alone never earns a suggestion",
     "intent": "completely unrelated request",
     "routes": [
       {

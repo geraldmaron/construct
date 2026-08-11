@@ -1,0 +1,33 @@
+{
+ "judgedBy": "claude-opus-5",
+ "judgedFrom": "fixtures/org-harness/runs/2026-08-10-compliance-narrow.score.json",
+ "standard": "each plant's gist as committed before any run; the scorer has never read these gists, so the standard was fixed in advance rather than fitted to results",
+ "correlatedError": "if the judging model shares a family with the model that produced the run, observed agreement is an upper bound on what independent judges would reach",
+ "results": [
+  {
+   "plant": "X2",
+   "structuralFound": true,
+   "statesMechanism": null,
+   "why": null
+  },
+  {
+   "plant": "R1",
+   "structuralFound": true,
+   "statesMechanism": null,
+   "why": null
+  },
+  {
+   "plant": "L2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "States that commitAuthor is copied from the dry commit and is not proof of authorship, which is the planted attribution gap, before elaborating on the signing key."
+  },
+  {
+   "plant": "UX2",
+   "structuralFound": true,
+   "statesMechanism": true,
+   "why": "States the rollback push outside the commit server, rejection on a signature-required branch, and no messaging or retry path."
+  }
+ ],
+ "falseCredits": []
+}

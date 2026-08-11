@@ -1,0 +1,36 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "client-accounts.md describes the timekeeping manager's weekly verification as accountability that employees have 'reported their time,' but time-tracking-and-rates.md states the weekly check only 'confirms that a timecard exists for each person for the previous week; it does not establish who filed it' — since the Tock team can file entries on a person's behalf with no field recording who submitted them, the control described as verifying individual timekeeping compliance cannot actually distinguish self-reported hours from proxy-entered hours, so the accuracy of self-reported billable time is unmeasured even where a timecard exists.",
+   "citations": [
+    "policies/client-accounts.md",
+    "policies/time-tracking-and-rates.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "security-incidents.md sets the reporting clock at one hour from when 'a person becomes aware' and states 'no rotation watches for incidents outside working hours,' while public-vulnerability-disclosure.md states a report that arrives outside the HackerOne program channel 'cannot be worked from where it landed' and 'has nowhere else to go' — combined, a vulnerability reported off-channel during off-hours has no mechanism recording elapsed time until someone happens to notice it, so the one-hour SLA has no observable start time and no one is measuring time-to-awareness for misdirected reports.",
+   "citations": [
+    "policies/security-incidents.md",
+    "policies/public-vulnerability-disclosure.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "projects-in-distress.md states the pivot/pause/stop decision and its reasoning are captured only by the project health tracker and that 'no count of those decisions, or of the reasons behind them, is kept anywhere outside the project,' while project-lifecycle.md's Dashboard tracks only stage transitions (Launched, Paused, Landed) without a reason field — so TTS leadership, which finance-and-billing.md says is responsible for 'weighing capacity projections in pipeline and hiring decisions,' has no aggregate, cross-project data on why projects pause or stop, making root causes like funding lapses versus partner disengagement unobservable at the organizational level.",
+   "citations": [
+    "policies/projects-in-distress.md",
+    "policies/project-lifecycle.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "rfc-003-cybersecurity-advisor.md places the proposed role's hours entirely outside engagement work ('None of that is work assigned to a single engagement, and the position sits in the Front Office rather than on a delivery team') and defines no success metric for the role itself, while finance-and-billing.md identifies utilization rate — billable hours over available hours, tracked monthly per chapter and CoE center — as the organization's primary financial-health indicator; because the advisor's coordination, training, and hiring-support work is structurally nonbillable, its output is invisible to the one metric TTS leadership is described as monitoring, leaving the role's value unmeasured in production even after RFC 002's stated aim of getting 'additional engineering... and subject matter expertise into program teams.'",
+   "citations": [
+    "rfc-003-cybersecurity-advisor.md",
+    "policies/finance-and-billing.md"
+   ]
+  }
+ ]
+}

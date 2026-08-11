@@ -344,3 +344,29 @@ test('a role env whose values are not strings is refused', async () => {
     /strings/,
   );
 });
+
+test('naming no model does not make the family unknown: this binary runs one vendor', () => {
+  const adapter = createClaudeAdapter({ binary: '/nonexistent/claude' });
+  // No --model anywhere: the specific model is genuinely unknown, the family
+  // is not. Reporting best-effort here said something false about a tuned
+  // family in order to sound careful.
+  assert.equal(adapter.model, null);
+  // Tuning reporting is optional on the interface, so the absence of the hook
+  // is itself a failure of this expectation, not a reason to skip the checks.
+  const tuning = adapter.modelTuning?.() ?? null;
+  assert.ok(tuning, 'the claude adapter must report a tuning family');
+  assert.equal(tuning.family, 'claude');
+  assert.equal(tuning.tuned, true);
+
+  // The tier stays honestly unknown — which model inside the family answered
+  // is not knowable before the envelope reports it — so that degradation,
+  // which is real, still fires.
+  assert.equal(adapter.modelTier?.() ?? null, null);
+
+  // An explicitly named foreign model is still untuned; the fallback applies
+  // only when nothing was named.
+  const foreign = adapter.modelTuning?.('llama-3-70b') ?? null;
+  assert.ok(foreign, 'a named foreign model still gets a tuning verdict');
+  assert.equal(foreign.tuned, false);
+  assert.equal(foreign.family, null);
+});

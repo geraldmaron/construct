@@ -240,3 +240,40 @@ test('a scope-diff that invents what the brief asked for fails against the recor
   const ok = runStructuralChallenges(brief(['scope-diff']), anchored);
   assert.equal(ok.results.find((r) => r.challenge === 'scope-diff')?.passed, true);
 });
+
+test('claims-cited judges code citations against the ground roots the run was licensed', () => {
+  const cited = challengeById('claims-cited');
+  assert.ok(cited?.structural);
+  const grounded =
+    'Retry policy is the host\'s alone [cite:/ground/repo/src/kernel/run/coordinator.ts].';
+  const inRoot = cited.structural(grounded, brief(['claims-cited']), {
+    groundRoots: ['/ground/repo'],
+  });
+  assert.equal(inRoot.passed, true, 'ground under a licensed root is evidence');
+  const outOfRoot = cited.structural(grounded, brief(['claims-cited']), {
+    groundRoots: ['/somewhere/else'],
+  });
+  assert.equal(outOfRoot.passed, false, 'an unlicensed tree is still not evidence');
+});
+
+test('the heading the template dictates satisfies scope-diff: hyphenated headings are the spaced label', () => {
+  const scope = challengeById('scope-diff');
+  assert.ok(scope?.structural);
+  const templateLiteral = [
+    '# product requirements document',
+    'The work, cited [cite:docs/plan.md].',
+    '',
+    '## out-of-scope',
+    'Remote connectors wait for a later phase.',
+  ].join('\n');
+  const check = scope.structural(templateLiteral, brief(['scope-diff']));
+  assert.equal(check.passed, true, 'the checker must not fail its own dictated heading');
+
+  const premortem = challengeById('pre-mortem');
+  assert.ok(premortem?.structural);
+  assert.equal(
+    premortem.structural('## Pre-mortem\nIt fails when...', brief(['pre-mortem'])).passed,
+    true,
+    'hyphen flattening keeps pre-mortem detection whole',
+  );
+});

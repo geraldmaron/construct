@@ -3,22 +3,30 @@
  *
  * The properties held here: the producer prompt shows the note with the line
  * numbers its citations must name (a model cannot cite lines it was never
- * shown) and the exact declared-source ids; the challenger is asked to refute
- * and its verdict must carry a boolean and a reason or it is a failure, not a
- * pass; both adapters surface host failures as throws for the caller to
- * state.
+ * shown) and the exact declared-source ids; the producer prompt states the
+ * settled-vs-parked rule verbatim, and the org-harness notes-drop prompt
+ * renders the same export rather than a copy that could drift from it; the
+ * challenger is asked to refute and its verdict must carry a boolean and a
+ * reason or it is a failure, not a pass; both adapters surface host failures
+ * as throws for the caller to state.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import {
   challengerPrompt,
   createHostChallenger,
   createHostProducer,
   extractJson,
   producerPrompt,
+  SETTLED_VS_PARKED_RULE,
 } from '../../src/hosts/contextloop.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const DELTA = {
   kind: 'process',
@@ -57,6 +65,27 @@ test('the producer prompt numbers every note line and names the citation form', 
   assert.match(prompt, /"note:n-9#L<n>"/);
   assert.match(prompt, /src-1 \(jira: PROJ\)/);
   assert.match(prompt, /clients decide by quarter/);
+});
+
+test('the producer prompt carries the settled-vs-parked rule: a parked item is not a delta', () => {
+  const prompt = producerPrompt({ noteBody: 'x', noteId: 'n-1', lessons: [], sources: [] });
+  assert.ok(
+    prompt.includes(SETTLED_VS_PARKED_RULE),
+    'the shipped producer prompt must state the rule verbatim, not a paraphrase that can drift',
+  );
+});
+
+test('the org-harness notes-drop prompt states the same settled-vs-parked rule as the product', () => {
+  const rendered = execFileSync(
+    process.execPath,
+    [join(repoRoot, 'scripts', 'org-harness-producer-prompt.mjs'), '--notes'],
+    { encoding: 'utf8', cwd: repoRoot },
+  );
+  assert.ok(
+    rendered.includes(SETTLED_VS_PARKED_RULE),
+    'the harness prompt must render the product export verbatim; a drifted copy could ' +
+      'credit the harness with eliminating a violation class the shipped prompt never guards against',
+  );
 });
 
 test('with nothing declared, the prompt says so instead of leaving blanks to fill', () => {

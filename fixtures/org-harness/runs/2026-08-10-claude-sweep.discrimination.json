@@ -1,0 +1,251 @@
+{
+ "suite": "claude",
+ "lensesTested": [
+  "compliance",
+  "legal",
+  "program",
+  "product",
+  "strategy",
+  "architect",
+  "operations",
+  "design",
+  "security",
+  "analyst",
+  "engineering"
+ ],
+ "lensesMissing": [],
+ "results": [
+  {
+   "plant": "A1",
+   "owner": "analyst",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "program",
+    "architect",
+    "operations",
+    "design",
+    "analyst"
+   ],
+   "foreignEarners": [
+    "program",
+    "architect",
+    "operations",
+    "design"
+   ]
+  },
+  {
+   "plant": "C1",
+   "owner": "pm",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "compliance",
+    "legal",
+    "program",
+    "product",
+    "strategy",
+    "architect",
+    "operations",
+    "design",
+    "security",
+    "analyst"
+   ],
+   "foreignEarners": [
+    "compliance",
+    "legal",
+    "program",
+    "strategy",
+    "architect",
+    "operations",
+    "design",
+    "security",
+    "analyst"
+   ]
+  },
+  {
+   "plant": "CP1",
+   "owner": "compliance",
+   "verdict": "discriminating",
+   "earnedBy": [
+    "compliance"
+   ],
+   "foreignEarners": []
+  },
+  {
+   "plant": "L1",
+   "owner": "legal",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "compliance",
+    "legal",
+    "program",
+    "strategy",
+    "architect",
+    "security",
+    "analyst",
+    "engineering"
+   ],
+   "foreignEarners": [
+    "compliance",
+    "program",
+    "strategy",
+    "architect",
+    "security",
+    "analyst",
+    "engineering"
+   ]
+  },
+  {
+   "plant": "OP1",
+   "owner": "operations",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "SA2",
+   "owner": "strategy",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "compliance",
+    "legal",
+    "program",
+    "product",
+    "strategy",
+    "architect",
+    "operations",
+    "design",
+    "security",
+    "analyst"
+   ],
+   "foreignEarners": [
+    "compliance",
+    "legal",
+    "program",
+    "product",
+    "architect",
+    "operations",
+    "design",
+    "security",
+    "analyst"
+   ]
+  },
+  {
+   "plant": "SD1",
+   "owner": "architect",
+   "verdict": "missed",
+   "earnedBy": [],
+   "foreignEarners": []
+  },
+  {
+   "plant": "TH2",
+   "owner": "security",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "compliance",
+    "program",
+    "product",
+    "operations",
+    "design",
+    "security",
+    "analyst"
+   ],
+   "foreignEarners": [
+    "compliance",
+    "program",
+    "product",
+    "operations",
+    "design",
+    "analyst"
+   ]
+  },
+  {
+   "plant": "TP1",
+   "owner": "tpm",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "program",
+    "product",
+    "strategy"
+   ],
+   "foreignEarners": [
+    "product",
+    "strategy"
+   ]
+  },
+  {
+   "plant": "UX1",
+   "owner": "design",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "compliance",
+    "program",
+    "analyst"
+   ],
+   "foreignEarners": [
+    "compliance",
+    "program",
+    "analyst"
+   ]
+  },
+  {
+   "plant": "X1",
+   "owner": "engineering",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "program",
+    "product",
+    "strategy",
+    "architect",
+    "design",
+    "analyst",
+    "engineering"
+   ],
+   "foreignEarners": [
+    "program",
+    "product",
+    "strategy",
+    "architect",
+    "design",
+    "analyst"
+   ]
+  },
+  {
+   "plant": "X2",
+   "owner": "engineering",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "strategy",
+    "security",
+    "engineering"
+   ],
+   "foreignEarners": [
+    "strategy",
+    "security"
+   ]
+  },
+  {
+   "plant": "X3",
+   "owner": "pm",
+   "verdict": "not-discriminating",
+   "earnedBy": [
+    "legal",
+    "program",
+    "product",
+    "strategy",
+    "operations",
+    "security",
+    "analyst",
+    "engineering"
+   ],
+   "foreignEarners": [
+    "legal",
+    "program",
+    "strategy",
+    "operations",
+    "security",
+    "analyst",
+    "engineering"
+   ]
+  }
+ ]
+}

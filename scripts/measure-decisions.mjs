@@ -7,13 +7,28 @@
  * cannot be printed here is a figure nobody measured. Same discipline as
  * probe-*-conformance.mjs, applied to statistics instead of to a host.
  *
- * Reads the real corpora and the real catalog. Writes nothing.
+ * Reads the real corpora and the real catalog. Writes nothing unless asked to:
+ * §10's --namer-record persists that run's per-outcome answers, and nothing
+ * else in the script writes at all.
  *
  *   node scripts/measure-decisions.mjs
  *   node scripts/measure-decisions.mjs --section 3
+ *
+ * Comparing two §10 arms is a PAIRED question — both score the same outcomes
+ * against the same gold — so the arms are recorded per outcome and compared
+ * with McNemar rather than by reading two aggregate rates off two runs. On
+ * these corpora the intervals around a single rate are wide enough to hide
+ * every difference worth acting on, while the discordant pairs are few enough
+ * to count by hand:
+ *
+ *   ... --namer --section 10 --namer-arm shipped  --namer-record fixtures/namer-arms/shipped.json
+ *   ... --namer --section 10 --namer-arm no-nots  --namer-record fixtures/namer-arms/no-nots.json \
+ *                                                 --namer-compare fixtures/namer-arms/shipped.json
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -802,13 +817,58 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   // not see shell aliases, so an aliased auth path must be passed explicitly.
   const binaryFlag = process.argv.indexOf('--namer-binary');
   const BINARY = binaryFlag !== -1 ? process.argv[binaryFlag + 1] : undefined;
+  // The script writes nothing unless asked to. --namer-record persists this
+  // run's per-outcome answers so a later arm can be compared against it
+  // paired; --namer-compare reads such a record and reports that comparison.
+  const recordFlag = process.argv.indexOf('--namer-record');
+  const RECORD_TO = recordFlag !== -1 ? process.argv[recordFlag + 1] : null;
+  const compareFlag = process.argv.indexOf('--namer-compare');
+  const COMPARE_TO = compareFlag !== -1 ? process.argv[compareFlag + 1] : null;
+  const armFlag = process.argv.indexOf('--namer-arm');
+  const ARM_LABEL = armFlag !== -1 ? process.argv[armFlag + 1] : 'unlabelled';
+
+  // Refused before the run rather than after it. These figures are stated per
+  // tier, and on this host an unnamed model means the session default answers
+  // — whatever that resolves to today, and it may change mid-run. A run that
+  // would be refused at the end is a run whose entire cost was spent to be
+  // told so, and on this host that cost is real money.
+  if (RECORD_TO && NAMER_HOST === 'claude' && MODEL === undefined) {
+    console.log('\n  NOT RUN: --namer-record on the claude host needs --namer-model.');
+    console.log('  Without one the session default answers, so the figures would name no tier —');
+    console.log(`  and ${RECORD_TO} would be refused after the consultations were already paid for.`);
+    process.exit(1);
+  }
   const byName = domainsByName(DOMAINS);
+
+  /**
+   * What this run actually asked the model, reduced to a short digest. A record
+   * that cannot say which prompt produced it invites the comparison nobody
+   * meant to make: two runs of the same prompt, read as evidence about a change.
+   */
+  const promptFingerprint = () =>
+    createHash('sha256').update(namerPrompt('fingerprint probe', DOMAINS)).digest('hex').slice(0, 12);
 
   let calls = 0;
   let failures = 0;
+  // A repair is a second model call that succeeded, not a failure — but it is
+  // a cost, and a prompt that provokes more of them is paying it.
+  let repairs = 0;
   let totalMs = 0;
   let costUsd = 0;
   const modelsRan = new Set();
+  /**
+   * Which model served THIS consultation, carried per async context rather than
+   * in a shared variable: consultations run four at a time on the Claude host,
+   * so a "last model seen" would attribute one outcome's answer to another
+   * outcome's model. The run-level set says a tier drifted; only this says
+   * which answers came from where, which is what separating a mixed run needs.
+   */
+  const servedBy = new AsyncLocalStorage();
+  const attribute = (model) => {
+    if (typeof model !== 'string' || !model) return;
+    modelsRan.add(model);
+    servedBy.getStore()?.add(model);
+  };
 
   /** One namer consultation returning raw namings. Throws on failure, like the real namer. */
   let rawNamer;
@@ -834,15 +894,18 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         // check here silently reported 'unreported' for a run that named its
         // model in every envelope. Accept both shapes.
         const ran = out?.modelRan;
-        if (typeof ran === 'string' && ran) modelsRan.add(ran);
-        else if (Array.isArray(ran)) for (const m of ran) if (typeof m === 'string' && m) modelsRan.add(m);
+        if (typeof ran === 'string') attribute(ran);
+        else if (Array.isArray(ran)) for (const m of ran) attribute(m);
         return result;
       },
     };
     rawNamer = createHostNamer(metered);
   } else {
+    // ollama's own clients read OLLAMA_HOST; following that convention is what
+    // lets this be pointed somewhere other than the daemon on this machine.
+    const OLLAMA = (process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434').replace(/\/$/, '');
     rawNamer = async (outcome, catalog) => {
-      const res = await fetch('http://127.0.0.1:11434/api/generate', {
+      const res = await fetch(`${OLLAMA}/api/generate`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -853,7 +916,13 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         }),
       });
       if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${MODEL} pulled?`);
-      return parseNamings((await res.json()).response ?? '');
+      const body = await res.json();
+      // What answered, not what was asked for — the same question the Claude
+      // path's modelRan answers. Requesting a model and being served it is the
+      // usual case here and not the guaranteed one, and a record that reports
+      // the request cannot tell the difference.
+      attribute(typeof body.model === 'string' && body.model ? body.model : MODEL);
+      return parseNamings(body.response ?? '');
     };
   }
 
@@ -873,25 +942,46 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     return kept;
   };
 
+  // A namer that had to repair its first reply answers with `{ namings,
+  // retried }` rather than with a bare array (naming.ts's NamerReply), and
+  // escalate.ts unwraps that before it admits anything. This script iterated
+  // the reply directly, so every outcome that needed a repair threw "namings
+  // is not iterable", was counted as a namer FAILURE, and fell back to
+  // keywords — while the run still reported its figures as the namer's. The
+  // unwrap belongs here for the same reason admit() does: the semantics must
+  // match the shipped path, not approximate it.
+  const unwrap = (reply) => (reply && !Array.isArray(reply) && 'namings' in reply ? reply.namings : reply);
+
   const consult = async (outcome) => {
     calls += 1;
     const started = Date.now();
-    const namings = await rawNamer(outcome, DOMAINS);
+    const reply = await rawNamer(outcome, DOMAINS);
     totalMs += Date.now() - started;
-    return admit(namings);
+    const namings = unwrap(reply);
+    if (Array.isArray(reply) === false && namings !== reply) repairs += 1;
+    return admit(Array.isArray(namings) ? namings : []);
   };
+
+  /** Which model(s) served each outcome's one consultation, by outcome text. */
+  const servedByOutcome = new Map();
 
   // Outcomes repeat across configurations; one consultation serves all of them.
   const namerCache = new Map();
   let lastFailure = null;
   const named = async (outcome) => {
     if (!namerCache.has(outcome)) {
+      // The attribution is bound around the consultation and kept whether it
+      // answered or threw: a failure served by a tier is still evidence about
+      // which tier was answering when.
+      const served = new Set();
       try {
-        namerCache.set(outcome, await consult(outcome));
+        namerCache.set(outcome, await servedBy.run(served, () => consult(outcome)));
       } catch (err) {
         failures += 1;
         lastFailure = err instanceof Error ? err.message : String(err);
         namerCache.set(outcome, null); // null = the namer failed, not "named nothing"
+      } finally {
+        servedByOutcome.set(outcome, [...served]);
       }
     }
     return namerCache.get(outcome);
@@ -934,6 +1024,14 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  --escalate behavior); B namer on every outcome, keyword map as the');
   console.log('  fallback when the namer fails (the shipped inversion).\n');
 
+  // Per-outcome answers, kept rather than tallied away. Two arms score the
+  // same outcomes against the same gold, so the comparison between them is
+  // paired; reading two aggregate rates off two runs and eyeballing their
+  // intervals throws that pairing away and needs far more corpus to conclude
+  // anything. The unit is the (outcome, expected label) pair, which is exactly
+  // the unit `miss = missed/expected` already counts.
+  const perOutcome = {};
+
   for (const c of corpora) {
     const kw = c.outcomes.map((o) => implicatedDomains({ outcome: o.outcome }));
     const a1 = [];
@@ -951,8 +1049,19 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         `    ${label.padEnd(13)} miss ${formatRate(t.missed, t.expected).padEnd(38)} over ${formatRate(t.over, t.surfaced)}`,
       );
     }
+    perOutcome[c.name] = c.outcomes.map((o, i) => ({
+      outcome: o.outcome,
+      expect: o.expect,
+      A0: kw[i],
+      A1: a1[i],
+      B: b[i],
+      // Which model produced this row's namer answer. A0 is the keyword map and
+      // no model served it; the field describes the consultation, so it is
+      // empty when there was none.
+      servedBy: servedByOutcome.get(o.outcome) ?? [],
+    }));
   }
-  console.log(`\n  namer consultations: ${calls} (${failures} failed), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
+  console.log(`\n  namer consultations: ${calls} (${failures} failed, ${repairs} answered on a corrective retry), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
   if (failures > 0) {
     console.log(`  LAST FAILURE: ${lastFailure}`);
     console.log('  A failed consultation falls back per configuration (A1 -> silence, B -> keywords),');
@@ -970,6 +1079,185 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   console.log('  Adoption was decided by Gerald on these figures, recorded in the tracker — a weak');
   console.log('  namer understating the inversion must not kill it, and a strong one');
   console.log('  flattering it must not ship it without the figures being read per tier.');
+
+  // A record of a run that fell back is a trap: it looks like an arm, compares
+  // like an arm, and is partly the keyword map. The run already says so on
+  // screen, but a file outlives the terminal it was printed in, so the refusal
+  // is here rather than left to whoever reads the figures later.
+  if (RECORD_TO && failures > 0) {
+    console.log(`\n  NOT RECORDED: ${failures} of ${calls} consultations failed, so this run is`);
+    console.log(`  partly the fallback arm. ${RECORD_TO} is left untouched. Fix the cause and re-run.`);
+  } else if (RECORD_TO && modelsRan.size > 1) {
+    // These figures are stated per tier, and a run answered by two tiers is
+    // not one tier's figures. The arm file is refused rather than annotated,
+    // because an annotation on a file is a note the next comparison will not
+    // read. Pin the tier with --namer-model and run it again.
+    //
+    // The answers are not thrown away with it. Each one now names the model
+    // that served it, so the run is separable after the fact — which is the
+    // whole difference between a refusal and a loss. It goes to a sibling
+    // file that cannot be mistaken for an arm: nothing compares against a
+    // path ending .mixed.json.
+    const forensic = `${RECORD_TO}.mixed.json`;
+    writeFileSync(
+      forensic,
+      `${JSON.stringify(
+        {
+          arm: ARM_LABEL,
+          notAnArm:
+            'more than one model served this run, so these figures are not a per-tier measurement. ' +
+            'Kept only so the consultations can be separated by the model that served each one.',
+          recordedAt: new Date().toISOString(),
+          host: NAMER_HOST,
+          model: MODEL ?? null,
+          modelsRan: [...modelsRan],
+          promptFingerprint: promptFingerprint(),
+          consultations: calls,
+          failures,
+          repairs,
+          perOutcome,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const perTier = new Map();
+    for (const [, list] of servedByOutcome) {
+      for (const m of list) perTier.set(m, (perTier.get(m) ?? 0) + 1);
+    }
+    console.log(`\n  NOT RECORDED: ${modelsRan.size} tiers served this run (${[...modelsRan].join(', ')}),`);
+    for (const [m, n] of [...perTier].sort()) {
+      console.log(`    ${m}: ${n} of ${servedByOutcome.size} consultations`);
+    }
+    console.log('  so it is not a per-tier measurement. Pin the tier with --namer-model and re-run.');
+    console.log(`  ${RECORD_TO} is left untouched; the per-consultation attribution is in ${forensic},`);
+    console.log('  which is evidence about what happened, never an arm to compare against.');
+  } else if (RECORD_TO) {
+    const record = {
+      arm: ARM_LABEL,
+      recordedAt: new Date().toISOString(),
+      host: NAMER_HOST,
+      model: MODEL ?? null,
+      modelsRan: [...modelsRan],
+      promptFingerprint: promptFingerprint(),
+      consultations: calls,
+      failures,
+      repairs,
+      perOutcome,
+    };
+    writeFileSync(RECORD_TO, `${JSON.stringify(record, null, 2)}\n`);
+    console.log(`\n  recorded arm "${ARM_LABEL}" to ${RECORD_TO}`);
+    console.log(`  prompt fingerprint ${record.promptFingerprint} — a comparison against a`);
+    console.log('  record carrying a different fingerprint is comparing two prompts, which is');
+    console.log('  the point; against the SAME fingerprint it is measuring host nondeterminism.');
+  }
+
+  if (COMPARE_TO) {
+    const base = JSON.parse(readFileSync(COMPARE_TO, 'utf8'));
+    console.log(`\n  PAIRED against arm "${base.arm}" (${COMPARE_TO}, recorded ${base.recordedAt})`);
+    console.log(`  fingerprints: base ${base.promptFingerprint} -> now ${promptFingerprint()}`);
+    if (base.promptFingerprint === promptFingerprint()) {
+      console.log('  IDENTICAL PROMPTS: any difference below is host nondeterminism, not the change.');
+    }
+    console.log('\n  On the miss axis, per (outcome, expected label) pair. "base only" = the pair');
+    console.log('  the baseline found and this arm misses (a regression); "now only" = recovered.\n');
+    console.log('  corpus                       base miss    now miss   base only   now only   McNemar p');
+
+    let totalBaseOnly = 0;
+    let totalNowOnly = 0;
+    let totalPairs = 0;
+    let baseMissed = 0;
+    let nowMissed = 0;
+    // The §10 adoption gate is stated on pooled out-of-family miss — fresh +
+    // unspent, the corpora written after the catalog — so that pooling gets
+    // its own row rather than being recovered by hand from the per-corpus
+    // ones. The all-four POOLED row below is not the gate's axis.
+    const OUT_OF_FAMILY = new Set(['fresh-outcomes.json', 'unspent-outcomes.json']);
+    let oofBaseOnly = 0;
+    let oofNowOnly = 0;
+    let oofPairs = 0;
+    let oofBaseMissed = 0;
+    let oofNowMissed = 0;
+
+    for (const c of corpora) {
+      const baseRows = base.perOutcome?.[c.name];
+      const nowRows = perOutcome[c.name];
+      if (!baseRows) {
+        console.log(`  ${c.name.padEnd(28)} ABSENT from the baseline record — not compared`);
+        continue;
+      }
+      // Match on the outcome text, never on position: a corpus that gained or
+      // reordered an entry would otherwise pair each answer with a different
+      // outcome's gold and report the misalignment as a finding.
+      const baseByOutcome = new Map(baseRows.map((r) => [r.outcome, r]));
+      let onlyBase = 0;
+      let onlyNow = 0;
+      let pairs = 0;
+      let bMiss = 0;
+      let nMiss = 0;
+      let unmatched = 0;
+      for (const row of nowRows) {
+        const prior = baseByOutcome.get(row.outcome);
+        if (!prior) {
+          unmatched += 1;
+          continue;
+        }
+        for (const label of row.expect) {
+          pairs += 1;
+          const foundBefore = prior.B.includes(label);
+          const foundNow = row.B.includes(label);
+          if (!foundBefore) bMiss += 1;
+          if (!foundNow) nMiss += 1;
+          if (foundBefore && !foundNow) onlyBase += 1;
+          if (!foundBefore && foundNow) onlyNow += 1;
+        }
+      }
+      const p = mcnemarExact(onlyBase, onlyNow);
+      console.log(
+        `  ${c.name.padEnd(28)} ${(bMiss / pairs).toFixed(3).padStart(9)} ${(nMiss / pairs)
+          .toFixed(3)
+          .padStart(11)} ${String(onlyBase).padStart(11)} ${String(onlyNow).padStart(10)} ${p
+          .toFixed(4)
+          .padStart(11)}${unmatched ? `  (${unmatched} unmatched)` : ''}`,
+      );
+      totalBaseOnly += onlyBase;
+      totalNowOnly += onlyNow;
+      totalPairs += pairs;
+      baseMissed += bMiss;
+      nowMissed += nMiss;
+      if (OUT_OF_FAMILY.has(c.name)) {
+        oofBaseOnly += onlyBase;
+        oofNowOnly += onlyNow;
+        oofPairs += pairs;
+        oofBaseMissed += bMiss;
+        oofNowMissed += nMiss;
+      }
+    }
+
+    const oofP = mcnemarExact(oofBaseOnly, oofNowOnly);
+    console.log(
+      `  ${'OUT-OF-FAMILY (gate axis)'.padEnd(28)} ${(oofBaseMissed / oofPairs)
+        .toFixed(3)
+        .padStart(9)} ${(oofNowMissed / oofPairs).toFixed(3).padStart(11)} ${String(
+        oofBaseOnly,
+      ).padStart(11)} ${String(oofNowOnly).padStart(10)} ${oofP.toFixed(4).padStart(11)}`,
+    );
+
+    const pooledP = mcnemarExact(totalBaseOnly, totalNowOnly);
+    console.log(
+      `  ${'POOLED'.padEnd(28)} ${(baseMissed / totalPairs).toFixed(3).padStart(9)} ${(
+        nowMissed / totalPairs
+      )
+        .toFixed(3)
+        .padStart(11)} ${String(totalBaseOnly).padStart(11)} ${String(totalNowOnly).padStart(
+        10,
+      )} ${pooledP.toFixed(4).padStart(11)}`,
+    );
+    console.log(`\n  ${totalBaseOnly + totalNowOnly} discordant pairs of ${totalPairs}.`);
+    console.log('  A large p with few discordant pairs is "this corpus cannot tell", not');
+    console.log('  "the arms are the same". Concordant pairs carry no information about a');
+    console.log('  difference, which is why the raw rates above are the wrong thing to read.');
+  }
 }
 
 console.log('');

@@ -23,6 +23,22 @@
  * challenge with no structural checker is never recorded as passed — it stays
  * unanswered until something that can judge it answers.
  *
+ * WHERE THE INDEPENDENCE OF A SUBSTANTIVE PASS COMES FROM. Not from the second
+ * role. A different role over the same model produces correlated output — that
+ * is measured here and in the external record, and it is why per-role depth was
+ * retired. What a second role buys is attribution (a name on the verdict) and
+ * the structural guarantee that the author does not grade itself, which is real
+ * and is why the rule below stands. What it does NOT buy is an independent
+ * opinion. Independence is bought with a second model FAMILY, dispatched
+ * through the host adapter seam, and that is where any challenge or judge pass
+ * that is load-bearing should spend.
+ *
+ * Stated as a limit rather than left implied: only one family is tuned today
+ * (`hosts/tuning.ts`), so a cross-family substantive pass cannot be run yet.
+ * Until a second family passes its eval gate, a substantive verdict carries the
+ * independence its author's family can give it and no more, and no surface
+ * describes it as independent review.
+ *
  * The checks are deliberately generous about form and strict about presence.
  * Models write "## Strongest objection", "**The strongest objection:**", and
  * "Strongest counter-argument -" for the same instruction, and a checker that
@@ -45,6 +61,15 @@ export interface ChallengeCheck {
   readonly detail: string;
 }
 
+/**
+ * Facts about the dispatch a check may need beyond the deliverable and brief.
+ * Ground roots are the one so far: a grounded run's citations are judged
+ * against what the run was actually licensed to read.
+ */
+export interface ChallengeContext {
+  readonly groundRoots?: readonly string[];
+}
+
 export interface Challenge {
   readonly id: string;
   /** What the challenge asks of the deliverable, in one sentence. */
@@ -53,12 +78,20 @@ export interface Challenge {
    * A free, deterministic check for the presence of the work, or null when
    * only a substantive pass can answer this challenge.
    */
-  readonly structural: ((deliverable: string, brief: Brief) => ChallengeCheck) | null;
+  readonly structural:
+    | ((deliverable: string, brief: Brief, context?: ChallengeContext) => ChallengeCheck)
+    | null;
 }
 
-/** Any of these labels, however the model decorated them, counts as present. */
+/**
+ * Any of these labels, however the model decorated them, counts as present.
+ * Hyphens flatten to spaces because the templates themselves dictate
+ * hyphenated headings ("out-of-scope"): a checker that failed the exact
+ * heading the assignment asked for would be grading its own instructions.
+ * Labels are written in the flattened form.
+ */
 function labelled(text: string, labels: readonly string[]): boolean {
-  const flattened = text.toLowerCase().replace(/[*_`#>]/g, ' ').replace(/\s+/g, ' ');
+  const flattened = text.toLowerCase().replace(/[*_`#>-]/g, ' ').replace(/\s+/g, ' ');
   return labels.some((label) => flattened.includes(label));
 }
 
@@ -121,7 +154,7 @@ export const CHALLENGES: readonly Challenge[] = [
     question: 'Assume this failed. What is the most likely story of how?',
     structural: (deliverable) =>
       found(
-        labelled(deliverable, ['pre-mortem', 'premortem', 'assume this failed', 'how this fails']),
+        labelled(deliverable, ['pre mortem', 'premortem', 'assume this failed', 'how this fails']),
         'a labelled pre-mortem',
         'present — the plausibility of the failure story is a substantive question',
       ),
@@ -133,12 +166,14 @@ export const CHALLENGES: readonly Challenge[] = [
     // implementation before this catalog existed. Reused rather than rewritten:
     // a second matcher for the same job is the drift commitment 16 exists to
     // catch, and two of them would disagree eventually.
-    structural: (deliverable) => {
+    structural: (deliverable, _brief, context) => {
       // A citation that points at code fails here rather than in a challenge of
       // its own, because from the reader's side it is the same failure: the
       // claim is not sourced. Checked first — a deliverable that cites the
-      // tool's insides has a worse problem than one that cites nothing.
-      const misplaced = findSourceFileCitations(deliverable);
+      // tool's insides has a worse problem than one that cites nothing. A
+      // grounded dispatch is the exception: code under a declared root is the
+      // user's own ground, and citing it is the discipline, not the defect.
+      const misplaced = findSourceFileCitations(deliverable, context?.groundRoots ?? []);
       if (misplaced.length > 0) {
         const shown = misplaced.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
         return {
@@ -278,7 +313,11 @@ export interface StructuralRun {
  * declaration on the brief, and a dispatcher that ran checks nobody asked for
  * would be deciding the obligation itself.
  */
-export function runStructuralChallenges(brief: Brief, deliverable: string): StructuralRun {
+export function runStructuralChallenges(
+  brief: Brief,
+  deliverable: string,
+  context?: ChallengeContext,
+): StructuralRun {
   const results: StructuralResult[] = [];
   const unanswered: UnansweredChallenge[] = [];
 
@@ -298,7 +337,7 @@ export function runStructuralChallenges(brief: Brief, deliverable: string): Stru
       });
       continue;
     }
-    const check = challenge.structural(deliverable, brief);
+    const check = challenge.structural(deliverable, brief, context);
     results.push({ challenge: id, passed: check.passed, detail: check.detail });
   }
 

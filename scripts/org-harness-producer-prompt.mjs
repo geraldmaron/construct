@@ -8,13 +8,15 @@
  * families, or tuned with a record of what changed. This script is the one
  * source of that prompt.
  *
- * What a run is told comes from the product, in two pieces: the role depth from
- * the committed lenses (src/kernel/plan/lenses.ts) and the synthesis discipline
- * from the grounded dispatch protocol (src/kernel/run/grounding.ts). Both are
- * rendered here from those exports, so a scored rung measures depth the product
- * actually ships. What this file adds on top is the eval's output contract
- * alone: the JSON envelope and the corpus-relative citation format, which exist
- * so a run can be scored structurally and are not depth under measurement.
+ * What a run is told comes from the product, in three pieces: the role depth
+ * from the committed lenses (src/kernel/plan/lenses.ts), the synthesis
+ * discipline from the grounded dispatch protocol (src/kernel/run/grounding.ts),
+ * and the settled-vs-parked rule for the notes drop (src/hosts/contextloop.ts).
+ * All three are rendered here from those exports, so a scored run measures
+ * depth the product actually ships. What this file adds on top is the eval's
+ * output contract alone: the JSON envelope and the corpus-relative citation
+ * format, which exist so a run can be scored structurally and are not depth
+ * under measurement.
  *
  * Two shapes, because the product has one and the whole-roster view has one:
  *
@@ -45,7 +47,8 @@
 
 import process from 'node:process';
 import { LENSES } from '../src/kernel/plan/lenses.ts';
-import { GROUNDED_SYNTHESIS_PROTOCOL } from '../src/kernel/run/grounding.ts';
+import { GROUNDED_SYNTHESIS_PROTOCOL, ROLE_OWNERSHIP_BOUND } from '../src/kernel/run/grounding.ts';
+import { SETTLED_VS_PARKED_RULE } from '../src/hosts/contextloop.ts';
 
 const args = process.argv.slice(2);
 const corpusIdx = args.indexOf('--corpus');
@@ -111,7 +114,7 @@ const NOTES_DISCIPLINE = `## The notes drop
 
 The two files under notes/ are raw brain-dump notes from team members. They contain decisions and facts the organization's records do not yet hold. Propose, for each ticket the notes bear on, what should be recorded there (proposals), and state each decision or standing rule the notes establish (deltas). Every proposal and delta quotes the exact justifying line from the notes file it came from — quote the line verbatim, whole.
 
-A delta records what the notes SETTLED, and only that. Notes also carry items that were explicitly parked, deferred to an owner, or raised and left undecided — those are not decisions, and writing one up as a delta records a resolution the organization never reached. Where the notes park something or say a question needs an owner, that is not yours to record as decided; leave it out of the deltas entirely. Before writing each delta, point at the words in the note that make it settled; if the words say "parking that", "needs an owner", "not deciding here", or anything of that shape, it is not a delta.`;
+${SETTLED_VS_PARKED_RULE}`;
 
 function lensBlock(l) {
   const questions = l.questions.map((q) => `- ${q}`).join('\n');
@@ -125,6 +128,8 @@ function singleLensPrompt(l) {
     .map((s) => `- ${s.name}: ${s.expects}`)
     .join('\n');
   return `${HEADER}
+
+${ROLE_OWNERSHIP_BOUND}
 
 You are dispatched as the ${l.lens} role, and only that role. Other reviews cover the other concerns; anything outside your lens is someone else's finding, and chasing it costs you the depth you were dispatched for.
 

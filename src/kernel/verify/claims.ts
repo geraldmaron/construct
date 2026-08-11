@@ -33,7 +33,18 @@ export interface UntaggedClaim {
 
 const CLAIM =
   /(\$[\d][\d,.]*|\b\d+(?:\.\d+)?%|\b\d{4}-\d{2}-\d{2}\b|\b\d+(?:\.\d+)?\s*(?:business\s+)?(?:hour|day|week|month|year)s?\b|\barts?\.\s*\d+|§\s*\d+|\bDirective\s+\d+\/\d+)/i;
-const TAG = /\[(cite:[^\]]+|unverified)\]/i;
+/**
+ * The three shapes that discharge a claim, and the reason there are three.
+ *
+ * `[cite:…]` points at the run's own ground — a declared source, a document the
+ * run read, an answer the user gave. `[research:…]` points outside it, at
+ * something publicly reachable the role opened during the research rung. Both
+ * are citations and both satisfy the discipline; they stay separate markers so
+ * a reader can tell at a glance whether a claim rests on their own material or
+ * on the open web, which are not the same quality of evidence and must never
+ * read as if they were. `[unverified]` is the honest third answer.
+ */
+const TAG = /\[(cite:[^\]]+|research:[^\]]+|unverified)\]/i;
 
 /**
  * A citation whose body is a source file rather than a source.
@@ -110,13 +121,24 @@ export function findScaffoldingCitations(text: string): MisplacedCitation[] {
  * Reported separately from untagged claims because the two failures need
  * different words: one deliverable did not source its claim, the other sourced
  * it to something that cannot support it.
+ *
+ * `allowedRoots` is the grounded exception, and it inverts nothing: when the
+ * user points a run at a codebase, that code IS the declared ground, so a
+ * cited path under a declared root is evidence exactly the way a document is.
+ * A path under no declared root keeps failing — that is still the tool's
+ * insides or a tree nobody declared, whichever it is.
  */
-export function findSourceFileCitations(text: string): MisplacedCitation[] {
+export function findSourceFileCitations(
+  text: string,
+  allowedRoots: readonly string[] = [],
+): MisplacedCitation[] {
   const findings: MisplacedCitation[] = [];
   const lines = text.split('\n');
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i] ?? '';
-    if (SOURCE_PATH.test(line)) findings.push({ line: i + 1, text: line.trim() });
+    if (!SOURCE_PATH.test(line)) continue;
+    if (allowedRoots.some((root) => root.trim() !== '' && line.includes(root))) continue;
+    findings.push({ line: i + 1, text: line.trim() });
   }
   return findings;
 }

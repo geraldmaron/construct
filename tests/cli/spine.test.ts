@@ -8,15 +8,18 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, outcome, work } from '../../src/cli/index.ts';
+import { main, outcome, parseWorkArgs, work } from '../../src/cli/index.ts';
+import { createOpenCodeAdapter } from '../../src/hosts/opencode/adapter.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
 import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
 import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
+import { planFor } from '../../src/kernel/store/plans.ts';
+import { readWorkLog } from '../../src/kernel/store/worklog.ts';
 
 /** Fixed points for the staged-crash test below; the CLI's own clock is real. */
 const SETTLED_AT = '2026-08-03T00:00:00.000Z';
@@ -925,10 +928,10 @@ test('an outcome records a plan and construct plan renders it, sequenced and lab
   ]);
   delete process.env.CONSTRUCT_TEST_PLAN_RUN;
   assert.equal(result.code, 0);
-  assert.match(result.out, /plan plan-run-\d+: \d+ steps?, risk (low|high), grounded in 1 declared source/);
+  assert.match(result.out, /plan plan-run-\d+: \d+ steps?, risk (low|high), over 1 declared source \(read at work time\)/);
   assert.match(result.out, /routed to [a-z-]+ by lexical-fallback/);
   assert.match(result.out, /required slots: finding, evidence, risks/);
-  assert.match(result.out, /sources: src-\d+/);
+  assert.match(result.out, /sources declared: src-\d+/);
 });
 
 test('plan without a run id is usage, and an unknown run is a sentence', async () => {
@@ -938,4 +941,178 @@ test('plan without a run id is usage, and an unknown run is a sentence', async (
   const usage = await runAll([['plan']]);
   assert.equal(usage.code, 2);
   assert.match(usage.err, /usage: construct plan/);
+});
+
+test('a run over declared sources dispatches roles grounded in the named documents', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  writeFileSync(join(ground, 'roadmap.md'), '# roadmap\nbeta in the EU\n');
+  writeFileSync(join(ground, 'constraints.txt'), 'no launch before compliance sign-off\n');
+
+  const assignments: string[] = [];
+  const capturing: HostAdapter = {
+    name: 'stand-in',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      assignments.push((request as { task: string }).task);
+      const role = (request as { role: string }).role;
+      return { id: role, status: 'ok', output: { text: `${role} reporting` }, error: null };
+    },
+  };
+
+  try {
+    const { code, out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['source', 'add', '--kind=jira', '--locator=PROJ'],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work([], capturing),
+      ['log'],
+    ]);
+
+    assert.equal(code, 0);
+    assert.match(out, /grounded run-/, 'the survey reports before dispatch');
+    assert.match(out, /2 documents from 2 sources \(1 unreachable\)/);
+    assert.match(out, /sources-read/, 'the survey is in the work log, not only on screen');
+
+    assert.ok(assignments.length > 0, 'roles were dispatched');
+    for (const assignment of assignments) {
+      assert.match(assignment, /Your material for this task/);
+      assert.ok(assignment.includes(join(ground, 'roadmap.md')), 'documents are named by citable path');
+      assert.match(assignment, /\[unreachable\]/, 'the source nobody could read says so');
+      assert.match(assignment, /Not all of it was read/);
+      assert.match(assignment, /the survey, not the boundary/, 'reads past the list are licensed');
+      assert.ok(assignment.includes(ground), 'the licensed root is the declared locator');
+      assert.match(assignment, /ASK: <the question, one sentence>/, 'requirements protocol is stated');
+    }
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('watch refuses ground that is not Construct rather than filing another repo\'s drift as its own', async () => {
+  const elsewhere = mkdtempSync(join(tmpdir(), 'not-construct-'));
+  try {
+    writeFileSync(join(elsewhere, 'package.json'), JSON.stringify({ name: 'someone-elses-app' }));
+    const refused = await runAll([['watch', `--root=${elsewhere}`]]);
+    assert.equal(refused.code, 1);
+    assert.match(refused.err, /is not a Construct checkout/);
+    // The failure names what --root actually selects, so the next person does
+    // not read the flag as "watch this project".
+    assert.match(refused.err, /which checkout of Construct to inspect/);
+    assert.doesNotMatch(refused.out, /ground:/, 'a refused sweep records no ground at all');
+  } finally {
+    rmSync(elsewhere, { recursive: true, force: true });
+  }
+});
+
+test('an outcome plans against the workspace it was given, not always the default one', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    writeFileSync(join(ground, 'notes.md'), '# Notes\n\nThe billing migration is deferred.\n');
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`, '--workspace=waveb'],
+      ['outcome', 'ship the paid beta'],
+      ['outcome', '--workspace=waveb', 'ship the paid beta'],
+      async () => {
+        const store = openStore(
+          join(process.env.XDG_DATA_HOME!, 'construct', 'construct.db'),
+        );
+        try {
+          // The plan is what records sourcesDeclared and what `work` grounds
+          // from, so the flag is only real if it reaches the plan.
+          const runs = readWorkLog(store)
+            .filter((e) => e.action === 'outcome-received')
+            .map((e) => e.run);
+          assert.equal(runs.length, 2);
+          assert.deepEqual(planFor(store, runs[0])!.sourcesDeclared, []);
+          assert.equal(planFor(store, runs[1])!.sourcesDeclared.length, 1);
+        } finally {
+          store.close();
+        }
+        return 0;
+      },
+    ]);
+    // A workspace with nothing declared on it and a workspace that was never
+    // consulted print the same phrase, so the phrase names the workspace.
+    assert.match(out, /no sources declared\n/);
+    assert.match(out, /over 1 declared source \(read at work time\) on workspace "waveb"/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('the invocation limit is the caller\'s to set, and cannot silently outlast the lease', async () => {
+  assert.equal(parseWorkArgs(['--timeout=5']).timeoutMs, 5 * 60 * 1000);
+  assert.equal(parseWorkArgs([]).timeoutMs, undefined, 'unset means the host\'s own declared default');
+  assert.throws(() => parseWorkArgs(['--timeout=0']), /positive number of minutes/);
+  // Longer than the lease means a task still running when its lease expires is
+  // handed to a second worker and the same work is paid for twice.
+  assert.throws(() => parseWorkArgs(['--timeout=20']), /exceeds --lease-minutes=15/);
+  assert.equal(parseWorkArgs(['--timeout=20', '--lease-minutes=30']).timeoutMs, 20 * 60 * 1000);
+});
+
+test('a host states the invocation limit it will enforce rather than leaving it to be discovered', () => {
+  assert.equal(createOpenCodeAdapter({}).invocationTimeoutMs, 10 * 60 * 1000);
+  assert.equal(createOpenCodeAdapter({ timeoutMs: 90_000 }).invocationTimeoutMs, 90_000);
+});
+
+test('a dispatch meets the recorded throughput floor before it spends ten minutes per role on it', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    // The recorded observation is at 40 surveyed documents; a ground at least
+    // that large is what it was measured against.
+    for (let i = 0; i < 40; i += 1) {
+      writeFileSync(join(ground, `doc-${String(i)}.md`), `# doc ${String(i)}\nbeta in the EU\n`);
+    }
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work(['--model=ollama/qwen3.6:35b'], standInHost()),
+    ]);
+    assert.match(out, /nearest recorded observation \(2026-08-10, ollama\/qwen3\.6:35b\)/);
+    // A caution with no next move is a slower failure, so both ways out are named.
+    assert.match(out, /--timeout=<minutes>/);
+    assert.match(out, /construct outcome --workspace=<name>/);
+    assert.match(out, /docs\/stakeholder-acceptance-phase-5\.md/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('a dispatch on a model nothing was measured on is not cautioned about one that was', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    for (let i = 0; i < 40; i += 1) {
+      writeFileSync(join(ground, `doc-${String(i)}.md`), `# doc ${String(i)}\nbeta in the EU\n`);
+    }
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`],
+      ['outcome', 'launch a paid beta to EU users next month'],
+      () => work(['--model=claude-sonnet-5'], standInHost()),
+    ]);
+    assert.doesNotMatch(out, /nearest recorded observation/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
+  }
+});
+
+test('a timeout failure names the flag that moves the wall, not just the wall', async () => {
+  const timedOut: HostAdapter = {
+    ...standInHost(),
+    invoke: async (): Promise<HostResult> => ({
+      id: 'x',
+      status: 'error',
+      output: null,
+      error: { messages: ['Host "opencode" invocation exceeded 600000ms'] },
+    }),
+  };
+  const { code, out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], timedOut),
+  ]);
+  assert.equal(code, 1);
+  assert.match(out, /invocation exceeded 600000ms — raise it with --timeout=<minutes>/);
 });

@@ -1,0 +1,98 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": []
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": true,
+    "conflicts": [],
+    "proposals": [],
+    "deltas": []
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C-B1",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP-B1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A-B1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP-B1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L-B1",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA-B1",
+        "found": true,
+        "by": {
+          "claim": "policies/finance-and-billing.md and policies/client-accounts.md establish that TTS/18F is a fee-for-service, cost-recoverable organization funded through the Acquisition Services Fund, meaning expenses (predominantly salaries) must be recovered by billing specific client engagements — reinforced by policies/time-tracking-and-rates.md, which classifies 'business development for new projects' as explicitly nonbillable. rfc-003-cybersecurity-advisor.md proposes a Senior Cybersecurity Advisor role in the Front Office whose hours go to 'coordination across programs, advice to teams, hiring support, and training' — 'None of that is work assigned to a single engagement' — while conceding 'a funding source for this role should be identified' and that determining budget/staff is itself the role's first task. This is a commitment the RFC has not reconciled with the org's cost-recovery funding model, and the RFC assigns the resolution to the 18F Executive Director, who must identify the funding source before the role can be sustained.",
+          "citations": [
+            "policies/finance-and-billing.md",
+            "policies/client-accounts.md",
+            "policies/time-tracking-and-rates.md",
+            "rfc-003-cybersecurity-advisor.md"
+          ]
+        }
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD-B1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP-B1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX-B1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH-B1",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [],
+  "distractorGate": null,
+  "pass": true
+}

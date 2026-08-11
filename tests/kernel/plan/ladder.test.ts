@@ -23,7 +23,7 @@ test('an empty or whitespace required slot is a gap; optional slots never are', 
     // risks, attack-surface, mitigations missing; open-questions is optional
   });
   const names = gaps.map((g) => g.slot.name);
-  assert.deepEqual(names, ['evidence', 'risks', 'attack-surface', 'mitigations']);
+  assert.deepEqual(names, ['evidence', 'risks', 'attack-surface', 'mitigations', 'threat-paths']);
   assert.ok(!names.includes('open-questions'));
 });
 
@@ -82,5 +82,46 @@ test('a question with no assumed default is refused: that is a stall in disguise
   } finally {
     store.close();
     fixture.cleanup();
+  }
+});
+
+test('product-scoping ships the document a product manager hands a team', () => {
+  const template = playbookFor('product-scoping').template;
+  assert.equal(template.deliverable, 'product requirements document');
+  const names = template.slots.map((s) => s.name);
+  for (const required of ['users-and-problem', 'in-scope', 'out-of-scope', 'success-measures']) {
+    const found = template.slots.find((s) => s.name === required);
+    assert.ok(found?.required, `${required} is a required slot`);
+  }
+  assert.ok(names.includes('phasing'), 'phasing is present, optional');
+  assert.ok(
+    playbookFor('program-sequencing').template.slots.some((s) => s.name === 'milestones'),
+    'sequencing carries milestones',
+  );
+});
+
+test('each new concern ships a deliverable shaped like the seat it fills', () => {
+  const expected: Record<string, readonly string[]> = {
+    'strategy-alignment': ['the-bet', 'price', 'decision-owner', 'displaced-work'],
+    'system-design': ['boundaries', 'reversibility', 'migration', 'hard-to-undo'],
+    operations: ['failure-paths', 'ownership', 'rollback', 'operability-gaps'],
+    'user-experience': ['the-path', 'unhandled-states', 'flow-dead-ends'],
+  };
+  for (const [domain, required] of Object.entries(expected)) {
+    const template = playbookFor(domain).template;
+    assert.notEqual(template.deliverable, 'review memo', `${domain} still falls back to the memo`);
+    for (const name of required) {
+      const found = template.slots.find((s) => s.name === name);
+      assert.ok(found?.required, `${domain} is missing required slot ${name}`);
+    }
+  }
+});
+
+test('measurement ships the plan an analyst hands back: whether the number can exist', () => {
+  const template = playbookFor('measurement').template;
+  assert.equal(template.deliverable, 'measurement plan');
+  for (const required of ['baseline', 'instrumentation', 'measurement-gaps']) {
+    const found = template.slots.find((s) => s.name === required);
+    assert.ok(found?.required, `${required} is a required slot`);
   }
 });

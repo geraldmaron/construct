@@ -73,15 +73,17 @@ export const STANCE_PROTOCOL = [
  * Strip the decoration a model puts around a labeled line. Live runs return
  * `**STANCE:** hold`, `- STANCE: hold`, and `### STANCE: hold` for the same
  * instruction; the label is what matters, not the markdown around it.
+ * Exported for every declared-line protocol, so ASK and STANCE cannot drift
+ * into two parsers that disagree about the same markdown.
  */
-function undecorate(line: string): string {
+export function undecorate(line: string): string {
   return line
     .replace(/[*_`>#]/g, '')
     .replace(/^\s*[-+•]\s*/, '')
     .trim();
 }
 
-function labeled(lines: readonly string[], label: string): string | null {
+export function labeled(lines: readonly string[], label: string): string | null {
   const pattern = new RegExp(`^${label}\\s*[:\\-–]\\s*(.+)$`, 'i');
   // Last wins: a model that restates the block (a summary, then the real one)
   // means the final declaration, and an earlier draft of it is not the answer.
@@ -217,10 +219,49 @@ export function frameConflict(input: FrameInput): RaiseDecision | null {
       citation: s.declared.citation,
     }));
 
+  // The reversible default, stated as its own position rather than left to the
+  // reader to work out.
+  //
+  // Commitment 11 as amended says every inbox decision ships as a risk
+  // assessment: what fired, the stakes on each branch, and the branch that
+  // holds if the user does nothing. The ask path has carried that default
+  // since it was written; this path never did — it named the sides and
+  // stopped, which hands the user back the same work they were delegating.
+  //
+  // The default is holding, and it is not an arbitration. It is the branch
+  // that is actually reversible: an outcome not yet proceeded with can still
+  // proceed tomorrow, and one proceeded with cannot be unproceeded. Saying so
+  // is the opposite of picking a winner — it tells the user what silence
+  // costs, which is the only way silence can be a choice rather than an
+  // accident. The holding roles are named because the default is theirs, and a
+  // default with no author reads as the tool's own recommendation.
+  const holding = sides
+    .filter((s) => s.declared.stance === 'hold')
+    .map((s) => s.role)
+    .sort();
+  const proceeding = sides
+    .filter((s) => s.declared.stance === 'proceed')
+    .map((s) => s.role)
+    .sort();
+  positions.push({
+    role: 'construct',
+    stance:
+      'the reversible default if you do nothing: this holds, because holding ' +
+      'can be undone tomorrow and proceeding cannot. That is what silence ' +
+      `costs, not a preference — ${holding.join(' and ')} argued for it, ` +
+      `${proceeding.join(' and ')} argued against, and the call is yours`,
+    citation: null,
+  });
+
   return {
     id: `${input.run}:stance`,
     run: input.run,
-    question: `${input.outcome} — ${counted}. This one is yours to call.`,
+    // What fired, then the call. A question that opens on the disagreement
+    // without naming the pattern that produced it is an alert wearing a
+    // question mark.
+    question:
+      `Two concerns disagree on this outcome: ${input.outcome} — ${counted}. ` +
+      'This one is yours to call.',
     positions,
     raisedAt: input.at,
   };

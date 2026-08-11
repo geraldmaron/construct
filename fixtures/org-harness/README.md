@@ -20,9 +20,8 @@ scored run over this corpus.
   what the memory deltas must contain). Recorded before any run; never edited
   to fit one.
 - `PROVENANCE.md` — where every base document came from and exactly what was
-  edited in. The base corpus is real public material precisely so that the
-  corpus and the system it measures do not share an author; only the plants
-  are this project's edits, and each one is listed.
+  edited in. The base corpus is real public material; only the plants are this
+  project's edits, and each one is listed.
 - `runs/` — scored run outputs land here, one JSON per run.
 - `raw/` — the fetched originals, kept so every plant is auditable as a diff.
 

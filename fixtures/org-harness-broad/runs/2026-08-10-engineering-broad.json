@@ -1,0 +1,28 @@
+{
+ "claims": [
+  {
+   "kind": "cross-reference",
+   "claim": "The design decision in policies/client-accounts.md that the timekeeping manager 'verifies weekly that everyone has reported their time' is undercut by the Tock proxy-entry mechanism described in policies/time-tracking-and-rates.md, where hours entered by the Tock team on a departing employee's behalf are recorded under that employee's name with no field indicating who submitted the entry — so the weekly check confirms a timecard exists but, as the doc itself notes, 'does not establish who filed it,' meaning the verification design cannot detect proxy-filed hours it was built to catch.",
+   "citations": [
+    "policies/client-accounts.md",
+    "policies/time-tracking-and-rates.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "rfc-003-cybersecurity-advisor.md's design decision to add a Senior Cybersecurity Advisor position in the Front Office — whose hours are explicitly 'not work assigned to a single engagement' and whose funding source the RFC says 'should be identified' rather than already secured — creates new headcount cost that lands in exactly the expense line policies/finance-and-billing.md flags as unmanageable: 'Overhead from TTS and GSA... is allocated and not under our control.' The RFC's own funding caveat is the unacknowledged symptom of adding non-billable capacity into a budget lever the finance document says TTS cannot directly adjust.",
+   "citations": [
+    "rfc-003-cybersecurity-advisor.md",
+    "policies/finance-and-billing.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "policies/project-teams-and-staffing.md's design decision that staffing changes 'must be made by staffing representatives from chapters and portfolios, not project leads or team members' centralizes re-staffing authority, and this is the decision that explains the symptom reported in policies/projects-in-distress.md: when a team rolls off a project unexpectedly, staffing representatives must re-staff it, which 'may lead to lengthy periods without billable work' and an opportunity cost of about $10,000/week per benched team member — a direct consequence of routing all restaffing through the single centralized channel the staffing-authority design establishes.",
+   "citations": [
+    "policies/project-teams-and-staffing.md",
+    "policies/projects-in-distress.md"
+   ]
+  }
+ ]
+}

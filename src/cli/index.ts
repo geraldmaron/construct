@@ -20,11 +20,15 @@ import {
   addSource,
   ENGAGEMENT_MODES,
   engagementMode,
+  getSource,
   retireSource,
   setEngagementMode,
   SOURCE_KINDS,
   sourcesFor,
 } from '../kernel/store/sources.ts';
+import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
+import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
+import { surveySource } from '../hosts/sources.ts';
 import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
@@ -48,15 +52,18 @@ import {
   UnsurfacedVerdictError,
 } from '../kernel/implication/verdict.ts';
 import type { RecordedVerdict } from '../kernel/implication/verdict.ts';
-import { startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
+import { startAskNamed, startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
 import type { StartedRun } from '../kernel/run/outcome.ts';
+import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
+import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
-import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
+import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
+import { dispatchFloorFor } from '../hosts/floors.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
@@ -325,7 +332,7 @@ async function serve(): Promise<number> {
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] ' +
-  '[--domains=<name,…>] "<what you want to happen>"\n';
+  '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -345,6 +352,15 @@ export interface OutcomeArgs {
    * does not know what to ask for; this is the door for the user who does.
    */
   readonly domains?: readonly string[];
+  /**
+   * Which workspace's declared sources and engagement mode the plan is built
+   * from. `source add` and `ask` already take it; a run that could not be
+   * pointed at the same ground they were is a flag that means something on one
+   * command and nothing on the next.
+   */
+  readonly workspace: string;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
 }
 
 export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
@@ -375,12 +391,14 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
   // only mean something when a model is going to be consulted, so supplying one
   // without --host is a usage error rather than a silent no-op.
-  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
       `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
     );
   }
+
+  const timeoutMs = timeoutFlag(flags);
 
   const domains =
     flags.domains === undefined
@@ -408,6 +426,8 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     binary: flags.binary,
     dir: flags.dir,
     domains,
+    workspace: workspaceFlag(flags),
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
 
@@ -423,13 +443,20 @@ function planRun(
   densified: DensifiedIntake | null,
   workspace: string,
   at: string,
+  /**
+   * The concerns this run will actually dispatch, when that is narrower than
+   * what it implicated. A question is answered by one of them, and a plan
+   * listing steps nobody will work would be a schedule of work that is not
+   * going to happen.
+   */
+  dispatching?: readonly Implication[],
 ): void {
   const plan = buildPlan({
     id: `plan-${started.runId}`,
     run: started.runId,
     outcome: started.outcome,
     densified,
-    implicated: started.implicated,
+    implicated: dispatching ?? started.implicated,
     inferredBy: started.inferredBy,
     sources: sourcesFor(store, workspace),
     mode: engagementMode(store, workspace),
@@ -439,9 +466,13 @@ function planRun(
   process.stdout.write(
     `\nplan ${plan.id}: ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}, ` +
       `risk ${plan.riskTier}` +
-      (plan.sourcesConsulted.length > 0
-        ? `, grounded in ${plan.sourcesConsulted.length} declared source${plan.sourcesConsulted.length === 1 ? '' : 's'}`
+      (plan.sourcesDeclared.length > 0
+        ? `, over ${plan.sourcesDeclared.length} declared source${plan.sourcesDeclared.length === 1 ? '' : 's'} (read at work time)`
         : ', no sources declared') +
+      // Which workspace was consulted, whenever it is not the one a reader
+      // would assume. "No sources declared" against a workspace the user did
+      // not mean is indistinguishable from having declared none at all.
+      (workspace === 'default' ? '' : ` on workspace "${workspace}"`) +
       `\n  construct plan ${started.runId}\n`,
   );
   for (const d of plan.discarded) {
@@ -539,7 +570,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         return 2;
       }
       reportRun(started);
-      planRun(store, started, null, 'default', at);
+      planRun(store, started, null, args.workspace, at);
       return 0;
     }
 
@@ -556,19 +587,19 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           '\nA host model can be asked instead, at cost:\n' +
             `  construct outcome --host=<opencode|claude> ${JSON.stringify(args.text)}\n`,
         );
-        planRun(store, started, null, 'default', at);
+        planRun(store, started, null, args.workspace, at);
         return 0;
       }
       reportRun(started);
-      planRun(store, started, null, 'default', at);
+      planRun(store, started, null, args.workspace, at);
       return 0;
     }
 
     const host =
       hostOverride ??
       (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
 
     try {
       await host.init();
@@ -649,18 +680,293 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
       );
-      planRun(store, started, densified, 'default', at);
+      planRun(store, started, densified, args.workspace, at);
       return 0;
     }
     reportRun(started);
-    planRun(store, started, densified, 'default', at);
+    planRun(store, started, densified, args.workspace, at);
+    return 0;
+  });
+}
+
+/** The same lease `work` takes by default; a single dispatch needs no other rule. */
+const DEFAULT_LEASE_MINUTES_ASK = 15;
+
+const ASK_USAGE =
+  'usage: construct ask [--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]] ' +
+  '[--workspace=<name>] [--ceiling=<amount>] [--timeout=<minutes>] "<your question>"\n';
+
+export interface AskArgs {
+  readonly question: string;
+  readonly host?: 'opencode' | 'claude';
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+  readonly workspace: string;
+  readonly ceiling: number;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
+}
+
+export function parseAskArgs(argv: string[]): AskArgs {
+  const { flags, rest } = parseFlags(argv);
+
+  const host = flags.host;
+  if (host !== undefined && host !== 'opencode' && host !== 'claude') {
+    throw new Error(`unknown host "${host}" (expected opencode or claude)`);
+  }
+  // Same rule as `outcome`: a flag that only means something with a host, given
+  // without one, is a usage error rather than a silent no-op.
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
+  if (host === undefined && hostFlags.length > 0) {
+    throw new Error(
+      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
+    );
+  }
+
+  const timeoutMs = timeoutFlag(flags);
+
+  const ceiling = flags.ceiling === undefined ? DEFAULT_SPEND_CEILING : Number(flags.ceiling);
+  if (!Number.isFinite(ceiling) || ceiling < 0) {
+    throw new Error(`--ceiling must be a non-negative number, got "${flags.ceiling}"`);
+  }
+
+  return {
+    question: rest.join(' ').trim(),
+    host,
+    model: flags.model,
+    binary: flags.binary,
+    dir: flags.dir,
+    workspace: workspaceFlag(flags),
+    ceiling,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+  };
+}
+
+/**
+ * Ask the staff a question.
+ *
+ * The spine end to end in one command, which is the point: recording a question
+ * and then remembering to work it is the ceremony an outcome earns and a
+ * question does not. One concern answers, over whatever sources the workspace
+ * declared, and the answer is printed here rather than left for `construct
+ * show` — a question the user has to go and collect the answer to has not been
+ * answered.
+ *
+ * Nothing about it is a shortcut around the record. The run, the plan, the
+ * source reads, the dispatch, the challenge verdict and the spend all land in
+ * the store exactly as `outcome` and `work` leave them, and the same commands
+ * read them back.
+ */
+export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: AskArgs;
+  try {
+    args = parseAskArgs(argv);
+  } catch (error) {
+    process.stderr.write(`ask: ${(error as Error).message}\n${ASK_USAGE}`);
+    return 2;
+  }
+  if (!args.question) {
+    process.stderr.write(ASK_USAGE);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    const at = now();
+    const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
+
+    const host =
+      args.host === undefined && hostOverride === undefined
+        ? null
+        : (hostOverride ??
+          (args.host === 'claude'
+            ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+            : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })));
+
+    if (host) {
+      try {
+        await host.init();
+      } catch (error) {
+        process.stderr.write(
+          `ask: host "${host.name}" is not available — ${(error as Error).message}\n`,
+        );
+        return 1;
+      }
+    }
+
+    // Who answers is inferred exactly as it is for an outcome: the named host's
+    // model reads the question, and the keyword map answers only if it fails or
+    // if no host was named. A question with no host is recorded and routed and
+    // then has nobody to answer it, which is said rather than pretended past.
+    const started = host
+      ? await startAskNamed(store, {
+          runId,
+          outcome: args.question,
+          at,
+          host: host.name,
+          namer: createHostNamer(host),
+          cache: storeNamingCache(store, { host: host.name, at }),
+        })
+      : await startAskNamed(store, { runId, outcome: args.question, at });
+
+    process.stdout.write(`run ${started.runId}\n  question: ${args.question}\n\n`);
+
+    const answering = primaryImplication(started.implicated);
+    if (!answering) {
+      process.stdout.write(
+        host
+          ? `no concern in the catalog owns this question — ${host.name} read it and named nothing. ` +
+              'That is recorded, not silently dropped.\n'
+          : 'no concern in the catalog owns this question, by keyword match. ' +
+              'Nothing was inferred and no model was consulted.\n',
+      );
+      if (!host) {
+        process.stdout.write(
+          '\nA host model reads the question properly, at cost:\n' +
+            `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+        );
+      }
+      planRun(store, started, null, args.workspace, at, []);
+      return 0;
+    }
+
+    process.stdout.write(`answering: ${answering.domain} — ${answering.concern}\n`);
+    process.stdout.write(
+      `  ${started.inferredBy === 'keywords' ? 'signals' : 'reason'}: ${answering.signals.join(' ')}\n`,
+    );
+    const alsoTouched = started.implicated.filter((i) => i !== answering);
+    if (alsoTouched.length > 0) {
+      // The concerns a question reached and nobody answered are the reason the
+      // full run exists. Naming them is what keeps the cheap surface from
+      // reading as the complete one.
+      process.stdout.write(
+        `\nalso implicated, and not asked: ${alsoTouched.map((i) => i.domain).join(', ')}\n` +
+          '  A question is answered by one concern. To have them all answered:\n' +
+          `  construct outcome ${JSON.stringify(args.question)}\n`,
+      );
+    }
+    if (started.namerFailure !== undefined) {
+      process.stdout.write(
+        `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
+      );
+    }
+    const notice = highRiskNotice(answering.domain, licensedReviewFor(answering.domain));
+    if (notice) process.stdout.write(`\n${notice}\n`);
+
+    planRun(store, started, null, args.workspace, at, [answering]);
+
+    if (!host) {
+      process.stdout.write(
+        '\nNobody was dispatched: answering costs a model call, and no host was named.\n' +
+          `  construct ask --host=<opencode|claude> ${JSON.stringify(args.question)}\n`,
+      );
+      return 0;
+    }
+
+    recordRunDispatch(store, {
+      run: started.runId,
+      host: args.host ?? host.name,
+      model: args.model,
+      binary: args.binary,
+      dir: args.dir,
+      recordedAt: at,
+    });
+
+    // The same grounding pass `work` runs, on this one run: what the declared
+    // sources actually hold, surveyed and recorded before the dispatch that
+    // will cite them.
+    const plan = planFor(store, started.runId);
+    if (plan && plan.sourcesDeclared.length > 0) {
+      const surveys: SourceSurvey[] = [];
+      for (const id of plan.sourcesDeclared) {
+        const declared = getSource(store, id);
+        if (declared) surveys.push(surveySource(declared));
+      }
+      const { recorded, skipped } = recordRunSourceReads(store, started.runId, surveys, now());
+      if (!skipped) {
+        const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
+        const documents = surveys.reduce(
+          (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
+          0,
+        );
+        appendWorkLog(store, {
+          run: started.runId,
+          role: 'construct',
+          action: 'sources-read',
+          detail: {
+            sources: surveys.length,
+            documents,
+            unreachable,
+            reads: recorded,
+            licensedRoots: surveys
+              .filter((s) => s.outcome === 'listed')
+              .map((s) => s.locator)
+              .sort(),
+          },
+          at: now(),
+        });
+        process.stdout.write(
+          `\ngrounded: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
+            `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
+            (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
+            '\n',
+        );
+      }
+    } else {
+      // An answer with no declared sources rests on the model's own knowledge,
+      // and the reader has to know that before they read it.
+      process.stdout.write(
+        '\nno sources declared for this workspace, so the answer rests on what the ' +
+          'model knows rather than on your material.\n' +
+          '  construct source add <path> --kind=<kind>\n',
+      );
+    }
+
+    const report = await workRun(store, host, {
+      owner: `cli-${String(process.pid)}`,
+      clock: now,
+      spendCeiling: args.ceiling,
+      concurrency: 1,
+      leaseMs: DEFAULT_LEASE_MINUTES_ASK * 60 * 1000,
+      run: started.runId,
+      capabilitySecret: loadOrCreateSecret(secretFile()),
+    });
+
+    const task = report.settled.map((id) => getTask(store, id)).find((t) => t !== null);
+    if (!task || task.state !== 'done') {
+      process.stderr.write(
+        `\nno answer: ${task ? failureLine(task.error) : 'the dispatch produced nothing'}\n`,
+      );
+      return 1;
+    }
+
+    const draft = latestDraft(store, task.id)?.deliverable ?? task.result;
+    const answer = renderDeliverable(draft);
+    process.stdout.write(`\n${answer.trimEnd()}\n`);
+
+    const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
+    process.stdout.write(`\n— ${task.role}, ${cost}\n`);
+    // The deliverable's own defects, printed with it rather than left in the
+    // log: an answer read without them is an answer read as better than it is.
+    for (const concern of deliverableConcerns(task.result)) {
+      process.stdout.write(`⚑ ${concern.detail}\n`);
+    }
+    for (const limit of limitsFor(store, started.runId, task.id)) {
+      process.stdout.write(`⚑ ${limit.label}\n`);
+    }
+    if (report.degraded > 0) {
+      process.stdout.write(
+        '⚑ this ran below the model capability floor its brief declared — see: construct log\n',
+      );
+    }
+    process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
     return 0;
   });
 }
 
 const NOTES_USAGE =
   'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
-  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…]]\n';
+  '[--host=<opencode|claude> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
 
 export interface NotesArgs {
   readonly file: string;
@@ -670,6 +976,8 @@ export interface NotesArgs {
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
+  /** How long one host invocation may run, in milliseconds. Host default when unset. */
+  readonly timeoutMs?: number;
 }
 
 export function parseNotesArgs(argv: string[]): NotesArgs {
@@ -687,7 +995,7 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
   if (host !== undefined && host !== 'opencode' && host !== 'claude') {
     throw new Error(`unknown host "${host}" (expected opencode or claude)`);
   }
-  const hostFlags = ['model', 'binary', 'dir'].filter((f) => flags[f] !== undefined);
+  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
   if (host === undefined && hostFlags.length > 0) {
     throw new Error(
       `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude>, or drop the flag`,
@@ -701,6 +1009,7 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
     model: flags.model,
     binary: flags.binary,
     dir: flags.dir,
+    ...(timeoutFlag(flags) === undefined ? {} : { timeoutMs: timeoutFlag(flags) }),
   };
 }
 
@@ -790,8 +1099,8 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     const host =
       hostOverride ??
       (args.host === 'claude'
-        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir })
-        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir }));
+        ? createClaudeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs }));
     try {
       await host.init();
     } catch (error) {
@@ -967,6 +1276,13 @@ export interface WorkArgs {
    * Absent is the house voice — the case that needs no flag and no record.
    */
   readonly voice?: string;
+  /**
+   * How long one host invocation may run, in milliseconds. Host default when
+   * unset. A grounded dispatch over a real repository on a small local model
+   * was measured producing nothing inside the ten-minute default, so the limit
+   * is the caller's to set rather than one constant for every model.
+   */
+  readonly timeoutMs?: number;
 }
 
 /**
@@ -1000,17 +1316,32 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     throw new Error(`Invalid --host=${host}; expected opencode|claude`);
   }
 
+  const leaseMinutes = number('lease-minutes', 15);
+  const timeoutMs = timeoutFlag(args);
+  // The lease exceeds the invocation limit by design: a task whose lease
+  // expires while the host is still working it is handed to a second worker,
+  // and the same work is then paid for twice. Raising the limit past the lease
+  // silently would arrange exactly that, so it is refused with the other flag
+  // named rather than accepted and warned about.
+  if (timeoutMs !== undefined && timeoutMs >= leaseMinutes * 60 * 1000) {
+    throw new Error(
+      `--timeout=${args.timeout} exceeds --lease-minutes=${String(leaseMinutes)}; a task still running ` +
+        'when its lease expires is dispatched again and paid for twice. Raise --lease-minutes past the timeout.',
+    );
+  }
+
   return {
     run,
     concurrency: number('concurrency', DEFAULT_CONCURRENCY),
     ceiling: number('ceiling', DEFAULT_SPEND_CEILING),
-    leaseMinutes: number('lease-minutes', 15),
+    leaseMinutes,
     model: args.model,
     binary: args.binary,
     dir: args.dir,
     host,
     hostExplicit: args.host !== undefined,
     voice: args.voice?.trim() ? args.voice.trim() : undefined,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
 
@@ -1026,7 +1357,13 @@ function money(amount: number): string {
 function failureLine(error: unknown): string {
   const record = error as { messages?: unknown; message?: unknown } | null;
   const first = Array.isArray(record?.messages) ? record.messages[0] : record?.message;
-  return typeof first === 'string' && first ? first : 'failed';
+  const message = typeof first === 'string' && first ? first : 'failed';
+  // A wall the user cannot move is a wall; naming the flag that moves it is
+  // the difference between a limit and a dead end. Said here rather than in
+  // the error itself, which belongs to the kernel and knows no flags.
+  return /invocation exceeded \d+ms/.test(message)
+    ? `${message} — raise it with --timeout=<minutes> (and --lease-minutes past it), or ground the run in fewer documents`
+    : message;
 }
 
 /**
@@ -1098,8 +1435,8 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     const host =
       hostOverride ??
       (hostName === 'claude'
-        ? createClaudeAdapter({ binary, model, dir })
-        : createOpenCodeAdapter({ binary, model, dir }));
+        ? createClaudeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs })
+        : createOpenCodeAdapter({ binary, model, dir, timeoutMs: args.timeoutMs }));
 
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {
@@ -1157,6 +1494,72 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         );
       }
       return 0;
+    }
+
+    // The producer half of grounding, run before any dispatch: what each run's
+    // declared sources actually hold is surveyed and recorded, so materialFor
+    // answers the coordinator from evidence rather than from silence. Once per
+    // run — the record is evidence, not a cache — and a run whose plan
+    // declared no sources is left exactly as it was.
+    const pendingRuns = new Set(
+      listTasks(store, args.run)
+        .filter((t) => t.state === 'pending')
+        .map((t) => t.run),
+    );
+    for (const runId of pendingRuns) {
+      const plan = planFor(store, runId);
+      if (!plan || plan.sourcesDeclared.length === 0) continue;
+      const surveys: SourceSurvey[] = [];
+      for (const id of plan.sourcesDeclared) {
+        const declared = getSource(store, id);
+        if (declared) surveys.push(surveySource(declared));
+      }
+      const { recorded, skipped } = recordRunSourceReads(store, runId, surveys, now());
+      if (skipped) continue;
+      const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
+      const documents = surveys.reduce(
+        (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
+        0,
+      );
+      // Licensed vs listed, on the record: the listed documents are the read
+      // rows; the roots are what the roles may read past them.
+      const licensedRoots = surveys
+        .filter((s) => s.outcome === 'listed')
+        .map((s) => s.locator)
+        .sort();
+      appendWorkLog(store, {
+        run: runId,
+        role: 'construct',
+        action: 'sources-read',
+        detail: { sources: surveys.length, documents, unreachable, reads: recorded, licensedRoots },
+        at: now(),
+      });
+      process.stdout.write(
+        `grounded ${runId}: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
+          `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
+          (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
+          '\n',
+      );
+
+      // Where a measured floor is met before it is paid for, rather than ten
+      // minutes per role later. It is stated as the nearest recorded
+      // observation and names the model it was measured on, because a
+      // measurement on a neighbouring model is not a prediction about this
+      // one — and both ways out are named, since a caution with no next move
+      // is just a slower failure.
+      const floor = dispatchFloorFor(host.model ?? model, documents);
+      if (floor) {
+        const limit = host.invocationTimeoutMs ?? floor.timeoutMs;
+        process.stdout.write(
+          `  ⚑ nearest recorded observation (${floor.observedOn}, ${floor.measuredOn}): ${floor.observation}.\n` +
+            `    This dispatch has ${String(documents)} document${documents === 1 ? '' : 's'} and ` +
+            `${String(Math.round(limit / 60000))} minute(s) per role.\n` +
+            '    Give it longer:  construct work --timeout=<minutes> --lease-minutes=<more>\n' +
+            '    Or give it less ground:  construct source add --workspace=<name> …  then ' +
+            'construct outcome --workspace=<name> …\n' +
+            `    Evidence: ${floor.evidence}\n`,
+        );
+      }
     }
 
     try {
@@ -1389,6 +1792,12 @@ export function show(argv: string[]): number {
         process.stdout.write(
           `\n  issue-spotting only: needs review by a licensed ${review} before you rely on it`,
         );
+      }
+      // What produced this, stated with it. A role with no lens has no
+      // labeling rule of its own, so without this the untuned fact reached
+      // nobody reading the deliverable — which is everybody who reads it.
+      for (const limit of limitsFor(store, task.run, task.id)) {
+        process.stdout.write(`\n  ${limit.label}`);
       }
       process.stdout.write('\n');
       // A draft submitted through the write surface is the deliverable of
@@ -1673,13 +2082,39 @@ const WATCH_USAGE =
   'usage: construct watch [--root=<repo>] [--sweep]\n';
 
 /**
+ * Whether a root is a checkout of Construct itself, decided from the package
+ * identity rather than from the presence of a tracker: any repository can carry
+ * beads, and only this one is what the watch's findings are about.
+ */
+function isConstructCheckout(root: string): boolean {
+  try {
+    const manifest: unknown = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+    return (
+      typeof manifest === 'object' &&
+      manifest !== null &&
+      (manifest as { name?: unknown }).name === '@geraldmaron/construct'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
  * The standing watch, swept once.
  *
  * A watch is an outcome that never closes, so there is no "start" to run and
  * nothing to schedule: something outside decides when to look, exactly as
- * something outside decides when to `work`. Today the only ground is Construct
+ * something outside decides when to `work`. The only ground is Construct
  * itself (commitment 16 made operational), which is why this takes a repo root
- * and nothing else. External ground waits for Phase 4 behind its gates.
+ * and nothing else. External ground waits behind its gates.
+ *
+ * `--root` therefore selects WHICH CHECKOUT of Construct to inspect, and never
+ * which project to watch. The findings are drift between this project's
+ * strategy, tracker, and repo; pointed at an unrelated repository they would be
+ * meaningless, and reporting them under Construct's own watch identity — which
+ * is what happened while the flag was half-wired — is worse than meaningless,
+ * because the record would name a ground the evidence did not come from. A root
+ * that is not a Construct checkout is refused by name rather than swept.
  */
 export function watch(argv: string[]): number {
   const flags: Record<string, string> = {};
@@ -1692,6 +2127,15 @@ export function watch(argv: string[]): number {
     return 0;
   }
   const root = flags.root || process.cwd();
+  if (!isConstructCheckout(root)) {
+    process.stderr.write(
+      `watch: ${root} is not a Construct checkout.\n` +
+        'The watch reports drift between this project\'s strategy, tracker, and repo,\n' +
+        'so --root selects which checkout of Construct to inspect, not which project\n' +
+        'to watch. Watching other ground is not built yet.\n',
+    );
+    return 1;
+  }
 
   const gathered = gatherRepoEvidence({ root });
   if (isFailure(gathered)) {
@@ -1825,9 +2269,9 @@ export function plan(argv: string[]): number {
     for (const p of found.understanding.parked) process.stdout.write(`  parked: ${p}\n`);
     process.stdout.write(`  risk: ${found.riskTier}  mode: ${found.mode}\n`);
     process.stdout.write(
-      found.sourcesConsulted.length > 0
-        ? `  sources: ${found.sourcesConsulted.join(', ')}\n`
-        : '  sources: none declared\n',
+      found.sourcesDeclared.length > 0
+        ? `  sources declared: ${found.sourcesDeclared.join(', ')}\n`
+        : '  sources declared: none\n',
     );
     if (found.steps.length === 0) {
       process.stdout.write('  steps: none — nothing was implicated\n');
@@ -1861,6 +2305,24 @@ export function plan(argv: string[]): number {
  */
 function workspaceFlag(flags: Record<string, string>): string {
   return flags.workspace?.trim() || 'default';
+}
+
+/**
+ * `--timeout=<minutes>`, in milliseconds, or undefined for the host's own
+ * declared default.
+ *
+ * Stated in minutes because the wall a user hits is measured in minutes of
+ * their afternoon, and taken as a flag because the alternative — one constant
+ * for every model — makes a 4b model and a 120b model wait the same, which is
+ * a limit nobody measured either way.
+ */
+function timeoutFlag(flags: Record<string, string>): number | undefined {
+  if (flags.timeout === undefined) return undefined;
+  const minutes = Number(flags.timeout);
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    throw new Error(`--timeout must be a positive number of minutes, got "${flags.timeout}"`);
+  }
+  return minutes * 60 * 1000;
 }
 
 function parseFlags(argv: string[]): { flags: Record<string, string>; rest: string[] } {
@@ -1980,7 +2442,8 @@ export function mode(argv: string[]): number {
   });
 }
 
-const USAGE = 'usage: construct <outcome|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+const USAGE =
+  'usage: construct <outcome|ask|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -1988,6 +2451,19 @@ const USAGE = 'usage: construct <outcome|work|notes|show|plan|source|mode|watch|
  * nothing and keeps one entry point.
  */
 export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+  // `construct outcome … | head -1` closes the pipe while the command is still
+  // writing, and an unhandled write to a closed stdout throws an 'error' event
+  // that Node reports as a crash with a full stack. Piping into head, less, or
+  // grep -m1 is ordinary use, and a stack trace on it reads as a broken tool.
+  // A reader that has gone away is a normal end for a CLI, not a failure, so
+  // the process stops quietly at that point rather than reporting one.
+  const quitOnClosedOutput = (error: NodeJS.ErrnoException): void => {
+    if (error.code === 'EPIPE') process.exit(0);
+    throw error;
+  };
+  process.stdout.on('error', quitOnClosedOutput);
+  process.stderr.on('error', quitOnClosedOutput);
+
   try {
     return await run(argv);
   } catch (error) {
@@ -2006,6 +2482,8 @@ async function run(argv: string[]): Promise<number> {
       return notes(argv.slice(1));
     case 'outcome':
       return outcome(argv.slice(1));
+    case 'ask':
+      return ask(argv.slice(1));
     case 'work':
       return work(argv.slice(1));
     case 'watch':

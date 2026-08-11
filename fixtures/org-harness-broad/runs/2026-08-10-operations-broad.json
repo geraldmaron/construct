@@ -1,0 +1,29 @@
+{
+ "claims": [
+  {
+   "kind": "risk",
+   "claim": "When a Slack user is converted to a Single-Channel Guest, their 2FA is disabled and their account email is switched to a personal address the organization no longer administers, so account recovery for that still-live workspace membership now runs through an uncontrolled mailbox — but security-incidents.md's detection model depends entirely on 'attentive staff' noticing and self-reporting unusual activity, and the person best positioned to notice misuse of that dormant account (its former owner) no longer has GSA access or reason to be watching it, leaving no detection path for hijack of a converted account via that personal-email recovery route.",
+   "citations": [
+    "policies/chat-user-management.md",
+    "policies/security-incidents.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "public-vulnerability-disclosure.md states HackerOne/GSA Bug Bounty is 'the only intake we publish' and that a report arriving any other way (emailed, posted in a public channel) has 'no separate route' to be moved into the program, while security-incidents.md separately instructs anyone who becomes aware of a security issue to email itservicedesk@gsa.gov, gsa-ir@gsa.gov, and devops@gsa.gov within one hour and treats under-reporting as the failure mode to avoid ('fail towards the side of reporting'); neither document says which process governs when a member of the public emails a vulnerability report directly, so a misdirected public vulnerability report has no named owner, no confirmed intake, and no clock start under either policy.",
+   "citations": [
+    "policies/public-vulnerability-disclosure.md",
+    "policies/security-incidents.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "solutions-portfolio.md declares its initiatives (cloud.gov, Login.gov, USA.gov, etc.) standing commitments with no end date, funded 'the same way engagement work is' — i.e., out of reimbursements against agreements that each name a period of performance — while agreements.md and client-accounts.md establish that an IAA's obligated funding and period of performance are hard ceilings (the 7600B cost and period cannot exceed the 7600A estimate) and that 18F does not perform work without a currently signed, active agreement; no mechanism is named for continuously renewing the underlying agreement of a 'perpetual' public-facing service before its period of performance lapses, so a standing government service is structurally exposed to an un-signaled funding cliff with no rollback or continuity plan described for that scenario.",
+   "citations": [
+    "org/solutions-portfolio.md",
+    "policies/agreements.md",
+    "policies/client-accounts.md"
+   ]
+  }
+ ]
+}

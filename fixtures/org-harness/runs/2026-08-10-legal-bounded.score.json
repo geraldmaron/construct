@@ -1,0 +1,193 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "In push-to-stage mode the actor that decides what reaches the deployment branch is an unowned shell script, and no document names a holder. The hydrator's push-to-stage mode writes to `hydrateTo.targetBranch` and relies on some external system to move changes to the `syncSource` deployment branch; the stage-branch promoter that performs that move is still the shell script that nobody owns, and the item was parked without an owner. The consequence is already observed: in push-to-stage mode auto-sync deploys whatever the stage branch last held because the external promoter has not yet moved the fresh manifests. Responsibility for what is deployed has moved to a component with no named owner.",
+          "citations": [
+            "notes/note-1.md",
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-26443.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "The audit-trail assurance the impersonation design gives does not cover the diff path. The design answers the question of whether Kubernetes audit events capture impersonation by stating that audit events capture both the actual user and the impersonating user, so it is possible to track who executed the commands and under which user's permissions. But Server-Side Diff does not honour `destinationServiceAccounts`; it runs as the cluster credential from the cluster Secret, and the API server authorizes its dry-run as a real `patch` by user `argocd`. Every diff-time write authorization therefore lands in the audit record under the standing control-plane credential with no tenant identity attached, which is exactly the attribution the design tells reviewers the audit trail will supply.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C1",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": false
+      }
+    ],
+    "engineering": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "In push-to-stage mode the actor that decides what reaches the deployment branch is an unowned shell script, and no document names a holder. The hydrator's push-to-stage mode writes to `hydrateTo.targetBranch` and relies on some external system to move changes to the `syncSource` deployment branch; the stage-branch promoter that performs that move is still the shell script that nobody owns, and the item was parked without an owner. The consequence is already observed: in push-to-stage mode auto-sync deploys whatever the stage branch last held because the external promoter has not yet moved the fresh manifests. Responsibility for what is deployed has moved to a component with no named owner.",
+          "citations": [
+            "notes/note-1.md",
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-26443.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      }
+    ],
+    "tpm": [
+      {
+        "id": "TP1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L1",
+        "found": true,
+        "by": {
+          "claim": "The hydrated git history the organization proposes to rely on for change auditing records a human as the author of writes no human made: the hydrator's README template and `hydrator.metadata` file carry `commitAuthor`, `commitMessage` and `commitTime` copied from the dry commit, while the commit that actually lands on the sync branch is pushed by the commit server using the `repository-write` Secret's GitHub App credentials. Because the commit server today always pushes unsigned commits, nothing in the record distinguishes a machine-generated write from a human act, so the authorship the audit history displays is asserted by the hydrator rather than provable from the commit itself.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA2",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH2",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

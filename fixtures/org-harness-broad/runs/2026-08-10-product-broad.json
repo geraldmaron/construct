@@ -1,0 +1,38 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "org/solutions-portfolio.md commits that every SOL initiative (Login.gov, Cloud.gov, USA.gov, etc.) is a standing service with 'none of them carr[ying] an end date,' yet it also states they are funded 'out of reimbursements recovered against agreements that each name a period of performance' — and policies/agreements.md shows that mechanism is structurally bounded: the 7600A sets an estimated amount and agreement period that no 7600B task order under it may exceed, and the 7600B period of performance cannot exceed the 7600A's end date. A commitment to perpetual, undated service cannot rest on a funding instrument whose governing document imposes a hard expiration; someone (SOL leadership together with the Agreements Team) has to own how a 'no end date' initiative is kept alive across sequential, individually time-boxed IAAs without a lapse.",
+   "citations": [
+    "org/solutions-portfolio.md",
+    "policies/agreements.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "strategy.md commits to being 'data-informed' as a core value — 'We measure everything, including ourselves' — but policies/projects-in-distress.md states that for the pivot/pause/stop decision, the most consequential judgment call a project team makes, 'No count of those decisions, or of the reasons behind them, is kept anywhere outside the project.' The organization cannot measure itself on the outcome that most directly tests whether its consulting model works if the record of that outcome is deliberately not retained centrally. This is a call for 18F leadership (Chief of Delivery per the escalation chain in projects-in-distress.md) to either reconcile the stated value with the recordkeeping practice or drop the 'measure everything' claim as applied to project health.",
+   "citations": [
+    "strategy.md",
+    "policies/projects-in-distress.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "policies/finance-and-billing.md and policies/client-accounts.md establish that TTS/18F is a fee-for-service, cost-recoverable organization funded through the Acquisition Services Fund, meaning expenses (predominantly salaries) must be recovered by billing specific client engagements — reinforced by policies/time-tracking-and-rates.md, which classifies 'business development for new projects' as explicitly nonbillable. rfc-003-cybersecurity-advisor.md proposes a Senior Cybersecurity Advisor role in the Front Office whose hours go to 'coordination across programs, advice to teams, hiring support, and training' — 'None of that is work assigned to a single engagement' — while conceding 'a funding source for this role should be identified' and that determining budget/staff is itself the role's first task. This is a commitment the RFC has not reconciled with the org's cost-recovery funding model, and the RFC assigns the resolution to the 18F Executive Director, who must identify the funding source before the role can be sustained.",
+   "citations": [
+    "policies/finance-and-billing.md",
+    "policies/client-accounts.md",
+    "policies/time-tracking-and-rates.md",
+    "rfc-003-cybersecurity-advisor.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "policies/security-incidents.md commits every staff member to report any suspicious activity or potential incident 'within 1 hour of identifying' it, through whatever channel is available, and explicitly encourages erring toward over-reporting ('you'll never get in trouble for pinging IR at all'). policies/public-vulnerability-disclosure.md, however, states that HackerOne/the GSA Bug Bounty Program is 'the only intake we publish' for vulnerability reports, and that a report arriving any other way — 'emailed to a program address, or written into a public channel — cannot be worked from where it landed, and there is no separate route to move it into the program on the reporter's behalf.' A staffer who receives a public vulnerability report outside HackerOne is bound by security-incidents.md to report it within an hour, but public-vulnerability-disclosure.md forecloses any mechanism for that report to actually enter the response process — leaving genuine reports actionable only by the reporter re-filing through HackerOne, which they may not do.",
+   "citations": [
+    "policies/security-incidents.md",
+    "policies/public-vulnerability-disclosure.md"
+   ]
+  }
+ ]
+}

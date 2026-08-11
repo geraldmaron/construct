@@ -1,0 +1,96 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": []
+  },
+  "rung2": {
+    "pass": true,
+    "plants": [],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": true,
+    "conflicts": [],
+    "proposals": [],
+    "deltas": []
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C-B1",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP-B1",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A-B1",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP-B1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L-B1",
+        "found": true,
+        "by": {
+          "claim": "state-local-agreements.md has the account manager merely 'confirm' informally that a delegation or authorizing statute exists when an IGCA request letter is signed by someone other than the chief executive, and explicitly states 'the instrument itself is not collected' and 'is not one of the items assembled into the package that goes for review and signature.' agreements.md establishes that OGC's review is the actual control gate before an agreement is executed and funds obligated. Because the authority check happens only as an unverified AM attestation upstream of the one enforced review step, a forged or nonexistent delegation could ride through OGC review undetected — the review that is supposed to be the check happens where the missing document would never be seen.",
+          "citations": [
+            "policies/state-local-agreements.md",
+            "policies/agreements.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA-B1",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD-B1",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP-B1",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX-B1",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH-B1",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [],
+  "distractorGate": null,
+  "pass": true
+}

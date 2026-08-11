@@ -139,3 +139,16 @@ test('the org-harness scores the protocol the product ships, not a copy of it', 
       'scores depth the product never asks for',
   );
 });
+
+test('declared roots license reading past the survey, and no roots licenses nothing', () => {
+  const material = [
+    { source: 'src-1', descriptor: '/ground/docs/plan.md', coverage: 'complete' as const, detail: '120 bytes' },
+  ];
+  const licensed = groundedMaterialProtocol(material, ['/ground/docs', '/ground/repo']);
+  assert.match(licensed, /the survey, not the boundary/);
+  assert.match(licensed, /- \/ground\/docs\n- \/ground\/repo/);
+  assert.match(licensed, /Nothing outside these roots is evidence/);
+
+  const unlicensed = groundedMaterialProtocol(material);
+  assert.ok(!unlicensed.includes('survey, not the boundary'), 'no license paragraph without roots');
+});

@@ -21,6 +21,9 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { getTask } from '../../../src/kernel/store/tasks.ts';
+import { addSource, recordSourceRead } from '../../../src/kernel/store/sources.ts';
+import { enqueueTask } from '../../../src/kernel/store/tasks.ts';
+import { openDecisions, resolveDecision } from '../../../src/kernel/store/decisions.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { startRun } from '../../../src/kernel/run/outcome.ts';
 import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
@@ -314,6 +317,135 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
         assert.ok(brief.challenges?.includes('legal-issue-spot'), `${id} declares legal-issue-spot`);
       }
     }
+  } finally {
+    done();
+  }
+});
+
+test('a grounded run cites its own ground and the citation gate accepts exactly that', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    addSource(store, {
+      id: 'src-1',
+      workspace: 'default',
+      kind: 'directory',
+      locator: '/ground/repo',
+      addedAt: AT,
+    });
+    recordSourceRead(store, {
+      run: 'run-1',
+      source: 'src-1',
+      descriptor: '/ground/repo/docs/plan.md',
+      coverage: 'complete',
+      detail: '120 bytes',
+      recordedAt: AT,
+    });
+
+    const GROUNDED = [
+      '# Privacy read',
+      'Sessions are minted in one module [cite:/ground/repo/src/auth/session.ts].',
+      '',
+      '## Out of scope',
+      'I could not determine retention policy; it is uncovered.',
+    ].join('\n');
+    await workRun(store, hostReturning(GROUNDED), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    const verdicts = readWorkLog(store, 'run-1')
+      .filter((e) => e.action === 'verdict-recorded')
+      .map((e) => e.detail as { challenge: string; outcome: string });
+    const cited = verdicts.filter((v) => v.challenge === 'claims-cited');
+    assert.ok(cited.length > 0, 'the citation check ran');
+    assert.ok(
+      cited.every((v) => v.outcome === 'passed'),
+      'code under the declared root is evidence on the real settle path',
+    );
+
+    // The same dispatch told the role about the license it is being judged by.
+    const dispatches = readWorkLog(store, 'run-1').filter((e) => e.action === 'role-dispatched');
+    assert.ok(dispatches.length > 0);
+    void started;
+  } finally {
+    done();
+  }
+});
+
+test('a role that lacks a user-held fact asks once through the inbox, and a later dispatch consumes the answer', async () => {
+  const { store, done } = fixtureStore();
+  try {
+    // The EU-beta outcome on purpose: this scenario needs several roles so the
+    // one-open-ask rule has something to suppress.
+    const started = startRun(store, {
+      runId: 'run-1',
+      outcome: 'launch a paid beta to EU users next month',
+      at: AT,
+    });
+    assert.ok(started.tasks.length >= 2, 'this scenario needs at least two roles');
+
+    const ASKING = [
+      '# Read',
+      'Sessions expire after a fixed window [unverified].',
+      '',
+      '## Out of scope',
+      'I could not determine the identity provider; it is uncovered.',
+      '',
+      'STANCE: proceed',
+      'BECAUSE: nothing here blocks the outcome as stated.',
+      'CITE: none',
+      'ASK: Which identity provider does the organization standardize on?',
+      'ASSUMING: the incumbent provider stays.',
+    ].join('\n');
+
+    await workRun(store, hostReturning(ASKING), {
+      owner: 'w1',
+      clock: () => AT,
+      spendCeiling: 100,
+    });
+
+    // Every role asked; exactly one open ask reached the inbox.
+    const open = openDecisions(store, 'run-1').filter((d) => d.id.endsWith(':ask'));
+    assert.equal(open.length, 1, 'one open ask per run, never a questionnaire');
+    assert.match(open[0].question, /needs a fact only you can give/);
+    assert.equal(open[0].positions.length, 2);
+    const suppressed = readWorkLog(store, 'run-1').filter(
+      (e) => e.action === 'ask-suppressed-open-question',
+    );
+    assert.equal(suppressed.length, started.tasks.length - 1, 'the rest are on the log');
+
+    // The user answers; a later dispatch of the run receives the answer.
+    resolveDecision(store, open[0].id, 'We standardize on Okta.', AT);
+    enqueueTask(store, {
+      id: 't-later',
+      run: 'run-1',
+      role: 'privacy',
+      brief: {
+        id: 't-later',
+        outcome: 'launch a paid beta to EU users next month',
+        role: 'privacy',
+        inputs: [],
+        capabilities: [],
+        postconditions: [],
+      },
+      at: AT,
+    });
+    const assignments: string[] = [];
+    const capturing: HostAdapter = {
+      ...hostReturning(SOURCED),
+      invoke: async (request: unknown): Promise<HostResult> => {
+        assignments.push((request as { task: string }).task);
+        return { id: 't-later', status: 'ok', output: { text: SOURCED, usage: { cost: 0, steps: 1 } }, error: null };
+      },
+    } as unknown as HostAdapter;
+    await workRun(store, capturing, { owner: 'w2', clock: () => AT, spendCeiling: 100 });
+
+    assert.equal(assignments.length, 1);
+    assert.match(assignments[0], /already answered these questions/);
+    assert.match(assignments[0], /We standardize on Okta\./);
+    assert.match(assignments[0], /ASK: <the question, one sentence>/, 'the protocol itself is stated');
   } finally {
     done();
   }

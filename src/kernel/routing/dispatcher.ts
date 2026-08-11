@@ -110,7 +110,14 @@ const STOPWORDS = new Set([
 ]);
 
 function significantParts(kw: string): string[] {
-  const parts = kw.toLowerCase().split(/\s+/).filter(Boolean);
+  // Split the keyword with the same tokenizer the text goes through. Splitting
+  // on whitespace alone left any keyword carrying a hyphen, slash, or
+  // apostrophe unmatchable forever: the text's "on-call" became the tokens
+  // "on" and "call", while the keyword stayed one part spelled "on-call", and
+  // a part with punctuation in it can equal no token. Such a keyword is not
+  // weak, it is dead, and it fails silently — the catalog looks like it covers
+  // a word it can never fire on.
+  const parts = tokenize(kw);
   const filtered = parts.filter((p) => !STOPWORDS.has(p));
   return filtered.length > 0 ? filtered : parts;
 }
@@ -122,14 +129,22 @@ function keywordScore(kw: string, tokens: readonly string[]): number {
     return parts.some((p) => partMatches(p, tokens)) ? 3 : 0;
   }
   // Adjacency bonus: the parts also appear as consecutive tokens in the intent,
-  // not merely present somewhere in it.
+  // not merely present somewhere in it. Adjacency is judged with the intent's
+  // own stopwords dropped, because the parts had theirs dropped too: "hard of
+  // hearing" reduces to hard+hearing, which is never literally consecutive in
+  // the sentence it was written for, and a keyword that cannot reach the bonus
+  // in its own best case sits under the signal floor forever.
+  const significantTokens = tokens.filter((t) => !STOPWORDS.has(t));
+  const runs = [tokens, significantTokens];
   const adjacent =
     parts.length === 1 ||
-    tokens.some((_, i) =>
-      parts.every((p, j) => {
-        const t = tokens[i + j];
-        return t !== undefined && (t === p || (p.length >= 5 && t.startsWith(p)));
-      }),
+    runs.some((run) =>
+      run.some((_, i) =>
+        parts.every((p, j) => {
+          const t = run[i + j];
+          return t !== undefined && (t === p || (p.length >= 5 && t.startsWith(p)));
+        }),
+      ),
     );
   return adjacent ? 10 : 7;
 }

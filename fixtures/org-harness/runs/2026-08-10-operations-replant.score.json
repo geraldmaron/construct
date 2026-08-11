@@ -1,0 +1,180 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "In push-to-stage mode the load-bearing component of the deploy path is an unowned shell script: the hydrator design explicitly relies on an external system to move changes from the stage branch to the deployment branch, the stage-branch promoter is still that shell script with nobody on it, and its lag is not merely slow but incorrect, because auto-sync will immediately apply whatever the stage branch last held, which can be very old manifests. There is no owner to page and no signal that distinguishes a stalled promoter from a quiet one.",
+          "citations": [
+            "notes/note-1.md",
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-26443.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": false
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "With hydrator rollback deprioritized to next quarter and the dev pair moved onto the progressive sync deletion loop, the Reverse deletionOrder ships without any automated revert: Reverse waits for one Application to be fully deleted before moving to the next, and a child stuck Progressing means that wait never completes, leaving a half-deleted ApplicationSet whose recovery is entirely hand work by whoever is on at the time.",
+          "citations": [
+            "notes/note-1.md",
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28511.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "The impersonation feature's least-privilege posture carries a permanent, unbudgeted maintenance tax because the diff path was never decoupled with the sync path: sync honors destinationServiceAccounts, Server-Side Diff runs as the cluster Secret credential and needs real patch authority on every resource kind in the Application, so each new chart kind produces a ComparisonError and forces another patch rule onto the standing cluster role, five rounds so far with no end state. Detection is the App rotating Synced and Unknown on every reconcile, and the remediation is always widening the very credential the impersonation design set out to narrow.",
+          "citations": [
+            "tickets/T-28695.md",
+            "rfc-001-sync-impersonation.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": false,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": false
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": false
+      },
+      {
+        "id": "P2",
+        "found": false
+      },
+      {
+        "id": "P3",
+        "found": false
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": false
+      },
+      {
+        "id": "D2",
+        "found": false
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": false
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": false
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": false
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": true,
+        "by": {
+          "claim": "Turning on hydrated-commit signing is precisely what breaks the rollback path: once the operator adds the public key to the project's SourceIntegrity policy, the History and Rollback push, which happens outside the commit server and therefore lands unsigned, is rejected by the git host, and the UI surfaces only a failed push with no message tying it to signing and no retry, so the rollback that ops relies on after a bad promotion fails at the moment it is needed and with no diagnosis attached.",
+          "citations": [
+            "tickets/T-27327.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

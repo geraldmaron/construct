@@ -84,6 +84,16 @@ export interface HostAdapter {
   readonly model?: string | null;
 
   /**
+   * How long this adapter will wait for one invocation before abandoning it.
+   *
+   * Declared rather than assumed: a caller that reports a timeout without being
+   * able to say what the limit was, or that sets a lease against a limit it
+   * guessed at, is describing a wall it cannot see. Optional, and absence means
+   * the adapter will not say — not that it waits forever.
+   */
+  readonly invocationTimeoutMs?: number;
+
+  /**
    * Which capability tier `model` (or the adapter's default) sits at.
    *
    * Optional, and its absence is meaningful rather than neutral: a brief
