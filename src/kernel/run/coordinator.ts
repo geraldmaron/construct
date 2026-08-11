@@ -64,6 +64,7 @@ import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
+import { standardsFor } from '../plan/standards.ts';
 import { voiceProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
@@ -272,6 +273,19 @@ function lensDirective(role: string): string {
       : `${lens.jurisdictions.outside}\n`
     : '';
   const ceiling = lens.ceiling ? `The limit of this role, which is the invariant and not a gap: ${lens.ceiling}\n` : '';
+  // The lens's standards, spoken so the role can cite the standard where the
+  // standard speaks. What a standard currently says is checked against the
+  // standard itself, never assumed from its name here.
+  const standardsRecord = standardsFor(lens.lens);
+  const standards =
+    standardsRecord && standardsRecord.refs.length > 0
+      ? 'Your method descends from these standards; cite them where they speak, ' +
+        'and verify what they currently say before quoting them:\n' +
+        standardsRecord.refs
+          .map((r) => `- ${r.name} (${r.publisher}): ${r.contributes}`)
+          .join('\n') +
+        '\n'
+      : '';
   return (
     `Your posture: ${lens.posture}\n\n` +
     `${ROLE_OWNERSHIP_BOUND}\n\n` +
@@ -279,6 +293,7 @@ function lensDirective(role: string): string {
     `${questions}\n\n` +
     'Escalate rather than push past your remit:\n' +
     `${escalation}\n` +
+    standards +
     ceiling +
     labeling +
     jurisdictions +
