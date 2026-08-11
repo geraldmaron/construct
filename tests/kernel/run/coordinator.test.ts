@@ -667,8 +667,13 @@ test('disagreeing roles become one inbox item, and agreement becomes none', asyn
     assert.equal(report.conflicts, 1, 'one run, one framed decision');
     const inbox = openDecisions(store, 'run-1');
     assert.equal(inbox.length, 1);
-    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+    // The two sides by name, then the reversible default, which is not a side.
+    assert.deepEqual(
+      inbox[0].positions.map((p) => p.role),
+      ['privacy', 'program-sequencing', 'construct'],
+    );
     assert.equal(inbox[0].positions[0].citation, 'GDPR Art. 28');
+    assert.match(inbox[0].positions[2].stance, /reversible default if you do nothing/);
     assert.equal(inbox[0].resolution, null, 'nothing auto-arbitrates');
 
     const raised = readWorkLog(store, 'run-1').find((e) => e.action === 'decision-raised');
@@ -870,7 +875,10 @@ test('a run that settled and then died still raises its decision', async () => {
     assert.equal(raised, 1, 'the framing is re-derived from the store');
     const inbox = openDecisions(store, 'run-1');
     assert.equal(inbox.length, 1);
-    assert.deepEqual(inbox[0].positions.map((p) => p.role), ['privacy', 'program-sequencing']);
+    assert.deepEqual(
+      inbox[0].positions.map((p) => p.role),
+      ['privacy', 'program-sequencing', 'construct'],
+    );
 
     // The once-per-run rule has to survive being re-enterable, or the fix trades
     // a lost decision for one that rewrites itself under the reader.
