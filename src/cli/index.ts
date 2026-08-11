@@ -331,7 +331,7 @@ async function serve(): Promise<number> {
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude> [--model=…] [--binary=…]] ' +
-  '[--domains=<name,…>] "<what you want to happen>"\n';
+  '[--domains=<name,…>] [--workspace=<name>] "<what you want to happen>"\n';
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -351,6 +351,13 @@ export interface OutcomeArgs {
    * does not know what to ask for; this is the door for the user who does.
    */
   readonly domains?: readonly string[];
+  /**
+   * Which workspace's declared sources and engagement mode the plan is built
+   * from. `source add` and `ask` already take it; a run that could not be
+   * pointed at the same ground they were is a flag that means something on one
+   * command and nothing on the next.
+   */
+  readonly workspace: string;
 }
 
 export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
@@ -414,6 +421,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     binary: flags.binary,
     dir: flags.dir,
     domains,
+    workspace: workspaceFlag(flags),
   };
 }
 
@@ -455,6 +463,10 @@ function planRun(
       (plan.sourcesDeclared.length > 0
         ? `, over ${plan.sourcesDeclared.length} declared source${plan.sourcesDeclared.length === 1 ? '' : 's'} (read at work time)`
         : ', no sources declared') +
+      // Which workspace was consulted, whenever it is not the one a reader
+      // would assume. "No sources declared" against a workspace the user did
+      // not mean is indistinguishable from having declared none at all.
+      (workspace === 'default' ? '' : ` on workspace "${workspace}"`) +
       `\n  construct plan ${started.runId}\n`,
   );
   for (const d of plan.discarded) {
@@ -552,7 +564,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         return 2;
       }
       reportRun(started);
-      planRun(store, started, null, 'default', at);
+      planRun(store, started, null, args.workspace, at);
       return 0;
     }
 
@@ -569,11 +581,11 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           '\nA host model can be asked instead, at cost:\n' +
             `  construct outcome --host=<opencode|claude> ${JSON.stringify(args.text)}\n`,
         );
-        planRun(store, started, null, 'default', at);
+        planRun(store, started, null, args.workspace, at);
         return 0;
       }
       reportRun(started);
-      planRun(store, started, null, 'default', at);
+      planRun(store, started, null, args.workspace, at);
       return 0;
     }
 
@@ -662,11 +674,11 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
       );
-      planRun(store, started, densified, 'default', at);
+      planRun(store, started, densified, args.workspace, at);
       return 0;
     }
     reportRun(started);
-    planRun(store, started, densified, 'default', at);
+    planRun(store, started, densified, args.workspace, at);
     return 0;
   });
 }

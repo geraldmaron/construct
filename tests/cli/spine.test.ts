@@ -17,6 +17,8 @@ import { openStore } from '../../src/kernel/store/open.ts';
 import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
 import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
+import { planFor } from '../../src/kernel/store/plans.ts';
+import { readWorkLog } from '../../src/kernel/store/worklog.ts';
 
 /** Fixed points for the staged-crash test below; the CLI's own clock is real. */
 const SETTLED_AT = '2026-08-03T00:00:00.000Z';
@@ -1002,5 +1004,41 @@ test('watch refuses ground that is not Construct rather than filing another repo
     assert.doesNotMatch(refused.out, /ground:/, 'a refused sweep records no ground at all');
   } finally {
     rmSync(elsewhere, { recursive: true, force: true });
+  }
+});
+
+test('an outcome plans against the workspace it was given, not always the default one', async () => {
+  const ground = mkdtempSync(join(tmpdir(), 'construct-ground-'));
+  try {
+    writeFileSync(join(ground, 'notes.md'), '# Notes\n\nThe billing migration is deferred.\n');
+    const { out } = await runAll([
+      ['source', 'add', '--kind=directory', `--locator=${ground}`, '--workspace=waveb'],
+      ['outcome', 'ship the paid beta'],
+      ['outcome', '--workspace=waveb', 'ship the paid beta'],
+      async () => {
+        const store = openStore(
+          join(process.env.XDG_DATA_HOME!, 'construct', 'construct.db'),
+        );
+        try {
+          // The plan is what records sourcesDeclared and what `work` grounds
+          // from, so the flag is only real if it reaches the plan.
+          const runs = readWorkLog(store)
+            .filter((e) => e.action === 'outcome-received')
+            .map((e) => e.run);
+          assert.equal(runs.length, 2);
+          assert.deepEqual(planFor(store, runs[0])!.sourcesDeclared, []);
+          assert.equal(planFor(store, runs[1])!.sourcesDeclared.length, 1);
+        } finally {
+          store.close();
+        }
+        return 0;
+      },
+    ]);
+    // A workspace with nothing declared on it and a workspace that was never
+    // consulted print the same phrase, so the phrase names the workspace.
+    assert.match(out, /no sources declared\n/);
+    assert.match(out, /over 1 declared source \(read at work time\) on workspace "waveb"/);
+  } finally {
+    rmSync(ground, { recursive: true, force: true });
   }
 });
