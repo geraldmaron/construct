@@ -1,0 +1,273 @@
+{
+ "claims": [
+  {
+   "kind": "conflict",
+   "claim": "The standing incident rule requires `deletionOrder: AllAtOnce` until the controller fix lands, so the PRD workstream to deliver `deletionOrder: Reverse` cannot proceed to operational use on ProgressiveSync ApplicationSets while that restriction remains. PRD author @ranakan19 and the controller-fix owner must resolve the gate before Reverse rollout.",
+   "citations": [
+    "notes/note-2.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented, while the deletion PRD commits to implementing `deletionOrder` with `AllAtOnce` and `Reverse`. The roadmap owner and PRD author @ranakan19 must choose which commitment governs before the deletion workstream proceeds.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The proposed `rollingSync.parallelGroups` or per-step `parallel` structure cannot land after Stable promotion freezes `strategy.rollingSync.steps` as one match-set per step, and it also removes the single sequential ordering that `deletionOrder: Reverse` assumes for as long as that feature exists. The Progressive Sync Stable-promotion owner must either schedule a new parallelism field before the freeze or reject the parallel-steps workstream.",
+   "citations": [
+    "tickets/T-28755.md",
+    "tickets/T-28927.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Application-controller sharding cannot start while the shared pair is closing the Progressive Sync Stable-promotion punch list, but that promotion still carries open bug and enhancement backlogs rather than a closed completion set. The shared pair owns this dependency and must establish the Stable exit scope before any sharding start date is credible.",
+   "citations": [
+    "strategy.md",
+    "tickets/T-28927.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The rollout decision makes impersonation a per-project flag, while the RFC permits enablement only at the system level. After enablement, diff and sync act as the destination service account selected through AppProject destinationServiceAccounts, Kubernetes audit events record both the requesting and impersonated identities, and the Argo CD admin who controls AppProject configuration must review that access; a system-level switch cannot enforce the stated project-by-project approval boundary.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Impersonation does not produce one consistent access-and-audit model on external clusters: sync acts as the AppProject destinationServiceAccounts identity, but Server-Side Diff acts as the cluster Secret credential and requires real patch authority because Kubernetes RBAC has no dry-run verb. Kubernetes audit records therefore attribute comparison writes to the standing cluster identity rather than the destination service account reviewed by the AppProject admin, so access review must also cover every expanding patch grant on the cluster credential.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Hydrated-branch provenance remains unverifiable until signing is enabled: the GitHub App credential performs every push, commitAuthor merely copies the dry commit's human identity, and the commits are unsigned. The proposed control adds SourceIntegrity verification but uses one cluster-wide signing key stored where other Argo CD namespace Secret readers can obtain it, so auditors cannot treat a valid signature as evidence that the commit server alone acted unless access reviewers also certify every identity allowed to read that Secret.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The proposed History & Rollback path pushes directly to the sync branch outside the commit server, while hydrated-commit signing is implemented in the commit server and SourceIntegrity may require its signatures. The rollback actor therefore cannot produce the audit evidence reviewed by SourceIntegrity: enforcement rejects the unsigned rollback, while disabling enforcement would admit a branch change with no cryptographic proof of which identity acted.",
+   "citations": [
+    "tickets/T-27327.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "provenance-and-authorship: Hydrated commits are machine-written with a GitHub App credential, while README and hydrator.metadata copy commitAuthor from the dry commit; because signing is currently optional and the copied human identity is not the identity that produced the hydrated content, the hydrated branch proves neither human authorship nor the machine actor unless separate audit evidence is retained.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "licensed-review: Counsel licensed in each jurisdiction governing the organization's audit records and attribution representations should determine whether commitAuthor, README, and hydrator.metadata may legally be presented or relied upon as authorship records when hydrated content is generated by the commit server and signing, if enabled, authenticates a cluster-wide key rather than the named human.",
+   "citations": [
+    "rfc-002-manifest-hydrator.md",
+    "tickets/T-28239.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The roadmap commits that ordered or automated deletion of ApplicationSet children will not be implemented and teardown will remain manual, while the deletion PRD commits to `strategy.deletionOrder` with `AllAtOnce` and `Reverse`; the Progressive Sync product owner owns the call on which ApplicationSet deletion promise survives.",
+   "citations": [
+    "strategy.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "The impersonation RFC commits that enablement is system-level and applies to all Applications, while the rollout decision requires a per-project flag and forbids enabling any project until the diff story is fixed; the impersonation feature owner owns the call on replacing the RFC's fleet-wide flag contract with project-scoped enablement.",
+   "citations": [
+    "rfc-001-sync-impersonation.md",
+    "notes/note-1.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "Reverse deletion commits to deriving one unambiguous order from a strictly sequential `rollingSync.steps` list for as long as the feature exists, while the parallel-steps proposal allows multiple match groups to execute concurrently and therefore removes that single reversible order; the Progressive Sync API owner owns the call on rejecting parallel groups or defining a new deletion-order contract.",
+   "citations": [
+    "prd-progressive-sync-deletion.md",
+    "tickets/T-28755.md"
+   ]
+  },
+  {
+   "kind": "conflict",
+   "claim": "Stable promotion freezes `strategy.rollingSync.steps` as one match-set per step, but the parallel-steps proposal includes an in-place `steps[].parallel` restructuring; the Progressive Sync maturity owner must either land parallel execution under a new field before Stable or reject that API shape.",
+   "citations": [
+    "tickets/T-28927.md",
+    "tickets/T-28755.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Production prevalence of the RollingSync `specChanged`-without-sync failure is unobservable: support's estimated rate is explicitly not measured, and no counter records when `specChanged` fires without a resulting sync operation. The requested ApplicationSet-caused refresh count would measure hydrator-triggered activity but would still need a paired sync-operation counter before the hydrator pilot restriction or a before/after failure baseline can be evaluated.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-27846.md",
+    "tickets/T-27949.md"
+   ]
+  },
+  {
+   "kind": "risk",
+   "claim": "Readiness for Progressive Sync Stable promotion is not measurable with the current production telemetry: the promotion requires validation across use cases, while the open metrics request says operators cannot measure detection-to-trigger latency, per-step completion time, ApplicationSet-caused refreshes, or which Applications block a sync. Without those measurements, no pre-promotion baseline exists for detecting a regression after the Stable compatibility commitment.",
+   "citations": [
+    "tickets/T-27846.md",
+    "tickets/T-28927.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "The progressive deletion loop is observable only through staging reproduction and Application status flipping between `Deleting` and `Syncing`; production incidence is unobservable because the ticket has no logs and the operational review identifies no controller-level check or alert. A missing counter for Reverse deletion wave restarts or repeated child recreation means the manual `AllAtOnce` mitigation cannot be measured for adherence or effectiveness.",
+   "citations": [
+    "notes/note-2.md",
+    "tickets/T-28511.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "Impersonation-related Server-Side Diff failures are observable today through CI fatal errors, reconcile `ComparisonError`, and Kubernetes audit trails that identify the actual and impersonated users; however, fleet exposure is unobservable because no cited source records a failure-rate counter or baseline by project, destination, or diff identity. Consequently, the per-project rollout gate cannot quantify how many enabled projects still run diff under an identity lacking the required cluster-scoped `patch` permissions.",
+   "citations": [
+    "notes/note-1.md",
+    "rfc-001-sync-impersonation.md",
+    "tickets/T-26271.md",
+    "tickets/T-28695.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26271's missing-permissions failure is the symptom of the impersonation design selecting a destinationServiceAccounts service account per Application and applying impersonation to kubectl operations: Server-Side Diff's dry-run patch of cluster-scoped resources therefore runs with the destination identity's narrower RBAC.",
+   "citations": [
+    "tickets/T-26271.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28695's external-cluster ComparisonError is the inverse symptom of the same impersonation design: sync uses the AppProject destinationServiceAccounts identity, while Server-Side Diff remains on the cluster Secret credential, so its server-side apply dry-run requires patch permissions that the mapped sync identity already has.",
+   "citations": [
+    "tickets/T-28695.md",
+    "rfc-001-sync-impersonation.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-26443's immediate sync of old manifests after a sync source change follows from push-to-stage mode: the hydrator writes fresh output to hydrateTo.targetBranch, while Argo CD continues watching syncSource.targetBranch and depends on an external promoter to move that output there.",
+   "citations": [
+    "tickets/T-26443.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-24417's inability to use a Helm repository chart as DrySource reflects the hydrator design's single dry source and explicit choice to use Helm dependencies or an umbrella chart instead of additional external sources.",
+   "citations": [
+    "tickets/T-24417.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-27949's repeated source changes on hydrator pilot repositories follow from the hydrator design: every dry commit produces and pushes a hydrated commit, and each new commit on syncSource.targetBranch is detected as a source revision for the child Applications participating in RollingSync.",
+   "citations": [
+    "tickets/T-27949.md",
+    "rfc-002-manifest-hydrator.md"
+   ]
+  },
+  {
+   "kind": "cross-reference",
+   "claim": "T-28511's deletion wave restarting while a child remains Progressing is tied to the Reverse deletion design, which waits for each Application to be fully deleted before advancing; a child that cannot complete deletion holds that sequential wait open.",
+   "citations": [
+    "tickets/T-28511.md",
+    "prd-progressive-sync-deletion.md"
+   ]
+  }
+ ],
+ "notesDrop": {
+  "proposals": [
+   {
+    "target": "tickets/T-26271.md",
+    "change": "Record the confirmed root cause: with impersonation enabled, diff runs as the destination service account, which lacks patch permission for cluster-scoped resources; the cluster Secret credential is not the cause.",
+    "citedLine": "the CI diff failures (the missing-permissions one, T-26271) got root-caused on the call: with impersonation on, diff runs as the destination service account which doesn't hold patch on cluster-scoped stuff. someone should note the root cause on that ticket so the reporter stops chasing the cluster secret."
+   },
+   {
+    "target": "tickets/T-27327.md",
+    "change": "Record that hydrator history and rollback work is deprioritized until next quarter and its development pair has moved to the progressive sync deletion-loop work.",
+    "citedLine": "hydrator rollback work (the history & rollback ticket, T-27327) is deprioritized to next quarter. dev pair moves to the progressive sync deletion loop instead. ticket should say so."
+   },
+   {
+    "target": "tickets/T-28511.md",
+    "change": "Record that the delete/recreate loop was reproduced in staging with reverse deletion order and document the interim runbook mitigation: switch the ApplicationSet to AllAtOnce deletion before manually deleting any child Application.",
+    "citedLine": "the delete/recreate loop (T-28511) reproduced in staging with the reverse deletion order. mitigation for now: incident runbook says switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand. that's the operational rule until the controller fix lands — worth remembering as a standing practice."
+   },
+   {
+    "target": "tickets/T-27949.md",
+    "change": "Record the confirmed hydrator interaction and pilot restriction: every hydrator push restarts the rolling sync wave, so hydrator pilot repositories must not use progressive sync until debounce support exists.",
+    "citedLine": "the wave-restart thing on hydrated repos: we confirmed each hydrator push restarts the rolling sync wave. interim call from the review: hydrator pilot repos must not use progressive sync until there's a debounce. the pilot ticket (T-27949) should carry that restriction so the next team doesn't trip it."
+   }
+  ],
+  "deltas": [
+   {
+    "body": "Impersonation rollout is controlled by a per-project flag rather than fleet-wide enablement, and it must not be enabled for any project until the diff behavior is fixed.",
+    "citedLine": "impersonation rollout: we decided it goes behind a per-project flag, not fleet-wide. nobody flips it on a project until the diff story is fixed. that's a real decision, not a maybe."
+   },
+   {
+    "body": "Hydrator history and rollback work is deprioritized until next quarter, and the assigned development pair is moving to the progressive sync deletion-loop work.",
+    "citedLine": "hydrator rollback work (the history & rollback ticket, T-27327) is deprioritized to next quarter. dev pair moves to the progressive sync deletion loop instead. ticket should say so."
+   },
+   {
+    "body": "Until the controller fix lands, operators must switch an ApplicationSet to AllAtOnce deletion before manually deleting any child Application.",
+    "citedLine": "the delete/recreate loop (T-28511) reproduced in staging with the reverse deletion order. mitigation for now: incident runbook says switch the ApplicationSet to AllAtOnce deletion before deleting any child app by hand. that's the operational rule until the controller fix lands — worth remembering as a standing practice."
+   },
+   {
+    "body": "Hydrator pilot repositories must not use progressive sync until a debounce mechanism is available.",
+    "citedLine": "the wave-restart thing on hydrated repos: we confirmed each hydrator push restarts the rolling sync wave. interim call from the review: hydrator pilot repos must not use progressive sync until there's a debounce. the pilot ticket (T-27949) should carry that restriction so the next team doesn't trip it."
+   }
+  ]
+ },
+ "composedOf": [
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-program.json",
+   "claims": 4
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-compliance.json",
+   "claims": 4
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-legal.json",
+   "claims": 2
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-product.json",
+   "claims": 4
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-analyst.json",
+   "claims": 4
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-engineering.json",
+   "claims": 6
+  },
+  {
+   "file": "/private/tmp/claude-501/-Users-geralddagher-Developer-Projects-construct/1073fe35-a65d-4670-b08b-ec732d5d25e1/scratchpad/gptruns/runC-notes.json",
+   "proposals": 4,
+   "deltas": 4
+  }
+ ]
+}

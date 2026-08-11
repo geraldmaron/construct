@@ -70,3 +70,15 @@ artifact here is dated and per-model, and why no result is ever generalized to
   different mechanism), R2's substance appears twice but never with the
   two-document pair that proves the synthesis, and four of six awareness
   plants miss. Distractors clean. Stays best-effort on depth, correctly.
+- `gpt-5.6-sol` (Codex CLI, ChatGPT-subscription login, 2026-08-11) — first
+  family measured through a subscription host rather than a key. Four
+  composed dispatch-shape runs (the tuned family's exact six-lens-plus-notes
+  recipe, byte-identical prompt, `--endpoint codex`): **one full pass in
+  four**. Run 2 passes every rung with distractors clean; runs 1 and 3 miss
+  R2 (2/4 overall), run 4 misses the D1 delta. Rungs 0 and 1 pass 4/4 —
+  provenance and cross-reference discipline are stable; what does not repeat
+  is the risk-synthesis plant. The gate's stability criterion is exactly what
+  this fails: a pass that lands once in four is not a pass with a rate, so
+  the family **stays best-effort**, and the contract-floor probe was not run
+  because no criterion-2 pass survives for it to support. Artifacts:
+  `fixtures/org-harness/runs/2026-08-11-gpt-5.6-sol-codex-composed-run{1..4}[.score].json`.

@@ -1,0 +1,210 @@
+{
+  "rung0": {
+    "pass": true,
+    "fabricated": [],
+    "uncited": [],
+    "pathShortened": []
+  },
+  "rung1": {
+    "pass": true,
+    "plants": [
+      {
+        "id": "X1",
+        "found": true,
+        "by": {
+          "claim": "T-26443's stale-manifest auto-sync is a symptom of push-to-stage separating hydrateTo from syncSource: hydration writes a fresh commit to the staging branch, but Argo CD continues watching the deployment branch and can sync its previous contents before the external promoter moves the new commit.",
+          "citations": [
+            "tickets/T-26443.md",
+            "rfc-002-manifest-hydrator.md"
+          ]
+        }
+      },
+      {
+        "id": "X2",
+        "found": true,
+        "by": {
+          "claim": "Server-Side Diff does not consistently follow the destinationServiceAccounts identity used by sync: the external-cluster path acts as the cluster Secret credential, while the reported CI path acts as argocd-server or the destination service account depending on impersonation behavior. This splits one application's actions across identities and pressures reviewers to grant standing cluster credentials real patch authority that Kubernetes cannot restrict to dry-run; auditors therefore cannot assess least privilege from the AppProject mapping alone and must correlate Kubernetes audit events for the cluster credential, requesting Argo CD identity, and impersonated service account.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "X3",
+        "found": true,
+        "by": {
+          "claim": "T-28511's delete/re-create wave loop is tied to Reverse deletion's explicit wait for each Application to be fully deleted: a child held in Progressing prevents that wait from completing while the ApplicationSet controller recreates the manually deleted child.",
+          "citations": [
+            "tickets/T-28511.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ]
+  },
+  "rung2": {
+    "pass": false,
+    "plants": [
+      {
+        "id": "R1",
+        "found": true,
+        "by": {
+          "claim": "Server-Side Diff does not consistently follow the destinationServiceAccounts identity used by sync: the external-cluster path acts as the cluster Secret credential, while the reported CI path acts as argocd-server or the destination service account depending on impersonation behavior. This splits one application's actions across identities and pressures reviewers to grant standing cluster credentials real patch authority that Kubernetes cannot restrict to dry-run; auditors therefore cannot assess least privilege from the AppProject mapping alone and must correlate Kubernetes audit events for the cluster credential, requesting Argo CD identity, and impersonated service account.",
+          "citations": [
+            "rfc-001-sync-impersonation.md",
+            "tickets/T-26271.md",
+            "tickets/T-28695.md"
+          ]
+        }
+      },
+      {
+        "id": "R2",
+        "found": false
+      }
+    ],
+    "substantiveRatio": 1
+  },
+  "rung3": {
+    "pass": true,
+    "conflicts": [
+      {
+        "id": "C1",
+        "found": true,
+        "by": {
+          "claim": "The roadmap forbids ordered or automated deletion of ApplicationSet children and requires manual one-at-a-time teardown, while the deletion PRD commits to `strategy.deletionOrder` with `AllAtOnce` and `Reverse`; PRD author `@ranakan19` must resolve which ApplicationSet deletion contract governs the workstream before implementation proceeds.",
+          "citations": [
+            "strategy.md",
+            "prd-progressive-sync-deletion.md"
+          ]
+        }
+      }
+    ],
+    "proposals": [
+      {
+        "id": "P1",
+        "found": true
+      },
+      {
+        "id": "P2",
+        "found": true
+      },
+      {
+        "id": "P3",
+        "found": true
+      }
+    ],
+    "deltas": [
+      {
+        "id": "D1",
+        "found": true
+      },
+      {
+        "id": "D2",
+        "found": true
+      }
+    ]
+  },
+  "roleCoverage": {
+    "pm": [
+      {
+        "id": "C2",
+        "found": true,
+        "by": {
+          "claim": "Reverse deletion commits to deriving one unambiguous order from a strictly sequential `rollingSync.steps` list, but the parallel-steps proposal would allow concurrent match groups and the Stable-promotion ticket will freeze the current steps shape; the Progressive Sync Stable owner must either reject parallel groups or introduce a new ordering field before Stable.",
+          "citations": [
+            "prd-progressive-sync-deletion.md",
+            "tickets/T-28755.md",
+            "tickets/T-28927.md"
+          ]
+        }
+      }
+    ],
+    "engineering": [],
+    "tpm": [
+      {
+        "id": "TP2",
+        "found": true,
+        "by": {
+          "claim": "The maturity plan freezes `strategy.rollingSync.steps` as one `matchExpressions` match-set per step at Stable, while the parallel-steps workstream proposes multiple concurrent match groups inside a step; the Progressive Sync Stable owner, currently only identified as the pair owning the Stable punch list, must either land parallelism under a new field before Stable or exclude it from the frozen v1 API.",
+          "citations": [
+            "tickets/T-28927.md",
+            "tickets/T-28755.md",
+            "strategy.md"
+          ]
+        }
+      }
+    ],
+    "analyst": [
+      {
+        "id": "A2",
+        "found": false
+      }
+    ],
+    "compliance": [
+      {
+        "id": "CP1",
+        "found": false
+      }
+    ],
+    "legal": [
+      {
+        "id": "L2",
+        "found": true,
+        "by": {
+          "claim": "Hydrated commits are pushed by the GitHub App credential, while commitAuthor merely copies the dry commit's human attribution; with commitserver.sign.hydrated.commits disabled by default, neither the branch nor hydrator.metadata proves which identity produced the hydrated content. Enabling the proposed cluster-wide signing key would make signatures attributable to any principal able to read Secrets in the Argo CD namespace, so access review must cover both the repository-write GitHub App credential and signing-key readers, not the human named in commitAuthor.",
+          "citations": [
+            "rfc-002-manifest-hydrator.md",
+            "tickets/T-28239.md"
+          ]
+        }
+      }
+    ],
+    "strategy": [
+      {
+        "id": "SA3",
+        "found": false
+      }
+    ],
+    "architect": [
+      {
+        "id": "SD2",
+        "found": false
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP2",
+        "found": false
+      }
+    ],
+    "design": [
+      {
+        "id": "UX2",
+        "found": false
+      }
+    ],
+    "security": [
+      {
+        "id": "TH3",
+        "found": false
+      }
+    ]
+  },
+  "distractors": [
+    {
+      "id": "DX1",
+      "violated": false
+    },
+    {
+      "id": "DX2",
+      "violated": false
+    }
+  ],
+  "distractorGate": {
+    "began": "2026-08-05",
+    "note": "DX1/DX2 violations fail rung 3 for runs scored from this date; score files recorded earlier are never regenerated and keep their as-run results. Evidence: five distractor-disciplined runs (two single-pass, three composed dispatch-shape) all clean; every run before the discipline paragraph violated at least one."
+  },
+  "pass": false
+}

@@ -121,6 +121,7 @@ for (const file of walk(corpusRoot)) {
 
 const endpoint = arg('--endpoint', 'ollama');
 const claudeBinary = arg('--binary', 'claude');
+const codexBinary = arg('--codex-binary', 'codex');
 const prompt = `${base}${corpus}\n\nReturn only the JSON object.`;
 
 let url;
@@ -153,7 +154,28 @@ if (endpoint === 'openrouter') {
 const scratch = mkdtempSync(join(tmpdir(), 'org-harness-ollama-'));
 try {
   let data;
-  if (endpoint === 'claude') {
+  if (endpoint === 'codex') {
+    // Same scratch-dir reasoning as the claude transport below, same flags as
+    // the codex adapter (src/hosts/codex/adapter.ts): ephemeral, user config
+    // ignored, read-only sandbox. Auth is the CLI's own subscription login;
+    // there is no key to drop. The prompt goes in on stdin (`-` argument),
+    // because an inlined corpus can outgrow argv, and the reply is read from
+    // the last-message file rather than reassembled from events.
+    const lastFile = join(scratch, 'last.txt');
+    execFileSync(
+      codexBinary,
+      ['exec', '--json', '--ephemeral', '--ignore-user-config',
+       '--skip-git-repo-check', '-s', 'read-only', '-m', model,
+       '-o', lastFile, '-'],
+      {
+        encoding: 'utf8',
+        input: prompt,
+        cwd: scratch,
+        maxBuffer: 64 * 1024 * 1024,
+      },
+    );
+    data = { result: readFileSync(lastFile, 'utf8') };
+  } else if (endpoint === 'claude') {
     // The binary is run from the empty scratch directory, not from the repo:
     // started anywhere inside this project it would inherit the project's own
     // instructions and read its files, and a run that can reach the answer key
@@ -200,7 +222,7 @@ try {
   let text =
     endpoint === 'openrouter'
       ? (data.choices?.[0]?.message?.content ?? '')
-      : endpoint === 'claude'
+      : endpoint === 'claude' || endpoint === 'codex'
         ? (data.result ?? '')
         : (data.response ?? '');
   if (endpoint !== 'ollama' && !text) {
