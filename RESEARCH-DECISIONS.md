@@ -1754,3 +1754,7 @@ tier, and that the half worth handing it — the near misses — is also the hal
 that is cheap to write and expensive to verify. Whether a smaller, measured
 exclusion set can be bought without a recall cost this corpus is too small to
 see is open, and needs a corpus that can see it before it is worth another run.
+
+Tracked as `construct-9933` (2026-08-11), with that corpus-power precondition
+written into its acceptance rather than left in this paragraph: a defect stated
+only in prose is a defect nobody is holding.

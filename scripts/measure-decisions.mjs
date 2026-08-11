@@ -28,6 +28,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -825,6 +826,18 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   const COMPARE_TO = compareFlag !== -1 ? process.argv[compareFlag + 1] : null;
   const armFlag = process.argv.indexOf('--namer-arm');
   const ARM_LABEL = armFlag !== -1 ? process.argv[armFlag + 1] : 'unlabelled';
+
+  // Refused before the run rather than after it. These figures are stated per
+  // tier, and on this host an unnamed model means the session default answers
+  // — whatever that resolves to today, and it may change mid-run. A run that
+  // would be refused at the end is a run whose entire cost was spent to be
+  // told so, and on this host that cost is real money.
+  if (RECORD_TO && NAMER_HOST === 'claude' && MODEL === undefined) {
+    console.log('\n  NOT RUN: --namer-record on the claude host needs --namer-model.');
+    console.log('  Without one the session default answers, so the figures would name no tier —');
+    console.log(`  and ${RECORD_TO} would be refused after the consultations were already paid for.`);
+    process.exit(1);
+  }
   const byName = domainsByName(DOMAINS);
 
   /**
@@ -843,6 +856,19 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
   let totalMs = 0;
   let costUsd = 0;
   const modelsRan = new Set();
+  /**
+   * Which model served THIS consultation, carried per async context rather than
+   * in a shared variable: consultations run four at a time on the Claude host,
+   * so a "last model seen" would attribute one outcome's answer to another
+   * outcome's model. The run-level set says a tier drifted; only this says
+   * which answers came from where, which is what separating a mixed run needs.
+   */
+  const servedBy = new AsyncLocalStorage();
+  const attribute = (model) => {
+    if (typeof model !== 'string' || !model) return;
+    modelsRan.add(model);
+    servedBy.getStore()?.add(model);
+  };
 
   /** One namer consultation returning raw namings. Throws on failure, like the real namer. */
   let rawNamer;
@@ -868,8 +894,8 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         // check here silently reported 'unreported' for a run that named its
         // model in every envelope. Accept both shapes.
         const ran = out?.modelRan;
-        if (typeof ran === 'string' && ran) modelsRan.add(ran);
-        else if (Array.isArray(ran)) for (const m of ran) if (typeof m === 'string' && m) modelsRan.add(m);
+        if (typeof ran === 'string') attribute(ran);
+        else if (Array.isArray(ran)) for (const m of ran) attribute(m);
         return result;
       },
     };
@@ -887,6 +913,10 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
         }),
       });
       if (!res.ok) throw new Error(`ollama ${res.status} — is ollama running with ${MODEL} pulled?`);
+      // The local path names the model it asked for and gets that model; the
+      // attribution is recorded the same way regardless, so a record from
+      // either host answers the same question.
+      attribute(MODEL);
       return parseNamings((await res.json()).response ?? '');
     };
   }
@@ -927,17 +957,26 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     return admit(Array.isArray(namings) ? namings : []);
   };
 
+  /** Which model(s) served each outcome's one consultation, by outcome text. */
+  const servedByOutcome = new Map();
+
   // Outcomes repeat across configurations; one consultation serves all of them.
   const namerCache = new Map();
   let lastFailure = null;
   const named = async (outcome) => {
     if (!namerCache.has(outcome)) {
+      // The attribution is bound around the consultation and kept whether it
+      // answered or threw: a failure served by a tier is still evidence about
+      // which tier was answering when.
+      const served = new Set();
       try {
-        namerCache.set(outcome, await consult(outcome));
+        namerCache.set(outcome, await servedBy.run(served, () => consult(outcome)));
       } catch (err) {
         failures += 1;
         lastFailure = err instanceof Error ? err.message : String(err);
         namerCache.set(outcome, null); // null = the namer failed, not "named nothing"
+      } finally {
+        servedByOutcome.set(outcome, [...served]);
       }
     }
     return namerCache.get(outcome);
@@ -1011,6 +1050,10 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
       A0: kw[i],
       A1: a1[i],
       B: b[i],
+      // Which model produced this row's namer answer. A0 is the keyword map and
+      // no model served it; the field describes the consultation, so it is
+      // empty when there was none.
+      servedBy: servedByOutcome.get(o.outcome) ?? [],
     }));
   }
   console.log(`\n  namer consultations: ${calls} (${failures} failed, ${repairs} answered on a corrective retry), mean latency ${calls ? Math.round(totalMs / calls) : 0}ms`);
@@ -1041,12 +1084,49 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
     console.log(`  partly the fallback arm. ${RECORD_TO} is left untouched. Fix the cause and re-run.`);
   } else if (RECORD_TO && modelsRan.size > 1) {
     // These figures are stated per tier, and a run answered by two tiers is
-    // not one tier's figures. The record is refused rather than annotated,
+    // not one tier's figures. The arm file is refused rather than annotated,
     // because an annotation on a file is a note the next comparison will not
     // read. Pin the tier with --namer-model and run it again.
+    //
+    // The answers are not thrown away with it. Each one now names the model
+    // that served it, so the run is separable after the fact — which is the
+    // whole difference between a refusal and a loss. It goes to a sibling
+    // file that cannot be mistaken for an arm: nothing compares against a
+    // path ending .mixed.json.
+    const forensic = `${RECORD_TO}.mixed.json`;
+    writeFileSync(
+      forensic,
+      `${JSON.stringify(
+        {
+          arm: ARM_LABEL,
+          notAnArm:
+            'more than one model served this run, so these figures are not a per-tier measurement. ' +
+            'Kept only so the consultations can be separated by the model that served each one.',
+          recordedAt: new Date().toISOString(),
+          host: NAMER_HOST,
+          model: MODEL ?? null,
+          modelsRan: [...modelsRan],
+          promptFingerprint: promptFingerprint(),
+          consultations: calls,
+          failures,
+          repairs,
+          perOutcome,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const perTier = new Map();
+    for (const [, list] of servedByOutcome) {
+      for (const m of list) perTier.set(m, (perTier.get(m) ?? 0) + 1);
+    }
     console.log(`\n  NOT RECORDED: ${modelsRan.size} tiers served this run (${[...modelsRan].join(', ')}),`);
+    for (const [m, n] of [...perTier].sort()) {
+      console.log(`    ${m}: ${n} of ${servedByOutcome.size} consultations`);
+    }
     console.log('  so it is not a per-tier measurement. Pin the tier with --namer-model and re-run.');
-    console.log(`  ${RECORD_TO} is left untouched.`);
+    console.log(`  ${RECORD_TO} is left untouched; the per-consultation attribution is in ${forensic},`);
+    console.log('  which is evidence about what happened, never an arm to compare against.');
   } else if (RECORD_TO) {
     const record = {
       arm: ARM_LABEL,

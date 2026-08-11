@@ -157,6 +157,20 @@ construct mode --set=seat
 one role on your human team and treats your tracker as the system of record —
 changes to it are proposed to you, never just made.
 
+Sources and the engagement mode both belong to a workspace, and every command
+that touches one takes `--workspace=<name>` — including `construct outcome`.
+That is how a run is pointed at a different ground without disturbing the one
+other runs were read against:
+
+```bash
+construct source add --kind=directory --locator=./docs/adr --workspace=architecture
+construct outcome --workspace=architecture "Decide whether the adapter seam absorbs retry state"
+```
+
+Everything defaults to a workspace called `default`, so you can ignore this
+until you need two grounds at once. The plan line names the workspace whenever
+it is not the default one.
+
 ## Read back what happened
 
 ```bash
