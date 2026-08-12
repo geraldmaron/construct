@@ -24,9 +24,9 @@ construct doctor
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Running work needs an agent host present, either OpenCode (first-class) or the Claude Agent SDK, because Construct never ships its own agent runtime (commitment 1). `construct doctor` checks the parts it owns; it does not yet check that a host is reachable.
+Running work needs an agent host present, because Construct never ships its own agent runtime (commitment 1). Four are wired: OpenCode and the Claude Code CLI, plus two that spend a subscription rather than an API key — the Codex CLI (ChatGPT login) and the Cursor CLI (Cursor login). Every adapter is pinned to a probed version (`npm run probe:<host>`), and `construct doctor` now reports each host's presence: found, version against the pin, and auth state. A model family nobody has tuned for still runs on any of them; it is labeled best-effort on the work log, never refused.
 
 If you already work inside an agent host, `construct serve` puts the spine inside it over MCP, so Claude Code, Codex, VS Code agent mode, and OpenCode reach the same store with no CLI to learn:
 
