@@ -160,3 +160,45 @@ test('a source that only passed after being sent back is reported, not counted a
     /passed ground-exhausted only after being sent back/,
   );
 });
+
+/**
+ * Measured on three live compositions on a free model in one session: two
+ * came back with zero claims kept because the model wrote a real dispatched
+ * role's name in a form the discard check did not recognize — "Product
+ * Scoping" for "product-scoping" — and the whole document was lost to a
+ * spelling mismatch the guard was never meant to enforce. It was still right
+ * to refuse "author" and "construct-position" (a document byline and
+ * Construct's own internal role id, neither ever dispatched); the fix is
+ * lenient about form and exactly as strict about identity.
+ */
+test('a role name in a different case or spacing still resolves to the real role', () => {
+  const composition = toComposition({
+    claims: [
+      { section: 'the-answer', text: 'kept via title case', from: 'Product Scoping' },
+      { section: 'what-follows', text: 'kept via underscore', from: 'strategy_alignment' },
+    ],
+    uncovered: [],
+  });
+  const screened = screenComposition(composition, SOURCES);
+  assert.equal(screened.discarded.length, 0, 'neither claim should be refused for its spelling');
+  // Canonicalized to the real id, not left as the model spelled it — so every
+  // downstream reader (the support check, the rendered attribution) sees one
+  // consistent identifier regardless of how the model wrote it.
+  assert.deepEqual(
+    screened.claims.map((c) => c.from),
+    ['product-scoping', 'strategy-alignment'],
+  );
+});
+
+test('a genuinely invented source is still refused under any spelling', () => {
+  const composition = toComposition({
+    claims: [
+      { section: 'the-answer', text: 'from a document byline, not a role', from: 'author' },
+      { section: 'what-follows', text: 'from the composer\'s own internal id', from: 'construct-position' },
+    ],
+    uncovered: [],
+  });
+  const screened = screenComposition(composition, SOURCES);
+  assert.equal(screened.claims.length, 0);
+  assert.equal(screened.discarded.length, 2);
+});

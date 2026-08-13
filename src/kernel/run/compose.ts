@@ -32,6 +32,8 @@
  * deliverable is an unchecked one.
  */
 
+import { roleLookup } from './rolekey.ts';
+
 /** One role's finished work, as the composer receives it. */
 export interface SourceDeliverable {
   readonly role: string;
@@ -165,16 +167,25 @@ export function toComposition(parsed: unknown): Composition {
  * produced no deliverable here. Structural and deterministic — whether the
  * deliverable actually says it is the substantive question, and a model
  * answers that one.
+ *
+ * Matching a written attribution against a dispatched role is lenient about
+ * spelling (see rolekey.ts) and strict about identity: "Product Scoping" for
+ * "product-scoping" resolves, "author" and "construct-position" do not,
+ * under any spelling, because neither is a role this run dispatched. A
+ * resolved claim is canonicalized to the real role id rather than kept in
+ * whatever form the model wrote it, so everything downstream — the support
+ * check, the rendered attribution — sees one consistent identifier.
  */
 export function screenComposition(
   composition: Composition,
   sources: readonly SourceDeliverable[],
 ): ScreenedComposition {
-  const roles = new Set(sources.map((s) => s.role));
+  const resolve = roleLookup(sources.map((s) => s.role));
   const claims: ComposedClaim[] = [];
   const discarded: { claim: ComposedClaim; reason: string }[] = [];
   for (const claim of composition.claims) {
-    if (!roles.has(claim.from)) {
+    const canonical = resolve(claim.from);
+    if (canonical === undefined) {
       discarded.push({
         claim,
         reason:
@@ -183,7 +194,7 @@ export function screenComposition(
       });
       continue;
     }
-    claims.push(claim);
+    claims.push(canonical === claim.from ? claim : { ...claim, from: canonical });
   }
   return { claims, uncovered: composition.uncovered, discarded };
 }

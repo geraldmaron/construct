@@ -284,3 +284,38 @@ test('a second call every role stopped objecting to is taken', () => {
     true,
   );
 });
+
+/**
+ * Measured on a live composition: a factual claim's restsOn survived with
+ * "Product Scoping" where the real dispatched role is "product-scoping", and
+ * the strict-equality check refused it as a role that never ran — the same
+ * spelling-vs-identity failure fixed in compose.ts's screenComposition, at
+ * this module's own equivalent call site.
+ */
+test('restsOn in a different case or spacing still resolves and is canonicalized', () => {
+  const screened = screenPosition(
+    { ...toPosition(WHOLE)!, because: [{ text: 'x', restsOn: ['Product Scoping', 'privacy_role'] }] },
+    ['product-scoping', 'privacy_role', 'program-sequencing'],
+  );
+  assert.equal(screened.refused.length, 0);
+  assert.deepEqual(screened.position.because[0]!.restsOn, ['product-scoping', 'privacy_role']);
+});
+
+test('a resolved side spelled differently than its dispatched role still resolves', () => {
+  const screened = screenPosition(
+    { ...toPosition(WHOLE)!, resolved: [{ question: 'q', took: ['Product Scoping'], over: ['Privacy'], because: 'r' }] },
+    ROLES,
+  );
+  assert.deepEqual(screened.refused, []);
+  assert.deepEqual(screened.position.resolved[0]!.took, ['product-scoping']);
+  assert.deepEqual(screened.position.resolved[0]!.over, ['privacy']);
+});
+
+test('a document name or the composer\'s own role is still refused under any spelling', () => {
+  const screened = screenPosition(
+    { ...toPosition(WHOLE)!, because: [{ text: 'x', restsOn: ['AGENTS.MD', 'construct-position'] }] },
+    ROLES,
+  );
+  assert.equal(screened.refused.length, 1);
+  assert.match(screened.refused[0]!.reason, /produced no deliverable in this run/);
+});

@@ -75,6 +75,8 @@
  * does not become acceptable by being phrased as a question.
  */
 
+import { roleLookup } from './rolekey.ts';
+
 /** One thing the position asserts, and the roles whose work it rests on. */
 export interface PositionClaim {
   readonly text: string;
@@ -264,12 +266,18 @@ export function toPosition(parsed: unknown): ConstructPosition | null {
  * design is guarding while it lets the judgment through: a factual sentence
  * with no role behind it came from the composer's own knowledge of the world,
  * which it has no license to use here.
+ *
+ * Matching, here as in compose.ts's screenComposition, is lenient about how a
+ * role's name is spelled and strict about which role it resolves to — see
+ * rolekey.ts. Every role a claim survives on is canonicalized to its real id,
+ * so a claim that rested on "Product Scoping" reads, downstream, exactly as
+ * one that rested on "product-scoping" would.
  */
 export function screenPosition(
   position: ConstructPosition,
   roles: readonly string[],
 ): ScreenedPosition {
-  const known = new Set(roles);
+  const resolve = roleLookup(roles);
   const refused: { text: string; reason: string }[] = [];
 
   const keep = (claims: readonly PositionClaim[]): PositionClaim[] => {
@@ -284,7 +292,8 @@ export function screenPosition(
         });
         continue;
       }
-      const unknown = claim.restsOn.filter((role) => !known.has(role));
+      const resolved = claim.restsOn.map((role) => resolve(role));
+      const unknown = claim.restsOn.filter((_, i) => resolved[i] === undefined);
       if (unknown.length > 0) {
         refused.push({
           text: claim.text,
@@ -292,7 +301,7 @@ export function screenPosition(
         });
         continue;
       }
-      kept.push(claim);
+      kept.push({ ...claim, restsOn: resolved as string[] });
     }
     return kept;
   };
@@ -303,13 +312,13 @@ export function screenPosition(
   // resolution goes.
   const resolved: Resolution[] = [];
   for (const r of position.resolved) {
-    const took = r.took.filter((role) => known.has(role));
-    const over = r.over.filter((role) => known.has(role));
+    const took = r.took.map((role) => resolve(role)).filter((role): role is string => role !== undefined);
+    const over = r.over.map((role) => resolve(role)).filter((role): role is string => role !== undefined);
     if (took.length > 0 && over.length > 0) {
       resolved.push({ ...r, took, over });
       continue;
     }
-    const strangers = [...r.took, ...r.over].filter((role) => !known.has(role));
+    const strangers = [...r.took, ...r.over].filter((role) => resolve(role) === undefined);
     refused.push({
       text: r.question,
       reason: `settles a disagreement between roles this run did not dispatch (${strangers.join(', ')})`,
