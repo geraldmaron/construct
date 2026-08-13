@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **A run whose roles cannot open its ground is refused, not reported done** (construct-edmi.15). Found by running the strategy validation for real: a workspace declared a repository, the survey walked 120 documents, the roles were licensed the root — and the host was dispatched from a different directory, so every file read failed and `work` reported three tasks done. Ungrounded deliverables, a record saying grounded. `work` now compares the licensed roots against the directory the roles will actually run in and refuses before a model call is spent, naming both ways out: `--dir=<root>` fixes the common case, `--allow-distant-ground` is for a host the operator knows reaches wider, and taking it is recorded as a choice rather than a silence. Containment is by path segment, not prefix — a check that says `/work/app` contains `/work/application` passes exactly the run it exists to stop.
+- **A role can no longer be nudged into logging a read it never made** (construct-edmi.16). The same run had a role record an external read whose locator was "no external source used" and whose detail explained it was satisfying the tool's logging habit. A provenance list containing declarations of having read nothing is worse than an empty one; the tool now says it is called only when the role actually went outside, and that not calling it is the normal case.
+- **Records and notes can be erased** (construct-edmi.14) — see the erasure entry below, which shipped in alpha.7's tree after the tag.
+
 ## 3.0.0-alpha.7 — 2026-08-13
 
 Four questions were asked of the system — ingest a file or a directory; point it at repos and have it write strategy; point it at a documents repository and have it find what conflicts; feed it customer notes and have it keep records current — and modelled against the code. Two were already answered. The eight gaps behind the other two are closed here (construct-edmi). The rule underneath all of them: ground Construct has not actually read is not ground, and a conclusion whose provenance is silence reads exactly like one whose provenance is a document.

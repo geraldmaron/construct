@@ -151,6 +151,16 @@ and recorded with the reason if none can. A remote source (`jira`, `github`,
 `docs`) is recorded as unreachable until a host can reach it — an answer, not
 an omission.
 
+Dispatch where the ground is. A run is refused if a declared root sits outside
+the directory its roles will run in, because a role dispatched somewhere else
+cannot open the material it is about to be graded on — and the failure is
+silent from the inside, arriving as a finished deliverable with nothing behind
+it:
+
+```bash
+construct work --run <id> --host=claude --dir=/path/to/your/repo
+```
+
 By default the survey ranks prose ahead of code and lists forty documents,
 which is right for understanding what a system promises and wrong for
 understanding what it does. Say which you meant:

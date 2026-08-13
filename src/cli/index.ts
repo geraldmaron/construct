@@ -5,6 +5,7 @@
  */
 
 import { readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
@@ -29,7 +30,8 @@ import {
   SOURCE_KINDS,
   sourcesFor,
 } from '../kernel/store/sources.ts';
-import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
+import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
+import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
 import { DOCUMENT_CAP, listDocuments, surveySource } from '../hosts/sources.ts';
 import type { EngagementMode, Source, SourceKind, SurveyEmphasis } from '../kernel/store/sources.ts';
@@ -1133,6 +1135,13 @@ const NOTES_USAGE =
  */
 export const DEFAULT_MAX_NOTES = 25;
 
+/**
+ * The flag that dispatches anyway when ground sits outside the working
+ * directory. Named once so the refusal, the override and the log entry cannot
+ * drift into naming three different things.
+ */
+const UNREACHABLE_GROUND_FLAG = '--allow-distant-ground';
+
 /** Model calls one note costs: densify, produce, and one challenge per delta. */
 const CALLS_PER_NOTE = 3;
 
@@ -1739,6 +1748,13 @@ export interface WorkArgs {
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
+  /**
+   * Dispatch even where a licensed ground root sits outside the directory the
+   * roles will run in. Off by default: the roles would be graded on material
+   * they cannot open. On when the operator knows this host reaches wider than
+   * its working directory, which Construct cannot see from here.
+   */
+  readonly allowDistantGround: boolean;
   /** Which host executes: 'opencode' (default) or 'claude'. */
   readonly host: string;
   /**
@@ -1813,6 +1829,7 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     model: args.model,
     binary: args.binary,
     dir: args.dir,
+    allowDistantGround: args['allow-distant-ground'] === 'true' || args['allow-distant-ground'] === '',
     host,
     hostExplicit: args.host !== undefined,
     voice: args.voice?.trim() ? args.voice.trim() : undefined,
@@ -1978,11 +1995,45 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         .filter((t) => t.state === 'pending')
         .map((t) => t.run),
     );
+    // Where the roles will actually run: the host's --dir when given, and
+    // otherwise wherever this process was invoked, which is what every adapter
+    // inherits when nothing is passed.
+    const dispatchDirectory = resolve(args.dir ?? process.cwd());
+
     for (const runId of pendingRuns) {
       const pass = groundRun(store, runId, now());
       if (!pass || pass.skipped) continue;
       const documents = pass.documents;
       process.stdout.write(`grounded ${runId}: ${groundingSummary(pass)}\n`);
+
+      // Licensing ground the dispatch cannot open is how a run comes back
+      // three-tasks-done with every file read failed and every deliverable
+      // ungrounded. Knowable here, before a model call is paid for.
+      const reach = groundReach(groundRootsFor(store, runId), dispatchDirectory);
+      const unreachable = unreachableGroundMessage(reach, dispatchDirectory, UNREACHABLE_GROUND_FLAG);
+      if (unreachable && !args.allowDistantGround) {
+        process.stderr.write(`work: ${unreachable}`);
+        appendWorkLog(store, {
+          run: runId,
+          role: 'construct',
+          action: 'ground-unreachable',
+          detail: { from: dispatchDirectory, unreachable: reach.unreachable, reachable: reach.reachable },
+          at: now(),
+        });
+        return 1;
+      }
+      if (unreachable) {
+        // Overridden, not absent: the operator said this host reaches past its
+        // working directory, and the record must show that was a choice.
+        process.stdout.write(`  ⚑ ${UNREACHABLE_GROUND_FLAG}: ${String(reach.unreachable.length)} root(s) outside ${dispatchDirectory}\n`);
+        appendWorkLog(store, {
+          run: runId,
+          role: 'construct',
+          action: 'ground-unreachable-allowed',
+          detail: { from: dispatchDirectory, unreachable: reach.unreachable },
+          at: now(),
+        });
+      }
 
       // Where a measured floor is met before it is paid for, rather than ten
       // minutes per role later. It is stated as the nearest recorded

@@ -972,7 +972,9 @@ test('a run over declared sources dispatches roles grounded in the named documen
       ['source', 'add', '--kind=directory', `--locator=${ground}`],
       ['source', 'add', '--kind=jira', '--locator=PROJ'],
       ['outcome', 'launch a paid beta to EU users next month'],
-      () => work([], capturing),
+      // Dispatched where the ground is: a run licensed a root it cannot open
+      // is refused now, which is the whole point of the check.
+      () => work([`--dir=${ground}`], capturing),
       ['log'],
     ]);
 
@@ -1074,7 +1076,7 @@ test('a dispatch meets the recorded throughput floor before it spends ten minute
     const { out } = await runAll([
       ['source', 'add', '--kind=directory', `--locator=${ground}`],
       ['outcome', 'launch a paid beta to EU users next month'],
-      () => work(['--model=ollama/qwen3.6:35b'], standInHost()),
+      () => work([`--dir=${ground}`, '--model=ollama/qwen3.6:35b'], standInHost()),
     ]);
     assert.match(out, /nearest recorded observation \(2026-08-10, ollama\/qwen3\.6:35b\)/);
     // A caution with no next move is a slower failure, so both ways out are named.
