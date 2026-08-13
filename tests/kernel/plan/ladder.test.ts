@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
-import { batchAskHuman, nextRung, slotGaps } from '../../../src/kernel/plan/ladder.ts';
+import { batchAskHuman, nextRung, slotGaps, slotSection } from '../../../src/kernel/plan/ladder.ts';
 import { playbookFor } from '../../../src/kernel/plan/playbooks.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
@@ -124,4 +124,30 @@ test('measurement ships the plan an analyst hands back: whether the number can e
     const found = template.slots.find((s) => s.name === required);
     assert.ok(found?.required, `${required} is a required slot`);
   }
+});
+
+/**
+ * Reading what is in a slot, not just that it is headed. A check about one
+ * slot's content needs the body, and prose that merely mentions the slot name
+ * must not read as the slot — the deliverable that made this necessary
+ * discussed its own decision-owner section by name three sections later.
+ */
+test('a slot section is read from its heading to the next one, in the forms a role writes it', () => {
+  const deliverable =
+    '## price\n\nUnstated in the material.\n\n' +
+    '## decision-owner\n\nD. Okafor, VP Engineering.\nAsked to decide, not informed.\n\n' +
+    '## displaced-work\n\nThe wind-down, discussed under decision-owner above.\n';
+
+  assert.equal(
+    slotSection(deliverable, 'decision-owner'),
+    'D. Okafor, VP Engineering.\nAsked to decide, not informed.',
+  );
+  assert.equal(slotSection(deliverable, 'price'), 'Unstated in the material.');
+  assert.equal(slotSection(deliverable, 'rollback'), null);
+});
+
+test('an inline label carries its value, and a bare mention of the slot name is not the slot', () => {
+  assert.equal(slotSection('**Decision owner:** D. Okafor\n', 'decision-owner'), 'D. Okafor');
+  assert.equal(slotSection('- decision owner — the VP of Engineering\n', 'decision-owner'), 'the VP of Engineering');
+  assert.equal(slotSection('A different, narrower decision than decision-owner asks for.\n', 'decision-owner'), null);
 });

@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import {
   RUBRIC_LINES,
   namesAnOwner,
+  namesAnOwnerIn,
   rubricChallengeId,
   rubricFor,
   structuralRubricFor,
@@ -104,6 +105,100 @@ test('the several forms a role writes an owner in are all owners', () => {
   ]) {
     assert.equal(namesAnOwner(text).passed, true, `should read an owner from: ${text}`);
   }
+});
+
+/**
+ * The recorded second failure, and the one the slot reading exists for.
+ *
+ * A strategy review said in its own decision-owner slot that no owner was named,
+ * raised an ASK for exactly that, and passed the gate. The text below is that
+ * deliverable's shape: the slot as it was written, and the two sentences
+ * elsewhere that a whole-document read counted as owner attributions. One of
+ * them is the sentence reporting that no owner was named.
+ */
+const NO_DECISION_OWNER_NAMED =
+  '## price\n\n' +
+  'Not stated as a dollar or time figure anywhere in the material.\n\n' +
+  '## decision-owner\n\n' +
+  'Not named in the material as a single role or person for "what capability to fund next." ' +
+  '`docs/data/firebase-wind-down.md` names an "owner" only for specific console-level actions ' +
+  '(Supabase dashboard toggle, admin decommission) — a different, narrower decision than the one ' +
+  'this outcome asks for. Treat this as asking the decision owner to decide, once named.\n\n' +
+  '## displaced-work\n\n' +
+  '- Firebase wind-down completion: the open items are pre-existing, already-scoped work.\n\n' +
+  '## rubric-strategy-alignment-S3\n\n' +
+  'Decision owner is not named for the roadmap-commitment question itself (see decision-owner ' +
+  'above); a narrower owner is named only for specific Firebase console actions.\n';
+
+test('a deliverable that says in its own slot that no owner is named does not pass the owner gate', () => {
+  const s3 = RUBRIC_LINES.find((line) => line.id === 'S3');
+  assert.equal(s3?.enforcement.kind, 'structural');
+
+  const check = (s3?.enforcement as { check: (d: string) => { passed: boolean; detail: string } })
+    .check(NO_DECISION_OWNER_NAMED);
+
+  assert.equal(check.passed, false);
+  assert.match(check.detail, /placeholder/);
+});
+
+/**
+ * The narrower reading is the whole correction: an owner named for something
+ * else is not an answer to this line, and a whole-document read cannot tell the
+ * difference. The slot the template asked the question in can.
+ */
+test('an owner named for a different, narrower decision does not answer the decision-owner line', () => {
+  const namedElsewhere =
+    '## decision-owner\n\nNot named in the material.\n\n' +
+    '## displaced-work\n\nOwner: D. Okafor, for the console decommission steps only.\n';
+
+  assert.equal(namesAnOwnerIn('decision-owner')(namedElsewhere).passed, false);
+  // The same text passes the reading that cannot ask which decision is owned,
+  // which is why the lines gate on the narrower one.
+  assert.equal(namesAnOwner(namedElsewhere).passed, true);
+});
+
+test('a placeholder that explains itself past the end of the phrase is still a placeholder', () => {
+  for (const written of [
+    'Not named in the material as a single role or person for what to fund next.',
+    'Not yet assigned; the research lead would be the natural owner once staffed.',
+    'To be determined at the next planning review.',
+    'No single named owner exists in the read material.',
+    'Unowned as of this writing — security/platform admin is the likely home.',
+  ]) {
+    const check = namesAnOwnerIn('decision-owner')(`## decision-owner\n\n${written}\n`);
+    assert.equal(check.passed, false, `should read as a placeholder: ${written}`);
+  }
+});
+
+test('"the team" is not an owner however the slot phrases it, but a narrowed collective is', () => {
+  const collective = namesAnOwnerIn('ownership')('## ownership\n\nThe team owns this when it breaks.\n');
+  assert.equal(collective.passed, false);
+
+  const narrowed = namesAnOwnerIn('ownership')('## ownership\n\nThe team lead, D. Okafor, is paged.\n');
+  assert.equal(narrowed.passed, true);
+});
+
+test('a name in the slot passes, in the forms a role writes it', () => {
+  for (const written of [
+    '## decision-owner\n\nD. Okafor, VP Engineering, is being asked to decide.\n',
+    '## decision-owner\n\n**Decision owner:** the platform security lead (D. Okafor) — asked to decide.\n',
+    'Decision owner: D. Okafor, who is being informed rather than asked.\n',
+  ]) {
+    assert.equal(namesAnOwnerIn('decision-owner')(written).passed, true, `should read a name from: ${written}`);
+  }
+});
+
+/**
+ * A deliverable that ignores the template is not held to a standard the
+ * template implies: the missing slot is a gap the ladder already raises, and
+ * this check is meant to be stricter than the whole-document read, not scoped
+ * somewhere the deliverable never wrote.
+ */
+test('a deliverable that never heads the slot falls back to the whole-document reading', () => {
+  const unheaded = '## finding\n\nProceed with the migration. Owner: D. Okafor.\n';
+
+  assert.equal(namesAnOwnerIn('decision-owner')(unheaded).passed, true);
+  assert.equal(namesAnOwnerIn('decision-owner')('## finding\n\nProceed.\n').passed, false);
 });
 
 /**

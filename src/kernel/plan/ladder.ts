@@ -56,6 +56,71 @@ export function unheadedSlots(
     .map((slot) => ({ deliverable: template.deliverable, slot }));
 }
 
+/** A line read as a slot label: what it names, what followed it, how it was written. */
+interface SlotLabel {
+  readonly label: string;
+  readonly rest: string;
+  readonly heading: boolean;
+}
+
+const normalizeLabel = (text: string): string =>
+  text.toLowerCase().replace(/[*_`]/g, '').replace(/[-\s]+/g, ' ').trim();
+
+/**
+ * Whether a line labels a slot, and what it labels it with.
+ *
+ * A heading labels its whole line. Anything else has to end its label with a
+ * colon or an em dash, which is what keeps prose that merely mentions a slot by
+ * name — "a different, narrower decision than the one this outcome asks for
+ * (see decision-owner above)" — from reading as the slot itself.
+ */
+function slotLabelOf(raw: string): SlotLabel | null {
+  const heading = /^\s*#{1,6}\s+(.*)$/.exec(raw);
+  if (heading) {
+    const [label, ...rest] = heading[1].split(/\s*[:—]\s*/);
+    return { label: normalizeLabel(label), rest: rest.join(': ').trim(), heading: true };
+  }
+  const inline = /^[\s>*_`-]*([^:—\n]{1,60}?)[*_`]*\s*[:—]\s*(.*)$/.exec(raw);
+  if (!inline) return null;
+  return {
+    label: normalizeLabel(inline[1]),
+    rest: inline[2].replace(/^[\s*_`]+/, '').trim(),
+    heading: false,
+  };
+}
+
+/**
+ * What a deliverable wrote in one named slot, or null if it never headed it.
+ *
+ * `unheadedSlots` above answers whether the slot is there; this answers what is
+ * in it, which is what a check about a specific slot's content needs. The two
+ * read prose the same way on purpose — one parser for one shape, so a heading
+ * form that satisfies the gap detector cannot be invisible to the checks.
+ *
+ * Reading the slot is how a structural check learns what an attribution is
+ * about. A checker cannot tell from a sentence which decision an owner owns;
+ * it can tell that a name stands in the slot the template asked the owner
+ * question in, and that is the same information arrived at honestly.
+ */
+export function slotSection(deliverable: string, slotName: string): string | null {
+  const wanted = normalizeLabel(slotName);
+  const lines = deliverable.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const labelled = slotLabelOf(lines[i]);
+    if (!labelled || labelled.label !== wanted) continue;
+    if (labelled.rest) return labelled.rest;
+    if (!labelled.heading) continue;
+    const body: string[] = [];
+    for (let j = i + 1; j < lines.length; j += 1) {
+      if (/^\s*#{1,6}\s/.test(lines[j])) break;
+      body.push(lines[j]);
+    }
+    const text = body.join('\n').trim();
+    if (text) return text;
+  }
+  return null;
+}
+
 /** What one gap should do next, given how far it has already climbed. */
 export function nextRung(climbed: readonly AcquisitionRung[]): AcquisitionRung | null {
   for (const rung of ACQUISITION_LADDER) {

@@ -37,6 +37,7 @@
  * would be enforcing a standard stricter than the document it comes from.
  */
 
+import { slotSection } from '../plan/ladder.ts';
 import type { ChallengeCheck } from './catalog.ts';
 
 /** How a rubric line is enforced, or why it is not. */
@@ -85,8 +86,50 @@ function labelled(text: string, labels: readonly string[]): boolean {
 const OWNER_ATTRIBUTION =
   /\b(?:decision\s+)?owner\s*[:\-—]\s*([^\n]+)|\bowned by\s+([^\n.,;]+)|\bowner is\s+([^\n.,;]+)/gi;
 
-const NOT_AN_OWNER =
-  /^(?:\[?(?:unowned|unassigned|unknown|none|nobody|no one|tbd|tba|n\/a)\]?|not (?:yet )?(?:named|assigned|determined|identified|decided)|unclear|the team|the org|the group|engineering|the business|whoever|someone|to be (?:decided|determined|named|assigned))\.?$/i;
+/**
+ * Placeholders that are the whole of what stands in the owner's place.
+ */
+const NOT_AN_OWNER_EXACT =
+  /^(?:\[?(?:none|nobody|no one|tbd|tba|n\/a)\]?|unclear|engineering|whoever|someone)\.?$/i;
+
+/**
+ * The collective standing in for a person — the placeholder the rubric names by
+ * name, since "'the team' is not an owner" is the line's own words.
+ *
+ * Matched as an opening rather than exactly, because in a slot whose heading
+ * already asked the question the answer is written as a sentence: "The team
+ * owns this call" is the same non-answer as "the team". The lookahead is what
+ * keeps a narrowed collective — "the team lead", "the group architect" — a
+ * name, since those point at one person the reader can go to.
+ */
+const COLLECTIVE_NOT_AN_OWNER =
+  /^the (?:team|org|organisation|organization|group|business|company)\b(?!\s+(?:lead|leads|owner|manager|head|director|architect|chair|captain|liaison|principal|contact|representative|rep|engineer|sre)\b)/i;
+
+/**
+ * Openings that are a placeholder however the sentence continues.
+ *
+ * The distinction is the correction this catalog needed twice. A whole-value
+ * test lets a placeholder escape by explaining itself, and the explanations are
+ * honest, which is exactly why they are convincing: a real deliverable wrote
+ * "Not named in the material as a single role or person for what capability to
+ * fund next" in its decision-owner slot and the gate passed it. The sentence
+ * says what kind of person would own this and leaves the reader with a search.
+ * Whatever follows the placeholder explains it; it does not replace it.
+ *
+ * "named" opens the list because the slot's label already asked the owner
+ * question — an attribution answering it gives a name, and one that starts by
+ * restating the verb is prose about naming rather than a name.
+ */
+const NOT_AN_OWNER_OPENING =
+  /^(?:\[?(?:unowned|unassigned|unknown|unnamed)\]?|not (?:yet )?(?:named|assigned|determined|identified|decided)|never (?:named|assigned)|no single|not stated|named|to be (?:decided|determined|named|assigned))\b/i;
+
+function notAnOwner(head: string): boolean {
+  return (
+    NOT_AN_OWNER_EXACT.test(head) ||
+    NOT_AN_OWNER_OPENING.test(head) ||
+    COLLECTIVE_NOT_AN_OWNER.test(head)
+  );
+}
 
 /**
  * The head of an owner attribution — what stands where the name goes, before
@@ -106,44 +149,101 @@ function ownerHead(value: string): string {
 }
 
 /**
- * Whether the deliverable names somebody a reader could actually go to.
+ * Whether the deliverable names somebody a reader could actually go to,
+ * anywhere in it.
  *
- * One implementation for the three rubric lines that require an owner, rather
- * than three matchers that would drift apart. The lines differ in what the
- * owner owns — a decision, a failure, an instrument — and a structural check
- * cannot see that difference; what it can see is whether a name was given at
- * all, which is the part all three fail on together in practice.
+ * This is the reading of last resort, for a deliverable that never headed the
+ * slot the owner question was asked in. It cannot tell which decision an
+ * attribution is about, so it answers the weaker question — was a name given at
+ * all — and `namesAnOwnerIn` below is what the rubric lines actually gate on.
  */
 export function namesAnOwner(deliverable: string): ChallengeCheck {
+  return verdictOn(readOwners(deliverable), 'for what this deliverable recommends');
+}
+
+/** The owner attributions in a stretch of prose, sorted into names and placeholders. */
+function readOwners(text: string): { named: number; placeholders: string[] } {
   const placeholders: string[] = [];
   let named = 0;
-  for (const match of deliverable.matchAll(OWNER_ATTRIBUTION)) {
+  for (const match of text.matchAll(OWNER_ATTRIBUTION)) {
     const value = (match[1] ?? match[2] ?? match[3] ?? '').trim().replace(/[.*_`]+$/, '');
     if (!value) continue;
     const head = ownerHead(value);
     if (!head) continue;
-    if (NOT_AN_OWNER.test(head)) placeholders.push(head);
+    if (notAnOwner(head)) placeholders.push(head);
     else named += 1;
   }
-  if (named > 0) {
+  return { named, placeholders };
+}
+
+/** A placeholder as the message quotes it: enough to recognize, not the whole paragraph. */
+function quoted(head: string): string {
+  return head.length > 60 ? `${head.slice(0, 60).trimEnd()}…` : head;
+}
+
+function verdictOn(
+  read: { named: number; placeholders: string[] },
+  where: string,
+): ChallengeCheck {
+  if (read.named > 0) {
     return {
       passed: true,
-      detail: `${String(named)} owner attribution(s) name somebody — whether that person can actually decide is a substantive question this check cannot answer`,
+      detail: `${String(read.named)} owner attribution(s) name somebody — whether that person can actually decide is a substantive question this check cannot answer`,
     };
   }
-  if (placeholders.length > 0) {
+  if (read.placeholders.length > 0) {
     return {
       passed: false,
       detail:
-        `every owner attribution is a placeholder (${placeholders.slice(0, 3).join(', ')}) — ` +
+        `every owner attribution is a placeholder (${read.placeholders.slice(0, 3).map(quoted).join(', ')}) — ` +
         'a reader who is told the owner is unassigned has been told nothing they can act on',
     };
   }
   return {
     passed: false,
     detail:
-      'no owner is named for what this deliverable recommends — the reader cannot act on a ' +
+      `no owner is named ${where} — the reader cannot act on a ` +
       'recommendation with nobody against it, and finding the owner is work this role could do',
+  };
+}
+
+/**
+ * Whether the slot that asks the owner question was answered with somebody.
+ *
+ * The whole-deliverable read above cannot ask which decision an owner owns, and
+ * that limit has now let a document through twice. The playbook template already
+ * carries the answer: it asks each of these roles the owner question in a named
+ * slot — decision-owner, ownership, instrumentation — so the slot's own content
+ * says which decision the attribution is about, and reading it is not a
+ * judgement the checker is unequipped to make.
+ *
+ * The recorded failure is what this is for. A strategy review wrote "Not named
+ * in the material as a single role or person for what capability to fund next"
+ * under its decision-owner heading, raised an ASK for exactly that, and passed,
+ * because two sentences elsewhere in the document — one of them the sentence
+ * reporting that no owner was named — matched an owner attribution.
+ *
+ * A deliverable that never heads the slot falls back to the whole-document read
+ * rather than failing here: the missing slot is already a gap the ladder raises,
+ * and this check should be stricter than it was, never differently scoped.
+ */
+export function namesAnOwnerIn(slotName: string): (deliverable: string) => ChallengeCheck {
+  return (deliverable) => {
+    const section = slotSection(deliverable, slotName);
+    if (section === null) return namesAnOwner(deliverable);
+    // Within the slot the heading is the label, so the section itself is the
+    // attribution — unless it writes its own, which the operations and
+    // measurement slots do when several items each carry an owner.
+    const written = readOwners(section);
+    if (written.named > 0 || written.placeholders.length > 0) {
+      return verdictOn(written, `in the ${slotName} slot`);
+    }
+    const head = ownerHead(section.split('\n').find((line) => line.trim())?.trim() ?? '');
+    if (!head) return verdictOn({ named: 0, placeholders: [] }, `in the ${slotName} slot`);
+    return verdictOn(
+      notAnOwner(head) ? { named: 0, placeholders: [head] } : { named: 1, placeholders: [] },
+      `in the ${slotName} slot`,
+    );
   };
 }
 
@@ -180,7 +280,7 @@ export const RUBRIC_LINES: readonly RubricLine[] = [
     id: 'S3',
     weight: 'must',
     requires: 'The decision owner is named, and the deliverable says whether it is asking that person to decide or informing them.',
-    enforcement: { kind: 'structural', check: namesAnOwner },
+    enforcement: { kind: 'structural', check: namesAnOwnerIn('decision-owner') },
   },
   {
     concern: 'system-design',
@@ -232,7 +332,7 @@ export const RUBRIC_LINES: readonly RubricLine[] = [
     id: 'O2',
     weight: 'must',
     requires: "An owner is named for answering the failure, with what access that person needs; 'the team' is not an owner.",
-    enforcement: { kind: 'structural', check: namesAnOwner },
+    enforcement: { kind: 'structural', check: namesAnOwnerIn('ownership') },
   },
   {
     concern: 'operations',
@@ -321,7 +421,7 @@ export const RUBRIC_LINES: readonly RubricLine[] = [
     id: 'M3',
     weight: 'must',
     requires: 'Instrumentation names where a number would be recorded and who owns recording it.',
-    enforcement: { kind: 'structural', check: namesAnOwner },
+    enforcement: { kind: 'structural', check: namesAnOwnerIn('instrumentation') },
   },
   {
     concern: 'security',
