@@ -16,7 +16,9 @@ import {
   claimsFrom,
   composeReadiness,
   screenComposition,
+  standingLine,
   toComposition,
+  unclearedSources,
 } from '../../../src/kernel/run/compose.ts';
 import type { SourceDeliverable } from '../../../src/kernel/run/compose.ts';
 
@@ -95,4 +97,46 @@ test('one deliverable has nothing to compose, and says why rather than paraphras
   assert.match(none.reason, /no task in this run produced a deliverable/);
 
   assert.equal(composeReadiness(SOURCES).ready, true);
+});
+
+/**
+ * The screen a composed document shows is real and it is not the only one.
+ *
+ * A recorded run produced five deliverables, every one failing its citation
+ * gate, none promoted — and the document composed from all five reported what
+ * the composer had discarded, asserted that nothing was added by the composing,
+ * and never mentioned that not one source had passed. Both statements were
+ * true. Together they read as an assurance about the material that nobody made.
+ */
+test('sources that did not come through their own challenges are the ones reported', () => {
+  const standings = [
+    { role: 'privacy', state: 'draft', failing: ['claims-cited'], outstanding: ['legal-issue-spot'] },
+    { role: 'product-scoping', state: 'challenged', failing: ['claims-cited'], outstanding: [] },
+    { role: 'measurement', state: 'promoted', failing: [], outstanding: [] },
+  ];
+
+  const uncleared = unclearedSources(standings);
+
+  assert.deepEqual(uncleared.map((s) => s.role), ['privacy', 'product-scoping']);
+});
+
+test('a run whose every source is clean reports nothing, rather than reporting cleanliness', () => {
+  const clean = [
+    { role: 'privacy', state: 'promoted', failing: [], outstanding: [] },
+    { role: 'security', state: 'promoted', failing: [], outstanding: [] },
+  ];
+
+  assert.deepEqual(unclearedSources(clean), []);
+});
+
+test('an outstanding challenge is reported as answered by nobody, not as passed', () => {
+  const line = standingLine({
+    role: 'privacy',
+    state: 'draft',
+    failing: ['claims-cited'],
+    outstanding: ['legal-issue-spot'],
+  });
+
+  assert.match(line, /failed claims-cited/);
+  assert.match(line, /legal-issue-spot answered by nobody/);
 });

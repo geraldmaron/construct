@@ -57,9 +57,11 @@ import {
   claimsFrom,
   composeReadiness,
   screenComposition,
+  standingLine,
   toComposition,
+  unclearedSources,
 } from '../kernel/run/compose.ts';
-import type { ComposedClaim, SourceDeliverable } from '../kernel/run/compose.ts';
+import type { ComposedClaim, SourceDeliverable, SourceStanding } from '../kernel/run/compose.ts';
 import {
   COMPOSITION_SECTIONS,
   createHostComposer,
@@ -3139,6 +3141,18 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         .map((task) => [task.role, task.brief as Brief] as const)
         .filter(([, brief]) => brief !== null && typeof brief === 'object'),
     );
+    // What each source's own challenges came to. Read here rather than assumed:
+    // the states are recorded on every run and were simply never carried to the
+    // person reading the document built out of them.
+    const standings: SourceStanding[] = done.map((task) => {
+      const promotion = promotionOf(store, task.id);
+      return {
+        role: task.role,
+        state: promotion?.state ?? 'unrecorded',
+        failing: promotion?.failing ?? [],
+        outstanding: promotion?.outstanding ?? [],
+      };
+    });
 
     const readiness = composeReadiness(sources);
     if (!readiness.ready) {
@@ -3215,6 +3229,22 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
     const kept = screened.claims.filter((claim) => !unsupported.has(claim));
     process.stdout.write(`\n# ${plan.outcome}\n`);
+
+    // Before the claims, not after them. A reader who reaches the end of a
+    // document and only then learns that none of its sources passed their own
+    // gates has already believed it.
+    const uncleared = unclearedSources(standings);
+    if (uncleared.length > 0) {
+      process.stdout.write(
+        `\n> **What the sources of this document did not pass.** ${String(uncleared.length)} of ` +
+          `${String(standings.length)} deliverables composed here did not come through their own\n` +
+          '> challenges clean. The claims below are still each a role\'s own, checked against that\n' +
+          "> role — that screen is real and it is not this one.\n>\n" +
+          uncleared.map((s) => `> - ${standingLine(s)}\n`).join('') +
+          '>\n> They are composed rather than withheld because the run recorded these verdicts and\n' +
+          '> can show them, and a reader told which sources were challenged can weigh the document.\n',
+      );
+    }
     const empty: string[] = [];
     for (const section of COMPOSITION_SECTIONS) {
       const inSection = kept.filter((claim) => claim.section === section.name);

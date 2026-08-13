@@ -38,6 +38,56 @@ export interface SourceDeliverable {
   readonly text: string;
 }
 
+/**
+ * What a source deliverable's own challenges came to, carried to the reader of
+ * the document built from it.
+ *
+ * A composition's defence has always been that every claim in it is a role's,
+ * checked against that role. That sentence is true about the composing step and
+ * says nothing about the material, and the difference is not academic: a
+ * recorded run produced five deliverables, every one of them failing its
+ * citation gate, none of them promoted, and the document composed from all five
+ * reported what the composer discarded and never mentioned that not one source
+ * had passed. The screen the reader was shown was real and it was the wrong
+ * screen.
+ *
+ * Disclosure rather than refusal, decided rather than defaulted. Refusing to
+ * compose from a challenged deliverable would withhold the run's work over a
+ * gate the run already recorded and already showed, which is the withholding
+ * this project refuses everywhere else; and a reader who is told which sources
+ * were challenged can weigh the document, while a reader handed nothing cannot.
+ */
+export interface SourceStanding {
+  readonly role: string;
+  /** The promotion state the run recorded: draft, challenged, promoted. */
+  readonly state: string;
+  /** Challenges this source's deliverable failed. */
+  readonly failing: readonly string[];
+  /** Challenges nothing has answered — no structural form, no substantive pass. */
+  readonly outstanding: readonly string[];
+}
+
+/** Sources whose deliverable did not come through its own challenges clean. */
+export function unclearedSources(standings: readonly SourceStanding[]): SourceStanding[] {
+  return standings.filter((s) => s.failing.length > 0 || s.outstanding.length > 0);
+}
+
+/**
+ * One line a reader can act on, per source that did not come through clean.
+ *
+ * Written as what it means rather than as a status: "challenged" is a word from
+ * this system's own vocabulary, and the reader of a composed document has not
+ * agreed to learn it.
+ */
+export function standingLine(standing: SourceStanding): string {
+  const parts: string[] = [];
+  if (standing.failing.length > 0) parts.push(`failed ${standing.failing.join(', ')}`);
+  if (standing.outstanding.length > 0) {
+    parts.push(`${standing.outstanding.join(', ')} answered by nobody`);
+  }
+  return `${standing.role}: ${parts.join('; ')}`;
+}
+
 /** One claim in the composition, and the role whose deliverable it came from. */
 export interface ComposedClaim {
   readonly section: string;
