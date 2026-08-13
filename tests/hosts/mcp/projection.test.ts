@@ -30,6 +30,7 @@ import {
   PROJECTION_TOOLS,
   createProjectionHandler,
 } from '../../../src/hosts/mcp/projection.ts';
+import { addRecord, updateRecordField } from '../../../src/kernel/store/records.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
 import type { JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
 
@@ -80,7 +81,9 @@ test('the tool surface is exactly the read/append set — nothing dispatches, no
     'decide',
     'drop_note',
     'inbox',
+    'record',
     'record_outcome',
+    'records',
     'run_status',
     'validate_brief',
     'verdict',
@@ -381,4 +384,76 @@ test('the catalog names the Construct that answered it', async () => {
   } finally {
     f.cleanup();
   }
+});
+
+/**
+ * An operator triaging a decision needs to see what is already known about the
+ * thing they are deciding about. Before this that meant leaving the surface,
+ * which is the whole complaint the projection exists to answer.
+ */
+test('a subject reads through the projection with its history and citations', async () => {
+  const f = fixture();
+  try {
+    addRecord(f.store, {
+      id: 'sub-1',
+      workspace: 'blackstory',
+      kind: 'customer',
+      name: 'Acme',
+      createdAt: '2026-08-01T00:00:00.000Z',
+    });
+    updateRecordField(f.store, {
+      record: 'sub-1',
+      field: 'renewal',
+      value: 'Q2',
+      citation: 'note:n1#L4',
+      recordedAt: '2026-08-01T00:00:00.000Z',
+    });
+    updateRecordField(f.store, {
+      record: 'sub-1',
+      field: 'renewal',
+      value: 'Q3',
+      citation: 'note:n2#L9',
+      recordedAt: '2026-08-05T00:00:00.000Z',
+    });
+
+    const listed = payload(await f.handle(call('records', { workspace: 'blackstory' }))).body as {
+      subjects: { id: string; name: string }[];
+    };
+    assert.deepEqual(listed.subjects.map((s) => s.name), ['Acme']);
+
+    const shown = payload(await f.handle(call('record', { id: 'sub-1' }))).body as {
+      fields: { field: string; value: string; citation: string; previously: { value: string }[] }[];
+    };
+    const renewal = shown.fields.find((field) => field.field === 'renewal');
+    assert.equal(renewal?.value, 'Q3', 'the current value is the most recent');
+    assert.equal(renewal?.citation, 'note:n2#L9', 'and it carries the words that taught it');
+    // A current value with no way to see what it replaced is a fact with no way
+    // to be wrong.
+    assert.deepEqual(renewal?.previously.map((p) => p.value), ['Q2']);
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The two operations that must not reach a surface whose host can enable
+ * externally reachable channels: the ones that spend the user's money, and the
+ * one with no way back.
+ */
+test('review, compose and erasure are absent from this surface by decision', () => {
+  const names = PROJECTION_TOOLS.map((tool) => tool.name);
+  for (const absent of ['review', 'compose', 'record_erase', 'erase', 'work']) {
+    assert.equal(names.includes(absent), false, `${absent} must not be projected`);
+  }
+});
+
+/**
+ * A note dropped here is stored and waits. The tool used to say the loop
+ * happened "elsewhere", which a model relays to the user as though the work had
+ * been done somewhere they need not think about.
+ */
+test('drop_note says plainly that nothing is learned until someone runs the loop', () => {
+  const note = PROJECTION_TOOLS.find((tool) => tool.name === 'drop_note');
+  assert.match(note?.description ?? '', /does not run the context loop/);
+  assert.match(note?.description ?? '', /construct notes --run/);
 });

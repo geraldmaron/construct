@@ -24,6 +24,26 @@
  *     this server touches it. Role writes (submit_draft, append_work_log) stay
  *     on the token-scoped role server, which a dispatcher launches with a
  *     capability this process never holds.
+ *   - No `review` and no `compose`. Both are the CLI asking a host model
+ *     several times and paying for it, which is dispatch wearing the clothes of
+ *     a read: `review` runs a producer over the declared ground, and `compose`
+ *     spends a call to arrange plus one per role to check, plus the closing
+ *     round. The rule above is not that writes are forbidden and reads are
+ *     fine; it is that a host model must not be able to spend the user's money
+ *     by being helpful, and these would let it.
+ *   - No erasure. `construct record erase` destroys a subject and every value
+ *     its fields ever held, deliberately and irreversibly, because a person
+ *     asked to be forgotten. This host can enable chat channels reachable from
+ *     outside the machine, and the one operation with no way back is the one
+ *     that must not sit behind a surface whose reachability the operator may
+ *     not have thought about. It stays a terminal in front of a person, and
+ *     saying so here is the decision rather than an omission nobody made.
+ *
+ * What reading a subject IS for: an operator triaging research decisions needs
+ * to see what is already known about the thing they are deciding about, and
+ * before this that meant leaving the surface. `records` and `record` are reads
+ * of exactly that, history included — a current value with no way to see what
+ * it replaced is a fact with no way to be wrong.
  *
  * The inversion, inside a host: the model calling these tools has already read
  * the user's words, so `record_outcome` lets it propose domain namings
@@ -47,6 +67,7 @@ import { validateBrief } from '../../kernel/brief/schema.ts';
 import type { DomainNaming } from '../../kernel/implication/naming.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
+import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
 import type { JsonRpcRequest, JsonRpcResponse, MessageHandler } from './jsonrpc.ts';
 
 export interface ProjectionCore {
@@ -177,8 +198,13 @@ export const PROJECTION_TOOLS = [
       'user typed or dictated in this session, or the contents of a file ' +
       'they dropped. Pass the text verbatim: the note is the evidence later ' +
       'conclusions cite by line, so a cleaned-up paraphrase would be ' +
-      'provenance for words the user never said. Recording draws no ' +
-      'conclusions; densification and the context loop happen elsewhere.',
+      'provenance for words the user never said.\n\n' +
+      'This records the note and nothing else. It does not run the context ' +
+      'loop, so no deltas, proposals, records or drift come out of dropping a ' +
+      'note here — the note is stored and waits. Someone must run ' +
+      '`construct notes --run` against this workspace for anything to be ' +
+      'learned from it. Say so when you record one, rather than leaving the ' +
+      'user to believe the work happened.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -195,6 +221,37 @@ export const PROJECTION_TOOLS = [
         run: { type: 'string', description: 'A run id, when the notes belong to one.' },
       },
       required: ['workspace', 'body', 'door'],
+    },
+  },
+  {
+    name: 'records',
+    description:
+      'The subjects this workspace keeps facts about — customers, vendors, ' +
+      'accounts, programmes — by name and kind. Reading only. Use `record` ' +
+      'to see what is actually known about one of them.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: { type: 'string', description: 'The workspace whose subjects to list.' },
+      },
+      required: ['workspace'],
+    },
+  },
+  {
+    name: 'record',
+    description:
+      'What is known about one subject: each field\'s current value, the note ' +
+      'citation that taught it, and every value it held before. Reading only, ' +
+      'and history included on purpose — a current value with no way to see ' +
+      'what it replaced is a fact with no way to be wrong. Fields are never ' +
+      'set here or anywhere by hand; they arrive through the context loop from ' +
+      'notes, citing lines.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The subject id, from the records tool.' },
+      },
+      required: ['id'],
     },
   },
   {
@@ -322,6 +379,33 @@ async function callTool(
           construct: core.serverVersion,
           domains: DOMAINS.map((d) => ({ domain: d.domain, concern: d.concern })),
         });
+      case 'records': {
+        const workspace = typeof input.workspace === 'string' ? input.workspace.trim() : '';
+        if (!workspace) throw new RangeError('records requires a non-empty string "workspace"');
+        return toolResult(id, { subjects: recordsFor(core.store, workspace) });
+      }
+      case 'record': {
+        const subject = typeof input.id === 'string' ? input.id.trim() : '';
+        if (!subject) throw new RangeError('record requires a non-empty string "id"');
+        const found = getRecord(core.store, subject);
+        if (!found) throw new RangeError(`no record "${subject}"`);
+        return toolResult(id, {
+          subject: found,
+          fields: currentFields(core.store, subject).map((field) => ({
+            ...field,
+            // The values this field held before, so a reader can see what the
+            // current one replaced and on whose words. A record that shows only
+            // its latest answer cannot be argued with.
+            previously: fieldHistory(core.store, subject, field.field)
+              .filter((entry) => entry.recordedAt !== field.recordedAt)
+              .map((entry) => ({
+                value: entry.value,
+                citation: entry.citation,
+                recordedAt: entry.recordedAt,
+              })),
+          })),
+        });
+      }
       case 'record_outcome':
         return toolResult(id, await recordOutcome(core, client, input));
       case 'work_log':
