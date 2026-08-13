@@ -30,6 +30,19 @@ export interface DensifiedIntake {
   readonly decisions: readonly string[];
   /** Tangents worth keeping visible that are not this outcome. */
   readonly parked: readonly string[];
+  /**
+   * What the text does not say that staffing this outcome would need to
+   * assume — a person, a scope boundary, a definition of done. Empty when the
+   * text carries enough to staff with confidence, which is the ordinary case
+   * and not treated as suspicious.
+   *
+   * This never blocks the run: staffing proceeds on the densified outcome and
+   * a stated assumption either way, the same fail-open shape as an inbox ask
+   * (kernel/run/asks.ts). What this adds is the reader seeing, before paying
+   * for the run, that the outcome was thin enough to need a guess rather than
+   * finding out only from what the roles guessed.
+   */
+  readonly underspecified: string;
 }
 
 /** A model-backed densifier. Throws on failure; the caller states the fallback. */
@@ -46,6 +59,7 @@ export function toDensifiedIntake(parsed: unknown): DensifiedIntake {
     constraints?: unknown;
     decisions?: unknown;
     parked?: unknown;
+    underspecified?: unknown;
   } | null;
   const outcome = typeof record?.outcome === 'string' ? record.outcome.trim() : '';
   if (!outcome) {
@@ -60,5 +74,6 @@ export function toDensifiedIntake(parsed: unknown): DensifiedIntake {
     constraints: strings(record?.constraints),
     decisions: strings(record?.decisions),
     parked: strings(record?.parked),
+    underspecified: typeof record?.underspecified === 'string' ? record.underspecified.trim() : '',
   };
 }

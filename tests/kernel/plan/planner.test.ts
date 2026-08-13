@@ -78,6 +78,7 @@ test('understanding absorbs the densified intake and falls back to the raw outco
         constraints: ['no third-party trackers'],
         decisions: ['use the existing list provider'],
         parked: ['redesign later'],
+        underspecified: '',
       },
     }),
   );

@@ -34,6 +34,7 @@ const DENSIFIED = {
   constraints: ['legal review before any customer email'],
   decisions: ['pricing stays flat for the pilot'],
   parked: ['revisit the onboarding video'],
+  underspecified: '',
 } as const;
 
 function withStore<T>(fn: (store: ReturnType<typeof openStore>) => T): T {
@@ -101,7 +102,7 @@ test('the confirm-intent summary restates the densified reading, sections only w
   assert.match(summary, /Outcome: move the pilot to Q4/);
   assert.match(summary, /Decisions you already made:\n- pricing stays flat/);
   assert.match(summary, /Parked .*:\n- revisit the onboarding video/);
-  const bare = confirmIntentSummary({ outcome: 'x', constraints: [], decisions: [], parked: [] });
+  const bare = confirmIntentSummary({ outcome: 'x', constraints: [], decisions: [], parked: [], underspecified: '' });
   assert.ok(!bare.includes('Constraints'));
   assert.ok(!bare.includes('Parked'));
 });

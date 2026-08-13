@@ -36,12 +36,20 @@ export function densifierPrompt(raw: string): string {
     '- decisions: choices the text shows as already made. When the text',
     '  corrects itself, the correction is the decision.',
     '- parked: side-thoughts worth keeping that are not this outcome.',
+    '- underspecified: what staffing this outcome would have to guess because',
+    '  the text does not say it — who it is for, what scope it covers, what',
+    '  "done" means. One plain sentence naming the gap, or empty if the text',
+    '  gives enough to staff with confidence. "Fix onboarding" cannot be',
+    '  staffed without guessing which onboarding, for whom, and against what',
+    '  standard — say so. Do not invent a gap in a request that is actually',
+    '  clear just to have something here; empty is the common, expected case.',
     '- Invent nothing. Every item must be traceable to their words.',
     '- Empty lists are valid. Do not reach.',
     '',
     'Reply with JSON only — no prose, no markdown fences, no <think> blocks,',
     'nothing outside the object:',
-    '{"outcome":"<one sentence>","constraints":[],"decisions":[],"parked":[]}',
+    '{"outcome":"<one sentence>","constraints":[],"decisions":[],"parked":[],' +
+      '"underspecified":"<gap, or empty>"}',
   ].join('\n');
 }
 

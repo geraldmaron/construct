@@ -49,3 +49,25 @@ test('non-string and empty list entries are dropped, not passed downstream', () 
   assert.deepEqual(parsed.constraints, ['keep', 'also keep']);
   assert.deepEqual(parsed.decisions, []);
 });
+
+test('an omitted underspecified field defaults to empty, never to a guessed gap', () => {
+  const parsed = toDensifiedIntake({ outcome: 'ship the pilot' });
+  assert.equal(parsed.underspecified, '');
+});
+
+/**
+ * A vague ask like "fix onboarding" was staffed with the same confidence as a
+ * precise one, because nothing distinguished a thin extraction from a solid
+ * one. The prompt asks the model to say so in the same call rather than
+ * adding one; this is the reader-visible half of that.
+ */
+test('a stated gap survives extraction and a clean one is not invented', () => {
+  const thin = toDensifiedIntake({
+    outcome: 'fix onboarding',
+    underspecified: 'which onboarding flow, for whom, and what "fixed" means are not said',
+  });
+  assert.equal(thin.underspecified, 'which onboarding flow, for whom, and what "fixed" means are not said');
+
+  const precise = toDensifiedIntake({ outcome: 'ship signup', underspecified: '' });
+  assert.equal(precise.underspecified, '');
+});

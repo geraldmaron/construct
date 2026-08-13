@@ -132,6 +132,9 @@ export function confirmIntentSummary(densified: DensifiedIntake): string {
   section('Decisions you already made', densified.decisions);
   section('Constraints', densified.constraints);
   section('Parked (kept visible, not this outcome)', densified.parked);
+  if (densified.underspecified.length > 0) {
+    lines.push('', `This is thin enough to need a guess: ${densified.underspecified}`);
+  }
   return lines.join('\n');
 }
 

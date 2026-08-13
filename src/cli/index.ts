@@ -877,6 +877,16 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       for (const c of densified.constraints) process.stdout.write(`  constraint: ${c}\n`);
       for (const d of densified.decisions) process.stdout.write(`  decided: ${d}\n`);
       for (const p of densified.parked) process.stdout.write(`  parked: ${p}\n`);
+      // Fail-open, never a gate: staffing proceeds either way. What this buys
+      // is the reader seeing, before paying for the run, that the outcome was
+      // thin enough to need a guess — rather than finding out only from what
+      // the roles guessed.
+      if (densified.underspecified.length > 0) {
+        process.stdout.write(
+          `  this is thin enough that staffing will have to guess: ${densified.underspecified}\n` +
+            '  staffing proceeds on that guess; nothing here blocks the run.\n',
+        );
+      }
       process.stdout.write('\n');
     } else if (densifyFailure !== undefined) {
       process.stdout.write(
