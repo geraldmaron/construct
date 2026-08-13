@@ -122,6 +122,38 @@ function cheapFixFor(challenge: string): string | null {
   return CHEAP_FIX.find((entry) => challenge.startsWith(entry.prefix))?.refusal ?? null;
 }
 
+/**
+ * Whether a second attempt is actually better than the first.
+ *
+ * The instruction asks for the whole deliverable back, every section, including
+ * the parts that already passed. Measured against a real run, roles do not
+ * comply: told that two checks failed, they rewrote to answer those two and
+ * dropped sections nobody had complained about, so a round that fixed
+ * citations and ground exhaustion broke the scope diff and the pre-mortem. Net
+ * of both, the deliverable was no better and the reader was no better off.
+ *
+ * A prompt cannot hold this. What holds it is refusing to take the trade: a
+ * repair is admitted only when the failures it leaves are a strict subset of
+ * the ones it was sent back for. Fixed something and broke nothing is a repair.
+ * Fixed one thing and broke another is a rewrite, and the run keeps the draft
+ * it already had, because the first attempt is a known quantity and a swap is
+ * not an improvement just because it is newer.
+ *
+ * Equal sets are refused too. A second attempt that fixed nothing has spent a
+ * call to produce a different document with the same standing, and taking it
+ * would churn the record for no gain.
+ */
+export function repairIsAnImprovement(
+  before: readonly StructuralResult[],
+  after: readonly StructuralResult[],
+): boolean {
+  const was = new Set(repairableFailures(before).map((f) => f.challenge));
+  const now = new Set(repairableFailures(after).map((f) => f.challenge));
+  if (now.size >= was.size) return false;
+  for (const challenge of now) if (!was.has(challenge)) return false;
+  return true;
+}
+
 export interface RepairRequest {
   readonly role: string;
   /** The deliverable as first submitted, whole. */

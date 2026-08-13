@@ -9,7 +9,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { repairAssignment, repairableFailures } from '../../../src/kernel/run/repair.ts';
+import {
+  repairAssignment,
+  repairIsAnImprovement,
+  repairableFailures,
+} from '../../../src/kernel/run/repair.ts';
 
 const FAILED_GROUND = {
   challenge: 'ground-exhausted',
@@ -120,4 +124,39 @@ test('a reader-rubric failure reaches the cheap-fix table through its namespace'
   });
 
   assert.match(text, /Do not close this by: Prose about the thing the line asks for/);
+});
+
+const f = (challenge: string) => ({ challenge, passed: false, detail: 'not found' });
+const p = (challenge: string) => ({ challenge, passed: true, detail: 'present' });
+
+/**
+ * Measured on a real run rather than reasoned about. Told that citations and
+ * ground exhaustion failed, roles rewrote to answer those two and dropped the
+ * scope diff and the pre-mortem that nobody had complained about. The
+ * instruction asks for the whole deliverable back; that is not something a
+ * prompt can hold, so the run refuses the trade instead.
+ */
+test('a repair that fixed one check and broke another is not taken', () => {
+  const before = [f('claims-cited'), f('ground-exhausted'), p('scope-diff'), p('pre-mortem')];
+  const after = [p('claims-cited'), p('ground-exhausted'), f('scope-diff'), f('pre-mortem')];
+
+  assert.equal(repairIsAnImprovement(before, after), false);
+});
+
+test('a repair that fixed something and broke nothing is taken', () => {
+  const before = [f('claims-cited'), f('ground-exhausted'), p('scope-diff')];
+  const after = [p('claims-cited'), f('ground-exhausted'), p('scope-diff')];
+
+  assert.equal(repairIsAnImprovement(before, after), true);
+});
+
+test('a second attempt that fixed nothing is not taken, however different it is', () => {
+  const before = [f('claims-cited'), p('scope-diff')];
+  const after = [f('claims-cited'), p('scope-diff')];
+
+  assert.equal(repairIsAnImprovement(before, after), false);
+});
+
+test('a repair that fixed everything is taken', () => {
+  assert.equal(repairIsAnImprovement([f('claims-cited')], [p('claims-cited')]), true);
 });

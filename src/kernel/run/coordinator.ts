@@ -57,7 +57,12 @@ import { RESEARCH_PROTOCOL } from './research.ts';
 import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
 import { DRAFT_ACTION, latestDraft, logPromotion, recordVerdict } from './promotion.ts';
-import { REPAIR_ACTION, repairAssignment, repairableFailures } from './repair.ts';
+import {
+  REPAIR_ACTION,
+  repairAssignment,
+  repairIsAnImprovement,
+  repairableFailures,
+} from './repair.ts';
 import type { DraftAttempt } from './repair.ts';
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import { getDecision, openDecisions as openDecisionsFor, raiseDecision } from '../store/decisions.ts';
@@ -1026,20 +1031,6 @@ export async function workRun(
 
             if (repairedText !== null && repairedText.trim().length > 0) {
               const repairCost = spendOf(repaired);
-              if (submitted === null) {
-                // The role replied rather than submitting. Recorded as a draft
-                // in its own name so the latest draft is the one the reader
-                // receives; the log is append-only, so the first attempt stays
-                // beside it rather than being replaced by it.
-                appendWorkLog(store, {
-                  run: task.run,
-                  task: task.id,
-                  role: task.role,
-                  action: DRAFT_ACTION,
-                  detail: { deliverable: repairedText, attempt: 'repaired' },
-                  at: settledAt,
-                });
-              }
               appendWorkLog(store, {
                 run: task.run,
                 task: task.id,
@@ -1053,8 +1044,49 @@ export async function workRun(
                 },
                 at: settledAt,
               });
-              structural = runStructuralChallenges(brief, repairedText, { groundRoots });
-              attempt = 'repaired';
+
+              // A repair that traded one failure for another is not a repair.
+              // The first attempt is a known quantity; a swap is not an
+              // improvement because it is newer, and the reader gets the better
+              // of the two rather than the later of the two.
+              const rechecked = runStructuralChallenges(brief, repairedText, { groundRoots });
+              const better = repairIsAnImprovement(structural.results, rechecked.results);
+
+              // Whichever draft the run keeps has to be the LATEST one, because
+              // that is the only one anything downstream reads. A role holding a
+              // write surface has already written its second attempt into the
+              // log, so keeping the first means writing the first back — the log
+              // is append-only and both attempts stay on it either way.
+              const keep = better ? repairedText : deliverableText;
+              const latestIsRepaired = submitted !== null;
+              if (better !== latestIsRepaired) {
+                appendWorkLog(store, {
+                  run: task.run,
+                  task: task.id,
+                  role: task.role,
+                  action: DRAFT_ACTION,
+                  detail: { deliverable: keep, attempt: better ? 'repaired' : 'first' },
+                  at: settledAt,
+                });
+              }
+
+              if (better) {
+                structural = rechecked;
+                attempt = 'repaired';
+              } else {
+                appendWorkLog(store, {
+                  run: task.run,
+                  task: task.id,
+                  role: 'construct',
+                  action: 'repair-refused',
+                  detail: {
+                    kept: 'first',
+                    was: repairableFailures(structural.results).map((f) => f.challenge),
+                    now: repairableFailures(rechecked.results).map((f) => f.challenge),
+                  },
+                  at: settledAt,
+                });
+              }
             }
           }
 
