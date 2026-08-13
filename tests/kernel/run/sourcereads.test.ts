@@ -189,3 +189,50 @@ test('a binary document no rung could put into words stays partial, with the rea
   assert.match(reads[0]!.detail, /extraction refused: no ASR provider is available/);
   assert.match(reads[0]!.detail, /install one/);
 });
+
+/**
+ * "The rest went unread" reads as more of the same, and over a repository it
+ * means something else: the role was shown the design documents and not the
+ * implementation. It is licensed to open either, and it will not go looking
+ * for a gap whose shape it cannot see.
+ */
+test('a prose-ranked survey over a codebase says how much of the remainder is code', () => {
+  const reads = readsFromSurvey(
+    'run-1',
+    {
+      source: 's1',
+      locator: '/ground/repo',
+      outcome: 'listed',
+      documents: [{ path: '/ground/repo/README.md', bytes: 120 }],
+      total: 3412,
+      emphasis: 'prose',
+      unlistedCode: 3300,
+    },
+    '2026-08-13T00:00:00.000Z',
+  );
+
+  const partial = reads.find((read) => read.coverage === 'partial');
+  assert.match(partial?.detail ?? '', /listed 1 of 3412 documents/);
+  assert.match(partial?.detail ?? '', /ranked prose-first/);
+  assert.match(partial?.detail ?? '', /3300 of them source files/);
+  assert.match(partial?.detail ?? '', /may still open by path/);
+});
+
+test('a prose ground drops no code and says nothing about code', () => {
+  const reads = readsFromSurvey(
+    'run-1',
+    {
+      source: 's1',
+      locator: '/ground/policies',
+      outcome: 'listed',
+      documents: [{ path: '/ground/policies/a.md', bytes: 10 }],
+      total: 40,
+      emphasis: 'prose',
+    },
+    '2026-08-13T00:00:00.000Z',
+  );
+
+  const partial = reads.find((read) => read.coverage === 'partial');
+  assert.match(partial?.detail ?? '', /the rest went unread/);
+  assert.doesNotMatch(partial?.detail ?? '', /source files/);
+});

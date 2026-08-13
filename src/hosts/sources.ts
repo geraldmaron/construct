@@ -253,6 +253,9 @@ export function surveySource(
   }
 
   const listed = ranked.slice(0, cap);
+  const unlistedCode = ranked
+    .slice(cap)
+    .filter((doc) => !doc.binary && CODE_EXTS.has(extname(doc.path).toLowerCase())).length;
   const extract = opts?.extract;
   let documents = listed;
   if (extract && listed.some((doc) => doc.binary)) {
@@ -272,5 +275,10 @@ export function surveySource(
     // Only when it mattered: a listing that fit under the cap dropped nothing,
     // so naming the ranking would describe a choice that had no effect.
     ...(ranked.length > listed.length && emphasis !== 'all' ? { emphasis } : {}),
+    // What kind of thing the cap dropped, not merely how much of it. A prose
+    // ranking over a repository drops implementation, and a role that knows
+    // the shape of what it was not shown can go and open a file it names;
+    // one told only a number cannot tell a large document set from a codebase.
+    ...(unlistedCode > 0 ? { unlistedCode } : {}),
   };
 }

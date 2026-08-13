@@ -74,6 +74,18 @@ export type SourceSurvey =
        * drops the prose, and the two are different gaps.
        */
       readonly emphasis?: string;
+      /**
+       * How many of the unlisted documents are code, when the ranking dropped
+       * any.
+       *
+       * "The rest went unread" reads as more of the same, and over a repository
+       * it means something else entirely: a role told 60 of 3,412 documents were
+       * listed has no way to know that 3,300 of the remainder are source files
+       * it was never shown. That difference decides whether it goes and opens
+       * one — which it is licensed to do and will not do for a gap it cannot
+       * see the shape of.
+       */
+      readonly unlistedCode?: number;
     }
   | {
       readonly source: string;
@@ -156,7 +168,10 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
       detail:
         `listed ${String(survey.documents.length)} of ${String(survey.total)} documents` +
         (survey.emphasis ? `, ranked ${survey.emphasis}-first` : '') +
-        '; the rest went unread',
+        '; the rest went unread' +
+        (survey.unlistedCode
+          ? ` — ${String(survey.unlistedCode)} of them source files, which you may still open by path`
+          : ''),
       recordedAt: at,
     });
   }
