@@ -1111,13 +1111,34 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
 }
 
 const NOTES_USAGE =
-  'usage: construct notes <file|directory> [--workspace=<name>] [--run=<id>] ' +
+  'usage: construct notes <file|directory> [--workspace=<name>] [--run=<id>] [--max-notes=<n>] ' +
   '[--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
+
+/**
+ * How many notes one invocation will reason over before stopping.
+ *
+ * There is no money ceiling here and stating a fake one would be worse than
+ * stating none: the spend ceiling `ask` and `work` enforce sums the tasks
+ * table, and the context loop creates no tasks, so a `--ceiling` on this
+ * command would read a number it never moves. What binds regardless of what
+ * any host reports about cost is the count, so the count is what is bounded.
+ *
+ * Twenty-five because a person dropping a quarter's call notes should not have
+ * to think about this, and someone pointing at a documents repository of two
+ * thousand files should be stopped before the first dispatch rather than
+ * after the six hundredth.
+ */
+export const DEFAULT_MAX_NOTES = 25;
+
+/** Model calls one note costs: densify, produce, and one challenge per delta. */
+const CALLS_PER_NOTE = 3;
 
 export interface NotesArgs {
   readonly file: string;
   readonly workspace: string;
   readonly run?: string;
+  /** How many notes this invocation will reason over before stopping. */
+  readonly maxNotes: number;
   readonly host?: HostName;
   readonly model?: string;
   readonly binary?: string;
@@ -1177,10 +1198,15 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
   if (words.length !== 1) {
     throw new Error(words.length === 0 ? 'a notes path is required' : 'one notes path at a time');
   }
+  const maxNotes = flags['max-notes'] === undefined ? DEFAULT_MAX_NOTES : Number(flags['max-notes']);
+  if (!Number.isInteger(maxNotes) || maxNotes < 1) {
+    throw new Error(`--max-notes must be a positive whole number, got "${flags['max-notes'] ?? ''}"`);
+  }
   return {
     file: words[0] as string,
     workspace: flags.workspace ?? 'default',
     run: flags.run,
+    maxNotes,
     ...parseHostFlags(flags),
   };
 }
@@ -1311,6 +1337,25 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       return 0;
     }
 
+    // What the loop is about to spend, before it spends it. The count is the
+    // only bound that holds: no money ceiling binds here, and one that reads a
+    // number this command never moves would be a bound in name only.
+    const reasoning = recorded.slice(0, args.maxNotes);
+    const deferred = recorded.length - reasoning.length;
+    if (recorded.length > 1) {
+      process.stdout.write(
+        `\nreasoning over ${String(reasoning.length)} note${reasoning.length === 1 ? '' : 's'}: ` +
+          `at least ${String(reasoning.length * CALLS_PER_NOTE)} model calls, one host invocation each.\n`,
+      );
+    }
+    if (deferred > 0) {
+      process.stdout.write(
+        `  ${String(deferred)} more ${deferred === 1 ? 'note is' : 'notes are'} recorded and left unreasoned ` +
+          `(--max-notes=${String(args.maxNotes)}). They keep their rows; raise the limit to take them:\n` +
+          `  construct notes ${args.file} --max-notes=${String(recorded.length)} --host=${args.host ?? '<host>'}\n`,
+      );
+    }
+
     const host =
       hostOverride ??
       adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
@@ -1333,8 +1378,8 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     const { producerSources, surveyed } = driftGround(sources, surveyDeclared(store, sources));
 
     let failed = 0;
-    for (const { noteId, body } of recorded) {
-      if (recorded.length > 1) process.stdout.write(`\n── ${noteId} ──\n`);
+    for (const { noteId, body } of reasoning) {
+      if (reasoning.length > 1) process.stdout.write(`\n── ${noteId} ──\n`);
       const ok = await contextLoopOverNote(store, host, {
         noteId,
         body,
@@ -1348,7 +1393,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     }
     // Every note that could not be reasoned over is still recorded evidence,
     // so a batch where some loops failed is a partial success, not a failure.
-    return failed === recorded.length ? 1 : 0;
+    return failed === reasoning.length ? 1 : 0;
   });
 }
 

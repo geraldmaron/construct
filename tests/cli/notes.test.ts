@@ -315,3 +315,34 @@ test('a fact about a named subject lands on its record, and one about no subject
   assert.match(out, /rec-acme renewal/);
   assert.match(out, /rec-ghost\.renewal names a record this workspace does not keep/);
 });
+
+test('a batch states what it is about to spend, and stops at the note limit rather than after it', async () => {
+  const { code, out } = await run((file) => [
+    () => {
+      writeFileSync(join(dirname(file), 'second-call.txt'), 'they want SSO\nbudget is approved');
+      writeFileSync(join(dirname(file), 'third-call.txt'), 'they want audit logs');
+      return 0;
+    },
+    () => notes([dirname(file), '--max-notes=2'], loopHost()),
+    () =>
+      withStore((store) => {
+        assert.equal(notesFor(store, 'default').length, 3, 'every document is still recorded evidence');
+        return 0;
+      }),
+  ]);
+  assert.equal(code, 0);
+  assert.match(out, /reasoning over 2 notes: at least 6 model calls/);
+  assert.match(out, /1 more note is recorded and left unreasoned \(--max-notes=2\)/);
+  assert.match(out, /--max-notes=3/, 'and the command that takes the rest');
+  assert.equal(
+    (out.match(/confirm this reading first/g) ?? []).length,
+    2,
+    'the limit binds before the dispatch, not after it',
+  );
+});
+
+test('a note limit that would list nothing is refused as a lie waiting to happen', async () => {
+  const { code, err } = await run((file) => [['notes', file, '--max-notes=0']]);
+  assert.equal(code, 2);
+  assert.match(err, /--max-notes must be a positive whole number/);
+});
