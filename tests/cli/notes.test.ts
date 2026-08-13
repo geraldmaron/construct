@@ -36,7 +36,11 @@ async function run(
 ): Promise<Capture> {
   const root = mkdtempSync(join(tmpdir(), 'construct-notes-'));
   const previous = process.env.XDG_DATA_HOME;
+  const previousCache = process.env.XDG_CACHE_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
+  // The loop surveys declared ground and extracts what it cannot read; an
+  // extraction written into the real home is the leak the harness prevents.
+  process.env.XDG_CACHE_HOME = join(root, 'cache');
   const file = join(root, 'after-call.txt');
   writeFileSync(file, NOTE);
   const out: string[] = [];
@@ -62,6 +66,8 @@ async function run(
     (process.stderr as { write: unknown }).write = realErr;
     if (previous === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previous;
+    if (previousCache === undefined) delete process.env.XDG_CACHE_HOME;
+    else process.env.XDG_CACHE_HOME = previousCache;
     rmSync(root, { recursive: true, force: true });
   }
 }

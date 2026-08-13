@@ -37,10 +37,12 @@ import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
 import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
+import { toReviewedDrift } from '../kernel/context/review.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
+import type { ScreenResult } from '../kernel/context/observations.ts';
 import { operationalLessonsFor } from '../kernel/lessons/admission.ts';
-import { createHostChallenger, createHostProducer } from '../hosts/contextloop.ts';
+import { createHostChallenger, createHostProducer, createHostReviewer } from '../hosts/contextloop.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { readFeedback } from '../kernel/store/feedback.ts';
@@ -91,6 +93,15 @@ const MIN_NODE = { major: 22, minor: 18 };
  * default stays opencode; unknown names are the callers' to refuse (work()
  * validates; outcome/ask/notes accept only what their usage line names).
  */
+/**
+ * The hosts this CLI can dispatch through. One list, so the flag validator,
+ * the error text, and the adapter switch can never disagree about what is
+ * dispatchable.
+ */
+export const HOST_NAMES = ['opencode', 'claude', 'codex', 'cursor'] as const;
+
+export type HostName = (typeof HOST_NAMES)[number];
+
 function adapterForHost(
   host: string | undefined,
   opts: { readonly binary?: string; readonly model?: string; readonly dir?: string; readonly timeoutMs?: number },
@@ -368,7 +379,7 @@ export interface OutcomeArgs {
    * least expected charge in the product. With a host named, its model is the
    * primary namer on every outcome (adopted 2026-08-05).
    */
-  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
+  readonly host?: HostName;
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -843,7 +854,7 @@ const ASK_USAGE =
 
 export interface AskArgs {
   readonly question: string;
-  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
+  readonly host?: HostName;
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -1081,7 +1092,7 @@ export interface NotesArgs {
   readonly file: string;
   readonly workspace: string;
   readonly run?: string;
-  readonly host?: 'opencode' | 'claude' | 'codex' | 'cursor';
+  readonly host?: HostName;
   readonly model?: string;
   readonly binary?: string;
   readonly dir?: string;
@@ -1089,7 +1100,8 @@ export interface NotesArgs {
   readonly timeoutMs?: number;
 }
 
-export function parseNotesArgs(argv: string[]): NotesArgs {
+/** Split `--key=value` flags from positional words, in argv order. */
+function splitFlags(argv: string[]): { flags: Record<string, string>; words: string[] } {
   const flags: Record<string, string> = {};
   const words: string[] = [];
   for (const arg of argv) {
@@ -1097,28 +1109,53 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
     if (match) flags[match[1]] = match[2];
     else words.push(arg);
   }
-  if (words.length !== 1) {
-    throw new Error(words.length === 0 ? 'a notes file is required' : 'one notes file at a time');
-  }
+  return { flags, words };
+}
+
+interface HostFlags {
+  readonly host?: HostName;
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+  readonly timeoutMs?: number;
+}
+
+/**
+ * The host selection every model-calling surface takes, parsed once. A host
+ * tuning flag with no host named is refused rather than ignored: silently
+ * dropping `--model` on a surface that was never going to call a model is how
+ * a user comes to believe a model ran.
+ */
+function parseHostFlags(flags: Record<string, string>): HostFlags {
   const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
+  if (host !== undefined && !(HOST_NAMES as readonly string[]).includes(host)) {
+    throw new Error(`unknown host "${host}" (expected ${HOST_NAMES.join(', ')})`);
   }
-  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
-  if (host === undefined && hostFlags.length > 0) {
+  const named = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
+  if (host === undefined && named.length > 0) {
     throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
+      `--${named[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
     );
+  }
+  return {
+    host: host as HostName | undefined,
+    model: flags.model,
+    binary: flags.binary,
+    dir: flags.dir,
+    ...(timeoutFlag(flags) === undefined ? {} : { timeoutMs: timeoutFlag(flags) }),
+  };
+}
+
+export function parseNotesArgs(argv: string[]): NotesArgs {
+  const { flags, words } = splitFlags(argv);
+  if (words.length !== 1) {
+    throw new Error(words.length === 0 ? 'a notes path is required' : 'one notes path at a time');
   }
   return {
     file: words[0] as string,
     workspace: flags.workspace ?? 'default',
     run: flags.run,
-    host,
-    model: flags.model,
-    binary: flags.binary,
-    dir: flags.dir,
-    ...(timeoutFlag(flags) === undefined ? {} : { timeoutMs: timeoutFlag(flags) }),
+    ...parseHostFlags(flags),
   };
 }
 
@@ -1351,19 +1388,129 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       for (const id of result.filed) process.stdout.write(`  ${id}\n`);
     }
 
-    const screened = screenObservations(produced.observations, sources, surveyed);
-    if (screened.flags.length > 0) {
-      process.stdout.write('\ncross-source drift:\n');
-      for (const flag of screened.flags) {
-        process.stdout.write(
-          `  ${flag.claim}\n    cites: ${flag.citations.map((c) => `${c.source} ${c.document}`).join('; ')}\n`,
-        );
-      }
+    writeDrift(screenObservations(produced.observations, sources, surveyed));
+
+    return 0;
+  });
+}
+
+/**
+ * Print what a drift screen kept and what it dropped. One writer because the
+ * note loop and the standalone review both end here, and a reader comparing
+ * the two surfaces should not have to work out whether they mean the same
+ * thing by a flag.
+ */
+function writeDrift(screened: ScreenResult): void {
+  if (screened.flags.length > 0) {
+    process.stdout.write('\ncross-source drift:\n');
+    for (const flag of screened.flags) {
+      process.stdout.write(
+        `  ${flag.claim}\n    cites: ${flag.citations.map((c) => `${c.source} ${c.document}`).join('; ')}\n`,
+      );
     }
-    for (const drop of screened.discarded) {
-      process.stdout.write(`  discarded observation: ${drop.observation.claim.slice(0, 60)} — ${drop.reason}\n`);
+  }
+  for (const drop of screened.discarded) {
+    process.stdout.write(`  discarded observation: ${drop.observation.claim.slice(0, 60)} — ${drop.reason}\n`);
+  }
+}
+
+const REVIEW_USAGE =
+  'usage: construct review [--workspace=<name>] ' +
+  '[--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
+
+export interface ReviewArgs {
+  readonly workspace: string;
+  readonly host?: string;
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+  readonly timeoutMs?: number;
+}
+
+export function parseReviewArgs(argv: string[]): ReviewArgs {
+  const { flags, words } = splitFlags(argv);
+  if (words.length > 0) throw new Error(`review takes no positional arguments (got "${words[0]}")`);
+  return { workspace: flags.workspace ?? 'default', ...parseHostFlags(flags) };
+}
+
+/**
+ * Read a workspace's declared ground and report what disagrees inside it.
+ *
+ * The note loop could already find drift, but only when a note occasioned it.
+ * A person acting as program manager over a documents repository needs to ask
+ * the question directly, and asking it is the whole command: survey, read,
+ * screen the citations, print. Nothing is written to memory and nothing is
+ * proposed outward — a review has no note, so it has nothing either could
+ * cite, and a conclusion with nothing to cite is the class the gates exist for.
+ */
+export async function review(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: ReviewArgs;
+  try {
+    args = parseReviewArgs(argv);
+  } catch (error) {
+    process.stderr.write(`review: ${(error as Error).message}\n${REVIEW_USAGE}`);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    const sources = sourcesFor(store, args.workspace);
+    if (sources.length === 0) {
+      process.stderr.write(
+        `review: workspace "${args.workspace}" has declared no sources, so there is no ground to read.\n` +
+          '  construct source add --kind=directory --locator=<path>\n',
+      );
+      return 2;
     }
 
+    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(sources));
+    const documents = producerSources.reduce((sum, s) => sum + s.documents.length, 0);
+    const unsurveyed = producerSources.filter((s) => s.unreachable !== undefined);
+    process.stdout.write(
+      `surveyed: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
+        `across ${String(sources.length)} source${sources.length === 1 ? '' : 's'}\n`,
+    );
+    for (const source of unsurveyed) {
+      process.stdout.write(`  not surveyed: ${source.id} — ${source.unreachable ?? ''}\n`);
+    }
+
+    if (args.host === undefined && hostOverride === undefined) {
+      process.stdout.write(
+        '\nReading them for disagreements is model work, at cost:\n' +
+          '  construct review --host=<opencode|claude|codex|cursor>\n',
+      );
+      return 0;
+    }
+    if (documents === 0 && unsurveyed.length === sources.length) {
+      // Dispatching a reviewer over nothing would spend a model call to be
+      // told nothing disagrees, which is true and worthless.
+      process.stderr.write('review: no source could be surveyed, so there is nothing to read.\n');
+      return 1;
+    }
+
+    const host =
+      hostOverride ??
+      adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
+    try {
+      await host.init();
+    } catch (error) {
+      process.stderr.write(`review: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      return 1;
+    }
+
+    let reviewed;
+    try {
+      reviewed = toReviewedDrift(await createHostReviewer(host)({ sources: producerSources }));
+    } catch (error) {
+      process.stderr.write(`review: the ground could not be read (${(error as Error).message}).\n`);
+      return 1;
+    }
+    for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${reason}\n`);
+
+    const screened = screenObservations(reviewed.observations, sources, surveyed);
+    writeDrift(screened);
+    if (screened.flags.length === 0) {
+      process.stdout.write('\nno drift survived the screen.\n');
+    }
     return 0;
   });
 }
@@ -2538,7 +2685,7 @@ export function mode(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -2573,6 +2720,8 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
 async function run(argv: string[]): Promise<number> {
   const command = argv[0] ?? 'help';
   switch (command) {
+    case 'review':
+      return review(argv.slice(1));
     case 'notes':
       return notes(argv.slice(1));
     case 'outcome':

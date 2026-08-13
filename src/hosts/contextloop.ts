@@ -4,7 +4,7 @@
  * `HostAdapter` so one implementation serves every conforming host, throwing
  * on every failure path so the caller states the stop.
  *
- * Two model calls, two disciplines:
+ * Three model calls, three disciplines:
  *
  *   - The producer reads the note with its lines numbered, because every
  *     conclusion it proposes must cite `note:<id>#L<n>` and a model cannot
@@ -19,6 +19,10 @@
  *     reviewer asked "is this good?" agrees; a challenger asked "why is this
  *     wrong?" has to find something or concede, and the concession is the
  *     adversarial-pass detail the admission gate records.
+ *   - The drift reviewer reads the same surveyed documents the producer is
+ *     shown, and is asked only what contradicts. It gets no note, so it is
+ *     asked for no deltas and no proposals: both justify themselves by citing
+ *     a note line, and a pass with no note cannot cite one.
  */
 
 import type {
@@ -27,6 +31,8 @@ import type {
   ProducedDelta,
   ProducerSource,
 } from '../kernel/context/produce.ts';
+import type { DriftReviewer } from '../kernel/context/review.ts';
+import { REVIEWER_ROLE } from '../kernel/context/review.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 
 /** The roles these passes run as. Not catalog domains — they run around them. */
@@ -130,6 +136,41 @@ export function challengerPrompt(delta: ProducedDelta, citedLine: string): strin
   ].join('\n');
 }
 
+/**
+ * The drift review's prompt: the same documents the producer is shown, asked
+ * the one question a review exists to answer. No note, so nothing to cite a
+ * line of, so nothing but observations is asked for — a review that proposed
+ * memory deltas would be proposing conclusions with no evidence behind them.
+ */
+export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
+  return [
+    'You are reading a set of documents a workspace has declared as its ground,',
+    'to find where two of them contradict each other. Not to summarize them, not',
+    'to improve them, and not to report what you think of them.',
+    '',
+    'Declared sources and the documents each was found to hold:',
+    input.sources.map(sourceListing).join('\n'),
+    '',
+    'Open the documents and read them. A contradiction is two documents making',
+    'claims that cannot both be acted on: a requirement one promises and the',
+    'other rules out, a date, an owner, a number, a decision recorded as settled',
+    'in one and open in the other. A difference in emphasis is not a',
+    'contradiction, and neither is one document being older than another unless',
+    'both are presented as current.',
+    '',
+    'Cite BOTH sides of every contradiction by the document paths as listed',
+    'above. An observation citing a document that is not listed will be',
+    'discarded, and so will one that cites only one side — a disagreement you',
+    'remember rather than read is not an observation.',
+    '',
+    'An empty list is a valid answer, and a better one than a reach.',
+    '',
+    'Reply with JSON only, no prose outside it:',
+    '{"observations":[{"claim":"<what disagrees, in one sentence>",' +
+      '"citations":[{"source":"<declared id>","document":"<path as listed>"},…]}]}',
+  ].join('\n');
+}
+
 /** Pull the JSON object out of a reply, tolerating fenced-code wrappers. */
 export function extractJson(text: string): unknown {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
@@ -161,6 +202,14 @@ function deliverableText(host: HostAdapter, result: { status: string; output: un
 export function createHostProducer(host: HostAdapter): ContextProducer {
   return async (input) => {
     const result = await host.invoke({ role: PRODUCER_ROLE, task: producerPrompt(input) });
+    return extractJson(deliverableText(host, result));
+  };
+}
+
+/** Build a `DriftReviewer` backed by a host adapter; caller owns init(). */
+export function createHostReviewer(host: HostAdapter): DriftReviewer {
+  return async (input) => {
+    const result = await host.invoke({ role: REVIEWER_ROLE, task: reviewerPrompt(input) });
     return extractJson(deliverableText(host, result));
   };
 }

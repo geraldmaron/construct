@@ -148,8 +148,30 @@ export function toProducedLoop(parsed: unknown, noteId: string): ProducedLoop {
     proposals.push({ source, change, justification, risk: p?.risk === 'low' ? 'low' : 'high' });
   }
 
+  const observations = toObservations(record?.observations, PRODUCER_OBSERVER, discarded);
+
+  return { deltas, proposals, observations, discarded };
+}
+
+/** The role recorded on an observation a note-driven producer pass made. */
+export const PRODUCER_OBSERVER = 'context-producer';
+
+/**
+ * Parse a reply's observation list, attributing each to the pass that made it.
+ * Shared by the note-driven producer and the note-free drift review, because
+ * two parsers for one shape is two definitions of what a citation is.
+ *
+ * The reading pass never judges citations — the observation screen owns that,
+ * including discarding the uncited — so a malformed citation is simply absent
+ * here and the screen says what its absence means.
+ */
+export function toObservations(
+  value: unknown,
+  role: string,
+  discarded: string[] = [],
+): Observation[] {
   const observations: Observation[] = [];
-  for (const item of list(record?.observations)) {
+  for (const item of Array.isArray(value) ? value : []) {
     const o = item as { claim?: unknown; citations?: unknown } | null;
     const claim = asString(o?.claim);
     if (!claim) {
@@ -157,17 +179,13 @@ export function toProducedLoop(parsed: unknown, noteId: string): ProducedLoop {
       continue;
     }
     const citations: DriftCitation[] = [];
-    for (const c of list(o?.citations)) {
+    for (const c of Array.isArray(o?.citations) ? o.citations : []) {
       const cite = c as { source?: unknown; document?: unknown } | null;
       const source = asString(cite?.source);
       const document = asString(cite?.document);
       if (source && document) citations.push({ source, document });
     }
-    // The producer is one reading pass; the observation screen owns the
-    // citation judgment (including discarding the uncited), so malformed
-    // citations are simply absent and the screen says what that means.
-    observations.push({ role: 'context-producer', claim, citations });
+    observations.push({ role, claim, citations });
   }
-
-  return { deltas, proposals, observations, discarded };
+  return observations;
 }
