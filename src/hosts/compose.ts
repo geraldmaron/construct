@@ -74,7 +74,17 @@ export function composerPrompt(input: {
   ].join('\n');
 }
 
-export function supportPrompt(source: SourceDeliverable, claims: readonly ComposedClaim[]): string {
+export function supportPrompt(
+  source: SourceDeliverable,
+  claims: readonly ComposedClaim[],
+  /**
+   * Construct's own call, when there is one. Shown here rather than in a call
+   * of its own: the role is already reading its deliverable to answer a
+   * question about faithfulness, and asking the second question costs nothing.
+   * A synthesis nobody it leans on can object to is not screened.
+   */
+  position?: string,
+): string {
   return [
     `Below is one specialist's finished deliverable, and beneath it a numbered`,
     'list of claims that someone else wrote down as coming from it.',
@@ -96,9 +106,110 @@ export function supportPrompt(source: SourceDeliverable, claims: readonly Compos
     'not let a claim pass because it sounds like something this specialist would',
     'have said.',
     '',
+    ...(position === undefined
+      ? []
+      : [
+          '',
+          '--- and separately: the call Construct made across every specialist ---',
+          position,
+          '',
+          'You are not being asked whether you agree with the call. It is a judgment',
+          'across concerns and yours was one of them; Construct is entitled to make it',
+          'and you were not asked for it. What you are asked is narrower and only you',
+          'can answer it: does it state your work as something other than what you',
+          'established — firmer than you put it, resolved where you left it open, or',
+          'resting on you for something you did not say? Quote the sentence if so.',
+        ]),
+    '',
     'Reply with JSON only, no prose outside it:',
-    '{"unsupported":[<indices>],"detail":"<one sentence on what you found>"}',
+    '{"unsupported":[<indices>],"detail":"<one sentence on what you found>"' +
+      (position === undefined ? '}' : ',"misreadsMe":"<the sentence, or empty if none>"}'),
   ].join('\n');
+}
+
+export const POSITION_ROLE = 'construct-position';
+
+/**
+ * The one question nobody was dispatched for.
+ *
+ * Every other prompt in this file is written to stop a model adding something.
+ * This one is written to make it commit, because the failure it answers is the
+ * opposite: a run that assembles five expert readings, arranges them faithfully,
+ * and leaves the reader to work out what to do has moved the hardest part of the
+ * job to the person who asked for it.
+ *
+ * The prohibition is kept and narrowed to what it was always about. A fact is
+ * something Construct cannot know except through a role that read the ground,
+ * and inventing one is fabrication. A judgment is what the facts add up to, and
+ * nobody was asked it — each specialist was asked about its own concern and each
+ * was right to answer only that. So: no new facts, and a judgment is required.
+ */
+export function positionPrompt(input: {
+  readonly outcome: string;
+  readonly sources: readonly SourceDeliverable[];
+}): string {
+  return [
+    'You are Construct. Several specialists have each finished one concern of the',
+    'same outcome, their work has been checked, and you are the only participant',
+    'who has read all of it. What it adds up to is the question none of them was',
+    'asked, and it is yours.',
+    '',
+    `What was asked:\n${input.outcome}`,
+    '',
+    ...input.sources.map((source) => `--- ${source.role} ---\n${source.text}`),
+    '',
+    'Take a position. If the outcome asks what to do, say what to do, in the',
+    'shape it asked — a choice if it asked for a choice, an order if it asked',
+    'what comes first, a cut if it asked what stops. State it as a commitment',
+    'somebody could act on tomorrow, not as a summary of the range of views.',
+    '',
+    'Two of these specialists agreeing is not a tally to report; it is evidence',
+    'about which way the weight falls, and weighing it is your job. Where two of',
+    'them cannot both be acted on, decide, and name the reading you did not take',
+    'and why. Order of arrival is not a reason. Averaging them into a sentence',
+    'neither would recognise is worse than either.',
+    '',
+    'THE ONE THING YOU MAY NOT DO is assert a fact none of them established.',
+    'What the code does, what the schema holds, what a document commits to — you',
+    'have no access to any of it except through these deliverables. Every factual',
+    'sentence you write names the role or roles whose work it rests on, and a',
+    'sentence with nothing behind it is you using what you happen to know about',
+    'the world, which is the one thing that is not yours to use here.',
+    '',
+    'Your reasoning is not a fact and needs no source. That is the whole point of',
+    'asking you.',
+    '',
+    'Then argue against yourself, twice, and mean it. The strongest objection to',
+    'your call — the one you find hardest to answer, not one you can dismiss in',
+    'the next sentence. And a pre-mortem: assume this was taken and it failed,',
+    'and write the most likely story of how. A recommendation shipped without',
+    'either is an advertisement.',
+    '',
+    'If something genuinely cannot be decided from what these deliverables hold,',
+    'say what specifically would decide it — a document, a number, a person\'s',
+    'answer. Naming the options again is not an answer to that, and an empty list',
+    'here is the expected result, not a suspicious one.',
+    '',
+    'Reply with JSON only, no prose outside it:',
+    '{"approach":"<the call, one or two sentences, as a commitment>",',
+    ' "because":[{"text":"<what it rests on>","restsOn":["<role>"]}],',
+    ' "resolved":[{"question":"<what two roles could not both be right about>",',
+    '   "took":"<role>","over":"<role>","because":"<why>"}],',
+    ' "costs":[{"text":"<what stops, slips, or is displaced>","restsOn":["<role>"]}],',
+    ' "first":[{"text":"<what happens first, and what must hold before the next>","restsOn":["<role>"]}],',
+    ' "strongestObjection":"<the best argument against this call>",',
+    ' "preMortem":"<assume it failed: the most likely story of how>",',
+    ' "undecided":[{"question":"<what could not be decided>","settledBy":"<what would settle it>"}]}',
+  ].join('\n');
+}
+
+export function createHostPositioner(
+  host: HostAdapter,
+): (input: { outcome: string; sources: readonly SourceDeliverable[] }) => Promise<unknown> {
+  return async (input) => {
+    const result = await host.invoke({ role: POSITION_ROLE, task: positionPrompt(input) });
+    return extractJson(textOf(host, result));
+  };
 }
 
 export const CLOSING_ROLE_SUFFIX = '-closing';
@@ -210,11 +321,15 @@ export function createHostComposer(
  * never read.
  */
 export function createHostSupportChecker(host: HostAdapter): SupportChecker {
-  return async (source, claims) => {
-    const result = await host.invoke({ role: SUPPORT_ROLE, task: supportPrompt(source, claims) });
+  return async (source, claims, position) => {
+    const result = await host.invoke({
+      role: SUPPORT_ROLE,
+      task: supportPrompt(source, claims, position),
+    });
     const parsed = extractJson(textOf(host, result)) as {
       unsupported?: unknown;
       detail?: unknown;
+      misreadsMe?: unknown;
     } | null;
     if (!Array.isArray(parsed?.unsupported)) {
       throw new Error('the support check replied without an "unsupported" list');
@@ -225,6 +340,7 @@ export function createHostSupportChecker(host: HostAdapter): SupportChecker {
     return {
       unsupported,
       detail: typeof parsed.detail === 'string' ? parsed.detail.trim() : '',
+      misreadsMe: typeof parsed.misreadsMe === 'string' ? parsed.misreadsMe.trim() : undefined,
     };
   };
 }

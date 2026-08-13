@@ -198,6 +198,18 @@ export interface SupportVerdict {
   /** Indices into the claims that pass was given, which it says are unsupported. */
   readonly unsupported: readonly number[];
   readonly detail: string;
+  /**
+   * A sentence in Construct's own call that states this role's work as
+   * something other than what it established, quoted by the role. Empty when
+   * the role took no objection, absent when it was never shown a call.
+   *
+   * This is the veto that keeps the synthesis honest. Construct is entitled to
+   * a judgment across concerns and the role is not asked whether it agrees with
+   * one; it is asked the narrower question only it can answer, which is whether
+   * its own work has been firmed up, resolved, or leaned on for something it
+   * did not say.
+   */
+  readonly misreadsMe?: string;
 }
 
 /**
@@ -208,6 +220,8 @@ export interface SupportVerdict {
 export type SupportChecker = (
   source: SourceDeliverable,
   claims: readonly ComposedClaim[],
+  /** Construct's own call, for the role to object to. Omitted when there is none. */
+  position?: string,
 ) => Promise<SupportVerdict>;
 
 export interface ComposeReadiness {

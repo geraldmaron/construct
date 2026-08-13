@@ -70,12 +70,15 @@ import type { ComposedClaim, SourceDeliverable, SourceStanding } from '../kernel
 import {
   createHostComposer,
   createHostGapCloser,
+  createHostPositioner,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
 import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
+import { positionShortfalls, screenPosition, toPosition } from '../kernel/run/position.ts';
+import type { ScreenedPosition } from '../kernel/run/position.ts';
 import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
 import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
@@ -3342,18 +3345,42 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       process.stdout.write(`  discarded: "${drop.claim.text.slice(0, 60)}" — ${drop.reason}\n`);
     }
 
+    // Construct's own read, taken before the roles are asked anything, so the
+    // same call they get to object to is the one that was formed from their
+    // finished work rather than from what survived their objections to it.
+    //
+    // Fail-soft: a position that could not be produced leaves the arranged
+    // document, which is what this command produced before there was one. It
+    // must never be able to cost the work it is a judgment about.
+    let position: ScreenedPosition | null = null;
+    try {
+      const read = toPosition(await createHostPositioner(host)({ outcome: plan.outcome, sources }));
+      position = read === null ? null : screenPosition(read, sources.map((s) => s.role));
+    } catch (error) {
+      process.stdout.write(
+        `  no position taken (${(error as Error).message}); the arranged document stands alone\n`,
+      );
+    }
+    for (const drop of position?.refused ?? []) {
+      process.stdout.write(`  refused from the position: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`);
+    }
+
     // Each role shown its own deliverable beside the claims drawn from it.
     // Per role rather than per claim: identical coverage, and the cost is
     // bounded by how many concerns the run had rather than by how much the
     // composer wrote.
     const check = createHostSupportChecker(host);
     const unsupported = new Set<ComposedClaim>();
+    // A role saying the call states its work as something it did not establish.
+    // Printed with the call rather than instead of it: the objection is the
+    // role's and the judgment is Construct's, and a reader is owed both.
+    const objections: { role: string; quote: string }[] = [];
     for (const source of sources) {
       const mine = claimsFrom(screened.claims, source.role);
       if (mine.length === 0) continue;
       let verdict;
       try {
-        verdict = await check(source, mine);
+        verdict = await check(source, mine, position?.position.approach);
       } catch (error) {
         process.stderr.write(
           `compose: ${source.role}'s claims could not be checked (${(error as Error).message}); ` +
@@ -3369,6 +3396,9 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         process.stdout.write(
           `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${verdict.detail}\n`,
         );
+      }
+      if (verdict.misreadsMe !== undefined && verdict.misreadsMe.length > 0) {
+        objections.push({ role: source.role, quote: verdict.misreadsMe });
       }
     }
 
@@ -3404,6 +3434,76 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           '> put one half of a live disagreement in the document under a single name.\n>\n' +
           contested.map((fact) => `> - ${contestedLine(fact)}\n`).join(''),
       );
+    }
+
+    // Construct's own call, first, because it is the answer to what was asked.
+    // Everything below it is the evidence it rests on and the specialists' own
+    // work in their own names — a reader can always tell which is which,
+    // because they are in different parts of the document under different
+    // names, which is what lets the judgment be made at all.
+    if (position !== null) {
+      const p = position.position;
+      const asRecord = flags.record !== undefined;
+      const say = (text: string) => (asRecord ? text : renderClaim(text));
+      process.stdout.write(`\n## What Construct makes of this\n\n${say(p.approach)}\n`);
+      process.stdout.write(
+        '\n*This is a judgment across every concern, not any one specialist\'s finding. ' +
+          'Nobody was dispatched to make it; the roles below were each asked about their own ' +
+          'concern and each was right to answer only that.*\n',
+      );
+      const listing = (title: string, claims: readonly { text: string; restsOn: readonly string[] }[]) => {
+        if (claims.length === 0) return;
+        process.stdout.write(`\n**${title}**\n\n`);
+        for (const claim of claims) {
+          const on = claim.restsOn.map((r) => (asRecord ? r : renderAttribution(r))).join(', ');
+          process.stdout.write(`- ${say(claim.text)} [${on}]\n`);
+        }
+      };
+      listing('Why', p.because);
+      listing('What it costs', p.costs);
+      listing('What happens first', p.first);
+
+      if (p.resolved.length > 0) {
+        process.stdout.write('\n**Where the specialists could not both be acted on**\n\n');
+        for (const r of p.resolved) {
+          process.stdout.write(
+            `- ${say(r.question)} — went with ${asRecord ? r.took : renderAttribution(r.took)} over ` +
+              `${asRecord ? r.over : renderAttribution(r.over)}: ${say(r.because)}\n`,
+          );
+        }
+      }
+      if (p.strongestObjection.length > 0) {
+        process.stdout.write(`\n**The strongest objection to this**\n\n${say(p.strongestObjection)}\n`);
+      }
+      if (p.preMortem.length > 0) {
+        process.stdout.write(`\n**Assume it was taken and it failed**\n\n${say(p.preMortem)}\n`);
+      }
+      if (p.undecided.length > 0) {
+        process.stdout.write('\n**What this could not decide, and what would decide it**\n\n');
+        for (const u of p.undecided) {
+          process.stdout.write(`- ${say(u.question)} — settled by: ${say(u.settledBy)}\n`);
+        }
+      }
+      // A recommendation with no case against it is an advertisement, and this
+      // system holds every role to exactly that standard. Reporting the
+      // shortfall rather than withholding the call: the reader can weigh a call
+      // they are told arrived without its objection.
+      const short = positionShortfalls(p);
+      if (short.length > 0) {
+        process.stdout.write(
+          `\n> **This call did not come with everything it owes.** ${short.join('; ')}. ` +
+            'The same checks apply to it as to any deliverable here.\n',
+        );
+      }
+      if (objections.length > 0) {
+        process.stdout.write(
+          '\n> **A specialist says the call states its work as something else.** Reported rather\n' +
+            '> than resolved: the judgment is Construct\'s to make and the objection is theirs to\n' +
+            '> make, and a reader is owed both.\n>\n' +
+            objections.map((o) => `> - ${o.role}: "${o.quote}"\n`).join(''),
+        );
+      }
+      process.stdout.write('\n---\n\n*What each specialist established, in their own names:*\n');
     }
 
     const empty: string[] = [];
