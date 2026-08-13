@@ -257,3 +257,32 @@ test('an uncited position survives as uncited rather than being dropped', () => 
   });
   assert.equal(decision?.positions.find((p) => p.role === 'privacy')?.citation, null);
 });
+
+/**
+ * Observed live: a role ended its stance with a forty-word caveat and the whole
+ * caveat was read out inside the count, as though it were the name of a side.
+ * The sides stay as distinct as the roles made them — collapsing to the bare
+ * word would report a conditional proceed as a plain one — and only the
+ * rendering inside the tally is bounded.
+ */
+test('a long qualifier is cut inside the tally and kept whole on the position', () => {
+  const long =
+    'these are real but bounded exposures (evidence destruction and capped-privilege ' +
+    'forgery, not reach to funds or other tenants), worth filing as follow-up work';
+  const decision = frameConflict({
+    run: 'run-3',
+    outcome: 'ship the installer',
+    at: AT,
+    stances: [
+      stance('security', 'proceed', 'bounded', null, long),
+      stance('privacy', 'hold', 'no agreement', null),
+    ],
+  });
+
+  assert.ok(decision);
+  assert.doesNotMatch(decision.question, /other tenants/);
+  assert.match(decision.question, /1 say proceed these are real but bounded…/);
+
+  const security = decision.positions.find((p) => p.role === 'security');
+  assert.ok(security!.stance.includes('other tenants'), 'the position keeps the whole qualifier');
+});

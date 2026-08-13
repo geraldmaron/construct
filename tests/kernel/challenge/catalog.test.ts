@@ -347,3 +347,38 @@ test('an ungrounded dispatch passes the ground-exhausted challenge saying why', 
   assert.equal(check?.passed, true);
   assert.match(check?.detail ?? '', /no declared roots/);
 });
+
+/**
+ * Two different failures wear the same shape and only one justifies the strong
+ * sentence. From a recorded run: a role wrote that it had opened every document
+ * a question needed, cited none of them by marker, and was told in the same
+ * breath that it had left fourteen pieces of work undone. The check still
+ * fails — a reader cannot tell in either case — but it stops asserting the
+ * thing it cannot know.
+ */
+test('a deliverable that cites nothing is not told it left work undone', () => {
+  const draft =
+    'I opened docs/a.md and docs/b.md and neither settles the question. ' +
+    'See also docs/c.md for the surrounding decision.';
+
+  const run = runStructuralChallenges(brief(['ground-exhausted']), draft, {
+    groundRoots: ['/repo'],
+  });
+
+  assert.equal(run.results[0].passed, false);
+  assert.match(run.results[0].detail, /no citation marker anywhere/);
+  assert.doesNotMatch(run.results[0].detail, /work it could have done/);
+});
+
+test('a deliverable that cites elsewhere and not here is told exactly that', () => {
+  const draft =
+    'The bar is stated in the ops note [cite:docs/a.md]. See also docs/unopened.md.';
+
+  const run = runStructuralChallenges(brief(['ground-exhausted']), draft, {
+    groundRoots: ['/repo'],
+  });
+
+  assert.equal(run.results[0].passed, false);
+  assert.match(run.results[0].detail, /cites elsewhere/);
+  assert.match(run.results[0].detail, /work it could have done/);
+});

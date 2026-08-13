@@ -76,20 +76,30 @@ export function landingCommits(
   ids: readonly string[],
   mainBranch: string,
 ): Map<string, string[]> | null {
-  const log = git(root, ['log', '--format=%H%x00%s%x01', mainBranch]);
+  // The whole message, not the subject. The convention puts the id at the end
+  // of the first line, which works for a commit landing one bead and cannot
+  // work for one landing four — the trailer goes in the body, and reading only
+  // the subject reported every bead except the one that fit. A trailer is the
+  // last parenthesised group on its own line, wherever in the message that line
+  // sits, so both shapes are found and neither is guessed at.
+  const log = git(root, ['log', '--format=%H%x00%B%x01', mainBranch]);
   if (log === null) return null;
   const known = new Set(ids);
   const found = new Map<string, string[]>(ids.map((id) => [id, []]));
   for (const entry of log.split('\x01')) {
-    const [sha, subject] = entry.split('\x00');
-    if (!sha || !subject) continue;
-    const trailer = /\(([^()]*)\)$/.exec(subject.trim());
-    if (!trailer) continue;
-    for (const token of trailer[1].split(/[,\s]+/)) {
-      const id = token.trim();
-      if (known.has(id)) found.get(id)?.push(sha.trim().slice(0, 12));
+    const [sha, message] = entry.split('\x00');
+    if (!sha || !message) continue;
+    for (const line of message.split('\n')) {
+      const trailer = /\(([^()]*)\)$/.exec(line.trim());
+      if (!trailer) continue;
+      for (const token of trailer[1].split(/[,\s]+/)) {
+        const id = token.trim();
+        if (known.has(id)) found.get(id)?.push(sha.trim().slice(0, 12));
+      }
     }
   }
+  // A commit naming the same bead on two lines is one landing commit.
+  for (const [id, shas] of found) found.set(id, [...new Set(shas)]);
   return found;
 }
 

@@ -192,6 +192,24 @@ export interface FrameInput {
  * still reads the declared word, so carrying qualifiers invents no conflict and
  * loses none.
  */
+/**
+ * A stance label short enough to read inside a count.
+ *
+ * The question line is a tally, and a tally is unreadable the moment one of its
+ * names is a sentence. Cut on a word boundary so the fragment is a phrase
+ * rather than a severed word, and mark that it was cut, because a qualifier
+ * silently shortened is a role quoted as saying something narrower than it did.
+ * The uncut text is on the position.
+ */
+const LABEL_BUDGET = 40;
+
+export function shortLabel(label: string): string {
+  if (label.length <= LABEL_BUDGET) return label;
+  const cut = label.slice(0, LABEL_BUDGET);
+  const boundary = cut.lastIndexOf(' ');
+  return `${(boundary > 0 ? cut.slice(0, boundary) : cut).replace(/[,;:]$/, '')}…`;
+}
+
 export function frameConflict(input: FrameInput): RaiseDecision | null {
   const sides = input.stances.filter((s) => s.declared.stance !== 'unclear');
   if (!isConflict(sides)) return null;
@@ -199,6 +217,15 @@ export function frameConflict(input: FrameInput): RaiseDecision | null {
   // Grouped by what each role wrote, holds first so the question opens on the
   // objection, then in declaration order — not by size, which would read as a
   // verdict on which side is winning.
+  // Keyed on the full label, shown short. Collapsing to the bare stance word
+  // was tried and is wrong: a role that wrote "proceed with conditions" counted
+  // among the plain proceeds is reported as plainer than it wrote, which is the
+  // one thing this framing may never do. What was actually broken is the
+  // reading — a role ending with a forty-word caveat had the whole caveat read
+  // out inside the count, as though it were the name of a side. So the sides
+  // stay exactly as distinct as the roles made them and only the rendering is
+  // bounded; the qualifier in full travels on the position, beside the reason,
+  // which is where a reader who wants it is already looking.
   const tally = new Map<string, number>();
   for (const side of sides) {
     const label = stanceLabel(side.declared);
@@ -206,7 +233,9 @@ export function frameConflict(input: FrameInput): RaiseDecision | null {
   }
   const counted = [...tally.entries()]
     .sort(([a], [b]) => Number(b.startsWith('hold')) - Number(a.startsWith('hold')))
-    .map(([label, n], i) => (i === 0 ? `${String(n)} role(s) say ${label}` : `${String(n)} say ${label}`))
+    .map(([label, n], i) =>
+      i === 0 ? `${String(n)} role(s) say ${shortLabel(label)}` : `${String(n)} say ${shortLabel(label)}`,
+    )
     .join(', ');
 
   const positions: Position[] = [...sides]

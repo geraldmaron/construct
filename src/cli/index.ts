@@ -16,6 +16,7 @@ import { writeFileSync } from 'node:fs';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
+import { CAPABILITY_DENIED_ACTION } from '../kernel/run/rolewrite.ts';
 import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
 import {
   addSource,
@@ -70,6 +71,7 @@ import {
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
 import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
+import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
 import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
 import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
@@ -2416,6 +2418,16 @@ export function log(argv: string[]): number {
  * here mutates, and nothing polls — it is one read of what the store already
  * holds, which is the whole reason the CLI could have said it all along.
  */
+/**
+ * Denials of one grant by one role above which the count is worth a line.
+ *
+ * Three rather than one, because a single denial is a role discovering its
+ * grants and a second is it confirming; a third is a loop. Set here rather
+ * than tuned per surface, so the log and any later surface agree on what a
+ * flood is.
+ */
+const DENIAL_FLOOD = 3;
+
 function writeRunState(store: Store, run?: string): void {
   const tasks = listTasks(store, run);
   if (tasks.length === 0) return;
@@ -2426,10 +2438,38 @@ function writeRunState(store: Store, run?: string): void {
   const parts = [...counts.entries()].map(([state, n]) => `${String(n)} ${state}`);
   process.stdout.write(`${tasks.length} task(s): ${parts.join(', ')}.\n`);
 
+  // A denial is the write surface working: a role reached for a grant it does
+  // not hold and was told no. A *flood* of them is different information — it
+  // is the run's own evidence that a role is fighting its grants, usually
+  // retrying one call in a loop, and it was visible only to somebody who opened
+  // the raw log already knowing to count. Counted here rather than reported per
+  // event, because the individual denial is noise and the rate is the finding.
+  const denials = new Map<string, number>();
+  for (const entry of readWorkLog(store, run)) {
+    if (entry.action !== CAPABILITY_DENIED_ACTION) continue;
+    const detail = entry.detail as { grant?: unknown } | null;
+    const grant = typeof detail?.grant === 'string' ? detail.grant : 'a grant it does not hold';
+    denials.set(`${entry.role}:${grant}`, (denials.get(`${entry.role}:${grant}`) ?? 0) + 1);
+  }
+  const flooding = [...denials.entries()].filter(([, n]) => n >= DENIAL_FLOOD);
+  if (flooding.length > 0) {
+    for (const [who, n] of flooding) {
+      const [role, grant] = who.split(':');
+      process.stdout.write(
+        `${role} was denied ${grant} ${String(n)} times — the surface held, and a role ` +
+          'retrying one call that many times is reading the refusal as a transient error ' +
+          'rather than as an answer.\n',
+      );
+    }
+  }
+
   // A lease with time left is the one fact that separates "still working" from
   // "stopped", and it is the fact nobody could see. Report the deadline rather
   // than a remaining-time countdown, so the line does not imply it is watching.
-  const running = tasks.filter((t) => t.state === 'leased' && t.leaseUntil);
+  const leased = tasks.filter((t) => t.state === 'leased' && t.leaseUntil);
+  const asOf = new Date().toISOString();
+  const running = leased.filter((t) => (t.leaseUntil as string) > asOf);
+  const expired = leased.filter((t) => (t.leaseUntil as string) <= asOf);
   if (running.length > 0) {
     const latest = running
       .map((t) => t.leaseUntil as string)
@@ -2438,8 +2478,23 @@ function writeRunState(store: Store, run?: string): void {
       `Still running — ${String(running.length)} task(s) hold a lease until ${latest}. ` +
         'Re-read this log rather than re-running work; work will not take a live lease.\n',
     );
-    return;
   }
+  // A lease is only evidence of work in flight while it has time left. A
+  // coordinator that died after claiming leaves the row exactly as a healthy
+  // one looks, and reporting the two the same way asked the reader to compare
+  // a timestamp against the clock and do the arithmetic before they could tell
+  // whether anything was happening.
+  if (expired.length > 0) {
+    const stalest = expired
+      .map((t) => t.leaseUntil as string)
+      .reduce((a, b) => (a < b ? a : b));
+    process.stdout.write(
+      `Stopped — ${String(expired.length)} task(s) hold a lease that expired at ${stalest}, ` +
+        'so no coordinator is working them. Run `construct work` to take them back over; ' +
+        'the fencing token makes a re-dispatch safe.\n',
+    );
+  }
+  if (running.length > 0 || expired.length > 0) return;
 
   const failed = tasks.filter((t) => t.state === 'failed');
   if (failed.length > 0 && failed.length === tasks.length) {
@@ -3272,6 +3327,22 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           '> can show them, and a reader told which sources were challenged can weigh the document.\n',
       );
     }
+    // Before the sections, beside the standing block, for the same reason it
+    // sits there: a reader who meets the contradiction after reading the
+    // recommendation built on one side of it has already believed the
+    // recommendation.
+    const contested = contestedFacts(kept.map((c) => ({ text: c.text, from: c.from })));
+    if (contested.length > 0) {
+      process.stdout.write(
+        `\n> **Two roles do not agree about ${contested.length === 1 ? 'a fact' : 'some facts'} in this document.** ` +
+          'Each read the same ground and reached\n' +
+          '> a different state for the same thing. Nothing here picks a side — the run has no\n' +
+          '> standing to decide which role read correctly, and choosing by order of arrival would\n' +
+          '> put one half of a live disagreement in the document under a single name.\n>\n' +
+          contested.map((fact) => `> - ${contestedLine(fact)}\n`).join(''),
+      );
+    }
+
     const empty: string[] = [];
     for (const section of shape.sections) {
       const inSection = kept.filter((claim) => claim.section === section.name);

@@ -181,6 +181,11 @@ function citedAnywhere(text: string, path: string): boolean {
 const COULD_NOT_READ =
   /could not (?:be )?(?:read|open|access|retrieve)|unable to (?:read|open|access)|not reachable|no access|outside (?:the |my )?(?:declared |licensed )?(?:root|ground)|access denied|permission denied|binary|no such file/i;
 
+/** Whether the deliverable cites anything at all, by any marker. */
+function citesAnything(deliverable: string): boolean {
+  return /\[(?:cite|research):/i.test(deliverable);
+}
+
 /**
  * Paths a deliverable names but never cites, with no stated reason it could
  * not be read.
@@ -353,12 +358,31 @@ export const CHALLENGES: readonly Challenge[] = [
       }
       const shown = unread.slice(0, 3).join(', ');
       const more = unread.length > 3 ? ` (and ${String(unread.length - 3)} more)` : '';
+      // Two different failures wear the same shape, and only one of them
+      // justifies the strong sentence. A deliverable that cites elsewhere and
+      // not here has a reading gap: it shows what it does when it opens a file,
+      // and it did not do that for these. A deliverable that cites nothing at
+      // all shows nothing either way — one role wrote that it had opened every
+      // document a question needed and was told, in the same breath, that it
+      // had left fourteen pieces of work undone. The check still fails, because
+      // the reader cannot tell in either case; what changes is that it stops
+      // asserting the thing it cannot know.
+      if (!citesAnything(deliverable)) {
+        return {
+          passed: false,
+          detail:
+            `${String(unread.length)} document(s) are named and the deliverable carries no ` +
+            `citation marker anywhere: ${shown}${more}. Which of them you actually opened cannot ` +
+            'be told from the text, including by a reader who wants to check one — cite each ' +
+            'document you read, at the claim it supports.',
+        };
+      }
       return {
         passed: false,
         detail:
           `${String(unread.length)} document(s) are named but never cited and carry no reason they ` +
-          `could not be read: ${shown}${more}. A path this role could name inside a root it was ` +
-          'licensed to read is work it could have done.',
+          `could not be read, in a deliverable that cites elsewhere: ${shown}${more}. A path this ` +
+          'role could name inside a root it was licensed to read is work it could have done.',
       };
     },
   },
