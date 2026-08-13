@@ -205,7 +205,25 @@ construct record show <record-id>
 as its own note. Record fields fill in from those notes and are never set by
 hand: every value carries the note line that taught it, and the value before
 it survives, so `construct record show <id> --field=renewal` shows how it got
-there.
+there. A note only reaches the records it names, so a note that says "they
+moved the renewal" without naming anyone updates nothing — which is the
+correct answer, not a missed one.
+
+### One workspace, or one per client?
+
+Records hold several subjects inside one workspace, so a client engagement
+with its vendors and stakeholders is one workspace with several records. What
+does *not* divide by record is the ground: declared sources, the engagement
+mode, and workspace memory are all workspace-wide, so every run in a workspace
+is grounded in every source declared there.
+
+Use a workspace per client engagement whenever their material may not mix.
+Records inside one shared workspace are for subjects that may legitimately see
+each other's documents — your own vendors, your own programmes, a single
+client's org chart. The cost of getting it wrong runs both ways: sharing when
+you should not have puts one client's documents in the survey grounding
+another's work, and splitting when you need not have splits the operating
+memory you paid to learn.
 
 Sources and the engagement mode both belong to a workspace, and every command
 that touches one takes `--workspace=<name>` — including `construct outcome`.

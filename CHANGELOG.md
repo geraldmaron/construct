@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.7 — 2026-08-13
 
 Four questions were asked of the system — ingest a file or a directory; point it at repos and have it write strategy; point it at a documents repository and have it find what conflicts; feed it customer notes and have it keep records current — and modelled against the code. Two were already answered. The eight gaps behind the other two are closed here (construct-edmi). The rule underneath all of them: ground Construct has not actually read is not ground, and a conclusion whose provenance is silence reads exactly like one whose provenance is a document.
 
@@ -23,6 +23,21 @@ Four questions were asked of the system — ingest a file or a directory; point 
 
 - **A customer is a subject with a history, not a domain string** (construct-edmi.7). Facts a note taught became workspace lessons keyed by free text, so "Acme moved its renewal to Q3" could not be listed, superseded per subject, or told apart from another client's fact under the same word — and the only isolation available was one workspace per customer, which also isolates the memory you wanted shared. Records are named subjects whose fields are append-only: the current value is the most recent row and the rows before it are how it got there. Every field carries the note citation that taught it; an uncited value is refused. Fields are never set by hand — they arrive through the context loop, from notes, citing lines. `construct record add|list|show`.
 - **An approved outward write nobody carries out is a decision, not a change** (construct-edmi.8). `construct decide --apply=<id> --host=…` hands the approved words to the host and records only what it reported succeeding. A rejected proposal is never attempted; a host that could not be asked records nothing, because an unknown is not a failure to apply; a reply with no boolean throws rather than defaulting either way. A host with no way to reach the system says so, and the proposal stays approved and unapplied.
+
+### Caught by adversarial review, before the release
+
+The program's own review found four defects in the work above. Three are fixed here; the fourth is filed.
+
+- **A command that was three model calls became six hundred** (construct-edmi.11). Directory ingest made `notes` cost N documents times densify-produce-challenge, with no bound and no estimate — the user learned the size of it from the bill. Bounded by note count (`--max-notes`, default 25), and the batch states what it is about to spend before spending it; notes past the limit keep their rows with the command that takes them. Deliberately no money ceiling: the one `ask` and `work` enforce sums the tasks table and the context loop creates no tasks, so a `--ceiling` here would read a number this command never moves. A bound in name only is worse than an honest count.
+- **A host that dispatches read-only cannot carry a change out** (construct-edmi.12). `decide --apply` went through the same seam every role uses — `--mode plan` on cursor, `-s read-only` on codex, both probed — so apply there could only ever report that it could not, while the surface offered all four hosts. Hosts now declare `outward-write` from the posture their own pins record, and the apply surface refuses a host without it before spending a call. For the two that have it the declaration is the warning as much as the permission: claude and opencode pass no sandbox flag, so an apply there runs with whatever reach the user's install grants, and the command says so before dispatching.
+- **One client's fields have no business in another client's prompt** (construct-edmi.13). The loop showed the producer every record the workspace kept, so a workspace holding several clients put one client's field values into the prompt reasoning over another's notes — a leak no gate downstream would catch, because nothing about it is a citation. A note is now scoped to the subjects it names, deterministically: an update must name the record it changes, so a subject the note never mentions is one it cannot determine anything about. The notes fixture named no client and passed anyway; it names one now, and a second proves it never reaches the prompt.
+- **Records cannot be erased** (construct-edmi.14, open). Append-only by trigger like every other evidence table — but unlike the work log, records hold facts about named people and organizations, which is what an erasure request is about. Filed with the decision it needs rather than papered over.
+
+Also corrected: the extraction-path comment claimed re-surveying reuses the extraction. It does not — every survey re-extracts and overwrites, which is right, because a document that changed between runs would otherwise ground the second run in the first run's words.
+
+### Guidance
+
+- **One workspace, or one per client?** Records hold several subjects inside one workspace, but declared sources, engagement mode and workspace memory stay workspace-wide. Use a workspace per client engagement whenever their material may not mix; records inside one shared workspace are for subjects that may legitimately see each other's documents. Documented in `docs/first-run.md` with the cost of each mistake (construct-edmi.10).
 
 ### Consolidated
 
