@@ -23,7 +23,7 @@ import { addRecord, currentFields } from '../../src/kernel/store/records.ts';
 import { notesFor } from '../../src/kernel/store/notes.ts';
 import { operationalLessonsFor } from '../../src/kernel/lessons/admission.ts';
 
-const NOTE = 'they want the pilot in Q4\npricing stays flat\nupdate PROJ-14 with the new date';
+const NOTE = 'Acme want the pilot in Q4\npricing stays flat\nupdate PROJ-14 with the new date';
 
 interface Capture {
   readonly code: number;
@@ -345,4 +345,41 @@ test('a note limit that would list nothing is refused as a lie waiting to happen
   const { code, err } = await run((file) => [['notes', file, '--max-notes=0']]);
   assert.equal(code, 2);
   assert.match(err, /--max-notes must be a positive whole number/);
+});
+
+test('a note names one client, and the other client never reaches the prompt', async () => {
+  let prompt = '';
+  const capturing: HostAdapter = {
+    ...loopHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'context-producer') prompt = task;
+      return loopHost().invoke(request);
+    },
+  };
+  await run((file) => [
+    () =>
+      withStore((store) => {
+        for (const [id, name] of [
+          ['rec-acme', 'Acme'],
+          ['rec-globex', 'Globex'],
+        ] as const) {
+          addRecord(store, {
+            id,
+            workspace: 'default',
+            kind: 'customer',
+            name,
+            createdAt: '2026-08-05T00:00:00.000Z',
+          });
+        }
+        return 0;
+      }),
+    () => notes([file], capturing),
+  ]);
+  assert.match(prompt, /rec-acme \(customer: Acme\)/, 'the client the note names is shown');
+  assert.doesNotMatch(
+    prompt,
+    /Globex/,
+    'and the one it does not name never reaches the prompt reasoning over it',
+  );
 });

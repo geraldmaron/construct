@@ -50,6 +50,7 @@ import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
 import { toReviewedDrift } from '../kernel/context/review.ts';
+import { subjectsOf } from '../kernel/context/subjects.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
@@ -1134,6 +1135,14 @@ export const DEFAULT_MAX_NOTES = 25;
 /** Model calls one note costs: densify, produce, and one challenge per delta. */
 const CALLS_PER_NOTE = 3;
 
+/**
+ * How many of the subjects a note names are shown to the loop. A note that
+ * genuinely concerns a dozen clients at once is a note about a portfolio, and
+ * the loop is not the surface for it; what the cap drops is stated rather than
+ * silently trimmed off the end of a prompt.
+ */
+const SUBJECTS_PER_NOTE = 10;
+
 export interface NotesArgs {
   readonly file: string;
   readonly workspace: string;
@@ -1439,6 +1448,15 @@ async function contextLoopOverNote(
     return false;
   }
 
+  const subjects = subjectsOf(body, recordsFor(store, workspace), SUBJECTS_PER_NOTE);
+  if (subjects.withheld > 0) {
+    process.stdout.write(
+      `  ${String(subjects.withheld)} record${subjects.withheld === 1 ? '' : 's'} this note names ` +
+        `${subjects.withheld === 1 ? 'was' : 'were'} not shown to the loop (limit ${String(SUBJECTS_PER_NOTE)}); ` +
+        'nothing was recorded against them.\n',
+    );
+  }
+
   let produced: ProducedLoop;
   try {
     const reply = await createHostProducer(host)({
@@ -1446,10 +1464,14 @@ async function contextLoopOverNote(
       noteId,
       lessons: operationalLessonsFor(store, workspace).map((l) => l.body),
       sources: producerSources,
-      // What each record says now, so an update supersedes rather than
-      // repeats: a model that cannot see the field is already set will set it
-      // again, and a history of restatements hides the one real change.
-      records: recordsFor(store, workspace).map((r) => ({
+      // Only the subjects this note names, with what each says now. Two
+      // reasons, and the first is the serious one: a workspace holding several
+      // clients would otherwise put one client's fields into the prompt
+      // reasoning over another's call notes. The second is that an update must
+      // name the record it changes, so a subject the note never mentions is
+      // one the note cannot determine anything about — showing it buys
+      // nothing and risks a fact being filed against the wrong client.
+      records: subjects.shown.map((r) => ({
         id: r.id,
         kind: r.kind,
         name: r.name,
