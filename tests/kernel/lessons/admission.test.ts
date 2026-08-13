@@ -15,13 +15,15 @@ import assert from 'node:assert/strict';
 import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
-import { recordLesson } from '../../../src/kernel/store/lessons.ts';
+import { recordLesson, getLesson } from '../../../src/kernel/store/lessons.ts';
 import {
   admissionOf,
   decideAdmission,
   operationalLessonsFor,
   riskTierFor,
+  runDerived,
 } from '../../../src/kernel/lessons/admission.ts';
+import { DECISION_CITATION_PREFIX } from '../../../src/kernel/lessons/fromDecisions.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
@@ -168,5 +170,57 @@ test('revoking an admitted lesson is a newer held row, and the newest verdict wi
     });
     assert.equal(admissionOf(store, 'l-revoke')?.verdict, 'held');
     assert.deepEqual(operationalLessonsFor(store, 'client-a'), []);
+  });
+});
+
+/**
+ * A run-derived lesson (see lessons/fromDecisions.ts) is not read by a model
+ * before it is filed, so it carries none of the injection risk external text
+ * does — but the gate does not take its provenance on trust either. It is a
+ * third category, recognized structurally from the citation, and held exactly
+ * like an external one until a named human admits it, regardless of how
+ * low-risk the domain is.
+ */
+test('a run-derived lesson is recognized structurally and held even at the lowest risk tier', () => {
+  withStore((store) => {
+    recordLesson(store, {
+      id: 'l-decision',
+      workspace: 'client-a',
+      kind: 'process',
+      body: 'strategy-alignment held over product-scoping; resolved: ship mobile first',
+      citation: `${DECISION_CITATION_PREFIX}run-1:stance`,
+      external: false,
+      createdAt: AT,
+    });
+    assert.ok(runDerived(getLesson(store, 'l-decision')!));
+
+    const held = decideAdmission(store, {
+      lessonId: 'l-decision',
+      domain: LOW_RISK as string,
+      basis: { kind: 'adversarial-pass', detail: 'n/a' },
+      decidedAt: AT,
+    });
+    assert.equal(held.verdict, 'held');
+    assert.match(held.reason, /own resolved decision/);
+    assert.deepEqual(operationalLessonsFor(store, 'client-a'), []);
+
+    const admitted = decideAdmission(store, {
+      lessonId: 'l-decision',
+      domain: LOW_RISK as string,
+      basis: { kind: 'human-approval', approver: 'gerald', detail: 'read the decision myself' },
+      decidedAt: '2026-08-05T02:00:00.000Z',
+    });
+    assert.equal(admitted.verdict, 'admitted');
+    assert.deepEqual(
+      operationalLessonsFor(store, 'client-a').map((l) => l.id),
+      ['l-decision'],
+    );
+  });
+});
+
+test('a lesson whose citation is not the decision scheme is not treated as run-derived', () => {
+  withStore((store) => {
+    recordLesson(store, lesson('l-note', false));
+    assert.equal(runDerived(getLesson(store, 'l-note')!), false);
   });
 });

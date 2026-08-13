@@ -94,14 +94,16 @@ import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { ScreenResult } from '../kernel/context/observations.ts';
-import { operationalLessonsFor } from '../kernel/lessons/admission.ts';
+import { operationalLessonsFor, decideAdmission, admissionOf, riskTierFor } from '../kernel/lessons/admission.ts';
+import { distillDecisionLesson } from '../kernel/lessons/fromDecisions.ts';
+import { recordLesson, lessonsFor, getLesson } from '../kernel/store/lessons.ts';
 import {
   createHostApplier,
   createHostChallenger,
   createHostProducer,
   createHostReviewer,
 } from '../hosts/contextloop.ts';
-import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
+import { openDecisions, resolveDecision, getDecision } from '../kernel/store/decisions.ts';
 import { evaluateProfile, proposeStaffing, NOT_STAFFED } from '../kernel/staffing/profile.ts';
 import type { StaffingProposal } from '../kernel/staffing/profile.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
@@ -2664,13 +2666,57 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
     return 2;
   }
   return withStore((store) => {
+    const at = now();
     try {
-      resolveDecision(store, id, resolution, now());
+      resolveDecision(store, id, resolution, at);
     } catch (error) {
       process.stderr.write(`decide: ${(error as Error).message}\n`);
       return 1;
     }
     process.stdout.write(`decided ${id}: ${resolution}\n`);
+
+    // The first place a run's own operation becomes a candidate lesson rather
+    // than only a document someone hands in. Distillation is mechanical (no
+    // model reads the decision) and fail-soft on top of an already-succeeded
+    // resolution: losing the lesson is not losing the decision, so a failure
+    // here is reported, not thrown.
+    const resolved = getDecision(store, id);
+    const distilled = resolved && distillDecisionLesson(resolved);
+    if (resolved && distilled) {
+      try {
+        recordLesson(store, {
+          id: distilled.id,
+          workspace: planFor(store, resolved.run)?.workspace ?? resolved.run,
+          kind: 'process',
+          body: distilled.body,
+          citation: distilled.citation,
+          external: false,
+          supersedes: null,
+          createdAt: at,
+        });
+        const worst =
+          distilled.domains.find((d) => riskTierFor(d) === 'high') ?? distilled.domains[0] ?? resolved.run;
+        // The gate holds every run-derived lesson unconditionally (see
+        // runDerived() in lessons/admission.ts), so this basis is never read
+        // into a reason on this path — it exists only because DecideAdmission
+        // requires one. Admitting this lesson for real is a later, separate
+        // call with basis: {kind: 'human-approval', ...}, made by whoever
+        // reviews the held queue, not by this command.
+        const admitted = decideAdmission(store, {
+          lessonId: distilled.id,
+          domain: worst,
+          basis: { kind: 'adversarial-pass', detail: 'not applicable: no adversarial pass runs on a run-derived lesson' },
+          decidedAt: at,
+        });
+        process.stdout.write(
+          `distilled ${distilled.id} (${admitted.verdict}): ${admitted.reason}\n`,
+        );
+      } catch (error) {
+        process.stdout.write(
+          `the decision was resolved but the lesson could not be recorded (${(error as Error).message})\n`,
+        );
+      }
+    }
     return 0;
   });
 }

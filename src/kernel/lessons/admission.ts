@@ -10,6 +10,19 @@
  * cannot be trusted to catch injected instructions. That rule is not a score
  * input — it runs first and cannot be outvoted.
  *
+ * A lesson distilled from this run's own resolved decisions (see
+ * lessons/fromDecisions.ts) is a third provenance and gets the same
+ * unconditional human-approval treatment, for a different reason. It carries
+ * none of the injection risk external text does — it is assembled verbatim
+ * from typed store columns, not read by a model — but familiarity is not
+ * verification either, and a system whose own output could admit itself into
+ * its own future prompts without a human ever seeing it is certifying its own
+ * work exactly as much as the caller-declared risk tier this module already
+ * refuses to trust. Recognized structurally, from the citation the lesson was
+ * recorded with, for the same reason the risk tier is derived rather than
+ * declared: a caller that could mark its own lesson not-run-derived would be
+ * the gate believing whatever it is told.
+ *
  * The risk tier is derived from the domain catalog rather than declared by the
  * caller: a domain whose output requires licensed review before anyone relies
  * on it is high-risk, and a domain the catalog does not know is high-risk too,
@@ -24,6 +37,7 @@
 import type { Store } from '../store/open.ts';
 import { getLesson, lessonsFor, type Lesson } from '../store/lessons.ts';
 import { DOMAINS } from '../implication/domains.ts';
+import { DECISION_CITATION_PREFIX } from './fromDecisions.ts';
 
 export type RiskTier = 'low' | 'high';
 
@@ -35,6 +49,11 @@ export function riskTierFor(domain: string): RiskTier {
   const found = DOMAINS.find((d) => d.domain === domain);
   if (!found) return 'high';
   return found.licensedReview ? 'high' : 'low';
+}
+
+/** Whether a lesson's citation marks it as distilled from this run's own decisions. */
+export function runDerived(lesson: Lesson): boolean {
+  return lesson.citation.startsWith(DECISION_CITATION_PREFIX);
 }
 
 /** What the decision rests on. Human approval names its human. */
@@ -125,6 +144,15 @@ export function decideAdmission(store: Store, input: DecideAdmission): Admission
       verdict: 'held',
       reason:
         'source was an ingested external document: another model reading the same text cannot be trusted to catch injected instructions, so only a human admits it',
+    });
+  }
+
+  if (runDerived(lesson) && !human) {
+    return record(store, {
+      ...base,
+      verdict: 'held',
+      reason:
+        'source is this run\'s own resolved decision, not something Construct was told: nothing here needed an adversarial pass to catch, but familiarity with its own operation is not verification, so it needs the same human review an ingested document does',
     });
   }
 
