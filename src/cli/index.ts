@@ -63,8 +63,12 @@ import type { ComposedClaim, SourceDeliverable } from '../kernel/run/compose.ts'
 import {
   COMPOSITION_SECTIONS,
   createHostComposer,
+  createHostGapCloser,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
+import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
+import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
+import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
@@ -3036,7 +3040,57 @@ export function record(argv: string[]): number {
 
 const COMPOSE_USAGE =
   'usage: construct compose --run=<id> --host=<opencode|claude|codex|cursor> ' +
-  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n';
+  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>] [--no-close]\n';
+
+/**
+ * Put the composition's gaps back to the roles, once.
+ *
+ * Fail-soft by construction: a role whose closing call fails leaves its gaps
+ * standing, which is exactly the state the document was in before this round
+ * existed. A closing round is work the run can do on top of an answer it
+ * already has, so it must never be able to cost the answer.
+ */
+async function closeGaps(input: {
+  readonly host: HostAdapter;
+  readonly outcome: string;
+  readonly groundRoots: readonly string[];
+  readonly sources: readonly SourceDeliverable[];
+  readonly briefs: ReadonlyMap<string, Brief>;
+  readonly gaps: readonly string[];
+}): Promise<ClosingRound> {
+  const close = createHostGapCloser(input.host, input.outcome, input.groundRoots);
+  const replies: ClosingReply[] = [];
+  process.stdout.write(
+    `\nclosing round: ${String(input.gaps.length)} unanswered question(s) back to ` +
+      `${String(input.sources.length)} role(s) — one call each\n`,
+  );
+  for (const source of input.sources) {
+    try {
+      const reply = await close(source, input.gaps);
+      // A role whose brief cannot be read is asked and then not admitted: the
+      // checks it owed are the ones its answer must pass, and running a
+      // different set against it would be a weaker gate wearing the same name.
+      const brief = input.briefs.get(source.role);
+      replies.push(
+        brief === undefined
+          ? {
+              closed: [],
+              unclosed: reply.unclosed,
+              refused: reply.closed.map((answer) => ({
+                gap: answer.gap,
+                reason: `${source.role}'s brief could not be read, so its answer could not be held to the checks it owed`,
+              })),
+            }
+          : screenClosedAnswers(reply, brief, input.groundRoots),
+      );
+    } catch (error) {
+      process.stdout.write(
+        `  ${source.role} could not be asked (${(error as Error).message}); its gaps stand\n`,
+      );
+    }
+  }
+  return foldClosingRound(input.gaps, replies);
+}
 
 /**
  * Write one document from the several a run produced.
@@ -3071,13 +3125,20 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       process.stderr.write(`compose: no plan recorded for ${run}\n`);
       return 1;
     }
-    const sources: SourceDeliverable[] = listTasks(store, run)
-      .filter((task) => task.state === 'done')
+    const done = listTasks(store, run).filter((task) => task.state === 'done');
+    const sources: SourceDeliverable[] = done
       .map((task) => ({
         role: task.role,
         text: renderDeliverable(latestDraft(store, task.id)?.deliverable ?? task.result),
       }))
       .filter((source) => source.text.trim() !== '');
+    // Each role's own brief, so a closing answer can be held to the challenges
+    // that role already owed rather than to a set invented for the round.
+    const briefs = new Map<string, Brief>(
+      done
+        .map((task) => [task.role, task.brief as Brief] as const)
+        .filter(([, brief]) => brief !== null && typeof brief === 'object'),
+    );
 
     const readiness = composeReadiness(sources);
     if (!readiness.ready) {
@@ -3175,14 +3236,71 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       );
     }
 
+    // Naming a gap is where this used to stop, and stopping there hands the
+    // reader a question the run was better placed to answer than they are. So
+    // the gaps go back to the roles, once: each is shown the list and asked
+    // which its own material settles, with the run's ground still licensed to
+    // it. Skipped when nothing is open, and skippable on purpose — it is a
+    // model call per role, and a reader who only wants the arrangement should
+    // not pay for the round that follows it.
+    const closing =
+      screened.uncovered.length > 0 && flags['no-close'] === undefined
+        ? await closeGaps({
+            host,
+            outcome: plan.outcome,
+            groundRoots: groundRootsFor(store, run),
+            sources,
+            briefs,
+            gaps: screened.uncovered,
+          })
+        : null;
+
+    if (closing !== null && closing.closed.length > 0) {
+      // A separate section rather than mixed into the composed ones, because
+      // the provenance is different and the reader is owed the difference:
+      // these are a role's own words from a second dispatch, not the composer's
+      // arrangement of a first. Nothing screened them for addition because
+      // nothing arranged them — the screen exists for the composer's step.
+      process.stdout.write('\n## what was open until somebody went and looked\n\n');
+      for (const answer of closing.closed) {
+        process.stdout.write(`- ${answer.gap}\n  → ${answer.answer} [${answer.role}]\n`);
+      }
+    }
+    if (closing !== null && closing.contested.length > 0) {
+      // Two roles answering the same question is a finding, not a tie to break.
+      // Printing one of them alone would be the run resolving a disagreement it
+      // has no standing to resolve, under a single name.
+      process.stdout.write('\n## questions two roles answered differently\n\n');
+      for (const item of closing.contested) {
+        process.stdout.write(`- ${item.gap}\n`);
+        for (const answer of item.answers) {
+          process.stdout.write(`  → ${answer.answer} [${answer.role}]\n`);
+        }
+      }
+    }
+    for (const drop of closing?.refused ?? []) {
+      process.stdout.write(`  discarded: "${drop.gap.slice(0, 60)}" — ${drop.reason}\n`);
+    }
+
     // The gap is part of the document, not a footnote under it. A composition
     // that silently answers two thirds of an outcome is the failure composing
     // introduces, and naming it is the whole defence.
     process.stdout.write('\n## what nobody answered\n\n');
+    const standing = closing?.standing ?? screened.uncovered.map((gap) => ({ gap, reasons: [] }));
     if (screened.uncovered.length === 0) {
       process.stdout.write('- the roles between them addressed every part of the outcome\n');
+    } else if (standing.length === 0) {
+      process.stdout.write('- every question the composing left open was closed by the round that followed it\n');
     } else {
-      for (const gap of screened.uncovered) process.stdout.write(`- ${gap}\n`);
+      for (const item of standing) {
+        process.stdout.write(`- ${item.gap}\n`);
+        // A gap several roles opened their material for and could not settle is
+        // a different fact from one nobody looked at, and only the reasons can
+        // tell them apart. Without them the second reads as the first.
+        for (const reason of item.reasons) {
+          process.stdout.write(`  (${reason.role} looked: ${reason.reason})\n`);
+        }
+      }
     }
 
     const removed = screened.discarded.length + unsupported.size;

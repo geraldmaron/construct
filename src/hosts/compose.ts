@@ -18,6 +18,8 @@
 
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import type { ComposedClaim, SourceDeliverable, SupportChecker } from '../kernel/run/compose.ts';
+import type { GapCloser } from '../kernel/run/closing.ts';
+import { toClosingReply } from '../kernel/run/closing.ts';
 import { extractJson } from './contextloop.ts';
 
 export const COMPOSER_ROLE = 'composer';
@@ -100,6 +102,82 @@ export function supportPrompt(source: SourceDeliverable, claims: readonly Compos
     'Reply with JSON only, no prose outside it:',
     '{"unsupported":[<indices>],"detail":"<one sentence on what you found>"}',
   ].join('\n');
+}
+
+export const CLOSING_ROLE_SUFFIX = '-closing';
+
+/**
+ * One role, the gaps the composition found, and the question of which its own
+ * material settles.
+ *
+ * The framing is deliberately not "answer these". A role asked to answer a list
+ * answers all of it, from whatever it has, and the run gets a document whose
+ * gaps were papered rather than closed. It is asked instead which of them its
+ * material settles — a question whose honest answer is often none, and the
+ * prompt says so in as many words, because a closing round that cannot come
+ * back empty is not a check, it is a generator.
+ */
+export function closingPrompt(input: {
+  readonly outcome: string;
+  readonly source: SourceDeliverable;
+  readonly gaps: readonly string[];
+  readonly groundRoots: readonly string[];
+}): string {
+  return [
+    `You are the ${input.source.role} role. You have already delivered your work on`,
+    'this outcome, several other specialists delivered theirs, and the whole was',
+    'composed into one document. The composing found questions the document does',
+    'not answer, and they are below.',
+    '',
+    `The outcome:\n${input.outcome}`,
+    '',
+    '--- your own deliverable ---',
+    input.source.text,
+    '',
+    '--- what the composed document does not answer ---',
+    ...input.gaps.map((gap, i) => `${String(i)}. ${gap}`),
+    '',
+    ...(input.groundRoots.length > 0
+      ? [
+          'You may read and cite any document under these roots, by its full path:',
+          ...input.groundRoots.map((root) => `- ${root}`),
+          'If one of these questions is settled by a document you can go and open,',
+          'open it and report what it says. That is the entire point of this pass:',
+          'the reader has the same list you do and cannot close it any faster.',
+          '',
+        ]
+      : [
+          'You have no ground to read beyond your own deliverable on this pass, so',
+          'the only questions you can close are ones your delivered work already',
+          'settles and the composing missed.',
+          '',
+        ]),
+    'Which of these does YOUR material settle? Not which could you give a',
+    'reasonable view on — which does the evidence you hold actually answer.',
+    'Closing none of them is a legitimate and common reply, and it is worth far',
+    'more than an answer assembled from what you happen to know: the reader is',
+    'told the question is open and can go and settle it, and cannot recover from',
+    'being handed a plausible sentence instead.',
+    '',
+    'Quote each gap you report on exactly as it is written above. An answer to a',
+    'question that is not on the list is discarded before anyone reads it.',
+    '',
+    'Reply with JSON only, no prose outside it:',
+    '{"closed":[{"gap":"<the gap, verbatim>","answer":"<what your material says, ' +
+      'citing it>"}],"unclosed":[{"gap":"<the gap, verbatim>","reason":"<what your ' +
+      'material would need to hold to settle it, and does not>"}]}',
+  ].join('\n');
+}
+
+/** Build a gap closer backed by a host adapter; caller owns init(). */
+export function createHostGapCloser(host: HostAdapter, outcome: string, groundRoots: readonly string[]): GapCloser {
+  return async (source, gaps) => {
+    const result = await host.invoke({
+      role: `${source.role}${CLOSING_ROLE_SUFFIX}`,
+      task: closingPrompt({ outcome, source, gaps, groundRoots }),
+    });
+    return toClosingReply(extractJson(textOf(host, result)), source.role, gaps);
+  };
 }
 
 function textOf(host: HostAdapter, result: { status: string; output: unknown }): string {
