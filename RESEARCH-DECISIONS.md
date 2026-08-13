@@ -1774,3 +1774,54 @@ see is open, and needs a corpus that can see it before it is worth another run.
 Tracked as `construct-9933` (2026-08-11), with that corpus-power precondition
 written into its acceptance rather than left in this paragraph: a defect stated
 only in prose is a defect nobody is holding.
+
+## 19. A multi-role outcome produces no document, and that is the gap (2026-08-13)
+
+**The question.** A user asks Construct to "read this codebase and write the
+strategy." The playbook catalog has `strategy review` and `product requirements
+document` but no author-a-strategy shape, so the ask returns review-shaped
+artifacts. Add an authoring playbook, or is review the right shape?
+
+**How it was settled.** By running it rather than reasoning about it. The
+outcome above was dispatched against this repository, declared code-first
+(`--emphasis=code`, cap 120), on the claude host. Three domains were implicated
+and all three completed with cited deliverables.
+
+The first attempt is itself part of the record: dispatched from a working
+directory that could not reach the licensed root, every role's file reads
+failed, and the run reported three tasks done with a per-role best-effort note.
+Ungrounded deliverables, a record that said grounded. Filed as
+construct-edmi.15. The second attempt, dispatched with `--dir` at the repository,
+produced deliverables citing specific files and line ranges throughout.
+
+**What the grounded run showed.** Neither of the two answers on offer was right.
+
+`strategy-alignment` produced the bet, the price, the decision owner, and the
+displaced work — and said in its own `scope-diff` slot: "The outcome asked for a
+full strategy... This deliverable does none of that directly — it does not
+propose the 'uniquely good at' claim, does not sequence work... The three
+findings above are the load-bearing constraints a full strategy draft needs to
+sit inside, not the strategy itself."
+
+`product-scoping` produced in-scope, out-of-scope, success measures and phasing.
+`program-sequencing` produced the ordering. Between the three roles, every part
+of the requested strategy exists. Each role correctly declined to claim the
+whole, because the whole is not any one of their concerns.
+
+**Decided.** The gap is not a missing playbook. It is that a multi-role outcome
+composes nothing: synthesis merges *issues* across roles, and no pass writes one
+document from N deliverables. Adding a strategy-authoring playbook would give
+one domain a shape for producing a whole document out of a partial view, which
+is the fabrication risk every other gate in this system exists to prevent — the
+authoring role would be asserting the scope and sequence that two other roles
+were separately dispatched to establish.
+
+So: no authoring playbook. The composition pass is filed as its own work
+(construct-edmi.17), and until it exists the honest description of what
+Construct does with "write me a strategy" is that it produces the constraints a
+strategy must sit inside, from several concerns, and leaves the composing to
+the reader. `strategy-alignment`'s own `scope-diff` says that to the user
+already, which is the gate working rather than failing.
+
+**Recorded by:** the run's own deliverables (run-20260813111558843,
+workspace `strategy-validation`). Accepted by Gerald.

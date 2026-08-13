@@ -99,11 +99,16 @@ export const TOOLS = [
   {
     name: 'record_external_read',
     description:
-      'Record something you read that is NOT in the material you were given: a ' +
-      'standard, a vendor doc, a regulation, anything you reached through your ' +
-      "own tools. Construct fetches nothing and cannot see what you read, so a " +
-      'claim resting on it has no provenance unless you record it here. Record ' +
-      'the read when you make it, not at the end.',
+      'Call this ONLY if you actually went and read something that is NOT in ' +
+      'the material you were given: a standard, a vendor doc, a regulation, ' +
+      'anything you reached through your own tools. Most dispatches read only ' +
+      'their material and never call this at all — that is the normal case, and ' +
+      'there is nothing to report when it holds. Never call it to say you read ' +
+      'nothing; a provenance list containing declarations of having read nothing ' +
+      'is worse than an empty one. When you did read something outside, record ' +
+      'it as you read it rather than at the end, because Construct fetches ' +
+      'nothing and cannot see it, so a claim resting on it has no provenance at ' +
+      'all unless you say where it came from.',
     inputSchema: {
       type: 'object',
       properties: {
