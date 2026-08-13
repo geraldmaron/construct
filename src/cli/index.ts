@@ -70,6 +70,8 @@ import type { ComposedClaim, SourceDeliverable, SourceStanding } from '../kernel
 import {
   createHostComposer,
   createHostGapCloser,
+  createHostObjectionChecker,
+  createHostPositionRepairer,
   createHostPositioner,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
@@ -77,8 +79,14 @@ import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts'
 import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
-import { positionShortfalls, screenPosition, toPosition } from '../kernel/run/position.ts';
-import type { ScreenedPosition } from '../kernel/run/position.ts';
+import {
+  collapseObjections,
+  positionRepairIsAnImprovement,
+  positionShortfalls,
+  screenPosition,
+  toPosition,
+} from '../kernel/run/position.ts';
+import type { PositionObjection, ScreenedPosition } from '../kernel/run/position.ts';
 import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
 import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
@@ -3374,7 +3382,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // A role saying the call states its work as something it did not establish.
     // Printed with the call rather than instead of it: the objection is the
     // role's and the judgment is Construct's, and a reader is owed both.
-    const objections: { role: string; quote: string }[] = [];
+    let objections: PositionObjection[] = [];
     for (const source of sources) {
       const mine = claimsFrom(screened.claims, source.role);
       if (mine.length === 0) continue;
@@ -3399,6 +3407,70 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       }
       if (verdict.misreadsMe !== undefined && verdict.misreadsMe.length > 0) {
         objections.push({ role: source.role, quote: verdict.misreadsMe });
+      }
+    }
+
+    // The call goes back to itself once, with what the roles said about it.
+    // A deliverable that fails its checks is sent back to its author, and an
+    // objection of this kind is more specific than any of those checks: a role
+    // has quoted the sentence and said it states work that role did not do.
+    // Reporting that leaves the reader holding a call plus a correction to
+    // apply themselves.
+    //
+    // One round, and only taken if it is an improvement — the repair round's
+    // rule, because an instruction not to lose ground is not a mechanism.
+    let callWasRepaired = false;
+    let callWentBack = false;
+    if (position !== null && objections.length > 0) {
+      const before = position;
+      try {
+        const second = toPosition(
+          await createHostPositionRepairer(host)({
+            outcome: plan.outcome,
+            sources,
+            position: before.position,
+            objections: collapseObjections(objections),
+          }),
+        );
+        if (second !== null) {
+          const rescreened = screenPosition(second, sources.map((s) => s.role));
+          // Only the roles that objected are asked again. A role that had
+          // nothing to say about the first call is not owed a second reading of
+          // a document edited to answer somebody else, and the claims drawn
+          // from it did not change.
+          const recheck = createHostObjectionChecker(host);
+          const remaining: PositionObjection[] = [];
+          for (const role of new Set(objections.map((o) => o.role))) {
+            const source = sources.find((s) => s.role === role);
+            if (source === undefined) continue;
+            const quote = await recheck(source, rescreened.position.approach);
+            if (quote.length > 0) remaining.push({ role, quote });
+          }
+          callWentBack = true;
+          const better = positionRepairIsAnImprovement(
+            { objections, refused: before.refused },
+            { objections: remaining, refused: rescreened.refused },
+          );
+          if (better) {
+            position = rescreened;
+            objections = remaining;
+            callWasRepaired = true;
+            for (const drop of rescreened.refused) {
+              process.stdout.write(
+                `  refused from the repaired position: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`,
+              );
+            }
+          } else {
+            process.stdout.write(
+              '  the repaired call was refused: it did not drop an objection without ' +
+                'introducing another or losing an attribution; the first call stands\n',
+            );
+          }
+        }
+      } catch (error) {
+        process.stdout.write(
+          `  the call could not be sent back (${(error as Error).message}); it stands with its objections\n`,
+        );
       }
     }
 
@@ -3495,12 +3567,34 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
             'The same checks apply to it as to any deliverable here.\n',
         );
       }
+      // What the roles said, after the call had its one chance to answer them.
+      // Several roles quoting the same sentence is one contested sentence and
+      // prints as one line naming all of them: three lines would read as three
+      // problems and bury which sentence is actually in dispute.
       if (objections.length > 0) {
         process.stdout.write(
-          '\n> **A specialist says the call states its work as something else.** Reported rather\n' +
-            '> than resolved: the judgment is Construct\'s to make and the objection is theirs to\n' +
-            '> make, and a reader is owed both.\n>\n' +
-            objections.map((o) => `> - ${o.role}: "${o.quote}"\n`).join(''),
+          '\n> **A specialist says the call states its work as something else.** ' +
+            (callWasRepaired
+              ? 'The call went\n> back once with these objections, and this is what it left standing.'
+              : callWentBack
+                ? 'The call went\n> back once and what came back did not answer this without costing something else,\n> so the first call stands.'
+                : 'It was not sent back.') +
+            ' Reported rather than resolved from here: the\n' +
+            '> judgment is Construct\'s to make and the objection is theirs to make, and a reader\n' +
+            '> is owed both.\n>\n' +
+            collapseObjections(objections)
+              .map((o) => `> - ${o.roles.join(', ')}: "${o.quote}"\n`)
+              .join(''),
+        );
+      }
+      // A repair the reader cannot see is a fragile path reading as a solid
+      // one. The call they are holding is a second attempt, and that is a fact
+      // about it.
+      if (callWasRepaired) {
+        process.stdout.write(
+          '\n*This call is a second attempt. Specialists objected that the first stated their\n' +
+            'work as something they had not established, it was sent back once with their\n' +
+            'objections, and what came back dropped objections without introducing new ones.*\n',
         );
       }
       process.stdout.write('\n---\n\n*What each specialist established, in their own names:*\n');

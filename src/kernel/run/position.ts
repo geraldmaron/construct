@@ -47,11 +47,16 @@
  *   - RESTS ON WHAT WAS ESTABLISHED. The position names the roles it is built
  *     on, and an attribution to a role that produced no deliverable is refused
  *     structurally, the same way a composed claim's is.
- *   - CHECKED BY THE ROLES IT LEANS ON. Each role sees the position beside its
- *     own deliverable and says whether it misrepresents what that deliverable
- *     established. That is a real veto and it costs nothing extra: the roles are
- *     already asked about the claims drawn from them, and this rides the same
- *     call.
+ *   - CHECKED BY THE ROLES IT LEANS ON, AND SENT BACK ONCE WHEN THEY OBJECT.
+ *     Each role sees the position beside its own deliverable and says whether it
+ *     misrepresents what that deliverable established. That is a real veto and
+ *     it costs nothing extra: the roles are already asked about the claims drawn
+ *     from them, and this rides the same call. An objection of that kind is
+ *     specific enough to fix — the sentence is quoted — so the position goes
+ *     back with it, exactly as a deliverable that fails its checks does, rather
+ *     than being printed beside a correction the reader is left to apply. What
+ *     cannot be repaired prints with its objections, which is where this
+ *     started.
  *   - OWES THE CASE AGAINST ITSELF. A recommendation shipped without its
  *     strongest objection and its most likely failure is an advertisement. Both
  *     are already structural checks in the catalog and both are required here.
@@ -122,6 +127,27 @@ export interface ConstructPosition {
 export interface ScreenedPosition {
   readonly position: ConstructPosition;
   /** Claims dropped before anyone was asked to verify them, with the reason. */
+  readonly refused: readonly { readonly text: string; readonly reason: string }[];
+}
+
+/**
+ * One role saying the call states its work as something it did not establish,
+ * in the role's own words: the sentence it objects to, quoted.
+ */
+export interface PositionObjection {
+  readonly role: string;
+  readonly quote: string;
+}
+
+/** The same sentence objected to, once, naming every role that raised it. */
+export interface SharedObjection {
+  readonly quote: string;
+  readonly roles: readonly string[];
+}
+
+/** A position as it stood after one screening and one round of objections. */
+export interface PositionAttempt {
+  readonly objections: readonly PositionObjection[];
   readonly refused: readonly { readonly text: string; readonly reason: string }[];
 }
 
@@ -255,6 +281,81 @@ export function screenPosition(
  * Holding its own synthesis to a lower bar than the work it synthesises would
  * be the exact inversion of the standard.
  */
+/**
+ * The same sentence, however many roles quoted it.
+ *
+ * Three roles objecting to one clause is one problem with the call, not three,
+ * and printing it three times tells the reader that the call is in worse shape
+ * than it is while burying which sentence is actually contested. It is also the
+ * strongest signal the objections carry: a sentence three roles independently
+ * reached for is the one the repair has to fix.
+ *
+ * Matched on the words rather than the characters — a role that quotes with
+ * different capitalisation, surrounding quote marks, or wrapped whitespace has
+ * quoted the same sentence, and treating those as different objections would
+ * defeat the collapse in exactly the cases it exists for.
+ */
+function quoteKey(quote: string): string {
+  return quote
+    .trim()
+    .replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+export function collapseObjections(
+  objections: readonly PositionObjection[],
+): readonly SharedObjection[] {
+  const byQuote = new Map<string, { quote: string; roles: string[] }>();
+  for (const objection of objections) {
+    const key = quoteKey(objection.quote);
+    if (key.length === 0) continue;
+    const entry = byQuote.get(key);
+    if (entry === undefined) {
+      byQuote.set(key, { quote: objection.quote.trim(), roles: [objection.role] });
+      continue;
+    }
+    if (!entry.roles.includes(objection.role)) entry.roles.push(objection.role);
+  }
+  return [...byQuote.values()];
+}
+
+/**
+ * Whether the call that came back is better than the one that went out.
+ *
+ * The rule is the repair round's, and it is here for the reason it is there: an
+ * instruction is not a mechanism. Told that one sentence misreads one role, a
+ * model rewrites the call, and the rewrite can trade the objection it was sent
+ * back for against a new one — or lose the attributions that made the old
+ * version screenable in the first place, which is the failure mode unique to
+ * this pass, since a position is admitted claim by claim on what it rests on.
+ *
+ * So a second attempt is taken only when the objections it leaves are a strict
+ * subset of the ones it was sent back for AND it brought back no refusal the
+ * first attempt did not already have. Fixed something and broke nothing is a
+ * repair. Anything else is a rewrite, and the run keeps the call it already
+ * had, which is a known quantity that prints with its objections beside it.
+ *
+ * Equal objection sets are refused too: a second attempt that fixed nothing
+ * spent a call to produce a different document with the same standing.
+ */
+export function positionRepairIsAnImprovement(
+  before: PositionAttempt,
+  after: PositionAttempt,
+): boolean {
+  const objectionKey = (o: PositionObjection): string => `${o.role} ${quoteKey(o.quote)}`;
+  const was = new Set(before.objections.map(objectionKey));
+  const now = new Set(after.objections.map(objectionKey));
+  if (now.size >= was.size) return false;
+  for (const key of now) if (!was.has(key)) return false;
+
+  const refusedBefore = new Set(before.refused.map((r) => quoteKey(r.text)));
+  for (const refusal of after.refused) {
+    if (!refusedBefore.has(quoteKey(refusal.text))) return false;
+  }
+  return true;
+}
+
 export function positionShortfalls(position: ConstructPosition): string[] {
   const missing: string[] = [];
   if (position.strongestObjection.length === 0) {

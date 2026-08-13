@@ -11,6 +11,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  collapseObjections,
+  positionRepairIsAnImprovement,
   positionShortfalls,
   screenPosition,
   toPosition,
@@ -127,5 +129,101 @@ test('a call resting on nothing any role established is reported short', () => {
   assert.match(
     positionShortfalls({ ...toPosition(WHOLE)!, because: [] }).join(' '),
     /rests on nothing any role established/,
+  );
+});
+
+/**
+ * Three roles reaching for the same sentence is one contested sentence and the
+ * strongest signal the objections carry. Printed three times it reads as three
+ * problems and buries which sentence is actually in dispute.
+ */
+test('the same sentence quoted by several roles is one objection naming all of them', () => {
+  const collapsed = collapseObjections([
+    { role: 'privacy', quote: 'The kill switches are settled.' },
+    { role: 'program-sequencing', quote: '  "the kill switches are settled."  ' },
+    { role: 'product-scoping', quote: 'The mobile epic is stalled.' },
+  ]);
+
+  assert.equal(collapsed.length, 2);
+  assert.deepEqual(collapsed[0].roles, ['privacy', 'program-sequencing']);
+  assert.deepEqual(collapsed[1].roles, ['product-scoping']);
+});
+
+test('one role repeating itself is still one objection from one role', () => {
+  const collapsed = collapseObjections([
+    { role: 'privacy', quote: 'The kill switches are settled.' },
+    { role: 'privacy', quote: 'The kill switches are settled.' },
+  ]);
+
+  assert.deepEqual(collapsed, [{ quote: 'The kill switches are settled.', roles: ['privacy'] }]);
+});
+
+const OBJECTION = { role: 'privacy', quote: 'The kill switches are settled.' };
+const OTHER = { role: 'product-scoping', quote: 'The mobile epic is stalled.' };
+const REFUSAL = { text: 'Postgres is the system of record', reason: 'rests on no role' };
+
+/** Fixed something and broke nothing is a repair. */
+test('a second call that drops an objection and adds nothing is taken', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION, OTHER], refused: [] },
+      { objections: [OTHER], refused: [] },
+    ),
+    true,
+  );
+});
+
+test('a second call that trades one objection for another is refused', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION], refused: [] },
+      { objections: [OTHER], refused: [] },
+    ),
+    false,
+  );
+});
+
+/**
+ * The failure mode unique to this pass: a position is admitted claim by claim
+ * on what it rests on, so a rewrite can answer an objection and lose the
+ * attributions that made the call screenable at all.
+ */
+test('a second call that answers an objection by losing an attribution is refused', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION, OTHER], refused: [] },
+      { objections: [OTHER], refused: [REFUSAL] },
+    ),
+    false,
+  );
+});
+
+test('a refusal the first call already had is not held against the second', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION, OTHER], refused: [REFUSAL] },
+      { objections: [OTHER], refused: [REFUSAL] },
+    ),
+    true,
+  );
+});
+
+test('a second call that fixed nothing is refused rather than churned in', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION], refused: [] },
+      { objections: [OBJECTION], refused: [] },
+    ),
+    false,
+  );
+});
+
+test('a second call every role stopped objecting to is taken', () => {
+  assert.equal(
+    positionRepairIsAnImprovement(
+      { objections: [OBJECTION, OTHER], refused: [] },
+      { objections: [], refused: [] },
+    ),
+    true,
   );
 });

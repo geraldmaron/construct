@@ -121,6 +121,69 @@ function composeHost(): HostAdapter {
   };
 }
 
+/** A call, in the shape the position pass asks for. */
+function call(approach: string, restsOn: string): string {
+  return JSON.stringify({
+    approach,
+    because: [{ text: 'the pilot has one blocker left', restsOn: [restsOn] }],
+    resolved: [],
+    costs: [],
+    first: [],
+    strongestObjection: 'The migration may be the real blocker and it is not costed.',
+    preMortem: 'The pilot ships, nobody uses it, and the migration was the reason.',
+    undecided: [],
+  });
+}
+
+const FIRST_CALL = 'Ship the pilot in Q4 and treat the migration as settled.';
+const REPAIRED_CALL = 'Ship the pilot in Q4; whether the migration is cut is still open.';
+
+/**
+ * A host whose specialist objects that the call states its work as settled when
+ * its deliverable left it open — the objection the first live run of the
+ * position pass produced — and whose second attempt is whatever the test says.
+ */
+function objectingHost(second: string, stillObjects = ''): HostAdapter {
+  return {
+    ...composeHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'construct-position') {
+        const repairing = task.includes('the call you made, in full');
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: repairing ? second : call(FIRST_CALL, 'strategy-alignment') },
+          error: null,
+        };
+      }
+      if (role === 'composition-support' && task.includes('You raised an objection')) {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ misreadsMe: stillObjects }) },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              unsupported: /^1\. /m.test(task) ? [1] : [],
+              detail: 'the deliverable states a conclusion but never mentions a date',
+              misreadsMe: FIRST_CALL,
+            }),
+          },
+          error: null,
+        };
+      }
+      return composeHost().invoke(request);
+    },
+  };
+}
+
 const OUTCOME = 'Decide whether the pilot ships in Q4';
 
 /** The run the last `outcome` queued, read from the store rather than scraped. */
@@ -163,6 +226,86 @@ test('a run with several deliverables composes, and what no deliverable supports
   assert.match(out, /the decision shape asks for .*where-things-stand.*what-it-costs/);
   assert.match(out, /not about the roles who wrote them/);
   assert.match(out, /Shaped as a decision/);
+});
+
+/**
+ * A role's objection is specific enough to fix — it quotes the sentence — so
+ * the call goes back with it rather than being printed beside a correction the
+ * reader is left to apply.
+ */
+test('a call a specialist says misreads it goes back once, and the repair is what the reader gets', async () => {
+  let composed = 0;
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => (
+      (composed = await compose(
+        [`--run=${latestRun()}`],
+        objectingHost(call(REPAIRED_CALL, 'strategy-alignment')),
+      )),
+      composed
+    ),
+  ]);
+
+  assert.equal(composed, 0);
+  assert.match(out, /whether the migration is cut is still open/);
+  assert.doesNotMatch(out, /treat the migration as settled/, 'the objected-to call is replaced, not printed');
+  assert.match(out, /This call is a second attempt/);
+  assert.doesNotMatch(out, /states its work as something else/, 'nothing is left to report');
+});
+
+/**
+ * The repair round's rule, and it is here because an instruction not to lose
+ * ground is not a mechanism: a call that answers the objection by resting on a
+ * role that never ran has traded a reported objection for a fabricated
+ * attribution.
+ */
+test('a second call that answers the objection by losing an attribution is refused, and the first stands', async () => {
+  let composed = 0;
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => (
+      (composed = await compose(
+        [`--run=${latestRun()}`],
+        objectingHost(call(REPAIRED_CALL, 'never-dispatched')),
+      )),
+      composed
+    ),
+  ]);
+
+  assert.equal(composed, 0);
+  assert.match(out, /the repaired call was refused/);
+  assert.match(out, /treat the migration as settled/, 'the call the run already had stands');
+  assert.doesNotMatch(out, /This call is a second attempt/);
+  assert.match(out, /states its work as something else/);
+  assert.match(out, /product-scoping: "Ship the pilot in Q4 and treat the migration as settled\."/);
+});
+
+/** One round. A call that keeps repairing itself never delivers. */
+test('the call is sent back once and no further, however many objections survive', async () => {
+  let positionCalls = 0;
+  const counting = (second: string): HostAdapter => {
+    const inner = objectingHost(second, FIRST_CALL);
+    return {
+      ...inner,
+      invoke: async (request: unknown): Promise<HostResult> => {
+        const { role } = request as { role: string };
+        if (role === 'construct-position') positionCalls += 1;
+        return inner.invoke(request);
+      },
+    };
+  };
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () =>
+      compose([`--run=${latestRun()}`], counting(call(REPAIRED_CALL, 'strategy-alignment'))),
+  ]);
+
+  assert.equal(positionCalls, 2, 'the first call and one repair, never a third');
+  assert.match(out, /states its work as something else/);
+  assert.match(out, /did not answer this without costing something else/);
 });
 
 test('a composition whose claims could not be checked is refused, not promoted unverified', async () => {

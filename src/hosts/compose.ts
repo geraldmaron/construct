@@ -18,6 +18,7 @@
 
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import type { ComposedClaim, SourceDeliverable, SupportChecker } from '../kernel/run/compose.ts';
+import type { ConstructPosition, SharedObjection } from '../kernel/run/position.ts';
 import type { GapCloser } from '../kernel/run/closing.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
@@ -74,6 +75,21 @@ export function composerPrompt(input: {
   ].join('\n');
 }
 
+/**
+ * The narrow question a role can answer about Construct's call, asked in one
+ * place because it is asked twice: once riding the support check that already
+ * runs, and again when a call that was sent back comes home. Two wordings of it
+ * would be two different questions and only one of them would be the veto.
+ */
+const POSITION_CHECK: readonly string[] = [
+  'You are not being asked whether you agree with the call. It is a judgment',
+  'across concerns and yours was one of them; Construct is entitled to make it',
+  'and you were not asked for it. What you are asked is narrower and only you',
+  'can answer it: does it state your work as something other than what you',
+  'established — firmer than you put it, resolved where you left it open, or',
+  'resting on you for something you did not say? Quote the sentence if so.',
+];
+
 export function supportPrompt(
   source: SourceDeliverable,
   claims: readonly ComposedClaim[],
@@ -113,12 +129,7 @@ export function supportPrompt(
           '--- and separately: the call Construct made across every specialist ---',
           position,
           '',
-          'You are not being asked whether you agree with the call. It is a judgment',
-          'across concerns and yours was one of them; Construct is entitled to make it',
-          'and you were not asked for it. What you are asked is narrower and only you',
-          'can answer it: does it state your work as something other than what you',
-          'established — firmer than you put it, resolved where you left it open, or',
-          'resting on you for something you did not say? Quote the sentence if so.',
+          ...POSITION_CHECK,
         ]),
     '',
     'Reply with JSON only, no prose outside it:',
@@ -209,6 +220,131 @@ export function createHostPositioner(
   return async (input) => {
     const result = await host.invoke({ role: POSITION_ROLE, task: positionPrompt(input) });
     return extractJson(textOf(host, result));
+  };
+}
+
+/**
+ * The call sent back to itself, once, with what the roles it leans on said
+ * about it.
+ *
+ * A role's objection here is not a difference of opinion about the call — it is
+ * a role quoting one sentence and saying that sentence states its work as
+ * something it did not establish. That is repairable in a single pass, and
+ * reporting it instead hands the reader a call plus a correction to apply
+ * themselves, which is the position the repair round exists to keep anyone out
+ * of.
+ *
+ * The whole position goes back out with the request, for the reason the
+ * deliverable does: this is a fresh dispatch and a fresh dispatch remembers
+ * nothing, and a model asked to fix a document it cannot see rebuilds it from
+ * the complaints and drops everything nobody complained about. The refusal to
+ * take a second attempt that lost ground stands behind the instruction anyway,
+ * because an instruction is not a mechanism.
+ */
+export function positionRepairPrompt(input: {
+  readonly outcome: string;
+  readonly sources: readonly SourceDeliverable[];
+  readonly position: ConstructPosition;
+  readonly objections: readonly SharedObjection[];
+}): string {
+  return [
+    'You are Construct. You took a position across every specialist on this',
+    'outcome, and each of them was then shown the call beside their own finished',
+    'work and asked one question: does it state their work as something other',
+    'than what they established? These are the ones who said it does. They are',
+    'not disputing your judgment — that is yours and they were not asked for it.',
+    'Each is telling you something only they can tell you, about their own',
+    'deliverable.',
+    '',
+    ...input.objections.map(
+      (objection) => `- ${objection.roles.join(', ')}: "${objection.quote}"`,
+    ),
+    '',
+    `What was asked:\n${input.outcome}`,
+    '',
+    ...input.sources.map((source) => `--- ${source.role} ---\n${source.text}`),
+    '',
+    '--- the call you made, in full ---',
+    JSON.stringify(input.position, null, 2),
+    '',
+    'Send the whole call back, every field it already had, changed where these',
+    'objections landed. Do not rewrite it from scratch and do not drop a part',
+    'nobody objected to: a second attempt that answers one objection and loses',
+    'ground elsewhere is refused, and what the reader then receives is the call',
+    'exactly as it stands above, with these objections printed beside it.',
+    '',
+    'Do not close an objection by deleting the sentence and saying less, by',
+    'softening the call into a summary of what the specialists think, or by',
+    'moving the contested part into what could not be decided. Each of those',
+    'passes the check and costs the reader the answer. If the objection is that',
+    'you stated as settled something that role framed as an open question, then',
+    'it is open, and the honest repair says so and says what would settle it. If',
+    'it is that you used a term the deliverable never used, use theirs.',
+    '',
+    'You may still take a position and you are still required to. And the one',
+    'thing you may not do has not changed: no fact none of them established.',
+    'Every factual sentence names the role or roles whose work it rests on, and',
+    'one that names nobody is dropped before anyone reads it.',
+    '',
+    'This is the only time it comes back.',
+    '',
+    'Reply with JSON only, in the same shape you replied in before, no prose',
+    'outside it.',
+  ].join('\n');
+}
+
+export function createHostPositionRepairer(
+  host: HostAdapter,
+): (input: {
+  outcome: string;
+  sources: readonly SourceDeliverable[];
+  position: ConstructPosition;
+  objections: readonly SharedObjection[];
+}) => Promise<unknown> {
+  return async (input) => {
+    const result = await host.invoke({ role: POSITION_ROLE, task: positionRepairPrompt(input) });
+    return extractJson(textOf(host, result));
+  };
+}
+
+/**
+ * The same veto, asked again about the call that came back.
+ *
+ * On its own rather than riding the support check this time, because the claims
+ * drawn from this role did not change and re-verdicting them would spend a call
+ * to re-answer a question already answered. Only the roles that objected are
+ * asked: a role that had nothing to say about the first call is not owed a
+ * second reading of a document edited to answer somebody else.
+ */
+export function objectionPrompt(source: SourceDeliverable, position: string): string {
+  return [
+    `Below is one specialist's finished deliverable, and beneath it the call`,
+    'Construct made across every specialist. You raised an objection to an',
+    'earlier version of this call; this is what came back.',
+    '',
+    `--- ${source.role}'s deliverable ---`,
+    source.text,
+    '',
+    '--- the call Construct made across every specialist ---',
+    position,
+    '',
+    ...POSITION_CHECK,
+    '',
+    'Reply with JSON only, no prose outside it:',
+    '{"misreadsMe":"<the sentence, or empty if none>"}',
+  ].join('\n');
+}
+
+export function createHostObjectionChecker(
+  host: HostAdapter,
+): (source: SourceDeliverable, position: string) => Promise<string> {
+  return async (source, position) => {
+    const result = await host.invoke({
+      role: SUPPORT_ROLE,
+      task: objectionPrompt(source, position),
+    });
+    const parsed = extractJson(textOf(host, result)) as { misreadsMe?: unknown } | null;
+    return typeof parsed?.misreadsMe === 'string' ? parsed.misreadsMe.trim() : '';
   };
 }
 
