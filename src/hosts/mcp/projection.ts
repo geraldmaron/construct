@@ -65,9 +65,12 @@ export const PROJECTION_TOOLS = [
   {
     name: 'catalog',
     description:
-      'The domains Construct can implicate, each with its concern. These are ' +
-      'the only domains record_outcome will admit — a domain not listed here ' +
-      'is discarded, not created.',
+      'The domains Construct can implicate, each with its concern, and the ' +
+      'Construct version answering. These are the only domains record_outcome ' +
+      'will admit — a domain not listed here is discarded, not created. The ' +
+      'version matters because this is the installed Construct, not whatever ' +
+      'a repository holds: any statement about what Construct covers is a ' +
+      'statement about this version.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -307,7 +310,16 @@ async function callTool(
   try {
     switch (name) {
       case 'catalog':
+        // The version answering rides on the catalog because the catalog is
+        // what a claim about coverage is made from, and a host reaches whatever
+        // Construct is installed rather than whatever a repository holds. A
+        // trial found a machine answering with fifteen domains while the tree
+        // carried seventeen, unwarned on either side: the operator was reading
+        // a released catalog and had no way to know which release. serverInfo
+        // carries this too, and a model that read the catalog and never saw the
+        // handshake is the reader this is for.
         return toolResult(id, {
+          construct: core.serverVersion,
           domains: DOMAINS.map((d) => ({ domain: d.domain, concern: d.concern })),
         });
       case 'record_outcome':

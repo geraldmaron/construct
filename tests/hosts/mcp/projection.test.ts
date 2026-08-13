@@ -358,3 +358,27 @@ test('drop_note refuses a missing workspace, an unknown door, and an empty body'
     f.cleanup();
   }
 });
+
+/**
+ * A host reaches whatever Construct is installed, never whatever a repository
+ * holds. A trial found a machine answering with fifteen domains while the tree
+ * carried seventeen, and nothing on either side said so — so an operator
+ * reading a catalog through a chat surface was making claims about coverage
+ * from a released build they could not name. The handshake carries the version
+ * too; a model that read the catalog and never saw the handshake is who this
+ * is for.
+ */
+test('the catalog names the Construct that answered it', async () => {
+  const f = fixture();
+  try {
+    const answered = await f.handle(call('catalog'));
+    const { body } = payload(answered);
+    const catalog = body as { construct: string; domains: { domain: string }[] };
+
+    assert.equal(typeof catalog.construct, 'string');
+    assert.ok(catalog.construct.length > 0, 'the version answering is not blank');
+    assert.ok(catalog.domains.length > 0);
+  } finally {
+    f.cleanup();
+  }
+});

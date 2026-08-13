@@ -1,7 +1,7 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "3.0.0-alpha.9",
-  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out.",
+  "version": "3.0.0-alpha.10",
+  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest \u2014 decisions in, deliverables out.",
   "type": "module",
   "license": "Apache-2.0",
   "repository": {
