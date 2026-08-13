@@ -1825,3 +1825,82 @@ already, which is the gate working rather than failing.
 
 **Recorded by:** the run's own deliverables (run-20260813111558843,
 workspace `strategy-validation`). Accepted by Gerald.
+
+## 20. A project's own vocabulary, and which router can reach it (2026-08-13)
+
+A run recorded this outcome against BlackStory: "Decide whether the bulk
+canonical-edit path may change `living_status` for a filtered set of entities
+without a second approver, before the next release ships." `living_status` is the
+field carrying that project's living-person privacy guarantee, so the question is
+a privacy control question end to end. The host model named security,
+system-design, program-sequencing and coverage-gaps. It did not name privacy —
+"second approver" reads as authorization, and security is a true and adjacent
+answer rather than a wrong one.
+
+The general shape, which is what makes this worth a decision rather than a fix:
+a project's privacy-defining field has a name that belongs to that project, and a
+router keyed to generic vocabulary cannot see that a domain-specific identifier
+*is* the concern. The concern was in the catalog the whole time and was still not
+reached.
+
+**Two directions were on the table, and one measured better than the other.**
+
+*Workspace-declared vocabulary* — a workspace binds its own terms to concerns,
+so `living_status` is declared to mean privacy. Rejected as the primary answer.
+It requires the user to know in advance which of their terms are
+privacy-defining, and a user who knows that would likely have written the outcome
+in a way that already routes. It cannot help on a first run, which is when
+routing is least informed and matters most. And a per-project term list nobody
+maintains is the fifty-three role overlays again, one layer down: a static file
+asserting a binding that no measurement checked.
+
+*Letting the declared ground inform naming* — the run already declares a root and
+reads it. BlackStory's own documents state the binding in plain words:
+`docs/architecture.md` carries a Boundaries row reading "Living persons | No
+public residential addresses; unknown living status treated as living". The
+project defines its own vocabulary in its own documents, which is exactly the
+evidence a router keyed to generic terms is missing.
+
+**Measured, on the recorded outcome, deterministically.** The keyword router was
+run on the outcome alone and on the outcome plus the ground context that the
+outcome's project-specific terms appear in, at four context widths. Build
+artifacts were excluded; 354 documents were surveyed under the declared root.
+
+| context admitted | domains implicated | privacy reached |
+|---|---|---|
+| none (outcome alone) | 1 — program-sequencing | no |
+| the line the term sits on | 4 | **yes** |
+| ±1 line | 9 | yes |
+| ±2 lines | 11 | yes |
+| ±4 lines | 12 | yes |
+
+The binding lives on the line, not in the neighbourhood. Widening the window past
+the line bought no recall — privacy is already reached at zero — and cost
+precision monotonically, until the router conscripts most of the catalog. That is
+the expected result once stated: a document that defines a project's vocabulary
+does so in a sentence, while the lines around it are the rest of that document's
+concerns. A boundaries table is dense with every concern there is.
+
+**Decided.** Addressable, and the direction is the ground, not a declared
+glossary. The discipline is line-scoped: ground evidence is admitted only from
+the line an outcome's own project-term appears on. Workspace-declared vocabulary
+is not adopted; if it ever is, it belongs as an override for a term the ground
+does not define, not as the mechanism.
+
+**What this decision does not license.** It does not change routing today, and no
+improvement is claimed. The measurement above is one outcome, one project, and
+the deterministic router only — it says nothing about the model namer, which is
+the path that actually ran and actually missed. Under this project's own standard
+an improvement claim needs more than one run and more than one model family, so
+the implementation carries that obligation rather than inheriting this table as
+its evidence. The probe is committed as `scripts/probe-ground-routing.mjs` so the
+follow-up measures with an instrument that already exists.
+
+**One correction to the record.** The bead that raised this stated that the
+keyword map, run as a control, "names NOTHING at all" on this text. Re-run today
+it names program-sequencing at score 36, above the signal floor of 10. Privacy is
+still not among what it names, so the finding stands and its substance is
+unchanged; the control's result was recorded more strongly than it was.
+
+**Recorded by:** the run's own work log (run-20260813144804609) and the probe
+above, 2026-08-13. Implementation and its measurement filed separately.
