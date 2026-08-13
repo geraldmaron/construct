@@ -37,6 +37,7 @@ import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
 import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
+import { externalReadsFor } from '../kernel/store/externalreads.ts';
 import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
@@ -2158,6 +2159,21 @@ export function show(argv: string[]): number {
         .map((line) => `  ${line}`)
         .join('\n');
       process.stdout.write(`${body}\n`);
+    }
+
+    // Two kinds of ground, named apart. What the survey walked is a document
+    // this run can point at; what a role read through its host's own tools is
+    // testimony Construct never saw and cannot check. Folding them into one
+    // "grounded in" line would let the second borrow the first's standing.
+    const external = externalReadsFor(store, run);
+    if (external.length > 0) {
+      process.stdout.write(
+        `\nread outside the declared ground (${String(external.length)}), reported by the role ` +
+          'and not verified by Construct:\n',
+      );
+      for (const read of external) {
+        process.stdout.write(`  ${read.role}: ${read.locator}\n    took: ${read.took}\n`);
+      }
     }
     return 0;
   });

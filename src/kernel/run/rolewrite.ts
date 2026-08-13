@@ -31,6 +31,7 @@
  */
 
 import type { Store } from '../store/open.ts';
+import { recordExternalRead } from '../store/externalreads.ts';
 import {
   appendWorkLog,
   countWorkLogEntries,
@@ -55,7 +56,7 @@ export const CAPABILITY_DENIED_ACTION = 'capability-denied';
 const UNATTRIBUTED = 'unattributed';
 
 /**
- * What a role is told about the two writes it holds.
+ * What a role is told about the three writes it holds.
  *
  * This block exists because the surface was built, registered, reachable — and
  * never mentioned to the model. A live four-role run finished with every role
@@ -78,13 +79,22 @@ const UNATTRIBUTED = 'unattributed';
  */
 export const WRITE_SURFACE_PROTOCOL = [
   'You can write back to Construct. A server named "construct" gives you exactly',
-  'two tools, and no others:',
+  'three tools, and no others:',
   '',
   '  submit_draft      — put your deliverable on the record. Submitting does not',
   '                      promote it: it stays a draft until it survives challenges',
   '                      that are not yours to record.',
   '  append_work_log   — record one line, in your own name, about what you',
   '                      reviewed, flagged, or could not determine.',
+  '  record_external_read — record something you read that is NOT in your',
+  '                      material: a standard, a vendor doc, a regulation. Give',
+  '                      where you read it and what you took from it.',
+  '',
+  'If you go and read something outside the material you were given, record it',
+  'with record_external_read as you read it. Construct fetches nothing and cannot',
+  'see what you read: a claim resting on it carries no provenance at all unless',
+  'you say where it came from, and a claim with no provenance is the one failure',
+  'this system will not let a deliverable keep.',
   '',
   'Call submit_draft exactly once, with your finished deliverable, before you',
   'stop. Your reply text is read as well, but the draft is what lands on the',
@@ -353,5 +363,121 @@ export function submitDraft(
         'If this is your final draft, stop now — do not call submit_draft again.',
     };
   }
+  return { ok: true, seq, role: scope.role };
+}
+
+/** The action an external read lands on the work log under, in the role's name. */
+export const EXTERNAL_READ_ACTION = 'external-read';
+
+/**
+ * How many external reads one task may record. High enough that real research
+ * is not truncated, low enough that a role looping on the tool leaves a
+ * bounded record rather than an unbounded one — the same reasoning as the
+ * draft and note caps, and the cap event lands once rather than once per retry.
+ */
+export const EXTERNAL_READ_CAP = 50;
+
+export const EXTERNAL_READ_CAP_ACTION = 'external-read-cap-reached';
+
+export interface ExternalReadSubmission {
+  readonly run: string;
+  readonly task: string;
+  /** Where the role read: a URL, a standard's designation, a document title. */
+  readonly locator: string;
+  /** What it took from there, specific enough to weigh against the claim. */
+  readonly took: string;
+}
+
+/**
+ * Record what a role read outside the run's declared ground.
+ *
+ * Construct fetches nothing and verifies nothing here: this is testimony, and
+ * it is recorded as testimony so a deliverable resting partly on the open web
+ * carries provenance for that part instead of silence. The read lands in both
+ * places for the reasons each exists — the work log because it is what the
+ * role did in its own name, the external-reads table because it is provenance
+ * a reader of the run must be able to list without reading the whole log.
+ *
+ * A locator with nothing taken from it is refused rather than stored: it
+ * claims to have been somewhere and evidences nothing, which is the shape this
+ * table would otherwise legitimize.
+ */
+export function recordExternalReadAsRole(
+  store: Store,
+  credential: RoleCredential,
+  request: ExternalReadSubmission,
+): WriteOutcome {
+  const authorization = authorizeRoleToken(credential.token, credential.secret, {
+    grant: 'record-external-read',
+    run: request.run,
+    task: request.task,
+    now: credential.at,
+  });
+  if (!authorization.ok) {
+    return refuse(
+      store,
+      credential,
+      request,
+      'record-external-read',
+      authorization.denial,
+      authorization.reason,
+    );
+  }
+
+  const { scope } = authorization;
+
+  const recorded = countWorkLogEntries(store, scope.run, scope.task, EXTERNAL_READ_ACTION);
+  if (recorded >= EXTERNAL_READ_CAP) {
+    const marked = countWorkLogEntries(store, scope.run, scope.task, EXTERNAL_READ_CAP_ACTION);
+    const seq =
+      marked > 0
+        ? 0
+        : appendWorkLog(store, {
+            run: scope.run,
+            task: scope.task,
+            role: scope.role,
+            action: EXTERNAL_READ_CAP_ACTION,
+            detail: { cap: EXTERNAL_READ_CAP },
+            at: credential.at,
+          });
+    return {
+      ok: false,
+      denial: 'note-cap',
+      reason:
+        `${String(EXTERNAL_READ_CAP)} external reads are already on the record for this task and ` +
+        'this one was NOT recorded. Write the deliverable with what you have.',
+      seq,
+    };
+  }
+
+  const locator = request.locator.trim();
+  const took = request.took.trim();
+  if (!locator || !took) {
+    return {
+      ok: false,
+      denial: 'malformed',
+      reason: locator
+        ? 'record what you took from it: a locator with nothing taken from it evidences nothing.'
+        : 'name where you read: an external read with no locator is not provenance.',
+      seq: 0,
+    };
+  }
+
+  const seq = appendWorkLog(store, {
+    run: scope.run,
+    task: scope.task,
+    role: scope.role,
+    action: EXTERNAL_READ_ACTION,
+    detail: { locator, took },
+    at: credential.at,
+  });
+  recordExternalRead(store, {
+    run: scope.run,
+    task: scope.task,
+    role: scope.role,
+    locator,
+    took,
+    recordedAt: credential.at,
+  });
   return { ok: true, seq, role: scope.role };
 }

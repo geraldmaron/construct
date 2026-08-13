@@ -35,8 +35,8 @@ import { fileURLToPath } from 'node:url';
  */
 export const MCP_SERVER_NAME = 'construct';
 
-/** The two writes a role is ever granted. Same const-not-parameter discipline as ROLE_GRANTS. */
-export const ROLE_TOOLS: readonly string[] = ['submit_draft', 'append_work_log'];
+/** The three writes a role is ever granted. Same const-not-parameter discipline as ROLE_GRANTS. */
+export const ROLE_TOOLS: readonly string[] = ['submit_draft', 'append_work_log', 'record_external_read'];
 
 /** What the model is allowed to call, under --strict-mcp-config: these and nothing else. */
 export const ROLE_TOOL_NAMES: readonly string[] = ROLE_TOOLS.map(
@@ -117,7 +117,7 @@ export function writeMcpConfig(
  * `--strict-mcp-config` is not optional politeness: without it the CLI merges
  * the user's own configured MCP servers into the run, so a role would inherit
  * whatever write surfaces the developer happens to have registered. The role's
- * authority is supposed to be exactly two writes.
+ * authority is supposed to be exactly the role writes.
  */
 export function mcpArgsFor(configPath: string): readonly string[] {
   return ['--mcp-config', configPath, '--strict-mcp-config', '--allowedTools', ROLE_TOOL_NAMES.join(',')];

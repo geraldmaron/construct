@@ -34,7 +34,7 @@
  */
 
 import { ROLE_GRANTS } from '../kernel/capabilities/tokens.ts';
-import { appendAsRole, submitDraft } from '../kernel/run/rolewrite.ts';
+import { appendAsRole, recordExternalReadAsRole, submitDraft } from '../kernel/run/rolewrite.ts';
 import type { WriteOutcome } from '../kernel/run/rolewrite.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from '../hosts/mcp/jsonrpc.ts';
@@ -53,7 +53,7 @@ export interface RoleServeCore {
   readonly serverVersion: string;
 }
 
-/** The whole tool surface. Two writes, and no third — same as ROLE_GRANTS. */
+/** The whole tool surface. Three writes, and no fourth — same as ROLE_GRANTS. */
 export const TOOLS = [
   {
     name: 'submit_draft',
@@ -94,6 +94,31 @@ export const TOOLS = [
         },
       },
       required: ['action'],
+    },
+  },
+  {
+    name: 'record_external_read',
+    description:
+      'Record something you read that is NOT in the material you were given: a ' +
+      'standard, a vendor doc, a regulation, anything you reached through your ' +
+      "own tools. Construct fetches nothing and cannot see what you read, so a " +
+      'claim resting on it has no provenance unless you record it here. Record ' +
+      'the read when you make it, not at the end.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        locator: {
+          type: 'string',
+          description: 'Where you read it: a URL, a standard designation, a document title.',
+        },
+        took: {
+          type: 'string',
+          description:
+            'What you took from there, specific enough that a reader can weigh it ' +
+            'against the claim it supports.',
+        },
+      },
+      required: ['locator', 'took'],
     },
   },
 ] as const;
@@ -157,6 +182,24 @@ function callTool(core: RoleServeCore, id: unknown, params: unknown): JsonRpcRes
         task: core.task,
         action: input.action,
         detail: fromWire(input.detail),
+      }),
+    );
+  }
+
+  if (name === 'record_external_read') {
+    if (typeof input.locator !== 'string' || input.locator.trim() === '') {
+      return failure(id, -32602, 'record_external_read requires a non-empty string "locator"');
+    }
+    if (typeof input.took !== 'string' || input.took.trim() === '') {
+      return failure(id, -32602, 'record_external_read requires a non-empty string "took"');
+    }
+    return toolResult(
+      id,
+      recordExternalReadAsRole(core.store, credential, {
+        run: core.run,
+        task: core.task,
+        locator: input.locator,
+        took: input.took,
       }),
     );
   }

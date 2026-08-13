@@ -156,7 +156,7 @@ test('a role submits a draft and appends to the log through MCP, never holding t
     const list = (await read()) as { result: { tools: Array<{ name: string }> } };
     assert.deepEqual(
       list.result.tools.map((t) => t.name).sort(),
-      ['append_work_log', 'submit_draft'],
+      ['append_work_log', 'record_external_read', 'submit_draft'],
     );
 
     // The call carries no token, no run, no task — that is the entire point.
@@ -370,7 +370,7 @@ test('protocol edges: unknown method, unknown tool, missing arguments, notificat
 
     assert.equal(handleMessage(core, { jsonrpc: '2.0', method: 'notifications/cancelled' }), null);
 
-    assert.equal(TOOLS.length, 2, 'two writes, and no third');
+    assert.equal(TOOLS.length, 3, 'three writes, and no fourth');
   } finally {
     done();
   }

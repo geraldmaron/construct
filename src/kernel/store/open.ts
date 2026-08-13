@@ -60,7 +60,13 @@
  * row is surveyed the way every source was before the setting existed. It is
  * its own table rather than columns on `sources` because this schema is
  * created, never altered: a column added to an existing table would silently
- * not exist in a store that already has one.
+ * not exist in a store that already has one. Schema version 12 adds
+ * `external_reads`, append-only: what a role read through its host's own tools
+ * that no declared source holds. Construct fetches nothing, so this is
+ * testimony rather than a walked document, and it is stored separately from
+ * `source_reads` precisely so a reader can weigh it differently — a
+ * deliverable resting half on a declared repository and half on the open web
+ * previously carried provenance for one half and silence for the other.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -85,7 +91,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -376,6 +382,26 @@ BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
 CREATE TRIGGER IF NOT EXISTS sources_no_delete
 BEFORE DELETE ON sources
 BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+
+CREATE TABLE IF NOT EXISTS external_reads (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  run         TEXT NOT NULL,
+  task        TEXT,
+  role        TEXT NOT NULL,
+  locator     TEXT NOT NULL,
+  took        TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS external_reads_run ON external_reads (run, seq);
+
+CREATE TRIGGER IF NOT EXISTS external_reads_no_update
+BEFORE UPDATE ON external_reads
+BEGIN SELECT RAISE(ABORT, 'external_reads is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS external_reads_no_delete
+BEFORE DELETE ON external_reads
+BEGIN SELECT RAISE(ABORT, 'external_reads is append-only'); END;
 
 CREATE TABLE IF NOT EXISTS source_shapes (
   source     TEXT PRIMARY KEY REFERENCES sources (id),

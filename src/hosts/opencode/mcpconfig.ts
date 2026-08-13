@@ -28,7 +28,7 @@
  *
  *    So a role dispatched to OpenCode can reach whatever MCP servers the
  *    operator has registered, and Construct cannot currently prevent that. The
- *    Claude adapter's guarantee — the role's authority is exactly two writes —
+ *    Claude adapter's guarantee — the role's authority is exactly the role writes —
  *    does NOT hold on this host, and any claim that it does would be false.
  *    What Construct still controls is its own surface: the bearer is scoped to
  *    one run, one task and one lease, so a wider tool reach does not widen the
@@ -47,8 +47,8 @@ import { fileURLToPath } from 'node:url';
  */
 export const MCP_SERVER_NAME = 'construct';
 
-/** The two writes a role is ever granted, same set as every other surface. */
-export const ROLE_TOOLS: readonly string[] = ['submit_draft', 'append_work_log'];
+/** The writes a role is ever granted, same set as every other surface. */
+export const ROLE_TOOLS: readonly string[] = ['submit_draft', 'append_work_log', 'record_external_read'];
 
 /** The dev-checkout launcher; a packaged install overrides it via config. */
 export const DEFAULT_ROLE_SERVE_COMMAND: readonly string[] = [

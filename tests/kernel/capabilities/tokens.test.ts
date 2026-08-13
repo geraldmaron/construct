@@ -32,8 +32,8 @@ function ask(over: Partial<Parameters<typeof authorizeRoleToken>[2]> = {}) {
   return { grant: 'append-work-log', run: 'run-1', task: 't-privacy', now: NOW, ...over };
 }
 
-test('a role token grants exactly two writes', () => {
-  assert.deepEqual([...ROLE_GRANTS], ['submit-draft', 'append-work-log']);
+test('a role token grants exactly three writes', () => {
+  assert.deepEqual([...ROLE_GRANTS], ['submit-draft', 'append-work-log', 'record-external-read']);
 
   const held = token();
   for (const grant of ROLE_GRANTS) {

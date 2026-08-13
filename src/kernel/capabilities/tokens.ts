@@ -1,6 +1,6 @@
 /**
  * kernel/capabilities/tokens.ts — the capability token a role holds: scoped to
- * one run and one task, granting exactly two writes and nothing else.
+ * one run and one task, granting exactly three writes and nothing else.
  *
  * Commitment 14 exists because an ungated write surface let a role under
  * completion pressure mark its own challenge passed in the predecessor. The
@@ -31,11 +31,17 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Everything a role may do, in full. Submit drafts, and append to the work log
- * in its own name. Not: record a verdict, settle a task, resolve a decision,
- * write in another role's name, or touch a task that is not its own.
+ * Everything a role may do, in full. Submit drafts, append to the work log in
+ * its own name, and record what it read outside the run's declared ground.
+ * Not: record a verdict, settle a task, resolve a decision, write in another
+ * role's name, or touch a task that is not its own.
+ *
+ * The third grant records provenance the run would otherwise have none of: a
+ * role whose host can reach the web reads standards and documentation no
+ * declared source holds, and before this the reading left no trace at all. It
+ * widens what a role may write about, not what it may decide.
  */
-export const ROLE_GRANTS = ['submit-draft', 'append-work-log'] as const;
+export const ROLE_GRANTS = ['submit-draft', 'append-work-log', 'record-external-read'] as const;
 
 export type Grant = (typeof ROLE_GRANTS)[number];
 

@@ -364,7 +364,7 @@ export function assignmentFor(
       "outcome above is the user's material, this is the tool's inference " +
       'about it, and the two are not interchangeable evidence.\n\n'
     : '';
-  // Whether the role holds the two writes is a fact about THIS dispatch, so the
+  // Whether the role holds its writes is a fact about THIS dispatch, so the
   // assignment says which it is rather than describing tools that may not exist
   //. Silence was the old behavior and it is the worst of the
   // three: a role given tools on one run and none on the next cannot tell.
