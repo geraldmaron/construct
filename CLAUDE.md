@@ -68,6 +68,8 @@ The tracker and the repo drift apart the moment either moves without the other. 
 
 - bd refuses epic->task edges. When the true dependency is narrower than an epic, record it as a dated NOTES entry on the bead (construct-r67's notes are the house pattern).
 - Every drift fix is a dated NOTES entry on the affected bead. A silent fix recreates the drift.
+- A disagreement that is benign rather than fixable is *adjudicated*, in a NOTES line the reconcile reads: `YYYY-MM-DD DRIFT ADJUDICATED (<direction>): <why>`. The direction is one of `closed-without-commit`, `open-but-named`, `claimed-but-idle`, `in-flight-unclaimed`, and naming it is what keeps the verdict tied to the disagreement it was about — a bead that later drifts the other way is reported again. Adjudicated beads are counted, not listed, so the working list holds only what still needs a person. Write the reason a stranger could check (a sha on main, a file that exists, the child that carried the trailer), never just "benign".
+- `bd update --notes` **replaces** the field. Read the existing note and append, or the record you are protecting is the one you destroy.
 - Statuses are facts, not intentions: claim on start, close on land, never before.
 - in_progress means a session is working the bead right now. The moment the next move belongs to Gerald (a token to mint, labels to accept, a decision to make), release the claim, set status back to open, add the `human` label, and write a NOTES line naming exactly what that move is. `bd list --label=human` is Gerald's queue; a bead sitting in_progress across sessions is drift by definition, including sessions that end abnormally.
 - Every landing commit ends with its bead id: `(construct-<id>)`.

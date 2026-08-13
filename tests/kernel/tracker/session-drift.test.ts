@@ -186,3 +186,73 @@ test('a conflict is described as the fix it calls for, and direction decides whi
 test('a bead without an id is rejected rather than projected as undefined', () => {
   assert.throws(() => projectBead({ status: 'open' } as never), /string id/);
 });
+
+/**
+ * The ritual says every drift fix is a dated note on the bead. Until the checker
+ * read those notes it re-derived the same disagreement on every run, so the
+ * beads a session had already accounted for stayed in the working list and the
+ * ones that still needed a person had to be found among them.
+ */
+test('a dated note naming the direction settles that disagreement', () => {
+  const note = '2026-08-05 DRIFT ADJUDICATED (closed-without-commit): a decision bead lands no code.';
+  const report = reconcileSession(
+    [bead('construct-a', 'closed', { notes: note })],
+    { 'construct-a': nothing },
+    AT,
+  );
+
+  assert.equal(report.counts.drifted, 0);
+  assert.equal(report.counts.adjudicated, 1);
+  assert.equal(report.adjudicated[0]?.external_id, 'construct-a');
+  assert.equal(report.clean, true);
+});
+
+test('the older bare marker means the direction it was only ever written for', () => {
+  const report = reconcileSession(
+    [bead('construct-a', 'closed', { notes: '2026-08-05 DRIFT RESOLVED (audit): predates the trailer convention.' })],
+    { 'construct-a': nothing },
+    AT,
+  );
+
+  assert.equal(report.counts.adjudicated, 1);
+  assert.equal(report.counts.drifted, 0);
+});
+
+/**
+ * The reason the direction is recorded rather than a bare "settled": a bead can
+ * be adjudicated in one direction and later disagree in the other, and the old
+ * verdict was never about the new disagreement.
+ */
+test('a verdict on one direction does not settle the opposite one', () => {
+  const note = '2026-08-05 DRIFT ADJUDICATED (closed-without-commit): a decision bead lands no code.';
+  const report = reconcileSession(
+    [bead('construct-a', 'open', { notes: note })],
+    { 'construct-a': landed },
+    AT,
+  );
+
+  assert.equal(report.counts.adjudicated, 0);
+  assert.equal(report.counts.drifted, 1);
+  assert.equal(report.clean, false);
+});
+
+test('an unsettled conflict survives on a bead whose other conflict is settled', () => {
+  const note = '2026-08-05 DRIFT ADJUDICATED (closed-without-commit): landed under a sibling trailer.';
+  const report = reconcileSession(
+    [bead('construct-a', 'closed', { notes: note })],
+    { 'construct-a': { landingCommits: [], inFlight: true } },
+    AT,
+  );
+
+  assert.equal(report.counts.drifted, 1);
+  assert.equal(report.drifted[0]?.conflicts.length, 1);
+  assert.equal(report.drifted[0]?.conflicts[0]?.field, 'in_flight');
+});
+
+test('a bead with no notes is unaffected, and adjudication never invents agreement', () => {
+  const report = reconcileSession([bead('construct-a', 'closed')], { 'construct-a': nothing }, AT);
+
+  assert.equal(report.counts.adjudicated, 0);
+  assert.equal(report.counts.drifted, 1);
+  assert.equal(report.clean, false);
+});

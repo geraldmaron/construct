@@ -56,6 +56,7 @@ if (json) {
   process.stdout.write(
     `\nreconcile-tracker: ${report.counts.total} beads against ${MAIN_BRANCH}` +
       ` — ${report.counts.inSync} in sync, ${report.counts.drifted} drifted,` +
+      ` ${report.counts.adjudicated} adjudicated,` +
       ` ${report.contradictions.length} contradiction(s)\n`,
   );
   for (const result of report.drifted) {
@@ -66,6 +67,15 @@ if (json) {
   }
   for (const c of report.contradictions) {
     process.stdout.write(`\n  ${c.external_id}  [${c.rule}]\n    ${c.detail}\n`);
+  }
+  // Named, not listed. These are disagreements a dated note on the bead already
+  // accounts for, and reprinting them in full is what buried the ones that
+  // still needed a person.
+  if (report.adjudicated.length > 0) {
+    process.stdout.write(
+      `\n  ${report.adjudicated.length} adjudicated (a dated note on the bead says why): ` +
+        `${report.adjudicated.map((r) => r.external_id).join(', ')}\n`,
+    );
   }
   if (report.clean) process.stdout.write('  the tracker and the repo agree.\n');
   else {

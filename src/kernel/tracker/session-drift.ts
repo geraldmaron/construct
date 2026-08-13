@@ -81,11 +81,59 @@ export interface RitualContradiction {
   readonly detail: string;
 }
 
-export interface SessionDriftReport extends DriftReport {
+export interface SessionDriftReport extends Omit<DriftReport, 'counts' | 'drifted'> {
+  readonly counts: DriftReport['counts'] & { readonly adjudicated: number };
+  /** Disagreements no one has adjudicated. These are what a session acts on. */
+  readonly drifted: DriftReport['drifted'];
+  /** Disagreements a dated note already explains, kept out of the working list. */
+  readonly adjudicated: DriftReport['drifted'];
   /** Contradictions inside the tracker's own claims. Not reconciliation results. */
   readonly contradictions: readonly RitualContradiction[];
   /** True only when the reconcile is clean AND no contradiction was found. */
   readonly clean: boolean;
+}
+
+/**
+ * The four disagreements a bead can be in, named the way a person writes them
+ * down. A note adjudicates one of these, not "the drift" in general, so a bead
+ * whose disagreement later flips direction is reported again rather than
+ * inheriting a verdict that was about something else.
+ */
+const ADJUDICABLE = Object.freeze({
+  'closed-without-commit': 'landed:true',
+  'open-but-named': 'landed:false',
+  'claimed-but-idle': 'in_flight:true',
+  'in-flight-unclaimed': 'in_flight:false',
+});
+
+const ADJUDICATION_MARKER = /DRIFT (?:ADJUDICATED|RESOLVED)\b[^\n]*/gi;
+
+function conflictKey(field: string, tracker: unknown): string {
+  return `${field}:${String(tracker)}`;
+}
+
+/**
+ * The disagreements a bead's notes already account for.
+ *
+ * The ritual says every drift fix is a dated note on the bead, and the reason it
+ * says so is that an unrecorded fix recreates the drift. What it could not do
+ * until now is spend that record: the checker re-derived the same disagreement
+ * on every run, so adjudicated beads stayed in the working list forever and a
+ * genuine drift had to be found among them. A note that names its direction is
+ * read here and the disagreement is reported as settled instead of as work.
+ *
+ * A bare marker with no direction is the older form, which was only ever written
+ * for closes with no landing commit, so that is what it means.
+ */
+export function adjudicatedConflicts(issue: BeadIssue | undefined): ReadonlySet<string> {
+  const notes = typeof issue?.notes === 'string' ? issue.notes : '';
+  const keys = new Set<string>();
+  for (const marker of notes.match(ADJUDICATION_MARKER) ?? []) {
+    const named = Object.entries(ADJUDICABLE).filter(([direction]) => marker.includes(direction));
+    if (named.length === 0) keys.add(ADJUDICABLE['closed-without-commit']);
+    else for (const [, key] of named) keys.add(key);
+  }
+  return keys;
 }
 
 function isClosed(status: unknown): boolean {
@@ -191,7 +239,31 @@ export function reconcileSession(
   const report = reconcileAll(projections, liveIssues, reconciledAt, { domainRecords });
   const contradictions = (issues ?? []).flatMap(ritualContradictions);
 
-  return { ...report, contradictions, clean: report.ok && contradictions.length === 0 };
+  // A bead's own notes can settle a disagreement, so the working list holds only
+  // what nobody has accounted for yet. Settled entries are kept and counted
+  // rather than dropped: the reconcile still says how much of the board it is
+  // taking on trust.
+  const byId = new Map((issues ?? []).map((issue) => [issue?.id, issue] as const));
+  const drifted: DriftReport['drifted'][number][] = [];
+  const adjudicated: DriftReport['drifted'][number][] = [];
+  for (const result of report.drifted) {
+    const settled = adjudicatedConflicts(byId.get(result.external_id));
+    const live = result.conflicts.filter((c) => !settled.has(conflictKey(c.field, c.tracker)));
+    if (live.length === 0) adjudicated.push(result);
+    else if (live.length === result.conflicts.length) drifted.push(result);
+    else drifted.push({ ...result, conflicts: live });
+  }
+
+  const ok = drifted.length === 0 && report.missing.length === 0;
+  return {
+    ...report,
+    ok,
+    counts: { ...report.counts, drifted: drifted.length, adjudicated: adjudicated.length },
+    drifted,
+    adjudicated,
+    contradictions,
+    clean: ok && contradictions.length === 0,
+  };
 }
 
 /**
