@@ -79,6 +79,7 @@ test('every shape names its sections uniquely and says what ask it answers', () 
   const names = new Set<string>();
   for (const shape of COMPOSITION_SHAPES) {
     assert.ok(shape.answers.length > 0, `${shape.name} must say what it is for`);
+    assert.ok(shape.article === 'a' || shape.article === 'an', `${shape.name} must declare its article`);
     assert.ok(shape.sections.length > 0);
     assert.equal(names.has(shape.name), false, 'shape names are unique');
     names.add(shape.name);
@@ -128,4 +129,48 @@ test('naming the document type outranks a decision word in the same sentence', (
  */
 test('a mention of specs in passing does not hijack a plain review', () => {
   assert.equal(shapeForOutcome('Review the auth flow; the spec is out of date, note that').name, 'review');
+});
+
+test('an ask naming the RFC gets the rfc shape', () => {
+  for (const outcome of [
+    'Write an RFC for the caching layer redesign',
+    'Draft an RFC for the export tool',
+    'An RFC for the auth migration',
+    'Write a proposal for the notification pipeline',
+  ]) {
+    assert.equal(shapeForOutcome(outcome).name, 'rfc', outcome);
+  }
+});
+
+test('the rfc shape asks for alternatives and stays silent on cost and sequence', () => {
+  const rfc = shapeForOutcome('Write an RFC for the caching layer').sections.map((s) => s.name);
+  assert.ok(rfc.includes('the-proposal'));
+  assert.ok(rfc.includes('alternatives-considered'), 'a proposal that never names alternatives has not been chosen between');
+  assert.ok(rfc.includes('tradeoffs'));
+  assert.ok(rfc.includes('out-of-scope'));
+  // The distinction from DECISION is the point: an RFC is pre-commitment and
+  // has no business stating what happens first or what stops to pay for it —
+  // that is the decision this document is asking someone else to make.
+  assert.ok(!rfc.includes('what-it-costs'));
+  assert.ok(!rfc.includes('what-happens-first'));
+  assert.ok(!rfc.includes('requirements'), 'requirements belong to a spec for something already chosen');
+});
+
+/**
+ * RFC is checked before spec and decision so it does not lose a race to a
+ * document type or a judgment word appearing in the same sentence.
+ */
+test('naming the RFC outranks both a decision word and a neighbouring document type', () => {
+  assert.equal(
+    shapeForOutcome('Write an RFC deciding which of two approaches the export tool should take').name,
+    'rfc',
+  );
+  assert.equal(
+    shapeForOutcome("An RFC for the export tool's requirements").name,
+    'rfc',
+  );
+});
+
+test('a mention of a proposal in passing does not hijack a plain review', () => {
+  assert.equal(shapeForOutcome('Review the auth flow; propose a fix if you find one').name, 'review');
 });

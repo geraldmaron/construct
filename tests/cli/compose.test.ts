@@ -436,6 +436,64 @@ test('an ask naming the document type comes back with the sections only that sha
   assert.doesNotMatch(out, /Where things stand/);
 });
 
+function rfcHost(): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'composer') {
+        const cited = /--- ([a-z-]+) ---/.exec(task)?.[1] ?? 'strategy-alignment';
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              claims: [
+                { section: 'the-proposal', text: 'move the cache to a write-through model', from: cited },
+                { section: 'alternatives-considered', text: 'a write-back cache was ruled out for its data-loss window', from: cited },
+                { section: 'out-of-scope', text: 'does not cover the cold-start warmup path', from: cited },
+              ],
+              uncovered: [],
+            }),
+          },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ unsupported: [], detail: '' }) },
+          error: null,
+        };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+test('an ask naming an RFC comes back with alternatives and no cost or sequence', async () => {
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Write an RFC for the caching layer redesign'],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], rfcHost())), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /Shaped as an rfc/);
+  assert.match(out, /## The proposal/);
+  assert.match(out, /move the cache to a write-through model/);
+  assert.match(out, /## Alternatives considered/);
+  assert.match(out, /a write-back cache was ruled out/);
+  assert.match(out, /## Out of scope/);
+  assert.match(out, /does not cover the cold-start warmup path/);
+  // The distinction from decision and spec is the point: no commitment
+  // language and no requirements list belong in a pre-commitment proposal.
+  assert.doesNotMatch(out, /## The choice/);
+  assert.doesNotMatch(out, /## What it costs/);
+  assert.doesNotMatch(out, /## Requirements/);
+});
+
 test('one deliverable composes nothing, and points at reading it instead', async () => {
   let composed = 0;
   const { err } = await run([

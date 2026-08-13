@@ -45,6 +45,13 @@ export interface CompositionShape {
   readonly name: string;
   /** What kind of ask this shape answers, for the header and the usage line. */
   readonly answers: string;
+  /**
+   * "a" or "an", for the sentence that names this shape aloud. Declared
+   * rather than guessed from the first letter: "rfc" starts with a consonant
+   * letter and a vowel sound ("ar-eff-see"), which is exactly the case a
+   * spelling-based heuristic gets wrong.
+   */
+  readonly article: 'a' | 'an';
   readonly sections: readonly CompositionSection[];
 }
 
@@ -58,6 +65,7 @@ export interface CompositionShape {
 const REVIEW: CompositionShape = {
   name: 'review',
   answers: 'an ask to look at something and report what is there',
+  article: 'a',
   sections: [
     { name: 'the-answer', expects: 'what the roles together actually answer, stated first and plainly' },
     { name: 'what-each-concern-established', expects: 'the substance each role contributed, in its own terms' },
@@ -80,6 +88,7 @@ const REVIEW: CompositionShape = {
 const DECISION: CompositionShape = {
   name: 'decision',
   answers: 'an ask to choose, commit, prioritise, or say what stops',
+  article: 'a',
   sections: [
     { name: 'where-things-stand', expects: 'the position the choice is made from, only as the deliverables describe it' },
     { name: 'what-was-on-the-table', expects: 'the options the deliverables weighed, each with what would have recommended it' },
@@ -108,6 +117,7 @@ const DECISION: CompositionShape = {
 const SPEC: CompositionShape = {
   name: 'spec',
   answers: 'an ask to define what a feature or change must do before it is built',
+  article: 'a',
   sections: [
     { name: 'the-problem', expects: 'what is broken or missing, and who it costs, only as the deliverables describe it' },
     { name: 'the-goal', expects: 'what success looks like, stated as an outcome rather than a task' },
@@ -118,7 +128,35 @@ const SPEC: CompositionShape = {
   ],
 };
 
-export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC];
+/**
+ * The shape of an RFC: one proposed approach, argued against the alternatives
+ * it was chosen over, put up for someone else to object to.
+ *
+ * Close to DECISION and easy to conflate with it, so the distinction is the
+ * point. A decision states a commitment, what it costs, and what happens
+ * first — it is post-commitment, written for someone about to act on it. An
+ * RFC proposes one approach and justifies it against the others that were on
+ * the table — it is pre-commitment, written for someone who might still
+ * reject it, and asking it to state a cost or a sequence would be asking it
+ * to commit on the reader's behalf before the reader has said yes. That is
+ * why this shape has no what-it-costs or what-happens-first: those questions
+ * belong to the decision this document is asking someone else to make.
+ */
+const RFC: CompositionShape = {
+  name: 'rfc',
+  answers: 'an ask to propose one approach and put it up for objection before it is chosen',
+  article: 'an',
+  sections: [
+    { name: 'the-proposal', expects: 'the one approach being proposed, stated plainly as a specific course of action' },
+    { name: 'why-now', expects: 'what is driving the need for this decision, only as the deliverables describe it' },
+    { name: 'alternatives-considered', expects: 'other approaches weighed and why this one over them, each tied to the role that established it' },
+    { name: 'tradeoffs', expects: 'what this approach costs or risks that a reader should weigh before agreeing to it' },
+    { name: 'open-questions', expects: 'what the proposal leaves for the reader to resolve, kept as questions rather than answered over' },
+    { name: 'out-of-scope', expects: 'what this proposal deliberately does not address, where a deliverable says so' },
+  ],
+};
+
+export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC];
 
 export const DEFAULT_SHAPE = REVIEW;
 
@@ -152,16 +190,33 @@ const SPEC_SIGNALS = [
 ];
 
 /**
+ * The words a person uses asking for a proposal put up for someone else to
+ * object to, rather than a finished commitment. Kept as specific as
+ * SPEC_SIGNALS and for the same reason — "propose" alone is too common a verb
+ * to trust ("propose a fix" is often just a review with a recommendation in
+ * it), so the phrases here name the document, not the act of suggesting
+ * something.
+ */
+const RFC_SIGNALS = [
+  'write an rfc', 'draft an rfc', 'an rfc for', 'rfc for', 'request for comments',
+  'request for comment', 'write a proposal for', 'draft a proposal for', 'a design proposal',
+];
+
+/**
  * Which shape an outcome asks for. Falls to the review shape by design.
  *
- * Spec is checked first: "write a PRD deciding which of two approaches to
- * take" names the document type and the judgment in one sentence, and the document type
- * is what a reader would notice missing — a decision-shaped document with no
- * requirements section is not the PRD that was asked for, while a spec whose
- * requirements section states a clear choice is still a spec.
+ * RFC and spec are both checked before decision, and RFC before spec: "write
+ * an RFC deciding which of two approaches to take" or "an RFC for the export
+ * tool's requirements" name the document type over the judgment or the
+ * neighbouring document type in the same breath, and the document type is
+ * what a reader would notice missing — a decision-shaped document with no
+ * alternatives-considered section is not the RFC that was asked for, and a
+ * spec's requirements read differently from an RFC's proposal even when both
+ * describe the same feature.
  */
 export function shapeForOutcome(outcome: string): CompositionShape {
   const text = outcome.toLowerCase();
+  if (RFC_SIGNALS.some((signal) => text.includes(signal))) return RFC;
   if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return SPEC;
   if (DECISION_SIGNALS.some((signal) => text.includes(signal))) return DECISION;
   return DEFAULT_SHAPE;

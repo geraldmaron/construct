@@ -3778,7 +3778,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       `\ncomposed from ${String(sources.length)} deliverables: ${String(kept.length)} claims kept` +
         (removed > 0 ? `, ${String(removed)} refused as unsupported or unattributable` : '') +
         '.\nNothing here was added by the composing: every claim is one of the roles, checked against it.\n' +
-        `Shaped as a ${shape.name} — ${shape.answers}` +
+        `Shaped as ${shape.article} ${shape.name} — ${shape.answers}` +
         (flags.shape === undefined
           ? `, read from the outcome. Another shape: --shape=<${shapeNames().join('|')}>.\n`
           : ', as asked.\n'),
