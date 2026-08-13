@@ -145,9 +145,32 @@ Declaring a source builds no connection and reads nothing by itself. When
 work runs, local ground (a directory, a git checkout) is surveyed first: the
 run records which documents it found and how completely, the roles receive
 them by name, and they may read further inside those roots and cite what they
-read by path. A remote source (`jira`, `github`, `docs`) is recorded as
-unreachable until a host can reach it — an answer, not an omission. There is
-also an engagement mode:
+read by path. A document the walk cannot read as text — a PDF, a deck — is
+put into words through the extraction ladder if a rung on this machine can,
+and recorded with the reason if none can. A remote source (`jira`, `github`,
+`docs`) is recorded as unreachable until a host can reach it — an answer, not
+an omission.
+
+By default the survey ranks prose ahead of code and lists forty documents,
+which is right for understanding what a system promises and wrong for
+understanding what it does. Say which you meant:
+
+```bash
+construct source add --kind=git --locator=/path/to/repo --emphasis=code --cap=200
+```
+
+Once ground is declared, you can ask what disagrees inside it without waiting
+for a run to notice:
+
+```bash
+construct review --host=claude
+```
+
+That surveys every declared source, reads the documents for contradictions,
+and reports only what cites both sides by documents the survey actually found.
+It writes nothing.
+
+There is also an engagement mode:
 
 ```bash
 construct mode --set=seat
@@ -155,7 +178,34 @@ construct mode --set=seat
 
 `team` (the default) means Construct is the whole team. `seat` means it fills
 one role on your human team and treats your tracker as the system of record —
-changes to it are proposed to you, never just made.
+changes to it are proposed to you, never just made. A proposal you approve can
+then be carried out through a host, which records only what that host reported
+succeeding:
+
+```bash
+construct decide --apply=<proposal-id> --host=claude
+```
+
+A host with no way to reach the system says so, and the change stays yours to
+make rather than being recorded as made.
+
+## Keep facts about the people you work with
+
+A durable operating fact ("this client decides scope by quarter") belongs to
+the workspace. A fact about a named subject ("Acme moved its renewal to Q3")
+belongs to that subject:
+
+```bash
+construct record add --kind=customer --name=Acme
+construct notes ./calls --host=claude
+construct record show <record-id>
+```
+
+`construct notes` takes a file or a whole directory, ingesting each document
+as its own note. Record fields fill in from those notes and are never set by
+hand: every value carries the note line that taught it, and the value before
+it survives, so `construct record show <id> --field=renewal` shows how it got
+there.
 
 Sources and the engagement mode both belong to a workspace, and every command
 that touches one takes `--workspace=<name>` — including `construct outcome`.

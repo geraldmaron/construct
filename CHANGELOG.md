@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+Four questions were asked of the system — ingest a file or a directory; point it at repos and have it write strategy; point it at a documents repository and have it find what conflicts; feed it customer notes and have it keep records current — and modelled against the code. Two were already answered. The eight gaps behind the other two are closed here (construct-edmi). The rule underneath all of them: ground Construct has not actually read is not ground, and a conclusion whose provenance is silence reads exactly like one whose provenance is a document.
+
+### Ground
+
+- **A surveyed document that cannot be read as text is extracted, not just listed** (construct-edmi.1). The extraction ladder was wired to a dropped note and nowhere else, so a declared directory of PDFs grounded a run in filenames while its read rows said listed-not-extracted. The survey now runs every unreadable document it listed through the same ladder, materializes the text under the cache root, and records a complete read naming the rung that produced it; a document no rung can reach stays partial carrying the ladder's own reason. The role reads the extraction and cites the original — an extraction is a rendering of licensed evidence, not evidence of its own, so nothing about what a run may cite changes.
+- **A repository read for its surfaces is not one read for its code** (construct-edmi.5). A source now carries how it should be walked — prose-first, code-first, or unranked, with its own cap — declared alongside it (`construct source add --emphasis=code --cap=200`). Binary ranks last under every emphasis. A source nobody shaped is walked exactly as before. The partial read row names the ranking that dropped the rest, because prose-first and code-first leave different gaps.
+- **`construct notes` accepts a directory** (construct-edmi.4). Each document lands as its own note and is reasoned over separately, sharing one Docling probe and one survey. A document that cannot be read never ends the batch: its refusal is printed with the ladder's remediation and written to the log, and a batch fails only when every loop in it failed.
+
+### Drift
+
+- **A disagreement between documents nobody read is a recollection, not an observation** (construct-edmi.2). The drift producer was handed source ids and locators and asked what contradicts in "the documents you know of"; the screen then checked only that the cited source was declared. The declared sources are now surveyed before the producer is asked, the prompt names the documents each holds, and a citation into a surveyed source must name a document that survey found. A bare basename resolves when exactly one listed document carries it and not when two do. A source nobody could survey is exempt rather than refused — there is no listing to check against, and a check against a listing that could not be taken is a refusal wearing one.
+- **`construct review`** (construct-edmi.3): read a workspace's declared ground and report what disagrees inside it, with no note to occasion the question. It asks for no memory deltas and no outward proposals — both justify themselves by citing a note line, and a pass with no note cannot cite one.
+
+### Provenance
+
+- **Research a role did outside the declared ground leaves a row, or it did not happen** (construct-edmi.6). A role dispatched into a host with web access reads standards and documentation no declared source holds, and that reading produced no row anywhere: a deliverable resting half on a declared repository and half on the open web carried provenance for one half and silence for the other, and the fabricated-provenance gate, which looks only at declared sources, saw nothing wrong. A third grant on the role token (`record_external_read`) records what the host reports reading, stored apart from the source reads because Construct walked one and never saw the other. Nothing fetches and nothing is verified; a locator with nothing taken from it is refused.
+
+### Records
+
+- **A customer is a subject with a history, not a domain string** (construct-edmi.7). Facts a note taught became workspace lessons keyed by free text, so "Acme moved its renewal to Q3" could not be listed, superseded per subject, or told apart from another client's fact under the same word — and the only isolation available was one workspace per customer, which also isolates the memory you wanted shared. Records are named subjects whose fields are append-only: the current value is the most recent row and the rows before it are how it got there. Every field carries the note citation that taught it; an uncited value is refused. Fields are never set by hand — they arrive through the context loop, from notes, citing lines. `construct record add|list|show`.
+- **An approved outward write nobody carries out is a decision, not a change** (construct-edmi.8). `construct decide --apply=<id> --host=…` hands the approved words to the host and records only what it reported succeeding. A rejected proposal is never attempted; a host that could not be asked records nothing, because an unknown is not a failure to apply; a reply with no boolean throws rather than defaulting either way. A host with no way to reach the system says so, and the proposal stays approved and unapplied.
+
+### Consolidated
+
+- One grounding pass where `ask` and `work` had two copies; one document walk shared by survey and ingest; one observation parser for both drift passes; one drift writer for both surfaces; one host-flag parser; one list of dispatchable hosts. The per-note context loop became its own function, which is what let the batch ingest exist.
+- Schema versions 11, 12 and 13 add `source_shapes`, `external_reads`, and `records` + `record_fields`. All additive and all new tables: this schema is created, never altered, so a column added to an existing table would silently not exist in a store that already has one.
+- The CLI test harness isolates the cache root as well as the data root, because a pass that extracts can now write outside the fixture.
+
 ## 3.0.0-alpha.6 — 2026-08-11
 
 The host roster doubles, and both new seats spend a subscription instead of an API key. Every lens now names the standards its method descends from, doctor reports whether a host is actually reachable, and the first family measured through a subscription host got an honest no from the promotion gate. The standing rule these changes serve: a model family nobody optimized for still functions — labeled best-effort, never refused — and that rule is now verified live on three hosts.
