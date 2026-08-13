@@ -54,10 +54,10 @@ test('a concern the catalog cannot carry is written to the work log with its rea
         Promise.resolve([
           { domain: 'privacy', why: 'records name people who may still be living' },
           {
-            domain: 'evidence-provenance',
-            why: 'every claim rests on an archival record whose kind decides what it can support',
+            domain: 'community-consent',
+            why: 'descendants of the people in these records have a stake in how they are shown',
           },
-          { domain: 'coverage-gaps', why: 'an empty region on the map is a claim about history' },
+          { domain: 'source-rights', why: 'each archive licenses its scans on its own terms' },
         ]),
     });
 
@@ -66,14 +66,14 @@ test('a concern the catalog cannot carry is written to the work log with its rea
     assert.deepEqual(
       unmet.map((d) => [d.proposed, d.reason]),
       [
-        ['evidence-provenance', 'not-in-catalog'],
-        ['coverage-gaps', 'not-in-catalog'],
+        ['community-consent', 'not-in-catalog'],
+        ['source-rights', 'not-in-catalog'],
       ],
       'both proposals outside the catalog are named, in the order the namer gave them',
     );
     assert.equal(
       unmet[0]?.why,
-      'every claim rests on an archival record whose kind decides what it can support',
+      'descendants of the people in these records have a stake in how they are shown',
       "the namer's own words are the evidence; a paraphrase would be the record arguing with itself",
     );
     assert.equal(unmet[0]?.host, 'test-host', 'which host proposed it is part of the record');
@@ -89,7 +89,7 @@ test('an unmet concern enqueues nothing and leaves routing exactly as it was', a
       namer: () =>
         Promise.resolve([
           { domain: 'privacy', why: 'records name people who may still be living' },
-          { domain: 'evidence-provenance', why: 'the source class decides what a claim can support' },
+          { domain: 'community-consent', why: 'descendants have a stake in how these records are shown' },
         ]),
     });
 
@@ -124,11 +124,11 @@ test('the zero-model path records no unmet concern, because keywords cannot prop
 
 test('the log line shows what was asked for, so a reader can judge whether the catalog should carry it', () => {
   const line = reasonClause('concern-unmet', {
-    proposed: 'evidence-provenance',
+    proposed: 'community-consent',
     reason: 'not-in-catalog',
-    why: 'the source class decides what a claim can support',
+    why: 'descendants have a stake in how these records are shown',
   });
-  assert.match(line, /evidence-provenance/);
+  assert.match(line, /community-consent/);
   assert.match(line, /not-in-catalog/);
-  assert.match(line, /the source class decides what a claim can support/);
+  assert.match(line, /descendants have a stake in how these records are shown/);
 });

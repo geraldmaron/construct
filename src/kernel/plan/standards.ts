@@ -177,6 +177,52 @@ export const LENS_STANDARDS: readonly LensStandards[] = Object.freeze([
       'than ground.',
   },
   {
+    lens: 'research',
+    refs: [
+      {
+        name: 'PROV-DM: The PROV Data Model (W3C Recommendation, 30 April 2013)',
+        publisher: 'W3C',
+        contributes:
+          'the vocabulary that separates a thing from the activity that produced it and the agent responsible: entity, activity, agent, derivation, attribution',
+      },
+      {
+        name: 'Records in Contexts — Conceptual Model (RiC-CM) 1.0',
+        publisher: 'International Council on Archives, Expert Group on Archival Description',
+        contributes:
+          'the archival framing that a record is inseparable from who made it, in what activity, and in what relation to other records',
+      },
+      {
+        name: 'ISO 15489-1:2016, Information and documentation — Records management — Part 1: Concepts and principles',
+        publisher: 'ISO',
+        contributes:
+          'the four properties a record must keep to be relied on — authenticity, reliability, integrity, usability — as separable questions rather than one impression of trustworthiness',
+      },
+    ],
+  },
+  {
+    lens: 'coverage',
+    refs: [
+      {
+        name: 'Total Survey Error: Past, Present, and Future (Public Opinion Quarterly 74(5), 2010)',
+        publisher: 'Groves and Lyberg, Oxford University Press',
+        contributes:
+          'coverage error as a named, separable component of representation error, distinct from sampling and non-response',
+      },
+      {
+        name: 'Datasheets for Datasets (Communications of the ACM, December 2021)',
+        publisher: 'Gebru, Morgenstern, Vecchione, Wortman Vaughan, Wallach, Daumé III, and Crawford',
+        contributes:
+          'the documentation questions a collection owes its reader: motivation, composition, collection process, and what it should not be used for',
+      },
+      {
+        name: 'Silencing the Past: Power and the Production of History (1995)',
+        publisher: 'Michel-Rolph Trouillot, Beacon Press',
+        contributes:
+          'the account of how absences enter a record at the moments of making, archiving, retrieval, and retelling, which is why an empty region is read as a claim rather than as nothing',
+      },
+    ],
+  },
+  {
     lens: 'engineering',
     refs: [],
     ungrounded:

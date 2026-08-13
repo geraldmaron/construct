@@ -249,6 +249,40 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     ],
   },
   {
+    path: 'evidence-provenance',
+    domain: 'evidence-provenance',
+    concern: 'where a claim comes from, what kind of source that is, and whether a reader can check it',
+    // The words people use when the work turns on somebody else's record.
+    // Deliberately not the words of measurement: an instrumented product
+    // measures its own behavior, and this domain is about material the work
+    // did not produce and cannot re-run.
+    keywords: [
+      'archive', 'archives', 'archival', 'source', 'sources', 'citation', 'cite',
+      'provenance', 'primary source', 'secondary source', 'attribution',
+      'catalog', 'catalogue', 'corpus', 'dataset', 'records', 'record',
+      'transcript', 'transcription', 'oral history', 'aggregate', 'aggregator',
+      'scrape', 'scraped', 'ingest', 'digitize', 'digitise', 'metadata',
+      'footnote', 'bibliography', 'evidence', 'verify', 'fact check',
+      'fact-check', 'historical', 'history', 'genealogy', 'census',
+    ],
+  },
+  {
+    path: 'coverage-gaps',
+    domain: 'coverage-gaps',
+    concern: 'what is missing from the record, and whether its absence is a finding or a bias',
+    // The boundary against evidence-provenance, which the lens entries repeat:
+    // provenance asks whether what is said is traceable, and coverage asks
+    // whether what is unsaid is a bias. A blank region on a map and a claim
+    // with no footnote are different defects with different remedies.
+    keywords: [
+      'coverage', 'gap', 'gaps', 'missing', 'incomplete', 'completeness',
+      'representative', 'representation', 'underrepresented', 'sample',
+      'sampling', 'sampling frame', 'blind spot', 'blank', 'sparse',
+      'nationwide', 'comprehensive', 'every', 'all of them', 'exhaustive',
+      'map of', 'directory of', 'index of', 'inventory',
+    ],
+  },
+  {
     path: 'marketing-claims',
     domain: 'marketing-claims',
     concern: 'what you say publicly and whether you can back it up',

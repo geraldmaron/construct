@@ -34,7 +34,7 @@ Nor is it a completeness claim. Routing misses roughly three in ten of the
 concerns a labeler marks implicated on wording its authors never saw. The figure
 and its interval are in the README and in full in `RESEARCH-DECISIONS.md` §10.
 
-15 of 15 concerns carry a lens — a posture, an escalation
+17 of 17 concerns carry a lens — a posture, an escalation
 ladder, and extra required sections. The rest route and carry the default
 template, and say so.
 
@@ -420,6 +420,60 @@ template, and say so.
 **What it surfaces to you rather than deciding itself.**
 
 - An unobservable failure mode in shipping work: surface the measurement gap as its own finding, not a footnote.
+
+### unmapped seat — `evidence-provenance`
+
+**The concern.** Where a claim comes from, what kind of source that is, and whether a reader can check it.
+
+**What it hands you.** A review memo, with these sections required before the work is called finished:
+
+- `finding` — the conclusion, stated first, in plain language
+- `evidence` — what supports the finding, each item citing a source read or the domain catalog
+- `risks` — what could make the finding wrong, or "none identified" said explicitly
+- `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
+- `claim-provenance` — each load-bearing claim with its source, the class of that source (record, derived record, aggregator, inference), and what the source actually asserts as distinct from what the claim asserts
+- `single-source-claims` — the claims resting on one source, each with whether an independent source could exist and where it would be looked for
+
+**What it must answer before anyone relies on it.**
+
+- `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
+- `scope-diff` — What did the brief ask for that this deliverable does not cover?
+
+**Its posture.** A claim is only as good as what it rests on and how plainly that is said: the job is naming the source, the kind of thing it is, and what it can and cannot support — never whether the claim feels right.
+
+**What it surfaces to you rather than deciding itself.**
+
+- A claim whose source cannot be reached or named: report it as unsupported rather than softening the wording until it passes.
+- A source whose terms of use or licence are unclear for the intended use: route to the contracts concern before the claim is built on.
+
+**Its stated limit, which is the invariant and not a gap.** this lens judges whether a claim is traceable and correctly typed, never whether it is true — a claim citing the right record and misreading it passes here and is still wrong
+
+### unmapped seat — `coverage-gaps`
+
+**The concern.** What is missing from the record, and whether its absence is a finding or a bias.
+
+**What it hands you.** A review memo, with these sections required before the work is called finished:
+
+- `finding` — the conclusion, stated first, in plain language
+- `evidence` — what supports the finding, each item citing a source read or the domain catalog
+- `risks` — what could make the finding wrong, or "none identified" said explicitly
+- `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
+- `coverage-frame` — the intended frame in one sentence, and what falls outside it on purpose
+- `absences` — each known absence, marked as not-recorded, not-yet-collected, or did-not-happen, with what distinguishes it
+
+**What it must answer before anyone relies on it.**
+
+- `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
+- `scope-diff` — What did the brief ask for that this deliverable does not cover?
+
+**Its posture.** What a collection leaves out is a claim it makes without saying so: the job is naming the frame, the absences inside it, and which absences are the record being silent rather than the world being empty.
+
+**What it surfaces to you rather than deciding itself.**
+
+- An absence that cannot be classified from the material: put it in the decision inbox as an open question, never as a coverage claim.
+- A surface that implies completeness the collection does not have: raise it as a public-claim finding, not a documentation task.
+
+**Its stated limit, which is the invariant and not a gap.** this lens reports the shape of what is missing; it does not fill gaps, and an absence it cannot classify stays classified as unknown
 
 ### Marketing — `marketing-claims`
 

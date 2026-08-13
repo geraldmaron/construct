@@ -148,3 +148,45 @@ test('the engineering lens states its own ceiling and equips no domain', () => {
   assert.match(engineering.ceiling ?? '', /hosts are the engineers/);
   assert.match(engineering.ceiling ?? '', /no code review/i);
 });
+
+test('the two evidence concerns route to their own lens and stay apart', () => {
+  // The pair was added together and the reason they are two is the whole
+  // point: one asks whether what is said is traceable, the other whether what
+  // is unsaid is a bias. A single lens answering both would answer whichever
+  // is easier on the material in front of it.
+  assert.equal(lensForDomain('evidence-provenance')?.lens, 'research');
+  assert.equal(lensForDomain('coverage-gaps')?.lens, 'coverage');
+  assert.notDeepEqual(
+    lensByName('research')?.domains,
+    lensByName('coverage')?.domains,
+    'two lenses on one domain would make coverage of it unfalsifiable',
+  );
+});
+
+test('the research lens requires the source class beside the claim, not just a source', () => {
+  const template = playbookFor('evidence-provenance').template;
+  const provenance = template.slots.find((s) => s.name === 'claim-provenance');
+  assert.ok(provenance, 'the provenance slot must reach the deliverable template');
+  // A citation with no source class reads identically whether it names the
+  // record or somebody's summary of it, which is the defect this slot exists
+  // to make visible.
+  assert.match(provenance.expects, /aggregator/);
+  assert.match(provenance.expects, /inference/);
+  assert.ok(template.slots.some((s) => s.name === 'single-source-claims'));
+});
+
+test('the coverage lens requires each absence to be classified, never merely counted', () => {
+  const template = playbookFor('coverage-gaps').template;
+  const absences = template.slots.find((s) => s.name === 'absences');
+  assert.ok(absences, 'the absences slot must reach the deliverable template');
+  assert.match(absences.expects, /not-recorded/);
+  assert.match(absences.expects, /did-not-happen/);
+  assert.ok(template.slots.some((s) => s.name === 'coverage-frame'));
+});
+
+test('the research lens states the limit it does not cross: traceable is not true', () => {
+  const research = lensByName('research');
+  assert.ok(research?.ceiling, 'a lens that judges evidence must state what it does not judge');
+  assert.match(research.ceiling, /never|not/);
+  assert.ok(lensByName('coverage')?.ceiling, 'the coverage lens must state its own ceiling');
+});

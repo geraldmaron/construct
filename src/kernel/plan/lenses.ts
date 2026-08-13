@@ -388,6 +388,96 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
     ],
   },
   {
+    lens: 'research',
+    domains: ['evidence-provenance'],
+    posture:
+      'A claim is only as good as what it rests on and how plainly that is said: ' +
+      'the job is naming the source, the kind of thing it is, and what it can ' +
+      'and cannot support — never whether the claim feels right.',
+    questions: [
+      'For every claim the work relies on: what is the source, and is it the ' +
+        'record itself, a derived record, an aggregator, or an inference? A ' +
+        'summary of a record is not the record.',
+      'Where a date, a status, or a name is asserted: what kind of date or ' +
+        'status is it in the source (when the thing happened, when it was ' +
+        'registered, when it was last checked), and does the claim assert the ' +
+        'same kind? A date read as the wrong kind is a fabrication that passes ' +
+        'every spelling check.',
+      'Which claims rest on a single source, and which are corroborated by a ' +
+        'source that could have disagreed? Two sources that copy one another ' +
+        'are one source.',
+      'What would a reader have to do to check this claim, and can they do it ' +
+        'from what the work states?',
+      'Which claims are inferences the work made rather than statements a ' +
+        'source makes, and are they marked as inferences where they appear?',
+      'What does the source not say that a reader would assume it does — ' +
+        'silence read as confirmation is the most common way a record is ' +
+        'misreported.',
+    ],
+    slots: [
+      slot(
+        'claim-provenance',
+        'each load-bearing claim with its source, the class of that source ' +
+          '(record, derived record, aggregator, inference), and what the source ' +
+          'actually asserts as distinct from what the claim asserts',
+      ),
+      slot(
+        'single-source-claims',
+        'the claims resting on one source, each with whether an independent ' +
+          'source could exist and where it would be looked for',
+      ),
+    ],
+    escalation: [
+      'A claim whose source cannot be reached or named: report it as unsupported rather than softening the wording until it passes.',
+      'A source whose terms of use or licence are unclear for the intended use: route to the contracts concern before the claim is built on.',
+    ],
+    ceiling:
+      'this lens judges whether a claim is traceable and correctly typed, never ' +
+      'whether it is true — a claim citing the right record and misreading it ' +
+      'passes here and is still wrong',
+  },
+  {
+    lens: 'coverage',
+    domains: ['coverage-gaps'],
+    posture:
+      'What a collection leaves out is a claim it makes without saying so: the ' +
+      'job is naming the frame, the absences inside it, and which absences are ' +
+      'the record being silent rather than the world being empty.',
+    questions: [
+      'What is the intended frame — the population, geography, or period this ' +
+        'is meant to cover — and is it written down anywhere a reader can see?',
+      'Where is the collection empty, and for each empty region: is that ' +
+        'because nothing happened there, because nothing was recorded, or ' +
+        'because nothing has been collected yet? Those three are ' +
+        'indistinguishable to a reader and must not be to the work.',
+      'Whose record is systematically thinner here, and does the collection ' +
+        'method explain why? A method that reaches institutions reaches what ' +
+        'institutions kept.',
+      'What coverage does the surface imply to someone who reads it without ' +
+        'reading the method, and is that implication true?',
+      'What would have to be measured to state coverage as a number rather ' +
+        'than as an impression, and does that measurement exist?',
+    ],
+    slots: [
+      slot(
+        'coverage-frame',
+        'the intended frame in one sentence, and what falls outside it on purpose',
+      ),
+      slot(
+        'absences',
+        'each known absence, marked as not-recorded, not-yet-collected, or ' +
+          'did-not-happen, with what distinguishes it',
+      ),
+    ],
+    escalation: [
+      'An absence that cannot be classified from the material: put it in the decision inbox as an open question, never as a coverage claim.',
+      'A surface that implies completeness the collection does not have: raise it as a public-claim finding, not a documentation task.',
+    ],
+    ceiling:
+      'this lens reports the shape of what is missing; it does not fill gaps, ' +
+      'and an absence it cannot classify stays classified as unknown',
+  },
+  {
     lens: 'commerce',
     domains: ['commerce-tax'],
     posture:
