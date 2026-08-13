@@ -3438,7 +3438,11 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     let screened;
     try {
       const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape });
-      screened = screenComposition(toComposition(reply), sources);
+      screened = screenComposition(
+        toComposition(reply),
+        sources,
+        shape.sections.map((s) => s.name),
+      );
     } catch (error) {
       process.stderr.write(`compose: the deliverables could not be composed (${(error as Error).message}).\n`);
       return 1;

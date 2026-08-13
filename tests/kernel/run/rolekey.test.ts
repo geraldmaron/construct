@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { roleLookup } from '../../../src/kernel/run/rolekey.ts';
+import { roleLookup, sectionLookup } from '../../../src/kernel/run/rolekey.ts';
 
 const ROLES = ['product-scoping', 'strategy-alignment'];
 
@@ -34,4 +34,11 @@ test('nothing that is not a dispatched role resolves, under any spelling', () =>
 test('an empty dispatched-role list resolves nothing', () => {
   const resolve = roleLookup([]);
   assert.equal(resolve('product-scoping'), undefined);
+});
+
+test('sectionLookup is the identical mechanism, applied to a shape\'s section names', () => {
+  const resolve = sectionLookup(['the-problem', 'requirements']);
+  assert.equal(resolve('The Problem'), 'the-problem');
+  assert.equal(resolve('requirements'), 'requirements');
+  assert.equal(resolve('timeline'), undefined);
 });

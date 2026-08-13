@@ -32,7 +32,7 @@
  * deliverable is an unchecked one.
  */
 
-import { roleLookup } from './rolekey.ts';
+import { roleLookup, sectionLookup } from './rolekey.ts';
 
 /** One role's finished work, as the composer receives it. */
 export interface SourceDeliverable {
@@ -175,17 +175,29 @@ export function toComposition(parsed: unknown): Composition {
  * resolved claim is canonicalized to the real role id rather than kept in
  * whatever form the model wrote it, so everything downstream — the support
  * check, the rendered attribution — sees one consistent identifier.
+ *
+ * A claim's section gets the identical treatment when the caller names the
+ * shape's sections. This one matters more than it first reads: an
+ * unrecognized role at least surfaced as a discarded line the reader could
+ * see. An unrecognized section, left unscreened, rendered under no heading
+ * at all — a claim that survived every other check vanished without a
+ * trace, and a live composition with nine surviving claims produced a
+ * document where every single section reported "no claim was placed there."
+ * Optional and skipped when the caller has no shape to screen against,
+ * which callers written before shapes existed still do not.
  */
 export function screenComposition(
   composition: Composition,
   sources: readonly SourceDeliverable[],
+  sectionNames?: readonly string[],
 ): ScreenedComposition {
-  const resolve = roleLookup(sources.map((s) => s.role));
+  const resolveRole = roleLookup(sources.map((s) => s.role));
+  const resolveSection = sectionNames === undefined ? undefined : sectionLookup(sectionNames);
   const claims: ComposedClaim[] = [];
   const discarded: { claim: ComposedClaim; reason: string }[] = [];
   for (const claim of composition.claims) {
-    const canonical = resolve(claim.from);
-    if (canonical === undefined) {
+    const canonicalRole = resolveRole(claim.from);
+    if (canonicalRole === undefined) {
       discarded.push({
         claim,
         reason:
@@ -194,7 +206,19 @@ export function screenComposition(
       });
       continue;
     }
-    claims.push(canonical === claim.from ? claim : { ...claim, from: canonical });
+    const canonicalSection = resolveSection === undefined ? claim.section : resolveSection(claim.section);
+    if (canonicalSection === undefined) {
+      discarded.push({
+        claim,
+        reason: `filed under "${claim.section}", which this document's shape has no section named`,
+      });
+      continue;
+    }
+    claims.push(
+      canonicalRole === claim.from && canonicalSection === claim.section
+        ? claim
+        : { ...claim, from: canonicalRole, section: canonicalSection },
+    );
   }
   return { claims, uncovered: composition.uncovered, discarded };
 }

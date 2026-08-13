@@ -202,3 +202,48 @@ test('a genuinely invented source is still refused under any spelling', () => {
   assert.equal(screened.claims.length, 0);
   assert.equal(screened.discarded.length, 2);
 });
+
+/**
+ * The section-name defect this discovered is worse than the role one: nine
+ * claims survived attribution on a live PRD compose and the document still
+ * reported every section empty, because none of the nine section labels the
+ * model wrote matched a shape section's name exactly. A role mismatch at
+ * least surfaces as a discarded line; an unscreened section mismatch just
+ * never renders anywhere, with no trace.
+ */
+test('a section name in a different case or spacing still places under the real heading', () => {
+  const composition = toComposition({
+    claims: [
+      { section: 'The Problem', text: 'exports drop rows', from: 'product-scoping' },
+      { section: 'open_questions', text: 'is streaming in scope', from: 'strategy-alignment' },
+    ],
+    uncovered: [],
+  });
+  const screened = screenComposition(composition, SOURCES, ['the-problem', 'open-questions']);
+  assert.equal(screened.discarded.length, 0);
+  assert.deepEqual(
+    screened.claims.map((c) => c.section),
+    ['the-problem', 'open-questions'],
+  );
+});
+
+test('a claim naming a section the shape does not have is discarded and disclosed, not silently dropped', () => {
+  const composition = toComposition({
+    claims: [{ section: 'timeline', text: 'ships in Q4', from: 'product-scoping' }],
+    uncovered: [],
+  });
+  const screened = screenComposition(composition, SOURCES, ['the-problem', 'requirements']);
+  assert.equal(screened.claims.length, 0);
+  assert.equal(screened.discarded.length, 1);
+  assert.match(screened.discarded[0]!.reason, /this document's shape has no section named/);
+});
+
+test('with no shape named, section matching is skipped exactly as it always was', () => {
+  const composition = toComposition({
+    claims: [{ section: 'anything at all', text: 'x', from: 'product-scoping' }],
+    uncovered: [],
+  });
+  const screened = screenComposition(composition, SOURCES);
+  assert.equal(screened.claims.length, 1);
+  assert.equal(screened.claims[0]!.section, 'anything at all');
+});
