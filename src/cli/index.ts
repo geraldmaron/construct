@@ -69,6 +69,7 @@ import {
 } from '../hosts/compose.ts';
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
 import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
+import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
 import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
 import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
@@ -1192,8 +1193,18 @@ function splitFlags(argv: string[]): { flags: Record<string, string>; words: str
   const flags: Record<string, string> = {};
   const words: string[] = [];
   for (const arg of argv) {
-    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
-    if (match) flags[match[1]] = match[2];
+    const valued = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (valued) {
+      flags[valued[1]] = valued[2];
+      continue;
+    }
+    // A flag carrying no value is present, not absent, and not a positional.
+    // Every surface that documents one — --no-close, --record — tests it with
+    // `!== undefined`, so the empty string is the right value; the alternative
+    // was that a bare flag fell through to `words` and was read as whatever
+    // positional came first, which for compose is the run id.
+    const bare = /^--([a-z-]+)$/.exec(arg);
+    if (bare) flags[bare[1]] = '';
     else words.push(arg);
   }
   return { flags, words };
@@ -3045,7 +3056,7 @@ export function record(argv: string[]): number {
 const COMPOSE_USAGE =
   'usage: construct compose --run=<id> --host=<opencode|claude|codex|cursor> ' +
   '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>] [--no-close] ' +
-  `[--shape=<${shapeNames().join('|')}>]\n`;
+  `[--shape=<${shapeNames().join('|')}>] [--record]\n`;
 
 /**
  * Put the composition's gaps back to the roles, once.
@@ -3268,8 +3279,16 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         empty.push(section.name);
         continue;
       }
-      process.stdout.write(`\n## ${section.name}\n\n`);
-      for (const claim of inSection) process.stdout.write(`- ${claim.text} [${claim.from}]\n`);
+      // The record keeps the markers the gates read; a reader gets sentences.
+      // --record asks for the stored form, for anything downstream that needs
+      // to check the text rather than read it.
+      const asRecord = flags.record !== undefined;
+      process.stdout.write(`\n## ${asRecord ? section.name : renderHeading(section.name)}\n\n`);
+      for (const claim of inSection) {
+        const text = asRecord ? claim.text : renderClaim(claim.text);
+        const from = asRecord ? claim.from : renderAttribution(claim.from);
+        process.stdout.write(`- ${text} [${from}]\n`);
+      }
     }
     // A section that came back empty is dropped from the document but not from
     // the report. Silently omitting it lets a composition that never stated an

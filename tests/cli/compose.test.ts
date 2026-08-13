@@ -145,7 +145,11 @@ test('a run with several deliverables composes, and what no deliverable supports
   // "Decide whether the pilot ships in Q4" is a decision ask, so the document
   // comes back in the decision shape rather than the review one. The chooser
   // reading a fixture written long before shapes existed is the point.
-  assert.match(out, /## the-choice/);
+  // Headings reach the reader as sentences. The slug is the identifier the
+  // shape matches on, and a reader is not reading identifiers — the record form
+  // is still one flag away, which the next test holds.
+  assert.match(out, /## The choice/);
+  assert.doesNotMatch(out, /## the-choice/);
   assert.match(out, /concluded its own part \[/, 'a supported claim keeps its attribution');
   assert.doesNotMatch(out, /therefore we should ship in Q4/, 'the unsupported claim is removed, not flagged');
   assert.match(out, /a claim from nobody.*produced no deliverable/s);
@@ -214,4 +218,23 @@ test('a run nobody planned is refused before anything is read', async () => {
   ]);
   assert.equal(composed, 1);
   assert.match(err, /no plan recorded for run-nobody/);
+});
+
+/**
+ * The rendering is a view, not a migration. Anything downstream that needs to
+ * check the text rather than read it asks for the record and gets exactly what
+ * the roles wrote, markers and slugs intact — which is what the gates were run
+ * against and what the store holds.
+ */
+test('--record hands back the stored form, markers and slugs intact', async () => {
+  let composed = 0;
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`, '--record'], composeHost())), composed),
+  ]);
+
+  assert.equal(composed, 0);
+  assert.match(out, /## the-choice/);
+  assert.doesNotMatch(out, /## The choice/);
 });
