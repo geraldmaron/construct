@@ -19,28 +19,23 @@
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import type { ComposedClaim, SourceDeliverable, SupportChecker } from '../kernel/run/compose.ts';
 import type { GapCloser } from '../kernel/run/closing.ts';
+import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
 import { extractJson } from './contextloop.ts';
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
 
-/**
- * The sections a composed document carries. Fixed rather than free-form so the
- * screen and the reader agree on what was asked for, and so the last one
- * cannot be quietly omitted — a composition missing a third of the ask with no
- * gap named is precisely the failure composing introduces.
- */
-export const COMPOSITION_SECTIONS: readonly { readonly name: string; readonly expects: string }[] = [
-  { name: 'the-answer', expects: 'what the roles together actually answer, stated first and plainly' },
-  { name: 'what-each-concern-established', expects: 'the substance each role contributed, in its own terms' },
-  { name: 'where-they-disagree', expects: 'points two deliverables cannot both be acted on, or "none" explicitly' },
-  { name: 'what-follows', expects: 'the actions the deliverables together support, only where they say so' },
-];
-
 export function composerPrompt(input: {
   readonly outcome: string;
   readonly sources: readonly SourceDeliverable[];
+  /**
+   * The sections this document carries, chosen from the ask before the composer
+   * saw anything. Named rather than fixed so a decision ask does not come back
+   * in the shape of a review — and passed in rather than picked here, because a
+   * composer choosing its own headings is choosing what the document argues.
+   */
+  readonly shape: CompositionShape;
 }): string {
   return [
     'Several specialists were each asked about one concern of the same outcome.',
@@ -63,8 +58,10 @@ export function composerPrompt(input: {
     'drawn from two roles is two claims, one per role, rather than one claim that',
     'names both — because each is checked against that role and no other.',
     '',
-    'Sections, in this order:',
-    ...COMPOSITION_SECTIONS.map((s) => `- ${s.name}: ${s.expects}`),
+    `Sections, in this order. A section the deliverables cannot fill is left`,
+    'empty rather than filled — the same rule as everything else here, and the',
+    'reader is shown which came back empty:',
+    ...input.shape.sections.map((s) => `- ${s.name}: ${s.expects}`),
     '',
     'And separately, `uncovered`: the parts of the outcome above that no',
     'deliverable answered. This is not a formality. Read the outcome again,',
@@ -194,7 +191,11 @@ function textOf(host: HostAdapter, result: { status: string; output: unknown }):
 /** Build a composer backed by a host adapter; caller owns init(). */
 export function createHostComposer(
   host: HostAdapter,
-): (input: { outcome: string; sources: readonly SourceDeliverable[] }) => Promise<unknown> {
+): (input: {
+  outcome: string;
+  sources: readonly SourceDeliverable[];
+  shape: CompositionShape;
+}) => Promise<unknown> {
   return async (input) => {
     const result = await host.invoke({ role: COMPOSER_ROLE, task: composerPrompt(input) });
     return extractJson(textOf(host, result));

@@ -91,9 +91,9 @@ function composeHost(): HostAdapter {
           output: {
             text: JSON.stringify({
               claims: [
-                { section: 'the-answer', text: `${cited} concluded its own part`, from: cited },
-                { section: 'what-follows', text: 'and therefore we should ship in Q4', from: cited },
-                { section: 'what-follows', text: 'a claim from nobody', from: 'never-dispatched' },
+                { section: 'the-choice', text: `${cited} concluded its own part`, from: cited },
+                { section: 'what-happens-first', text: 'and therefore we should ship in Q4', from: cited },
+                { section: 'what-happens-first', text: 'a claim from nobody', from: 'never-dispatched' },
               ],
               uncovered: ['nobody costed the migration'],
             }),
@@ -142,18 +142,23 @@ test('a run with several deliverables composes, and what no deliverable supports
     async () => ((composed = await compose([`--run=${latestRun()}`], composeHost())), composed),
   ]);
   assert.equal(composed, 0);
-  assert.match(out, /## the-answer/);
+  // "Decide whether the pilot ships in Q4" is a decision ask, so the document
+  // comes back in the decision shape rather than the review one. The chooser
+  // reading a fixture written long before shapes existed is the point.
+  assert.match(out, /## the-choice/);
   assert.match(out, /concluded its own part \[/, 'a supported claim keeps its attribution');
   assert.doesNotMatch(out, /therefore we should ship in Q4/, 'the unsupported claim is removed, not flagged');
   assert.match(out, /a claim from nobody.*produced no deliverable/s);
   assert.match(out, /## what nobody answered/);
   assert.match(out, /nobody costed the migration/);
   assert.match(out, /Nothing here was added by the composing/);
-  // Three of the four sections got no claims. Dropped from the document,
-  // reported anyway: a composition that never stated an answer must not read
-  // like one that had nothing more to add.
-  assert.match(out, /no claim was placed under .*where-they-disagree.*what-follows/);
-  assert.match(out, /fact about this composition rather than about the deliverables/);
+  // Most of the shape got no claims. Dropped from the document, reported
+  // anyway: a composition that never stated a price must not read like one that
+  // had nothing more to add, and once the shape follows the ask an empty
+  // section also tells the reader what these deliverables do not carry.
+  assert.match(out, /the decision shape asks for .*where-things-stand.*what-it-costs/);
+  assert.match(out, /not about the roles who wrote them/);
+  assert.match(out, /Shaped as a decision/);
 });
 
 test('a composition whose claims could not be checked is refused, not promoted unverified', async () => {

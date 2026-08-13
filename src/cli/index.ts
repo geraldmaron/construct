@@ -63,12 +63,12 @@ import {
 } from '../kernel/run/compose.ts';
 import type { ComposedClaim, SourceDeliverable, SourceStanding } from '../kernel/run/compose.ts';
 import {
-  COMPOSITION_SECTIONS,
   createHostComposer,
   createHostGapCloser,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
+import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import type { ClosingReply, ClosingRound } from '../kernel/run/closing.ts';
 import type { Brief } from '../kernel/brief/schema.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
@@ -3042,7 +3042,8 @@ export function record(argv: string[]): number {
 
 const COMPOSE_USAGE =
   'usage: construct compose --run=<id> --host=<opencode|claude|codex|cursor> ' +
-  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>] [--no-close]\n';
+  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>] [--no-close] ' +
+  `[--shape=<${shapeNames().join('|')}>]\n`;
 
 /**
  * Put the composition's gaps back to the roles, once.
@@ -3127,6 +3128,18 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       process.stderr.write(`compose: no plan recorded for ${run}\n`);
       return 1;
     }
+    // What shape of document this ask wants back, decided before any model sees
+    // the deliverables. Inferred from the recorded outcome and overridable,
+    // because a chooser the user can see and correct costs a flag when it is
+    // wrong, and one they cannot costs the document.
+    const shape = flags.shape === undefined ? shapeForOutcome(plan.outcome) : shapeByName(flags.shape);
+    if (shape === undefined) {
+      process.stderr.write(
+        `compose: no shape named "${String(flags.shape)}" — known shapes are ${shapeNames().join(', ')}\n`,
+      );
+      return 2;
+    }
+
     const done = listTasks(store, run).filter((task) => task.state === 'done');
     const sources: SourceDeliverable[] = done
       .map((task) => ({
@@ -3187,7 +3200,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
     let screened;
     try {
-      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources });
+      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape });
       screened = screenComposition(toComposition(reply), sources);
     } catch (error) {
       process.stderr.write(`compose: the deliverables could not be composed (${(error as Error).message}).\n`);
@@ -3246,7 +3259,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       );
     }
     const empty: string[] = [];
-    for (const section of COMPOSITION_SECTIONS) {
+    for (const section of shape.sections) {
       const inSection = kept.filter((claim) => claim.section === section.name);
       if (inSection.length === 0) {
         empty.push(section.name);
@@ -3258,11 +3271,14 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // A section that came back empty is dropped from the document but not from
     // the report. Silently omitting it lets a composition that never stated an
     // answer read like one that had nothing more to add, and the reader cannot
-    // tell the difference from the page alone.
+    // tell the difference from the page alone — and once the section set follows
+    // the ask, an unfillable section is also the reader's evidence that the ask
+    // wanted something these deliverables do not carry.
     if (empty.length > 0) {
       process.stdout.write(
-        `\n(no claim was placed under ${empty.join(', ')} — the composing put everything elsewhere, ` +
-          'which is a fact about this composition rather than about the deliverables)\n',
+        `\n(the ${shape.name} shape asks for ${empty.join(', ')} and no claim was placed there — ` +
+          'a fact about this composition and about what these deliverables hold, ' +
+          'not about the roles who wrote them)\n',
       );
     }
 
@@ -3337,7 +3353,11 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     process.stdout.write(
       `\ncomposed from ${String(sources.length)} deliverables: ${String(kept.length)} claims kept` +
         (removed > 0 ? `, ${String(removed)} refused as unsupported or unattributable` : '') +
-        '.\nNothing here was added by the composing: every claim is one of the roles, checked against it.\n',
+        '.\nNothing here was added by the composing: every claim is one of the roles, checked against it.\n' +
+        `Shaped as a ${shape.name} — ${shape.answers}` +
+        (flags.shape === undefined
+          ? `, read from the outcome. Another shape: --shape=<${shapeNames().join('|')}>.\n`
+          : ', as asked.\n'),
     );
     return 0;
   });
