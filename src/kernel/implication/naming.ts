@@ -54,6 +54,43 @@ export interface DomainNaming {
 }
 
 /**
+ * Why a proposed naming did not become an implication.
+ *
+ * 'not-in-catalog'  — the namer read the outcome and named a concern this
+ *                     catalog does not carry. The most informative of the
+ *                     four: it is the catalog's own coverage gap, stated in
+ *                     the words of a model that had just read the user's.
+ * 'no-reason-given' — named without a why. Nothing to cite, so nothing to
+ *                     argue with, so it does not surface.
+ * 'duplicate'       — the same domain named twice; the first naming stands.
+ * 'over-limit'      — admitted, then cut by the caller's limit. The concern
+ *                     was real and the run simply would not carry that many.
+ */
+export type UnmetReason = 'not-in-catalog' | 'no-reason-given' | 'duplicate' | 'over-limit';
+
+/**
+ * A concern the namer raised that the run will not act on, kept with the
+ * reason it was refused.
+ *
+ * Discarding these was correct and still is: a namer cannot extend the
+ * catalog, and dispatching to a domain nobody defined is the invention half of
+ * commitment 15. Discarding them SILENTLY was the defect. A run whose namer
+ * proposed four concerns the catalog cannot carry, and a run whose catalog
+ * covered the outcome exactly, produced the same record and read the same to
+ * the user. Now they do not.
+ *
+ * Nothing here changes routing. An unmet concern is a report about the
+ * catalog, never a role, and no dispatch reads this field.
+ */
+export interface UnmetConcern {
+  /** The domain the namer proposed, verbatim, including a name nobody defined. */
+  readonly proposed: string;
+  /** The namer's stated reason, empty exactly when that is what refused it. */
+  readonly why: string;
+  readonly reason: UnmetReason;
+}
+
+/**
  * A namer's answer when it has more to say than the namings themselves: a
  * malformed first reply that a corrective retry repaired is a fact the work
  * log must be able to show, because the repair cost a second model call.
@@ -114,6 +151,14 @@ export interface NamedMap extends ImplicationMap {
    * answer, but it cost a second model call and the log says so.
    */
   readonly namerRetriedAfter?: string;
+  /**
+   * Concerns the namer raised that this run will not act on, each with the
+   * reason. Empty on every path where nothing was proposed, and empty on a
+   * cache hit — the consultation that filled the cache recorded its own unmet
+   * concerns against that outcome at the time, and repeating them here would
+   * claim a second reading that never happened.
+   */
+  readonly unmet: readonly UnmetConcern[];
 }
 
 export interface NameInput {
@@ -138,21 +183,41 @@ const NO_KEYWORD_SCORE = 0;
  * order the namer gave them. A namer that returns a domain nobody defined is
  * not extending the catalog — it is hallucinating a role, and dispatching to
  * it would be the invention half of commitment 15.
+ *
+ * The refusals come back beside what was kept. What is refused is a fact about
+ * the catalog rather than about the namer, and a caller that cannot see it
+ * cannot tell a covered outcome from an uncovered one.
  */
 function admissible(
   namings: readonly DomainNaming[],
   catalog: readonly Domain[],
-): Implication[] {
+): { readonly kept: Implication[]; readonly unmet: UnmetConcern[] } {
   const byName = domainsByName(catalog);
   const seen = new Set<string>();
   const kept: Implication[] = [];
+  const unmet: UnmetConcern[] = [];
   for (const naming of namings) {
-    const domain = byName.get(naming.domain);
-    if (!domain || seen.has(domain.domain)) continue;
+    const proposed = typeof naming.domain === 'string' ? naming.domain.trim() : '';
     const why = typeof naming.why === 'string' ? naming.why.trim() : '';
+    const domain = byName.get(proposed);
+    if (!domain) {
+      // The catalog's coverage gap, in the words of a model that had just read
+      // the user's. Kept under the name the namer used, unaltered: a proposal
+      // normalized toward a name the catalog already has would read as a near
+      // miss when it may be a concern nobody has staffed.
+      unmet.push({ proposed, why, reason: 'not-in-catalog' });
+      continue;
+    }
+    if (seen.has(domain.domain)) {
+      unmet.push({ proposed: domain.domain, why, reason: 'duplicate' });
+      continue;
+    }
     // Same bar as the keyword path: an implication with nothing to cite does
     // not surface. A namer that will not say why has not given a reason.
-    if (!why) continue;
+    if (!why) {
+      unmet.push({ proposed: domain.domain, why: '', reason: 'no-reason-given' });
+      continue;
+    }
     seen.add(domain.domain);
     kept.push({
       domain: domain.domain,
@@ -161,7 +226,7 @@ function admissible(
       signals: [why],
     });
   }
-  return kept;
+  return { kept, unmet };
 }
 
 /**
@@ -185,7 +250,10 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
 
   if (!input.namer) {
     const fallback = keywords();
-    return { ...fallback, inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none' };
+    // The keyword map draws from the catalog and cannot propose outside it, so
+    // it has no unmet concerns to report. Its silence is a different thing
+    // from a namer's silence and must not be dressed up as the same evidence.
+    return { ...fallback, inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none', unmet: [] };
   }
 
   const cached = input.cache?.get(input.outcome);
@@ -194,6 +262,7 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       outcome: input.outcome,
       implicated: cached,
       inferredBy: cached.length > 0 ? 'cache' : 'none',
+      unmet: [],
     };
   }
 
@@ -219,11 +288,22 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       ...fallback,
       inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none',
       namerFailure: (error as Error)?.message ?? String(error),
+      unmet: [],
     };
   }
 
-  const implicated = admissible(Array.isArray(namings) ? namings : [], catalog);
-  const limited = input.limit === undefined ? implicated : implicated.slice(0, input.limit);
+  const { kept, unmet } = admissible(Array.isArray(namings) ? namings : [], catalog);
+  const limited = input.limit === undefined ? kept : kept.slice(0, input.limit);
+  // A concern cut by the limit was admitted on its merits and lost to a cap.
+  // That is a different fact from a concern the catalog cannot carry, and the
+  // reason code keeps them apart wherever this is read.
+  const cut = kept.slice(limited.length).map(
+    (implication): UnmetConcern => ({
+      proposed: implication.domain,
+      why: implication.signals[0] ?? '',
+      reason: 'over-limit',
+    }),
+  );
   // A cached nothing is a real answer: the namer considered the catalog and
   // named nothing, and the same outcome must not pay to hear it twice.
   input.cache?.set(input.outcome, limited);
@@ -232,5 +312,6 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
     implicated: limited,
     inferredBy: limited.length > 0 ? 'namer' : 'none',
     ...(retriedAfter !== undefined ? { namerRetriedAfter: retriedAfter } : {}),
+    unmet: [...unmet, ...cut],
   };
 }

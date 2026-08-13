@@ -1752,6 +1752,15 @@ export function reasonClause(action: string, detail: unknown): string {
       const fellBackTo = s('fellBackTo');
       return `  — ${failure}${fellBackTo ? `; fell back to ${fellBackTo}` : ''}`;
     }
+    case 'concern-unmet': {
+      // The proposal's own words, not a paraphrase: the value of this line is
+      // that a reader can see what the catalog was asked for and judge whether
+      // it should carry it.
+      const proposed = s('proposed') ?? 'unnamed';
+      const reason = s('reason') ?? 'reason not recorded';
+      const why = s('why');
+      return `  — "${proposed}" (${reason})${why ? `: ${why}` : ''}`;
+    }
     case 'namer-retried':
       return `  — first reply failed (${s('firstFailure') ?? 'unparseable'}); a corrective retry answered`;
     case 'model-untuned-best-effort':

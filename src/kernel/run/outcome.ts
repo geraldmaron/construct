@@ -18,7 +18,7 @@
 
 import { mapImplications } from '../implication/map.ts';
 import { mapImplicationsNamed } from '../implication/naming.ts';
-import type { DomainNamer, NamingCache, InferredBy } from '../implication/naming.ts';
+import type { DomainNamer, NamingCache, InferredBy, UnmetConcern } from '../implication/naming.ts';
 import { domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import type { Implication } from '../implication/map.ts';
@@ -178,7 +178,9 @@ function briefFor(
  */
 export function startRun(store: Store, input: StartRunInput): StartedRun {
   const map = mapImplications({ outcome: input.outcome, catalog: input.catalog });
-  return record(store, input, map.implicated, map.implicated.length > 0 ? 'keywords' : 'none');
+  return record(store, input, map.implicated, {
+    inferredBy: map.implicated.length > 0 ? 'keywords' : 'none',
+  });
 }
 
 /**
@@ -206,15 +208,13 @@ export async function startRunNamed(
     namer: input.namer,
     cache: input.cache,
   });
-  return record(
-    store,
-    input,
-    map.implicated,
-    map.inferredBy,
-    input.host,
-    map.namerFailure,
-    map.namerRetriedAfter,
-  );
+  return record(store, input, map.implicated, {
+    inferredBy: map.inferredBy,
+    host: input.host,
+    namerFailure: map.namerFailure,
+    namerRetriedAfter: map.namerRetriedAfter,
+    unmet: map.unmet,
+  });
 }
 
 export interface StartRunSelectedInput extends StartRunInput {
@@ -262,7 +262,7 @@ export function startRunSelected(store: Store, input: StartRunSelectedInput): St
     });
   }
 
-  return record(store, input, implicated, 'user');
+  return record(store, input, implicated, { inferredBy: 'user' });
 }
 
 /**
@@ -290,10 +290,13 @@ export async function startAskNamed(
     store,
     input,
     map.implicated,
-    map.inferredBy,
-    input.host,
-    map.namerFailure,
-    map.namerRetriedAfter,
+    {
+      inferredBy: map.inferredBy,
+      host: input.host,
+      namerFailure: map.namerFailure,
+      namerRetriedAfter: map.namerRetriedAfter,
+      unmet: map.unmet,
+    },
     'ask',
   );
 }
@@ -305,16 +308,29 @@ export async function startAskNamed(
  */
 type RunShape = 'outcome' | 'ask';
 
+/**
+ * How the implications were reached, and what reaching them cost or left
+ * behind. One object rather than five trailing parameters because these travel
+ * together and mean nothing apart: an inference method with no note of its
+ * degradations is the record this module exists to prevent.
+ */
+interface Inference {
+  readonly inferredBy: InferredBy;
+  readonly host?: string;
+  readonly namerFailure?: string;
+  readonly namerRetriedAfter?: string;
+  /** Concerns the namer raised that this catalog cannot act on. */
+  readonly unmet?: readonly UnmetConcern[];
+}
+
 function record(
   store: Store,
   input: StartRunInput,
   implicated: readonly Implication[],
-  inferredBy: InferredBy,
-  host?: string,
-  namerFailure?: string,
-  namerRetriedAfter?: string,
+  inference: Inference,
   shape: RunShape = 'outcome',
 ): StartedRun {
+  const { inferredBy, host, namerFailure, namerRetriedAfter } = inference;
   return transact(store, () => {
     const logged: number[] = [];
     const tasks: string[] = [];
@@ -382,6 +398,29 @@ function record(
             outcome: input.outcome,
             host: host ?? null,
             firstFailure: namerRetriedAfter,
+          },
+          at: input.at,
+        }),
+      );
+    }
+
+    // What the namer raised and this catalog will not act on. One entry per
+    // concern, under the name the namer used, because a count would say the
+    // catalog fell short without saying of what. These enqueue nothing: the
+    // entry is a report about coverage, and staffing it is a separate,
+    // accepted decision rather than a side effect of recording an outcome.
+    for (const concern of inference.unmet ?? []) {
+      logged.push(
+        appendWorkLog(store, {
+          run: input.runId,
+          role: 'construct',
+          action: 'concern-unmet',
+          detail: {
+            outcome: input.outcome,
+            proposed: concern.proposed,
+            why: concern.why,
+            reason: concern.reason,
+            host: host ?? null,
           },
           at: input.at,
         }),

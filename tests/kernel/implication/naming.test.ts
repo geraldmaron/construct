@@ -217,3 +217,72 @@ test('an object reply without a retry reads exactly like a bare array', async ()
   assert.equal(result.inferredBy, 'namer');
   assert.equal(result.namerRetriedAfter, undefined);
 });
+
+test('a concern the catalog cannot carry is refused and kept, under the name the namer used', async () => {
+  const stub = namer([
+    { domain: 'evidence-provenance', why: 'every claim rests on an archival record of some kind' },
+    { domain: 'marketing-claims', why: 'a raffle is a regulated promotion' },
+  ]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['marketing-claims'], 'routing is unchanged');
+  assert.deepEqual(result.unmet, [
+    {
+      proposed: 'evidence-provenance',
+      why: 'every claim rests on an archival record of some kind',
+      reason: 'not-in-catalog',
+    },
+  ]);
+});
+
+test('a refused naming keeps its proposed name unaltered rather than being snapped to a near neighbour', async () => {
+  const stub = namer([{ domain: 'marketing', why: 'close to a domain that exists, and not it' }]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated, []);
+  assert.equal(result.unmet[0]?.proposed, 'marketing');
+});
+
+test('the four refusals are told apart by reason, because they mean different things', async () => {
+  const stub = namer([
+    { domain: 'astrology', why: 'the stars say so' },
+    { domain: 'marketing-claims', why: '   ' },
+    { domain: 'privacy', why: 'a signup list is personal data' },
+    { domain: 'privacy', why: 'said twice' },
+  ]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['privacy']);
+  assert.deepEqual(
+    result.unmet.map((u) => [u.proposed, u.reason]),
+    [
+      ['astrology', 'not-in-catalog'],
+      ['marketing-claims', 'no-reason-given'],
+      ['privacy', 'duplicate'],
+    ],
+  );
+});
+
+test('a concern cut by the limit is recorded as cut, not as one the catalog lacks', async () => {
+  const stub = namer([
+    { domain: 'marketing-claims', why: 'a raffle is a regulated promotion' },
+    { domain: 'privacy', why: 'a signup list is personal data' },
+  ]);
+  const result = await mapImplicationsNamed({
+    catalog: CATALOG,
+    outcome: SILENT,
+    namer: stub.fn,
+    limit: 1,
+  });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['marketing-claims']);
+  assert.deepEqual(result.unmet, [
+    { proposed: 'privacy', why: 'a signup list is personal data', reason: 'over-limit' },
+  ]);
+});
+
+test('the keyword fallback reports no unmet concerns, because it cannot propose outside the catalog', async () => {
+  const exploding: DomainNamer = async () => {
+    throw new Error('host unreachable');
+  };
+  const failed = await mapImplicationsNamed({ catalog: CATALOG, outcome: ANSWERED, namer: exploding });
+  assert.deepEqual(failed.unmet, []);
+  const zeroModel = await mapImplicationsNamed({ catalog: CATALOG, outcome: ANSWERED });
+  assert.deepEqual(zeroModel.unmet, []);
+});
