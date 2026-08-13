@@ -104,6 +104,27 @@ function walk(dir: string, found: SurveyedDocument[]): void {
 }
 
 /**
+ * Every document under a directory, ranked as the survey ranks them: prose a
+ * role can definitely open first, plain text next, binary last, deterministic
+ * at every level. Exported because ingestion walks the same ground a survey
+ * does, and two walks with different skip rules would mean a document that
+ * grounds a run cannot be ingested, or the reverse.
+ *
+ * Throws what the filesystem throws: a directory that cannot be walked is the
+ * caller's to report, and the survey's own answer for it is unreachable.
+ */
+export function listDocuments(dir: string): SurveyedDocument[] {
+  const found: SurveyedDocument[] = [];
+  walk(dir, found);
+  return found.sort((a, b) => {
+    const rank = (d: SurveyedDocument): number =>
+      PROSE_EXTS.has(extname(d.path).toLowerCase()) ? 0 : d.binary ? 2 : 1;
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
+    return a.path.localeCompare(b.path);
+  });
+}
+
+/**
  * Where one document's extracted text lives. Keyed by the document's absolute
  * path so re-surveying the same ground reuses the extraction instead of paying
  * a Docling spawn per run, and named with the original basename so a role
@@ -187,23 +208,16 @@ export function surveySource(
     return { ...base, outcome: 'unreachable', reason: (error as Error).message };
   }
 
-  const found: SurveyedDocument[] = [];
+  // Prose first, plain text next, binary last: when the cap bites, the
+  // documents a role can definitely open outrank the ones it may not.
+  let ranked: SurveyedDocument[];
   try {
-    walk(source.locator, found);
+    ranked = listDocuments(source.locator);
   } catch (error) {
     // A walk that died partway proves nothing about what it saw first: the
     // honest answer for the whole source is that it could not be read.
     return { ...base, outcome: 'unreachable', reason: (error as Error).message };
   }
-
-  const ranked = [...found].sort((a, b) => {
-    // Prose first, plain text next, binary last: when the cap bites, the
-    // documents a role can definitely open outrank the ones it may not.
-    const rank = (d: SurveyedDocument): number =>
-      PROSE_EXTS.has(extname(d.path).toLowerCase()) ? 0 : d.binary ? 2 : 1;
-    if (rank(a) !== rank(b)) return rank(a) - rank(b);
-    return a.path.localeCompare(b.path);
-  });
 
   const listed = ranked.slice(0, cap);
   const extract = opts?.extract;
@@ -221,6 +235,6 @@ export function surveySource(
     ...base,
     outcome: 'listed',
     documents,
-    total: found.length,
+    total: ranked.length,
   };
 }

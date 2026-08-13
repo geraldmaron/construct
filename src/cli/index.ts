@@ -4,7 +4,7 @@
  * not in CLI surface.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
@@ -28,7 +28,7 @@ import {
 } from '../kernel/store/sources.ts';
 import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
-import { surveySource } from '../hosts/sources.ts';
+import { listDocuments, surveySource } from '../hosts/sources.ts';
 import type { EngagementMode, Source, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
@@ -1085,7 +1085,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
 }
 
 const NOTES_USAGE =
-  'usage: construct notes <file> [--workspace=<name>] [--run=<id>] ' +
+  'usage: construct notes <file|directory> [--workspace=<name>] [--run=<id>] ' +
   '[--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
 
 export interface NotesArgs {
@@ -1161,13 +1161,18 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
 
 /**
  * Drop after-call notes and, with a host named, run the context loop over
- * them: densify, produce deltas/proposals/observations, challenge each delta
- * adversarially, then apply — deltas through the admission gate, proposals
- * into the rung 0 queue, observations through the citation screen.
+ * each of them.
  *
- * Without --host, recording is all that happens: the loop is model work, and
- * the free path says so instead of guessing. The note is kept either way —
- * the evidence lands first, and a later pass can always run over it.
+ * A file is one note. A directory is every document under it, each recorded
+ * as its own note and reasoned over separately — a pile of call transcripts
+ * is the shape this arrives in, and one shell invocation per file was the
+ * shape it was previously ingested in.
+ *
+ * Evidence lands before any model is consulted, and one document that cannot
+ * be read never ends the batch: the documents that could be read are evidence
+ * whatever happened to the ones that could not. Without --host, recording is
+ * all that happens — the loop is model work, and the free path says so
+ * instead of guessing.
  */
 export async function notes(argv: string[], hostOverride?: HostAdapter): Promise<number> {
   let args: NotesArgs;
@@ -1178,65 +1183,103 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     return 2;
   }
 
-  // Source reading goes through the extraction ladder, not a bare byte read:
-  // a binary document either extracts through a rung this install can run, or
-  // is refused with the ladder's own remediation — garbage bytes recorded as
-  // prose is the failure mode this replaces. Docling participates only when
-  // the probe says it exists.
-  const doclingProbe = probeDocling();
-  const sourceRead = readSource(args.file, { docling: doclingProbe });
-  if (!sourceRead.ok) {
-    process.stderr.write(
-      `notes: ${sourceRead.reason}\n` +
-        (sourceRead.remediation ? `  ${sourceRead.remediation}\n` : '') +
-        `  (docling probe: ${doclingProbe.detail})\n`,
-    );
-    return withStoreAsync(async (store) => {
-      // The refusal and its fallback path reach the record, not just stderr —
-      // a run reading its log later must see why this source is absent.
-      if (args.run) {
-        appendWorkLog(store, {
-          run: args.run,
-          role: 'intake',
-          action: 'extraction-refused',
-          detail: {
-            file: args.file,
-            reason: sourceRead.reason,
-            remediation: sourceRead.remediation,
-            doclingProbe: doclingProbe.detail,
-          },
-          at: now(),
-        });
-      }
-      return 1;
-    });
+  // One walk resolves the argument into the documents to ingest. A directory
+  // is walked exactly as a declared source is surveyed — same skip rules, same
+  // ordering — because ground that can be surveyed and ground that can be
+  // ingested must be the same ground.
+  let documents: string[];
+  try {
+    documents = statSync(args.file).isDirectory() ? listDocuments(args.file).map((d) => d.path) : [args.file];
+  } catch (error) {
+    process.stderr.write(`notes: cannot read ${args.file} — ${(error as Error).message}\n`);
+    return 1;
   }
-  const body: string = sourceRead.text;
+  if (documents.length === 0) {
+    process.stderr.write(`notes: ${args.file} holds no documents this install can read.\n`);
+    return 1;
+  }
+  if (documents.length > 1) {
+    process.stdout.write(
+      `ingesting ${String(documents.length)} documents from ${args.file}, each as its own note.\n`,
+    );
+  }
+
+  // Probed once for the batch: the probe spawns a process, and one spawn per
+  // document is the difference between an ingest and a stall.
+  const doclingProbe = probeDocling();
 
   return withStoreAsync(async (store) => {
-    const at = now();
-    const noteId = `note-${at.replace(/[-:.TZ]/g, '')}`;
-    try {
-      recordNote(store, {
-        id: noteId,
-        workspace: args.workspace,
-        run: args.run ?? null,
-        door: 'file-drop',
-        body,
-        recordedAt: at,
-      });
-    } catch (error) {
-      process.stderr.write(`notes: ${(error as Error).message}\n`);
-      return 1;
+    const recorded: Array<{ readonly noteId: string; readonly body: string }> = [];
+    let refused = 0;
+    for (const document of documents) {
+      // Reading goes through the extraction ladder, not a bare byte read: a
+      // binary document either extracts through a rung this install can run,
+      // or is refused with the ladder's own remediation — garbage bytes
+      // recorded as prose is the failure mode this replaces.
+      const sourceRead = readSource(document, { docling: doclingProbe });
+      if (!sourceRead.ok) {
+        refused += 1;
+        process.stderr.write(
+          `notes: ${sourceRead.reason}\n` +
+            (sourceRead.remediation ? `  ${sourceRead.remediation}\n` : '') +
+            `  (docling probe: ${doclingProbe.detail})\n`,
+        );
+        // The refusal and its fallback path reach the record, not just
+        // stderr — a run reading its log later must see why this source is
+        // absent. One refusal never ends the batch: the documents that could
+        // be read are evidence whatever happened to the ones that could not.
+        if (args.run) {
+          appendWorkLog(store, {
+            run: args.run,
+            role: 'intake',
+            action: 'extraction-refused',
+            detail: {
+              file: document,
+              reason: sourceRead.reason,
+              remediation: sourceRead.remediation,
+              doclingProbe: doclingProbe.detail,
+            },
+            at: now(),
+          });
+        }
+        continue;
+      }
+      const body = sourceRead.text;
+      const at = now();
+      const noteId = `note-${at.replace(/[-:.TZ]/g, '')}-${String(recorded.length + 1)}`;
+      try {
+        recordNote(store, {
+          id: noteId,
+          workspace: args.workspace,
+          run: args.run ?? null,
+          door: 'file-drop',
+          body,
+          recordedAt: at,
+        });
+      } catch (error) {
+        refused += 1;
+        process.stderr.write(`notes: ${(error as Error).message}\n`);
+        continue;
+      }
+      const lineCount = body.split('\n').length;
+      process.stdout.write(
+        `note ${noteId}: ${lineCount} line${lineCount === 1 ? '' : 's'} recorded verbatim in workspace "${args.workspace}".\n`,
+      );
+      recorded.push({ noteId, body });
     }
-    const lineCount = body.split('\n').length;
-    process.stdout.write(
-      `note ${noteId}: ${lineCount} line${lineCount === 1 ? '' : 's'} recorded verbatim in workspace "${args.workspace}".\n`,
-    );
+
+    if (recorded.length === 0) return 1;
+    if (refused > 0) {
+      process.stdout.write(
+        `\n${String(refused)} document${refused === 1 ? '' : 's'} could not be read and ${refused === 1 ? 'is' : 'are'} not recorded; ` +
+          `${String(recorded.length)} landed.\n`,
+      );
+    }
 
     if (args.host === undefined && hostOverride === undefined) {
       process.stdout.write(
-        '\nThe note is kept; drawing conclusions from it is model work, at cost:\n' +
+        `\nThe ${recorded.length === 1 ? 'note is' : 'notes are'} kept; drawing conclusions from ` +
+          `${recorded.length === 1 ? 'it' : 'them'} is model work, at cost:\n` +
           `  construct notes --host=<opencode|claude|codex|cursor> ${args.file}\n`,
       );
       return 0;
@@ -1250,21 +1293,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     } catch (error) {
       process.stderr.write(
         `notes: host "${host.name}" is not available — ${(error as Error).message}. ` +
-          'The note is recorded; run the loop again when the host is.\n',
-      );
-      return 1;
-    }
-
-    // Densify first: the confirm-intent summary is a restatement of this
-    // reading, and a loop that cannot state its reading has nothing to
-    // confirm. The note is already safe, so failing here loses no evidence.
-    let densified: DensifiedIntake;
-    try {
-      densified = await createHostDensifier(host)(body);
-    } catch (error) {
-      process.stderr.write(
-        `notes: the note could not be densified (${(error as Error).message}). ` +
-          `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
+          `The ${recorded.length === 1 ? 'note is' : 'notes are'} recorded; run the loop again when the host is.\n`,
       );
       return 1;
     }
@@ -1273,125 +1302,187 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     // disagrees in it. A producer shown locators alone answers about documents
     // it remembers, and the screen downstream has no listing to catch that
     // with — so the survey is what turns the drift pass into an observation.
+    // Surveyed once for the batch: it is the same ground for every note.
     const sources = sourcesFor(store, args.workspace);
     const { producerSources, surveyed } = driftGround(sources, surveyDeclared(sources));
-    let produced: ProducedLoop;
-    try {
-      const reply = await createHostProducer(host)({
-        noteBody: body,
+
+    let failed = 0;
+    for (const { noteId, body } of recorded) {
+      if (recorded.length > 1) process.stdout.write(`\n── ${noteId} ──\n`);
+      const ok = await contextLoopOverNote(store, host, {
         noteId,
-        lessons: operationalLessonsFor(store, args.workspace).map((l) => l.body),
-        sources: producerSources,
-      });
-      produced = toProducedLoop(reply, noteId);
-    } catch (error) {
-      process.stderr.write(
-        `notes: the loop could not read the note (${(error as Error).message}). ` +
-          `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
-      );
-      return 1;
-    }
-    for (const reason of produced.discarded) {
-      process.stdout.write(`  discarded: ${reason}\n`);
-    }
-
-    // The screen before the gate: a citation that does not resolve, or a
-    // proposal against an undeclared source, is dropped here with its reason
-    // so one bad item does not abort the pass; the loop's hard gate stays the
-    // backstop for anything that slips past.
-    const sourceIds = new Set(sources.map((s) => s.id));
-    const challenger = createHostChallenger(host);
-    const deltas: MemoryDelta[] = [];
-    for (const [i, delta] of produced.deltas.entries()) {
-      const cited = resolveNoteCitation(store, delta.citation);
-      if (!cited) {
-        process.stdout.write(
-          `  discarded: delta "${delta.body.slice(0, 60)}" cites ${delta.citation}, which is not a line of this note\n`,
-        );
-        continue;
-      }
-      let challenge: DeltaChallenge;
-      try {
-        challenge = await challenger(delta, cited.text);
-      } catch (error) {
-        process.stdout.write(
-          `  held back: delta "${delta.body.slice(0, 60)}" could not be challenged (${(error as Error).message}); an unchallenged delta is not recorded\n`,
-        );
-        continue;
-      }
-      if (!challenge.upheld) {
-        process.stdout.write(
-          `  refuted: delta "${delta.body.slice(0, 60)}" — ${challenge.detail}\n`,
-        );
-        continue;
-      }
-      deltas.push({
-        id: `${noteId}-d${i + 1}`,
-        kind: delta.kind,
-        domain: delta.domain,
-        body: delta.body,
-        citation: delta.citation,
-        external: delta.external,
-        basis: { kind: 'adversarial-pass', detail: challenge.detail },
-      });
-    }
-
-    const proposals: PropagationProposal[] = [];
-    for (const [i, proposal] of produced.proposals.entries()) {
-      if (!sourceIds.has(proposal.source)) {
-        process.stdout.write(
-          `  discarded: proposal "${proposal.change.slice(0, 60)}" targets ${proposal.source}, which is not a declared source\n`,
-        );
-        continue;
-      }
-      if (!resolveNoteCitation(store, proposal.justification)) {
-        process.stdout.write(
-          `  discarded: proposal "${proposal.change.slice(0, 60)}" cites ${proposal.justification}, which is not a line of this note\n`,
-        );
-        continue;
-      }
-      proposals.push({
-        id: `${noteId}-p${i + 1}`,
-        source: proposal.source,
-        change: proposal.change,
-        justification: proposal.justification,
-        risk: proposal.risk,
-      });
-    }
-
-    const result = applyContextLoop(
-      store,
-      {
+        body,
         workspace: args.workspace,
-        run: args.run ?? noteId,
-        noteId,
-        densified,
-        deltas,
-        proposals,
-      },
-      at,
-    );
-
-    process.stdout.write(`\n${result.summary}\n`);
-
-    if (result.admissions.length > 0) {
-      process.stdout.write('\nmemory deltas (through the admission gate):\n');
-      for (const admission of result.admissions) {
-        process.stdout.write(`  ${admission.verdict}: ${admission.lesson} — ${admission.reason}\n`);
-      }
+        run: args.run,
+        sources,
+        producerSources,
+        surveyed,
+      });
+      if (!ok) failed += 1;
     }
-    if (result.filed.length > 0) {
-      process.stdout.write(
-        `\nfiled ${result.filed.length} propagation proposal${result.filed.length === 1 ? '' : 's'} — ` +
-          'each waits for a decision; nothing was written outward:\n',
-      );
-      for (const id of result.filed) process.stdout.write(`  ${id}\n`);
-    }
-
-    writeDrift(screenObservations(produced.observations, sources, surveyed));
-
-    return 0;
+    // Every note that could not be reasoned over is still recorded evidence,
+    // so a batch where some loops failed is a partial success, not a failure.
+    return failed === recorded.length ? 1 : 0;
   });
+}
+
+interface LoopContext {
+  readonly noteId: string;
+  readonly body: string;
+  readonly workspace: string;
+  readonly run?: string;
+  readonly sources: readonly Source[];
+  readonly producerSources: readonly ProducerSource[];
+  readonly surveyed: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
+/**
+ * Run the context loop over one recorded note: densify, produce, challenge
+ * each delta adversarially, then apply — deltas through the admission gate,
+ * proposals into the rung 0 queue, observations through the citation screen.
+ *
+ * Returns whether the loop completed. A note whose loop failed keeps its row:
+ * the evidence landed before any model was consulted, and a later pass can
+ * always run over it.
+ */
+async function contextLoopOverNote(
+  store: Store,
+  host: HostAdapter,
+  context: LoopContext,
+): Promise<boolean> {
+  const { noteId, body, workspace, sources, producerSources, surveyed } = context;
+  const at = now();
+
+  // Densify first: the confirm-intent summary is a restatement of this
+  // reading, and a loop that cannot state its reading has nothing to
+  // confirm. The note is already safe, so failing here loses no evidence.
+  let densified: DensifiedIntake;
+  try {
+    densified = await createHostDensifier(host)(body);
+  } catch (error) {
+    process.stderr.write(
+      `notes: the note could not be densified (${(error as Error).message}). ` +
+        `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
+    );
+    return false;
+  }
+
+  let produced: ProducedLoop;
+  try {
+    const reply = await createHostProducer(host)({
+      noteBody: body,
+      noteId,
+      lessons: operationalLessonsFor(store, workspace).map((l) => l.body),
+      sources: producerSources,
+    });
+    produced = toProducedLoop(reply, noteId);
+  } catch (error) {
+    process.stderr.write(
+      `notes: the loop could not read the note (${(error as Error).message}). ` +
+        `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
+    );
+    return false;
+  }
+  for (const reason of produced.discarded) {
+    process.stdout.write(`  discarded: ${reason}\n`);
+  }
+
+  // The screen before the gate: a citation that does not resolve, or a
+  // proposal against an undeclared source, is dropped here with its reason
+  // so one bad item does not abort the pass; the loop's hard gate stays the
+  // backstop for anything that slips past.
+  const sourceIds = new Set(sources.map((s) => s.id));
+  const challenger = createHostChallenger(host);
+  const deltas: MemoryDelta[] = [];
+  for (const [i, delta] of produced.deltas.entries()) {
+    const cited = resolveNoteCitation(store, delta.citation);
+    if (!cited) {
+      process.stdout.write(
+        `  discarded: delta "${delta.body.slice(0, 60)}" cites ${delta.citation}, which is not a line of this note\n`,
+      );
+      continue;
+    }
+    let challenge: DeltaChallenge;
+    try {
+      challenge = await challenger(delta, cited.text);
+    } catch (error) {
+      process.stdout.write(
+        `  held back: delta "${delta.body.slice(0, 60)}" could not be challenged (${(error as Error).message}); an unchallenged delta is not recorded\n`,
+      );
+      continue;
+    }
+    if (!challenge.upheld) {
+      process.stdout.write(
+        `  refuted: delta "${delta.body.slice(0, 60)}" — ${challenge.detail}\n`,
+      );
+      continue;
+    }
+    deltas.push({
+      id: `${noteId}-d${i + 1}`,
+      kind: delta.kind,
+      domain: delta.domain,
+      body: delta.body,
+      citation: delta.citation,
+      external: delta.external,
+      basis: { kind: 'adversarial-pass', detail: challenge.detail },
+    });
+  }
+
+  const proposals: PropagationProposal[] = [];
+  for (const [i, proposal] of produced.proposals.entries()) {
+    if (!sourceIds.has(proposal.source)) {
+      process.stdout.write(
+        `  discarded: proposal "${proposal.change.slice(0, 60)}" targets ${proposal.source}, which is not a declared source\n`,
+      );
+      continue;
+    }
+    if (!resolveNoteCitation(store, proposal.justification)) {
+      process.stdout.write(
+        `  discarded: proposal "${proposal.change.slice(0, 60)}" cites ${proposal.justification}, which is not a line of this note\n`,
+      );
+      continue;
+    }
+    proposals.push({
+      id: `${noteId}-p${i + 1}`,
+      source: proposal.source,
+      change: proposal.change,
+      justification: proposal.justification,
+      risk: proposal.risk,
+    });
+  }
+
+  const result = applyContextLoop(
+    store,
+    {
+      workspace,
+      run: context.run ?? noteId,
+      noteId,
+      densified,
+      deltas,
+      proposals,
+    },
+    at,
+  );
+
+  process.stdout.write(`\n${result.summary}\n`);
+
+  if (result.admissions.length > 0) {
+    process.stdout.write('\nmemory deltas (through the admission gate):\n');
+    for (const admission of result.admissions) {
+      process.stdout.write(`  ${admission.verdict}: ${admission.lesson} — ${admission.reason}\n`);
+    }
+  }
+  if (result.filed.length > 0) {
+    process.stdout.write(
+      `\nfiled ${result.filed.length} propagation proposal${result.filed.length === 1 ? '' : 's'} — ` +
+        'each waits for a decision; nothing was written outward:\n',
+    );
+    for (const id of result.filed) process.stdout.write(`  ${id}\n`);
+  }
+
+  writeDrift(screenObservations(produced.observations, sources, surveyed));
+
+  return true;
 }
 
 /**

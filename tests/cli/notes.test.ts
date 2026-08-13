@@ -11,9 +11,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { main, notes } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
@@ -214,4 +214,52 @@ test('host flags without a host are refused as lies waiting to happen', async ()
   const { code, err } = await run((file) => [['notes', file, '--model=gpt']]);
   assert.equal(code, 2);
   assert.match(err, /--model only applies when a host is named/);
+});
+
+test('a directory ingests every document as its own note, and one refusal does not end the batch', async () => {
+  const { code, out, err } = await run((file) => [
+    () => {
+      // Beside the readable notes: a document no rung on any machine can put
+      // into words, so the refusal is the same everywhere the suite runs.
+      const dir = dirname(file);
+      writeFileSync(join(dir, 'second-call.txt'), 'they want SSO\nbudget is approved');
+      writeFileSync(join(dir, 'recording.mp4'), Buffer.from([0, 1, 2]));
+      return 0;
+    },
+    () => main(['notes', dirname(file)]),
+  ]);
+  assert.equal(code, 0, 'documents that could be read are evidence whatever happened to the rest');
+  assert.match(out, /ingesting 3 documents/);
+  assert.match(err, /ASR/);
+  assert.match(out, /1 document could not be read and is not recorded; 2 landed/);
+  assert.equal((out.match(/recorded verbatim/g) ?? []).length, 2);
+});
+
+test('every note in a batch gets its own row and its own loop', async () => {
+  const { code, out } = await run((file) => [
+    () => {
+      writeFileSync(join(dirname(file), 'second-call.txt'), 'they want SSO\nbudget is approved');
+      return 0;
+    },
+    () => notes([dirname(file)], loopHost()),
+    () =>
+      withStore((store) => {
+        assert.equal(notesFor(store, 'default').length, 2, 'two documents, two notes');
+        return 0;
+      }),
+  ]);
+  assert.equal(code, 0);
+  assert.equal((out.match(/confirm this reading first/g) ?? []).length, 2, 'each note is reasoned over');
+});
+
+test('a directory holding nothing readable says so rather than recording an empty pass', async () => {
+  const { code, err } = await run((file) => [
+    () => {
+      mkdirSync(join(dirname(file), 'empty'));
+      return 0;
+    },
+    () => main(['notes', join(dirname(file), 'empty')]),
+  ]);
+  assert.equal(code, 1);
+  assert.match(err, /holds no documents this install can read/);
 });
