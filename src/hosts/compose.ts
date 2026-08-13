@@ -227,8 +227,8 @@ export function createHostPositioner(
   host: HostAdapter,
 ): (input: { outcome: string; sources: readonly SourceDeliverable[] }) => Promise<unknown> {
   return async (input) => {
-    const result = await host.invoke({ role: POSITION_ROLE, task: positionPrompt(input) });
-    return extractJson(textOf(host, result));
+    const text = await invokeRetrying(host, { role: POSITION_ROLE, task: positionPrompt(input) });
+    return extractJson(text);
   };
 }
 
@@ -311,8 +311,8 @@ export function createHostPositionRepairer(
   objections: readonly SharedObjection[];
 }) => Promise<unknown> {
   return async (input) => {
-    const result = await host.invoke({ role: POSITION_ROLE, task: positionRepairPrompt(input) });
-    return extractJson(textOf(host, result));
+    const text = await invokeRetrying(host, { role: POSITION_ROLE, task: positionRepairPrompt(input) });
+    return extractJson(text);
   };
 }
 
@@ -355,11 +355,11 @@ export function createHostObjectionChecker(
   host: HostAdapter,
 ): (source: SourceDeliverable, position: string, isRepair?: boolean) => Promise<string> {
   return async (source, position, isRepair = false) => {
-    const result = await host.invoke({
+    const text = await invokeRetrying(host, {
       role: SUPPORT_ROLE,
       task: objectionPrompt(source, position, isRepair),
     });
-    const parsed = extractJson(textOf(host, result)) as { misreadsMe?: unknown } | null;
+    const parsed = extractJson(text) as { misreadsMe?: unknown } | null;
     return typeof parsed?.misreadsMe === 'string' ? parsed.misreadsMe.trim() : '';
   };
 }
@@ -432,11 +432,11 @@ export function closingPrompt(input: {
 /** Build a gap closer backed by a host adapter; caller owns init(). */
 export function createHostGapCloser(host: HostAdapter, outcome: string, groundRoots: readonly string[]): GapCloser {
   return async (source, gaps) => {
-    const result = await host.invoke({
+    const text = await invokeRetrying(host, {
       role: `${source.role}${CLOSING_ROLE_SUFFIX}`,
       task: closingPrompt({ outcome, source, gaps, groundRoots }),
     });
-    return toClosingReply(extractJson(textOf(host, result)), source.role, gaps);
+    return toClosingReply(extractJson(text), source.role, gaps);
   };
 }
 
@@ -460,9 +460,35 @@ export function createHostComposer(
   shape: CompositionShape;
 }) => Promise<unknown> {
   return async (input) => {
-    const result = await host.invoke({ role: COMPOSER_ROLE, task: composerPrompt(input) });
-    return extractJson(textOf(host, result));
+    const text = await invokeRetrying(host, { role: COMPOSER_ROLE, task: composerPrompt(input) });
+    return extractJson(text);
   };
+}
+
+/**
+ * One host call, retried once on any failure before giving up.
+ *
+ * Measured on a live composition on a free host (construct-qb0i): a support
+ * call returning no text discarded a whole finished document — the composer's
+ * call, the position, the position's own screen, and every other role's
+ * completed claims check, none of them wrong, all of them thrown away because
+ * one call came back empty. That is a flaky-host failure, not a defect in the
+ * reply to repair (contrast hosts/jsonrepair.ts, which shows the model its own
+ * malformed JSON and asks for the fix); the only thing worth doing differently
+ * the second time is asking again. One retry, matching the "one corrective
+ * turn" ceiling already set for the JSON seams — a call that fails twice in a
+ * row is below the floor a retry can rescue, and the caller's fail-closed
+ * fallback is the right answer at that point, not a third attempt.
+ */
+async function invokeRetrying(
+  host: HostAdapter,
+  request: Parameters<HostAdapter['invoke']>[0],
+): Promise<string> {
+  try {
+    return textOf(host, await host.invoke(request));
+  } catch {
+    return textOf(host, await host.invoke(request));
+  }
 }
 
 /**
@@ -474,11 +500,8 @@ export function createHostComposer(
  */
 export function createHostSupportChecker(host: HostAdapter): SupportChecker {
   return async (source, claims) => {
-    const result = await host.invoke({
-      role: SUPPORT_ROLE,
-      task: supportPrompt(source, claims),
-    });
-    const parsed = extractJson(textOf(host, result)) as {
+    const text = await invokeRetrying(host, { role: SUPPORT_ROLE, task: supportPrompt(source, claims) });
+    const parsed = extractJson(text) as {
       unsupported?: unknown;
       detail?: unknown;
     } | null;

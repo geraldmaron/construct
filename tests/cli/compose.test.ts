@@ -339,6 +339,40 @@ test('a composition whose claims could not be checked is refused, not promoted u
   assert.match(err, /an unverified composition is not promoted/);
 });
 
+/**
+ * Measured on a live composition (construct-qb0i): one role's support call
+ * came back with no text and the whole document was discarded, though every
+ * other call — the composer, the position, its screen, every other role's
+ * check — had already succeeded. A single empty reply is exactly the failure
+ * a retry exists to rescue; only a checker that fails twice in a row should
+ * still cost the run its document (covered above).
+ */
+test('a support call that comes back empty once is retried, not fatal', async () => {
+  let calls = 0;
+  const flaky: HostAdapter = {
+    ...composeHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'composition-support' && /claims attributed to it/.test((request as { task: string }).task)) {
+        calls += 1;
+        if (calls === 1) {
+          return { id: role, status: 'ok', output: { text: '' }, error: null };
+        }
+      }
+      return composeHost().invoke(request);
+    },
+  };
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], flaky)), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.ok(calls >= 2, 'the empty reply was retried rather than accepted as final');
+  assert.match(out, /concluded its own part/, 'the document survived the transient failure');
+});
+
 test('one deliverable composes nothing, and points at reading it instead', async () => {
   let composed = 0;
   const { err } = await run([
