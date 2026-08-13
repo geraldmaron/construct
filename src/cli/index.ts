@@ -16,7 +16,11 @@ import { writeFileSync } from 'node:fs';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
-import { CAPABILITY_DENIED_ACTION } from '../kernel/run/rolewrite.ts';
+import {
+  CAPABILITY_DENIED_ACTION,
+  revocationOf,
+  revokeRoleCapability,
+} from '../kernel/run/rolewrite.ts';
 import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
 import {
   addSource,
@@ -3117,6 +3121,56 @@ export function record(argv: string[]): number {
   return 2;
 }
 
+const REVOKE_USAGE =
+  'usage: construct revoke --task=<id> --reason="<why>"\n';
+
+/**
+ * Take one dispatched role's write surface away before its lease expires.
+ *
+ * Per task, and reasoned. The lever that existed before this was rotating the
+ * install-wide signing secret, which kills every outstanding token for every
+ * run at once — so an operator watching one role loop past its caps had to
+ * choose between waiting out the lease and taking down everything in flight.
+ *
+ * A reason is required rather than optional for the same reason a waiver
+ * requires one: the record of a control being used is the only thing that
+ * distinguishes an operator stopping a runaway from work quietly disappearing,
+ * and the role is told what the reason was when its next write is refused.
+ */
+export function revoke(argv: string[]): number {
+  const { flags } = splitFlags(argv);
+  const task = flags.task;
+  const reason = flags.reason?.trim();
+  if (task === undefined || reason === undefined || reason === '') {
+    process.stderr.write(REVOKE_USAGE);
+    return 2;
+  }
+  return withStore((store) => {
+    const row = getTask(store, task);
+    if (!row) {
+      process.stderr.write(`revoke: no task ${task}\n`);
+      return 1;
+    }
+    const already = revocationOf(store, row.run, task);
+    if (already !== null) {
+      process.stdout.write(`${task} was already revoked: ${already}\n`);
+      return 0;
+    }
+    revokeRoleCapability(store, {
+      run: row.run,
+      task,
+      reason,
+      at: new Date().toISOString(),
+    });
+    process.stdout.write(
+      `revoked ${task} (${row.role}): ${reason}\n` +
+        'Its next write is refused and says so. Every other role in the run keeps writing, ' +
+        'and the deliverable it already submitted stays on the record.\n',
+    );
+    return 0;
+  });
+}
+
 const COMPOSE_USAGE =
   'usage: construct compose --run=<id> --host=<opencode|claude|codex|cursor> ' +
   '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>] [--no-close] ' +
@@ -3805,7 +3859,7 @@ export function staff(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -3882,6 +3936,8 @@ async function run(argv: string[]): Promise<number> {
       return serve();
     case 'role-serve':
       return roleServe();
+    case 'revoke':
+      return revoke(argv.slice(1));
     case 'doctor':
       return doctor();
     case 'cleanup':

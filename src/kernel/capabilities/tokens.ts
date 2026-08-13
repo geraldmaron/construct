@@ -76,6 +76,10 @@ export const DENIALS = [
   'wrong-run',
   'wrong-task',
   'ungranted',
+  // Not reachable from this module, which is pure and holds no store. A
+  // revocation is a fact somebody recorded, and the denial name lives with its
+  // siblings so every refusal a role can meet is one list.
+  'revoked',
 ] as const;
 
 export type Denial = (typeof DENIALS)[number];

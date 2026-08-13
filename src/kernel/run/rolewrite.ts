@@ -36,6 +36,7 @@ import {
   appendWorkLog,
   countWorkLogEntries,
   countWorkLogEntriesByPrefix,
+  readWorkLog,
 } from '../store/worklog.ts';
 
 /** Role-authored notes for a task, whatever action names the role chose. */
@@ -51,6 +52,61 @@ export const ROLE_ACTION_PREFIX = 'role:';
 
 /** What a refused write is filed under. */
 export const CAPABILITY_DENIED_ACTION = 'capability-denied';
+
+/**
+ * An operator taking a role's write surface away before its lease runs out.
+ *
+ * The token is signed, scoped to one run and task, grant-constant, and expires
+ * with the lease. Its revocation story was thinner than its scoping: the only
+ * lever that killed a live token early was rotating the one install-wide
+ * signing secret, which kills every outstanding token for every run and role at
+ * once. An operator watching one role loop past its caps had to choose between
+ * waiting out fifteen minutes and taking down everything in flight.
+ *
+ * "Wait for expiry" was considered as an accepted position and rejected. The
+ * lease is long enough to matter, the blast radius is a role writing to a
+ * permanent record, and the shape of the answer already exists in this
+ * codebase: a reasoned, logged, per-task decision, the way a waiver is one.
+ *
+ * Recorded rather than stored as state, and read on every write. The work log
+ * is append-only at the storage layer, so a revocation cannot be quietly undone
+ * — which is the property that makes it worth having, since a revocation that
+ * can be reversed by whatever went wrong is not a control. It also means the
+ * record says who stopped what and why, and the role's own denial entry sits
+ * next to it.
+ */
+export const CAPABILITY_REVOKED_ACTION = 'capability-revoked';
+
+/**
+ * Take one task's write surface away, with a reason.
+ *
+ * Per task, never per run and never install-wide: the failure this answers is
+ * one role misbehaving, and a lever that stops every role would leave an
+ * operator with the same choice they already had.
+ */
+export function revokeRoleCapability(
+  store: Store,
+  input: { readonly run: string; readonly task: string; readonly reason: string; readonly at: string },
+): number {
+  return appendWorkLog(store, {
+    run: input.run,
+    task: input.task,
+    role: 'construct',
+    action: CAPABILITY_REVOKED_ACTION,
+    detail: { reason: input.reason },
+    at: input.at,
+  });
+}
+
+/** Whether a task's write surface has been taken away, and the reason given. */
+export function revocationOf(store: Store, run: string, task: string): string | null {
+  for (const entry of readWorkLog(store, run)) {
+    if (entry.task !== task || entry.action !== CAPABILITY_REVOKED_ACTION) continue;
+    const detail = entry.detail as { reason?: unknown } | null;
+    return typeof detail?.reason === 'string' ? detail.reason : 'no reason recorded';
+  }
+  return null;
+}
 
 /** Where a denial is filed when the caller did not even name a run. */
 const UNATTRIBUTED = 'unattributed';
@@ -226,6 +282,15 @@ export function appendAsRole(
 
   const { scope } = authorization;
 
+  // Checked after the token verifies, so a revoked task's write is refused for
+  // being revoked rather than for anything else, and the reason the operator
+  // gave is what the role is told.
+  const revoked = revocationOf(store, scope.run, scope.task);
+  if (revoked !== null) {
+    return refuse(store, credential, scope, 'append-work-log', 'revoked', revoked);
+  }
+
+
   // The same wall the draft cap is, for the same observed loop: with drafts
   // capped, a role that wanted to ask a question spun "awaiting_clarification"
   // through this surface hundreds of times until the host timeout killed the
@@ -322,6 +387,15 @@ export function submitDraft(
   }
 
   const { scope } = authorization;
+
+  // Checked after the token verifies, so a revoked task's write is refused for
+  // being revoked rather than for anything else, and the reason the operator
+  // gave is what the role is told.
+  const revoked = revocationOf(store, scope.run, scope.task);
+  if (revoked !== null) {
+    return refuse(store, credential, scope, 'submit-draft', 'revoked', revoked);
+  }
+
 
   const drafts = countWorkLogEntries(store, scope.run, scope.task, DRAFT_ACTION);
   if (drafts >= DRAFT_CAP) {
@@ -427,6 +501,15 @@ export function recordExternalReadAsRole(
   }
 
   const { scope } = authorization;
+
+  // Checked after the token verifies, so a revoked task's write is refused for
+  // being revoked rather than for anything else, and the reason the operator
+  // gave is what the role is told.
+  const revoked = revocationOf(store, scope.run, scope.task);
+  if (revoked !== null) {
+    return refuse(store, credential, scope, 'record-external-read', 'revoked', revoked);
+  }
+
 
   const recorded = countWorkLogEntries(store, scope.run, scope.task, EXTERNAL_READ_ACTION);
   if (recorded >= EXTERNAL_READ_CAP) {
