@@ -441,7 +441,7 @@ test('a subject reads through the projection with its history and citations', as
  * one with no way back.
  */
 test('review, compose and erasure are absent from this surface by decision', () => {
-  const names = PROJECTION_TOOLS.map((tool) => tool.name);
+  const names: string[] = PROJECTION_TOOLS.map((tool) => tool.name);
   for (const absent of ['review', 'compose', 'record_erase', 'erase', 'work']) {
     assert.equal(names.includes(absent), false, `${absent} must not be projected`);
   }
