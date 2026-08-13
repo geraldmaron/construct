@@ -4,7 +4,7 @@
  * `HostAdapter` so one implementation serves every conforming host, throwing
  * on every failure path so the caller states the stop.
  *
- * Three model calls, three disciplines:
+ * Four model calls, four disciplines:
  *
  *   - The producer reads the note with its lines numbered, because every
  *     conclusion it proposes must cite `note:<id>#L<n>` and a model cannot
@@ -26,6 +26,10 @@
  *     shown, and is asked only what contradicts. It gets no note, so it is
  *     asked for no deltas and no proposals: both justify themselves by citing
  *     a note line, and a pass with no note cannot cite one.
+ *   - The applier carries out one approved outward change with the host's own
+ *     tools. Its honest no is made as easy as its yes, because a model that
+ *     believes a refusal will disappoint reports a success it did not have,
+ *     and nobody goes and makes a change the record says was already made.
  */
 
 import type {
@@ -35,6 +39,7 @@ import type {
   ProducerRecord,
   ProducerSource,
 } from '../kernel/context/produce.ts';
+import type { ProposalApplier } from '../kernel/run/apply.ts';
 import type { DriftReviewer } from '../kernel/context/review.ts';
 import { REVIEWER_ROLE } from '../kernel/context/review.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
@@ -257,5 +262,80 @@ export function createHostChallenger(host: HostAdapter): DeltaChallenger {
       throw new Error('the challenger replied without a reason');
     }
     return { upheld: !parsed.refuted, detail: reason };
+  };
+}
+
+/** The role an apply pass runs as. Not a catalog domain — it runs around them. */
+export const APPLIER_ROLE = 'change-applier';
+
+/**
+ * The prompt that carries out one approved change.
+ *
+ * The change is quoted rather than paraphrased: a model asked to restate an
+ * instruction before following it follows the restatement, and the human
+ * approved these words. The honest no is made as easy as the yes, because a
+ * model that believes a refusal will disappoint will report a success it did
+ * not have, and a falsely recorded apply is worse than no apply at all —
+ * nobody goes and makes the change that the record says was already made.
+ */
+export function applierPrompt(proposal: {
+  readonly source: string;
+  readonly locator: string;
+  readonly change: string;
+  readonly justification: string;
+}): string {
+  return [
+    'A person has approved one change to a system outside this tool, and you are',
+    'being asked to carry it out with your own tools. Only this change.',
+    '',
+    `The system: ${proposal.source} (${proposal.locator})`,
+    'The change, in the words it was approved in:',
+    proposal.change,
+    `Why it was approved: ${proposal.justification}`,
+    '',
+    'Make exactly that change and nothing adjacent to it. Do not fix anything',
+    'else you notice, do not tidy, do not update a second field because it looked',
+    'wrong. What was approved is what was approved.',
+    '',
+    'If you have no way to reach that system, say so plainly and set applied to',
+    'false. That is the right answer and it costs nothing: the change stays with',
+    'the person who approved it, who can make it themselves. Reporting a change',
+    'you did not make is far worse than reporting that you could not — nobody',
+    'goes and makes a change the record already says was made.',
+    '',
+    'Reply with JSON only, no prose outside it:',
+    '{"applied":<true|false>,"detail":"<what you changed and where, or why you could not>"}',
+  ].join('\n');
+}
+
+/**
+ * Build a `ProposalApplier` backed by a host adapter; caller owns init().
+ *
+ * A reply missing its boolean throws rather than defaulting either way: a
+ * default of true records an apply nobody witnessed, and a default of false
+ * would silently discard a change that may have landed.
+ */
+export function createHostApplier(host: HostAdapter, locatorFor: (source: string) => string): ProposalApplier {
+  return async (proposal) => {
+    const result = await host.invoke({
+      role: APPLIER_ROLE,
+      task: applierPrompt({
+        source: proposal.source,
+        locator: locatorFor(proposal.source),
+        change: proposal.change,
+        justification: proposal.justification,
+      }),
+    });
+    const parsed = extractJson(deliverableText(host, result)) as {
+      applied?: unknown;
+      detail?: unknown;
+    } | null;
+    if (typeof parsed?.applied !== 'boolean') {
+      throw new Error('the applier replied without a boolean "applied"');
+    }
+    return {
+      applied: parsed.applied,
+      detail: typeof parsed.detail === 'string' ? parsed.detail : '',
+    };
   };
 }

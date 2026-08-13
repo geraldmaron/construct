@@ -17,7 +17,9 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
+  applierPrompt,
   challengerPrompt,
+  createHostApplier,
   createHostChallenger,
   createHostProducer,
   extractJson,
@@ -152,4 +154,39 @@ test('a host failure surfaces as a throw for the caller to state', async () => {
   };
   await assert.rejects(createHostProducer(failing)({ noteBody: 'x', noteId: 'n', lessons: [], sources: [], records: [] }), /status error/);
   await assert.rejects(createHostChallenger(failing)(DELTA, 'line'), /status error/);
+});
+
+test('the applier quotes the approved words and makes the honest no as easy as the yes', () => {
+  const prompt = applierPrompt({
+    source: 'src-1',
+    locator: 'PROJ',
+    change: 'move PROJ-14 target date to Q4',
+    justification: 'note:n-1#L3',
+  });
+  assert.match(prompt, /move PROJ-14 target date to Q4/, 'the approved words, not a paraphrase');
+  assert.match(prompt, /src-1 \(PROJ\)/);
+  assert.match(prompt, /no way to reach that system, say so plainly/);
+  assert.match(prompt, /nothing adjacent to it/);
+});
+
+test('an applier reply without a boolean throws rather than defaulting either way', async () => {
+  const proposal = {
+    id: 'p-1',
+    workspace: 'acme',
+    run: null,
+    source: 'src-1',
+    change: 'move it',
+    justification: 'note:n-1#L1',
+    risk: 'low' as const,
+    proposedAt: '2026-08-13T00:00:00.000Z',
+  };
+  await assert.rejects(
+    createHostApplier(replyingHost('{"detail":"I think I did it"}'), () => 'PROJ')(proposal),
+    /boolean "applied"/,
+  );
+  const refused = await createHostApplier(
+    replyingHost('{"applied":false,"detail":"no connector"}'),
+    () => 'PROJ',
+  )(proposal);
+  assert.deepEqual(refused, { applied: false, detail: 'no connector' });
 });

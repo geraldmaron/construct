@@ -50,11 +50,17 @@ import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
 import { toReviewedDrift } from '../kernel/context/review.ts';
+import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { ScreenResult } from '../kernel/context/observations.ts';
 import { operationalLessonsFor } from '../kernel/lessons/admission.ts';
-import { createHostChallenger, createHostProducer, createHostReviewer } from '../hosts/contextloop.ts';
+import {
+  createHostApplier,
+  createHostChallenger,
+  createHostProducer,
+  createHostReviewer,
+} from '../hosts/contextloop.ts';
 import { openDecisions, resolveDecision } from '../kernel/store/decisions.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
 import { readFeedback } from '../kernel/store/feedback.ts';
@@ -2315,11 +2321,86 @@ export function inbox(): number {
   });
 }
 
-export function decide(argv: string[]): number {
-  const [id, ...rest] = argv;
+const DECIDE_USAGE =
+  'usage: construct decide <id> "<your call>"\n' +
+  '       construct decide --apply=<proposal-id> --host=<opencode|claude|codex|cursor> ' +
+  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n';
+
+/**
+ * Carry out one approved outward change through a host.
+ *
+ * An approved proposal used to terminate as a row: the user had said yes, the
+ * queue said approved, and the ticket never moved. Construct still builds no
+ * connectors — it hands the approved words to the host the run dispatches
+ * through and records only what that host reported succeeding. A host with no
+ * way to reach the system says so, and the proposal stays approved and
+ * unapplied, which is the honest state and the one that leaves the change
+ * with the person who approved it.
+ */
+async function applyApproved(
+  proposal: string,
+  host: HostFlags,
+  hostOverride?: HostAdapter,
+): Promise<number> {
+  if (host.host === undefined && hostOverride === undefined) {
+    process.stderr.write(
+      'decide: carrying out a change needs a host — Construct builds no connectors and ' +
+        "reaches nothing itself.\n  construct decide --apply=" + proposal +
+        ' --host=<opencode|claude|codex|cursor>\n',
+    );
+    return 2;
+  }
+  return withStoreAsync(async (store) => {
+    const adapter =
+      hostOverride ??
+      adapterForHost(host.host, {
+        binary: host.binary,
+        model: host.model,
+        dir: host.dir,
+        timeoutMs: host.timeoutMs,
+      });
+    try {
+      await adapter.init();
+    } catch (error) {
+      process.stderr.write(`decide: host "${adapter.name}" is not available — ${(error as Error).message}\n`);
+      return 1;
+    }
+    const result = await applyProposal(
+      store,
+      createHostApplier(adapter, (id) => getSource(store, id)?.locator ?? 'an undeclared source'),
+      proposal,
+      now(),
+    );
+    if (result.outcome === 'applied') {
+      process.stdout.write(`applied ${proposal}: ${result.detail}\n`);
+      return 0;
+    }
+    if (result.outcome === 'unappliable') {
+      process.stderr.write(`decide: ${proposal} was not applied — ${result.reason}\n`);
+      return 1;
+    }
+    process.stderr.write(`decide: ${proposal} cannot be applied — ${result.reason}\n`);
+    return 1;
+  });
+}
+
+export async function decide(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const { flags, words } = splitFlags(argv);
+  if (flags.apply !== undefined) {
+    let host: HostFlags;
+    try {
+      host = parseHostFlags(flags);
+    } catch (error) {
+      process.stderr.write(`decide: ${(error as Error).message}\n${DECIDE_USAGE}`);
+      return 2;
+    }
+    return applyApproved(flags.apply, host, hostOverride);
+  }
+
+  const [id, ...rest] = words;
   const resolution = rest.join(' ').trim();
   if (!id || !resolution) {
-    process.stderr.write('usage: construct decide <id> "<your call>"\n');
+    process.stderr.write(DECIDE_USAGE);
     return 2;
   }
   return withStore((store) => {
