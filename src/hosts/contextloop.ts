@@ -10,15 +10,23 @@
  *     conclusion it proposes must cite `note:<id>#L<n>` and a model cannot
  *     cite line numbers it was never shown. It also reads the workspace's
  *     operational lessons (to propose deltas that supersede rather than
- *     repeat) and its declared sources (the only legal targets for proposals
- *     and observation citations).
+ *     repeat) and its declared sources with the documents each was surveyed
+ *     to hold — the only legal targets for proposals and observation
+ *     citations. Naming the documents is what makes a drift observation an
+ *     observation: asked about "documents you know of", a model answers from
+ *     recollection, and the screen downstream cannot tell the difference.
  *   - The challenger is told to refute one delta, not to review it. A
  *     reviewer asked "is this good?" agrees; a challenger asked "why is this
  *     wrong?" has to find something or concede, and the concession is the
  *     adversarial-pass detail the admission gate records.
  */
 
-import type { ContextProducer, DeltaChallenger, ProducedDelta } from '../kernel/context/produce.ts';
+import type {
+  ContextProducer,
+  DeltaChallenger,
+  ProducedDelta,
+  ProducerSource,
+} from '../kernel/context/produce.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 
 /** The roles these passes run as. Not catalog domains — they run around them. */
@@ -43,6 +51,21 @@ function numbered(body: string): string {
     .join('\n');
 }
 
+/**
+ * One source, with what the survey found under it. A source nobody could
+ * survey says so: the model is told the documents are unknown rather than
+ * shown an empty list, because an empty list reads as "this holds nothing"
+ * and the screen downstream exempts exactly this case from its document check.
+ */
+function sourceListing(source: ProducerSource): string {
+  const head = `- ${source.id} (${source.kind}: ${source.locator})`;
+  if (source.unreachable !== undefined) {
+    return `${head}\n    not surveyed (${source.unreachable}) — cite a document here only if you read it yourself`;
+  }
+  if (source.documents.length === 0) return `${head}\n    surveyed: no documents`;
+  return `${head}\n${source.documents.map((d) => `    ${d}`).join('\n')}`;
+}
+
 export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
   return [
     'A person dumped their after-call notes. Below they are shown with line',
@@ -58,9 +81,8 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
       : 'This workspace remembers nothing yet.',
     '',
     input.sources.length > 0
-      ? `Declared sources (the only ids you may cite or propose changes to):\n${input.sources
-          .map((s) => `- ${s.id} (${s.kind}: ${s.locator})`)
-          .join('\n')}`
+      ? `Declared sources (the only ids you may cite or propose changes to), and the ` +
+        `documents each was found to hold:\n${input.sources.map(sourceListing).join('\n')}`
       : 'No sources are declared: propose no outward changes and no drift observations.',
     '',
     'Emit three lists, each item citing the exact note line it came from as',
@@ -72,9 +94,11 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     '  {source: a declared source id, change: the change in auditable words,',
     '  justification: the note citation, risk: low|high — low only for routine',
     '  field updates a human would wave through}.',
-    '- observations: places where two documents you know of contradict each',
-    '  other, each {claim, citations: [{source: declared id, document}, ...]}',
-    '  citing BOTH sides. An observation you cannot cite will be discarded.',
+    '- observations: places where two of the documents listed above contradict',
+    '  each other, each {claim, citations: [{source: declared id, document}, ...]}',
+    '  citing BOTH sides by the document paths as listed. An observation citing a',
+    '  document that is not listed under its source will be discarded — a',
+    '  disagreement you remember rather than read is not an observation.',
     '',
     SETTLED_VS_PARKED_RULE,
     '',

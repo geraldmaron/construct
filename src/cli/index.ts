@@ -29,7 +29,7 @@ import {
 import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
 import { surveySource } from '../hosts/sources.ts';
-import type { EngagementMode, SourceKind } from '../kernel/store/sources.ts';
+import type { EngagementMode, Source, SourceKind } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
@@ -37,7 +37,7 @@ import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
 import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
-import type { DeltaChallenge, ProducedLoop } from '../kernel/context/produce.ts';
+import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import { operationalLessonsFor } from '../kernel/lessons/admission.ts';
 import { createHostChallenger, createHostProducer } from '../hosts/contextloop.ts';
@@ -476,6 +476,30 @@ function surveyDeclared(sources: readonly Source[]): SourceSurvey[] {
   if (sources.length === 0) return [];
   const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
   return sources.map((source) => surveySource(source, { extract }));
+}
+
+/**
+ * The two views a drift pass needs of the same survey: what the producer is
+ * shown, and what the screen checks its citations against. Built together so
+ * the model can never be shown one set of documents and graded on another.
+ */
+function driftGround(
+  sources: readonly Source[],
+  surveys: readonly SourceSurvey[],
+): { readonly producerSources: ProducerSource[]; readonly surveyed: Map<string, Set<string>> } {
+  const bySource = new Map(surveys.map((s) => [s.source, s]));
+  const surveyed = new Map<string, Set<string>>();
+  const producerSources = sources.map((source) => {
+    const survey = bySource.get(source.id);
+    const base = { id: source.id, kind: source.kind, locator: source.locator };
+    if (!survey || survey.outcome !== 'listed') {
+      return { ...base, documents: [], unreachable: survey?.reason ?? 'no survey was taken' };
+    }
+    const documents = survey.documents.map((d) => d.path);
+    surveyed.set(source.id, new Set(documents));
+    return { ...base, documents };
+  });
+  return { producerSources, surveyed };
 }
 
 export interface GroundingPass {
@@ -1208,14 +1232,19 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       return 1;
     }
 
+    // The declared ground, actually walked, before the model is asked what
+    // disagrees in it. A producer shown locators alone answers about documents
+    // it remembers, and the screen downstream has no listing to catch that
+    // with — so the survey is what turns the drift pass into an observation.
     const sources = sourcesFor(store, args.workspace);
+    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(sources));
     let produced: ProducedLoop;
     try {
       const reply = await createHostProducer(host)({
         noteBody: body,
         noteId,
         lessons: operationalLessonsFor(store, args.workspace).map((l) => l.body),
-        sources: sources.map((s) => ({ id: s.id, kind: s.kind, locator: s.locator })),
+        sources: producerSources,
       });
       produced = toProducedLoop(reply, noteId);
     } catch (error) {
@@ -1322,7 +1351,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       for (const id of result.filed) process.stdout.write(`  ${id}\n`);
     }
 
-    const screened = screenObservations(produced.observations, sources);
+    const screened = screenObservations(produced.observations, sources, surveyed);
     if (screened.flags.length > 0) {
       process.stdout.write('\ncross-source drift:\n');
       for (const flag of screened.flags) {

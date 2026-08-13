@@ -58,13 +58,29 @@ test('the producer prompt numbers every note line and names the citation form', 
     noteBody: 'first thing\nsecond thing',
     noteId: 'n-9',
     lessons: ['clients decide by quarter'],
-    sources: [{ id: 'src-1', kind: 'jira', locator: 'PROJ' }],
+    sources: [{ id: 'src-1', kind: 'jira', locator: 'PROJ', documents: [], unreachable: 'no connector' }],
   });
   assert.match(prompt, /L1: first thing/);
   assert.match(prompt, /L2: second thing/);
   assert.match(prompt, /"note:n-9#L<n>"/);
   assert.match(prompt, /src-1 \(jira: PROJ\)/);
   assert.match(prompt, /clients decide by quarter/);
+});
+
+test('a surveyed source shows its documents, and an unsurveyed one says so instead of reading empty', () => {
+  const prompt = producerPrompt({
+    noteBody: 'x',
+    noteId: 'n-1',
+    lessons: [],
+    sources: [
+      { id: 'docs', kind: 'directory', locator: '/ground', documents: ['/ground/prd.md', '/ground/strategy.md'] },
+      { id: 'tracker', kind: 'jira', locator: 'PROJ', documents: [], unreachable: 'no jira connector' },
+    ],
+  });
+  assert.match(prompt, /\/ground\/prd\.md/);
+  assert.match(prompt, /\/ground\/strategy\.md/);
+  assert.match(prompt, /not surveyed \(no jira connector\)/);
+  assert.match(prompt, /citing a\s+document that is not listed under its source will be discarded/);
 });
 
 test('the producer prompt carries the settled-vs-parked rule: a parked item is not a delta', () => {

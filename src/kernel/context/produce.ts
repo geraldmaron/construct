@@ -53,11 +53,26 @@ export interface ProducedLoop {
 }
 
 /** A model-backed producer. Throws on failure; the caller states the stop. */
+/**
+ * One declared source as the producer sees it. `documents` is what the survey
+ * found, which is what a drift observation may cite; an empty listing means
+ * the source could not be surveyed, not that it is empty, and the prompt says
+ * which so a model does not read silence as an absence of documents.
+ */
+export interface ProducerSource {
+  readonly id: string;
+  readonly kind: string;
+  readonly locator: string;
+  readonly documents: readonly string[];
+  /** Why the survey could not list this source, when it could not. */
+  readonly unreachable?: string;
+}
+
 export type ContextProducer = (input: {
   readonly noteBody: string;
   readonly noteId: string;
   readonly lessons: readonly string[];
-  readonly sources: ReadonlyArray<{ readonly id: string; readonly kind: string; readonly locator: string }>;
+  readonly sources: readonly ProducerSource[];
 }) => Promise<unknown>;
 
 /** What an adversarial challenge of one delta concluded. */
