@@ -168,6 +168,55 @@ export function sourcesFor(
   return rows.map(toSource);
 }
 
+/**
+ * How a source should be walked. A repository surveyed prose-first hands a
+ * role forty design documents and no code, which is right for understanding
+ * the surfaces and wrong for understanding the implementation; `code` inverts
+ * the ranking, `all` declines to rank at all. Default `prose`, which is what
+ * every survey did before the setting existed.
+ */
+export const SURVEY_EMPHASES = ['prose', 'code', 'all'] as const;
+
+export type SurveyEmphasis = (typeof SURVEY_EMPHASES)[number];
+
+export interface SourceShape {
+  readonly emphasis: SurveyEmphasis;
+  /** How many documents the survey lists; the rest are recorded as unread. */
+  readonly cap: number;
+}
+
+/** Record how a source is surveyed. A setting, not evidence, so an upsert. */
+export function setSourceShape(
+  store: Store,
+  source: string,
+  shape: SourceShape,
+  at: string,
+): void {
+  if (!(SURVEY_EMPHASES as readonly string[]).includes(shape.emphasis)) {
+    throw new Error(
+      `setSourceShape: unknown emphasis "${shape.emphasis}" (emphases: ${SURVEY_EMPHASES.join(', ')})`,
+    );
+  }
+  if (!Number.isInteger(shape.cap) || shape.cap < 1) {
+    throw new Error(`setSourceShape: cap must be a positive whole number, got ${String(shape.cap)}`);
+  }
+  store.db
+    .prepare(
+      `INSERT INTO source_shapes (source, emphasis, cap, recorded_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT (source) DO UPDATE SET emphasis = excluded.emphasis, cap = excluded.cap,
+         recorded_at = excluded.recorded_at`,
+    )
+    .run(source, shape.emphasis, shape.cap, at);
+}
+
+/** How this source is surveyed, or null when nobody has said. */
+export function sourceShape(store: Store, source: string): SourceShape | null {
+  const row = store.db
+    .prepare('SELECT emphasis, cap FROM source_shapes WHERE source = ?')
+    .get(source) as { emphasis: string; cap: number } | undefined;
+  return row ? { emphasis: row.emphasis as SurveyEmphasis, cap: Number(row.cap) } : null;
+}
+
 /** Record how this workspace engages. A setting, so an upsert. */
 export function setEngagementMode(
   store: Store,

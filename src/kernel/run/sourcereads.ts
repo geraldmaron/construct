@@ -67,6 +67,13 @@ export type SourceSurvey =
       readonly outcome: 'listed';
       readonly documents: readonly SurveyedDocument[];
       readonly total: number;
+      /**
+       * How the walk ranked what it found, when the cap made the ranking
+       * matter. Recorded on the partial row so a role reading "the rest went
+       * unread" can tell which rest: prose-first drops the code, code-first
+       * drops the prose, and the two are different gaps.
+       */
+      readonly emphasis?: string;
     }
   | {
       readonly source: string;
@@ -147,8 +154,9 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
       descriptor: survey.locator,
       coverage: 'partial',
       detail:
-        `listed ${String(survey.documents.length)} of ${String(survey.total)} documents; ` +
-        'the rest went unread',
+        `listed ${String(survey.documents.length)} of ${String(survey.total)} documents` +
+        (survey.emphasis ? `, ranked ${survey.emphasis}-first` : '') +
+        '; the rest went unread',
       recordedAt: at,
     });
   }

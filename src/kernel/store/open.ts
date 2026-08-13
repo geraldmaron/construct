@@ -54,6 +54,13 @@
  * cite — memory deltas and propagation proposals justify themselves by note
  * line — and a citation into a note that could be edited afterward would be
  * provenance pointing at whatever the note says now, not what the user said.
+ * Schema version 11 adds `source_shapes`, additive and an upsert: how a source
+ * should be surveyed — prose-first, code-first, or unranked, and how many
+ * documents to list — is a setting rather than evidence, and a source with no
+ * row is surveyed the way every source was before the setting existed. It is
+ * its own table rather than columns on `sources` because this schema is
+ * created, never altered: a column added to an existing table would silently
+ * not exist in a store that already has one.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -78,7 +85,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 10;
+export const SCHEMA_VERSION = 11;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -369,6 +376,13 @@ BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
 CREATE TRIGGER IF NOT EXISTS sources_no_delete
 BEFORE DELETE ON sources
 BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+
+CREATE TABLE IF NOT EXISTS source_shapes (
+  source     TEXT PRIMARY KEY REFERENCES sources (id),
+  emphasis   TEXT NOT NULL CHECK (emphasis IN ('prose', 'code', 'all')),
+  cap        INTEGER NOT NULL CHECK (cap > 0),
+  recorded_at TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS workspace_mode (
   workspace   TEXT PRIMARY KEY,

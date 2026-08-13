@@ -26,7 +26,7 @@ import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, join, extname } from 'node:path';
 import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS, EXTRACTABLE_DOCUMENT_EXTS } from '../kernel/extract/formats.ts';
-import type { Source } from '../kernel/store/sources.ts';
+import type { Source, SurveyEmphasis } from '../kernel/store/sources.ts';
 import type { SourceSurvey, SurveyedDocument, DocumentExtraction } from '../kernel/run/sourcereads.ts';
 import { readSource, probeDocling, type DoclingProbe } from './extract.ts';
 
@@ -51,11 +51,26 @@ const SKIPPED_DIRS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Prose ranks ahead of code when the cap bites: a role grounding a decision
- * wants the design document before the four-hundredth source file, and an
- * alphabetical walk of a repository would hand it the opposite.
+ * Prose ranks ahead of code when the cap bites and the source asks for prose:
+ * a role grounding a decision wants the design document before the
+ * four-hundredth source file, and an alphabetical walk would hand it the
+ * opposite. A source declared code-first inverts exactly this ranking, which
+ * is the whole of the difference between reading a repository to understand
+ * its surfaces and reading it to understand its implementation.
  */
 const PROSE_EXTS: ReadonlySet<string> = new Set(['.md', '.txt', '.rst', '.adoc', ...TRANSCRIPT_EXTS]);
+
+/**
+ * Text a machine executes rather than text a person wrote to be read. Derived
+ * from the readable set so an extension added there cannot be silently absent
+ * here: anything readable that is not prose and not a data or log format is
+ * treated as implementation.
+ */
+const CODE_EXTS: ReadonlySet<string> = new Set(
+  [...UTF8_TEXT_EXTS].filter(
+    (ext) => !PROSE_EXTS.has(ext) && !['.csv', '.tsv', '.log', '.env', '.env.example'].includes(ext),
+  ),
+);
 
 const READABLE_EXTS: ReadonlySet<string> = new Set([...UTF8_TEXT_EXTS, ...TRANSCRIPT_EXTS]);
 
@@ -113,12 +128,21 @@ function walk(dir: string, found: SurveyedDocument[]): void {
  * Throws what the filesystem throws: a directory that cannot be walked is the
  * caller's to report, and the survey's own answer for it is unreachable.
  */
-export function listDocuments(dir: string): SurveyedDocument[] {
+export function listDocuments(dir: string, emphasis: SurveyEmphasis = 'prose'): SurveyedDocument[] {
   const found: SurveyedDocument[] = [];
   walk(dir, found);
   return found.sort((a, b) => {
-    const rank = (d: SurveyedDocument): number =>
-      PROSE_EXTS.has(extname(d.path).toLowerCase()) ? 0 : d.binary ? 2 : 1;
+    const rank = (d: SurveyedDocument): number => {
+      // Binary is last under every emphasis: a document that may not open at
+      // all does not outrank one that certainly will, whatever is being read
+      // for. `all` ranks nothing else, which is how a caller declines to have
+      // the cap decide on a theory of what matters.
+      if (d.binary) return 2;
+      if (emphasis === 'all') return 0;
+      const ext = extname(d.path).toLowerCase();
+      const preferred = emphasis === 'code' ? CODE_EXTS : PROSE_EXTS;
+      return preferred.has(ext) ? 0 : 1;
+    };
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return a.path.localeCompare(b.path);
   });
@@ -178,9 +202,14 @@ function extractDocument(document: string, opts: ExtractOptions, docling: Doclin
  */
 export function surveySource(
   source: Source,
-  opts?: { readonly cap?: number; readonly extract?: ExtractOptions },
+  opts?: {
+    readonly cap?: number;
+    readonly emphasis?: SurveyEmphasis;
+    readonly extract?: ExtractOptions;
+  },
 ): SourceSurvey {
   const cap = opts?.cap ?? DOCUMENT_CAP;
+  const emphasis = opts?.emphasis ?? 'prose';
   const base = { source: source.id, locator: source.locator };
 
   if (source.kind !== 'directory' && source.kind !== 'git') {
@@ -212,7 +241,7 @@ export function surveySource(
   // documents a role can definitely open outrank the ones it may not.
   let ranked: SurveyedDocument[];
   try {
-    ranked = listDocuments(source.locator);
+    ranked = listDocuments(source.locator, emphasis);
   } catch (error) {
     // A walk that died partway proves nothing about what it saw first: the
     // honest answer for the whole source is that it could not be read.
@@ -236,5 +265,8 @@ export function surveySource(
     outcome: 'listed',
     documents,
     total: ranked.length,
+    // Only when it mattered: a listing that fit under the cap dropped nothing,
+    // so naming the ranking would describe a choice that had no effect.
+    ...(ranked.length > listed.length && emphasis !== 'all' ? { emphasis } : {}),
   };
 }

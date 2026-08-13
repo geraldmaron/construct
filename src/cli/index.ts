@@ -19,6 +19,9 @@ import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts'
 import {
   addSource,
   ENGAGEMENT_MODES,
+  setSourceShape,
+  sourceShape,
+  SURVEY_EMPHASES,
   engagementMode,
   getSource,
   retireSource,
@@ -28,8 +31,8 @@ import {
 } from '../kernel/store/sources.ts';
 import { recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
-import { listDocuments, surveySource } from '../hosts/sources.ts';
-import type { EngagementMode, Source, SourceKind } from '../kernel/store/sources.ts';
+import { DOCUMENT_CAP, listDocuments, surveySource } from '../hosts/sources.ts';
+import type { EngagementMode, Source, SourceKind, SurveyEmphasis } from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
@@ -483,10 +486,18 @@ function extractionCacheRoot(): string {
  * itself — a run's dispatch, a drift pass over a workspace — sees the same
  * documents, extracted the same way, with one Docling probe between them.
  */
-function surveyDeclared(sources: readonly Source[]): SourceSurvey[] {
+function surveyDeclared(store: Store, sources: readonly Source[]): SourceSurvey[] {
   if (sources.length === 0) return [];
   const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
-  return sources.map((source) => surveySource(source, { extract }));
+  return sources.map((source) => {
+    // A source nobody shaped is surveyed the way every source was before the
+    // setting existed, so declaring nothing keeps today's behavior exactly.
+    const shape = sourceShape(store, source.id);
+    return surveySource(source, {
+      extract,
+      ...(shape ? { emphasis: shape.emphasis, cap: shape.cap } : {}),
+    });
+  });
 }
 
 /**
@@ -540,7 +551,7 @@ function groundRun(store: Store, run: string, at: string): GroundingPass | null 
   const declared = plan.sourcesDeclared
     .map((id) => getSource(store, id))
     .filter((s): s is Source => s !== null && s !== undefined);
-  const surveys = surveyDeclared(declared);
+  const surveys = surveyDeclared(store, declared);
 
   const { recorded, skipped } = recordRunSourceReads(store, run, surveys, at);
   const listed = surveys.filter((s) => s.outcome === 'listed');
@@ -1304,7 +1315,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     // with — so the survey is what turns the drift pass into an observation.
     // Surveyed once for the batch: it is the same ground for every note.
     const sources = sourcesFor(store, args.workspace);
-    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(sources));
+    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(store, sources));
 
     let failed = 0;
     for (const { noteId, body } of recorded) {
@@ -1553,7 +1564,7 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
       return 2;
     }
 
-    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(sources));
+    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(store, sources));
     const documents = producerSources.reduce((sum, s) => sum + s.documents.length, 0);
     const unsurveyed = producerSources.filter((s) => s.unreachable !== undefined);
     process.stdout.write(
@@ -2568,7 +2579,8 @@ export function waive(argv: string[]): number {
 }
 
 const SOURCE_USAGE =
-  'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> [--workspace=<name>]\n' +
+  'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> ' +
+  '[--workspace=<name>] [--emphasis=<prose|code|all>] [--cap=<documents>]\n' +
   '       construct source list [--workspace=<name>] [--all]\n' +
   '       construct source retire --id=<source-id>\n';
 
@@ -2687,6 +2699,21 @@ export function source(argv: string[]): number {
       process.stderr.write(SOURCE_USAGE);
       return 2;
     }
+    // How this source is walked, declared with it. Both flags are optional and
+    // absent means today's behavior, so nothing about an existing workspace
+    // changes by the setting coming into existence.
+    const emphasis = flags.emphasis;
+    if (emphasis !== undefined && !(SURVEY_EMPHASES as readonly string[]).includes(emphasis)) {
+      process.stderr.write(
+        `source: unknown emphasis "${emphasis}" (emphases: ${SURVEY_EMPHASES.join(', ')})\n${SOURCE_USAGE}`,
+      );
+      return 2;
+    }
+    const cap = flags.cap === undefined ? undefined : Number(flags.cap);
+    if (cap !== undefined && (!Number.isInteger(cap) || cap < 1)) {
+      process.stderr.write(`source: --cap must be a positive whole number, got "${flags.cap ?? ''}"\n`);
+      return 2;
+    }
     return withStore((store) => {
       const at = now();
       const id = `src-${at.replace(/[-:.TZ]/g, '')}`;
@@ -2702,6 +2729,15 @@ export function source(argv: string[]): number {
         }
         throw error;
       }
+      if (emphasis !== undefined || cap !== undefined) {
+        const shape = { emphasis: (emphasis ?? 'prose') as SurveyEmphasis, cap: cap ?? DOCUMENT_CAP };
+        setSourceShape(store, id, shape, at);
+        process.stdout.write(
+          `declared ${id}: ${kind} ${locator} (workspace ${workspace}), ` +
+            `surveyed ${shape.emphasis}-first, up to ${String(shape.cap)} documents\n`,
+        );
+        return 0;
+      }
       process.stdout.write(`declared ${id}: ${kind} ${locator} (workspace ${workspace})\n`);
       return 0;
     });
@@ -2715,8 +2751,10 @@ export function source(argv: string[]): number {
         return 0;
       }
       for (const row of rows) {
+        const shape = sourceShape(store, row.id);
         process.stdout.write(
           `${row.id}  ${row.kind}  ${row.locator}` +
+            (shape ? `  [${shape.emphasis}-first, cap ${String(shape.cap)}]` : '') +
             (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
             '\n',
         );

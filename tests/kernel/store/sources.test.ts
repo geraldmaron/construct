@@ -29,6 +29,8 @@ import {
   setWriteConsent,
   sourceReadsFor,
   sourcesFor,
+  setSourceShape,
+  sourceShape,
   writeConsentAllowsLowRisk,
 } from '../../../src/kernel/store/sources.ts';
 
@@ -241,5 +243,34 @@ test('pending lists only undecided proposals, and proposal rows are immutable', 
       store.db.prepare("UPDATE write_proposals SET change = 'x' WHERE id = ?").run('p2'),
     );
     assert.throws(() => store.db.prepare('DELETE FROM write_proposals WHERE id = ?').run('p2'));
+  });
+});
+
+test('a source with no declared shape reads null, so the survey keeps its old default', () => {
+  withStore((store) => {
+    declare(store);
+    assert.equal(sourceShape(store, 'src-1'), null);
+  });
+});
+
+test('a shape is a setting, so declaring it twice moves it rather than failing', () => {
+  withStore((store) => {
+    declare(store);
+    setSourceShape(store, 'src-1', { emphasis: 'code', cap: 200 }, AT);
+    assert.deepEqual(sourceShape(store, 'src-1'), { emphasis: 'code', cap: 200 });
+    setSourceShape(store, 'src-1', { emphasis: 'all', cap: 5 }, LATER);
+    assert.deepEqual(sourceShape(store, 'src-1'), { emphasis: 'all', cap: 5 });
+  });
+});
+
+test('an unknown emphasis or a cap that lists nothing is refused, not stored', () => {
+  withStore((store) => {
+    declare(store);
+    assert.throws(
+      () => setSourceShape(store, 'src-1', { emphasis: 'prose-ish' as never, cap: 10 }, AT),
+      /unknown emphasis/,
+    );
+    assert.throws(() => setSourceShape(store, 'src-1', { emphasis: 'prose', cap: 0 }, AT), /positive/);
+    assert.equal(sourceShape(store, 'src-1'), null);
   });
 });

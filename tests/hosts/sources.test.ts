@@ -179,3 +179,66 @@ test('without an extract option nothing is extracted and the walk is unchanged',
     assert.equal(survey.documents[0]?.extraction, undefined);
   });
 });
+
+test('emphasis decides what the cap keeps: prose-first and code-first drop opposite halves', () => {
+  withGround((root) => {
+    writeFileSync(join(root, 'design.md'), '# design\n');
+    writeFileSync(join(root, 'notes.md'), '# notes\n');
+    writeFileSync(join(root, 'server.ts'), 'export {};\n');
+    writeFileSync(join(root, 'client.ts'), 'export {};\n');
+
+    const prose = surveySource(declared('directory', root), { cap: 2 });
+    assert.equal(prose.outcome, 'listed');
+    if (prose.outcome !== 'listed') return;
+    assert.deepEqual(
+      prose.documents.map((d) => d.path),
+      [join(root, 'design.md'), join(root, 'notes.md')],
+    );
+    assert.equal(prose.total, 4);
+    assert.equal(prose.emphasis, 'prose', 'the ranking that dropped the rest is on the record');
+
+    const code = surveySource(declared('directory', root), { cap: 2, emphasis: 'code' });
+    assert.equal(code.outcome, 'listed');
+    if (code.outcome !== 'listed') return;
+    assert.deepEqual(
+      code.documents.map((d) => d.path),
+      [join(root, 'client.ts'), join(root, 'server.ts')],
+    );
+    assert.equal(code.emphasis, 'code');
+  });
+});
+
+test('emphasis "all" declines to rank, and a listing under the cap records no ranking at all', () => {
+  withGround((root) => {
+    writeFileSync(join(root, 'a-server.ts'), 'export {};\n');
+    writeFileSync(join(root, 'b-design.md'), '# design\n');
+
+    const all = surveySource(declared('directory', root), { cap: 1, emphasis: 'all' });
+    assert.equal(all.outcome, 'listed');
+    if (all.outcome !== 'listed') return;
+    assert.deepEqual(all.documents.map((d) => d.path), [join(root, 'a-server.ts')]);
+    assert.equal(all.emphasis, undefined, 'unranked is not a ranking to name');
+
+    const uncapped = surveySource(declared('directory', root));
+    assert.equal(uncapped.outcome, 'listed');
+    if (uncapped.outcome !== 'listed') return;
+    assert.equal(uncapped.emphasis, undefined, 'a cap that never bit made no choice to report');
+  });
+});
+
+test('binary ranks last under every emphasis: a document that may not open never outranks one that will', () => {
+  withGround((root) => {
+    writeFileSync(join(root, 'a-contract.pdf'), Buffer.from('%PDF-1.4'));
+    writeFileSync(join(root, 'z-server.ts'), 'export {};\n');
+    for (const emphasis of ['prose', 'code', 'all'] as const) {
+      const survey = surveySource(declared('directory', root), { cap: 1, emphasis });
+      assert.equal(survey.outcome, 'listed');
+      if (survey.outcome !== 'listed') continue;
+      assert.deepEqual(
+        survey.documents.map((d) => d.path),
+        [join(root, 'z-server.ts')],
+        `binary should rank last under ${emphasis}`,
+      );
+    }
+  });
+});
