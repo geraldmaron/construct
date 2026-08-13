@@ -53,6 +53,18 @@ import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/c
 import { toProducedLoop } from '../kernel/context/produce.ts';
 import { toReviewedDrift } from '../kernel/context/review.ts';
 import { subjectsOf } from '../kernel/context/subjects.ts';
+import {
+  claimsFrom,
+  composeReadiness,
+  screenComposition,
+  toComposition,
+} from '../kernel/run/compose.ts';
+import type { ComposedClaim, SourceDeliverable } from '../kernel/run/compose.ts';
+import {
+  COMPOSITION_SECTIONS,
+  createHostComposer,
+  createHostSupportChecker,
+} from '../hosts/compose.ts';
 import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
@@ -3022,6 +3034,167 @@ export function record(argv: string[]): number {
   return 2;
 }
 
+const COMPOSE_USAGE =
+  'usage: construct compose --run=<id> --host=<opencode|claude|codex|cursor> ' +
+  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n';
+
+/**
+ * Write one document from the several a run produced.
+ *
+ * The roles each answered their own concern and each was right to decline the
+ * whole, which left composing to the reader — silently, which reads as the
+ * system having answered when it has not. This composes, and holds the result
+ * to the one discipline that makes composing safe: it may arrange what the
+ * roles established and may not add to it. Every claim names the deliverable
+ * it came from, an attribution to a role that produced none is refused here,
+ * and each role is then shown its own work beside the claims drawn from it and
+ * asked which it does not support.
+ */
+export async function compose(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const { flags, words } = splitFlags(argv);
+  const run = flags.run ?? words[0];
+  if (!run) {
+    process.stderr.write(COMPOSE_USAGE);
+    return 2;
+  }
+  let hostFlags: HostFlags;
+  try {
+    hostFlags = parseHostFlags(flags);
+  } catch (error) {
+    process.stderr.write(`compose: ${(error as Error).message}\n${COMPOSE_USAGE}`);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    const plan = planFor(store, run);
+    if (!plan) {
+      process.stderr.write(`compose: no plan recorded for ${run}\n`);
+      return 1;
+    }
+    const sources: SourceDeliverable[] = listTasks(store, run)
+      .filter((task) => task.state === 'done')
+      .map((task) => ({
+        role: task.role,
+        text: renderDeliverable(latestDraft(store, task.id)?.deliverable ?? task.result),
+      }))
+      .filter((source) => source.text.trim() !== '');
+
+    const readiness = composeReadiness(sources);
+    if (!readiness.ready) {
+      process.stderr.write(`compose: ${readiness.reason}\n`);
+      return 1;
+    }
+
+    if (hostFlags.host === undefined && hostOverride === undefined) {
+      process.stdout.write(
+        `${String(sources.length)} deliverables are ready to compose (${sources.map((s) => s.role).join(', ')}).\n` +
+          'Composing them is model work, at cost — one call to arrange, and one per role to check\n' +
+          'that nothing was added:\n' +
+          `  construct compose --run=${run} --host=<opencode|claude|codex|cursor>\n`,
+      );
+      return 0;
+    }
+
+    const host =
+      hostOverride ??
+      adapterForHost(hostFlags.host, {
+        binary: hostFlags.binary,
+        model: hostFlags.model,
+        dir: hostFlags.dir,
+        timeoutMs: hostFlags.timeoutMs,
+      });
+    try {
+      await host.init();
+    } catch (error) {
+      process.stderr.write(`compose: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      return 1;
+    }
+
+    let screened;
+    try {
+      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources });
+      screened = screenComposition(toComposition(reply), sources);
+    } catch (error) {
+      process.stderr.write(`compose: the deliverables could not be composed (${(error as Error).message}).\n`);
+      return 1;
+    }
+    for (const drop of screened.discarded) {
+      process.stdout.write(`  discarded: "${drop.claim.text.slice(0, 60)}" — ${drop.reason}\n`);
+    }
+
+    // Each role shown its own deliverable beside the claims drawn from it.
+    // Per role rather than per claim: identical coverage, and the cost is
+    // bounded by how many concerns the run had rather than by how much the
+    // composer wrote.
+    const check = createHostSupportChecker(host);
+    const unsupported = new Set<ComposedClaim>();
+    for (const source of sources) {
+      const mine = claimsFrom(screened.claims, source.role);
+      if (mine.length === 0) continue;
+      let verdict;
+      try {
+        verdict = await check(source, mine);
+      } catch (error) {
+        process.stderr.write(
+          `compose: ${source.role}'s claims could not be checked (${(error as Error).message}); ` +
+            'an unverified composition is not promoted.\n',
+        );
+        return 1;
+      }
+      for (const index of verdict.unsupported) {
+        const claim = mine[index];
+        if (claim) unsupported.add(claim);
+      }
+      if (verdict.unsupported.length > 0) {
+        process.stdout.write(
+          `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${verdict.detail}\n`,
+        );
+      }
+    }
+
+    const kept = screened.claims.filter((claim) => !unsupported.has(claim));
+    process.stdout.write(`\n# ${plan.outcome}\n`);
+    const empty: string[] = [];
+    for (const section of COMPOSITION_SECTIONS) {
+      const inSection = kept.filter((claim) => claim.section === section.name);
+      if (inSection.length === 0) {
+        empty.push(section.name);
+        continue;
+      }
+      process.stdout.write(`\n## ${section.name}\n\n`);
+      for (const claim of inSection) process.stdout.write(`- ${claim.text} [${claim.from}]\n`);
+    }
+    // A section that came back empty is dropped from the document but not from
+    // the report. Silently omitting it lets a composition that never stated an
+    // answer read like one that had nothing more to add, and the reader cannot
+    // tell the difference from the page alone.
+    if (empty.length > 0) {
+      process.stdout.write(
+        `\n(no claim was placed under ${empty.join(', ')} — the composing put everything elsewhere, ` +
+          'which is a fact about this composition rather than about the deliverables)\n',
+      );
+    }
+
+    // The gap is part of the document, not a footnote under it. A composition
+    // that silently answers two thirds of an outcome is the failure composing
+    // introduces, and naming it is the whole defence.
+    process.stdout.write('\n## what nobody answered\n\n');
+    if (screened.uncovered.length === 0) {
+      process.stdout.write('- the roles between them addressed every part of the outcome\n');
+    } else {
+      for (const gap of screened.uncovered) process.stdout.write(`- ${gap}\n`);
+    }
+
+    const removed = screened.discarded.length + unsupported.size;
+    process.stdout.write(
+      `\ncomposed from ${String(sources.length)} deliverables: ${String(kept.length)} claims kept` +
+        (removed > 0 ? `, ${String(removed)} refused as unsupported or unattributable` : '') +
+        '.\nNothing here was added by the composing: every claim is one of the roles, checked against it.\n',
+    );
+    return 0;
+  });
+}
+
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
 
 const PLAN_USAGE = 'usage: construct plan <run-id>\n';
@@ -3252,7 +3425,7 @@ export function mode(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|plan|source|record|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -3291,6 +3464,8 @@ async function run(argv: string[]): Promise<number> {
       return review(argv.slice(1));
     case 'record':
       return record(argv.slice(1));
+    case 'compose':
+      return compose(argv.slice(1));
     case 'notes':
       return notes(argv.slice(1));
     case 'outcome':

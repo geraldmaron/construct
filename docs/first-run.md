@@ -276,6 +276,27 @@ Everything defaults to a workspace called `default`, so you can ignore this
 until you need two grounds at once. The plan line names the workspace whenever
 it is not the default one.
 
+## Get one document out of several
+
+A run that implicates three concerns dispatches three roles and returns three
+deliverables. Each answers its own concern and each is right to decline the
+rest, which leaves the composing to you:
+
+```bash
+construct compose --run <id> --host=claude
+```
+
+The composer may arrange what the roles established and may not add to it.
+Every claim names the deliverable it came from; a claim attributed to a role
+that produced nothing is refused outright, and each role is then shown its own
+work beside the claims drawn from it and asked which it does not support. What
+fails either check is removed, not footnoted.
+
+The last section is the one to read first. `what nobody answered` lists the
+parts of your outcome no deliverable covered — a composition that quietly
+answers two thirds of what you asked is the failure composing introduces, and
+naming the gap is the whole defence against it.
+
 ## Read back what happened
 
 ```bash
