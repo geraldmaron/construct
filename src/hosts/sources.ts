@@ -150,9 +150,13 @@ export function listDocuments(dir: string, emphasis: SurveyEmphasis = 'prose'): 
 
 /**
  * Where one document's extracted text lives. Keyed by the document's absolute
- * path so re-surveying the same ground reuses the extraction instead of paying
- * a Docling spawn per run, and named with the original basename so a role
- * opening the file can tell what it is looking at.
+ * path so the same document always lands at the same place, and named with the
+ * original basename so a role opening the file can tell what it is looking at.
+ *
+ * A stable path is not a cache: every survey re-extracts and overwrites. A
+ * document that changed between runs would otherwise ground the second run in
+ * the first run's words, and being slow is cheaper than being confidently
+ * wrong about what a document says.
  */
 function extractionPathFor(cacheRoot: string, document: string): string {
   const digest = createHash('sha256').update(document).digest('hex').slice(0, 16);
