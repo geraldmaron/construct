@@ -74,6 +74,18 @@
  * erasing how it got there, and every one carries the note citation that
  * taught it. Workspace lessons stay what they are: a durable operating fact
  * belongs to the workspace, a fact about a named subject belongs to it.
+ * Schema version 14 adds `erasures` and turns three delete triggers into
+ * unlock-aware ones. Append-only is right for evidence and wrong as an answer
+ * to a person asking to be forgotten: records and notes hold facts about named
+ * people, which is exactly what an erasure request is about, and a store that
+ * cannot comply is not a safer store. Deletion stays refused by default and is
+ * permitted only inside an erasure, which sets a marker in `meta` for the
+ * length of one transaction; what survives is an `erasures` row carrying the
+ * fact, the count and the reason, and no content of its own. Those three
+ * triggers are dropped and recreated rather than created-if-absent, because a
+ * stale trigger in an existing store would refuse the erasure it was rewritten
+ * to allow — the one case where leaving an old definition in place is not
+ * harmless.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -98,7 +110,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 13;
+export const SCHEMA_VERSION = 14;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -390,6 +402,24 @@ CREATE TRIGGER IF NOT EXISTS sources_no_delete
 BEFORE DELETE ON sources
 BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
 
+CREATE TABLE IF NOT EXISTS erasures (
+  seq       INTEGER PRIMARY KEY AUTOINCREMENT,
+  workspace TEXT NOT NULL,
+  kind      TEXT NOT NULL CHECK (kind IN ('record', 'note')),
+  subject   TEXT NOT NULL,
+  reason    TEXT NOT NULL,
+  removed   INTEGER NOT NULL,
+  erased_at TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS erasures_no_update
+BEFORE UPDATE ON erasures
+BEGIN SELECT RAISE(ABORT, 'erasures is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS erasures_no_delete
+BEFORE DELETE ON erasures
+BEGIN SELECT RAISE(ABORT, 'erasures is append-only: the fact of an erasure is not itself erasable'); END;
+
 CREATE TABLE IF NOT EXISTS records (
   id         TEXT PRIMARY KEY,
   workspace  TEXT NOT NULL,
@@ -415,9 +445,11 @@ CREATE TRIGGER IF NOT EXISTS record_fields_no_update
 BEFORE UPDATE ON record_fields
 BEGIN SELECT RAISE(ABORT, 'record_fields is append-only: a new value is a new row'); END;
 
-CREATE TRIGGER IF NOT EXISTS record_fields_no_delete
+DROP TRIGGER IF EXISTS record_fields_no_delete;
+CREATE TRIGGER record_fields_no_delete
 BEFORE DELETE ON record_fields
-BEGIN SELECT RAISE(ABORT, 'record_fields is append-only'); END;
+WHEN (SELECT COUNT(*) FROM meta WHERE key = 'erasure_unlocked') = 0
+BEGIN SELECT RAISE(ABORT, 'record_fields is append-only outside an erasure'); END;
 
 CREATE TABLE IF NOT EXISTS external_reads (
   seq         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -542,9 +574,11 @@ CREATE TRIGGER IF NOT EXISTS notes_no_update
 BEFORE UPDATE ON notes
 BEGIN SELECT RAISE(ABORT, 'a note is cited evidence; it is never edited'); END;
 
-CREATE TRIGGER IF NOT EXISTS notes_no_delete
+DROP TRIGGER IF EXISTS notes_no_delete;
+CREATE TRIGGER notes_no_delete
 BEFORE DELETE ON notes
-BEGIN SELECT RAISE(ABORT, 'a note is cited evidence; it is never deleted'); END;
+WHEN (SELECT COUNT(*) FROM meta WHERE key = 'erasure_unlocked') = 0
+BEGIN SELECT RAISE(ABORT, 'a note is cited evidence; it is never deleted outside an erasure'); END;
 
 CREATE TABLE IF NOT EXISTS write_consent (
   workspace       TEXT PRIMARY KEY,

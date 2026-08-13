@@ -209,6 +209,33 @@ there. A note only reaches the records it names, so a note that says "they
 moved the renewal" without naming anyone updates nothing — which is the
 correct answer, not a missed one.
 
+### When someone asks to be forgotten
+
+Records and notes hold facts about named people and organizations, which is
+what an erasure request is about. Every other table here is append-only and
+stays that way; these two can be erased, and only by erasing:
+
+```bash
+construct record erase <record-id> --reason="the customer asked to be forgotten"
+```
+
+That removes the subject and every value its fields ever held, including the
+earlier ones. What survives is a line saying an erasure happened, with a count
+and your reason and no content of its own.
+
+It then lists the notes that still say that name, and does not touch them. A
+note naming two subjects is evidence about both, so taking it for one would
+destroy the other's record with nobody having asked. Read one before you erase
+it:
+
+```bash
+construct record erase-note <note-id> --reason="only about the erased subject"
+```
+
+Erasing a note means anything that cited a line of it stops resolving. That is
+correct: a fact justified by words that no longer exist should not go on
+presenting itself as justified.
+
 ### One workspace, or one per client?
 
 Records hold several subjects inside one workspace, so a client engagement

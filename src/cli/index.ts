@@ -51,6 +51,7 @@ import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/c
 import { toProducedLoop } from '../kernel/context/produce.ts';
 import { toReviewedDrift } from '../kernel/context/review.ts';
 import { subjectsOf } from '../kernel/context/subjects.ts';
+import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
@@ -2810,7 +2811,9 @@ const SOURCE_USAGE =
 const RECORD_USAGE =
   'usage: construct record add --kind=<customer|vendor|…> --name=<what it is called> [--workspace=<name>]\n' +
   '       construct record list [--workspace=<name>]\n' +
-  '       construct record show <record-id> [--field=<name>]\n';
+  '       construct record show <record-id> [--field=<name>]\n' +
+  '       construct record erase <record-id> --reason=<why>\n' +
+  '       construct record erase-note <note-id> --reason=<why>\n';
 
 /**
  * Declare and read the subjects a workspace keeps facts about.
@@ -2909,6 +2912,58 @@ export function record(argv: string[]): number {
       }
       process.stdout.write('\n  How a field got here:  construct record show <id> --field=<name>\n');
       return 0;
+    });
+  }
+
+  if (sub === 'erase' || sub === 'erase-note') {
+    const id = rest[0];
+    const reason = (flags.reason ?? '').trim();
+    if (!id || reason === '') {
+      process.stderr.write(RECORD_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      try {
+        if (sub === 'erase-note') {
+          const erased = eraseNote(store, id, reason, at);
+          process.stdout.write(`erased note ${erased.subject}: its words are gone.\n`);
+          process.stdout.write(
+            '  Anything that cited a line of it no longer resolves, which is correct — a fact\n' +
+              '  justified by words that no longer exist should not go on presenting itself as justified.\n',
+          );
+          return 0;
+        }
+        const { erased, notesStillNaming } = eraseRecord(store, id, reason, at);
+        process.stdout.write(
+          `erased record ${erased.subject}: the subject and ${String(erased.removed - 1)} field ` +
+            `value${erased.removed - 1 === 1 ? '' : 's'}, including every earlier value.\n`,
+        );
+        // Never presented as complete when it is not. A note naming two
+        // subjects is evidence about both, so taking it for one of them would
+        // destroy the other's record with nobody having asked.
+        if (notesStillNaming.length === 0) {
+          process.stdout.write('  No note in this workspace still says that name.\n');
+          return 0;
+        }
+        process.stdout.write(
+          `\n${String(notesStillNaming.length)} note${notesStillNaming.length === 1 ? '' : 's'} ` +
+            `still say${notesStillNaming.length === 1 ? 's' : ''} that name. The record is gone; ` +
+            `${notesStillNaming.length === 1 ? 'this is' : 'these are'} not:\n`,
+        );
+        for (const note of notesStillNaming) {
+          process.stdout.write(`  ${note.id}  (${note.recordedAt})\n`);
+        }
+        process.stdout.write(
+          '\n  Read one before erasing it — a note naming someone else too is their evidence,\n' +
+            '  and taking it for this subject removes theirs with nobody having asked:\n' +
+            '  construct record erase-note <note-id> --reason=<why>\n',
+        );
+        return 0;
+      } catch (error) {
+        process.stderr.write(`record: ${(error as Error).message}\n`);
+        return 1;
+      }
     });
   }
 
