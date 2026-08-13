@@ -33,7 +33,7 @@
  *     arranged here. They carry the role's name because they are the role's.
  */
 
-import { runStructuralChallenges } from '../challenge/catalog.ts';
+import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import type { Brief } from '../brief/schema.ts';
 import type { SourceDeliverable } from './compose.ts';
 
@@ -133,8 +133,39 @@ function normalise(text: string): string {
 }
 
 /**
- * Hold a closing answer to the same gates its author's first deliverable was
- * held to, before it may enter the document.
+ * The checks a paragraph answering one question actually owes.
+ *
+ * A closing answer is new text and must be screened; that much was settled by
+ * the argument below. What was wrong was screening it against every challenge
+ * its author's whole deliverable owed. Those two sets are not the same, and the
+ * difference is not cosmetic: over one recorded run, four of six closing answers
+ * were discarded for having no labelled pre-mortem, no scope diff, or no
+ * strongest objection — sections that mean something in a memo and nothing in a
+ * two-sentence answer to "who owns this gap?". The run held four answers, failed
+ * them on a heading, and printed "the gap stands" against questions it had just
+ * closed. A gate that reports an absence the run had filled is worse than the
+ * absence.
+ *
+ * What survives is every check about whether the answer is *sourced*, because
+ * those are the ones a short answer can fail honestly: a claim asserted with no
+ * citation is asserted with no citation whatever its length, and a document
+ * named but never opened is the same unfinished work in a paragraph as in a
+ * memo. What is dropped is every check about the shape a deliverable takes,
+ * because an answer is not a deliverable and holding it to one grades the form
+ * rather than the work.
+ *
+ * Which check is which is asked of the catalog rather than listed here. A list
+ * kept beside the rule is the drift this project catches elsewhere: it would
+ * still name two ids on the day a third sourcing check shipped, and the gap
+ * would look exactly like a decision.
+ */
+function answerOwes(id: string): boolean {
+  return challengeById(id)?.subject === 'sourcing';
+}
+
+/**
+ * Hold a closing answer to the gates that mean something for an answer, before
+ * it may enter the document.
  *
  * This is the correction to an argument that sounded right and was not. The
  * reasoning was that a closing answer needs no support screen because nothing
@@ -145,7 +176,6 @@ function normalise(text: string): string {
  * checked ones inherits their credibility without having earned it, which is
  * the exact trade the composer's own discipline exists to refuse.
  *
- * The brief is the role's own, so the challenges are the ones it already owed.
  * A closing answer that asserts an uncited fact, or names a document it did not
  * open, is refused and the gap stays standing — which is the honest outcome:
  * the question is still open, and now the record says somebody tried.
@@ -155,10 +185,14 @@ export function screenClosedAnswers(
   brief: Brief,
   groundRoots: readonly string[],
 ): ClosingReply {
+  const owed: Brief = {
+    ...brief,
+    challenges: (brief.challenges ?? []).filter(answerOwes),
+  };
   const closed: ClosedGap[] = [];
   const refused = [...reply.refused];
   for (const answer of reply.closed) {
-    const run = runStructuralChallenges(brief, answer.answer, { groundRoots });
+    const run = runStructuralChallenges(owed, answer.answer, { groundRoots });
     const failed = run.results.filter((result) => !result.passed);
     if (failed.length > 0) {
       refused.push({

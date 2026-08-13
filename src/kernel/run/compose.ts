@@ -65,11 +65,28 @@ export interface SourceStanding {
   readonly failing: readonly string[];
   /** Challenges nothing has answered — no structural form, no substantive pass. */
   readonly outstanding: readonly string[];
+  /**
+   * Challenges this source passed only after its deliverable was sent back.
+   *
+   * A repair round is the run finishing work it found unfinished, which is the
+   * right thing to do and is not the same as the work having been done the
+   * first time. Left off this record, a run that repaired every source to green
+   * would compose a document reporting nothing at all — a stronger assurance
+   * than the un-repaired run gave, bought by a round of the run grading its own
+   * corrections. The reader is told which sources needed a second pass and
+   * decides what that is worth.
+   */
+  readonly repaired: readonly string[];
 }
 
-/** Sources whose deliverable did not come through its own challenges clean. */
+/**
+ * Sources whose deliverable did not come through its own challenges clean, or
+ * only came through on a second attempt.
+ */
 export function unclearedSources(standings: readonly SourceStanding[]): SourceStanding[] {
-  return standings.filter((s) => s.failing.length > 0 || s.outstanding.length > 0);
+  return standings.filter(
+    (s) => s.failing.length > 0 || s.outstanding.length > 0 || s.repaired.length > 0,
+  );
 }
 
 /**
@@ -84,6 +101,9 @@ export function standingLine(standing: SourceStanding): string {
   if (standing.failing.length > 0) parts.push(`failed ${standing.failing.join(', ')}`);
   if (standing.outstanding.length > 0) {
     parts.push(`${standing.outstanding.join(', ')} answered by nobody`);
+  }
+  if (standing.repaired.length > 0) {
+    parts.push(`passed ${standing.repaired.join(', ')} only after being sent back`);
   }
   return `${standing.role}: ${parts.join('; ')}`;
 }

@@ -56,7 +56,9 @@ import { answerDirective } from './ask.ts';
 import { RESEARCH_PROTOCOL } from './research.ts';
 import type { AnsweredAsk } from './asks.ts';
 import type { RoleStance } from './conflicts.ts';
-import { latestDraft, logPromotion, recordVerdict } from './promotion.ts';
+import { DRAFT_ACTION, latestDraft, logPromotion, recordVerdict } from './promotion.ts';
+import { REPAIR_ACTION, repairAssignment, repairableFailures } from './repair.ts';
+import type { DraftAttempt } from './repair.ts';
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import { getDecision, openDecisions as openDecisionsFor, raiseDecision } from '../store/decisions.ts';
 import { ROLE_GRANTS, issueRoleToken } from '../capabilities/tokens.ts';
@@ -118,6 +120,14 @@ export interface CoordinatorOptions {
    * in force is written to the work log at every dispatch it shapes.
    */
   readonly voice?: VoiceOverride;
+  /**
+   * Whether a deliverable that fails a free structural check goes back to its
+   * author once before the run keeps it. Defaults to on: the checks exist to
+   * catch work the brief asked for and did not get, and a run that records that
+   * finding without acting on it has moved the unfinished work to the reader.
+   * Off is for a caller that wants the first attempt exactly as it arrived.
+   */
+  readonly repair?: boolean;
 }
 
 export interface RunReport {
@@ -956,8 +966,98 @@ export async function workRun(
           });
         }
         if (deliverableText !== null && declaredChallenges.length > 0) {
-          const run = runStructuralChallenges(brief, deliverableText, { groundRoots });
-          for (const check of run.results) {
+          let structural = runStructuralChallenges(brief, deliverableText, { groundRoots });
+          let attempt: DraftAttempt = 'first';
+
+          // The repair round. A structural failure is the brief's own
+          // obligation coming back unmet, and the run holds the role, the
+          // host and the license needed to meet it. Sending it back once costs
+          // a call; not sending it back moves the unfinished work to the
+          // reader, who has less than the role had.
+          const failures = repairableFailures(structural.results);
+          if (failures.length > 0 && options.repair !== false) {
+            const beforeSeq = latestDraft(store, task.id)?.seq ?? 0;
+            appendWorkLog(store, {
+              run: task.run,
+              task: task.id,
+              role: 'construct',
+              action: REPAIR_ACTION,
+              detail: { failing: failures.map((f) => f.challenge) },
+              at: settledAt,
+            });
+            let repaired: HostResult;
+            try {
+              repaired = await host.invoke(
+                {
+                  role: task.role,
+                  task: repairAssignment({
+                    role: task.role,
+                    deliverable: deliverableText,
+                    failures,
+                    groundRoots,
+                  }),
+                },
+                { invocationId: task.id, roleEnv },
+              );
+            } catch (error) {
+              // Fail-soft, the same shape the closing round takes: a repair
+              // that could not run leaves the deliverable exactly as it
+              // arrived, which is the state the run was already in. A second
+              // attempt must never be able to cost the first.
+              repaired = {
+                id: task.id,
+                status: 'error',
+                output: null,
+                error: { message: (error as Error).message, name: (error as Error).name },
+              };
+            }
+
+            // Where the repaired text comes from depends on how the role
+            // answered. A role holding a write surface submits a new draft and
+            // the log carries it; one without replies in prose. Reading
+            // whichever arrived is the difference between checking the second
+            // attempt and re-checking the first — and re-checking the first
+            // would record a verdict about a document nobody wrote.
+            const after = latestDraft(store, task.id);
+            const submitted = after !== null && after.seq > beforeSeq ? draftText(after.deliverable) : null;
+            const repairedText =
+              repaired.status === 'ok' ? (submitted ?? replyTextOf(repaired.output)) : null;
+
+            if (repairedText !== null && repairedText.trim().length > 0) {
+              const repairCost = spendOf(repaired);
+              if (submitted === null) {
+                // The role replied rather than submitting. Recorded as a draft
+                // in its own name so the latest draft is the one the reader
+                // receives; the log is append-only, so the first attempt stays
+                // beside it rather than being replaced by it.
+                appendWorkLog(store, {
+                  run: task.run,
+                  task: task.id,
+                  role: task.role,
+                  action: DRAFT_ACTION,
+                  detail: { deliverable: repairedText, attempt: 'repaired' },
+                  at: settledAt,
+                });
+              }
+              appendWorkLog(store, {
+                run: task.run,
+                task: task.id,
+                role: task.role,
+                action: 'role-reported',
+                detail: {
+                  ...summarize(repaired),
+                  spend: repairCost.spend,
+                  spendReported: repairCost.reported,
+                  attempt: 'repaired',
+                },
+                at: settledAt,
+              });
+              structural = runStructuralChallenges(brief, repairedText, { groundRoots });
+              attempt = 'repaired';
+            }
+          }
+
+          for (const check of structural.results) {
             recordVerdict(store, {
               task: task.id,
               challenge: check.challenge,
@@ -968,17 +1068,19 @@ export async function workRun(
               by: 'construct:structural',
               at: settledAt,
               // What was looked for and what was found. A bare pass tells the
-              // role nothing it can act on when the next one fails.
-              detail: { check: check.detail },
+              // role nothing it can act on when the next one fails. The
+              // attempt travels with it because "passed" and "passed once it
+              // was sent back" are different facts about the same document.
+              detail: { check: check.detail, attempt },
             });
           }
-          if (run.unanswered.length > 0) {
+          if (structural.unanswered.length > 0) {
             appendWorkLog(store, {
               run: task.run,
               task: task.id,
               role: 'construct',
               action: 'challenge-unanswered',
-              detail: { unanswered: run.unanswered },
+              detail: { unanswered: structural.unanswered },
               at: settledAt,
             });
           }

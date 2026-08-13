@@ -91,6 +91,17 @@ export interface TaskPromotion extends Promotion {
   /** The role that produced the deliverable. Its own verdicts do not count. */
   readonly role: string;
   readonly required: readonly string[];
+  /**
+   * Challenges whose surviving verdict was recorded against a second attempt.
+   *
+   * Carried because "passed" and "passed once it was sent back" are different
+   * facts about the same document, and only the first is visible in a state.
+   * A run that repairs everything to green and reports nothing but green has
+   * turned a true signal into a flattering one, which is the failure the
+   * source-standing disclosure exists to prevent — reintroduced through the
+   * side door if the repair itself goes unrecorded.
+   */
+  readonly repaired: readonly string[];
 }
 
 export interface SubmittedDraft {
@@ -203,9 +214,15 @@ export function promotionOf(store: Store, taskId: string): TaskPromotion | null 
 
   const required = (task.brief as Brief | null)?.challenges ?? [];
   const verdicts: Verdict[] = [];
+  const repaired = new Set<string>();
   for (const entry of entriesFor(store, task.run, task.id)) {
     if (entry.action !== VERDICT_ACTION) continue;
-    const detail = entry.detail as { challenge?: unknown; outcome?: unknown; by?: unknown } | null;
+    const detail = entry.detail as {
+      challenge?: unknown;
+      outcome?: unknown;
+      by?: unknown;
+      attempt?: unknown;
+    } | null;
     if (typeof detail?.challenge !== 'string' || typeof detail.by !== 'string') continue;
     if (!(VERDICT_OUTCOMES as readonly string[]).includes(detail.outcome as string)) continue;
     verdicts.push({
@@ -213,10 +230,21 @@ export function promotionOf(store: Store, taskId: string): TaskPromotion | null 
       outcome: detail.outcome as VerdictOutcome,
       by: detail.by,
     });
+    // Last one per challenge wins here for the same reason it wins in
+    // promotionState: a re-check supersedes its own earlier result.
+    if (detail.attempt === 'repaired') repaired.add(detail.challenge);
+    else repaired.delete(detail.challenge);
   }
 
   const promotion = promotionState({ role: task.role, required, verdicts });
-  return { ...promotion, task: task.id, run: task.run, role: task.role, required };
+  return {
+    ...promotion,
+    task: task.id,
+    run: task.run,
+    role: task.role,
+    required,
+    repaired: required.filter((challenge) => repaired.has(challenge)),
+  };
 }
 
 /**

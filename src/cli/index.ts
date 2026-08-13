@@ -3166,6 +3166,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         state: promotion?.state ?? 'unrecorded',
         failing: promotion?.failing ?? [],
         outstanding: promotion?.outstanding ?? [],
+        repaired: promotion?.repaired ?? [],
       };
     });
 

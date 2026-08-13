@@ -110,9 +110,9 @@ test('one deliverable has nothing to compose, and says why rather than paraphras
  */
 test('sources that did not come through their own challenges are the ones reported', () => {
   const standings = [
-    { role: 'privacy', state: 'draft', failing: ['claims-cited'], outstanding: ['legal-issue-spot'] },
-    { role: 'product-scoping', state: 'challenged', failing: ['claims-cited'], outstanding: [] },
-    { role: 'measurement', state: 'promoted', failing: [], outstanding: [] },
+    { role: 'privacy', state: 'draft', failing: ['claims-cited'], outstanding: ['legal-issue-spot'], repaired: [] },
+    { role: 'product-scoping', state: 'challenged', failing: ['claims-cited'], outstanding: [], repaired: [] },
+    { role: 'measurement', state: 'promoted', failing: [], outstanding: [], repaired: [] },
   ];
 
   const uncleared = unclearedSources(standings);
@@ -122,8 +122,8 @@ test('sources that did not come through their own challenges are the ones report
 
 test('a run whose every source is clean reports nothing, rather than reporting cleanliness', () => {
   const clean = [
-    { role: 'privacy', state: 'promoted', failing: [], outstanding: [] },
-    { role: 'security', state: 'promoted', failing: [], outstanding: [] },
+    { role: 'privacy', state: 'promoted', failing: [], outstanding: [], repaired: [] },
+    { role: 'security', state: 'promoted', failing: [], outstanding: [], repaired: [] },
   ];
 
   assert.deepEqual(unclearedSources(clean), []);
@@ -134,9 +134,29 @@ test('an outstanding challenge is reported as answered by nobody, not as passed'
     role: 'privacy',
     state: 'draft',
     failing: ['claims-cited'],
-    outstanding: ['legal-issue-spot'],
+    outstanding: ['legal-issue-spot'], repaired: [],
   });
 
   assert.match(line, /failed claims-cited/);
   assert.match(line, /legal-issue-spot answered by nobody/);
+});
+
+/**
+ * The repair round finishes work the checks found unfinished, and a run that
+ * repaired every source to green would otherwise compose a document reporting
+ * nothing — a stronger assurance than the un-repaired run gave, bought by the
+ * run correcting itself. Passing on the second attempt is a fact about the
+ * document and belongs where the other standing facts are.
+ */
+test('a source that only passed after being sent back is reported, not counted as clean', () => {
+  const standings = [
+    { role: 'privacy', state: 'challenged', failing: [], outstanding: [], repaired: ['ground-exhausted'] },
+    { role: 'measurement', state: 'promoted', failing: [], outstanding: [], repaired: [] },
+  ];
+
+  assert.deepEqual(unclearedSources(standings).map((s) => s.role), ['privacy']);
+  assert.match(
+    standingLine(standings[0]),
+    /passed ground-exhausted only after being sent back/,
+  );
 });

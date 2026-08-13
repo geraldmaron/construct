@@ -107,6 +107,21 @@ export const GROUND_EXHAUSTION_RULE = [
   'reader cannot do it for you any faster than you can. Go and read it, then',
   'report what it said.',
   '',
+  'Source files are material. The list above was ranked to put prose first,',
+  'because prose is usually where the reasoning is. That is a statement about',
+  'what was listed, never about what you are allowed to open. Code, schemas,',
+  'migrations and configuration under these roots are evidence about this',
+  'question exactly as documents are, and often the only place the real answer',
+  'lives — what a system does is settled by its code and only described by its',
+  'documentation. "Those are code, not the prose material I was given" is not a',
+  'reason, and a question you left open for that reason was answerable.',
+  '',
+  'The same holds for a document some other role is closer to. What you may',
+  'report is bounded by your concern; what you may read is bounded only by',
+  'these roots. Finding the file and then declining to open it because it sits',
+  "outside your usual reading is the worst of both — you did the search and",
+  'threw away the answer.',
+  '',
   'One read per question, the same stop rule research has. A question that',
   'survives the document you named is genuinely open: write it down, say which',
   'document you read and what it failed to settle, and move on. If you could',
@@ -117,6 +132,11 @@ export const GROUND_EXHAUSTION_RULE = [
   'What is not acceptable is naming the path and stopping. "The auth code was',
   'not read to confirm this" tells the reader you knew where the answer was',
   'and left it there.',
+  '',
+  'Cite every document you actually opened, with its path, at the claim it',
+  'supports. A file you read and then discussed without citing reads from the',
+  'outside exactly like one you never opened, and you are the only person who',
+  'can tell those apart.',
 ].join('\n');
 
 /**
@@ -148,7 +168,11 @@ export const ROLE_OWNERSHIP_BOUND = [
   'aside. Reporting everything you noticed is not thoroughness, it is declining',
   'to exercise the judgment you were dispatched for, and it leaves the reader',
   'unable to tell which concern actually answered. Fewer findings that are all',
-  'yours beat a survey of the material.',
+  'yours beat a survey of the material. This bounds what you report and',
+  'nothing else: every document under your declared roots is yours to open,',
+  'whoever else might also be reading it, and a file left unopened because it',
+  "looked like someone else's is a question you handed back that you could",
+  'have answered.',
 ].join(' ');
 
 /**

@@ -53,6 +53,7 @@ import {
   selfAttestsCiting,
 } from '../verify/claims.ts';
 import { RUBRIC_LINES, rubricChallengeId } from './readers.ts';
+import { handbacksEarned } from './answerable.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface ChallengeCheck {
@@ -71,10 +72,33 @@ export interface ChallengeContext {
   readonly groundRoots?: readonly string[];
 }
 
+/**
+ * What a challenge can meaningfully be asked of.
+ *
+ * `sourcing` asks whether the text is grounded — is the claim cited, was the
+ * document it names ever opened. That question means the same thing in a memo
+ * and in a two-sentence answer, because an assertion nobody sourced is
+ * unsourced at any length.
+ *
+ * `deliverable` asks whether a document has a part it owes: a scope diff, a
+ * pre-mortem, a named owner. Asking it of anything shorter grades the form
+ * instead of the work. One run discarded four closing answers for having no
+ * labelled pre-mortem and then reported the questions as unanswered — the run
+ * held the answers and printed the gap.
+ *
+ * The distinction sits on the challenge because a second copy of it kept by
+ * each caller is the drift this project already catches elsewhere: a challenge
+ * added here declares its own subject, and nothing has to remember to update a
+ * list somewhere else.
+ */
+export type ChallengeSubject = 'sourcing' | 'deliverable';
+
 export interface Challenge {
   readonly id: string;
   /** What the challenge asks of the deliverable, in one sentence. */
   readonly question: string;
+  /** What this can be asked of. See ChallengeSubject. */
+  readonly subject: ChallengeSubject;
   /**
    * A free, deterministic check for the presence of the work, or null when
    * only a substantive pass can answer this challenge.
@@ -183,6 +207,7 @@ function namedButUnread(deliverable: string): string[] {
 export const CHALLENGES: readonly Challenge[] = [
   {
     id: 'strongest-objection',
+    subject: 'deliverable',
     question: 'What is the strongest argument against this, stated in its own words?',
     structural: (deliverable) =>
       found(
@@ -199,6 +224,7 @@ export const CHALLENGES: readonly Challenge[] = [
   },
   {
     id: 'pre-mortem',
+    subject: 'deliverable',
     question: 'Assume this failed. What is the most likely story of how?',
     structural: (deliverable) =>
       found(
@@ -209,6 +235,7 @@ export const CHALLENGES: readonly Challenge[] = [
   },
   {
     id: 'claims-cited',
+    subject: 'sourcing',
     question: 'Does every load-bearing claim carry a citation or an [unverified] tag?',
     // The one challenge a machine can answer completely, and it already had an
     // implementation before this catalog existed. Reused rather than rewritten:
@@ -270,6 +297,7 @@ export const CHALLENGES: readonly Challenge[] = [
   },
   {
     id: 'scope-diff',
+    subject: 'deliverable',
     question: 'What did the brief ask for that this deliverable does not cover?',
     structural: (deliverable, brief) => {
       // The fidelity section is held to the record it claims fidelity to: a
@@ -302,6 +330,7 @@ export const CHALLENGES: readonly Challenge[] = [
   },
   {
     id: 'ground-exhausted',
+    subject: 'sourcing',
     question: 'Was every document you could name and reach actually read before anything was called unknown?',
     structural: (deliverable, _brief, context) => {
       // Only askable of a dispatch that was licensed to read past its survey.
@@ -334,7 +363,22 @@ export const CHALLENGES: readonly Challenge[] = [
     },
   },
   {
+    id: 'handback-earned',
+    subject: 'sourcing',
+    question:
+      'Is every question handed back one this role could not have answered from the ground it holds?',
+    // The question-shaped half of ground exhaustion. Its sibling above fires on
+    // a file path named and never opened; this one fires on a question that
+    // names a symbol, a table, or the code itself as where the answer lives.
+    // Both say the same thing: work the role located and did not do is not an
+    // open question, because the reader it goes to holds the same license and
+    // less context.
+    structural: (deliverable, _brief, context) =>
+      handbacksEarned(deliverable, context?.groundRoots),
+  },
+  {
     id: 'legal-issue-spot',
+    subject: 'deliverable',
     question: 'Has a legal issue-spotting pass read this deliverable?',
     // No structural form exists. Whether a legal issue was spotted is exactly
     // the judgement a check cannot make, and a presence test here would let a
@@ -364,7 +408,12 @@ export const CHALLENGES: readonly Challenge[] = [
  * unanswered challenge that never promotes. When a heat signal exists, it
  * chooses; until then the honest state is that these are not required.
  */
-export const SPINE_CHALLENGES: readonly string[] = ['claims-cited', 'scope-diff', 'ground-exhausted'];
+export const SPINE_CHALLENGES: readonly string[] = [
+  'claims-cited',
+  'scope-diff',
+  'ground-exhausted',
+  'handback-earned',
+];
 
 /**
  * The reader's own acceptance lines, as challenges.
@@ -381,6 +430,10 @@ const RUBRIC_CHALLENGES: readonly Challenge[] = RUBRIC_LINES.filter(
 ).map((line) => ({
   id: rubricChallengeId(line),
   question: line.requires,
+  // Every reader line asks a document for a part of itself — a named owner, a
+  // stated measure, a rollback. There is no reader whose acceptance turns on a
+  // supplementary paragraph carrying one.
+  subject: 'deliverable' as const,
   structural: (deliverable: string) =>
     (line.enforcement as { check: (text: string) => ChallengeCheck }).check(deliverable),
 }));

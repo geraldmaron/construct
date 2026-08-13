@@ -159,3 +159,61 @@ test('a round in which nobody closed anything leaves every gap standing', () => 
   assert.equal(round.closed.length, 0);
   assert.equal(round.standing.length, GAPS.length);
 });
+
+/**
+ * The real discard, from a recorded run: an answer thrown out for having no
+ * labelled pre-mortem and no scope diff, against a question that asked who owns
+ * a tracked gap. The run held the answer, failed it on a heading, and printed
+ * "the gap stands" — reporting an absence it had just filled.
+ *
+ * A closing answer is still screened. What it is screened on is whether it is
+ * sourced, which a two-sentence answer can fail honestly, and not whether it
+ * has the sections a memo owes.
+ */
+test('an answer is not discarded for lacking sections only a deliverable owes', () => {
+  const reply = {
+    closed: [
+      {
+        gap: 'Ownership of the canonical-write reauth gap is unresolved',
+        role: 'privacy',
+        answer:
+          'decisions-carryover.md names it as a follow-up and assigns no owner ' +
+          '[cite:docs/decisions-carryover.md].',
+      },
+    ],
+    unclosed: [],
+    refused: [],
+  };
+
+  const screened = screenClosedAnswers(
+    reply,
+    brief(['claims-cited', 'scope-diff', 'pre-mortem', 'strongest-objection']),
+    ['/repo'],
+  );
+
+  assert.equal(screened.closed.length, 1);
+  assert.deepEqual(screened.refused, []);
+});
+
+test('an answer that names a document it never opened is still refused', () => {
+  const reply = {
+    closed: [
+      {
+        gap: 'Ownership of the canonical-write reauth gap is unresolved',
+        role: 'privacy',
+        answer: 'The answer is in docs/decisions-carryover.md.',
+      },
+    ],
+    unclosed: [],
+    refused: [],
+  };
+
+  const screened = screenClosedAnswers(
+    reply,
+    brief(['claims-cited', 'ground-exhausted', 'pre-mortem']),
+    ['/repo'],
+  );
+
+  assert.equal(screened.closed.length, 0);
+  assert.match(screened.refused[0].reason, /ground-exhausted/);
+});

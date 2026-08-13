@@ -983,8 +983,22 @@ test('a run over declared sources dispatches roles grounded in the named documen
     assert.match(out, /2 documents from 2 sources \(1 unreachable\)/);
     assert.match(out, /sources-read/, 'the survey is in the work log, not only on screen');
 
-    assert.ok(assignments.length > 0, 'roles were dispatched');
-    for (const assignment of assignments) {
+    // A deliverable that fails its free checks goes back to its author once, so
+    // the calls this host saw are dispatches and repairs interleaved. They are
+    // different texts answering different questions and the dispatch assertions
+    // below belong to the first kind only.
+    const dispatched = assignments.filter((text) => text.includes('Your material for this task'));
+    const repairs = assignments.filter((text) => text.includes('Your draft is not finished'));
+
+    assert.ok(dispatched.length > 0, 'roles were dispatched');
+    assert.ok(
+      repairs.length > 0,
+      'a deliverable that failed its checks was sent back rather than kept as it arrived',
+    );
+    for (const repair of repairs) {
+      assert.ok(repair.includes(ground), 'a repair restates the license the role still holds');
+    }
+    for (const assignment of dispatched) {
       assert.match(assignment, /Your material for this task/);
       assert.ok(assignment.includes(join(ground, 'roadmap.md')), 'documents are named by citable path');
       assert.match(assignment, /\[unreachable\]/, 'the source nobody could read says so');

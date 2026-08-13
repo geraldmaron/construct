@@ -59,6 +59,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -87,6 +88,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Money that moves creates obligations at the moment it moves; the job is naming each obligation where it attaches, not after it has accrued.
@@ -117,6 +119,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -146,6 +149,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -176,6 +180,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `rubric-security-Y2` — Blast radius is stated concretely — one record, one tenant, every tenant, or persistent access — not as a severity word.
 
 **Its posture.** Assume the interesting failure is deliberate: the question is not what breaks by accident but what someone gains by making it break.
@@ -204,6 +209,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Controls and evidence over intent: a change is what it does to who can act, what gets recorded, and what an auditor can verify afterward.
@@ -232,6 +238,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
 
@@ -260,6 +267,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 
 **Its posture.** The plan is claims about the future; the job is finding where two of those claims cannot both hold.
 
@@ -290,6 +298,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 
 **Its posture.** Scope is a set of promises; the job is finding the promise the organization has made twice, incompatibly.
@@ -318,6 +327,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 - `rubric-strategy-alignment-S3` — The decision owner is named, and the deliverable says whether it is asking that person to decide or informing them.
 
@@ -348,6 +358,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 - `rubric-system-design-D1` — Reversible choices are separated from one-way doors, and each one-way door carries what unwinding it would cost.
 
@@ -380,6 +391,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `rubric-operations-O2` — An owner is named for answering the failure, with what access that person needs; 'the team' is not an owner.
 - `rubric-operations-O3` — The rollback is stated, including past any irreversible step, or the deliverable says plainly that there is none.
 
@@ -409,6 +421,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `rubric-user-experience-U2` — The unhandled states this change creates — empty, error, partial, permission-denied — are enumerated, with what the interface says in each.
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
@@ -437,6 +450,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `rubric-measurement-M2` — The baseline is stated, including the case where none exists and what that costs a before/after comparison.
 - `rubric-measurement-M3` — Instrumentation names where a number would be recorded and who owns recording it.
 
@@ -464,6 +478,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 
 **Its posture.** A claim is only as good as what it rests on and how plainly that is said: the job is naming the source, the kind of thing it is, and what it can and cannot support — never whether the claim feels right.
 
@@ -492,6 +507,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 
 **Its posture.** What a collection leaves out is a claim it makes without saying so: the job is naming the frame, the absences inside it, and which absences are the record being silent rather than the world being empty.
 
@@ -519,6 +535,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 
 **Its posture.** Every public sentence is a commitment; the question is never whether a claim sounds right but whether its evidence exists on the day it publishes.
 
