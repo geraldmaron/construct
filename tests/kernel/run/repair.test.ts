@@ -63,8 +63,8 @@ test('the whole deliverable is asked for, not the missing piece', () => {
     failures: [FAILED_GROUND],
   });
 
-  assert.match(text, /send back the whole deliverable/);
-  assert.match(text, /Not a patch/);
+  assert.match(text, /the same document, every section it already had/);
+  assert.match(text, /Do not rewrite it from scratch/);
 });
 
 /**
@@ -159,4 +159,32 @@ test('a second attempt that fixed nothing is not taken, however different it is'
 
 test('a repair that fixed everything is taken', () => {
   assert.equal(repairIsAnImprovement([f('claims-cited')], [p('claims-cited')]), true);
+});
+
+/**
+ * The repair is a fresh dispatch and a fresh dispatch remembers nothing. Asking
+ * for the whole deliverable back without sending the deliverable is asking the
+ * role to reconstruct a document it cannot see — measured over one run, five of
+ * five second attempts rebuilt from the failure list alone and dropped every
+ * section nobody had complained about.
+ */
+test('the draft travels with the request that asks for it back', () => {
+  const text = repairAssignment({
+    role: 'privacy',
+    deliverable: '## Finding\nThe kill switches read from Firestore.',
+    failures: [FAILED_CITES],
+  });
+
+  assert.match(text, /The kill switches read from Firestore\./);
+  assert.match(text, /the same document, every section it already had/);
+});
+
+test('a draft carrying fences is quoted so its headings cannot restructure the ask', () => {
+  const text = repairAssignment({
+    role: 'privacy',
+    deliverable: '```\ncode\n```',
+    failures: [FAILED_CITES],
+  });
+
+  assert.match(text, /````markdown/);
 });

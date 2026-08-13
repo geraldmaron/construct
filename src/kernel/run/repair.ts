@@ -27,10 +27,13 @@
  *     rule the research rung and the closing round carry, for the same reason:
  *     a run that keeps handing its own work back to itself never delivers, and
  *     the second pass is where nearly all of the recoverable work is.
- *   - THE WHOLE DELIVERABLE COMES BACK. Not a patch, not the missing section.
- *     A role that returns only what the checker asked for has written to the
- *     checker rather than to the reader, and the next check would then be run
- *     against a document nobody would receive.
+ *   - THE WHOLE DELIVERABLE COMES BACK, AND GOES OUT WITH THE REQUEST. Not a
+ *     patch and not the missing section: a role that returns only what the
+ *     checker asked for has written to the checker rather than to the reader.
+ *     Which means the draft has to travel with the ask, because this is a fresh
+ *     dispatch and a fresh dispatch remembers nothing — and a refusal to take a
+ *     second attempt that lost ground stands behind the instruction, because an
+ *     instruction is not a mechanism.
  *   - THE CHEAP FIX IS NAMED AND REFUSED. Every one of these checks has a way
  *     to be satisfied without doing anything: tag the claim [unverified]
  *     instead of sourcing it, write "could not be read" over a file nobody
@@ -190,12 +193,27 @@ export function repairAssignment(request: RepairRequest): string {
     if (cheap !== null) lines.push(`  Do not close this by: ${cheap}`);
   }
 
+  // The draft itself, because the repair is a fresh dispatch and a fresh
+  // dispatch remembers nothing. Asking a role to return the whole deliverable
+  // without showing it the deliverable is asking it to reconstruct a document
+  // it cannot see, which is what it does: measured over one run, five of five
+  // second attempts rebuilt from the failures alone and dropped every section
+  // nobody had complained about. Fenced so the draft's own headings cannot
+  // restructure the instruction around them.
+  const fence = request.deliverable.includes('```') ? '````' : '```';
   lines.push(
     '',
-    'Finish the work, then send back the whole deliverable — every section, ' +
-      'including the parts that already passed. Not a patch and not the missing ' +
-      'piece on its own: what you return is what the reader receives, and a ' +
-      'document assembled to satisfy a checker is written to the wrong audience.',
+    'This is what you submitted, in full:',
+    '',
+    `${fence}markdown`,
+    request.deliverable,
+    fence,
+    '',
+    'Send it back with the work above finished — the same document, every ' +
+      'section it already had, edited where the checks found it short. Do not ' +
+      'rewrite it from scratch and do not drop a section nobody asked about: a ' +
+      'second attempt that fixes two checks and loses three is refused, and what ' +
+      'the reader then receives is this draft exactly as it stands.',
   );
 
   if (request.groundRoots !== undefined && request.groundRoots.length > 0) {
