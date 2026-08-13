@@ -52,6 +52,7 @@ import {
   findScaffoldingCitations,
   selfAttestsCiting,
 } from '../verify/claims.ts';
+import { RUBRIC_LINES, rubricChallengeId } from './readers.ts';
 import type { Brief } from '../brief/schema.ts';
 
 export interface ChallengeCheck {
@@ -365,7 +366,28 @@ export const CHALLENGES: readonly Challenge[] = [
  */
 export const SPINE_CHALLENGES: readonly string[] = ['claims-cited', 'scope-diff', 'ground-exhausted'];
 
-const BY_ID = new Map(CHALLENGES.map((challenge) => [challenge.id, challenge]));
+/**
+ * The reader's own acceptance lines, as challenges.
+ *
+ * Derived rather than hand-listed so the rubric stays the source: a line that
+ * gains a structural form in readers.ts becomes a challenge here without
+ * anyone remembering to add it, and a line that loses one stops being a gate
+ * the same way. Only must-lines with a structural form appear — a should-line
+ * grades as accept-with-corrections in the rubric, and gating on one would
+ * enforce a standard stricter than the document it comes from.
+ */
+const RUBRIC_CHALLENGES: readonly Challenge[] = RUBRIC_LINES.filter(
+  (line) => line.weight === 'must' && line.enforcement.kind === 'structural',
+).map((line) => ({
+  id: rubricChallengeId(line),
+  question: line.requires,
+  structural: (deliverable: string) =>
+    (line.enforcement as { check: (text: string) => ChallengeCheck }).check(deliverable),
+}));
+
+const BY_ID = new Map(
+  [...CHALLENGES, ...RUBRIC_CHALLENGES].map((challenge) => [challenge.id, challenge]),
+);
 
 export function challengeById(id: string): Challenge | undefined {
   return BY_ID.get(id);

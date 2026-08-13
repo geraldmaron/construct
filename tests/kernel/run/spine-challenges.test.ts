@@ -25,7 +25,7 @@ import { addSource, recordSourceRead } from '../../../src/kernel/store/sources.t
 import { enqueueTask } from '../../../src/kernel/store/tasks.ts';
 import { openDecisions, resolveDecision } from '../../../src/kernel/store/decisions.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
-import { startRun } from '../../../src/kernel/run/outcome.ts';
+import { concernChallenges, startRun } from '../../../src/kernel/run/outcome.ts';
 import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import { promotionOf } from '../../../src/kernel/run/promotion.ts';
 import { SPINE_CHALLENGES, challengeById } from '../../../src/kernel/challenge/catalog.ts';
@@ -47,9 +47,14 @@ const UNSOURCED = [
 ].join('\n');
 
 /** The same work, cited and honest about what it did not cover. */
+// A deliverable that passes everything its concern owes, which now includes
+// what the reader of that concern requires. The blast-radius line is here for
+// that reason and not as decoration: a security reader who is told an exposure
+// is "critical" has been told how worried to be and not what is exposed.
 const SOURCED = [
   '# Privacy read',
   'A breach must be reported within 72 hours of awareness [cite:GDPR Article 33(1)].',
+  'A stolen admin session reaches one tenant, not every tenant, and grants no persistent access [unverified].',
   '',
   '## Out of scope',
   'I could not determine where the data is processed, so transfers are uncovered.',
@@ -92,7 +97,13 @@ test('a brief the spine produced declares the free challenges, and says so to th
 
     for (const id of started.tasks) {
       const brief = getTask(store, id)?.brief as Brief;
-      assert.deepEqual(brief.challenges, SPINE_CHALLENGES);
+      // Asked of the rule rather than compared against a copy of it. What the
+      // spine adds unconditionally is asserted separately below, so a rule that
+      // quietly stopped declaring the free three would still be caught.
+      assert.deepEqual(brief.challenges, concernChallenges(brief.role));
+      for (const spine of SPINE_CHALLENGES) {
+        assert.ok(brief.challenges?.includes(spine), `every brief declares ${spine}`);
+      }
     }
 
     // Declared and stated: a role held to a challenge it was never shown is the
@@ -242,7 +253,8 @@ test('a draft that is not text is reported unreadable, and never passes a challe
     );
     assert.ok(unanswered.length > 0, 'and the silence is on the record, not implied');
     const detail = unanswered[0].detail as { unanswered: Array<{ challenge: string; reason: string }> };
-    assert.deepEqual(detail.unanswered.map((u) => u.challenge), [...SPINE_CHALLENGES]);
+    const role = getTask(store, started.tasks[0])?.role ?? '';
+    assert.deepEqual(detail.unanswered.map((u) => u.challenge), [...concernChallenges(role)]);
     assert.match(detail.unanswered[0].reason, /not readable as text/);
 
     // Draft is the state for "nobody answered these", which is exactly true.
@@ -299,13 +311,17 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
     const low = startRun(store, { runId: 'run-low', outcome: OUTCOME, at: AT });
     for (const id of low.tasks) {
       const brief = getTask(store, id)?.brief as Brief;
-      // Decision-class concerns add strongest-objection on top of the spine
-      // two; everything else in a low-tier run declares exactly the spine.
+      // A low-tier run declares what the concern owes and nothing the run
+      // itself would raise: no pre-mortem, no legal issue-spot.
+      assert.deepEqual(brief.challenges, concernChallenges(brief.role));
+      assert.equal(brief.challenges?.includes('pre-mortem'), false);
+      assert.equal(brief.challenges?.includes('legal-issue-spot'), false);
+      // The decision class is still keyed on the concern, not on the run.
       const decisionClass = ['strategy-alignment', 'system-design', 'product-scoping'];
-      const expected = decisionClass.includes(brief.role)
-        ? [...SPINE_CHALLENGES, 'strongest-objection']
-        : SPINE_CHALLENGES;
-      assert.deepEqual(brief.challenges, expected);
+      assert.equal(
+        brief.challenges?.includes('strongest-objection'),
+        decisionClass.includes(brief.role),
+      );
     }
 
     const high = startRun(store, {

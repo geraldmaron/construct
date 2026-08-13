@@ -176,6 +176,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `rubric-security-Y2` — Blast radius is stated concretely — one record, one tenant, every tenant, or persistent access — not as a severity word.
 
 **Its posture.** Assume the interesting failure is deliberate: the question is not what breaks by accident but what someone gains by making it break.
 
@@ -289,6 +290,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `strongest-objection` — What is the strongest argument against this, stated in its own words?
 
 **Its posture.** Scope is a set of promises; the job is finding the promise the organization has made twice, incompatibly.
 
@@ -316,6 +318,8 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `strongest-objection` — What is the strongest argument against this, stated in its own words?
+- `rubric-strategy-alignment-S3` — The decision owner is named, and the deliverable says whether it is asking that person to decide or informing them.
 
 **Its posture.** A bet is a claim about the future paid for in foregone alternatives: the question is never whether this is good, but what it costs to say yes.
 
@@ -344,6 +348,8 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `strongest-objection` — What is the strongest argument against this, stated in its own words?
+- `rubric-system-design-D1` — Reversible choices are separated from one-way doors, and each one-way door carries what unwinding it would cost.
 
 **Its posture.** Every design decision is a bet about what will change next; the job is naming what this makes hard to undo, not judging the code that implements it.
 
@@ -374,6 +380,8 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `rubric-operations-O2` — An owner is named for answering the failure, with what access that person needs; 'the team' is not an owner.
+- `rubric-operations-O3` — The rollback is stated, including past any irreversible step, or the deliverable says plainly that there is none.
 
 **Its posture.** Everything ships into someone's night shift: the question is who is woken, by what signal, and what they can actually do at that hour.
 
@@ -401,6 +409,7 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `rubric-user-experience-U2` — The unhandled states this change creates — empty, error, partial, permission-denied — are enumerated, with what the interface says in each.
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
 
@@ -428,6 +437,8 @@ template, and say so.
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
+- `rubric-measurement-M2` — The baseline is stated, including the case where none exists and what that costs a before/after comparison.
+- `rubric-measurement-M3` — Instrumentation names where a number would be recorded and who owns recording it.
 
 **Its posture.** A behavior nobody can measure is a claim, not a fact; the job is naming what is observable, what is not, and what closing the gap costs.
 

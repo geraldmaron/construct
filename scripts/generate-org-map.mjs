@@ -33,8 +33,8 @@ import process from 'node:process';
 import { DOMAINS } from '../src/kernel/implication/domains.ts';
 import { playbookFor } from '../src/kernel/plan/playbooks.ts';
 import { lensForDomain } from '../src/kernel/plan/lenses.ts';
-import { riskTierFor } from '../src/kernel/lessons/admission.ts';
-import { SPINE_CHALLENGES, challengeById } from '../src/kernel/challenge/catalog.ts';
+import { challengeById } from '../src/kernel/challenge/catalog.ts';
+import { concernChallenges } from '../src/kernel/run/outcome.ts';
 
 /** The human seats each concern answers for. Declared, never inferred. */
 const SEATS = {
@@ -60,8 +60,11 @@ const OUT = join('docs', 'org-map.md');
 function section(domain) {
   const playbook = playbookFor(domain.domain);
   const lens = lensForDomain(domain.domain);
-  const tier = riskTierFor(domain.domain);
-  const declared = [...SPINE_CHALLENGES, ...(tier === 'high' ? ['legal-issue-spot'] : [])];
+  // Asked of the rule the briefs actually use rather than rebuilt here: a
+  // second copy of "what this concern owes" drifts the moment either moves,
+  // and this page existed for a while showing neither the decision-class
+  // objection nor the reader's acceptance lines that every brief carried.
+  const declared = concernChallenges(domain.domain);
 
   const lines = [];
   lines.push(`### ${SEATS[domain.domain] ?? 'unmapped seat'} — \`${domain.domain}\``);

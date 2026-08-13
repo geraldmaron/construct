@@ -1,7 +1,7 @@
 {
   "name": "@geraldmaron/construct",
   "version": "3.0.0-alpha.9",
-  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest \u2014 decisions in, deliverables out.",
+  "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out.",
   "type": "module",
   "license": "Apache-2.0",
   "repository": {
@@ -42,7 +42,7 @@
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/generate-org-map.mjs --check",
+    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/lint-reader-rubric-parity.mjs && node scripts/generate-org-map.mjs --check",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "smoke": "bash scripts/smoke-packaged-install.sh",

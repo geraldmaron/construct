@@ -27,6 +27,7 @@ import { enqueueTask } from '../store/tasks.ts';
 import { transact } from '../store/open.ts';
 import type { Store } from '../store/open.ts';
 import { SPINE_CHALLENGES } from '../challenge/catalog.ts';
+import { rubricChallengeId, structuralRubricFor } from '../challenge/readers.ts';
 import { riskTierFor } from '../lessons/admission.ts';
 import type { Brief } from '../brief/schema.ts';
 import { askBriefFor, primaryImplication } from './ask.ts';
@@ -110,11 +111,35 @@ const DECISION_CLASS_DOMAINS: ReadonlySet<string> = new Set([
   'product-scoping',
 ]);
 
+/**
+ * What a concern's brief declares when nothing about the run raises it further.
+ *
+ * Exported so the generated org map states obligations by asking the rule
+ * rather than rebuilding it. A page that lists what a concern owes, assembled
+ * from its own partial copy of this function, drifts the moment either changes
+ * — and it did: the map showed neither the decision-class objection nor the
+ * reader's acceptance lines, while every brief carried them.
+ *
+ * `pre-mortem` is absent by construction rather than by omission. It is
+ * declared on every brief in a run that implicates any high-tier concern, which
+ * is a fact about a run and not about a concern, and no page listing concerns
+ * can say whether it applies.
+ */
+export function concernChallenges(domain: string): readonly string[] {
+  return challengesFor(domain, false);
+}
+
 function challengesFor(domain: string, runHighTier: boolean): readonly string[] {
   const declared = [...SPINE_CHALLENGES];
   if (runHighTier) declared.push('pre-mortem');
   if (riskTierFor(domain) === 'high') declared.push('legal-issue-spot');
   if (DECISION_CLASS_DOMAINS.has(domain)) declared.push('strongest-objection');
+  // What the reader of this concern's deliverable requires before they would
+  // call it adequate, from the acceptance rubric they were written into. Keyed
+  // the same way the decision class is keyed, and for the same reason: a
+  // requirement that applies to one concern's reader and not another's is
+  // declared on that concern's brief or it is not a requirement at all.
+  for (const line of structuralRubricFor(domain)) declared.push(rubricChallengeId(line));
   return declared;
 }
 
