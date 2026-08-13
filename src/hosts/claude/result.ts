@@ -12,7 +12,17 @@
  */
 
 export interface ClaudeUsage {
-  /** total_cost_usd — a real number on this host; the ceiling binds. */
+  /**
+   * total_cost_usd, which is what these tokens would have cost on API billing
+   * and not necessarily what anything charged.
+   *
+   * This host authenticates through the Claude Code CLI's own OAuth, and on a
+   * subscription account nothing is billed per call: the figure is an estimate
+   * of work done, and the account's rate limit is the thing that actually
+   * binds. The ceiling is denominated in these estimates, so it bounds how much
+   * work a run may do, which is useful and is not the same as bounding a bill.
+   * Anything quoting this number as an amount charged is wrong.
+   */
   readonly cost: number;
   /** num_turns; spendOf() treats zero-step usage as unmeasured, so it matters. */
   readonly steps: number;

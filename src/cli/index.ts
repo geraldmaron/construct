@@ -2184,8 +2184,14 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     if (report.completed === 0 && report.failed > 0) {
       writeTotalFailureRecourse(report.failed);
     } else {
+      // What this invocation spent, against what it was allowed to spend. The
+      // lifetime total is a different fact and was being printed under this
+      // sentence, so a store with history read as a run that had nearly
+      // exhausted its budget before starting.
       process.stdout.write(
-        `\nspend ${money(report.spendAfter)} of ${money(report.spendCeiling)} ceiling.\n`,
+        `\nreported cost ${money(report.spendAfter - report.spendBefore)} of ` +
+          `${money(report.spendCeiling)} allowed for this run ` +
+          `(${money(report.spendAfter)} recorded across every run in this store).\n`,
       );
     }
     if (report.conflicts > 0) {
@@ -2221,8 +2227,11 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     if (report.halted === 'spend-ceiling') {
       const left = countTasksByState(store, args.run).pending ?? 0;
       process.stdout.write(
-        `\nhalted: spend ceiling reached. ${String(left)} task(s) left pending — ` +
-          'raise it with --ceiling=<amount> to continue.\n',
+        `\nhalted: this run reached the ${money(report.spendCeiling)} ceiling. ` +
+          `${String(left)} task(s) left pending — raise it with --ceiling=<amount> to continue.\n` +
+          'The figure is what a host reports each call costs. On a subscription host that is an ' +
+          'estimate of work done rather than an amount charged, so the ceiling bounds how much ' +
+          'work a run may do and is not a spending limit.\n',
       );
       return 1;
     }

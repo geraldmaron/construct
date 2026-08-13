@@ -162,3 +162,34 @@ harness-plant run — which is the only order in which a rubric means anything.
   working exploit, attack tooling, or evasion guidance fails this line.
 - should Y4. What evidence would show the exposure had already been used is
   named, and whether anything records it today.
+
+## Settled: O2 and M3 against the [unowned] rule (2026-08-13)
+
+Four of eleven verdicts in the wave-B panel are rejections and all four are the
+same complaint: operations O2 asks that an owner is named for answering the
+failure, measurement M3 that instrumentation names who owns recording the
+number, and the deliverables wrote `[unowned]` with the reason the material
+names nobody and who would have to supply one.
+
+Both sides were working correctly. The work-product directive requires the
+`[unowned]` marker precisely so that a resolving step with nobody attached is
+visible rather than quietly ownerless, and an invented name is worse than an
+absent one. The rubric asks for a name.
+
+**The rubric is not amended.** A rubric reinterpreted after seeing the
+deliverables it judges is no longer pre-committed, and the pre-commitment is the
+whole instrument — it is the only reason a score from it means anything. The
+four recorded verdicts keep their as-run values.
+
+What changed is the production side. A role is now told that where something
+needs an owner and the material names none, it proposes who should own it and
+why that role; and that where nothing in the material supports even that, the
+owner is whoever asked for the work, because saying so is more use to a reader
+than an empty line (`kernel/run/grounding.ts`, ANSWER_THE_ASK). A proposal is
+marked as a proposal, so nothing is invented and nothing is passed off as
+found — the marker's original purpose is kept and the line becomes satisfiable
+rather than being lowered to meet what was already written.
+
+The enforcement agrees in the same direction: the reader-rubric check fails a
+slot that describes the absence of an owner rather than naming one, so prose
+about ownership does not pass as ownership either.

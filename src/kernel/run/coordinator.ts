@@ -1291,7 +1291,13 @@ export async function workRun(
   for (;;) {
     if (fatal !== null) break;
 
-    if (totalSpend(store) >= options.spendCeiling) {
+    // What this invocation has spent, not what the store has spent since it
+    // was created. The ceiling was applied to the lifetime total, so a store
+    // that had ever run past the figure halted every later run at dispatch
+    // before doing any work, and the printed line said "this run" about a
+    // number covering every run there had ever been. A bound on a piece of
+    // work has to be measured over that piece of work.
+    if (totalSpend(store) - spendBefore >= options.spendCeiling) {
       halted = 'spend-ceiling';
       break;
     }

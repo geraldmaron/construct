@@ -33,17 +33,29 @@ function parseRubric(text) {
   const lines = [];
   const skipped = [];
   let concern = null;
+  // A heading only becomes a reported section once a rubric line appears under
+  // it. The document also carries dated decision notes, and listing one as a
+  // section that "binds to nothing" reads as a rubric nobody wired up rather
+  // than as prose — which is what it is.
+  let unkeyed = null;
   for (const raw of text.split('\n')) {
     const heading = /^##\s+(.+?)\s*$/.exec(raw);
     if (heading) {
       const keyed = /\(([a-z][a-z-]*)\)\s*$/.exec(heading[1]);
       concern = keyed ? keyed[1] : null;
-      if (!keyed) skipped.push(heading[1]);
+      unkeyed = keyed ? null : heading[1];
       continue;
     }
-    if (concern === null) continue;
     const line = /^-\s+(must|should)\s+([A-Z]\d+)\.\s+(.+)$/.exec(raw.trim());
-    if (line) lines.push({ concern, weight: line[1], id: line[2] });
+    if (!line) continue;
+    if (concern !== null) {
+      lines.push({ concern, weight: line[1], id: line[2] });
+      continue;
+    }
+    if (unkeyed !== null) {
+      skipped.push(unkeyed);
+      unkeyed = null;
+    }
   }
   return { lines, skipped };
 }

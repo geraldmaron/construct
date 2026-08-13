@@ -411,7 +411,11 @@ test('an outcome queues work, and construct work runs it to a deliverable', asyn
   assert.equal(code, 0);
   assert.match(out, /queued 4 task\(s\)/);
   assert.match(out, /worked 4 task\(s\) on stand-in: 4 done, 0 failed/);
-  assert.match(out, /spend 0\.04 of 10\.00 ceiling/);
+  // What this invocation spent, against what it was allowed. The lifetime
+  // total is a separate fact and says so, so a store with history no longer
+  // reads as a run that started nearly out of budget.
+  assert.match(out, /reported cost 0\.04 of 10\.00 allowed for this run/);
+  assert.match(out, /recorded across every run in this store/);
   assert.match(out, /role-dispatched/, 'the run must be readable back out of the work log');
   assert.match(out, /role-reported/);
 });
@@ -465,7 +469,11 @@ test('the spend ceiling stops the CLI and tells the user how to raise it', async
   ]);
 
   assert.equal(code, 1, 'a halted run must not exit as though it finished');
-  assert.match(out, /halted: spend ceiling reached/);
+  assert.match(out, /halted: this run reached the [\d.]+ ceiling/);
+  // The number is a reported cost, and on a subscription host that is an
+  // estimate of work done rather than an amount charged. Saying so where the
+  // ceiling is enforced is the only place a reader is guaranteed to see it.
+  assert.match(out, /not a spending limit/);
   assert.match(out, /task\(s\) left pending/);
   assert.match(out, /--ceiling=/);
 });
@@ -695,7 +703,7 @@ test('the invocation that fails everything states the recourse, not the one afte
   assert.match(out, /construct outcome "<what you want>"/, 'the user is told what to do next');
   assert.doesNotMatch(
     out,
-    /spend .* of .* ceiling/,
+    /reported cost .* allowed for this run/,
     'reporting spend under the ceiling after a run that delivered nothing reads as "this was cheap"',
   );
   assert.equal(code, 1);
