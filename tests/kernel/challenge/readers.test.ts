@@ -47,6 +47,32 @@ test('the recorded failure fails: every recommendation marked unowned names no o
   assert.match(check.detail, /unowned/);
 });
 
+/**
+ * The form the real deliverable used, which an earlier version of this check
+ * passed. Every line is honest and useful and none of them is a name: the
+ * reader is told what kind of person would own each item and is left with a
+ * search. Whatever follows the placeholder explains it rather than replacing it.
+ */
+test('an explained placeholder is still a placeholder', () => {
+  const asWritten = [
+    'Owner: [unowned]; closing it is a security/platform-admin call given it concerns session reauth.',
+    'Owner: [unowned] — research/product lead who sets the discovery roadmap.',
+    'Owner: [unowned] — security/platform admin owns assertRecentReauth; product owns the second approver.',
+    'Owner: [unowned] — owner of docs/admin/ content.',
+  ].join('\n');
+
+  const check = namesAnOwner(asWritten);
+
+  assert.equal(check.passed, false);
+  assert.match(check.detail, /placeholder/);
+});
+
+test('a name followed by qualifying prose is still a name', () => {
+  const check = namesAnOwner('Owner: D. Okafor — with the release manager as backup while she is on leave.');
+
+  assert.equal(check.passed, true);
+});
+
 test('"the team" is not an owner, because the rubric says so outright', () => {
   const check = namesAnOwner('The rollback is owned by the team, who will action it on detection.');
 

@@ -89,6 +89,23 @@ const NOT_AN_OWNER =
   /^(?:\[?(?:unowned|unassigned|unknown|none|nobody|no one|tbd|tba|n\/a)\]?|not (?:yet )?(?:named|assigned|determined|identified|decided)|unclear|the team|the org|the group|engineering|the business|whoever|someone|to be (?:decided|determined|named|assigned))\.?$/i;
 
 /**
+ * The head of an owner attribution — what stands where the name goes, before
+ * any explanation of it.
+ *
+ * Reading only the head is the correction to a check that passed the document
+ * it was built to fail. A real deliverable wrote `Owner: [unowned] — security/
+ * platform admin owns assertRecentReauth enforcement`, and a whole-value test
+ * saw a long string that was not the word "unowned" and let it through. The
+ * sentence is honest and useful and it is still not an owner: it says what kind
+ * of person would own this, which leaves the reader with a search rather than a
+ * name. Whatever follows the placeholder explains the placeholder; it does not
+ * replace it.
+ */
+function ownerHead(value: string): string {
+  return value.split(/\s*[;—(]|\s+-\s+|,\s/)[0].trim().replace(/[.*_`]+$/, '');
+}
+
+/**
  * Whether the deliverable names somebody a reader could actually go to.
  *
  * One implementation for the three rubric lines that require an owner, rather
@@ -103,7 +120,9 @@ export function namesAnOwner(deliverable: string): ChallengeCheck {
   for (const match of deliverable.matchAll(OWNER_ATTRIBUTION)) {
     const value = (match[1] ?? match[2] ?? match[3] ?? '').trim().replace(/[.*_`]+$/, '');
     if (!value) continue;
-    if (NOT_AN_OWNER.test(value)) placeholders.push(value);
+    const head = ownerHead(value);
+    if (!head) continue;
+    if (NOT_AN_OWNER.test(head)) placeholders.push(head);
     else named += 1;
   }
   if (named > 0) {
