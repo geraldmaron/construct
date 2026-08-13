@@ -215,3 +215,54 @@ export function groundedMaterialProtocol(
     GROUNDED_SYNTHESIS_PROTOCOL
   );
 }
+
+/**
+ * Answering the ask in the shape it was asked.
+ *
+ * A recorded run was told to decide which capability earns the next block of
+ * work, what stops being funded to pay for it, and what must be satisfied
+ * before either ships. All five roles reported that no document defines the
+ * release boundaries and no budget document exists in the material, and stopped
+ * there. The material held the epic's bead list and a target already exceeded
+ * by a factor of two — enough to propose a split and a cut. One role did make
+ * the call in its finding and then listed the same question as unresolved,
+ * which is the failure in miniature: the judgment was available, was formed,
+ * and was disowned on the way out.
+ *
+ * The confusion this fixes is between two different things. "No document states
+ * X" is a fact about the material and is worth writing down. It is not an
+ * answer to "decide X", and offering it as one hands back the ask. A colleague
+ * asked to choose when nothing on file chooses does not report that nothing on
+ * file chooses; they choose, say it is their judgment, and say what would
+ * change it. That is the whole difference between a contributor and a reviewer,
+ * and it is what this project is for.
+ *
+ * Bounded on both sides, because the opposite failure is worse. A proposal is
+ * marked as one and never dressed as a finding, its basis is stated so a reader
+ * can attack the reasoning rather than the conclusion, and a question that
+ * genuinely belongs to a person — what they intend, what they will spend, what
+ * they are willing to accept — is still theirs and is still asked.
+ */
+export const ANSWER_THE_ASK = [
+  'Answer what was asked, in the form it was asked. If the outcome asks you to',
+  'decide, choose, rank, sequence, or say what stops, then a decision is the',
+  'deliverable. "No document in the material states this" is a fact about the',
+  'material, not an answer: write it down as the reason your answer is a',
+  'proposal, and then give the proposal.',
+  '',
+  'Say plainly that it is your judgment, what you based it on, and what would',
+  'change it. A reader can argue with that. A reader cannot do anything at all',
+  'with the news that the answer was not already written down somewhere — they',
+  'asked you precisely because it was not.',
+  '',
+  'Where something needs an owner and the material names none, name who should',
+  'own it and why that role. If nothing in the material supports even that, the',
+  'owner is the person who asked for this work, and saying so is more use than',
+  'leaving the line empty.',
+  '',
+  'What stays a question: what a person intends, what they will spend, what',
+  'they will accept, and anything settled only by an event outside the',
+  'material — a review that has not happened, an application nobody has',
+  'answered. Those are theirs. Ask them, and say what you assumed meanwhile so',
+  'the work does not stop while they answer.',
+].join('\n');

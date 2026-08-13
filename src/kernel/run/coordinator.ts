@@ -41,7 +41,7 @@ import { planFor } from '../store/plans.ts';
 import { unheadedSlots } from '../plan/ladder.ts';
 import { operationalLessonsFor } from '../lessons/admission.ts';
 import { groundRootsFor } from './sourcereads.ts';
-import { ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
+import { ANSWER_THE_ASK, ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
 import type { Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
@@ -299,6 +299,7 @@ function lensDirective(role: string): string {
   return (
     `Your posture: ${lens.posture}\n\n` +
     `${ROLE_OWNERSHIP_BOUND}\n\n` +
+    `${ANSWER_THE_ASK}\n\n` +
     'Work through these questions against the material; each finding cites what supports it:\n' +
     `${questions}\n\n` +
     'Escalate rather than push past your remit:\n' +
