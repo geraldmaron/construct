@@ -19,6 +19,7 @@ import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.t
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { addSource, pendingProposals } from '../../src/kernel/store/sources.ts';
+import { addRecord, currentFields } from '../../src/kernel/store/records.ts';
 import { notesFor } from '../../src/kernel/store/notes.ts';
 import { operationalLessonsFor } from '../../src/kernel/lessons/admission.ts';
 
@@ -135,6 +136,20 @@ function loopHost(): HostAdapter {
               change: 'change an undeclared tracker',
               justification: `note:${noteId}#L3`,
               risk: 'low',
+            },
+          ],
+          records: [
+            {
+              record: 'rec-acme',
+              field: 'renewal',
+              value: 'Q4',
+              citation: `note:${noteId}#L1`,
+            },
+            {
+              record: 'rec-ghost',
+              field: 'renewal',
+              value: 'Q4',
+              citation: `note:${noteId}#L1`,
             },
           ],
           observations: [
@@ -262,4 +277,41 @@ test('a directory holding nothing readable says so rather than recording an empt
   ]);
   assert.equal(code, 1);
   assert.match(err, /holds no documents this install can read/);
+});
+
+test('a fact about a named subject lands on its record, and one about no subject is dropped', async () => {
+  const { code, out } = await run((file) => [
+    () =>
+      withStore((store) => {
+        addSource(store, {
+          id: 'src-1',
+          workspace: 'default',
+          kind: 'jira',
+          locator: 'PROJ',
+          addedAt: '2026-08-05T00:00:00.000Z',
+        });
+        addRecord(store, {
+          id: 'rec-acme',
+          workspace: 'default',
+          kind: 'customer',
+          name: 'Acme',
+          createdAt: '2026-08-05T00:00:00.000Z',
+        });
+        return 0;
+      }),
+    () => notes([file], loopHost()),
+    () =>
+      withStore((store) => {
+        const fields = currentFields(store, 'rec-acme');
+        assert.equal(fields.length, 1, 'the fact about Acme is on Acme, not in workspace memory');
+        assert.equal(fields[0]?.field, 'renewal');
+        assert.equal(fields[0]?.value, 'Q4');
+        assert.match(fields[0]?.citation ?? '', /^note:.+#L1$/, 'and it cites the line that taught it');
+        return 0;
+      }),
+  ]);
+  assert.equal(code, 0);
+  assert.match(out, /records updated \(1\)/);
+  assert.match(out, /rec-acme renewal/);
+  assert.match(out, /rec-ghost\.renewal names a record this workspace does not keep/);
 });

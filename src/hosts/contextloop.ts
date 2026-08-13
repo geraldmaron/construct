@@ -12,9 +12,12 @@
  *     operational lessons (to propose deltas that supersede rather than
  *     repeat) and its declared sources with the documents each was surveyed
  *     to hold — the only legal targets for proposals and observation
- *     citations. Naming the documents is what makes a drift observation an
- *     observation: asked about "documents you know of", a model answers from
- *     recollection, and the screen downstream cannot tell the difference.
+ *     citations. It also reads the records the workspace keeps, with what
+ *     each says now, so a fact about a named subject lands on that subject
+ *     instead of in workspace memory. Naming the documents is what makes a
+ *     drift observation an observation: asked about "documents you know of",
+ *     a model answers from recollection, and the screen downstream cannot
+ *     tell the difference.
  *   - The challenger is told to refute one delta, not to review it. A
  *     reviewer asked "is this good?" agrees; a challenger asked "why is this
  *     wrong?" has to find something or concede, and the concession is the
@@ -29,6 +32,7 @@ import type {
   ContextProducer,
   DeltaChallenger,
   ProducedDelta,
+  ProducerRecord,
   ProducerSource,
 } from '../kernel/context/produce.ts';
 import type { DriftReviewer } from '../kernel/context/review.ts';
@@ -72,6 +76,18 @@ function sourceListing(source: ProducerSource): string {
   return `${head}\n${source.documents.map((d) => `    ${d}`).join('\n')}`;
 }
 
+/**
+ * One record with what it currently says. The current values are shown so an
+ * update supersedes rather than repeats: a model that cannot see the field is
+ * already set to Q3 will helpfully set it to Q3 again, and a history full of
+ * restatements is a history nobody can read a change out of.
+ */
+function recordListing(record: ProducerRecord): string {
+  const head = `- ${record.id} (${record.kind}: ${record.name})`;
+  if (record.fields.length === 0) return `${head}\n    no fields recorded yet`;
+  return `${head}\n${record.fields.map((f) => `    ${f.field}: ${f.value}`).join('\n')}`;
+}
+
 export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
   return [
     'A person dumped their after-call notes. Below they are shown with line',
@@ -91,7 +107,11 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
         `documents each was found to hold:\n${input.sources.map(sourceListing).join('\n')}`
       : 'No sources are declared: propose no outward changes and no drift observations.',
     '',
-    'Emit three lists, each item citing the exact note line it came from as',
+    input.records.length > 0
+      ? `Records this workspace keeps, and what each says now:\n${input.records.map(recordListing).join('\n')}`
+      : 'This workspace keeps no records: propose no record updates.',
+    '',
+    'Emit four lists, each item citing the exact note line it came from as',
     `"note:${input.noteId}#L<n>":`,
     '- deltas: durable facts worth remembering, each {kind: technique|process|domain,',
     '  domain: what it teaches about, body, citation, external: true only if the',
@@ -100,6 +120,12 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     '  {source: a declared source id, change: the change in auditable words,',
     '  justification: the note citation, risk: low|high — low only for routine',
     '  field updates a human would wave through}.',
+    '- records: facts the notes settle about one of the records listed above,',
+    '  each {record: a listed record id, field: what the fact is about, value:',
+    '  what it now says, citation}. A fact about a named subject belongs on its',
+    '  record, not in the deltas: "this client decides scope by quarter" is a',
+    '  delta, "Acme moved its renewal to Q3" is a record update. Update a field',
+    '  only where the notes say something the record does not already say.',
     '- observations: places where two of the documents listed above contradict',
     '  each other, each {claim, citations: [{source: declared id, document}, ...]}',
     '  citing BOTH sides by the document paths as listed. An observation citing a',
@@ -111,7 +137,7 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     'Empty lists are valid. Do not reach.',
     '',
     'Reply with JSON only, no prose outside it:',
-    '{"deltas":[],"proposals":[],"observations":[]}',
+    '{"deltas":[],"proposals":[],"records":[],"observations":[]}',
   ].join('\n');
 }
 

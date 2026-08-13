@@ -67,6 +67,13 @@
  * `source_reads` precisely so a reader can weigh it differently — a
  * deliverable resting half on a declared repository and half on the open web
  * previously carried provenance for one half and silence for the other.
+ * Schema version 13 adds `records` and `record_fields`: the subjects a
+ * workspace keeps facts about, and those facts. The subject row is identity
+ * and does not change — a different name is a different subject — while the
+ * fields are append-only, so a value supersedes its predecessor without
+ * erasing how it got there, and every one carries the note citation that
+ * taught it. Workspace lessons stay what they are: a durable operating fact
+ * belongs to the workspace, a fact about a named subject belongs to it.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -91,7 +98,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 12;
+export const SCHEMA_VERSION = 13;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -382,6 +389,35 @@ BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
 CREATE TRIGGER IF NOT EXISTS sources_no_delete
 BEFORE DELETE ON sources
 BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+
+CREATE TABLE IF NOT EXISTS records (
+  id         TEXT PRIMARY KEY,
+  workspace  TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  created_at TEXT NOT NULL
+) STRICT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS records_subject ON records (workspace, kind, name);
+
+CREATE TABLE IF NOT EXISTS record_fields (
+  seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+  record      TEXT NOT NULL REFERENCES records (id),
+  field       TEXT NOT NULL,
+  value       TEXT NOT NULL,
+  citation    TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS record_fields_record ON record_fields (record, field, seq);
+
+CREATE TRIGGER IF NOT EXISTS record_fields_no_update
+BEFORE UPDATE ON record_fields
+BEGIN SELECT RAISE(ABORT, 'record_fields is append-only: a new value is a new row'); END;
+
+CREATE TRIGGER IF NOT EXISTS record_fields_no_delete
+BEFORE DELETE ON record_fields
+BEGIN SELECT RAISE(ABORT, 'record_fields is append-only'); END;
 
 CREATE TABLE IF NOT EXISTS external_reads (
   seq         INTEGER PRIMARY KEY AUTOINCREMENT,

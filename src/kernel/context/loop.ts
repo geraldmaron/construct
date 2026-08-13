@@ -22,6 +22,11 @@
  *   - Proposals do not become writes here. They become proposal rows, and the
  *     rung 0 machinery — human decisions, standing consent for low-risk —
  *     decides their fate. Filing grants nothing.
+ *   - A fact about a named subject goes to that subject's record, not to
+ *     workspace memory. Both are things the note taught; only one of them is
+ *     standing operating knowledge every later dispatch reasons from, and
+ *     filing "Acme's renewal moved to Q3" as the second is how a workspace
+ *     comes to hold one client's calendar as a general rule.
  *   - Application is transactional: either the whole loop's output lands, or
  *     none of it does. A half-applied loop would leave deltas admitted whose
  *     sibling proposals vanished.
@@ -37,6 +42,7 @@ import {
   type AdmissionDecision,
 } from '../lessons/admission.ts';
 import { proposeWrite } from '../store/sources.ts';
+import { getRecord, updateRecordField } from '../store/records.ts';
 import type { DensifiedIntake } from '../intake/densify.ts';
 
 /** A proposed change to memory: a lesson-to-be, citing the note line that taught it. */
@@ -68,6 +74,23 @@ export interface PropagationProposal {
   readonly risk: 'low' | 'high';
 }
 
+/**
+ * A fact about a named subject, headed for that subject's record rather than
+ * workspace memory. It goes through no admission gate: a gate exists to decide
+ * whether a claim becomes standing operating knowledge every later dispatch
+ * reasons from, and a field on one customer's record is not that. What it is
+ * held to instead is the same citation discipline as everything else here,
+ * plus the record actually existing — an update to a subject nobody declared
+ * would invent the subject as a side effect of describing it.
+ */
+export interface RecordUpdate {
+  readonly record: string;
+  readonly field: string;
+  readonly value: string;
+  /** A note citation (`note:<id>#L<n>`) into the note this loop is applying. */
+  readonly citation: string;
+}
+
 export interface ContextLoopInput {
   readonly workspace: string;
   readonly run: string;
@@ -75,6 +98,7 @@ export interface ContextLoopInput {
   readonly densified: DensifiedIntake;
   readonly deltas: readonly MemoryDelta[];
   readonly proposals: readonly PropagationProposal[];
+  readonly records?: readonly RecordUpdate[];
 }
 
 export interface ContextLoopResult {
@@ -84,6 +108,8 @@ export interface ContextLoopResult {
   readonly admissions: readonly AdmissionDecision[];
   /** Proposal ids now sitting in the rung 0 queue, in proposal order. */
   readonly filed: readonly string[];
+  /** Record fields moved by this pass, as "<record> <field>", in update order. */
+  readonly updated: readonly string[];
 }
 
 /**
@@ -183,10 +209,35 @@ export function applyContextLoop(
       filed.push(proposal.id);
     }
 
+    const updated: string[] = [];
+    for (const update of input.records ?? []) {
+      requireCitation(store, note.id, `record update ${update.record}.${update.field}`, update.citation);
+      const subject = getRecord(store, update.record);
+      if (!subject) {
+        throw new Error(
+          `applyContextLoop: record update cites ${update.record}, which this workspace does not keep`,
+        );
+      }
+      if (subject.workspace !== input.workspace) {
+        throw new Error(
+          `applyContextLoop: record ${update.record} belongs to ${subject.workspace}, not ${input.workspace}`,
+        );
+      }
+      updateRecordField(store, {
+        record: update.record,
+        field: update.field,
+        value: update.value,
+        citation: update.citation,
+        recordedAt: appliedAt,
+      });
+      updated.push(`${update.record} ${update.field}`);
+    }
+
     return {
       summary: confirmIntentSummary(input.densified),
       admissions,
       filed,
+      updated,
     };
   });
 }

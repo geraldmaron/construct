@@ -59,6 +59,7 @@ test('the producer prompt numbers every note line and names the citation form', 
     noteId: 'n-9',
     lessons: ['clients decide by quarter'],
     sources: [{ id: 'src-1', kind: 'jira', locator: 'PROJ', documents: [], unreachable: 'no connector' }],
+    records: [],
   });
   assert.match(prompt, /L1: first thing/);
   assert.match(prompt, /L2: second thing/);
@@ -76,6 +77,7 @@ test('a surveyed source shows its documents, and an unsurveyed one says so inste
       { id: 'docs', kind: 'directory', locator: '/ground', documents: ['/ground/prd.md', '/ground/strategy.md'] },
       { id: 'tracker', kind: 'jira', locator: 'PROJ', documents: [], unreachable: 'no jira connector' },
     ],
+    records: [],
   });
   assert.match(prompt, /\/ground\/prd\.md/);
   assert.match(prompt, /\/ground\/strategy\.md/);
@@ -84,7 +86,7 @@ test('a surveyed source shows its documents, and an unsurveyed one says so inste
 });
 
 test('the producer prompt carries the settled-vs-parked rule: a parked item is not a delta', () => {
-  const prompt = producerPrompt({ noteBody: 'x', noteId: 'n-1', lessons: [], sources: [] });
+  const prompt = producerPrompt({ noteBody: 'x', noteId: 'n-1', lessons: [], sources: [], records: [] });
   assert.ok(
     prompt.includes(SETTLED_VS_PARKED_RULE),
     'the shipped producer prompt must state the rule verbatim, not a paraphrase that can drift',
@@ -105,7 +107,7 @@ test('the org-harness notes-drop prompt states the same settled-vs-parked rule a
 });
 
 test('with nothing declared, the prompt says so instead of leaving blanks to fill', () => {
-  const prompt = producerPrompt({ noteBody: 'x', noteId: 'n-1', lessons: [], sources: [] });
+  const prompt = producerPrompt({ noteBody: 'x', noteId: 'n-1', lessons: [], sources: [], records: [] });
   assert.match(prompt, /remembers nothing yet/);
   assert.match(prompt, /No sources are declared/);
 });
@@ -148,6 +150,6 @@ test('a host failure surfaces as a throw for the caller to state', async () => {
       error: 'boom',
     }),
   };
-  await assert.rejects(createHostProducer(failing)({ noteBody: 'x', noteId: 'n', lessons: [], sources: [] }), /status error/);
+  await assert.rejects(createHostProducer(failing)({ noteBody: 'x', noteId: 'n', lessons: [], sources: [], records: [] }), /status error/);
   await assert.rejects(createHostChallenger(failing)(DELTA, 'line'), /status error/);
 });

@@ -5,9 +5,10 @@
  * Same division of labor as intake/densify.ts: the kernel defines the shape
  * and validates what came back; the model call lives in the host layer; a
  * failed producer is a stated stop, never a guess. The model reads the note,
- * the workspace's operational lessons, and its declared sources, and proposes
- * three sets — memory deltas, propagation proposals, drift observations. What
- * this module owns is the screen between the model's reply and the loop:
+ * the workspace's operational lessons, its declared sources, and the records
+ * it keeps, and proposes four sets — memory deltas, propagation proposals,
+ * record field updates, drift observations. What this module owns is the
+ * screen between the model's reply and the loop:
  *
  *   - A delta or proposal whose citation is not even the note-citation form
  *     is dropped here, with its reason kept, before the loop's hard gate ever
@@ -26,6 +27,14 @@
 import { LESSON_KINDS, type LessonKind } from '../store/lessons.ts';
 import { parseNoteCitation } from '../store/notes.ts';
 import type { Observation, DriftCitation } from './observations.ts';
+
+/** A record field change as the model proposed it, before the record is checked. */
+export interface ProducedRecordUpdate {
+  readonly record: string;
+  readonly field: string;
+  readonly value: string;
+  readonly citation: string;
+}
 
 /** A lesson-to-be as the model proposed it, before ids, bases, or gates. */
 export interface ProducedDelta {
@@ -47,12 +56,12 @@ export interface ProducedProposal {
 export interface ProducedLoop {
   readonly deltas: readonly ProducedDelta[];
   readonly proposals: readonly ProducedProposal[];
+  readonly records: readonly ProducedRecordUpdate[];
   readonly observations: readonly Observation[];
   /** What the model proposed that did not survive the screen, with reasons. */
   readonly discarded: readonly string[];
 }
 
-/** A model-backed producer. Throws on failure; the caller states the stop. */
 /**
  * One declared source as the producer sees it. `documents` is what the survey
  * found, which is what a drift observation may cite; an empty listing means
@@ -68,11 +77,21 @@ export interface ProducerSource {
   readonly unreachable?: string;
 }
 
+/** One record the workspace keeps, as the producer sees it. */
+export interface ProducerRecord {
+  readonly id: string;
+  readonly kind: string;
+  readonly name: string;
+  /** What its fields say now, so an update supersedes rather than repeats. */
+  readonly fields: ReadonlyArray<{ readonly field: string; readonly value: string }>;
+}
+
 export type ContextProducer = (input: {
   readonly noteBody: string;
   readonly noteId: string;
   readonly lessons: readonly string[];
   readonly sources: readonly ProducerSource[];
+  readonly records: readonly ProducerRecord[];
 }) => Promise<unknown>;
 
 /** What an adversarial challenge of one delta concluded. */
@@ -104,6 +123,7 @@ export function toProducedLoop(parsed: unknown, noteId: string): ProducedLoop {
   const record = parsed as {
     deltas?: unknown;
     proposals?: unknown;
+    records?: unknown;
     observations?: unknown;
   } | null;
   const list = (value: unknown): readonly unknown[] => (Array.isArray(value) ? value : []);
@@ -148,9 +168,31 @@ export function toProducedLoop(parsed: unknown, noteId: string): ProducedLoop {
     proposals.push({ source, change, justification, risk: p?.risk === 'low' ? 'low' : 'high' });
   }
 
+  const records: ProducedRecordUpdate[] = [];
+  for (const item of list(record?.records)) {
+    const r = item as { record?: unknown; field?: unknown; value?: unknown; citation?: unknown } | null;
+    const subject = asString(r?.record);
+    const field = asString(r?.field);
+    const value = asString(r?.value);
+    const citation = noteCitationOf(r?.citation, noteId);
+    if (!subject || !field || !value) {
+      discarded.push(
+        `a record update missing its ${!subject ? 'record' : !field ? 'field' : 'value'} was dropped`,
+      );
+      continue;
+    }
+    if (!citation) {
+      discarded.push(
+        `record update ${subject}.${field}: its citation does not name a line of note ${noteId}`,
+      );
+      continue;
+    }
+    records.push({ record: subject, field, value, citation });
+  }
+
   const observations = toObservations(record?.observations, PRODUCER_OBSERVER, discarded);
 
-  return { deltas, proposals, observations, discarded };
+  return { deltas, proposals, records, observations, discarded };
 }
 
 /** The role recorded on an observation a note-driven producer pass made. */

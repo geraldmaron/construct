@@ -94,9 +94,9 @@ test('an unstated or unrecognized risk is high risk', () => {
   );
 });
 
-test('an empty or shapeless reply is three empty lists, not a failure', () => {
+test('an empty or shapeless reply is four empty lists, not a failure', () => {
   const loop = toProducedLoop({}, 'n-1');
-  assert.deepEqual(loop, { deltas: [], proposals: [], observations: [], discarded: [] });
+  assert.deepEqual(loop, { deltas: [], proposals: [], records: [], observations: [], discarded: [] });
   const fromNull = toProducedLoop(null, 'n-1');
   assert.equal(fromNull.deltas.length, 0);
 });
@@ -112,4 +112,26 @@ test('an observation keeps its claim even when citations are malformed — the s
   );
   assert.equal(loop.observations.length, 1);
   assert.deepEqual(loop.observations[0]?.citations, [{ source: 's', document: 'd' }]);
+});
+
+test('a record update needs its record, field, value and a line of this note', () => {
+  const loop = toProducedLoop(
+    {
+      records: [
+        { record: 'rec-1', field: 'renewal', value: 'Q3', citation: 'note:n-1#L4' },
+        { record: 'rec-1', field: 'renewal', value: 'Q3' },
+        { record: 'rec-1', field: 'renewal', value: 'Q3', citation: 'note:n-other#L1' },
+        { record: '', field: 'renewal', value: 'Q3', citation: 'note:n-1#L4' },
+        { record: 'rec-1', field: 'renewal', value: '', citation: 'note:n-1#L4' },
+      ],
+    },
+    'n-1',
+  );
+  assert.deepEqual(loop.records, [
+    { record: 'rec-1', field: 'renewal', value: 'Q3', citation: 'note:n-1#L4' },
+  ]);
+  assert.equal(loop.discarded.length, 4);
+  assert.match(loop.discarded.join('\n'), /does not name a line of note n-1/);
+  assert.match(loop.discarded.join('\n'), /missing its record/);
+  assert.match(loop.discarded.join('\n'), /missing its value/);
 });

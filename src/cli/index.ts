@@ -38,8 +38,16 @@ import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
 import { recordNote, resolveNoteCitation } from '../kernel/store/notes.ts';
 import { externalReadsFor } from '../kernel/store/externalreads.ts';
+import {
+  addRecord,
+  currentFields,
+  fieldHistory,
+  findRecord,
+  getRecord,
+  recordsFor,
+} from '../kernel/store/records.ts';
 import { applyContextLoop } from '../kernel/context/loop.ts';
-import type { MemoryDelta, PropagationProposal } from '../kernel/context/loop.ts';
+import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
 import { toReviewedDrift } from '../kernel/context/review.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
@@ -1386,6 +1394,15 @@ async function contextLoopOverNote(
       noteId,
       lessons: operationalLessonsFor(store, workspace).map((l) => l.body),
       sources: producerSources,
+      // What each record says now, so an update supersedes rather than
+      // repeats: a model that cannot see the field is already set will set it
+      // again, and a history of restatements hides the one real change.
+      records: recordsFor(store, workspace).map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        name: r.name,
+        fields: currentFields(store, r.id).map((f) => ({ field: f.field, value: f.value })),
+      })),
     });
     produced = toProducedLoop(reply, noteId);
   } catch (error) {
@@ -1463,6 +1480,20 @@ async function contextLoopOverNote(
     });
   }
 
+  // The same screen the proposals get: an update naming a record this
+  // workspace does not keep is dropped with its reason rather than aborting
+  // the pass, and the loop's hard refusal stays the backstop.
+  const records: RecordUpdate[] = [];
+  for (const update of produced.records) {
+    if (!getRecord(store, update.record)) {
+      process.stdout.write(
+        `  discarded: record update ${update.record}.${update.field} names a record this workspace does not keep\n`,
+      );
+      continue;
+    }
+    records.push(update);
+  }
+
   const result = applyContextLoop(
     store,
     {
@@ -1472,6 +1503,7 @@ async function contextLoopOverNote(
       densified,
       deltas,
       proposals,
+      records,
     },
     at,
   );
@@ -1483,6 +1515,12 @@ async function contextLoopOverNote(
     for (const admission of result.admissions) {
       process.stdout.write(`  ${admission.verdict}: ${admission.lesson} — ${admission.reason}\n`);
     }
+  }
+  if (result.updated.length > 0) {
+    process.stdout.write(
+      `\nrecords updated (${String(result.updated.length)}) — each field cites the note line that moved it:\n`,
+    );
+    for (const moved of result.updated) process.stdout.write(`  ${moved}\n`);
   }
   if (result.filed.length > 0) {
     process.stdout.write(
@@ -2600,6 +2638,115 @@ const SOURCE_USAGE =
   '       construct source list [--workspace=<name>] [--all]\n' +
   '       construct source retire --id=<source-id>\n';
 
+const RECORD_USAGE =
+  'usage: construct record add --kind=<customer|vendor|…> --name=<what it is called> [--workspace=<name>]\n' +
+  '       construct record list [--workspace=<name>]\n' +
+  '       construct record show <record-id> [--field=<name>]\n';
+
+/**
+ * Declare and read the subjects a workspace keeps facts about.
+ *
+ * Declaring creates nothing but identity. Fields arrive through the context
+ * loop, each carrying the note line that taught it, because a record whose
+ * fields could be set by hand with no evidence is a place for unsourced facts
+ * to accumulate and later be quoted as though someone had established them.
+ * Reading is where the value and its history are both visible, since "what
+ * does it say" and "what changed it" are the same question asked twice.
+ */
+export function record(argv: string[]): number {
+  const sub = argv[0];
+  const { flags, rest } = parseFlags(argv.slice(1));
+  const workspace = workspaceFlag(flags);
+
+  if (sub === 'add') {
+    const kind = (flags.kind ?? '').trim();
+    const name = (flags.name ?? '').trim();
+    if (kind === '' || name === '') {
+      process.stderr.write(RECORD_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      const existing = findRecord(store, workspace, kind, name);
+      if (existing) {
+        // Not an error worth failing on, but not a silent second record
+        // either: two records for one subject split its history in half, and
+        // half a history reads exactly like a whole one.
+        process.stderr.write(
+          `record: ${workspace} already keeps ${kind} "${name}" as ${existing.id}\n`,
+        );
+        return 1;
+      }
+      const id = `rec-${at.replace(/[-:.TZ]/g, '')}`;
+      addRecord(store, { id, workspace, kind, name, createdAt: at });
+      process.stdout.write(
+        `keeping ${id}: ${kind} "${name}" (workspace ${workspace}).\n` +
+          '  Its fields fill in from notes — each one citing the line that taught it:\n' +
+          '  construct notes <file|directory> --host=<opencode|claude|codex|cursor>\n',
+      );
+      return 0;
+    });
+  }
+
+  if (sub === 'list') {
+    return withStore((store) => {
+      const rows = recordsFor(store, workspace);
+      if (rows.length === 0) {
+        process.stdout.write(`no records kept for workspace ${workspace}\n`);
+        return 0;
+      }
+      for (const row of rows) {
+        const fields = currentFields(store, row.id);
+        process.stdout.write(
+          `${row.id}  ${row.kind}  ${row.name}  (${String(fields.length)} field${fields.length === 1 ? '' : 's'})\n`,
+        );
+      }
+      return 0;
+    });
+  }
+
+  if (sub === 'show') {
+    const id = rest[0];
+    if (!id) {
+      process.stderr.write(RECORD_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const subject = getRecord(store, id);
+      if (!subject) {
+        process.stderr.write(`record: no record ${id}\n`);
+        return 1;
+      }
+      process.stdout.write(`${subject.id}: ${subject.kind} "${subject.name}" (since ${subject.createdAt})\n`);
+      if (flags.field) {
+        const history = fieldHistory(store, id, flags.field);
+        if (history.length === 0) {
+          process.stdout.write(`  ${flags.field}: never recorded\n`);
+          return 0;
+        }
+        process.stdout.write(`\n${flags.field}, oldest first:\n`);
+        for (const entry of history) {
+          process.stdout.write(`  ${entry.recordedAt}  ${entry.value}\n    cites ${entry.citation}\n`);
+        }
+        return 0;
+      }
+      const fields = currentFields(store, id);
+      if (fields.length === 0) {
+        process.stdout.write('  no fields recorded yet\n');
+        return 0;
+      }
+      for (const field of fields) {
+        process.stdout.write(`  ${field.field}: ${field.value}\n    cites ${field.citation}\n`);
+      }
+      process.stdout.write('\n  How a field got here:  construct record show <id> --field=<name>\n');
+      return 0;
+    });
+  }
+
+  process.stderr.write(RECORD_USAGE);
+  return 2;
+}
+
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
 
 const PLAN_USAGE = 'usage: construct plan <run-id>\n';
@@ -2830,7 +2977,7 @@ export function mode(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|plan|source|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|plan|source|record|mode|watch|waive|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -2867,6 +3014,8 @@ async function run(argv: string[]): Promise<number> {
   switch (command) {
     case 'review':
       return review(argv.slice(1));
+    case 'record':
+      return record(argv.slice(1));
     case 'notes':
       return notes(argv.slice(1));
     case 'outcome':
