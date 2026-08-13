@@ -90,7 +90,35 @@ const DECISION: CompositionShape = {
   ],
 };
 
-export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION];
+/**
+ * The shape of a spec: what problem it solves, for whom, what it must do, and
+ * what it deliberately leaves out.
+ *
+ * Asked for a PRD or a spec, the review shape answers a different question —
+ * it reports what several concerns found, and a spec is not a report, it is
+ * the thing engineering builds from. Every section here is something a reader
+ * building from this document needs and review has no place for: who the
+ * problem belongs to, because a requirement with no stated owner of the pain
+ * is a solution looking for one; what is explicitly out, because a spec that
+ * only says what it does invites scope to arrive by assumption; and open
+ * questions kept as their own section rather than folded into requirements,
+ * because a requirement stated with a question mark inside it is not a
+ * requirement, it is the same gap wearing the shape of an answer.
+ */
+const SPEC: CompositionShape = {
+  name: 'spec',
+  answers: 'an ask to define what a feature or change must do before it is built',
+  sections: [
+    { name: 'the-problem', expects: 'what is broken or missing, and who it costs, only as the deliverables describe it' },
+    { name: 'the-goal', expects: 'what success looks like, stated as an outcome rather than a task' },
+    { name: 'requirements', expects: 'what the solution must do, each tied to the role that established it' },
+    { name: 'non-goals', expects: 'what this deliberately does not cover, where a deliverable says so' },
+    { name: 'open-questions', expects: 'what the deliverables raised and left unresolved, kept as questions rather than folded into a requirement' },
+    { name: 'risks', expects: 'what could go wrong, where a deliverable names it' },
+  ],
+};
+
+export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC];
 
 export const DEFAULT_SHAPE = REVIEW;
 
@@ -110,9 +138,31 @@ const DECISION_SIGNALS = [
   'earns the next', 'next block of work', 'pick between', 'go/no-go', 'whether to',
 ];
 
-/** Which shape an outcome asks for. Falls to the review shape by design. */
+/**
+ * The words a person uses naming the document type itself rather than the
+ * judgment it takes to write one — kept narrower than DECISION_SIGNALS for
+ * the same reason "plan" is absent there: a chooser that fires on "spec"
+ * appearing anywhere would catch "let's spec out what we found" (a review of
+ * findings) as often as an actual ask for one.
+ */
+const SPEC_SIGNALS = [
+  'write a prd', 'write a spec', 'a prd for', 'a spec for', 'product requirements',
+  'requirements doc', 'write the requirements', 'define requirements', 'spec out',
+  'specification for', 'draft a prd', 'draft a spec',
+];
+
+/**
+ * Which shape an outcome asks for. Falls to the review shape by design.
+ *
+ * Spec is checked first: "write a PRD deciding which of two approaches to
+ * take" names the document type and the judgment in one sentence, and the document type
+ * is what a reader would notice missing — a decision-shaped document with no
+ * requirements section is not the PRD that was asked for, while a spec whose
+ * requirements section states a clear choice is still a spec.
+ */
 export function shapeForOutcome(outcome: string): CompositionShape {
   const text = outcome.toLowerCase();
+  if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return SPEC;
   if (DECISION_SIGNALS.some((signal) => text.includes(signal))) return DECISION;
   return DEFAULT_SHAPE;
 }

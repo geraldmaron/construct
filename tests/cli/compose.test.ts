@@ -373,6 +373,69 @@ test('a support call that comes back empty once is retried, not fatal', async ()
   assert.match(out, /concluded its own part/, 'the document survived the transient failure');
 });
 
+/**
+ * The shape is a widening of what compose can produce, not just a header
+ * relabel — this proves an ask that names the document type comes back with
+ * sections review and decision have no place for, and none of the sections
+ * those two shapes DO have.
+ */
+function specHost(): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'composer') {
+        const cited = /--- ([a-z-]+) ---/.exec(task)?.[1] ?? 'strategy-alignment';
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              claims: [
+                { section: 'the-problem', text: 'exports silently drop rows over 10k', from: cited },
+                { section: 'requirements', text: 'must stream past 10k rows without dropping any', from: cited },
+                { section: 'non-goals', text: 'does not cover the scheduled-export path', from: cited },
+              ],
+              uncovered: [],
+            }),
+          },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ unsupported: [], detail: '' }) },
+          error: null,
+        };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+test('an ask naming the document type comes back with the sections only that shape has', async () => {
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], specHost())), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /Shaped as a spec/);
+  assert.match(out, /## The problem/);
+  assert.match(out, /exports silently drop rows over 10k/);
+  assert.match(out, /## Requirements/);
+  assert.match(out, /must stream past 10k rows/);
+  assert.match(out, /## Non goals/);
+  assert.match(out, /does not cover the scheduled-export path/);
+  // Sections belonging to review or decision must not leak into a spec.
+  assert.doesNotMatch(out, /## The choice/);
+  assert.doesNotMatch(out, /## The answer/);
+  assert.doesNotMatch(out, /Where things stand/);
+});
+
 test('one deliverable composes nothing, and points at reading it instead', async () => {
   let composed = 0;
   const { err } = await run([

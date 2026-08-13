@@ -90,3 +90,42 @@ test('every shape names its sections uniquely and says what ask it answers', () 
   }
   assert.deepEqual(shapeNames(), [...names]);
 });
+
+test('an ask naming the document type gets the spec shape', () => {
+  for (const outcome of [
+    'Write a PRD for the referral feature',
+    'Draft a spec for the new onboarding flow',
+    'Write the requirements for the export tool',
+    'Spec out the notification preferences page',
+  ]) {
+    assert.equal(shapeForOutcome(outcome).name, 'spec', outcome);
+  }
+});
+
+test('the spec shape asks what neither review nor decision poses', () => {
+  const spec = shapeForOutcome('Write a spec for the export tool').sections.map((s) => s.name);
+  assert.ok(spec.includes('the-problem'), 'a requirement with no stated pain is a solution looking for one');
+  assert.ok(spec.includes('requirements'), 'the thing engineering builds from');
+  assert.ok(spec.includes('non-goals'), 'a spec that only says what it does invites scope by assumption');
+  assert.ok(spec.includes('open-questions'), 'a requirement with a question mark in it is not a requirement');
+});
+
+/**
+ * "spec" naming the document type must fire even inside a sentence that also
+ * carries a decision word — the document type asked for is what a reader would
+ * notice missing, and a decision-shaped document has no requirements section.
+ */
+test('naming the document type outranks a decision word in the same sentence', () => {
+  assert.equal(
+    shapeForOutcome('Write a PRD deciding which of two approaches the export tool should take').name,
+    'spec',
+  );
+});
+
+/**
+ * "spec out what we found" talks about findings, not a document to build
+ * from — the same asymmetry DECISION_SIGNALS already keeps "plan" out for.
+ */
+test('a mention of specs in passing does not hijack a plain review', () => {
+  assert.equal(shapeForOutcome('Review the auth flow; the spec is out of date, note that').name, 'review');
+});
