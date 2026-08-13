@@ -277,3 +277,73 @@ test('the heading the template dictates satisfies scope-diff: hyphenated heading
     'hyphen flattening keeps pre-mortem detection whole',
   );
 });
+
+/**
+ * A named path is a question the role could have answered.
+ *
+ * The failure this closes was observed whole: a strategy run's open questions
+ * named the exact files that would settle them — the auth module, the canonical
+ * write path, a boundary test — inside a repository the roles had been licensed
+ * to read, and the run reported all of them as unanswered. The check holds the
+ * three honest endings apart from the fourth: read it, could not read it, or
+ * read it and it did not settle, versus named it and stopped.
+ */
+test('a path named but never read fails the ground-exhausted challenge', () => {
+  const roots = ['/ground/repo'];
+  const named =
+    '## open-questions\n' +
+    '- Which auth mode is deployed is unresolved; apps/admin/src/auth/server-authorization.ts\n' +
+    '  was not read to confirm which document matches the deployed default.\n';
+
+  const check = challengeById('ground-exhausted')?.structural?.(named, brief([]), {
+    groundRoots: roots,
+  });
+
+  assert.equal(check?.passed, false);
+  assert.match(check?.detail ?? '', /server-authorization\.ts/);
+});
+
+test('a path the deliverable cites counts as read wherever else it is discussed', () => {
+  const roots = ['/ground/repo'];
+  const read =
+    '## finding\n' +
+    '- The deployed default is supabase [cite:apps/admin/src/auth/server-authorization.ts].\n' +
+    '## open-questions\n' +
+    '- Whether apps/admin/src/auth/server-authorization.ts also governs the bulk path\n' +
+    '  is not settled by what it contains.\n';
+
+  const check = challengeById('ground-exhausted')?.structural?.(read, brief([]), {
+    groundRoots: roots,
+  });
+
+  assert.equal(check?.passed, true);
+});
+
+test('a path that could not be opened passes when the deliverable says so', () => {
+  const roots = ['/ground/repo'];
+  const blocked =
+    '## open-questions\n' +
+    '- packages/domain/src/statistics/theme-impact-packet.ts could not be read: the host\n' +
+    '  returned a permission error, so the data contract is unverified [unverified].\n';
+
+  const check = challengeById('ground-exhausted')?.structural?.(blocked, brief([]), {
+    groundRoots: roots,
+  });
+
+  assert.equal(check?.passed, true);
+});
+
+/**
+ * Without roots there was nothing further to reach, so the same text passes.
+ * A role handed a fixed document list and no license is not withholding work
+ * by naming a file it never had — holding it to this check would punish it for
+ * the dispatch it was given.
+ */
+test('an ungrounded dispatch passes the ground-exhausted challenge saying why', () => {
+  const named = '## open-questions\n- src/auth/server-authorization.ts was not read.\n';
+
+  const check = challengeById('ground-exhausted')?.structural?.(named, brief([]), {});
+
+  assert.equal(check?.passed, true);
+  assert.match(check?.detail ?? '', /no declared roots/);
+});

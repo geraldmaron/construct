@@ -82,6 +82,44 @@ export const GROUNDED_SYNTHESIS_PROTOCOL = [
 ].join('\n\n');
 
 /**
+ * The rung between "my documents are silent" and "somebody else's problem".
+ *
+ * A role that can name the file which would settle its own question, inside a
+ * root it was just licensed to read, and writes the question down as open
+ * instead of opening the file, has done the reader no service: the reader now
+ * holds a question, a path, and the same license. The work was available and
+ * was not done.
+ *
+ * This is not a licence to read forever, which is why it carries the same stop
+ * rule as the research rung: a named path is one read, and what survives the
+ * read is genuinely open and says so. The three honest endings are that the
+ * document settled it, that the document was read and did not settle it, or
+ * that it could not be opened and why — and an open question that ends none of
+ * those ways is a question nobody tried to answer.
+ *
+ * Spoken only where the license is granted, because it is meaningless without
+ * it: a role with no reachable root cannot be asked to go and look.
+ */
+export const GROUND_EXHAUSTION_RULE = [
+  'Before you write anything down as unknown. If you can name the document',
+  'that would settle a question — a file under a root above, by its path —',
+  'then that question is work you can do, not an open question, and the',
+  'reader cannot do it for you any faster than you can. Go and read it, then',
+  'report what it said.',
+  '',
+  'One read per question, the same stop rule research has. A question that',
+  'survives the document you named is genuinely open: write it down, say which',
+  'document you read and what it failed to settle, and move on. If you could',
+  'not open the file at all, write that and why — an unread path is a fact',
+  'about your access, and it belongs in the deliverable rather than in the',
+  "reader's inbox as though nobody had noticed.",
+  '',
+  'What is not acceptable is naming the path and stopping. "The auth code was',
+  'not read to confirm this" tells the reader you knew where the answer was',
+  'and left it there.',
+].join('\n');
+
+/**
  * What a role may report, as an instruction rather than a suggestion.
  *
  * A dispatched role can see findings that belong to other concerns, and saying
@@ -144,7 +182,7 @@ export function groundedMaterialProtocol(
         'cite any document under these declared roots, by its full path:\n' +
         groundRoots.map((root) => `- ${root}`).join('\n') +
         '\nNothing outside these roots is evidence, and a path you did not ' +
-        'actually read is not a citation.'
+        `actually read is not a citation.\n\n${GROUND_EXHAUSTION_RULE}`
       : '';
   return (
     'Your material for this task is these documents, and nothing else around ' +

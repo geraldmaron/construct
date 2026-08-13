@@ -132,6 +132,53 @@ function inventedBriefClaims(deliverable: string, outcome: string): string[] {
   return invented;
 }
 
+/**
+ * A repository-relative path as a role writes one in prose: at least one
+ * directory separator and a file extension. Deliberately not an absolute-path
+ * matcher — roles cite the ground the way the survey lists it, relative, and a
+ * matcher demanding the root prefix would see none of the real ones.
+ */
+const NAMED_PATH = /\b((?:[\w.@-]+\/)+[\w.@-]+\.[a-z]{1,5})\b/gi;
+
+/** Whether a path appears inside a citation marker anywhere in the text. */
+function citedAnywhere(text: string, path: string): boolean {
+  const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\[(?:cite|research):[^\\]]*${escaped}`, 'i').test(text);
+}
+
+/**
+ * Whether the line saying a path went unread also says why it could not be
+ * read. The disclosure is what makes an unread path acceptable, so the check
+ * is for the disclosure — the same shape research.ts's aggregator rule takes,
+ * and for the same reason: a reader cannot tell "I could not open it" from "I
+ * did not bother" from the text alone.
+ */
+const COULD_NOT_READ =
+  /could not (?:be )?(?:read|open|access|retrieve)|unable to (?:read|open|access)|not reachable|no access|outside (?:the |my )?(?:declared |licensed )?(?:root|ground)|access denied|permission denied|binary|no such file/i;
+
+/**
+ * Paths a deliverable names but never cites, with no stated reason it could
+ * not be read.
+ *
+ * Conservative in both directions. A path cited once anywhere counts as read
+ * everywhere, because a role that opened a file and then discussed it in
+ * uncited prose has done the work this checks for. And a path whose line says
+ * it was unreachable passes, because the rule is that the reader is told, not
+ * that every file yields.
+ */
+function namedButUnread(deliverable: string): string[] {
+  const unread = new Set<string>();
+  for (const line of deliverable.split('\n')) {
+    for (const match of line.matchAll(NAMED_PATH)) {
+      const path = match[1];
+      if (citedAnywhere(deliverable, path)) continue;
+      if (COULD_NOT_READ.test(line)) continue;
+      unread.add(path);
+    }
+  }
+  return [...unread];
+}
+
 export const CHALLENGES: readonly Challenge[] = [
   {
     id: 'strongest-objection',
@@ -253,6 +300,39 @@ export const CHALLENGES: readonly Challenge[] = [
     },
   },
   {
+    id: 'ground-exhausted',
+    question: 'Was every document you could name and reach actually read before anything was called unknown?',
+    structural: (deliverable, _brief, context) => {
+      // Only askable of a dispatch that was licensed to read past its survey.
+      // Without roots the role had the listed documents and nothing else, and
+      // a path it names is a path it was never able to open.
+      if (!context?.groundRoots || context.groundRoots.length === 0) {
+        return {
+          passed: true,
+          detail: 'no declared roots on this dispatch — there was nothing further this role was licensed to read',
+        };
+      }
+      const unread = namedButUnread(deliverable);
+      if (unread.length === 0) {
+        return {
+          passed: true,
+          detail:
+            'every document named is cited or carries the reason it could not be read — whether the ' +
+            'reading was thorough is a substantive question this check cannot answer',
+        };
+      }
+      const shown = unread.slice(0, 3).join(', ');
+      const more = unread.length > 3 ? ` (and ${String(unread.length - 3)} more)` : '';
+      return {
+        passed: false,
+        detail:
+          `${String(unread.length)} document(s) are named but never cited and carry no reason they ` +
+          `could not be read: ${shown}${more}. A path this role could name inside a root it was ` +
+          'licensed to read is work it could have done.',
+      };
+    },
+  },
+  {
     id: 'legal-issue-spot',
     question: 'Has a legal issue-spotting pass read this deliverable?',
     // No structural form exists. Whether a legal issue was spotted is exactly
@@ -267,11 +347,14 @@ export const CHALLENGES: readonly Challenge[] = [
  *
  * Commitment 13 scopes most of its challenges to a condition — a strongest
  * objection "on load-bearing decisions", a pre-mortem "on plans", a legal
- * issue-spot "on heat-flagged deliverables" — and leaves exactly two
- * unconditional: a citation or `[unverified]` tag on *every* claim, and a scope
- * diff against the brief. Those two are this set. Both are answerable for free,
+ * issue-spot "on heat-flagged deliverables" — and leaves unconditional the ones
+ * every deliverable owes whatever it is: a citation or `[unverified]` tag on
+ * *every* claim, a scope diff against the brief, and no document named as the
+ * answer to a question nobody went and read. All three are answerable for free,
  * so declaring them on every run spends nothing and holds a deliverable at
- * draft when it asserts facts it did not source.
+ * draft when it asserts facts it did not source or leaves work it could have
+ * done. The third is self-limiting rather than conditional: a dispatch with no
+ * declared roots had nothing further to read, and it passes saying so.
  *
  * The conditional three are deliberately absent rather than forgotten. Nothing
  * in the spine yet decides whether an outcome is a decision, a plan, or hot
@@ -280,7 +363,7 @@ export const CHALLENGES: readonly Challenge[] = [
  * unanswered challenge that never promotes. When a heat signal exists, it
  * chooses; until then the honest state is that these are not required.
  */
-export const SPINE_CHALLENGES: readonly string[] = ['claims-cited', 'scope-diff'];
+export const SPINE_CHALLENGES: readonly string[] = ['claims-cited', 'scope-diff', 'ground-exhausted'];
 
 const BY_ID = new Map(CHALLENGES.map((challenge) => [challenge.id, challenge]));
 

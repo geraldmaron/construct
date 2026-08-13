@@ -58,6 +58,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -85,6 +86,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Money that moves creates obligations at the moment it moves; the job is naming each obligation where it attaches, not after it has accrued.
@@ -114,6 +116,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -142,6 +145,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
@@ -171,6 +175,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** Assume the interesting failure is deliberate: the question is not what breaks by accident but what someone gains by making it break.
 
@@ -197,6 +202,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Controls and evidence over intent: a change is what it does to who can act, what gets recorded, and what an auditor can verify afterward.
@@ -224,6 +230,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
 
@@ -251,6 +258,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** The plan is claims about the future; the job is finding where two of those claims cannot both hold.
 
@@ -280,6 +288,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** Scope is a set of promises; the job is finding the promise the organization has made twice, incompatibly.
 
@@ -306,6 +315,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** A bet is a claim about the future paid for in foregone alternatives: the question is never whether this is good, but what it costs to say yes.
 
@@ -333,6 +343,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** Every design decision is a bet about what will change next; the job is naming what this makes hard to undo, not judging the code that implements it.
 
@@ -362,6 +373,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** Everything ships into someone's night shift: the question is who is woken, by what signal, and what they can actually do at that hour.
 
@@ -388,6 +400,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
 
@@ -414,6 +427,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** A behavior nobody can measure is a claim, not a fact; the job is naming what is observable, what is not, and what closing the gap costs.
 
@@ -438,6 +452,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** A claim is only as good as what it rests on and how plainly that is said: the job is naming the source, the kind of thing it is, and what it can and cannot support — never whether the claim feels right.
 
@@ -465,6 +480,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** What a collection leaves out is a claim it makes without saying so: the job is naming the frame, the absences inside it, and which absences are the record being silent rather than the world being empty.
 
@@ -491,6 +507,7 @@ template, and say so.
 
 - `claims-cited` — Does every load-bearing claim carry a citation or an [unverified] tag?
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
+- `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 
 **Its posture.** Every public sentence is a commitment; the question is never whether a claim sounds right but whether its evidence exists on the day it publishes.
 
