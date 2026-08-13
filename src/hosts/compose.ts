@@ -90,16 +90,28 @@ const POSITION_CHECK: readonly string[] = [
   'resting on you for something you did not say? Quote the sentence if so.',
 ];
 
+/**
+ * What one role does and does not support, asked with nothing else in the
+ * frame.
+ *
+ * Construct's call was briefly shown here too, to buy the position's veto for
+ * no extra call. Measured on a live composition, that coupling showed itself in
+ * the record: a role rejected a claim and gave as its reason that the details
+ * "come from the Construct call, not the specialist's work" — a reason it could
+ * only give because the call was in front of it. The verdict may well have been
+ * right, but it was no longer a verdict about the claim alone, and the
+ * dangerous direction is the one that leaves no trace: a plausible synthesis
+ * makes the claims under it read as established, and a role anchored that way
+ * passes what it would otherwise have caught.
+ *
+ * The claim screen is the load-bearing one — it is what lets the document say
+ * every line in it was checked — so it is the one kept clean. The position's
+ * veto is asked separately, by objectionPrompt, at the price of one more call
+ * per role.
+ */
 export function supportPrompt(
   source: SourceDeliverable,
   claims: readonly ComposedClaim[],
-  /**
-   * Construct's own call, when there is one. Shown here rather than in a call
-   * of its own: the role is already reading its deliverable to answer a
-   * question about faithfulness, and asking the second question costs nothing.
-   * A synthesis nobody it leans on can object to is not screened.
-   */
-  position?: string,
 ): string {
   return [
     `Below is one specialist's finished deliverable, and beneath it a numbered`,
@@ -122,19 +134,9 @@ export function supportPrompt(
     'not let a claim pass because it sounds like something this specialist would',
     'have said.',
     '',
-    ...(position === undefined
-      ? []
-      : [
-          '',
-          '--- and separately: the call Construct made across every specialist ---',
-          position,
-          '',
-          ...POSITION_CHECK,
-        ]),
     '',
     'Reply with JSON only, no prose outside it:',
-    '{"unsupported":[<indices>],"detail":"<one sentence on what you found>"' +
-      (position === undefined ? '}' : ',"misreadsMe":"<the sentence, or empty if none>"}'),
+    '{"unsupported":[<indices>],"detail":"<one sentence on what you found>"}',
   ].join('\n');
 }
 
@@ -180,6 +182,13 @@ export function positionPrompt(input: {
     'and why. Order of arrival is not a reason. Averaging them into a sentence',
     'neither would recognise is worse than either.',
     '',
+    'A side of such a disagreement may hold more than one specialist — three',
+    'reaching the same reading against one holding out is the ordinary shape, and',
+    'both sides are lists for that reason. Name each specialist exactly as it is',
+    'labelled above, one per entry. Put your reasoning in "because", never in the',
+    'name: a name with your own gloss attached to it matches no specialist and',
+    'the resolution is dropped.',
+    '',
     'THE ONE THING YOU MAY NOT DO is assert a fact none of them established.',
     'What the code does, what the schema holds, what a document commits to — you',
     'have no access to any of it except through these deliverables. Every factual',
@@ -204,8 +213,8 @@ export function positionPrompt(input: {
     'Reply with JSON only, no prose outside it:',
     '{"approach":"<the call, one or two sentences, as a commitment>",',
     ' "because":[{"text":"<what it rests on>","restsOn":["<role>"]}],',
-    ' "resolved":[{"question":"<what two roles could not both be right about>",',
-    '   "took":"<role>","over":"<role>","because":"<why>"}],',
+    ' "resolved":[{"question":"<what the roles could not both be right about>",',
+    '   "took":["<role>"],"over":["<role>"],"because":"<why>"}],',
     ' "costs":[{"text":"<what stops, slips, or is displaced>","restsOn":["<role>"]}],',
     ' "first":[{"text":"<what happens first, and what must hold before the next>","restsOn":["<role>"]}],',
     ' "strongestObjection":"<the best argument against this call>",',
@@ -308,19 +317,26 @@ export function createHostPositionRepairer(
 }
 
 /**
- * The same veto, asked again about the call that came back.
+ * The position's veto: one role, its own deliverable, and Construct's call,
+ * with the claims screen deliberately not in the frame (see supportPrompt).
  *
- * On its own rather than riding the support check this time, because the claims
- * drawn from this role did not change and re-verdicting them would spend a call
- * to re-answer a question already answered. Only the roles that objected are
- * asked: a role that had nothing to say about the first call is not owed a
+ * Asked twice — once of every role that contributed, and again of the roles
+ * that objected, about the call that came back. Only those roles the second
+ * time: a role that had nothing to say about the first call is not owed a
  * second reading of a document edited to answer somebody else.
  */
-export function objectionPrompt(source: SourceDeliverable, position: string): string {
+export function objectionPrompt(
+  source: SourceDeliverable,
+  position: string,
+  /** True when this role already objected once and is reading the repair. */
+  isRepair = false,
+): string {
   return [
     `Below is one specialist's finished deliverable, and beneath it the call`,
-    'Construct made across every specialist. You raised an objection to an',
-    'earlier version of this call; this is what came back.',
+    'Construct made across every specialist.',
+    ...(isRepair
+      ? ['You raised an objection to an earlier version of this call; this is what', 'came back.']
+      : []),
     '',
     `--- ${source.role}'s deliverable ---`,
     source.text,
@@ -337,11 +353,11 @@ export function objectionPrompt(source: SourceDeliverable, position: string): st
 
 export function createHostObjectionChecker(
   host: HostAdapter,
-): (source: SourceDeliverable, position: string) => Promise<string> {
-  return async (source, position) => {
+): (source: SourceDeliverable, position: string, isRepair?: boolean) => Promise<string> {
+  return async (source, position, isRepair = false) => {
     const result = await host.invoke({
       role: SUPPORT_ROLE,
-      task: objectionPrompt(source, position),
+      task: objectionPrompt(source, position, isRepair),
     });
     const parsed = extractJson(textOf(host, result)) as { misreadsMe?: unknown } | null;
     return typeof parsed?.misreadsMe === 'string' ? parsed.misreadsMe.trim() : '';
@@ -457,15 +473,14 @@ export function createHostComposer(
  * never read.
  */
 export function createHostSupportChecker(host: HostAdapter): SupportChecker {
-  return async (source, claims, position) => {
+  return async (source, claims) => {
     const result = await host.invoke({
       role: SUPPORT_ROLE,
-      task: supportPrompt(source, claims, position),
+      task: supportPrompt(source, claims),
     });
     const parsed = extractJson(textOf(host, result)) as {
       unsupported?: unknown;
       detail?: unknown;
-      misreadsMe?: unknown;
     } | null;
     if (!Array.isArray(parsed?.unsupported)) {
       throw new Error('the support check replied without an "unsupported" list');
@@ -476,7 +491,6 @@ export function createHostSupportChecker(host: HostAdapter): SupportChecker {
     return {
       unsupported,
       detail: typeof parsed.detail === 'string' ? parsed.detail.trim() : '',
-      misreadsMe: typeof parsed.misreadsMe === 'string' ? parsed.misreadsMe.trim() : undefined,
     };
   };
 }

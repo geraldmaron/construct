@@ -82,14 +82,25 @@ export interface PositionClaim {
   readonly restsOn: readonly string[];
 }
 
-/** A disagreement the position settled, with the side it did not take. */
+/**
+ * A disagreement the position settled, with the side it did not take.
+ *
+ * Both sides are lists because a real disagreement is rarely one role against
+ * one role. Measured on a live composition, the most common shape is several
+ * roles converging on one reading and one holding out against it, and a field
+ * that admits a single name forces the model to either drop the roles that do
+ * not fit or write a composite that names no role at all — which is what it
+ * did, and the screen then refused work that was sound because it could not be
+ * expressed. A side naming nobody is still refused; that is the fabrication
+ * this guards, and it is a different thing from a side naming three.
+ */
 export interface Resolution {
-  /** What the two roles could not both be right about. */
+  /** What the roles could not both be right about. */
   readonly question: string;
-  /** The role whose reading the position took. */
-  readonly took: string;
-  /** The role whose reading it did not, named rather than dropped. */
-  readonly over: string;
+  /** The roles whose reading the position took. Never empty. */
+  readonly took: readonly string[];
+  /** The roles whose reading it did not, named rather than dropped. */
+  readonly over: readonly string[];
   /** Why — a reason a reader can disagree with, never an order of arrival. */
   readonly because: string;
 }
@@ -171,6 +182,38 @@ function toClaims(value: unknown): PositionClaim[] {
   return claims;
 }
 
+/**
+ * The roles a side of a disagreement names, read out of what a model actually
+ * writes there.
+ *
+ * Measured on a live composition, a side arrives in three shapes: a bare role
+ * name, several roles joined ("evidence-provenance + privacy + product-scoping"),
+ * and a role with the model's own gloss attached ("strategy-alignment (which
+ * favored mobile-launch-completion first)"). Only the first survives a literal
+ * read, and the other two were refused as roles the run never dispatched —
+ * refusing sound work for how it was punctuated.
+ *
+ * So the separators are split on and a trailing parenthetical is dropped. This
+ * is lenient about form and not at all about substance: what comes out is
+ * checked against the roles that actually ran, and a side that names nobody the
+ * run dispatched is still refused. Reading a name out of "a + b" is recovering
+ * what the model meant; inventing one is not, and screenPosition still decides
+ * which happened.
+ */
+export function rolesNamed(value: unknown): string[] {
+  const raw = asString(value);
+  if (raw.length === 0) return [];
+  const named: string[] = [];
+  for (const piece of raw.split(/\s*(?:\+|,|\/|;|\band\b)\s*/i)) {
+    const role = piece
+      .replace(/\([^)]*\)/g, '')
+      .replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')
+      .trim();
+    if (role.length > 0 && !named.includes(role)) named.push(role);
+  }
+  return named;
+}
+
 /** Read a position out of a host reply, taking nothing on trust. */
 export function toPosition(parsed: unknown): ConstructPosition | null {
   const record = parsed as Record<string, unknown> | null;
@@ -181,10 +224,12 @@ export function toPosition(parsed: unknown): ConstructPosition | null {
   for (const item of Array.isArray(record?.resolved) ? record.resolved : []) {
     const entry = item as Record<string, unknown> | null;
     const question = asString(entry?.question);
-    const took = asString(entry?.took);
-    const over = asString(entry?.over);
+    const took = Array.isArray(entry?.took) ? asStrings(entry.took) : rolesNamed(entry?.took);
+    const over = Array.isArray(entry?.over) ? asStrings(entry.over) : rolesNamed(entry?.over);
     const because = asString(entry?.because);
-    if (question && took && over && because) resolved.push({ question, took, over, because });
+    if (question && took.length > 0 && over.length > 0 && because) {
+      resolved.push({ question, took, over, because });
+    }
   }
 
   const undecided: { question: string; settledBy: string }[] = [];
@@ -252,14 +297,24 @@ export function screenPosition(
     return kept;
   };
 
-  const resolved = position.resolved.filter((r) => {
-    if (known.has(r.took) && known.has(r.over)) return true;
+  // A side is kept for the roles it names that actually ran. Dropping a
+  // stranger from a side of three leaves a disagreement the run can still
+  // stand behind; a side left naming nobody is the fabrication, and the whole
+  // resolution goes.
+  const resolved: Resolution[] = [];
+  for (const r of position.resolved) {
+    const took = r.took.filter((role) => known.has(role));
+    const over = r.over.filter((role) => known.has(role));
+    if (took.length > 0 && over.length > 0) {
+      resolved.push({ ...r, took, over });
+      continue;
+    }
+    const strangers = [...r.took, ...r.over].filter((role) => !known.has(role));
     refused.push({
       text: r.question,
-      reason: `settles a disagreement between roles this run did not dispatch (${r.took}, ${r.over})`,
+      reason: `settles a disagreement between roles this run did not dispatch (${strangers.join(', ')})`,
     });
-    return false;
-  });
+  }
 
   return {
     position: {

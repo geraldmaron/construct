@@ -3379,16 +3379,12 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // composer wrote.
     const check = createHostSupportChecker(host);
     const unsupported = new Set<ComposedClaim>();
-    // A role saying the call states its work as something it did not establish.
-    // Printed with the call rather than instead of it: the objection is the
-    // role's and the judgment is Construct's, and a reader is owed both.
-    let objections: PositionObjection[] = [];
     for (const source of sources) {
       const mine = claimsFrom(screened.claims, source.role);
       if (mine.length === 0) continue;
       let verdict;
       try {
-        verdict = await check(source, mine, position?.position.approach);
+        verdict = await check(source, mine);
       } catch (error) {
         process.stderr.write(
           `compose: ${source.role}'s claims could not be checked (${(error as Error).message}); ` +
@@ -3405,8 +3401,28 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${verdict.detail}\n`,
         );
       }
-      if (verdict.misreadsMe !== undefined && verdict.misreadsMe.length > 0) {
-        objections.push({ role: source.role, quote: verdict.misreadsMe });
+    }
+
+    // The call put to each role that contributed, in its own call rather than
+    // riding the claims check. The claims screen is what lets this document say
+    // every line in it was checked, so it is asked with nothing else in the
+    // frame; the veto is worth its own call rather than a cheaper coupled one.
+    //
+    // Fail-soft, unlike the claims check: a role that cannot be reached costs
+    // the position its objection, not the run its document.
+    const askObjection = createHostObjectionChecker(host);
+    let objections: PositionObjection[] = [];
+    if (position !== null) {
+      for (const source of sources) {
+        try {
+          const quote = await askObjection(source, position.position.approach);
+          if (quote.length > 0) objections.push({ role: source.role, quote });
+        } catch (error) {
+          process.stdout.write(
+            `  ${source.role} could not be asked about the call (${(error as Error).message}); ` +
+              'it stands unobjected-to by that role\n',
+          );
+        }
       }
     }
 
@@ -3443,7 +3459,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           for (const role of new Set(objections.map((o) => o.role))) {
             const source = sources.find((s) => s.role === role);
             if (source === undefined) continue;
-            const quote = await recheck(source, rescreened.position.approach);
+            const quote = await recheck(source, rescreened.position.approach, true);
             if (quote.length > 0) remaining.push({ role, quote });
           }
           callWentBack = true;
@@ -3537,10 +3553,12 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
       if (p.resolved.length > 0) {
         process.stdout.write('\n**Where the specialists could not both be acted on**\n\n');
+        const side = (roles: readonly string[]) =>
+          roles.map((role) => (asRecord ? role : renderAttribution(role))).join(', ');
         for (const r of p.resolved) {
           process.stdout.write(
-            `- ${say(r.question)} — went with ${asRecord ? r.took : renderAttribution(r.took)} over ` +
-              `${asRecord ? r.over : renderAttribution(r.over)}: ${say(r.because)}\n`,
+            `- ${say(r.question)} — went with ${side(r.took)} over ` +
+              `${side(r.over)}: ${say(r.because)}\n`,
           );
         }
       }

@@ -157,15 +157,10 @@ function objectingHost(second: string, stillObjects = ''): HostAdapter {
           error: null,
         };
       }
-      if (role === 'composition-support' && task.includes('You raised an objection')) {
-        return {
-          id: role,
-          status: 'ok',
-          output: { text: JSON.stringify({ misreadsMe: stillObjects }) },
-          error: null,
-        };
-      }
-      if (role === 'composition-support') {
+      // The claims screen and the position's veto are separate calls now, and
+      // the prompts are told apart the way a role would tell them apart: only
+      // one of them carries the claims.
+      if (role === 'composition-support' && task.includes('claims attributed to it')) {
         return {
           id: role,
           status: 'ok',
@@ -173,9 +168,17 @@ function objectingHost(second: string, stillObjects = ''): HostAdapter {
             text: JSON.stringify({
               unsupported: /^1\. /m.test(task) ? [1] : [],
               detail: 'the deliverable states a conclusion but never mentions a date',
-              misreadsMe: FIRST_CALL,
             }),
           },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        const repairing = task.includes('You raised an objection');
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ misreadsMe: repairing ? stillObjects : FIRST_CALL }) },
           error: null,
         };
       }
@@ -279,7 +282,13 @@ test('a second call that answers the objection by losing an attribution is refus
   assert.match(out, /treat the migration as settled/, 'the call the run already had stands');
   assert.doesNotMatch(out, /This call is a second attempt/);
   assert.match(out, /states its work as something else/);
-  assert.match(out, /product-scoping: "Ship the pilot in Q4 and treat the migration as settled\."/);
+  // Both roles quoted the same sentence, so it is one line naming both rather
+  // than the same objection printed twice.
+  assert.match(
+    out,
+    /- (product-scoping, strategy-alignment|strategy-alignment, product-scoping): "Ship the pilot in Q4 and treat the migration as settled\."/,
+  );
+  assert.equal(out.match(/treat the migration as settled\."/g)?.length, 1, 'one line, not two');
 });
 
 /** One round. A call that keeps repairing itself never delivers. */

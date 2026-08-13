@@ -29,8 +29,8 @@ const WHOLE = {
   resolved: [
     {
       question: 'whether the kill switches still read from Firestore',
-      took: 'product-scoping',
-      over: 'program-sequencing',
+      took: ['product-scoping'],
+      over: ['program-sequencing'],
       because: 'the wind-down document post-dates the sequencing note and reports the move done',
     },
   ],
@@ -47,7 +47,7 @@ test('a whole position is read back intact', () => {
   assert.ok(read);
   assert.match(read.approach, /Do not fund a UGC discovery surface/);
   assert.equal(read.because.length, 2);
-  assert.equal(read.resolved[0].took, 'product-scoping');
+  assert.deepEqual(read.resolved[0].took, ['product-scoping']);
 });
 
 test('a reply with no call is not a position', () => {
@@ -87,7 +87,7 @@ test('a resolution between roles that did not run is refused', () => {
   const screened = screenPosition(
     {
       ...toPosition(WHOLE)!,
-      resolved: [{ question: 'q', took: 'legal', over: 'privacy', because: 'r' }],
+      resolved: [{ question: 'q', took: ['legal'], over: ['privacy'], because: 'r' }],
     },
     ROLES,
   );
@@ -100,8 +100,65 @@ test('a real resolution names the side it did not take and survives', () => {
   const screened = screenPosition(toPosition(WHOLE)!, ROLES);
 
   assert.equal(screened.position.resolved.length, 1);
-  assert.equal(screened.position.resolved[0].over, 'program-sequencing');
+  assert.deepEqual(screened.position.resolved[0].over, ['program-sequencing']);
   assert.deepEqual(screened.refused, []);
+});
+
+/**
+ * Measured on a live composition: the ordinary shape of a disagreement is
+ * several roles on one side and one holding out, and a model with a single-name
+ * field writes a composite that names nobody. Refusing that refused sound work
+ * for its punctuation.
+ */
+test('a side naming several roles is read as several roles', () => {
+  const read = toPosition({
+    ...WHOLE,
+    resolved: [
+      {
+        question: 'whether to fund the UGC surface next',
+        took: 'privacy + product-scoping',
+        over: 'program-sequencing (which favored sequencing the mobile work first)',
+        because: 'the wind-down document post-dates the sequencing note',
+      },
+    ],
+  });
+
+  assert.deepEqual(read!.resolved[0].took, ['privacy', 'product-scoping']);
+  assert.deepEqual(read!.resolved[0].over, ['program-sequencing'], 'the gloss is not part of the name');
+  assert.deepEqual(screenPosition(read!, ROLES).refused, []);
+});
+
+test('a side is kept for the roles that ran, and a stranger among them is dropped', () => {
+  const screened = screenPosition(
+    {
+      ...toPosition(WHOLE)!,
+      resolved: [
+        {
+          question: 'q',
+          took: ['privacy', 'legal'],
+          over: ['program-sequencing'],
+          because: 'r',
+        },
+      ],
+    },
+    ROLES,
+  );
+
+  assert.deepEqual(screened.position.resolved[0].took, ['privacy'], 'legal never ran');
+  assert.deepEqual(screened.refused, []);
+});
+
+test('a side left naming nobody the run dispatched is still refused whole', () => {
+  const screened = screenPosition(
+    {
+      ...toPosition(WHOLE)!,
+      resolved: [{ question: 'q', took: ['legal'], over: ['privacy'], because: 'r' }],
+    },
+    ROLES,
+  );
+
+  assert.equal(screened.position.resolved.length, 0);
+  assert.match(screened.refused[0].reason, /this run did not dispatch \(legal\)/);
 });
 
 /**
