@@ -79,3 +79,66 @@ predicted, arriving unprompted from a model that had never read the argument.
   would record as unmeasured rather than free.
 - Nothing here is a recommendation to relocate BlackStory's own scheduled
   discovery work, which stays where it is.
+
+---
+
+## Second pass, 2026-08-13: on a build that carries the work
+
+The first pass ran against 3.0.0-alpha.5 and its first finding was that it had:
+the machine's installed Construct answered with fifteen domains while the tree
+carried seventeen, and nothing on either side said so. That is now closed in
+both directions. The instance runs 3.0.0-alpha.10, and the catalog tool carries
+the version answering it, so a claim about coverage made from inside a host
+names the build it is a claim about. Asked which version had answered, the host
+model read it straight off the catalog reply: `3.0.0-alpha.10`, seventeen
+domains.
+
+### What the surface now reaches
+
+`records` and `record` are projected: a workspace's subjects, and one subject's
+fields with the note citation that taught each value and every value it held
+before. That is the read an operator triaging a research decision actually
+needs, and before it they had to leave the surface — which is the complaint the
+projection exists to answer.
+
+`review`, `compose` and erasure are **not** projected, decided rather than
+omitted. The first two are the CLI asking a host model several times and paying
+for it, which is dispatch wearing the clothes of a read; the rule on this
+surface has never been that reads are safe and writes are not, but that a host
+model must not spend the user's money by being helpful. Erasure destroys a
+subject and every value its fields ever held, irreversibly, because a person
+asked to be forgotten — and this host can enable channels reachable from
+outside the machine. The one operation with no way back stays in front of a
+person at a terminal.
+
+`drop_note` now says what it does. It said the context loop happened
+"elsewhere", which a model relays as though the work were done somewhere the
+user need not think about; it records the note and nothing else until someone
+runs `construct notes --run`, and the tool description says to tell the user so.
+
+### What held
+
+A real BlackStory outcome recorded through the host produced briefs carrying the
+gates that landed the same day — `ground-exhausted` on every role,
+`rubric-security-Y2` on security, `rubric-system-design-D1` and
+`strongest-objection` on system-design. The chain from a chat surface through
+the projection to a brief that carries the reader's own acceptance lines works
+through a host that knows nothing about any of it.
+
+### What it exposed
+
+**A privacy-defining field named in the project's own vocabulary reaches neither
+router.** The outcome was whether the bulk canonical-edit path may change
+`living_status` without a second approver. `living_status` is the field carrying
+BlackStory's living-person privacy guarantee; the question is a privacy control
+question. The host model named security, system-design, program-sequencing and
+coverage-gaps — security is true and adjacent, "second approver" reads as
+authorization — and did not name privacy. Run as a control on the same text, the
+deterministic keyword map names *nothing at all*: privacy's keywords are generic
+("personal data", "delete everything"), and the user wrote the question in their
+own system's vocabulary. Neither path reaches the concern, for different
+reasons, and the model's answer is strictly better than the fallback's silence.
+
+One run, one local model, written down as an observation and not a measurement.
+Tracked, with an explicit instruction not to close it by adding `living_status`
+to a keyword list — that tunes the instrument to the one case anybody looked at.
