@@ -21,12 +21,38 @@ import { getSource, recordSourceRead, sourceReadsFor } from '../store/sources.ts
 import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
+/**
+ * What became of a binary document the survey tried to put into words. A
+ * document nothing can extract is a real answer and stays on the record with
+ * the ladder's own reason: the failure mode this replaces is a directory of
+ * PDFs grounding a run in filenames while reading as covered.
+ */
+export type DocumentExtraction =
+  | {
+      readonly outcome: 'extracted';
+      /** Which ladder rung produced the text. */
+      readonly tier: string;
+      /** Where the extracted text was materialized, for a role to open. */
+      readonly path: string;
+      readonly characters: number;
+    }
+  | {
+      readonly outcome: 'refused';
+      readonly reason: string;
+      readonly remediation: string | null;
+    };
+
 /** One document a survey found, by the path a role will cite and open. */
 export interface SurveyedDocument {
   readonly path: string;
   readonly bytes: number;
-  /** Present and true for a document the survey listed but could not read as text. */
+  /** Present and true for a document the walk could not read as text. */
   readonly binary?: boolean;
+  /**
+   * Present only when extraction was asked for and the document needed it.
+   * Absent means nobody tried, which reads differently from tried and failed.
+   */
+  readonly extraction?: DocumentExtraction;
 }
 
 /**
@@ -50,6 +76,44 @@ export type SourceSurvey =
     };
 
 /**
+ * How completely one listed document was actually read, and the honest detail
+ * behind that verdict. Plain text is complete because the role can open it.
+ * A binary document is complete only once a rung has put it into words at a
+ * path the role can open; refused and unattempted both stay partial, because
+ * a file the walk saw but nobody read is material the role does not have.
+ */
+function documentCoverage(doc: SurveyedDocument): Pick<SourceRead, 'coverage' | 'detail'> {
+  if (!doc.binary) {
+    return { coverage: 'complete', detail: `${String(doc.bytes)} bytes` };
+  }
+  const extraction = doc.extraction;
+  if (extraction?.outcome === 'extracted') {
+    return {
+      coverage: 'complete',
+      detail:
+        `${String(doc.bytes)} bytes, binary — extracted by ${extraction.tier} to ` +
+        `${extraction.path} (${String(extraction.characters)} characters); read the ` +
+        'extraction, cite the original',
+    };
+  }
+  if (extraction?.outcome === 'refused') {
+    return {
+      coverage: 'partial',
+      detail:
+        `${String(doc.bytes)} bytes, binary — extraction refused: ${extraction.reason}` +
+        (extraction.remediation ? `; ${extraction.remediation}` : ''),
+    };
+  }
+  return {
+    coverage: 'partial',
+    detail:
+      `${String(doc.bytes)} bytes, binary — listed, not extracted; ` +
+      "read it with your host's own tools if you can, and treat its " +
+      'content as unknown otherwise',
+  };
+}
+
+/**
  * The rows one survey earns. Listed documents each get a complete read row —
  * the descriptor is the path exactly as the role must cite it. A survey that
  * listed fewer documents than exist adds a partial row for the remainder, and
@@ -69,31 +133,13 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
       },
     ];
   }
-  const reads: SourceRead[] = survey.documents.map((doc) =>
-    doc.binary
-      ? {
-          // Listed, not read: a binary document is on the record so a role
-          // knows it exists, and partial so the gap warning fires — the walk
-          // saw a file, never its content.
-          run,
-          source: survey.source,
-          descriptor: doc.path,
-          coverage: 'partial' as const,
-          detail:
-            `${String(doc.bytes)} bytes, binary — listed, not extracted; ` +
-            'read it with your host\'s own tools if you can, and treat its ' +
-            'content as unknown otherwise',
-          recordedAt: at,
-        }
-      : {
-          run,
-          source: survey.source,
-          descriptor: doc.path,
-          coverage: 'complete' as const,
-          detail: `${String(doc.bytes)} bytes`,
-          recordedAt: at,
-        },
-  );
+  const reads: SourceRead[] = survey.documents.map((doc) => ({
+    run,
+    source: survey.source,
+    descriptor: doc.path,
+    ...documentCoverage(doc),
+    recordedAt: at,
+  }));
   if (survey.total > survey.documents.length) {
     reads.push({
       run,

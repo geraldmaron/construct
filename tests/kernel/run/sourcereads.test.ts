@@ -130,3 +130,62 @@ test('a binary document earns a partial read row that says listed, not extracted
   assert.match(reads[1]!.detail, /listed, not extracted/);
   assert.match(reads[1]!.detail, /treat its content as unknown/);
 });
+
+test('an extracted binary document reads complete and points at its extraction', () => {
+  const reads = readsFromSurvey(
+    'run-1',
+    {
+      source: 's1',
+      locator: '/ground',
+      outcome: 'listed',
+      documents: [
+        {
+          path: '/ground/contract.pdf',
+          bytes: 999,
+          binary: true,
+          extraction: {
+            outcome: 'extracted',
+            tier: 'docling-local',
+            path: '/cache/contract-abc.md',
+            characters: 4200,
+          },
+        },
+      ],
+      total: 1,
+    },
+    AT,
+  );
+  assert.equal(reads[0]!.coverage, 'complete');
+  assert.equal(reads[0]!.descriptor, '/ground/contract.pdf', 'the original is what gets cited');
+  assert.match(reads[0]!.detail, /extracted by docling-local/);
+  assert.match(reads[0]!.detail, /\/cache\/contract-abc\.md/);
+  assert.match(reads[0]!.detail, /cite the original/);
+});
+
+test('a binary document no rung could put into words stays partial, with the reason', () => {
+  const reads = readsFromSurvey(
+    'run-1',
+    {
+      source: 's1',
+      locator: '/ground',
+      outcome: 'listed',
+      documents: [
+        {
+          path: '/ground/call.mp4',
+          bytes: 5,
+          binary: true,
+          extraction: {
+            outcome: 'refused',
+            reason: 'no ASR provider is available',
+            remediation: 'install one',
+          },
+        },
+      ],
+      total: 1,
+    },
+    AT,
+  );
+  assert.equal(reads[0]!.coverage, 'partial');
+  assert.match(reads[0]!.detail, /extraction refused: no ASR provider is available/);
+  assert.match(reads[0]!.detail, /install one/);
+});

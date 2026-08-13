@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { surveySource } from '../../src/hosts/sources.ts';
@@ -121,4 +121,61 @@ test('a binary document is surveyed and marked, not silently invisible', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('a binary document the ladder can read is extracted into the survey', () => {
+  withGround((root) => {
+    const cacheRoot = join(root, '.cache');
+    writeFileSync(join(root, 'plan.md'), '# plan\n');
+    // A calendar file is not readable as prose by the walk, but the ladder's
+    // native rung reads it with no provider installed — which is what makes
+    // this the extraction case that needs nothing probed.
+    writeFileSync(join(root, 'kickoff.ics'), 'BEGIN:VCALENDAR\nSUMMARY:kickoff\nEND:VCALENDAR\n');
+
+    const survey = surveySource(declared('directory', root), { extract: { cacheRoot } });
+    assert.equal(survey.outcome, 'listed');
+    if (survey.outcome !== 'listed') return;
+
+    const prose = survey.documents.find((d) => d.path.endsWith('plan.md'));
+    assert.equal(prose?.extraction, undefined, 'text the walk already read is not re-extracted');
+
+    const calendar = survey.documents.find((d) => d.path.endsWith('kickoff.ics'));
+    assert.equal(calendar?.binary, true);
+    assert.equal(calendar?.extraction?.outcome, 'extracted');
+    if (calendar?.extraction?.outcome !== 'extracted') return;
+    assert.ok(calendar.extraction.path.startsWith(cacheRoot), 'extractions land under the cache root');
+    assert.match(calendar.extraction.path, /kickoff-[0-9a-f]{16}\.md$/);
+    assert.match(readFileSync(calendar.extraction.path, 'utf8'), /SUMMARY:kickoff/);
+    assert.equal(
+      calendar.extraction.characters,
+      readFileSync(calendar.extraction.path, 'utf8').length,
+      'the recorded character count is what actually landed',
+    );
+  });
+});
+
+test('a binary document no rung can read is refused with the ladder reason, not dropped', () => {
+  withGround((root) => {
+    writeFileSync(join(root, 'call.mp4'), Buffer.from([0, 1, 2]));
+    const survey = surveySource(declared('directory', root), {
+      extract: { cacheRoot: join(root, '.cache') },
+    });
+    assert.equal(survey.outcome, 'listed');
+    if (survey.outcome !== 'listed') return;
+    const doc = survey.documents[0];
+    assert.equal(doc?.extraction?.outcome, 'refused');
+    if (doc?.extraction?.outcome !== 'refused') return;
+    assert.match(doc.extraction.reason, /ASR/);
+  });
+});
+
+test('without an extract option nothing is extracted and the walk is unchanged', () => {
+  withGround((root) => {
+    writeFileSync(join(root, 'kickoff.ics'), 'BEGIN:VCALENDAR\nEND:VCALENDAR\n');
+    const survey = surveySource(declared('directory', root));
+    assert.equal(survey.outcome, 'listed');
+    if (survey.outcome !== 'listed') return;
+    assert.equal(survey.documents[0]?.binary, true);
+    assert.equal(survey.documents[0]?.extraction, undefined);
+  });
 });

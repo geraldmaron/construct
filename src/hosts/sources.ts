@@ -11,13 +11,24 @@
  * remote kind comes back unreachable with its reason, never silently skipped —
  * Construct builds no connectors, and a declared source nobody could read must
  * say so in the record rather than vanish from it.
+ *
+ * A document the walk cannot read as text is put into words here, through the
+ * same extraction ladder a dropped note goes through, rather than being listed
+ * and left. A ground of PDFs that a role can only see the filenames of reads
+ * downstream as covered, which is the failure the extraction pass closes. The
+ * extracted text is written under the cache root, and the material line points
+ * the role at it while telling it to cite the original: an extraction is a
+ * rendering of licensed evidence, not evidence of its own, so nothing about
+ * what a run may cite changes.
  */
 
-import { readdirSync, statSync } from 'node:fs';
-import { join, extname } from 'node:path';
+import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { basename, join, extname } from 'node:path';
 import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS, EXTRACTABLE_DOCUMENT_EXTS } from '../kernel/extract/formats.ts';
 import type { Source } from '../kernel/store/sources.ts';
-import type { SourceSurvey, SurveyedDocument } from '../kernel/run/sourcereads.ts';
+import type { SourceSurvey, SurveyedDocument, DocumentExtraction } from '../kernel/run/sourcereads.ts';
+import { readSource, probeDocling, type DoclingProbe } from './extract.ts';
 
 /**
  * The assignment carries every listed document by name, so the listing is
@@ -93,10 +104,61 @@ function walk(dir: string, found: SurveyedDocument[]): void {
 }
 
 /**
+ * Where one document's extracted text lives. Keyed by the document's absolute
+ * path so re-surveying the same ground reuses the extraction instead of paying
+ * a Docling spawn per run, and named with the original basename so a role
+ * opening the file can tell what it is looking at.
+ */
+function extractionPathFor(cacheRoot: string, document: string): string {
+  const digest = createHash('sha256').update(document).digest('hex').slice(0, 16);
+  const stem = basename(document, extname(document)).replace(/[^\w.-]+/g, '-').slice(0, 60);
+  return join(cacheRoot, `${stem}-${digest}.md`);
+}
+
+export interface ExtractOptions {
+  /** Directory the extracted text is written under; created on demand. */
+  readonly cacheRoot: string;
+  /** Probed once by the caller and reused across every document in the walk. */
+  readonly docling?: DoclingProbe;
+}
+
+/**
+ * Put one binary document into words, or say why nothing could. A rung that
+ * runs and a rung that refuses are both answers; only an exception would be a
+ * surprise, so writing the extraction out is guarded too — a cache root that
+ * cannot be written is a refusal, not a crash mid-survey.
+ */
+function extractDocument(document: string, opts: ExtractOptions, docling: DoclingProbe): DocumentExtraction {
+  const read = readSource(document, { docling });
+  if (!read.ok) {
+    return { outcome: 'refused', reason: read.reason, remediation: read.remediation };
+  }
+  const path = extractionPathFor(opts.cacheRoot, document);
+  try {
+    mkdirSync(opts.cacheRoot, { recursive: true });
+    writeFileSync(path, read.text);
+  } catch (error) {
+    return {
+      outcome: 'refused',
+      reason: `extracted by ${read.tier} but could not be written to ${path} — ${(error as Error).message}`,
+      remediation: null,
+    };
+  }
+  return { outcome: 'extracted', tier: read.tier, path, characters: read.text.length };
+}
+
+/**
  * What one declared source holds. Never throws: a locator that cannot be read
  * is the unreachable answer, which is a result, not an error.
+ *
+ * With `extract` given, every listed document the walk could not read as text
+ * is run through the ladder. Only listed documents are extracted: paying for a
+ * document the cap already dropped would buy words no role is going to see.
  */
-export function surveySource(source: Source, opts?: { readonly cap?: number }): SourceSurvey {
+export function surveySource(
+  source: Source,
+  opts?: { readonly cap?: number; readonly extract?: ExtractOptions },
+): SourceSurvey {
   const cap = opts?.cap ?? DOCUMENT_CAP;
   const base = { source: source.id, locator: source.locator };
 
@@ -143,10 +205,22 @@ export function surveySource(source: Source, opts?: { readonly cap?: number }): 
     return a.path.localeCompare(b.path);
   });
 
+  const listed = ranked.slice(0, cap);
+  const extract = opts?.extract;
+  let documents = listed;
+  if (extract && listed.some((doc) => doc.binary)) {
+    // Probed once for the whole source: the probe spawns a process, and one
+    // spawn per PDF is the difference between a survey and a stall.
+    const docling = extract.docling ?? probeDocling();
+    documents = listed.map((doc) =>
+      doc.binary ? { ...doc, extraction: extractDocument(doc.path, extract, docling) } : doc,
+    );
+  }
+
   return {
     ...base,
     outcome: 'listed',
-    documents: ranked.slice(0, cap),
+    documents,
     total: found.length,
   };
 }

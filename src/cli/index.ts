@@ -457,6 +457,93 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
 }
 
 /**
+ * Where extracted text is materialized. Under the cache root rather than the
+ * user's ground: an extraction is a rendering Construct produced, and writing
+ * it into the directory the user declared would put Construct's output inside
+ * its own evidence.
+ */
+function extractionCacheRoot(): string {
+  return join(resolvePaths().cacheDir, 'extractions');
+}
+
+export interface GroundingPass {
+  readonly surveys: readonly SourceSurvey[];
+  readonly recorded: number;
+  /** True when the run already had reads and this pass wrote nothing. */
+  readonly skipped: boolean;
+  readonly documents: number;
+  readonly unreachable: number;
+  readonly extracted: number;
+}
+
+/**
+ * The producer half of grounding for one run: survey every declared source,
+ * put its unreadable documents into words, record what was read, and log it.
+ *
+ * One function because `outcome --answer` and `work` were doing this
+ * identically in two places, and two copies of a grounding pass is two
+ * chances for a run to be graded against ground it was never licensed.
+ * Recording is once per run — the read record is evidence, not a cache — so a
+ * second pass reports skipped and writes nothing.
+ */
+function groundRun(store: Store, run: string, at: string): GroundingPass | null {
+  const plan = planFor(store, run);
+  if (!plan || plan.sourcesDeclared.length === 0) return null;
+
+  const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
+  const surveys: SourceSurvey[] = [];
+  for (const id of plan.sourcesDeclared) {
+    const declared = getSource(store, id);
+    if (declared) surveys.push(surveySource(declared, { extract }));
+  }
+
+  const { recorded, skipped } = recordRunSourceReads(store, run, surveys, at);
+  const listed = surveys.filter((s) => s.outcome === 'listed');
+  const documents = listed.reduce((sum, s) => sum + s.documents.length, 0);
+  const extracted = listed.reduce(
+    (sum, s) => sum + s.documents.filter((d) => d.extraction?.outcome === 'extracted').length,
+    0,
+  );
+  const pass: GroundingPass = {
+    surveys,
+    recorded,
+    skipped,
+    documents,
+    unreachable: surveys.length - listed.length,
+    extracted,
+  };
+  if (skipped) return pass;
+
+  appendWorkLog(store, {
+    run,
+    role: 'construct',
+    action: 'sources-read',
+    detail: {
+      sources: surveys.length,
+      documents,
+      unreachable: pass.unreachable,
+      extracted,
+      reads: recorded,
+      // Licensed vs listed, on the record: the listed documents are the read
+      // rows; the roots are what the roles may read past them.
+      licensedRoots: listed.map((s) => s.locator).sort(),
+    },
+    at,
+  });
+  return pass;
+}
+
+/** The one-line grounding summary both survey surfaces print. */
+function groundingSummary(pass: GroundingPass): string {
+  return (
+    `${String(pass.documents)} document${pass.documents === 1 ? '' : 's'} ` +
+    `from ${String(pass.surveys.length)} source${pass.surveys.length === 1 ? '' : 's'}` +
+    (pass.extracted > 0 ? `, ${String(pass.extracted)} extracted` : '') +
+    (pass.unreachable > 0 ? ` (${String(pass.unreachable)} unreachable)` : '')
+  );
+}
+
+/**
  * Build and record the run's plan from what the run already established: the
  * implicated domains and how they were inferred, the workspace's declared
  * sources, and its engagement mode. Recorded write-once at outcome time so
@@ -897,43 +984,9 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     // The same grounding pass `work` runs, on this one run: what the declared
     // sources actually hold, surveyed and recorded before the dispatch that
     // will cite them.
-    const plan = planFor(store, started.runId);
-    if (plan && plan.sourcesDeclared.length > 0) {
-      const surveys: SourceSurvey[] = [];
-      for (const id of plan.sourcesDeclared) {
-        const declared = getSource(store, id);
-        if (declared) surveys.push(surveySource(declared));
-      }
-      const { recorded, skipped } = recordRunSourceReads(store, started.runId, surveys, now());
-      if (!skipped) {
-        const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
-        const documents = surveys.reduce(
-          (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
-          0,
-        );
-        appendWorkLog(store, {
-          run: started.runId,
-          role: 'construct',
-          action: 'sources-read',
-          detail: {
-            sources: surveys.length,
-            documents,
-            unreachable,
-            reads: recorded,
-            licensedRoots: surveys
-              .filter((s) => s.outcome === 'listed')
-              .map((s) => s.locator)
-              .sort(),
-          },
-          at: now(),
-        });
-        process.stdout.write(
-          `\ngrounded: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
-            `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
-            (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
-            '\n',
-        );
-      }
+    const pass = groundRun(store, started.runId, now());
+    if (pass) {
+      if (!pass.skipped) process.stdout.write(`\ngrounded: ${groundingSummary(pass)}\n`);
     } else {
       // An answer with no declared sources rests on the model's own knowledge,
       // and the reader has to know that before they read it.
@@ -1524,39 +1577,10 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         .map((t) => t.run),
     );
     for (const runId of pendingRuns) {
-      const plan = planFor(store, runId);
-      if (!plan || plan.sourcesDeclared.length === 0) continue;
-      const surveys: SourceSurvey[] = [];
-      for (const id of plan.sourcesDeclared) {
-        const declared = getSource(store, id);
-        if (declared) surveys.push(surveySource(declared));
-      }
-      const { recorded, skipped } = recordRunSourceReads(store, runId, surveys, now());
-      if (skipped) continue;
-      const unreachable = surveys.filter((s) => s.outcome === 'unreachable').length;
-      const documents = surveys.reduce(
-        (sum, s) => sum + (s.outcome === 'listed' ? s.documents.length : 0),
-        0,
-      );
-      // Licensed vs listed, on the record: the listed documents are the read
-      // rows; the roots are what the roles may read past them.
-      const licensedRoots = surveys
-        .filter((s) => s.outcome === 'listed')
-        .map((s) => s.locator)
-        .sort();
-      appendWorkLog(store, {
-        run: runId,
-        role: 'construct',
-        action: 'sources-read',
-        detail: { sources: surveys.length, documents, unreachable, reads: recorded, licensedRoots },
-        at: now(),
-      });
-      process.stdout.write(
-        `grounded ${runId}: ${String(documents)} document${documents === 1 ? '' : 's'} ` +
-          `from ${String(surveys.length)} source${surveys.length === 1 ? '' : 's'}` +
-          (unreachable > 0 ? ` (${String(unreachable)} unreachable)` : '') +
-          '\n',
-      );
+      const pass = groundRun(store, runId, now());
+      if (!pass || pass.skipped) continue;
+      const documents = pass.documents;
+      process.stdout.write(`grounded ${runId}: ${groundingSummary(pass)}\n`);
 
       // Where a measured floor is met before it is paid for, rather than ten
       // minutes per role later. It is stated as the nearest recorded
