@@ -44,7 +44,13 @@ export const HOST_NAME = 'opencode';
  * declared rather than hidden — this one is ours, not the host's.
  * 'sandbox' is NOT declared: the child runs with this process's privileges.
  */
-export const OPENCODE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
+/**
+ * `outward-write` because `opencode run` passes no sandbox flag and this host
+ * has no equivalent to the strict confinement the cursor and codex adapters
+ * get — the same finding the MCP pin records about tool reach, applied to what
+ * a dispatched model can do to the world.
+ */
+export const OPENCODE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent', 'outward-write'];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 

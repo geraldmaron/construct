@@ -50,6 +50,10 @@ export const HOST_NAME = 'codex';
 const HOST_FAMILY_PROBE = 'gpt-';
 
 /** Killing the child genuinely interrupts; runs share nothing in-process. */
+/**
+ * No `outward-write`: dispatch runs `-s read-only`, a probed expectation, so a
+ * model here cannot act on anything outside the process however it is asked.
+ */
 export const CODEX_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;

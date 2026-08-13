@@ -52,7 +52,15 @@ export const HOST_NAME = 'claude';
 const HOST_FAMILY_PROBE = 'claude-';
 
 /** Killing the child genuinely interrupts; runs share nothing in-process. */
-export const CLAUDE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
+/**
+ * `outward-write` because this adapter passes no sandbox flag: `-p` leaves the
+ * dispatched model whatever tool reach the user's own Claude install grants
+ * it. That is what makes this the one host that can carry out an approved
+ * outward change, and it is equally the reason a dispatch here is not
+ * confined the way the cursor and codex ones are. Declared rather than
+ * assumed, so a surface that needs the distinction can ask instead of guess.
+ */
+export const CLAUDE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent', 'outward-write'];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 

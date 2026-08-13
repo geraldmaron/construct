@@ -40,6 +40,10 @@ import type { ModelTier } from '../../kernel/brief/tiers.ts';
 export const HOST_NAME = 'cursor';
 
 /** Killing the child genuinely interrupts; runs share nothing in-process. */
+/**
+ * No `outward-write`: dispatch runs `--mode plan`, probed read-only, so a
+ * model here cannot act on anything outside the process however it is asked.
+ */
 export const CURSOR_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;

@@ -18,6 +18,10 @@ import type { Store } from '../../../src/kernel/store/open.ts';
 import { addSource, decideProposal, decisionOf, proposeWrite } from '../../../src/kernel/store/sources.ts';
 import { applyProposal } from '../../../src/kernel/run/apply.ts';
 import type { ApplyReport } from '../../../src/kernel/run/apply.ts';
+import { CLAUDE_CAPABILITIES } from '../../../src/hosts/claude/adapter.ts';
+import { CODEX_CAPABILITIES } from '../../../src/hosts/codex/adapter.ts';
+import { CURSOR_CAPABILITIES } from '../../../src/hosts/cursor/adapter.ts';
+import { OPENCODE_CAPABILITIES } from '../../../src/hosts/opencode/adapter.ts';
 
 const AT = '2026-08-13T00:00:00.000Z';
 const LATER = '2026-08-14T00:00:00.000Z';
@@ -135,4 +139,17 @@ test('an undecided proposal, an unknown one, and one already applied are all ans
     assert.equal(again.outcome, 'refused');
     assert.match(again.outcome === 'refused' ? again.reason : '', /already applied/);
   });
+});
+
+test('a read-only host is declared unable rather than left to report failure per proposal', () => {
+  // The postures are probed expectations, not guesses: cursor dispatches
+  // --mode plan and codex -s read-only, so neither can act outside the
+  // process however it is asked. Declaring that is what lets the apply
+  // surface refuse before it spends a model call.
+  assert.equal(CURSOR_CAPABILITIES.includes('outward-write'), false);
+  assert.equal(CODEX_CAPABILITIES.includes('outward-write'), false);
+  // And the two that pass no sandbox flag say so, which is the warning as
+  // much as the permission.
+  assert.equal(CLAUDE_CAPABILITIES.includes('outward-write'), true);
+  assert.equal(OPENCODE_CAPABILITIES.includes('outward-write'), true);
 });

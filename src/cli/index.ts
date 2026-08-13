@@ -81,6 +81,7 @@ import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { hasCapability } from '../kernel/hosts/interface.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { createCodexAdapter } from '../hosts/codex/adapter.ts';
@@ -2368,8 +2369,9 @@ export function inbox(): number {
 
 const DECIDE_USAGE =
   'usage: construct decide <id> "<your call>"\n' +
-  '       construct decide --apply=<proposal-id> --host=<opencode|claude|codex|cursor> ' +
-  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n';
+  '       construct decide --apply=<proposal-id> --host=<opencode|claude> ' +
+  '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n' +
+  '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
 
 /**
  * Carry out one approved outward change through a host.
@@ -2391,7 +2393,7 @@ async function applyApproved(
     process.stderr.write(
       'decide: carrying out a change needs a host — Construct builds no connectors and ' +
         "reaches nothing itself.\n  construct decide --apply=" + proposal +
-        ' --host=<opencode|claude|codex|cursor>\n',
+        ' --host=<opencode|claude>\n',
     );
     return 2;
   }
@@ -2404,12 +2406,31 @@ async function applyApproved(
         dir: host.dir,
         timeoutMs: host.timeoutMs,
       });
+    // Asked before a model call is spent, not after one comes back saying it
+    // could not. The cursor and codex dispatch postures are probed read-only,
+    // so a model under either cannot carry out any change however it is asked
+    // — offering those hosts here and letting them fail would be selling a
+    // capability that never existed.
+    if (!hasCapability(adapter, 'outward-write')) {
+      process.stderr.write(
+        `decide: host "${adapter.name}" dispatches read-only, so it cannot carry out a change.\n` +
+          `  ${HOST_NAMES.filter((h) => h === 'claude' || h === 'opencode').join(' or ')} can, ` +
+          'because neither confines what the dispatched model may touch.\n' +
+          '  That is also what it means: an apply there runs with whatever reach your own ' +
+          'install of that host grants it.\n',
+      );
+      return 2;
+    }
     try {
       await adapter.init();
     } catch (error) {
       process.stderr.write(`decide: host "${adapter.name}" is not available — ${(error as Error).message}\n`);
       return 1;
     }
+    process.stdout.write(
+      `applying ${proposal} through ${adapter.name}, which dispatches unconfined — ` +
+        'the model acts with whatever reach your install grants it.\n',
+    );
     const result = await applyProposal(
       store,
       createHostApplier(adapter, (id) => getSource(store, id)?.locator ?? 'an undeclared source'),

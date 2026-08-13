@@ -20,7 +20,14 @@
  *                 no-op, not a missing method — some real transports (a
  *                 blocking spawnSync, say) genuinely cannot be interrupted once
  *                 started, and the interface requires that limitation be
- *                 declared, not hidden.
+ *                 declared, not hidden. 'outward-write' means this adapter's
+ *                 dispatch posture lets the model act on the world outside
+ *                 this process — edit a file, call a connector, move a
+ *                 ticket. Its absence is not a weakness to work around: a
+ *                 read-only posture is what makes a review role safe, and it
+ *                 is the reason a host that cannot carry out an approved
+ *                 change is told so before a model call is spent rather than
+ *                 after one comes back saying it could not.
  *   init(config)  async setup; must run before invoke()/health() are valid
  *   invoke(req, ctx) async; runs one unit of work and resolves a HostResult.
  *                 ctx may carry an invocationId chosen by the caller — an
@@ -38,7 +45,13 @@
 
 import type { ModelTier } from '../brief/tiers.ts';
 
-export const CAPABILITIES = ['interrupt', 'stream', 'sandbox', 'concurrent'] as const;
+export const CAPABILITIES = [
+  'interrupt',
+  'stream',
+  'sandbox',
+  'concurrent',
+  'outward-write',
+] as const;
 
 export type HostCapability = (typeof CAPABILITIES)[number];
 
