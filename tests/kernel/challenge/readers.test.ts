@@ -202,6 +202,63 @@ test('a deliverable that never heads the slot falls back to the whole-document r
 });
 
 /**
+ * The second real deliverable this gate met, and the hole it found.
+ *
+ * The placeholder openings catch a slot that begins by refusing the question.
+ * This one began by describing the material — "The material names no product
+ * owner distinct from the engineering function" — which is the same non-answer
+ * with a subject in front of it, and an anchored test cannot see it. The
+ * deliverable went on to say honestly that it was asking that unnamed person to
+ * decide, which is the ladder working; the gate passing it was not.
+ */
+test('a slot that says the material names no owner has not named one', () => {
+  const asWritten =
+    '## decision-owner\n\n' +
+    'The material names no product owner distinct from the engineering function; ' +
+    'docs/runbooks/solo-dev-hotfix.md describes a solo-developer release pattern. ' +
+    'This outcome is asking that person to decide now, not informing them.\n';
+
+  const check = namesAnOwnerIn('decision-owner')(asWritten);
+
+  assert.equal(check.passed, false);
+  assert.match(check.detail, /placeholder/);
+});
+
+test('a denial of ownership is read wherever it sits, but a negative about a named person is not', () => {
+  const denied = [
+    'There is no owner for this call in the material.',
+    'Engineering leadership has no single named owner for funding decisions.',
+    'Nobody in the read material owns what capability is funded next.',
+  ];
+  for (const written of denied) {
+    assert.equal(
+      namesAnOwnerIn('decision-owner')(`## decision-owner\n\n${written}\n`).passed,
+      false,
+      `should read as a denial: ${written}`,
+    );
+  }
+
+  // The distinction the rule has to keep: a named person described with a
+  // negative clause is still a named person.
+  assert.equal(
+    namesAnOwnerIn('decision-owner')(
+      '## decision-owner\n\nD. Okafor, who is not on call this week, is being asked to decide.\n',
+    ).passed,
+    true,
+  );
+});
+
+test('a head long enough to be prose is prose, and an honest role title is not', () => {
+  const prose =
+    '## decision-owner\n\nWhoever sets product direction across the mobile epic and the ' +
+    'discovery lane would have to weigh these against each other before anything ships.\n';
+  assert.equal(namesAnOwnerIn('decision-owner')(prose).passed, false);
+
+  const title = '## decision-owner\n\nThe head of trust and safety for the Americas region.\n';
+  assert.equal(namesAnOwnerIn('decision-owner')(title).passed, true);
+});
+
+/**
  * The binding is per concern, which is the whole point: a requirement that
  * applies to one reader and not another is declared on that reader's concern or
  * it is not a requirement.

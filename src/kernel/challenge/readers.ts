@@ -123,11 +123,40 @@ const COLLECTIVE_NOT_AN_OWNER =
 const NOT_AN_OWNER_OPENING =
   /^(?:\[?(?:unowned|unassigned|unknown|unnamed)\]?|not (?:yet )?(?:named|assigned|determined|identified|decided)|never (?:named|assigned)|no single|not stated|named|to be (?:decided|determined|named|assigned))\b/i;
 
+/**
+ * A denial of ownership, wherever it sits in the head.
+ *
+ * The openings above catch a slot that begins by refusing the question. The
+ * first real deliverable graded after they were written began by describing the
+ * material instead: "The material names no product owner distinct from the
+ * engineering function". That is the same non-answer with a subject in front of
+ * it, and an anchored test cannot see it.
+ *
+ * Kept narrow on purpose. This asks whether the head says there is no owner, not
+ * whether it contains a negative word — "Owner: D. Okafor, who is not on call
+ * this week" names somebody and must keep passing.
+ */
+const OWNERSHIP_DENIED =
+  /\b(?:names?|is|are|was|were|have|has)\s+no\b|\bno\s+(?:\w+\s+){0,3}owner\b|\bnot\s+(?:yet\s+)?(?:named|assigned|identified|determined)\b|\bnobody\b|\bno\s+one\b/i;
+
+/**
+ * A head long enough to be prose is prose.
+ *
+ * The backstop under the rules above, for a slot that explains an absence in
+ * words none of them list. An owner attribution is a name or a role — "D.
+ * Okafor", "the platform security lead" — and the ceiling sits far enough above
+ * the longest honest one that reaching it means the slot is describing a
+ * situation rather than answering the question.
+ */
+const LONGEST_PLAUSIBLE_NAME_WORDS = 14;
+
 function notAnOwner(head: string): boolean {
   return (
     NOT_AN_OWNER_EXACT.test(head) ||
     NOT_AN_OWNER_OPENING.test(head) ||
-    COLLECTIVE_NOT_AN_OWNER.test(head)
+    COLLECTIVE_NOT_AN_OWNER.test(head) ||
+    OWNERSHIP_DENIED.test(head) ||
+    head.split(/\s+/).filter(Boolean).length > LONGEST_PLAUSIBLE_NAME_WORDS
   );
 }
 
