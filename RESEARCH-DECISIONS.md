@@ -1904,3 +1904,49 @@ unchanged; the control's result was recorded more strongly than it was.
 
 **Recorded by:** the run's own work log (run-20260813144804609) and the probe
 above, 2026-08-13. Implementation and its measurement filed separately.
+
+## 21. The catalog's precision knowledge stays out of the router (2026-08-13)
+
+**The question.** Section 3 recorded that 116 of 207 catalog keywords have never
+fired, and that the precision knowledge bought since — which keywords fire
+mostly wrong, which conditions separate a near miss from a hit — lives in
+comments addressed to whoever next edits the catalog. Nothing in
+`kernel/implication/` or `kernel/routing/` reads those conditions; the router
+sees one-line concerns. That was filed as a defect with no proposed fix, and
+section 17 proposed the obvious one: hand the router the catalog's conditions.
+
+**What the measurement says.** Re-derived for free from the recorded arms
+(`fixtures/namer-arms/*.json`, `scripts/measure-decisions.mjs --namer-compare`),
+so no model call was needed to settle it.
+
+- `implicatedWhen` clauses buy no precision at all. Fifty-eight of them move the
+  over-rate from 0.376 to 0.377, and cost 0.225 of out-of-family miss.
+- `notImplicatedWhen` clauses buy precision that scales with dose — 0.376 to
+  0.353 to 0.321 to 0.190 — and cost recall more gently.
+- No configuration tested beats the shipped router on both axes.
+
+**The decision: rejected, and not left open.** The proposal is not adopted, and
+section 3's finding is closed as a measured non-improvement rather than as a
+defect awaiting a fix. Two reasons, and the second is the one that decides it.
+
+The first is the trade itself. Paying 0.225 of miss for 0.001 of over-rate is
+not a close call; the `implicatedWhen` half is simply worse.
+
+The second is which axis this project is allowed to trade. The promise is
+stated on recall — a user is not ambushed by a domain they did not know
+existed. An over-rate is a role dispatched that need not have been, which costs
+a call and produces a deliverable the reader can ignore. A miss is a concern
+nobody raised, which the reader cannot detect at all, because the failure is
+invisible in exactly the way the whole system exists to prevent. The
+`notImplicatedWhen` half buys real precision and still buys it with the one
+currency that is not ours to spend.
+
+**What stays true.** The comments are not dead weight: they remain the record
+for whoever edits the catalog, and they are the reason this could be settled
+without a run. Nothing here says the router is finished — it says this
+particular way of improving it was measured, costs recall, and is closed. A
+future proposal is judged against the same two axes and the same asymmetry
+between them.
+
+**Recorded by:** re-derivation from the committed arms, 2026-08-13. Sections 3
+and 17 are superseded on this point; their figures are unchanged.
