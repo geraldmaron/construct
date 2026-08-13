@@ -26,6 +26,65 @@ import { extractJson } from './contextloop.ts';
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
+export const SHAPE_ROLE = 'composition-shape';
+
+/**
+ * Which document shape an outcome wants — asked of a model, not guessed from
+ * its wording.
+ *
+ * Every other consultation in this codebase already draws this line: outcome
+ * inference is keyword matching on the free path and a model call on the paid
+ * one (kernel/implication/map.ts vs. hosts/namer.ts), because a model is
+ * already being read and paid for the moment a host is named, and guessing
+ * from a fixed phrase list when an actual answer is one call away serves
+ * nobody. Shape selection had been the one place in compose that kept
+ * guessing anyway, on an ask a model is right there to just be asked about —
+ * called out directly (Gerald, 2026-08-13) as unacceptable once a fourth
+ * shape made the guesswork visible. The keyword chooser in run/shapes.ts does
+ * not go away: it is what a run without a host still has, same as domain
+ * inference keeps its free path, and it is the disclosed fallback here when
+ * the model call itself fails or answers with a name that does not exist.
+ */
+export function shapeChoicePrompt(outcome: string, shapes: readonly CompositionShape[]): string {
+  return [
+    'A person asked for something. Which of these document shapes is the ask',
+    'actually for? Read the ask as a request for a specific document, not for a',
+    'topic — "an RFC deciding X" is asking for the RFC document even though it',
+    'also contains a judgment word, because the document type is what the',
+    'reader would notice missing if you got this wrong.',
+    '',
+    ...shapes.map((shape) => `- ${shape.name}: ${shape.answers}`),
+    '',
+    `The ask:\n${outcome}`,
+    '',
+    'Reply with JSON only, no prose outside it:',
+    `{"shape":"<one of: ${shapes.map((s) => s.name).join(', ')}>"}`,
+  ].join('\n');
+}
+
+/**
+ * Build a shape chooser backed by a host adapter. Returns null on any
+ * failure — a bad reply, an unrecognized name, a host that errors — so the
+ * caller can fall back to the keyword guess and say so, the same fail-open
+ * shape every other host consultation in this file already uses.
+ */
+export function createHostShapeChooser(
+  host: HostAdapter,
+): (outcome: string, shapes: readonly CompositionShape[]) => Promise<string | null> {
+  return async (outcome, shapes) => {
+    try {
+      const text = await invokeRetrying(host, {
+        role: SHAPE_ROLE,
+        task: shapeChoicePrompt(outcome, shapes),
+      });
+      const parsed = extractJson(text) as { shape?: unknown } | null;
+      const name = typeof parsed?.shape === 'string' ? parsed.shape.trim().toLowerCase() : '';
+      return shapes.some((shape) => shape.name === name) ? name : null;
+    } catch {
+      return null;
+    }
+  };
+}
 
 export function composerPrompt(input: {
   readonly outcome: string;

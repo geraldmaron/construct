@@ -73,10 +73,12 @@ import {
   createHostObjectionChecker,
   createHostPositionRepairer,
   createHostPositioner,
+  createHostShapeChooser,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
-import { shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
+import { COMPOSITION_SHAPES, shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
+import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
 import {
@@ -94,9 +96,9 @@ import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { ScreenResult } from '../kernel/context/observations.ts';
-import { operationalLessonsFor, decideAdmission, admissionOf, riskTierFor } from '../kernel/lessons/admission.ts';
+import { operationalLessonsFor, decideAdmission, riskTierFor } from '../kernel/lessons/admission.ts';
 import { distillDecisionLesson } from '../kernel/lessons/fromDecisions.ts';
-import { recordLesson, lessonsFor, getLesson } from '../kernel/store/lessons.ts';
+import { recordLesson } from '../kernel/store/lessons.ts';
 import {
   createHostApplier,
   createHostChallenger,
@@ -3327,15 +3329,23 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       return 1;
     }
     // What shape of document this ask wants back, decided before any model sees
-    // the deliverables. Inferred from the recorded outcome and overridable,
-    // because a chooser the user can see and correct costs a flag when it is
-    // wrong, and one they cannot costs the document.
-    const shape = flags.shape === undefined ? shapeForOutcome(plan.outcome) : shapeByName(flags.shape);
-    if (shape === undefined) {
-      process.stderr.write(
-        `compose: no shape named "${String(flags.shape)}" — known shapes are ${shapeNames().join(', ')}\n`,
-      );
-      return 2;
+    // the deliverables and overridable outright — an explicit --shape never
+    // costs a call, the same rule --domains already gets against the namer.
+    // Left unresolved here when no name was given: which document shape an
+    // outcome wants is not a fact the wording alone settles reliably, and a
+    // model is one call away the moment a host is named for this run, so it
+    // is asked rather than guessed once that host exists (below). The keyword
+    // guess in run/shapes.ts survives as what a host-less run still has and
+    // as the disclosed fallback if the model call itself fails.
+    let shape: CompositionShape | undefined;
+    if (flags.shape !== undefined) {
+      shape = shapeByName(flags.shape);
+      if (shape === undefined) {
+        process.stderr.write(
+          `compose: no shape named "${String(flags.shape)}" — known shapes are ${shapeNames().join(', ')}\n`,
+        );
+        return 2;
+      }
     }
 
     const done = listTasks(store, run).filter((task) => task.state === 'done');
@@ -3373,10 +3383,15 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     }
 
     if (hostFlags.host === undefined && hostOverride === undefined) {
+      // No host named: this run stays free, and shape falls to the keyword
+      // guess run/shapes.ts already has for exactly this path — the same
+      // duality domain inference uses (kernel/implication/map.ts) rather than
+      // an exception invented for this one decision.
+      shape ??= shapeForOutcome(plan.outcome);
       process.stdout.write(
         `${String(sources.length)} deliverables are ready to compose (${sources.map((s) => s.role).join(', ')}).\n` +
-          'Composing them is model work, at cost — one call to arrange, and one per role to check\n' +
-          'that nothing was added:\n' +
+          'Composing them is model work, at cost — one call to arrange, one per role to check\n' +
+          'that nothing was added, and one to choose the document shape unless --shape names it:\n' +
           `  construct compose --run=${run} --host=<opencode|claude|codex|cursor>\n`,
       );
       return 0;
@@ -3395,6 +3410,29 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     } catch (error) {
       process.stderr.write(`compose: host "${host.name}" is not available — ${(error as Error).message}\n`);
       return 1;
+    }
+
+    // A host exists and is already being paid for, so which document shape
+    // this ask wants is asked rather than guessed. Only the keyword-matched
+    // failure path — the host call itself failing, or naming something that
+    // is not a real shape — falls back to the guess, and either way the
+    // reader is told which one decided, the same disclosure the densifier's
+    // "as understood" already gives.
+    if (shape === undefined) {
+      const chosen = await createHostShapeChooser(host)(plan.outcome, COMPOSITION_SHAPES);
+      // chosen is already validated against COMPOSITION_SHAPES by the chooser,
+      // so shapeByName cannot actually fail here — the fallback is defensive,
+      // not expected to fire.
+      const resolved = chosen === null ? undefined : shapeByName(chosen);
+      if (resolved !== undefined) {
+        shape = resolved;
+        process.stdout.write(`shape: ${chosen} (chosen by the model)\n`);
+      } else {
+        shape = shapeForOutcome(plan.outcome);
+        process.stdout.write(
+          `shape: ${shape.name} (the model could not be asked; falling back to the keyword guess)\n`,
+        );
+      }
     }
 
     let screened;

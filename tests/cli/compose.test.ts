@@ -545,3 +545,80 @@ test('--record hands back the stored form, markers and slugs intact', async () =
   assert.match(out, /## the-choice/);
   assert.doesNotMatch(out, /## The choice/);
 });
+
+/**
+ * The properties a keyword fallback cannot demonstrate on its own: the
+ * model's choice is what compose actually uses (proven with an outcome whose
+ * wording alone would default to review), and the reader is told which
+ * method decided.
+ */
+function shapeChoosingHost(chosenShape: string): HostAdapter {
+  return {
+    ...specHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'composition-shape') {
+        return { id: role, status: 'ok', output: { text: JSON.stringify({ shape: chosenShape }) }, error: null };
+      }
+      return specHost().invoke(request);
+    },
+  };
+}
+
+test("the model's shape choice wins even when the wording alone would default to review", async () => {
+  let composed = 0;
+  // No shape keyword anywhere in this outcome — the keyword chooser would
+  // return review. The model is told to answer "spec" instead.
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the export tool for me'],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], shapeChoosingHost('spec'))), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /shape: spec \(chosen by the model\)/);
+  assert.match(out, /Shaped as a spec/);
+  assert.match(out, /## The problem/);
+  assert.doesNotMatch(out, /## The answer/, 'the keyword default (review) was not used');
+});
+
+test('a shape call that fails falls back to the keyword guess, disclosed as a fallback', async () => {
+  let composed = 0;
+  const failing: HostAdapter = {
+    ...specHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'composition-shape') {
+        return { id: role, status: 'error', output: null, error: 'the classifier died' };
+      }
+      return specHost().invoke(request);
+    },
+  };
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], failing)), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /shape: spec \(the model could not be asked; falling back to the keyword guess\)/);
+});
+
+test('an explicit --shape flag never calls the model', async () => {
+  let calledShapeRole = false;
+  const watching: HostAdapter = {
+    ...specHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'composition-shape') calledShapeRole = true;
+      return specHost().invoke(request);
+    },
+  };
+  let composed = 0;
+  const { err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the export tool for me'],
+    () => work([], workHost()),
+    async () =>
+      ((composed = await compose([`--run=${latestRun()}`, '--shape=spec'], watching)), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.equal(calledShapeRole, false, 'an explicit --shape must never cost a call');
+});
