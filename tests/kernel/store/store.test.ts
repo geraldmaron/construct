@@ -88,6 +88,62 @@ test('a store written by a newer schema is refused, not silently used', () => {
 });
 
 /**
+ * The refusal above can only mean something if the recorded version follows what
+ * the store actually carries, and for ten bumps it did not: a version was
+ * inserted when absent and never updated, so a store created at 4 still claimed
+ * 4 and every build after it opened the store without a word. The guard existed
+ * and had never been able to fire.
+ */
+test('a store recorded older than the build advances to what it now carries', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    const store = openStore(path);
+    store.db.prepare('UPDATE meta SET value = ? WHERE key = ?').run('4', 'schema_version');
+    store.close();
+
+    const reopened = openStore(path);
+    const recorded = reopened.db
+      .prepare('SELECT value FROM meta WHERE key = ?')
+      .get('schema_version') as { value: string };
+    assert.equal(Number(recorded.value), SCHEMA_VERSION);
+    reopened.close();
+
+    // Repeatable: opening again is a no-op rather than a second write, and the
+    // store stays openable.
+    const third = openStore(path);
+    const still = third.db
+      .prepare('SELECT value FROM meta WHERE key = ?')
+      .get('schema_version') as { value: string };
+    assert.equal(Number(still.value), SCHEMA_VERSION);
+    third.close();
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('advancing an old store does not weaken the refusal of a newer one', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    const store = openStore(path);
+    store.db.prepare('UPDATE meta SET value = ? WHERE key = ?').run('2', 'schema_version');
+    store.close();
+    openStore(path).close();
+
+    // Now push it past this build: the direction that must still refuse.
+    const advanced = openStore(path);
+    advanced.db
+      .prepare('UPDATE meta SET value = ? WHERE key = ?')
+      .run(String(SCHEMA_VERSION + 1), 'schema_version');
+    advanced.close();
+    assert.throws(() => openStore(path), /newer than this build understands/);
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/**
  * chmod is not enforced against a superuser, so these two would pass vacuously
  * as root. Skipping honestly beats a green check that proved nothing.
  */

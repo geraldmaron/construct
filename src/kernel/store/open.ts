@@ -639,6 +639,28 @@ export function openStore(path: string): Store {
       path,
       `it was written by schema version ${found}, newer than this build understands (${SCHEMA_VERSION})`,
     );
+  } else if (found < SCHEMA_VERSION) {
+    // The recorded version follows what the store now carries, which is the
+    // only thing that makes the refusal above mean anything. It never advanced
+    // before: a version was inserted when absent and never updated, so a store
+    // created at version 4 still claimed 4 ten bumps later, and the build that
+    // could not understand it opened it without a word. Verified live before
+    // this line existed — a released binary read runs written by a build ten
+    // versions ahead of it and reported nothing.
+    //
+    // Safe to run on every open and safe to run repeatedly: the statement above
+    // has already brought the store's tables up to this build, because every
+    // change so far is additive and applied by CREATE TABLE IF NOT EXISTS. That
+    // is the fact this line depends on, and the day a change is not additive it
+    // stops being true — at which point a migration has to run here, and this
+    // becomes the place it runs rather than a place that pretends one already
+    // did. Recorded that way round on purpose: the failure being fixed is a
+    // guard that stayed quiet, and a version bump that quietly claims a
+    // migration nobody wrote would be the same failure again.
+    db.prepare('UPDATE meta SET value = ? WHERE key = ?').run(
+      String(SCHEMA_VERSION),
+      'schema_version',
+    );
   }
 
   return {
