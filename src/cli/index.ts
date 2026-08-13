@@ -466,6 +466,18 @@ function extractionCacheRoot(): string {
   return join(resolvePaths().cacheDir, 'extractions');
 }
 
+/**
+ * Survey a set of declared sources, extracting whatever the walk could not
+ * read. The one place a survey is asked for, so every surface that grounds
+ * itself — a run's dispatch, a drift pass over a workspace — sees the same
+ * documents, extracted the same way, with one Docling probe between them.
+ */
+function surveyDeclared(sources: readonly Source[]): SourceSurvey[] {
+  if (sources.length === 0) return [];
+  const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
+  return sources.map((source) => surveySource(source, { extract }));
+}
+
 export interface GroundingPass {
   readonly surveys: readonly SourceSurvey[];
   readonly recorded: number;
@@ -490,12 +502,10 @@ function groundRun(store: Store, run: string, at: string): GroundingPass | null 
   const plan = planFor(store, run);
   if (!plan || plan.sourcesDeclared.length === 0) return null;
 
-  const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
-  const surveys: SourceSurvey[] = [];
-  for (const id of plan.sourcesDeclared) {
-    const declared = getSource(store, id);
-    if (declared) surveys.push(surveySource(declared, { extract }));
-  }
+  const declared = plan.sourcesDeclared
+    .map((id) => getSource(store, id))
+    .filter((s): s is Source => s !== null && s !== undefined);
+  const surveys = surveyDeclared(declared);
 
   const { recorded, skipped } = recordRunSourceReads(store, run, surveys, at);
   const listed = surveys.filter((s) => s.outcome === 'listed');
