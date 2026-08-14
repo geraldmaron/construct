@@ -134,12 +134,14 @@ export function frameHostTask(role: string, task: string): string {
  */
 export const CONTENT_SHAPE_PROTOCOL = [
   'Fill each headed section in Construct\'s voice. Prose is the default: connected',
-  'sentences a reader can follow. A markdown table belongs where the material',
-  'compares several items across the same dimensions. A mermaid diagram belongs',
-  'where the material itself describes a flow, sequence, or dependency — every',
-  'node and edge from something the material said. A list belongs only when the',
-  'content is genuinely a list. Numbered issues are for issue-spotting, not for',
-  'every section.',
+  'sentences a colleague can follow without translating a bullet wall. Prefer',
+  'short paragraphs that carry findings, proposals, and risks. A markdown table',
+  'belongs where the material compares several items across the same dimensions',
+  '(options, requirements, alternatives). A mermaid diagram belongs where the',
+  'material itself describes a flow, sequence, or dependency — every node and',
+  'edge from something the material said. A list belongs only when the content',
+  'is genuinely a list of independent items. Numbered issues are for',
+  'issue-spotting templates, not for every section of a PRD, RFC, or review.',
 ].join(' ');
 
 /**

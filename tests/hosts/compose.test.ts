@@ -13,10 +13,11 @@ import assert from 'node:assert/strict';
 import {
   closingPrompt,
   composerPrompt,
+  formGuidanceForShape,
   positionPrompt,
 } from '../../src/hosts/compose.ts';
 import { HOUSE_VOICE, voiceProtocol } from '../../src/kernel/voice/voice.ts';
-import { DEFAULT_SHAPE } from '../../src/kernel/run/shapes.ts';
+import { COMPOSITION_SHAPES, DEFAULT_SHAPE, shapeByName } from '../../src/kernel/run/shapes.ts';
 
 const SOURCES = [
   { role: 'privacy', text: '## finding\nThe DPA is missing.' },
@@ -37,6 +38,49 @@ test('the composer is Construct, bound to the house voice, not a specialist', ()
     assert.ok(prompt.includes(rule.rule), `composer must carry the ${rule.id} rule`);
   }
   assert.ok(prompt.includes(voiceProtocol()));
+});
+
+test('the composer prefers prose and names form by document shape', () => {
+  const review = composerPrompt({
+    outcome: 'Look at the beta plan',
+    sources: SOURCES,
+    shape: DEFAULT_SHAPE,
+  });
+  assert.match(review, /"paragraph" is the default/);
+  assert.doesNotMatch(review, /Most claims are "bullet"/);
+  assert.match(review, /Form for this review/);
+  assert.ok(review.includes(formGuidanceForShape(DEFAULT_SHAPE)));
+
+  const rfc = composerPrompt({
+    outcome: 'Write an RFC for shape governance',
+    sources: SOURCES,
+    shape: shapeByName('rfc')!,
+  });
+  assert.match(rfc, /Form for this RFC/);
+  assert.match(rfc, /multi-column table/);
+  assert.match(rfc, /never a centered list/);
+
+  const spec = composerPrompt({
+    outcome: 'Write a PRD for held lessons',
+    sources: SOURCES,
+    shape: shapeByName('spec')!,
+  });
+  assert.match(spec, /Form for this spec/);
+  assert.match(spec, /one-column table/);
+});
+
+test('every shipped shape has named form guidance of its own', () => {
+  for (const shape of COMPOSITION_SHAPES) {
+    const guidance = formGuidanceForShape(shape);
+    assert.match(guidance, /Form for this /);
+    if (shape.name !== 'review') {
+      assert.doesNotMatch(
+        guidance,
+        /Form for this review/,
+        `${shape.name} must not inherit review form by falling through`,
+      );
+    }
+  }
 });
 
 test('a closing answer is Construct speaking in that concern\'s name', () => {

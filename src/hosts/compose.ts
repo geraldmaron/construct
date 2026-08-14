@@ -30,6 +30,63 @@ export const SUPPORT_ROLE = 'composition-support';
 export const SHAPE_ROLE = 'composition-shape';
 
 /**
+ * Shape-specific form: what a reader of this document type expects to see.
+ *
+ * The four claim kinds are shared; which kind dominates is not. An RFC that
+ * is only bullets fails the genre the same way a PRD that never states the
+ * problem in prose does. Guidance is named per shape so the composer cannot
+ * invent a fifth document type by picking kinds at random.
+ */
+export function formGuidanceForShape(shape: CompositionShape): string {
+  const figureRule = [
+    'A diagram is mermaid that draws boxes and edges — never a centered list of',
+    'lines joined by Unicode arrows, never a monospace "Phase 1 → Phase 2" dump',
+    'pretending to be a figure. If you cannot draw it, write the sequence as a',
+    'short numbered paragraph instead of faking a diagram.',
+  ].join(' ');
+  switch (shape.name) {
+    case 'rfc':
+      return [
+        'Form for this RFC: abstract and proposal are prose. alternatives-considered',
+        'is a multi-column table (option, what recommended it, disposition) when two',
+        'or more options were weighed — left-aligned cells, no one-column tables.',
+        'A gate or phase order the specialists described becomes one diagram claim.',
+        figureRule,
+        'open-questions and out-of-scope may be short bullets. Do not tag every',
+        'sentence with a role; attribute once per claim.',
+      ].join(' ');
+    case 'spec':
+      return [
+        'Form for this spec (PRD): the-problem and the-goal are paragraphs a',
+        'builder can quote. requirements are a table with at least id and',
+        'requirement columns (add source when roles disagree). A lifecycle the',
+        'specialists described becomes one diagram claim.',
+        figureRule,
+        'non-goals and open-questions may be bullets. risks are paragraphs.',
+        'Success measures need two columns (measure, how checked) or they are',
+        'prose — never a one-column table that is a list in a box.',
+      ].join(' ');
+    case 'decision':
+      return [
+        'Form for this decision: where-things-stand and the-choice are paragraphs.',
+        'what-was-on-the-table is a multi-column table when options were compared.',
+        'what-happens-first is one diagram claim when order or gates were stated.',
+        figureRule,
+        'what-it-costs and what-would-change-it are paragraphs.',
+      ].join(' ');
+    case 'review':
+    default:
+      return [
+        'Form for this review: the-answer is one or two paragraphs stated first.',
+        'what-each-concern-established is attributed paragraphs, not a bullet per',
+        'sentence. where-they-disagree is a short multi-column table or two',
+        'paragraphs naming both sides. what-follows may mix a short list of',
+        'actions with prose that says what must be true before each starts.',
+      ].join(' ');
+  }
+}
+
+/**
  * Which document shape an outcome wants — asked of a model, not guessed from
  * its wording.
  *
@@ -134,23 +191,30 @@ export function composerPrompt(input: {
     'reader is shown which came back empty:',
     ...input.shape.sections.map((s) => `- ${s.name}: ${s.expects}`),
     '',
-    'Each claim also has a "kind". Most claims are "bullet" — one fact, one',
-    'sentence — and that is the right default when in doubt. Reach for the',
-    'others only when the deliverables themselves actually have that shape:',
+    'Each claim also has a "kind". The document a reader acts on is prose-led,',
+    'not a bullet dump of everything the specialists said. Choose kind by what',
+    'the claim is doing for the reader:',
     '',
-    '- "paragraph": connected reasoning a reader has to follow in order, not a',
-    '  list of independent facts — a deliverable\'s own multi-sentence analysis,',
-    '  condensed, not paraphrased into a single line that loses the argument.',
-    '- "table": the deliverables compare several items across the same few',
-    '  dimensions — options against criteria, sources against status. Never',
-    '  build a table with only one row\'s worth of real content; that is a',
-    '  bullet wearing a grid.',
-    '- "diagram": a deliverable itself describes a flow, sequence, or',
-    '  dependency structure. Write valid mermaid source in "text" (e.g.',
+    '- "paragraph" is the default. Connected sentences that carry an argument,',
+    '  a finding, a proposal, a risk, or a position — condensed from the',
+    '  deliverable\'s own analysis, not paraphrased into a one-liner that loses',
+    '  the reasoning. Prefer several short paragraphs over one wall of text.',
+    '- "bullet" only when the content is genuinely a list of independent items',
+    '  (requirements ids, non-goals, open questions kept as questions). A',
+    '  paragraph of reasoning cut into bullets is the failure this exists to',
+    '  stop.',
+    '- "table" when the deliverables compare several items across the same',
+    '  few dimensions — options against criteria, alternatives against cost,',
+    '  requirements against owner. Never build a table with only one row\'s',
+    '  worth of real content; that is a bullet wearing a grid.',
+    '- "diagram" when a deliverable itself describes a flow, sequence, or',
+    '  dependency. Write valid mermaid source in "text" (e.g.',
     '  "graph TD\\nA[close the gap] --> B[ship the adapter]"). Every node and',
     '  edge must trace to something a deliverable actually said — a diagram is',
     '  the easiest place to imply a relationship nobody established, and the',
     '  same no-adding rule holds here as everywhere else in this job.',
+    '',
+    formGuidanceForShape(input.shape),
     '',
     'A "table" claim also carries "table": {"headers":[...],"rows":[[...]]}.',
     'Every row must have exactly as many cells as there are headers. "text" on',
