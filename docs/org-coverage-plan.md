@@ -34,18 +34,18 @@ The target tree:
 | TPM / Program Manager | program-sequencing | routed + program lens | shipped |
 | Counsel | contracts, privacy, employment | routed + legal lens (dogfood-only) | shipped |
 | Compliance officer | compliance | routed + compliance lens (dogfood-only) | shipped |
-| Accessibility specialist | accessibility | routed, default template | shipped (design lens equips it) |
-| Finance / billing | commerce-tax | routed, default template | shipped |
-| Analyst / data | measurement (new) | lens shipped, **unroutable** | construct-nmh (wave A repair) |
-| Engineer | the host is the engineer | lens exists, **unroutable**, thin by design | construct-xhe (record or route) |
-| Security engineer | security | routed, **no lens** | construct-phe (wave B) |
-| Director / VP | strategy-alignment (new) | missing | construct-alo (wave B) |
-| Architect / Tech Lead / Platform | system-design (new) | missing | construct-gzw (wave B) |
-| Support / Ops / on-call | operations (new) | missing | construct-sqx (wave B) |
-| Designer / UX | user-experience (new) | missing | construct-xh7 (wave B) |
-| Requirements gathering | ask protocol + ask surface | protocol shipped | construct-9gb (existing) |
-| Conflict resolution | decision inbox, commitment 11 | shipped | construct-ej6 measures the new pairs |
-| Research | acquisition-ladder rung | named, undisciplined | construct-b1c (wave C) |
+| Accessibility specialist | accessibility | routed, design lens equips it | shipped |
+| Finance / billing | commerce-tax | routed + commerce lens | shipped |
+| Analyst / data | measurement | routed + analyst lens | shipped (construct-nmh) |
+| Engineer | the host is the engineer | lens exists, unroutable by design, ceiling recorded | shipped (construct-xhe) |
+| Security engineer | security | routed + security lens | shipped (construct-phe) |
+| Director / VP | strategy-alignment | routed + strategy lens | shipped (construct-alo) |
+| Architect / Tech Lead / Platform | system-design | routed + system-design lens | shipped (construct-gzw) |
+| Support / Ops / on-call | operations | routed + operations lens | shipped (construct-sqx) |
+| Designer / UX | user-experience | routed + UX lens | shipped (construct-xh7) |
+| Requirements gathering | ask protocol + ask surface | shipped | shipped (construct-9gb) |
+| Conflict resolution | decision inbox, commitment 11 | shipped | shipped (construct-ej6) |
+| Research | acquisition-ladder rung | discipline shipped | shipped (construct-b1c) |
 | Execution | dispatch + completion ladder | shipped | — |
 
 Altitude (Director/VP vs IC) is carried by concerns, not by a level field:
@@ -157,6 +157,16 @@ What the epic now delivers is the smaller, supported claim: every concern a
 cross-functional team owns is **routable from ordinary wording, carries stated
 obligations, and is attributed in the log** — with the routing accuracy quoted as
 a measured figure rather than asserted as completeness.
+
+## Amendment, 2026-08-13: the wave code landed; the remaining move is acceptance
+
+Waves A-D are closed in the tracker, including construct-gzk (the plan's
+stated epic close). The table above is the current state, not a forecast.
+Case 1 of `docs/stakeholder-acceptance-phase-5.md` was accepted 2026-08-10.
+Cases 0 and 2-6 are recorded and still unchecked: that is Gerald's move, and
+it is the only thing keeping construct-yx7 open. Do not restart pack work
+from the wave names below; they are the record of the order the work ran,
+not a queue.
 
 ## The wave plan
 
