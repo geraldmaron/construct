@@ -59,6 +59,13 @@ test('an ask that wants a report still gets exactly the review shape', () => {
   assert.deepEqual(shapeForOutcome('Review this').sections, DEFAULT_SHAPE.sections);
 });
 
+test('the review shape attributes each concern without inviting a different register', () => {
+  const established = DEFAULT_SHAPE.sections.find((s) => s.name === 'what-each-concern-established');
+  assert.ok(established);
+  assert.match(established.expects, /Construct's voice/);
+  assert.doesNotMatch(established.expects, /in its own terms/);
+});
+
 /**
  * "Plan" is the word the chooser deliberately does not read. Half its uses are
  * "tell me what the plan is", which is a review, and a chooser that gets the

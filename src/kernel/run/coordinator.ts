@@ -72,7 +72,7 @@ import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
 import { standardsFor } from '../plan/standards.ts';
-import { voiceProtocol } from '../voice/voice.ts';
+import { CONTENT_SHAPE_PROTOCOL, constructIdentity, voiceProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
@@ -241,20 +241,26 @@ function workProductDirective(role: string): string {
   const slots = template.slots
     .map((s) => `- ${s.name}${s.required ? '' : ' (optional)'}: ${s.expects}`)
     .join('\n');
+  const shapeRules =
+    template.form === 'issues'
+      ? [
+          'Rules for the work product:',
+          '- Number every issue. Each issue states the problem in one sentence, then ' +
+            'the concrete step that resolves it, then who takes that step.',
+          // A resolving step with nobody attached is a step nobody takes. Naming a
+          // role, a team, or a named person all count; what does not count is
+          // leaving it out, so the honest answer when the material does not say gets
+          // its own marker rather than silence.
+          '- Every issue names an owner for its step — a role, a team, or a person. ' +
+            'If the material does not say who owns it, write [unowned] and say who ' +
+            'would have to decide.',
+        ].join('\n')
+      : `Rules for the work product:\n${CONTENT_SHAPE_PROTOCOL}`;
   return (
     `Deliver a ${template.deliverable} the user can act on. Structure it under ` +
     'exactly these headed sections:\n' +
     `${slots}\n\n` +
-    'Rules for the work product:\n' +
-    '- Number every issue. Each issue states the problem in one sentence, then ' +
-    'the concrete step that resolves it, then who takes that step.\n' +
-    // A resolving step with nobody attached is a step nobody takes. Naming a
-    // role, a team, or a named person all count; what does not count is
-    // leaving it out, so the honest answer when the material does not say gets
-    // its own marker rather than silence.
-    '- Every issue names an owner for its step — a role, a team, or a person. ' +
-    'If the material does not say who owns it, write [unowned] and say who ' +
-    'would have to decide.\n' +
+    `${shapeRules}\n` +
     '- Missing information is never an issue. If something cannot be determined ' +
     'from the outcome, state the assumption you proceed on, label it [assumed], ' +
     'and deliver the work that assumption allows.\n' +
@@ -302,7 +308,9 @@ function lensDirective(role: string): string {
         '\n'
       : '';
   return (
-    `Your posture: ${lens.posture}\n\n` +
+    `The ${lens.lens} lens frames this work — which questions you work through ` +
+    'and which slots you fill, not how you sound.\n' +
+    `Posture: ${lens.posture}\n\n` +
     `${ROLE_OWNERSHIP_BOUND}\n\n` +
     `${ANSWER_THE_ASK}\n\n` +
     'Work through these questions against the material; each finding cites what supports it:\n' +
@@ -453,7 +461,7 @@ export function assignmentFor(
       : '';
   const asking = brief.question !== undefined;
   return (
-    `You are acting as the ${brief.role} role.${concern}\n\n` +
+    `${constructIdentity(brief.role)}${concern}\n\n` +
     (asking
       ? `The question the user asked: ${brief.question}\n\n`
       : `The outcome the user asked for: ${brief.outcome}\n\n`) +

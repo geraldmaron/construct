@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createOpenCodeAdapter, HOST_NAME, OPENCODE_CAPABILITIES } from '../../../src/hosts/opencode/adapter.ts';
+import { frameHostTask } from '../../../src/kernel/voice/voice.ts';
 import type { OpenCodeDeliverable, OpenCodeSpawnFn, SpawnedProcess } from '../../../src/hosts/opencode/adapter.ts';
 import { PINNED_VERSION } from '../../../src/hosts/opencode/pin.ts';
 import { validate } from '../../../src/kernel/hosts/interface.ts';
@@ -386,7 +387,7 @@ test('the role is stated to the host when no OpenCode agent is named', async () 
   assert.ok(run);
   assert.deepEqual(run.args.slice(0, 3), ['run', '--format', 'json']);
   assert.ok(run.args.includes('--model'), 'model is passed through');
-  assert.equal(run.args.at(-1), 'You are acting as: privacy.\n\nIssue-spot this DPA.');
+  assert.equal(run.args.at(-1), frameHostTask('privacy', 'Issue-spot this DPA.'));
   assert.equal(run.cwd, '/w', 'the working directory is injected, never the ambient cwd');
 });
 

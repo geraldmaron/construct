@@ -120,10 +120,19 @@ test('each new concern ships a deliverable shaped like the seat it fills', () =>
 test('measurement ships the plan an analyst hands back: whether the number can exist', () => {
   const template = playbookFor('measurement').template;
   assert.equal(template.deliverable, 'measurement plan');
+  assert.equal(template.form, 'document');
   for (const required of ['baseline', 'instrumentation', 'measurement-gaps']) {
     const found = template.slots.find((s) => s.name === required);
     assert.ok(found?.required, `${required} is a required slot`);
   }
+});
+
+test('issue-spotting templates say so; a PRD is a document', () => {
+  assert.equal(playbookFor('privacy').template.form, 'issues');
+  assert.equal(playbookFor('compliance').template.form, 'issues');
+  assert.equal(playbookFor('compliance').template.deliverable, 'compliance review');
+  assert.equal(playbookFor('product-scoping').template.form, 'document');
+  assert.equal(playbookFor('strategy-alignment').template.form, 'document');
 });
 
 /**

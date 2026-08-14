@@ -44,9 +44,22 @@ export interface Slot {
   readonly required: boolean;
 }
 
+/**
+ * How the body under a template's slots is shaped.
+ *
+ * `issues` is issue-spotting: numbered issues, each with a resolving step and
+ * an owner. `document` is everything else — a PRD, a strategy review, a plan —
+ * and fills the same slots as prose, tables, and diagrams. The form is data
+ * on the template so a role writing a requirements document is not also told
+ * to number issues on every page, which is how every deliverable used to
+ * collapse into the same list.
+ */
+export type DeliverableForm = 'issues' | 'document';
+
 /** The deliverable a role's playbook produces, with the slots that make sufficiency checkable. */
 export interface DeliverableTemplate {
   readonly deliverable: string;
+  readonly form: DeliverableForm;
   readonly slots: readonly Slot[];
 }
 

@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCodexAdapter } from '../../../src/hosts/codex/adapter.ts';
+import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 import type { CodexDeliverable, CodexSpawnFn, SpawnedProcess } from '../../../src/hosts/codex/adapter.ts';
 import { PINNED_VERSION } from '../../../src/hosts/codex/pin.ts';
 import { reduceStream } from '../../../src/hosts/codex/result.ts';
@@ -91,7 +92,7 @@ test('a successful invocation delivers with the requested model as what ran', as
     assert.ok(exec.args.includes(flag), `missing ${flag}`);
   }
   assert.ok(exec.args.join(' ').includes('-s read-only'));
-  assert.ok(String(exec.args.at(-1)).startsWith('You are acting as: security.'));
+  assert.ok(String(exec.args.at(-1)).startsWith(constructIdentity('security')));
 });
 
 test('an unnamed model delivers with modelRan honestly empty', async () => {

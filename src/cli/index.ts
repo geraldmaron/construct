@@ -143,6 +143,8 @@ import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-g
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
+import { playbookFor } from '../kernel/plan/playbooks.ts';
+import { unheadedSlots } from '../kernel/plan/ladder.ts';
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
@@ -1144,11 +1146,11 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     }
 
     const draft = latestDraft(store, task.id)?.deliverable ?? task.result;
-    const answer = renderDeliverable(draft);
+    const answer = renderClaim(deliverableBody(draft));
     process.stdout.write(`\n${answer.trimEnd()}\n`);
 
     const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
-    process.stdout.write(`\n— ${task.role}, ${cost}\n`);
+    process.stdout.write(`\n— Construct, framed through ${task.role}, ${cost}\n`);
     // The deliverable's own defects, printed with it rather than left in the
     // log: an answer read without them is an answer read as better than it is.
     for (const concern of deliverableConcerns(task.result)) {
@@ -2329,11 +2331,13 @@ export function reasonClause(action: string, detail: unknown): string {
 }
 
 /**
- * Render a submitted deliverable for reading. A string is the text itself; an
- * object with a `text` field was a role wrapping its prose; anything else is
- * shown as formatted JSON rather than hidden.
+ * The stored deliverable as text. A string is the text itself; an object with
+ * a `text` field was a role wrapping its prose; anything else is shown as
+ * formatted JSON rather than hidden. This is the record form — markers intact
+ * — because compose sources, challenges, and the work log all read those
+ * markers. A reader surface runs it through renderClaim.
  */
-function renderDeliverable(deliverable: unknown): string {
+function deliverableBody(deliverable: unknown): string {
   if (typeof deliverable === 'string') return deliverable;
   const text = (deliverable as { text?: unknown } | null)?.text;
   if (typeof text === 'string') return text;
@@ -2365,7 +2369,10 @@ export function show(argv: string[]): number {
     for (const task of tasks) {
       const draft = latestDraft(store, task.id);
       const promotion = promotionOf(store, task.id);
-      process.stdout.write(`\n${task.role} — ${task.state}`);
+      const template = playbookFor(task.role).template;
+      process.stdout.write(
+        `\nConstruct · ${template.deliverable}, framed through ${renderAttribution(task.role)} — ${task.state}`,
+      );
       if (promotion) process.stdout.write(` · ${promotion.state}`);
       const review = licensedReviewFor(task.role);
       if (review) {
@@ -2389,11 +2396,19 @@ export function show(argv: string[]): number {
         continue;
       }
       if (!draft) process.stdout.write('  (from the role\'s reply; no draft was submitted)\n');
-      const body = renderDeliverable(deliverable)
+      const recorded = deliverableBody(deliverable);
+      const body = renderClaim(recorded)
         .split('\n')
         .map((line) => `  ${line}`)
         .join('\n');
       process.stdout.write(`${body}\n`);
+      const missing = unheadedSlots(template, recorded);
+      if (missing.length > 0) {
+        process.stdout.write(
+          `  (${template.deliverable} asks for ${missing.map((g) => g.slot.name).join(', ')} ` +
+            'and no section was headed there — a fact about this deliverable, not a reason it was withheld)\n',
+        );
+      }
     }
 
     // Two kinds of ground, named apart. What the survey walked is a document
@@ -3352,7 +3367,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     const sources: SourceDeliverable[] = done
       .map((task) => ({
         role: task.role,
-        text: renderDeliverable(latestDraft(store, task.id)?.deliverable ?? task.result),
+        text: deliverableBody(latestDraft(store, task.id)?.deliverable ?? task.result),
       }))
       .filter((source) => source.text.trim() !== '');
     // Each role's own brief, so a closing answer can be held to the challenges
@@ -3590,6 +3605,10 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
     const kept = screened.claims.filter((claim) => !unsupported.has(claim));
     process.stdout.write(`\n# ${plan.outcome}\n`);
+    process.stdout.write(
+      `\nConstruct. Framed through ${sources.map((s) => renderAttribution(s.role)).join(', ')} ` +
+        '— each concern\'s obligation and name, not a different voice.\n',
+    );
 
     // Before the claims, not after them. A reader who reaches the end of a
     // document and only then learns that none of its sources passed their own
@@ -3623,17 +3642,17 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     }
 
     // Construct's own call, first, because it is the answer to what was asked.
-    // Everything below it is the evidence it rests on and the specialists' own
-    // work in their own names — a reader can always tell which is which,
-    // because they are in different parts of the document under different
-    // names, which is what lets the judgment be made at all.
+    // Everything below it is the evidence it rests on, each concern named —
+    // a reader can always tell which is which, because they are in different
+    // parts of the document under different names, which is what lets the
+    // judgment be made at all.
+    const asRecord = flags.record !== undefined;
     if (position !== null) {
       const p = position.position;
-      const asRecord = flags.record !== undefined;
       const say = (text: string) => (asRecord ? text : renderClaim(text));
       process.stdout.write(`\n## What Construct makes of this\n\n${say(p.approach)}\n`);
       process.stdout.write(
-        '\n*This is a judgment across every concern, not any one specialist\'s finding. ' +
+        '\n*This is a judgment across every concern, not any one concern\'s finding. ' +
           'Nobody was dispatched to make it; the roles below were each asked about their own ' +
           'concern and each was right to answer only that.*\n',
       );
@@ -3650,7 +3669,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       listing('What happens first', p.first);
 
       if (p.resolved.length > 0) {
-        process.stdout.write('\n**Where the specialists could not both be acted on**\n\n');
+        process.stdout.write('\n**Where the concerns could not both be acted on**\n\n');
         const side = (roles: readonly string[]) =>
           roles.map((role) => (asRecord ? role : renderAttribution(role))).join(', ');
         for (const r of p.resolved) {
@@ -3689,7 +3708,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // problems and bury which sentence is actually in dispute.
       if (objections.length > 0) {
         process.stdout.write(
-          '\n> **A specialist says the call states its work as something else.** ' +
+          '\n> **A concern says the call states its work as something else.** ' +
             (callWasRepaired
               ? 'The call went\n> back once with these objections, and this is what it left standing.'
               : callWentBack
@@ -3708,12 +3727,12 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // about it.
       if (callWasRepaired) {
         process.stdout.write(
-          '\n*This call is a second attempt. Specialists objected that the first stated their\n' +
-            'work as something they had not established, it was sent back once with their\n' +
+          '\n*This call is a second attempt. A concern objected that the first stated its\n' +
+            'work as something it had not established, it was sent back once with those\n' +
             'objections, and what came back dropped objections without introducing new ones.*\n',
         );
       }
-      process.stdout.write('\n---\n\n*What each specialist established, in their own names:*\n');
+      process.stdout.write('\n---\n\n*What each concern established, in its name:*\n');
     }
 
     const empty: string[] = [];
@@ -3726,7 +3745,6 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // The record keeps the markers the gates read; a reader gets sentences.
       // --record asks for the stored form, for anything downstream that needs
       // to check the text rather than read it.
-      const asRecord = flags.record !== undefined;
       process.stdout.write(`\n## ${asRecord ? section.name : renderHeading(section.name)}\n\n`);
       // Consecutive bullets read as one list; anything else is a block with
       // its own attribution line, so it gets the blank-line spacing a
@@ -3776,12 +3794,13 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     if (closing !== null && closing.closed.length > 0) {
       // A separate section rather than mixed into the composed ones, because
       // the provenance is different and the reader is owed the difference:
-      // these are a role's own words from a second dispatch, not the composer's
-      // arrangement of a first. Nothing screened them for addition because
-      // nothing arranged them — the screen exists for the composer's step.
+      // these carry the role's name from a second dispatch, written in
+      // Construct's voice, not the composer's arrangement of a first.
       process.stdout.write('\n## what was open until somebody went and looked\n\n');
       for (const answer of closing.closed) {
-        process.stdout.write(`- ${answer.gap}\n  → ${answer.answer} [${answer.role}]\n`);
+        const text = asRecord ? answer.answer : renderClaim(answer.answer);
+        const from = asRecord ? answer.role : renderAttribution(answer.role);
+        process.stdout.write(`- ${answer.gap}\n  → ${text} [${from}]\n`);
       }
     }
     if (closing !== null && closing.contested.length > 0) {
@@ -3792,7 +3811,9 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       for (const item of closing.contested) {
         process.stdout.write(`- ${item.gap}\n`);
         for (const answer of item.answers) {
-          process.stdout.write(`  → ${answer.answer} [${answer.role}]\n`);
+          const text = asRecord ? answer.answer : renderClaim(answer.answer);
+          const from = asRecord ? answer.role : renderAttribution(answer.role);
+          process.stdout.write(`  → ${text} [${from}]\n`);
         }
       }
     }

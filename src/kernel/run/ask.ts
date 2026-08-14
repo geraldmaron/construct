@@ -50,6 +50,7 @@ export const ASK_CHALLENGES: readonly string[] = ['claims-cited'];
  */
 export const ANSWER_TEMPLATE: DeliverableTemplate = {
   deliverable: 'answer',
+  form: 'document',
   slots: [
     { name: 'answer', expects: 'the answer to the question, stated first, in plain language', required: true },
     {

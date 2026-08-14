@@ -4,7 +4,7 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 
 | Term (use this) | Retired v2 synonym | Meaning |
 |---|---|---|
-| role | persona | A framing and risk posture over the shared playbook, plus a domain corpus. |
+| role | persona | A framing and risk posture over the shared playbook, plus a domain corpus. Attribution and obligation, not a voice to write in. |
 | lesson | ring | An append-only, cited unit of learning; supersedes but never overwrites. |
 | playbook | trunk | The shared operational method every role draws on. |
 | brief | contract | A declaration of what a task needs: inputs, tool capabilities, postconditions. |

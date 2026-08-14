@@ -443,9 +443,10 @@ test('construct show renders the deliverable a run produced, with its qualifiers
   ]);
 
   assert.equal(code, 0);
-  assert.match(out, /employment — done/);
+  assert.match(out, /Construct · .*framed through employment — done/);
   assert.match(out, /employment reporting/, 'the deliverable body is readable');
   assert.match(out, /needs review by a licensed attorney/, 'the qualifier travels with the text');
+  assert.match(out, /asks for .*finding/, 'empty required slots are disclosed, not silent');
 });
 
 test('construct show without a run id is a usage error, not a dump', async () => {

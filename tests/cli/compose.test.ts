@@ -216,6 +216,8 @@ test('a run with several deliverables composes, and what no deliverable supports
   // is still one flag away, which the next test holds.
   assert.match(out, /## The choice/);
   assert.doesNotMatch(out, /## the-choice/);
+  assert.match(out, /Construct\. Framed through/);
+  assert.doesNotMatch(out, /in their own names/);
   assert.match(out, /concluded its own part \[/, 'a supported claim keeps its attribution');
   assert.doesNotMatch(out, /therefore we should ship in Q4/, 'the unsupported claim is removed, not flagged');
   assert.match(out, /a claim from nobody.*produced no deliverable/s);

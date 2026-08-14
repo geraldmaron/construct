@@ -28,6 +28,7 @@ import { failedToolCalls, reduceTranscript } from './events.ts';
 import type { OpenCodeRunResult } from './events.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
 import { tuningOf } from '../tuning.ts';
+import { frameHostTask } from '../../kernel/voice/voice.ts';
 import { CONFIG_ENV_VAR, writeAdvisorConfig, writeOpenCodeConfig } from './mcpconfig.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
@@ -157,11 +158,11 @@ function buildRunArgs(request: OpenCodeRequest, config: OpenCodeConfig): string[
  * The role's framing is prepended to the task rather than passed as a host
  * concept, because "role" is a Construct idea and OpenCode's `--agent` is a
  * different thing with its own config. Callers that have a real OpenCode agent
- * configured pass `agent` explicitly; everyone else gets the role stated in the
- * prompt, which is honest about what the host was actually told.
+ * configured pass `agent` explicitly; everyone else gets Construct identity
+ * plus the attribution, which is honest about what the host was actually told.
  */
 function framedTask(request: OpenCodeRequest): string {
-  return request.agent ? request.task : `You are acting as: ${request.role}.\n\n${request.task}`;
+  return request.agent ? request.task : frameHostTask(request.role, request.task);
 }
 
 export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdapter {

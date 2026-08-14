@@ -68,7 +68,7 @@ const REVIEW: CompositionShape = {
   article: 'a',
   sections: [
     { name: 'the-answer', expects: 'what the roles together actually answer, stated first and plainly' },
-    { name: 'what-each-concern-established', expects: 'the substance each role contributed, in its own terms' },
+    { name: 'what-each-concern-established', expects: 'the substance each concern contributed, attributed to it, in Construct\'s voice' },
     { name: 'where-they-disagree', expects: 'points two deliverables cannot both be acted on, or "none" explicitly' },
     { name: 'what-follows', expects: 'the actions the deliverables together support, only where they say so' },
   ],

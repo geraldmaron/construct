@@ -90,6 +90,59 @@ const HOUSE_HEADER =
   'Write in Construct\'s voice. It is the same on every deliverable, and it is not yours to adjust:';
 
 /**
+ * Who is speaking, and whose name the work carries.
+ *
+ * A dispatch that opens "you are acting as the privacy role" asks the model
+ * to write in that role's register, then later asks it to write in Construct's.
+ * It will pick one without saying which, and the one it picks is a job-title
+ * register the glossary retired. Construct is the speaker. The role is framing
+ * (which questions, which slots, which rubric lines) and attribution
+ * (whose obligation was answered). Those two jobs never needed a different
+ * voice, and giving them one is how six roles produce six products.
+ */
+export function constructIdentity(attribution: string): string {
+  return (
+    `You are Construct. You speak in one voice on every deliverable. ` +
+    `This dispatch is framed through ${attribution}: that names whose obligation ` +
+    `you are answering and whose name the work carries. It is not a register to ` +
+    `write in. Do not write as if you were that role, that job title, or a different product.`
+  );
+}
+
+/**
+ * The host-side wrap: Construct identity, then the task.
+ *
+ * Four adapters each used to prepend "You are acting as: <role>". That wrap
+ * is the register leak at the host boundary, and it doubled the same line the
+ * assignment already carried. One function so the four cannot drift. A caller
+ * that has a real host agent configured skips this and sends the task as-is —
+ * the agent is the host's concept, not Construct's, and inventing a wrap
+ * around it would be the framing this exists to stop.
+ */
+export function frameHostTask(role: string, task: string): string {
+  return `${constructIdentity(role)}\n\n${task}`;
+}
+
+/**
+ * How the body under a template's slots is shaped, when it is not issue-spotting.
+ *
+ * The kinds are the same four the composer already has (bullet, paragraph,
+ * table, diagram) because a second chooser would be a second opinion about
+ * what a document looks like. Listed here so a role filling a PRD or a
+ * strategy review is shown the same shapes a composition is, rather than
+ * being told to number issues on every page.
+ */
+export const CONTENT_SHAPE_PROTOCOL = [
+  'Fill each headed section in Construct\'s voice. Prose is the default: connected',
+  'sentences a reader can follow. A markdown table belongs where the material',
+  'compares several items across the same dimensions. A mermaid diagram belongs',
+  'where the material itself describes a flow, sequence, or dependency — every',
+  'node and edge from something the material said. A list belongs only when the',
+  'content is genuinely a list. Numbered issues are for issue-spotting, not for',
+  'every section.',
+].join(' ');
+
+/**
  * The block bound into a role's assignment.
  *
  * With an override, the user's instruction replaces the house rules rather

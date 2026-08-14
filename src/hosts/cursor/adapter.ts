@@ -35,6 +35,7 @@ import { reduceEnvelope } from './result.ts';
 import type { CursorUsage } from './result.ts';
 import { PINNED_VERSION, tierOfModel } from './pin.ts';
 import { tuningOf } from '../tuning.ts';
+import { frameHostTask } from '../../kernel/voice/voice.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
 export const HOST_NAME = 'cursor';
@@ -128,9 +129,9 @@ function buildRunArgs(task: string, model: string | undefined): string[] {
   return args;
 }
 
-/** Same framing rule as the other adapters: the role is stated in the prompt. */
+/** Same framing as the other adapters: Construct identity, role as attribution. */
 function framedTask(request: CursorRequest): string {
-  return `You are acting as: ${request.role}.\n\n${request.task}`;
+  return frameHostTask(request.role, request.task);
 }
 
 export function createCursorAdapter(config: CursorConfig = {}): CursorAdapter {

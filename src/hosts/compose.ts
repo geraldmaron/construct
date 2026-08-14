@@ -23,6 +23,7 @@ import type { GapCloser } from '../kernel/run/closing.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
 import { extractJson } from './contextloop.ts';
+import { constructIdentity, voiceProtocol } from '../kernel/voice/voice.ts';
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
@@ -98,10 +99,15 @@ export function composerPrompt(input: {
   readonly shape: CompositionShape;
 }): string {
   return [
-    'Several specialists were each asked about one concern of the same outcome.',
-    'They have finished, their work has been checked, and each of them was right',
-    'to answer only their own concern. Your job is to arrange what they said into',
-    'one document a reader can act on.',
+    constructIdentity('composition'),
+    '',
+    voiceProtocol(),
+    '',
+    'Several concerns were each answered for the same outcome. They have finished,',
+    'their work has been checked, and each of them was right to answer only its',
+    'own concern. Your job is to arrange what they established into one document',
+    'a reader can act on, in Construct\'s voice. Every claim names the concern',
+    'that framed it — attribution, not a change of register.',
     '',
     'Arranging is the ENTIRE job. You may not add a claim, resolve a question',
     'they left open, decide something none of them decided, or fill a gap with',
@@ -266,7 +272,7 @@ export const POSITION_ROLE = 'construct-position';
  * The prohibition is kept and narrowed to what it was always about. A fact is
  * something Construct cannot know except through a role that read the ground,
  * and inventing one is fabrication. A judgment is what the facts add up to, and
- * nobody was asked it — each specialist was asked about its own concern and each
+ * nobody was asked it — each concern was asked about its own obligation and each
  * was right to answer only that. So: no new facts, and a judgment is required.
  */
 export function positionPrompt(input: {
@@ -274,10 +280,12 @@ export function positionPrompt(input: {
   readonly sources: readonly SourceDeliverable[];
 }): string {
   return [
-    'You are Construct. Several specialists have each finished one concern of the',
+    'You are Construct. Several concerns have each been answered for the',
     'same outcome, their work has been checked, and you are the only participant',
     'who has read all of it. What it adds up to is the question none of them was',
     'asked, and it is yours.',
+    '',
+    voiceProtocol(),
     '',
     `What was asked:\n${input.outcome}`,
     '',
@@ -288,17 +296,17 @@ export function positionPrompt(input: {
     'what comes first, a cut if it asked what stops. State it as a commitment',
     'somebody could act on tomorrow, not as a summary of the range of views.',
     '',
-    'Two of these specialists agreeing is not a tally to report; it is evidence',
+    'Two of these concerns agreeing is not a tally to report; it is evidence',
     'about which way the weight falls, and weighing it is your job. Where two of',
     'them cannot both be acted on, decide, and name the reading you did not take',
     'and why. Order of arrival is not a reason. Averaging them into a sentence',
     'neither would recognise is worse than either.',
     '',
-    'A side of such a disagreement may hold more than one specialist — three',
+    'A side of such a disagreement may hold more than one concern — three',
     'reaching the same reading against one holding out is the ordinary shape, and',
-    'both sides are lists for that reason. Name each specialist exactly as it is',
+    'both sides are lists for that reason. Name each concern exactly as it is',
     'labelled above, one per entry. Put your reasoning in "because", never in the',
-    'name: a name with your own gloss attached to it matches no specialist and',
+    'name: a name with your own gloss attached to it matches no concern and',
     'the resolution is dropped.',
     '',
     'THE ONE THING YOU MAY NOT DO is assert a fact none of them established.',
@@ -372,13 +380,15 @@ export function positionRepairPrompt(input: {
   readonly objections: readonly SharedObjection[];
 }): string {
   return [
-    'You are Construct. You took a position across every specialist on this',
+    'You are Construct. You took a position across every concern on this',
     'outcome, and each of them was then shown the call beside their own finished',
     'work and asked one question: does it state their work as something other',
     'than what they established? These are the ones who said it does. They are',
     'not disputing your judgment — that is yours and they were not asked for it.',
     'Each is telling you something only they can tell you, about their own',
     'deliverable.',
+    '',
+    voiceProtocol(),
     '',
     ...input.objections.map(
       (objection) => `- ${objection.roles.join(', ')}: "${objection.quote}"`,
@@ -499,10 +509,14 @@ export function closingPrompt(input: {
   readonly groundRoots: readonly string[];
 }): string {
   return [
-    `You are the ${input.source.role} role. You have already delivered your work on`,
-    'this outcome, several other specialists delivered theirs, and the whole was',
-    'composed into one document. The composing found questions the document does',
-    'not answer, and they are below.',
+    constructIdentity(input.source.role),
+    '',
+    voiceProtocol(),
+    '',
+    'You have already delivered your work on this outcome, several other concerns',
+    'delivered theirs, and the whole was composed into one document. The composing',
+    'found questions the document does not answer, and they are below. Answer in',
+    'Construct\'s voice. The work still carries your name.',
     '',
     `The outcome:\n${input.outcome}`,
     '',

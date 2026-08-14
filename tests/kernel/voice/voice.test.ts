@@ -11,7 +11,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { HOUSE_VOICE, voiceProtocol } from '../../../src/kernel/voice/voice.ts';
+import { HOUSE_VOICE, constructIdentity, frameHostTask, voiceProtocol } from '../../../src/kernel/voice/voice.ts';
 import { assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 import { findUntaggedClaims } from '../../../src/kernel/verify/claims.ts';
@@ -91,4 +91,15 @@ test('the CLI carries an override through, and blank is not an override', () => 
   assert.equal(parseWorkArgs(['--voice=Write it as a limerick.']).voice, 'Write it as a limerick.');
   assert.equal(parseWorkArgs(['--voice=   ']).voice, undefined);
   assert.equal(parseWorkArgs([]).voice, undefined);
+});
+
+test('Construct is the speaker; the role is framing and attribution, not a register', () => {
+  const identity = constructIdentity('privacy');
+  assert.match(identity, /You are Construct/);
+  assert.match(identity, /framed through privacy/);
+  assert.doesNotMatch(identity, /acting as/);
+  assert.match(identity, /not a register to write in/);
+
+  const wrapped = frameHostTask('privacy', 'Issue-spot this DPA.');
+  assert.equal(wrapped, `${identity}\n\nIssue-spot this DPA.`);
 });

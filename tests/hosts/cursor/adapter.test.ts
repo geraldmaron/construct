@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCursorAdapter } from '../../../src/hosts/cursor/adapter.ts';
+import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 import type { CursorDeliverable, CursorSpawnFn, SpawnedProcess } from '../../../src/hosts/cursor/adapter.ts';
 import { PINNED_VERSION } from '../../../src/hosts/cursor/pin.ts';
 import { reduceEnvelope } from '../../../src/hosts/cursor/result.ts';
@@ -70,7 +71,7 @@ test('dispatch runs read-only in plan mode with per-invocation trust', async () 
   // -p alone would grant write and shell; plan mode is the probed read-only posture.
   assert.ok(joined.includes('--mode plan'));
   assert.ok(dispatch.args.includes('--trust'));
-  assert.ok(String(dispatch.args.at(-1)).startsWith('You are acting as: security.'));
+  assert.ok(String(dispatch.args.at(-1)).startsWith(constructIdentity('security')));
 });
 
 test('a family this project never optimized for is labeled untuned and still runs', async () => {

@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createClaudeAdapter, HOST_NAME } from '../../../src/hosts/claude/adapter.ts';
+import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 import { MCP_SERVER_NAME, ROLE_TOOL_NAMES, writeMcpConfig } from '../../../src/hosts/claude/mcpconfig.ts';
 import type { ClaudeDeliverable, SpawnedProcess } from '../../../src/hosts/claude/adapter.ts';
 import { modelDrifted, reduceEnvelope } from '../../../src/hosts/claude/result.ts';
@@ -102,7 +103,7 @@ test('a captured success envelope becomes a deliverable with real cost', async (
   // The prompt carries the role framing and rides -p.
   const runCall = fake.calls.find((call) => call.args[0] === '-p');
   assert.ok(runCall);
-  assert.match(runCall.args[1], /^You are acting as: privacy\./);
+  assert.ok(runCall.args[1].startsWith(constructIdentity('privacy')));
   assert.ok(runCall.args.includes('--model'));
 });
 

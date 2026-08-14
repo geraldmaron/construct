@@ -1,13 +1,15 @@
 # What a deliverable sounds like
 
 This file is the reference for Construct's voice: one worked example of the
-kind of deliverable a role returns, written the way the voice asks for.
+kind of deliverable Construct returns, written the way the voice asks for.
 
 It was written by hand as an illustration, not produced by a live model run.
 Nothing here is a measurement, and the run id and the findings below are
 invented for the example. The rules it demonstrates live in
-`src/kernel/voice/voice.ts` and reach every role through the assignment text
-that `assignmentFor` builds, before any work happens.
+`src/kernel/voice/voice.ts` and reach every prompt that produces reader-facing
+prose — role assignment, composition, closing, and Construct's own call —
+before any work happens. The privacy concern framed which questions were asked
+and whose name the work carries. It did not write in a different register.
 
 ---
 
@@ -15,8 +17,9 @@ that `assignmentFor` builds, before any work happens.
 
 > Launch a paid beta to EU users next month
 
-The privacy role was engaged because a model read that sentence and gave its
-reason: EU users means GDPR obligations apply before launch, not after.
+Construct answered in the name of privacy because a model read that sentence
+and gave its reason: EU users means GDPR obligations apply before launch, not
+after. The deliverable names that concern. The prose is Construct's.
 
 ---
 
