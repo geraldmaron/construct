@@ -96,9 +96,9 @@ import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { ScreenResult } from '../kernel/context/observations.ts';
-import { operationalLessonsFor, decideAdmission, riskTierFor } from '../kernel/lessons/admission.ts';
+import { operationalLessonsFor, decideAdmission, riskTierFor, admissionOf } from '../kernel/lessons/admission.ts';
 import { distillDecisionLesson } from '../kernel/lessons/fromDecisions.ts';
-import { recordLesson } from '../kernel/store/lessons.ts';
+import { getLesson, lessonsFor, recordLesson } from '../kernel/store/lessons.ts';
 import {
   createHostApplier,
   createHostChallenger,
@@ -4195,8 +4195,99 @@ export function staff(argv: string[]): number {
   return 2;
 }
 
+const LESSONS_USAGE =
+  'usage: construct lessons list [--workspace=<name>] [--held] [--admitted]\n' +
+  '       construct lessons approve <id> --approver=<name> [--reason="<why>"] [--workspace=<name>]\n';
+
+function lessonSummary(body: string): string {
+  const one = body.replace(/\s+/g, ' ').trim();
+  return one.length <= 160 ? one : `${one.slice(0, 159)}...`;
+}
+
+/**
+ * The surface on the held-lesson queue.
+ *
+ * `construct decide` already distills a resolved decision into a candidate
+ * lesson and the admission gate holds every run-derived one for a human. That
+ * hold used to print once and vanish. Listing and approving here are thin
+ * wrappers over lessonsFor / admissionOf / decideAdmission — the gate does
+ * not change, and run-derived lessons still never auto-admit.
+ */
+export function lessons(argv: string[]): number {
+  const sub = argv[0];
+  const { flags, rest } = parseFlags(argv.slice(1));
+  const workspace = workspaceFlag(flags);
+
+  if (sub === 'list') {
+    const includeAdmitted = flags.admitted === 'true';
+    const includeHeld = flags.admitted !== 'true' || flags.held === 'true';
+    return withStore((store) => {
+      const rows = lessonsFor(store, workspace).flatMap((lesson) => {
+        const standing = admissionOf(store, lesson.id);
+        const verdict = standing?.verdict === 'admitted' ? 'admitted' : 'held';
+        if (verdict === 'admitted' && !includeAdmitted) return [];
+        if (verdict === 'held' && !includeHeld) return [];
+        return [{ lesson, standing, verdict }];
+      });
+      if (rows.length === 0) {
+        const which = includeAdmitted && includeHeld ? '' : includeAdmitted ? 'admitted ' : 'held ';
+        process.stdout.write(
+          `no ${which}lessons in workspace ${workspace}.\n` +
+            '  Run-derived lessons land in the plan workspace, or the run id if none was named.\n' +
+            '  construct lessons list --workspace=<name>\n',
+        );
+        return 0;
+      }
+      for (const row of rows) {
+        process.stdout.write(
+          `${row.lesson.id}  ${row.lesson.workspace}  ${row.verdict}  ${row.lesson.citation}\n` +
+            `  ${lessonSummary(row.lesson.body)}\n`,
+        );
+        if (row.verdict === 'held' && row.standing?.reason) {
+          process.stdout.write(`  hold: ${row.standing.reason}\n`);
+        }
+      }
+      return 0;
+    });
+  }
+
+  if (sub === 'approve') {
+    const id = (rest[0] ?? '').trim();
+    const approver = (flags.approver ?? '').trim();
+    if (id === '' || approver === '') {
+      process.stderr.write(LESSONS_USAGE);
+      return 2;
+    }
+    const detail = (flags.reason ?? '').trim() || 'approved via construct lessons approve';
+    return withStore((store) => {
+      const lesson = getLesson(store, id);
+      if (!lesson) {
+        process.stderr.write(`lessons: no lesson ${id}\n`);
+        return 1;
+      }
+      if (flags.workspace !== undefined && lesson.workspace !== workspace) {
+        process.stderr.write(
+          `lessons: ${id} belongs to workspace ${lesson.workspace}, not ${workspace}\n`,
+        );
+        return 1;
+      }
+      const decision = decideAdmission(store, {
+        lessonId: lesson.id,
+        domain: lesson.kind,
+        basis: { kind: 'human-approval', approver, detail },
+        decidedAt: now(),
+      });
+      process.stdout.write(`approved ${decision.lesson} (${decision.verdict}) by ${approver}\n`);
+      return 0;
+    });
+  }
+
+  process.stderr.write(LESSONS_USAGE);
+  return 2;
+}
+
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4269,6 +4360,8 @@ async function run(argv: string[]): Promise<number> {
       return inbox();
     case 'decide':
       return decide(argv.slice(1));
+    case 'lessons':
+      return lessons(argv.slice(1));
     case 'serve':
       return serve();
     case 'role-serve':

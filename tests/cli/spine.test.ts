@@ -396,7 +396,7 @@ test('outcome with no text is a usage error, not an empty run', async () => {
 
 test('help lists the spine commands', async () => {
   const { out } = await run(['help']);
-  for (const command of ['outcome', 'work', 'log', 'inbox', 'decide']) {
+  for (const command of ['outcome', 'work', 'log', 'inbox', 'decide', 'lessons']) {
     assert.match(out, new RegExp(command));
   }
 });
