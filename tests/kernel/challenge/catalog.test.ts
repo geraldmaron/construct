@@ -256,6 +256,26 @@ test('claims-cited judges code citations against the ground roots the run was li
   assert.equal(outOfRoot.passed, false, 'an unlicensed tree is still not evidence');
 });
 
+test('a citation into the org-harness fixture is not evidence for a run licensed elsewhere', () => {
+  const cited = challengeById('claims-cited');
+  assert.ok(cited?.structural);
+  const harness =
+    'Strategy.md names a VP of Product [cite:fixtures/org-harness-broad/corpus/policies/agreements.md].';
+  const check = cited.structural(harness, brief(['claims-cited']), {
+    groundRoots: ['/repo'],
+  });
+  assert.equal(
+    check.passed,
+    false,
+    'the fixture org is not Construct, and citing it from a run licensed elsewhere is the leak',
+  );
+  assert.match(check.detail, /planted-organization eval corpus/);
+  const licensed = cited.structural(harness, brief(['claims-cited']), {
+    groundRoots: ['/repo/fixtures/org-harness-broad'],
+  });
+  assert.equal(licensed.passed, true, 'a harness sweep pointed at the corpus may cite it');
+});
+
 test('the heading the template dictates satisfies scope-diff: hyphenated headings are the spaced label', () => {
   const scope = challengeById('scope-diff');
   assert.ok(scope?.structural);

@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findUntaggedClaims, findScaffoldingCitations } from '../../src/kernel/verify/claims.ts';
+import {
+  findUntaggedClaims,
+  findScaffoldingCitations,
+  findPlantedOrgCitations,
+} from '../../src/kernel/verify/claims.ts';
 
 test('flags a dollar figure with no citation or unverified tag', () => {
   const findings = findUntaggedClaims('Revenue grew to $4.2M last quarter.');
@@ -106,4 +110,15 @@ test('legitimate citations and prose mentions of the catalog are not refused', (
     'Their product catalog lists 40 SKUs. [cite: catalog-2026.pdf]',
   ].join('\n');
   assert.equal(findScaffoldingCitations(fine).length, 0);
+});
+
+test('the org-harness corpus is not evidence unless the run was licensed to it', () => {
+  const line =
+    'IAA mechanics live in the agreement [cite:fixtures/org-harness-broad/corpus/policies/agreements.md].';
+  assert.equal(findPlantedOrgCitations(line, ['/repo']).length, 1);
+  assert.equal(findPlantedOrgCitations(line, []).length, 1);
+  assert.equal(
+    findPlantedOrgCitations(line, ['/repo/fixtures/org-harness-broad']).length,
+    0,
+  );
 });

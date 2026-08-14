@@ -50,6 +50,7 @@ import {
   findUntaggedClaims,
   findSourceFileCitations,
   findScaffoldingCitations,
+  findPlantedOrgCitations,
   selfAttestsCiting,
 } from '../verify/claims.ts';
 import { RUBRIC_LINES, rubricChallengeId } from './readers.ts';
@@ -275,6 +276,17 @@ export const CHALLENGES: readonly Challenge[] = [
             `${String(internal.length)} citation(s) name Construct's own scaffolding as their source: ` +
             `${shown}. The catalog, lenses, and playbook are not evidence about the world — ` +
             'mark the claim [unverified] instead.',
+        };
+      }
+      const planted = findPlantedOrgCitations(deliverable, context?.groundRoots ?? []);
+      if (planted.length > 0) {
+        const shown = planted.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
+        return {
+          passed: false,
+          detail:
+            `${String(planted.length)} citation(s) name Construct's planted-organization eval ` +
+            `corpus as their source: ${shown}. That corpus is a planted organization for ` +
+            'measurement, not evidence about this run — unless the dispatch was licensed to it.',
         };
       }
       const untagged = findUntaggedClaims(deliverable);
