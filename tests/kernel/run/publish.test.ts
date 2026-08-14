@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import {
   renderAttribution,
   renderClaim,
+  renderComposedClaim,
   renderHeading,
 } from '../../../src/kernel/run/publish.ts';
 import { runStructuralChallenges } from '../../../src/kernel/challenge/catalog.ts';
@@ -102,4 +103,71 @@ test('a section slug becomes a sentence, not Title Case', () => {
 
 test('a concern id becomes the English it already was', () => {
   assert.equal(renderAttribution('evidence-provenance'), 'evidence provenance');
+});
+
+/**
+ * A composed document is not bullets by structural necessity — the render
+ * function was the thing forcing every claim through `- text [role]`
+ * regardless of kind. These hold that a table actually becomes a markdown
+ * table, a diagram actually becomes a mermaid fence, and a paragraph reads
+ * as prose rather than a bullet with an unusually long sentence in it.
+ */
+test('a bullet renders exactly as it always did', () => {
+  const rendered = renderComposedClaim(
+    { section: 's', text: 'the pilot ships in Q4', from: 'product-scoping', kind: 'bullet' },
+    false,
+  );
+  assert.equal(rendered, '- the pilot ships in Q4 [product scoping]');
+});
+
+test('a paragraph renders as prose with a byline, not a bullet', () => {
+  const rendered = renderComposedClaim(
+    { section: 's', text: 'First this happened. Then that followed because of it.', from: 'strategy-alignment', kind: 'paragraph' },
+    false,
+  );
+  assert.doesNotMatch(rendered, /^-/);
+  assert.match(rendered, /First this happened\. Then that followed because of it\./);
+  assert.match(rendered, /strategy alignment/);
+});
+
+test('a table renders as an actual markdown table, headers and all rows', () => {
+  const rendered = renderComposedClaim(
+    {
+      section: 's',
+      text: 'Two vendors compared on cost.',
+      from: 'product-scoping',
+      kind: 'table',
+      table: { headers: ['vendor', 'cost'], rows: [['Acme', '$10k'], ['Beta', '$8k']] },
+    },
+    false,
+  );
+  assert.match(rendered, /\| vendor \| cost \|/);
+  assert.match(rendered, /\| --- \| --- \|/);
+  assert.match(rendered, /\| Acme \| \$10k \|/);
+  assert.match(rendered, /\| Beta \| \$8k \|/);
+});
+
+test('a diagram renders as a fenced mermaid block, source untouched', () => {
+  const rendered = renderComposedClaim(
+    { section: 's', text: 'graph TD\nA[gap] --> B[fix]', from: 'strategy-alignment', kind: 'diagram' },
+    false,
+  );
+  assert.match(rendered, /```mermaid\ngraph TD\nA\[gap\] --> B\[fix\]\n```/);
+});
+
+test('a table with no table data renders nothing rather than a broken grid', () => {
+  const rendered = renderComposedClaim(
+    { section: 's', text: 'a caption with no data', from: 'product-scoping', kind: 'table' },
+    false,
+  );
+  assert.equal(rendered, '');
+});
+
+test('--record form leaves markers and role ids unrendered, same as a bullet already did', () => {
+  const rendered = renderComposedClaim(
+    { section: 's', text: 'the finding [unverified]', from: 'product-scoping', kind: 'paragraph' },
+    true,
+  );
+  assert.match(rendered, /\[unverified\]/);
+  assert.match(rendered, /product-scoping/);
 });

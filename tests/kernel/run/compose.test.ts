@@ -78,9 +78,9 @@ test('a shapeless reply composes nothing rather than throwing', () => {
 
 test('claims are split by the role they will be checked against', () => {
   const claims = [
-    { section: 'the-answer', text: 'a', from: 'product-scoping' },
-    { section: 'what-follows', text: 'b', from: 'strategy-alignment' },
-    { section: 'what-follows', text: 'c', from: 'product-scoping' },
+    { section: 'the-answer', text: 'a', from: 'product-scoping', kind: 'bullet' as const },
+    { section: 'what-follows', text: 'b', from: 'strategy-alignment', kind: 'bullet' as const },
+    { section: 'what-follows', text: 'c', from: 'product-scoping', kind: 'bullet' as const },
   ];
   assert.deepEqual(claimsFrom(claims, 'product-scoping').map((c) => c.text), ['a', 'c']);
   assert.deepEqual(claimsFrom(claims, 'nobody'), []);
@@ -246,4 +246,96 @@ test('with no shape named, section matching is skipped exactly as it always was'
   const screened = screenComposition(composition, SOURCES);
   assert.equal(screened.claims.length, 1);
   assert.equal(screened.claims[0]!.section, 'anything at all');
+});
+
+/**
+ * A composed document was, until this, bullets and nothing else — every
+ * claim forced through `- text [role]` regardless of what it actually said,
+ * even though the role deliverables underneath it are structured,
+ * multi-paragraph, citation-bearing prose. These properties hold the richer
+ * claim kinds to the same discipline as a bullet: default to bullet when
+ * unspecified, and a malformed table is dropped whole rather than rendered
+ * with invented empty cells.
+ */
+test('a claim with no kind defaults to bullet, unchanged from before kinds existed', () => {
+  const composition = toComposition({
+    claims: [{ section: 'the-answer', text: 'x', from: 'product-scoping' }],
+    uncovered: [],
+  });
+  assert.equal(composition.claims[0]!.kind, 'bullet');
+});
+
+test('a paragraph and a diagram claim parse with their kind intact', () => {
+  const composition = toComposition({
+    claims: [
+      { section: 'the-answer', kind: 'paragraph', text: 'First this, then that, because of the other.', from: 'strategy-alignment' },
+      { section: 'the-answer', kind: 'diagram', text: 'graph TD\nA-->B', from: 'strategy-alignment' },
+    ],
+    uncovered: [],
+  });
+  assert.equal(composition.claims[0]!.kind, 'paragraph');
+  assert.equal(composition.claims[1]!.kind, 'diagram');
+  assert.equal(composition.claims[1]!.text, 'graph TD\nA-->B');
+});
+
+test('an unrecognized kind falls back to bullet rather than an unrenderable claim', () => {
+  const composition = toComposition({
+    claims: [{ section: 'the-answer', kind: 'chart', text: 'x', from: 'product-scoping' }],
+    uncovered: [],
+  });
+  assert.equal(composition.claims[0]!.kind, 'bullet');
+});
+
+test('a well-formed table claim keeps its headers and rows', () => {
+  const composition = toComposition({
+    claims: [
+      {
+        section: 'the-answer',
+        kind: 'table',
+        text: 'Three vendors compared on cost and lead time.',
+        from: 'product-scoping',
+        table: { headers: ['vendor', 'cost'], rows: [['Acme', '$10k'], ['Beta', '$8k']] },
+      },
+    ],
+    uncovered: [],
+  });
+  assert.equal(composition.claims.length, 1);
+  assert.deepEqual(composition.claims[0]!.table, {
+    headers: ['vendor', 'cost'],
+    rows: [['Acme', '$10k'], ['Beta', '$8k']],
+  });
+});
+
+test('a table claim with a row the wrong width is dropped whole, not padded', () => {
+  const composition = toComposition({
+    claims: [
+      {
+        section: 'the-answer',
+        kind: 'table',
+        text: 'x',
+        from: 'product-scoping',
+        table: { headers: ['a', 'b'], rows: [['1']] },
+      },
+    ],
+    uncovered: [],
+  });
+  assert.equal(composition.claims.length, 0);
+});
+
+test('a table claim with no rows at all is dropped, not rendered as an empty grid', () => {
+  const composition = toComposition({
+    claims: [
+      { section: 'the-answer', kind: 'table', text: 'x', from: 'product-scoping', table: { headers: ['a'], rows: [] } },
+    ],
+    uncovered: [],
+  });
+  assert.equal(composition.claims.length, 0);
+});
+
+test('a table claim missing its table entirely is dropped, not rendered as a caption alone', () => {
+  const composition = toComposition({
+    claims: [{ section: 'the-answer', kind: 'table', text: 'x', from: 'product-scoping' }],
+    uncovered: [],
+  });
+  assert.equal(composition.claims.length, 0);
 });

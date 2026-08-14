@@ -379,6 +379,82 @@ test('a support call that comes back empty once is retried, not fatal', async ()
  * sections review and decision have no place for, and none of the sections
  * those two shapes DO have.
  */
+function mixedKindsHost(): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'composer') {
+        const cited = /--- ([a-z-]+) ---/.exec(task)?.[1] ?? 'strategy-alignment';
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              claims: [
+                { section: 'the-problem', kind: 'bullet', text: 'exports drop rows over 10k', from: cited },
+                {
+                  section: 'the-goal',
+                  kind: 'paragraph',
+                  text: 'Streaming must replace the current buffered write path. Buffering the full result set before writing is what causes the drop once memory pressure forces an early flush.',
+                  from: cited,
+                },
+                {
+                  section: 'requirements',
+                  kind: 'table',
+                  text: 'Three export formats compared on streaming support.',
+                  table: { headers: ['format', 'streams today'], rows: [['CSV', 'no'], ['JSON', 'no'], ['NDJSON', 'yes']] },
+                  from: cited,
+                },
+                {
+                  section: 'risks',
+                  kind: 'diagram',
+                  text: 'graph TD\nA[buffered write] -->|memory pressure| B[early flush]\nB --> C[dropped rows]',
+                  from: cited,
+                },
+              ],
+              uncovered: [],
+            }),
+          },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ unsupported: [], detail: '' }) },
+          error: null,
+        };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+test('a composed document renders a real table and a real diagram, not bullets standing in for them', async () => {
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], mixedKindsHost())), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  // The bullet claim still reads as a bullet.
+  assert.match(out, /- exports drop rows over 10k \[/);
+  // The paragraph claim reads as prose, not a bullet with a long sentence in it.
+  assert.doesNotMatch(out, /- Streaming must replace/);
+  assert.match(out, /Streaming must replace the current buffered write path\./);
+  // The table claim is an actual markdown table.
+  assert.match(out, /\| format \| streams today \|/);
+  assert.match(out, /\| --- \| --- \|/);
+  assert.match(out, /\| NDJSON \| yes \|/);
+  // The diagram claim is a fenced mermaid block with its structure intact.
+  assert.match(out, /```mermaid/);
+  assert.match(out, /A\[buffered write\] -->\|memory pressure\| B\[early flush\]/);
+  assert.match(out, /```\n/);
+});
+
 function specHost(): HostAdapter {
   return {
     ...workHost(),

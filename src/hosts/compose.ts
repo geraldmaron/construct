@@ -128,13 +128,37 @@ export function composerPrompt(input: {
     'reader is shown which came back empty:',
     ...input.shape.sections.map((s) => `- ${s.name}: ${s.expects}`),
     '',
+    'Each claim also has a "kind". Most claims are "bullet" — one fact, one',
+    'sentence — and that is the right default when in doubt. Reach for the',
+    'others only when the deliverables themselves actually have that shape:',
+    '',
+    '- "paragraph": connected reasoning a reader has to follow in order, not a',
+    '  list of independent facts — a deliverable\'s own multi-sentence analysis,',
+    '  condensed, not paraphrased into a single line that loses the argument.',
+    '- "table": the deliverables compare several items across the same few',
+    '  dimensions — options against criteria, sources against status. Never',
+    '  build a table with only one row\'s worth of real content; that is a',
+    '  bullet wearing a grid.',
+    '- "diagram": a deliverable itself describes a flow, sequence, or',
+    '  dependency structure. Write valid mermaid source in "text" (e.g.',
+    '  "graph TD\\nA[close the gap] --> B[ship the adapter]"). Every node and',
+    '  edge must trace to something a deliverable actually said — a diagram is',
+    '  the easiest place to imply a relationship nobody established, and the',
+    '  same no-adding rule holds here as everywhere else in this job.',
+    '',
+    'A "table" claim also carries "table": {"headers":[...],"rows":[[...]]}.',
+    'Every row must have exactly as many cells as there are headers. "text" on',
+    'a table claim is its one-sentence caption, not a cell.',
+    '',
     'And separately, `uncovered`: the parts of the outcome above that no',
     'deliverable answered. This is not a formality. Read the outcome again,',
     'clause by clause, and list what nobody addressed. An empty list is a real',
     'answer, and a wrong one is the most expensive mistake you can make here.',
     '',
     'Reply with JSON only, no prose outside it:',
-    '{"claims":[{"section":"<one of the section names>","text":"<the claim>",' +
+    '{"claims":[{"section":"<one of the section names>","kind":"<bullet|paragraph|table|diagram>",' +
+      '"text":"<the claim, mermaid source for a diagram, or a table\'s caption>",' +
+      '"table":{"headers":["<only for kind=table>"],"rows":[["..."]]},' +
       '"from":"<the role>"}],"uncovered":["<what nobody answered>"]}',
   ].join('\n');
 }
@@ -173,13 +197,37 @@ const POSITION_CHECK: readonly string[] = [
  * veto is asked separately, by objectionPrompt, at the price of one more call
  * per role.
  */
+/**
+ * A claim as the checking role needs to see it, not just its caption. A
+ * table's real content is its rows — a role asked whether "3 vendors
+ * compared" is supported without being shown which three and what the
+ * comparison said would be checking the wrong sentence. A diagram's real
+ * content is its structure, so the mermaid source goes in verbatim: an
+ * edge is a claimed relationship the same as a written sentence is.
+ */
+function claimAsShownToChecker(claim: ComposedClaim, index: number): string {
+  const head = `${String(index)}. [${claim.section}] ${claim.text}`;
+  if (claim.kind === 'table' && claim.table) {
+    const header = `   | ${claim.table.headers.join(' | ')} |`;
+    const rows = claim.table.rows.map((row) => `   | ${row.join(' | ')} |`).join('\n');
+    return `${head}\n${header}\n${rows}`;
+  }
+  if (claim.kind === 'diagram') {
+    return `${head}\n   (mermaid source, shown as its own line: ${JSON.stringify(claim.text)})`;
+  }
+  return head;
+}
+
 export function supportPrompt(
   source: SourceDeliverable,
   claims: readonly ComposedClaim[],
 ): string {
   return [
     `Below is one specialist's finished deliverable, and beneath it a numbered`,
-    'list of claims that someone else wrote down as coming from it.',
+    'list of claims that someone else wrote down as coming from it. A table',
+    'claim is shown with its rows, and a diagram claim with its structure — an',
+    'invented row or an invented edge is exactly as unsupported as an invented',
+    'sentence.',
     '',
     'Your job is to find the ones it does not support. Not to check them off —',
     'to find the ones that are not there. A claim counts as unsupported if the',
@@ -191,7 +239,7 @@ export function supportPrompt(
     source.text,
     '',
     '--- claims attributed to it ---',
-    ...claims.map((claim, i) => `${String(i)}. [${claim.section}] ${claim.text}`),
+    ...claims.map((claim, i) => claimAsShownToChecker(claim, i)),
     '',
     'Report the indices of the unsupported ones. Finding none is a legitimate',
     'answer; so is finding all of them. Do not stretch to find something, and do',

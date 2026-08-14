@@ -110,11 +110,40 @@ export function standingLine(standing: SourceStanding): string {
   return `${standing.role}: ${parts.join('; ')}`;
 }
 
-/** One claim in the composition, and the role whose deliverable it came from. */
+/**
+ * What shape a claim's content takes. Bullet is the default and the right
+ * choice for one atomic fact; the others exist because a composed document
+ * flattening five paragraphs of grounded reasoning, a real comparison table,
+ * or a dependency structure the deliverables themselves describe into
+ * one-line bullets throws away depth the underlying deliverables actually
+ * had (measured directly: role deliverables in this system are structured,
+ * multi-paragraph, citation-bearing prose; the composed document built from
+ * them was, until this, bullets and nothing else).
+ */
+export const CLAIM_KINDS = ['bullet', 'paragraph', 'table', 'diagram'] as const;
+export type ClaimKind = (typeof CLAIM_KINDS)[number];
+
+export interface ComposedTable {
+  readonly headers: readonly string[];
+  readonly rows: readonly (readonly string[])[];
+}
+
+/**
+ * One claim in the composition, and the role whose deliverable it came from.
+ *
+ * `text` carries the content for every kind except table: prose for bullet
+ * and paragraph, mermaid source for diagram. A table's `text` is its
+ * caption — the one-sentence claim the table is evidence for — and `table`
+ * carries the structured rows. A table claim without a well-formed `table`
+ * is not a table claim; toComposition drops it rather than rendering an
+ * empty grid.
+ */
 export interface ComposedClaim {
   readonly section: string;
   readonly text: string;
   readonly from: string;
+  readonly kind: ClaimKind;
+  readonly table?: ComposedTable;
 }
 
 export interface Composition {
@@ -138,6 +167,32 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(asString).filter((s) => s.length > 0) : [];
+}
+
+/**
+ * A table is well-formed if it has at least one header, at least one row,
+ * and every row is the same width as the header — a row with a different
+ * cell count is not evidence of a mismeasurement to render anyway, it is a
+ * table that does not describe what it claims to. Malformed in any of these
+ * ways, the table is dropped whole rather than padded or truncated into
+ * shape: a grid with invented empty cells is a fabrication the same as any
+ * other unsupported claim.
+ */
+function asTable(value: unknown): ComposedTable | undefined {
+  const record = value as { headers?: unknown; rows?: unknown } | null;
+  const headers = asStringArray(record?.headers);
+  if (headers.length === 0 || !Array.isArray(record?.rows)) return undefined;
+  const rows: string[][] = [];
+  for (const row of record.rows) {
+    const cells = asStringArray(row);
+    if (cells.length !== headers.length) return undefined;
+    rows.push(cells);
+  }
+  return rows.length === 0 ? undefined : { headers, rows };
+}
+
 /**
  * Validate a parsed composer reply. Malformed items become reasons rather than
  * exceptions, the same as every other reading pass here: one bad claim does
@@ -147,12 +202,22 @@ export function toComposition(parsed: unknown): Composition {
   const record = parsed as { claims?: unknown; uncovered?: unknown } | null;
   const claims: ComposedClaim[] = [];
   for (const item of Array.isArray(record?.claims) ? record.claims : []) {
-    const c = item as { section?: unknown; text?: unknown; from?: unknown } | null;
+    const c = item as { section?: unknown; text?: unknown; from?: unknown; kind?: unknown; table?: unknown } | null;
     const section = asString(c?.section);
     const text = asString(c?.text);
     const from = asString(c?.from);
     if (!section || !text || !from) continue;
-    claims.push({ section, text, from });
+    const kindRaw = asString(c?.kind).toLowerCase();
+    const kind: ClaimKind = (CLAIM_KINDS as readonly string[]).includes(kindRaw)
+      ? (kindRaw as ClaimKind)
+      : 'bullet';
+    if (kind === 'table') {
+      const table = asTable(c?.table);
+      if (table === undefined) continue;
+      claims.push({ section, text, from, kind, table });
+      continue;
+    }
+    claims.push({ section, text, from, kind });
   }
   const uncovered: string[] = [];
   for (const item of Array.isArray(record?.uncovered) ? record.uncovered : []) {

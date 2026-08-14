@@ -79,7 +79,7 @@ import {
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
 import { COMPOSITION_SHAPES, shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
-import { renderAttribution, renderClaim, renderHeading } from '../kernel/run/publish.ts';
+import { renderAttribution, renderClaim, renderComposedClaim, renderHeading } from '../kernel/run/publish.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
 import {
   collapseObjections,
@@ -3728,10 +3728,16 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // to check the text rather than read it.
       const asRecord = flags.record !== undefined;
       process.stdout.write(`\n## ${asRecord ? section.name : renderHeading(section.name)}\n\n`);
+      // Consecutive bullets read as one list; anything else is a block with
+      // its own attribution line, so it gets the blank-line spacing a
+      // paragraph, table, or diagram actually needs to render correctly.
+      let previousKind: string | null = null;
       for (const claim of inSection) {
-        const text = asRecord ? claim.text : renderClaim(claim.text);
-        const from = asRecord ? claim.from : renderAttribution(claim.from);
-        process.stdout.write(`- ${text} [${from}]\n`);
+        if (previousKind !== null && !(previousKind === 'bullet' && claim.kind === 'bullet')) {
+          process.stdout.write('\n');
+        }
+        process.stdout.write(`${renderComposedClaim(claim, asRecord)}\n`);
+        previousKind = claim.kind;
       }
     }
     // A section that came back empty is dropped from the document but not from

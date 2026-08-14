@@ -30,6 +30,8 @@
  * stopped.
  */
 
+import type { ComposedClaim } from './compose.ts';
+
 /** What a rendered claim carries beyond its text. */
 export interface RenderedClaim {
   readonly text: string;
@@ -154,4 +156,38 @@ export function renderHeading(slug: string): string {
  */
 export function renderAttribution(role: string): string {
   return role.replace(/[-_]+/g, ' ');
+}
+
+/**
+ * One composed claim, in the shape its kind actually calls for — not the
+ * bullet every kind used to be forced into regardless of what it said.
+ *
+ * `asRecord` keeps the same meaning it has everywhere else in this module:
+ * markers and slugs intact for anything downstream that reads the stored
+ * form, rendered prose for a reader. renderClaim only ever touches prose —
+ * a table's cells and a diagram's mermaid source are left exactly as the
+ * composer wrote them, because the marker substitutions are built for
+ * sentences and running them over a mermaid `-->` or a table cell risks
+ * mangling syntax a reader (or a diagram renderer) depends on being literal.
+ */
+export function renderComposedClaim(claim: ComposedClaim, asRecord: boolean): string {
+  const from = asRecord ? claim.from : renderAttribution(claim.from);
+  switch (claim.kind) {
+    case 'paragraph':
+      return `${asRecord ? claim.text : renderClaim(claim.text)}\n\n— *${from}*\n`;
+    case 'table': {
+      const table = claim.table;
+      if (table === undefined || table.headers.length === 0) return '';
+      const caption = asRecord ? claim.text : renderClaim(claim.text);
+      const header = `| ${table.headers.join(' | ')} |`;
+      const rule = `| ${table.headers.map(() => '---').join(' | ')} |`;
+      const rows = table.rows.map((row) => `| ${row.join(' | ')} |`).join('\n');
+      return `${caption}\n\n${header}\n${rule}\n${rows}\n\n— *${from}*\n`;
+    }
+    case 'diagram':
+      return `\`\`\`mermaid\n${claim.text}\n\`\`\`\n\n— *${from}*\n`;
+    case 'bullet':
+    default:
+      return `- ${asRecord ? claim.text : renderClaim(claim.text)} [${from}]`;
+  }
 }
