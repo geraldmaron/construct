@@ -142,3 +142,20 @@ reasons, and the model's answer is strictly better than the fallback's silence.
 One run, one local model, written down as an observation and not a measurement.
 Tracked, with an explicit instruction not to close it by adding `living_status`
 to a keyword list — that tunes the instrument to the one case anybody looked at.
+
+---
+
+## Interaction surface (2026-08-14)
+
+How to talk to this instance, and the host strategy recommendation that
+generalizes it, live in `docs/host-interaction.md`. Short form:
+
+```bash
+nanobot webui -c ~/.nanobot-blackstory/config.json -y
+nanobot agent -c ~/.nanobot-blackstory/config.json -m "…"
+```
+
+**Version trap:** Homebrew `construct` on PATH may lag this checkout. The
+trial instance currently launches this checkout (`node …/construct/bin/construct.mjs serve`),
+not PATH. Do not treat default `nanobot status` (which looks at `~/.nanobot/`)
+as this instance's health — this trial deliberately uses `~/.nanobot-blackstory/`.

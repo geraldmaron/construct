@@ -24,7 +24,7 @@ construct doctor
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
 Running work needs an agent host present, because Construct never ships its own agent runtime (commitment 1). Four are wired: OpenCode and the Claude Code CLI, plus two that spend a subscription rather than an API key — the Codex CLI (ChatGPT login) and the Cursor CLI (Cursor login). Every adapter is pinned to a probed version (`npm run probe:<host>`), and `construct doctor` now reports each host's presence: found, version against the pin, and auth state. A model family nobody has tuned for still runs on any of them; it is labeled best-effort on the work log, never refused.
 
@@ -33,6 +33,13 @@ If you already work inside an agent host, `construct serve` puts the spine insid
 ```bash
 claude mcp add construct construct serve
 ```
+
+
+Chat dogfood without an IDE: nanobot WebUI with Construct attached over MCP
+(`docs/host-trial-nanobot.md`, `docs/host-interaction.md`). OpenCode stays the
+first-party *execution* host; MCP presence reaches Claude Code, Codex, Cursor,
+and peers. Do not stand up a Construct-only chat UI — commitment 1. Xirp is a
+future projection target, not a substitute (`RESEARCH-DECISIONS.md` §16).
 
 That surface is presence, not execution. It can record outcomes, read the log and the inbox, and relay your decisions and verdicts, and it deliberately cannot dispatch work or advance a deliverable toward finished.
 

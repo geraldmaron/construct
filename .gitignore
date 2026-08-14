@@ -16,3 +16,6 @@ coverage/
 # belong in git — sheets/ is regenerable, returned/ may carry a labeler's name.
 scripts/labeling-kit/sheets/
 scripts/labeling-kit/returned/*.json
+
+# Session Typst/PDF dogfood lives next to the checkout, not in the product tree.
+tmp/
