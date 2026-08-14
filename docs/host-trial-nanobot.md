@@ -155,7 +155,10 @@ nanobot webui -c ~/.nanobot-blackstory/config.json -y
 nanobot agent -c ~/.nanobot-blackstory/config.json -m "…"
 ```
 
-**Version trap:** Homebrew `construct` on PATH may lag this checkout. The
-trial instance currently launches this checkout (`node …/construct/bin/construct.mjs serve`),
-not PATH. Do not treat default `nanobot status` (which looks at `~/.nanobot/`)
-as this instance's health — this trial deliberately uses `~/.nanobot-blackstory/`.
+**MCP:** this instance launches the checkout
+(`node …/construct/bin/construct.mjs serve`). PATH on this machine is also
+linked to the same checkout at `3.0.0-alpha.11` as of 2026-08-14; if either
+drifts, prefer the checkout launcher for the trial and re-link PATH with
+`npm install -g .`. Do not treat default `nanobot status` (which looks at
+`~/.nanobot/`) as this instance's health — this trial deliberately uses
+`~/.nanobot-blackstory/`.

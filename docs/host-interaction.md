@@ -25,7 +25,29 @@ organizational distillation layer. That layer rides hosts; it is not a host.
 | Claude / Codex / Cursor | Additional execution adapters | `--host=claude\|codex\|cursor` |
 | nanobot (HKUDS) | Chat / WebUI presence for BlackStory dogfood | MCP attached; see below |
 
-## nanobot — wired for presence, not yet the default PATH install
+## PATH and the spine (verified 2026-08-14)
+
+`construct lessons` is a spine command. Both global installs on this machine
+are linked to this checkout at `3.0.0-alpha.11` (fnm Node and Homebrew Node),
+so typing `construct` reaches the same binary hosts use:
+
+```bash
+construct version          # 3.0.0-alpha.11
+construct lessons list --workspace=<name>
+construct lessons approve <id> --approver=<you>
+```
+
+Verified end-to-end on PATH against a sterile store: `decide` holds a
+run-derived lesson → `lessons list` shows it → missing id exits 1 → approve
+without `--approver=` exits 2 → `lessons approve --approver=` admits →
+`--held` is empty and `--admitted` lists it. Hosts never replace this surface;
+approve writes into future prompts and stays on the CLI.
+
+If PATH lags again after a release: `npm install -g .` from this checkout
+(under each Node that owns a `construct` on PATH). Prefer that over pointing
+hosts at a packaged alpha that has not caught up.
+
+## nanobot — presence dogfood
 
 Trial record: `docs/host-trial-nanobot.md`. Instance lives at
 `~/.nanobot-blackstory/` so it does not collide with a personal default.
@@ -40,10 +62,8 @@ nanobot webui -c ~/.nanobot-blackstory/config.json -y
 nanobot agent -c ~/.nanobot-blackstory/config.json -m "Record an outcome: …"
 ```
 
-**Version trap (verified 2026-08-14).** Homebrew `construct` on PATH was
-`3.0.0-alpha.10` while this checkout is `3.0.0-alpha.11` (voice + form fixes).
-The trial instance at `~/.nanobot-blackstory/` is pointed at this checkout's
-launcher, not PATH. If a later session finds PATH lag again, restore:
+**MCP entry (applied 2026-08-14).** Points at this checkout's launcher, not a
+stale PATH binary:
 
 ```json
 {
@@ -61,8 +81,8 @@ launcher, not PATH. If a later session finds PATH lag again, restore:
 }
 ```
 
-Applied 2026-08-14 (this session, with explicit approval). Restart webui/agent
-to pick it up. Sessions must not rewrite host configs without that approval.
+Restart webui/agent after any MCP edit. Sessions must not rewrite host configs
+without approval.
 
 **What nanobot must not hold.** Capability tokens and erasure stay off this
 host: it can enable channels reachable from outside the machine. Presence only.
@@ -75,15 +95,17 @@ OpenCode remains the conformance-pinned execution host. Interfaces for *talking
 to* Construct are broader:
 
 1. **Wherever you already work** — attach MCP (`claude mcp add construct
-   construct serve`, Cursor MCP, Codex MCP, OpenCode tools). Cursor in
-   particular: the predecessor registered `lib/mcp/server.mjs` from a global
-   install. That path is not the rewrite and does not exist on this machine.
-   Point Cursor at `node <checkout>/bin/construct.mjs serve` (same launcher
-   nanobot uses). Applied 2026-08-14 to `~/.cursor/mcp.json`.
+   construct serve`, Cursor MCP, Codex MCP, OpenCode tools). Cursor's
+   predecessor registered `lib/mcp/server.mjs` from a global install — that
+   path is not the rewrite and does not exist. `~/.cursor/mcp.json` now
+   launches `node <checkout>/bin/construct.mjs serve`. Verified live in this
+   session: `catalog` returns `3.0.0-alpha.11` with seventeen domains; `inbox`
+   and `work_log` read the real store; `work` / `compose` are absent on
+   purpose. Reload Cursor MCP if discovery still shows the old error.
 2. **nanobot WebUI** — lightweight chat shell for outcome/inbox dogfood without
    opening an IDE.
-3. **CLI** — still the spine; hosts never replace `decide`, `compose`, or
-   erasure.
+3. **CLI** — still the spine; hosts never replace `decide`, `compose`,
+   `lessons approve`, or erasure.
 
 ## Xirp and peers — projection targets, not substitutes
 
@@ -120,9 +142,8 @@ document browser, not an agent UI — file it separately and keep it read-only.
 ## Recommendation (this session)
 
 1. Keep OpenCode as execution pin.
-2. Use nanobot WebUI + MCP for BlackStory / chat dogfood; point MCP at the
-   checkout when verifying voice/form work.
+2. Use nanobot WebUI + MCP for BlackStory / chat dogfood (checkout launcher).
 3. Treat Xirp as a Phase 4/5 host candidate, not a roadmap pivot.
 4. Do not fund a Construct-only chat UI.
-5. Held run-derived lessons are listed and admitted on the spine
-   (`construct lessons list|approve`), never inside a host.
+5. Use `construct lessons list|approve` on PATH for held run-derived lessons —
+   never inside a host.
