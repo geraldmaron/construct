@@ -181,3 +181,47 @@ test('naming the RFC outranks both a decision word and a neighbouring document t
 test('a mention of a proposal in passing does not hijack a plain review', () => {
   assert.equal(shapeForOutcome('Review the auth flow; propose a fix if you find one').name, 'review');
 });
+
+test('an ask naming the ADR gets the adr shape', () => {
+  for (const outcome of [
+    'Write an ADR for the caching layer',
+    'Draft an ADR for the auth migration',
+    'An ADR for the export tool',
+    'Write an architecture decision record for the storage backend',
+    'Draft an architectural decision record for the queue',
+  ]) {
+    assert.equal(shapeForOutcome(outcome).name, 'adr', outcome);
+  }
+});
+
+test('the adr shape records status and stays silent on cost and sequence', () => {
+  const adr = shapeForOutcome('Write an ADR for the caching layer').sections.map((s) => s.name);
+  assert.ok(adr.includes('context'));
+  assert.ok(adr.includes('decision'), 'the choice being recorded');
+  assert.ok(adr.includes('status'), 'without status, a proposal and an accepted record look the same');
+  assert.ok(adr.includes('consequences'));
+  assert.ok(adr.includes('alternatives-considered'), 'a record that never names alternatives has not been chosen between');
+  assert.ok(!adr.includes('what-it-costs'), 'cost belongs to a decision about what to commit to next');
+  assert.ok(!adr.includes('what-happens-first'));
+  assert.ok(!adr.includes('the-proposal'), 'a proposal is an RFC; this is a standing record');
+  assert.ok(!adr.includes('requirements'), 'requirements belong to a spec for something already chosen');
+});
+
+/**
+ * ADR is checked before RFC and decision so it does not lose a race to a
+ * neighbouring document type or a judgment word appearing in the same sentence.
+ */
+test('naming the ADR outranks both a decision word and a neighbouring document type', () => {
+  assert.equal(
+    shapeForOutcome('Write an ADR deciding which of two caching approaches to take').name,
+    'adr',
+  );
+  assert.equal(
+    shapeForOutcome("An ADR for the export tool's requirements").name,
+    'adr',
+  );
+});
+
+test('a mention of an ADR in passing does not hijack a plain review', () => {
+  assert.equal(shapeForOutcome('Review the auth flow; the ADR is out of date, note that').name, 'review');
+});

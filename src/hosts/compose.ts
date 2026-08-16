@@ -35,7 +35,7 @@ export const SHAPE_ROLE = 'composition-shape';
  * The four claim kinds are shared; which kind dominates is not. An RFC that
  * is only bullets fails the genre the same way a PRD that never states the
  * problem in prose does. Guidance is named per shape so the composer cannot
- * invent a fifth document type by picking kinds at random.
+ * invent another document type by picking kinds at random.
  */
 export function formGuidanceForShape(shape: CompositionShape): string {
   const figureRule = [
@@ -45,6 +45,16 @@ export function formGuidanceForShape(shape: CompositionShape): string {
     'short numbered paragraph instead of faking a diagram.',
   ].join(' ');
   switch (shape.name) {
+    case 'adr':
+      return [
+        'Form for this ADR: context and decision are paragraphs a later reader can',
+        'quote. status is one short sentence (proposed, accepted, superseded, or',
+        'deprecated). alternatives-considered is a multi-column table (option, what',
+        'recommended it, disposition) when two or more options were weighed —',
+        'left-aligned cells, no one-column tables. consequences are paragraphs.',
+        figureRule,
+        'Do not tag every sentence with a role; attribute once per claim.',
+      ].join(' ');
     case 'rfc':
       return [
         'Form for this RFC: abstract and proposal are prose. alternatives-considered',

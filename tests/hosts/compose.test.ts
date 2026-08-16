@@ -67,6 +67,14 @@ test('the composer prefers prose and names form by document shape', () => {
   });
   assert.match(spec, /Form for this spec/);
   assert.match(spec, /one-column table/);
+
+  const adr = composerPrompt({
+    outcome: 'Write an ADR for the cache layer',
+    sources: SOURCES,
+    shape: shapeByName('adr')!,
+  });
+  assert.match(adr, /Form for this ADR/);
+  assert.match(adr, /status is one short sentence/);
 });
 
 test('every shipped shape has named form guidance of its own', () => {

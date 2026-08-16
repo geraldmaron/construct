@@ -156,7 +156,33 @@ const RFC: CompositionShape = {
   ],
 };
 
-export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC];
+/**
+ * The shape of an ADR: a standing record of an architectural decision, its
+ * context, and what follows from it.
+ *
+ * Close to RFC and easy to conflate with it. An RFC proposes one approach
+ * and asks someone else to object before it is chosen — it is pre-commitment.
+ * An ADR records a decision as a standing document with a status, so a later
+ * reader can tell whether it still holds. That is why this shape has a status
+ * section the RFC does not: without one, yesterday's proposal and last year's
+ * accepted record look the same. It is also why it does not carry what-it-costs
+ * or what-happens-first: those belong to the decision shape, which is a choice
+ * about what to commit to next, not a record of how the system is built.
+ */
+const ADR: CompositionShape = {
+  name: 'adr',
+  answers: 'an ask to record an architectural decision as a standing document with a status',
+  article: 'an',
+  sections: [
+    { name: 'context', expects: 'the forces that made a decision necessary, only as the deliverables describe them' },
+    { name: 'decision', expects: 'the architectural choice being recorded, stated as the choice itself' },
+    { name: 'status', expects: 'whether this record is proposed, accepted, superseded, or deprecated, where a deliverable says so' },
+    { name: 'consequences', expects: 'what follows from adopting it: what becomes easier, harder, or now true' },
+    { name: 'alternatives-considered', expects: 'other approaches weighed and why this one over them, each tied to the role that established it' },
+  ],
+};
+
+export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC, ADR];
 
 export const DEFAULT_SHAPE = REVIEW;
 
@@ -203,19 +229,33 @@ const RFC_SIGNALS = [
 ];
 
 /**
+ * The words a person uses naming an architecture decision record rather than
+ * asking to decide something, or to write a proposal that is still up for
+ * objection. Kept as specific as RFC_SIGNALS: "decision" alone is DECISION's
+ * word, and "adr" appearing anywhere would catch "the ADR is out of date, note
+ * that" (a review of an existing record) as often as an ask to write one.
+ */
+const ADR_SIGNALS = [
+  'write an adr', 'draft an adr', 'an adr for', 'adr for',
+  'architecture decision record', 'architectural decision record',
+  'write an architecture decision', 'draft an architecture decision',
+];
+
+/**
  * Which shape an outcome asks for. Falls to the review shape by design.
  *
- * RFC and spec are both checked before decision, and RFC before spec: "write
- * an RFC deciding which of two approaches to take" or "an RFC for the export
- * tool's requirements" name the document type over the judgment or the
- * neighbouring document type in the same breath, and the document type is
- * what a reader would notice missing — a decision-shaped document with no
- * alternatives-considered section is not the RFC that was asked for, and a
- * spec's requirements read differently from an RFC's proposal even when both
- * describe the same feature.
+ * ADR, RFC and spec are all checked before decision, ADR before RFC, and RFC
+ * before spec: "write an ADR deciding which of two approaches to take" or
+ * "an RFC for the export tool's requirements" name the document type over the
+ * judgment or the neighbouring document type in the same breath, and the
+ * document type is what a reader would notice missing — a decision-shaped
+ * document with no status section is not the ADR that was asked for, and an
+ * RFC's proposal is not an accepted record even when both describe the same
+ * choice.
  */
 export function shapeForOutcome(outcome: string): CompositionShape {
   const text = outcome.toLowerCase();
+  if (ADR_SIGNALS.some((signal) => text.includes(signal))) return ADR;
   if (RFC_SIGNALS.some((signal) => text.includes(signal))) return RFC;
   if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return SPEC;
   if (DECISION_SIGNALS.some((signal) => text.includes(signal))) return DECISION;
