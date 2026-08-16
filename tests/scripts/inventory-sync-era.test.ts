@@ -167,7 +167,7 @@ function filesUnder(dir: string): string[] {
 test('the inventory does not write', () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-inventory-'));
   try {
-    const file = plant(root, 'admin-app/.cursor/rules/construct-web.mdc', '# leftover\n');
+    const file = plant(root, 'admin-app/.cursor/rules/construct-web-hooks.mdc', '# leftover\n');
     const before = readFileSync(file);
     const beforeTree = filesUnder(root);
     scan(root);
