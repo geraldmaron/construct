@@ -5,7 +5,7 @@
  */
 
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
-import { dirname, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
@@ -4580,6 +4580,21 @@ function symlinkToward(root: string, target: string): string | null {
 }
 
 /**
+ * Where the symlink walk toward `out` starts. The checked-out tree is what an
+ * attacker can plant links in, so an `out` under the working directory is
+ * walked from the working directory down — a planted `.claude` parent is a
+ * component on that walk, where lstat of `out` alone would silently follow
+ * it. An `out` elsewhere is walked from itself: its parents are the user's
+ * own machine, not the repository's to plant. Containment is by path
+ * segment, never by string prefix.
+ */
+function symlinkGuardRoot(out: string): string {
+  const cwd = process.cwd();
+  const rel = relative(cwd, out);
+  return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel) ? cwd : out;
+}
+
+/**
  * Write the Agent Skills pack, or remove one. The pack is output, not state:
  * every decision about what belongs in it, and which folders removal may
  * touch, is made by the kernel projection; this command only supplies the
@@ -4596,6 +4611,17 @@ export function skills(argv: string[]): number {
   const out = resolve(flags.out ?? join(process.cwd(), '.claude', 'skills'));
 
   if (flags.uninstall === 'true') {
+    // Removal reaches through `out` exactly as writing does, so it refuses a
+    // symbolic link the same way — an uninstall redirected by a planted link
+    // would delete construct-* folders somewhere the user never named.
+    const planted = symlinkToward(symlinkGuardRoot(out), out);
+    if (planted) {
+      process.stderr.write(
+        `skills: ${planted} is a symbolic link — removing through it would reach outside ${out}.\n` +
+          '  Remove the link, or point --out at the real directory.\n',
+      );
+      return 1;
+    }
     if (!existsSync(out)) {
       process.stdout.write(`skills: nothing to remove — ${out} does not exist\n`);
       return 0;
@@ -4629,13 +4655,13 @@ export function skills(argv: string[]): number {
     standards: LENS_STANDARDS,
     version: packageVersion(),
   });
+  // A write through a symbolic link lands outside the directory the user
+  // named, and a checked-out repository can plant one under its own tree —
+  // a pack folder, `out` itself, or a parent like `.claude`. Every target is
+  // checked before anything at all is created, so a refusal never leaves a
+  // partial pack behind.
   for (const file of files) {
-    const target = join(out, ...file.path.split('/'));
-    // A write through a symbolic link lands outside the directory the user
-    // named, and a checked-out repository can plant one under its own tree —
-    // so a link anywhere on the way to the file is refused by name, before
-    // anything is created, rather than followed.
-    const planted = symlinkToward(out, target);
+    const planted = symlinkToward(symlinkGuardRoot(out), join(out, ...file.path.split('/')));
     if (planted) {
       process.stderr.write(
         `skills: ${planted} is a symbolic link — writing through it would land outside ${out}.\n` +
@@ -4643,6 +4669,9 @@ export function skills(argv: string[]): number {
       );
       return 1;
     }
+  }
+  for (const file of files) {
+    const target = join(out, ...file.path.split('/'));
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, file.content);
     process.stdout.write(`  wrote ${file.path}\n`);
