@@ -4,8 +4,8 @@
  * not in CLI surface.
  */
 
-import { readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
@@ -149,6 +149,14 @@ import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-g
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
+import { LENSES } from '../kernel/plan/lenses.ts';
+import { allPlaybooks } from '../kernel/plan/playbooks.ts';
+import { LENS_STANDARDS } from '../kernel/plan/standards.ts';
+import {
+  planSkillsUninstall,
+  projectSkillsPack,
+  SKILL_FILENAME,
+} from '../kernel/skills/projection.ts';
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
@@ -4298,8 +4306,73 @@ export function staff(argv: string[]): number {
   return 2;
 }
 
+const SKILLS_USAGE = 'usage: construct skills [--out=<dir>] [--uninstall]\n';
+
+/**
+ * Write the Agent Skills pack, or remove one. The pack is output, not state:
+ * every decision about what belongs in it, and which folders removal may
+ * touch, is made by the kernel projection; this command only supplies the
+ * version, does the reading and writing, and says what happened.
+ */
+export function skills(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  const known = new Set(['out', 'uninstall']);
+  const unknown = Object.keys(flags).filter((f) => !known.has(f));
+  if (unknown.length > 0 || flags.out === 'true') {
+    process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+  const out = resolve(flags.out ?? join(process.cwd(), '.claude', 'skills'));
+
+  if (flags.uninstall === 'true') {
+    if (!existsSync(out)) {
+      process.stdout.write(`skills: nothing to remove — ${out} does not exist\n`);
+      return 0;
+    }
+    const folders = readdirSync(out, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const file = join(out, entry.name, SKILL_FILENAME);
+        return {
+          directory: entry.name,
+          skill: existsSync(file) ? readFileSync(file, 'utf8') : null,
+        };
+      });
+    const verdicts = planSkillsUninstall(folders);
+    for (const verdict of verdicts) {
+      if (verdict.removed) rmSync(join(out, verdict.directory), { recursive: true, force: true });
+      process.stdout.write(
+        `  ${verdict.removed ? 'removed' : 'kept   '} ${verdict.directory} — ${verdict.why}\n`,
+      );
+    }
+    const removed = verdicts.filter((v) => v.removed).length;
+    process.stdout.write(
+      `skills: removed ${String(removed)}, kept ${String(verdicts.length - removed)} in ${out}\n`,
+    );
+    return 0;
+  }
+
+  const files = projectSkillsPack({
+    lenses: LENSES,
+    playbooks: allPlaybooks(),
+    standards: LENS_STANDARDS,
+    version: packageVersion(),
+  });
+  for (const file of files) {
+    const target = join(out, ...file.path.split('/'));
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, file.content);
+    process.stdout.write(`  wrote ${file.path}\n`);
+  }
+  process.stdout.write(
+    `skills: ${String(files.length)} skill(s) written to ${out}, stamped ${packageVersion()}\n` +
+      '  Remove them with: construct skills --uninstall\n',
+  );
+  return 0;
+}
+
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4368,6 +4441,8 @@ async function run(argv: string[]): Promise<number> {
       return mode(argv.slice(1));
     case 'staff':
       return staff(argv.slice(1));
+    case 'skills':
+      return skills(argv.slice(1));
     case 'inbox':
       return inbox();
     case 'decide':
