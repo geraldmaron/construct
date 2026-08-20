@@ -58,6 +58,7 @@ import { openDecisions, resolveDecision } from '../../kernel/store/decisions.ts'
 import { countTasksByState, listTasks } from '../../kernel/store/tasks.ts';
 import { readWorkLog } from '../../kernel/store/worklog.ts';
 import { storeNamingCache } from '../../kernel/store/namings.ts';
+import { catalogHighWater, sightingAhead } from '../../kernel/store/catalog.ts';
 import { recordNote } from '../../kernel/store/notes.ts';
 import { startRun, startRunNamed } from '../../kernel/run/outcome.ts';
 import type { StartedRun } from '../../kernel/run/outcome.ts';
@@ -366,7 +367,7 @@ async function callTool(
 
   try {
     switch (name) {
-      case 'catalog':
+      case 'catalog': {
         // The version answering rides on the catalog because the catalog is
         // what a claim about coverage is made from, and a host reaches whatever
         // Construct is installed rather than whatever a repository holds. A
@@ -375,10 +376,28 @@ async function callTool(
         // a released catalog and had no way to know which release. serverInfo
         // carries this too, and a model that read the catalog and never saw the
         // handshake is the reader this is for.
+        //
+        // Naming the version is half the handshake; the other half is saying
+        // when it is stale. The store keeps the richest catalog any Construct
+        // has opened it with, so an answer served by an older build can state
+        // the skew instead of leaving the reader to notice a count. When
+        // nothing richer has been seen, the reply is exactly what it was.
+        const seen = catalogHighWater(core.store);
+        const answering = { version: core.serverVersion, domains: DOMAINS.length };
         return toolResult(id, {
           construct: core.serverVersion,
+          ...(seen && sightingAhead(seen, answering)
+            ? {
+                stale:
+                  `this catalog is from construct ${answering.version} (${answering.domains} domains); ` +
+                  `this store has been opened by construct ${seen.version} (${seen.domains} domains) — ` +
+                  'the construct answering here is behind, and any claim about coverage is a claim about ' +
+                  `${answering.version}`,
+              }
+            : {}),
           domains: DOMAINS.map((d) => ({ domain: d.domain, concern: d.concern })),
         });
+      }
       case 'records': {
         const workspace = typeof input.workspace === 'string' ? input.workspace.trim() : '';
         if (!workspace) throw new RangeError('records requires a non-empty string "workspace"');
