@@ -201,3 +201,57 @@ test('an output directory that is itself a symlink is refused, not followed', as
   assert.equal(code, 1);
   assert.match(err, /is a symbolic link/);
 });
+
+test('a planted parent of the default out (.claude as a link) is refused, not followed', async () => {
+  const previousCwd = process.cwd();
+  const result = await run((root) => {
+    const elsewhere = join(root, 'elsewhere');
+    mkdirSync(elsewhere, { recursive: true });
+    // The repo-plant shape: the checkout carries `.claude` as a link, so the
+    // default out resolves through it. lstat of out alone follows the parent
+    // silently; the walk from the working directory sees it.
+    symlinkSync(elsewhere, join(root, '.claude'));
+    process.chdir(root);
+    return [['skills']];
+  });
+  try {
+    assert.equal(result.code, 1);
+    assert.match(result.err, /\.claude is a symbolic link/);
+    assert.deepEqual(readdirSync(join(result.root, 'elsewhere')), [], 'nothing crossed the link');
+  } finally {
+    process.chdir(previousCwd);
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('a refusal writes nothing at all — no partial pack, however late the planted link sorts', async () => {
+  const { code, root } = await run((root) => {
+    const out = join(root, 'skills');
+    const elsewhere = join(root, 'elsewhere');
+    mkdirSync(out, { recursive: true });
+    mkdirSync(elsewhere, { recursive: true });
+    // construct-security sorts near the end of the pack; a per-file check
+    // would have written everything before it.
+    symlinkSync(elsewhere, join(out, 'construct-security'));
+    return [['skills', `--out=${out}`]];
+  });
+
+  assert.equal(code, 1);
+  const entries = readdirSync(join(root, 'skills'));
+  assert.deepEqual(entries, ['construct-security'], 'the planted link is all that exists');
+});
+
+test('--uninstall through a symlinked out is refused, and the real pack survives', async () => {
+  const { code, err, root } = await run((root) => {
+    const real = join(root, 'real-pack');
+    symlinkSync(real, join(root, 'linked-pack'));
+    return [
+      ['skills', `--out=${real}`],
+      ['skills', '--uninstall', `--out=${join(root, 'linked-pack')}`],
+    ];
+  });
+
+  assert.equal(code, 1);
+  assert.match(err, /linked-pack is a symbolic link/);
+  assert.ok(folders(join(root, 'real-pack')).length > 0, 'nothing was removed through the link');
+});
