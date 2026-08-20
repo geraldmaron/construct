@@ -1950,3 +1950,127 @@ between them.
 
 **Recorded by:** re-derivation from the committed arms, 2026-08-13. Sections 3
 and 17 are superseded on this point; their figures are unchanged.
+
+## 22. Product, feature, or personal tool — construct-7t0 decided (2026-08-20)
+
+§16 raised the question and construct-7t0 held it open as the decision that
+outranks the roadmap: with per-role depth retired (§15), is
+coverage-obligation-provenance a product worth continuing to build, a feature
+that belongs inside somebody else's host, or a personal tool that should stop
+pretending otherwise? One structural fact decides more than preference does:
+the no-external-subjects rule (Phase 5) means the organizational claim cannot
+be validated against any organization but this one — not "has not been,"
+*cannot be*, by the program's own design. A product claim the program has
+forbidden itself the evidence for is not a product claim; it is drift wearing
+one's clothes.
+
+**What the stakeholder actually asked for.** Gerald's 2026-08-20 statement of
+intent, decoded in-session and confirmed in chat: the enduring vision is
+skills — robust method that makes business roles (product, program, technical
+program, engineering, legal-adjacent) better at their work — usable anywhere
+he or someone like him operates, in any agent host, with guardrails that are
+configurable, honest, and able to stand down entirely. His words: construct is
+"a persona that is the face of different skills and ways to think about
+problems." Two further requirements from the same statement: the system should
+learn from its own strategy history and from its users' use of it, and it
+should protect the user from the user's own failure modes — including the
+failure mode of always intervening. The kernel was never the point; the
+method was.
+
+**What the project's own history says.** The record of this repository is the
+first training set for that protection. Its lessons, each with the receipts in
+the sections above and the tracker: a claim built before its falsification
+test was named cost the project its headline (§§14–15) — so claims now ship
+with the refuting observation named first. An unowned gate rotted for
+seventeen days (the attorney review: no owner, no tracker item, no forcing
+event — risk 3, now amended). Docs drifted against reality even with a
+drift-catching commitment standing (README's phase claim; commitment 3's
+adjective). And the project's best moments were public retractions — the depth
+retraction is quoted back in every summary this session produced, because
+publishing it was what made the remaining claim trustworthy.
+
+**What the external record says** (all read 2026-08-20; repository figures are
+the platforms' own counters, not measurements of this program):
+
+- The Agent Skills format — six frontmatter fields (name, description,
+  license, compatibility, metadata, allowed-tools), a SKILL.md body,
+  progressive disclosure — is adopted by 46 client products per the spec
+  repository's own client list, including every host this project pins:
+  Claude Code, OpenCode, Codex CLI, Cursor. Authoring against the six-field
+  subset is portability at zero cost; vendor extensions do not travel and are
+  refused by other implementations at upload.
+- Methodology packaged as skills is a working category at scale:
+  obra/superpowers (~275k GitHub stars) ships development methodology as
+  mandatory workflows under "evidence over claims"; K-Dense's scientific
+  skills (~34k stars) encode validation method with safety boundaries. The
+  winning shape in both is **method plus enforced verification gates**, not
+  method alone — which is what this project's challenge catalog and
+  no-fabrication discipline already are.
+- The niche this project's method fits — investigative and analytic
+  tradecraft: source independence, disconfirmation passes, structured analytic
+  techniques — was not found portably packaged by anyone with traction in an
+  August 2026 sweep. The nearest artifact found is unpackaged and unadopted.
+- There is no portable guardrail standard. The spec's one guardrail-shaped
+  field, `allowed-tools`, grants tool access and cannot restrict it, and the
+  flagship implementation does not gate it on workspace trust. Deterministic
+  enforcement exists per-host (hook systems) with mutually incompatible
+  encodings. A portable skill must therefore carry its gates in its own body
+  and state its enforcement tier honestly — advisory everywhere, deterministic
+  only where a host's hook layer is separately configured.
+- Skill supply chains are a documented attack surface (vendor and press
+  reporting on malicious-skill campaigns and registry poisoning through
+  early 2026). A registry is a curation liability a solo program should not
+  assume; git-as-registry plus copy-paste is the floor that carries no such
+  obligation.
+
+**Decision.**
+
+1. **Construct is a personal tool first.** Its claims are licensed by recorded
+   use on its author's real work — the Phase 5 discipline, unchanged and now
+   applied to everything the program ships.
+2. **One product wedge: portable business/analytic skills.** The method the
+   kernel already carries — the challenge catalog, the citation discipline,
+   the lens obligation sets and their standards grounding — ships as severable
+   skills under `skills/`, one self-contained SKILL.md per skill, six-field
+   frontmatter only. Severability is the defining property and is held by a
+   test: the naked-file test — the single file, pasted into a fresh host with
+   no construct checkout present, produces a deliverable carrying its
+   verification record.
+3. **The kernel is demoted from prerequisite to optional backbone.** Present,
+   it adds coverage, obligation, provenance, and the lessons loop; absent, the
+   skills work identically. Nothing about the kernel's own honesty changes.
+4. **Guardrails are tiered and honest, and stand-down is a designed outcome.**
+   Gates live in the skill body as mandatory workflow steps with a required
+   closing verification record; each skill states plainly that nothing in its
+   file is machine-enforced by the file. A skill that engages on a task that
+   does not need it is a failure mode, named in the skill's own scope section.
+5. **The first skill is investigative research**, because it is the flagship
+   of the stated vision, the strongest unfilled niche found, and the method
+   the kernel holds most of already. It carries a pre-registered falsification
+   test (tracked with the pilot) naming both refutations — no gate ever
+   changes an outcome in ten real uses, or ten uses are not reached in four
+   weeks — before first use.
+
+**What this costs, stated plainly.** The organizational product — outcome in,
+staffed decisions out, for teams — stops being the program's claim. It was
+already unvalidatable under the program's own rules; this decision makes the
+retreat explicit instead of ambient. What is kept is smaller and portable:
+method that survives contact with any host, and a kernel that proves its worth
+by use rather than by roadmap. If the wedge succeeds, the kernel's provenance
+layer is its natural upgrade path; if the wedge fails its falsification test,
+the program learns that in weeks, on its author's real work, instead of never.
+
+**What would reverse it.** The pilot's falsification test failing on the
+method arm (gates never change an outcome) would kill the wedge and return the
+program to kernel-as-personal-tool with no product claim at all. A real
+organization adopting the kernel's loop on its own initiative would reopen the
+product question with the evidence the current rule forbids the program from
+manufacturing. Either way the reversal is recorded here, dated, next to this
+section.
+
+**Sources.** Agent Skills specification and client list (agentskills
+repository, read 2026-08-20). obra/superpowers; K-Dense scientific agent
+skills; vercel-labs skills CLI (GitHub, read 2026-08-20). Vendor and security
+reporting on skill supply-chain attacks (2025–2026, read 2026-08-20).
+Gerald's statement of intent and endorsement, in-session chat, 2026-08-20.
+Full research trail: the vision-direction session of 2026-08-20.
