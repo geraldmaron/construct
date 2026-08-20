@@ -16,3 +16,6 @@ coverage/
 # belong in git — sheets/ is regenerable, returned/ may carry a labeler's name.
 scripts/labeling-kit/sheets/
 scripts/labeling-kit/returned/*.json
+
+# Agent worktrees: ephemeral per-agent checkouts, auto-cleaned, never committed.
+.claude/worktrees/

@@ -96,9 +96,15 @@ import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { ScreenResult } from '../kernel/context/observations.ts';
-import { operationalLessonsFor, decideAdmission, riskTierFor } from '../kernel/lessons/admission.ts';
-import { distillDecisionLesson } from '../kernel/lessons/fromDecisions.ts';
-import { recordLesson } from '../kernel/store/lessons.ts';
+import {
+  operationalLessonsFor,
+  decideAdmission,
+  admissionOf,
+  riskTierFor,
+  runDerived,
+} from '../kernel/lessons/admission.ts';
+import { distillDecisionLesson, DECISION_CITATION_PREFIX } from '../kernel/lessons/fromDecisions.ts';
+import { recordLesson, getLesson, lessonsFor, type Lesson } from '../kernel/store/lessons.ts';
 import {
   createHostApplier,
   createHostChallenger,
@@ -2565,6 +2571,116 @@ export function inbox(): number {
   });
 }
 
+const LESSONS_USAGE =
+  'usage: construct lessons [--workspace=<name>]\n' +
+  '       construct lessons --admit=<lesson-id> --by=<approver> [--detail="<why>"] [--workspace=<name>]\n';
+
+/**
+ * The domain a human review tiers a lesson by, re-derived rather than asked
+ * for. A run-derived lesson cites the decision it was distilled from, so the
+ * same worst-tier pick the decide command made is recoverable from the store;
+ * any other lesson's domain is not recorded, and "unrated" derives high-risk,
+ * which is the honest default — under a human-approval basis the tier changes
+ * nothing, and no caller gets to declare its own lesson low-risk.
+ */
+function admissionDomainFor(store: Store, lesson: Lesson): string {
+  if (!runDerived(lesson)) return 'unrated';
+  const decision = getDecision(store, lesson.citation.slice(DECISION_CITATION_PREFIX.length));
+  const domains = decision
+    ? [...new Set(decision.positions.filter((p) => p.role !== 'construct').map((p) => p.role))]
+    : [];
+  return domains.find((d) => riskTierFor(d) === 'high') ?? domains[0] ?? 'unrated';
+}
+
+/**
+ * The held-lessons queue, made visible, and the one write a human makes on it.
+ *
+ * The admission gate holds every run-derived or externally-sourced lesson
+ * unconditionally — that is the gate doing its job — but a held lesson was
+ * invisible once its decide-time line scrolled away: the readers were kernel
+ * functions with no command in front of them, reachable only by opening the
+ * database by hand. Listing shows the standing verdict for every lesson in
+ * the workspace, and a lesson with no verdict at all lists as held, because
+ * absence of a verdict is a hold nobody wrote down. Admitting re-runs the
+ * same gate with a human-approval basis naming its approver — the gate, not
+ * this command, is what turns that into an admission, so the rule that only
+ * an explicit human admits high-risk, external, or run-derived lessons lives
+ * in exactly one place.
+ */
+export function lessons(argv: string[]): number {
+  const { flags, rest } = parseFlags(argv);
+  if (rest.length > 0) {
+    process.stderr.write(LESSONS_USAGE);
+    return 2;
+  }
+  const workspace = workspaceFlag(flags);
+
+  if (flags.admit !== undefined) {
+    const id = flags.admit.trim();
+    // A bare `--by` parses as the flag-present sentinel 'true', and a bare
+    // `--admit` the same way. The point of the flag is a named human, so a
+    // sentinel is a missing name, not an approver called "true" — and an
+    // admission recorded against it would forge the exact audit line the
+    // gate exists to keep.
+    const approver = flags.by === 'true' ? '' : (flags.by?.trim() ?? '');
+    if (!id || id === 'true' || !approver) {
+      process.stderr.write('lessons: admitting needs the lesson and its human.\n' + LESSONS_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const lesson = getLesson(store, id);
+      if (!lesson) {
+        process.stderr.write(`lessons: no lesson ${id}\n`);
+        return 1;
+      }
+      const decision = decideAdmission(store, {
+        lessonId: id,
+        domain: admissionDomainFor(store, lesson),
+        basis: {
+          kind: 'human-approval',
+          approver,
+          detail: flags.detail?.trim() || 'approved from the held-lessons queue',
+        },
+        decidedAt: now(),
+      });
+      process.stdout.write(`${decision.verdict} ${id}: ${decision.reason}\n`);
+      return 0;
+    });
+  }
+
+  return withStore((store) => {
+    const recorded = lessonsFor(store, workspace);
+    if (recorded.length === 0) {
+      process.stdout.write(`lessons: none recorded for workspace "${workspace}".\n`);
+      return 0;
+    }
+    const standing = recorded.map((lesson) => ({ lesson, verdict: admissionOf(store, lesson.id) }));
+    const held = standing.filter((s) => s.verdict?.verdict !== 'admitted');
+    const admitted = standing.filter((s) => s.verdict?.verdict === 'admitted');
+    process.stdout.write(
+      `lessons for workspace "${workspace}": ${held.length} held, ${admitted.length} admitted.\n`,
+    );
+    const print = (entries: typeof standing, title: string): void => {
+      if (entries.length === 0) return;
+      process.stdout.write(`\n  ${title}:\n`);
+      for (const { lesson, verdict } of entries) {
+        process.stdout.write(`    ${lesson.id}  [${lesson.kind}]\n`);
+        process.stdout.write(`      ${lesson.body}\n`);
+        process.stdout.write(
+          `      ${verdict ? `${verdict.verdict}: ${verdict.reason}` : 'held: no verdict recorded — absence of a verdict is a hold nobody wrote down'}\n`,
+        );
+        process.stdout.write(`      cites ${lesson.citation}\n`);
+      }
+    };
+    print(held, 'held');
+    print(admitted, 'admitted');
+    if (held.length > 0) {
+      process.stdout.write('\nAdmit one with: construct lessons --admit=<id> --by=<your name>\n');
+    }
+    return 0;
+  });
+}
+
 const DECIDE_USAGE =
   'usage: construct decide <id> "<your call>"\n' +
   '       construct decide --apply=<proposal-id> --host=<opencode|claude> ' +
@@ -4175,7 +4291,7 @@ export function staff(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4248,6 +4364,8 @@ async function run(argv: string[]): Promise<number> {
       return inbox();
     case 'decide':
       return decide(argv.slice(1));
+    case 'lessons':
+      return lessons(argv.slice(1));
     case 'serve':
       return serve();
     case 'role-serve':
