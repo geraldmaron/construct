@@ -583,7 +583,7 @@ export function createHostComposer(
 /**
  * One host call, retried once on any failure before giving up.
  *
- * Measured on a live composition on a free host (construct-qb0i): a support
+ * Measured on a live composition on a free host: a support
  * call returning no text discarded a whole finished document — the composer's
  * call, the position, the position's own screen, and every other role's
  * completed claims check, none of them wrong, all of them thrown away because

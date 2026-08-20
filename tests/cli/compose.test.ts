@@ -340,7 +340,7 @@ test('a composition whose claims could not be checked is refused, not promoted u
 });
 
 /**
- * Measured on a live composition (construct-qb0i): one role's support call
+ * Measured on a live composition: one role's support call
  * came back with no text and the whole document was discarded, though every
  * other call — the composer, the position, its screen, every other role's
  * check — had already succeeded. A single empty reply is exactly the failure

@@ -13,18 +13,22 @@
  * labeling kit, whose ids are study identifiers and, in one case, a
  * deterministic shuffle seed whose bytes decide which outcomes were drawn:
  * rewording it would silently re-randomize a finished study.
- * `construct-mcp`, `construct-cli-…` and similar functional names do not
- * match: a bead id is exactly three alphanumerics, optionally dotted, with
- * nothing attached.
+ * `construct-mcp` and `construct-role` are excluded by name (functional
+ * identifiers, not lineage); `construct-cli-…` and similar never match: a
+ * bead id is three or four alphanumerics, optionally dotted, with nothing
+ * attached — four because the tracker mints four-character ids now,
+ * and a gate that cannot match what it was built to catch is worse than none.
+ * Shipped skills are covered too: a bead id in a portable file points at a
+ * tracker the file's reader has never seen.
  */
 
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const BEAD = /construct-(?!mcp)[a-z0-9]{3}(?:\.\d+)?(?![a-z0-9_-])/;
+const BEAD = /construct-(?!mcp|role)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
 
 const files = execSync(
-  "git ls-files 'src/**/*.ts' 'tests/**/*.ts' 'scripts/**/*.mjs' 'scripts/**/*.sh'",
+  "git ls-files 'src/**/*.ts' 'tests/**/*.ts' 'scripts/**/*.mjs' 'scripts/**/*.sh' 'skills/**/*.md'",
   { encoding: 'utf8' },
 )
   .split('\n')
