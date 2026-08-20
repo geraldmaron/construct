@@ -4,8 +4,8 @@
  * not in CLI surface.
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { dirname, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
@@ -4556,6 +4556,30 @@ export function staff(argv: string[]): number {
 const SKILLS_USAGE = 'usage: construct skills [--out=<dir>] [--uninstall]\n';
 
 /**
+ * The first symbolic link sitting at `root` or on the path from it down to
+ * `target`, or null when every existing component is a real directory. The
+ * walk stops at the first component that does not exist — nothing past it
+ * can be a link to follow.
+ */
+function symlinkToward(root: string, target: string): string | null {
+  const stops = [root];
+  let current = root;
+  for (const part of relative(root, target).split(sep)) {
+    if (!part || part === '.') continue;
+    current = join(current, part);
+    stops.push(current);
+  }
+  for (const stop of stops) {
+    try {
+      if (lstatSync(stop).isSymbolicLink()) return stop;
+    } catch {
+      break;
+    }
+  }
+  return null;
+}
+
+/**
  * Write the Agent Skills pack, or remove one. The pack is output, not state:
  * every decision about what belongs in it, and which folders removal may
  * touch, is made by the kernel projection; this command only supplies the
@@ -4607,6 +4631,18 @@ export function skills(argv: string[]): number {
   });
   for (const file of files) {
     const target = join(out, ...file.path.split('/'));
+    // A write through a symbolic link lands outside the directory the user
+    // named, and a checked-out repository can plant one under its own tree —
+    // so a link anywhere on the way to the file is refused by name, before
+    // anything is created, rather than followed.
+    const planted = symlinkToward(out, target);
+    if (planted) {
+      process.stderr.write(
+        `skills: ${planted} is a symbolic link — writing through it would land outside ${out}.\n` +
+          '  Remove the link, or point --out at the real directory.\n',
+      );
+      return 1;
+    }
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, file.content);
     process.stdout.write(`  wrote ${file.path}\n`);
