@@ -134,6 +134,7 @@ import { DOMAINS } from '../kernel/implication/domains.ts';
 import {
   declareStanding,
   dueStanding,
+  firingsFor,
   lastFiredAt,
   listStanding,
   recordFiring,
@@ -4264,7 +4265,7 @@ function renderCadence(minutes: number): string {
  * remembered the typing.
  */
 async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<number> {
-  const filed = withStore((store) => {
+  const { filed, unfinished } = withStore((store) => {
     const due = dueStanding(store, now());
     const runs: Array<{ standing: string; run: string }> = [];
     for (const item of due) {
@@ -4286,16 +4287,42 @@ async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<
       recordFiring(store, { standing: item.id, run: runId, firedAt });
       runs.push({ standing: item.id, run: runId });
     }
-    return runs;
+
+    // A firing recorded is not a firing finished. A --due killed mid-flight
+    // leaves pending or leased tasks on a run whose cadence now reads as
+    // spent, so every earlier standing-filed run still carrying unsettled
+    // tasks is picked up here, cadence or no cadence — the recipe's
+    // resumability holds on this surface, not only on a bare `work`. Retired
+    // standings included: their runs were filed and stand on the record.
+    const filedIds = new Set(runs.map((r) => r.run));
+    const unsettled: Array<{ standing: string; run: string }> = [];
+    for (const item of listStanding(store, { includeRetired: true })) {
+      for (const firing of firingsFor(store, item.id)) {
+        if (filedIds.has(firing.run)) continue;
+        if (unsettled.some((u) => u.run === firing.run)) continue;
+        const counts = countTasksByState(store, firing.run);
+        if ((counts.pending ?? 0) > 0 || (counts.leased ?? 0) > 0) {
+          unsettled.push({ standing: item.id, run: firing.run });
+        }
+      }
+    }
+    return { filed: runs, unfinished: unsettled };
   });
 
-  if (filed.length === 0) {
+  if (filed.length === 0 && unfinished.length === 0) {
     process.stdout.write('nothing is due.\n');
     return 0;
   }
 
   const passthrough = argv.filter((arg) => arg !== '--due');
   let worst = 0;
+  for (const firing of unfinished) {
+    process.stdout.write(
+      `\nresuming ${firing.run} (standing ${firing.standing} — unfinished from an earlier firing):\n`,
+    );
+    const code = await work([`--run=${firing.run}`, ...passthrough], hostOverride);
+    if (code > worst) worst = code;
+  }
   for (const firing of filed) {
     process.stdout.write(`\nworking ${firing.run} (standing ${firing.standing}):\n`);
     const code = await work([`--run=${firing.run}`, ...passthrough], hostOverride);

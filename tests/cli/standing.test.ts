@@ -141,6 +141,35 @@ test('--due files and works exactly what elapsed, each firing an ordinary run on
   assert.match(out, /nothing is due\./);
 });
 
+test('a firing killed mid-flight is resumed by the next --due, cadence spent or not', async () => {
+  const { code, out } = await runAll([
+    () => standing(['add', '--every=1h', '--domains=privacy', 'sweep the week for drift']),
+    () => standing(['--due'], standInHost()),
+    async () => {
+      // A kill mid-work dies inside the host invoke: the task is unsettled
+      // and nothing post-invoke (decisions, results) was written yet. The
+      // firing is already recorded, so the cadence reads as spent.
+      inStore((store) => {
+        store.db.prepare("UPDATE tasks SET state = 'pending', result = NULL, settled_at = NULL").run();
+        store.db.prepare('DELETE FROM decisions').run();
+      });
+      return 0;
+    },
+    () => standing(['--due'], standInHost()),
+    async () => {
+      inStore((store) => {
+        const declared = listStanding(store);
+        assert.equal(firingsFor(store, declared[0].id).length, 1, 'resuming is not a new firing');
+        const tasks = listTasks(store);
+        assert.ok(tasks.every((t) => t.state === 'done'), 'the killed run was worked to done');
+      });
+      return 0;
+    },
+  ]);
+  assert.equal(code, 0);
+  assert.match(out, /resuming run-.* unfinished from an earlier firing/);
+});
+
 test('a retired standing outcome never comes due again', async () => {
   const { code, out } = await runAll([
     () => standing(['add', '--every=1m', '--domains=privacy', 'sweep the week']),
