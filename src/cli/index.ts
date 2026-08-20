@@ -8,7 +8,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
-import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
+import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
@@ -195,7 +195,7 @@ function nodeFloorOk(version: string): boolean {
   return minor >= MIN_NODE.minor;
 }
 
-export function doctor(): number {
+export function doctor(cwd: string = process.cwd()): number {
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
   checks.push({
@@ -227,6 +227,14 @@ export function doctor(): number {
   // absence as mid-run errors instead of one line here.
   for (const line of presenceLines(surveyHosts())) {
     checks.push({ name: 'host', ok: true, detail: line });
+  }
+
+  // Predecessor markers in the project tree: reported like host presence,
+  // not gated — finding one says nothing about whether this install is
+  // healthy, only that `construct cleanup` has something to look at. Doctor
+  // only names it; it never removes anything itself.
+  for (const finding of projectTreeLitter(cwd)) {
+    checks.push({ name: 'litter', ok: true, detail: finding.detail });
   }
 
   let failed = 0;
