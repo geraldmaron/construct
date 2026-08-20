@@ -29,7 +29,9 @@ work log, same inbox as an outcome typed that morning — then worked through
 the normal `work` path with whatever host flags the firing line carries, so
 every execution keeps full run lineage and `construct standing` can show when
 each intention last fired. A `--due` that finds nothing elapsed files nothing
-and says so. Declaring with `--domains=<name,…>` names the staff outright, so
+and says so — but it still resumes any earlier standing-filed run left with
+unfinished tasks, so a firing killed mid-flight is picked up by the next
+`--due` rather than waiting out another cadence. Declaring with `--domains=<name,…>` names the staff outright, so
 an unattended firing spends nothing on inference; the names are checked
 against the catalog at declaration, where a typo costs one retype instead of
 every firing until somebody reads the log.
