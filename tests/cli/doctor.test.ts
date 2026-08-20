@@ -43,6 +43,23 @@ function mkFixtureDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'construct-doctor-proj-'));
 }
 
+/**
+ * Doctor's store check reads the real environment, and these tests assert on
+ * doctor's exit code — so they must hand it a writable data dir, or a machine
+ * whose HOME is read-only (the sterile CI job) fails the store check and the
+ * exit-code assertion inherits a failure that has nothing to do with litter.
+ */
+function withWritableDataDir<T>(root: string, fn: () => T): T {
+  const previous = process.env.XDG_DATA_HOME;
+  process.env.XDG_DATA_HOME = path.join(root, 'share');
+  try {
+    return fn();
+  } finally {
+    if (previous === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous;
+  }
+}
+
 test('doctor reports each predecessor marker with the cleanup pointer', () => {
   const cwd = mkFixtureDir();
   try {
@@ -60,7 +77,7 @@ test('doctor reports each predecessor marker with the cleanup pointer', () => {
     execFileSync('git', ['init', '-q'], { cwd });
     execFileSync('git', ['config', 'core.hooksPath', '.beads/hooks'], { cwd });
 
-    const { result, out } = captureStdio(() => doctor(cwd));
+    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
 
     const litterLines = out.split('\n').filter((line) => line.startsWith('ok   litter'));
     // .construct/launcher/ existing implies .construct/ itself exists too, so
@@ -80,7 +97,7 @@ test('doctor prints no litter lines for a clean project tree, and still exits 0'
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"clean"}\n');
 
-    const { result, out } = captureStdio(() => doctor(cwd));
+    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' litter '), `expected no litter lines, got:\n${out}`);
     assert.equal(result, 0);
