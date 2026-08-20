@@ -18,6 +18,8 @@ import { openStore } from '../../src/kernel/store/open.ts';
 import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
 import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
+import { catalogHighWater } from '../../src/kernel/store/catalog.ts';
+import { DOMAINS } from '../../src/kernel/implication/domains.ts';
 import { planFor } from '../../src/kernel/store/plans.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
 
@@ -1143,4 +1145,27 @@ test('a timeout failure names the flag that moves the wall, not just the wall', 
   ]);
   assert.equal(code, 1);
   assert.match(out, /invocation exceeded 600000ms — raise it with --timeout=<minutes>/);
+});
+
+test('every command leaves this build\'s catalog mark on the store it opens', async () => {
+  // The mark is what lets an older installed Construct say its catalog is
+  // behind: the newer build must leave word as a side effect of ordinary use,
+  // not as a ceremony nobody runs.
+  await runAll([
+    ['log'],
+    async () => {
+      const store = openStore(
+        join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'),
+      );
+      try {
+        const mark = catalogHighWater(store);
+        assert.ok(mark, 'opening the store recorded a catalog sighting');
+        assert.equal(mark.domains, DOMAINS.length);
+        assert.ok(mark.version.length > 0);
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+  ]);
 });

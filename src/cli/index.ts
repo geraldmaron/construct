@@ -4,11 +4,11 @@
  * not in CLI surface.
  */
 
-import { readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
-import { buildCleanupCatalog } from '../kernel/cleanup/catalog.ts';
+import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
@@ -129,6 +129,17 @@ import type { StartedRun } from '../kernel/run/outcome.ts';
 import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
 import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
+import { recordCatalogSighting } from '../kernel/store/catalog.ts';
+import { DOMAINS } from '../kernel/implication/domains.ts';
+import {
+  declareStanding,
+  dueStanding,
+  firingsFor,
+  lastFiredAt,
+  listStanding,
+  recordFiring,
+  retireStanding,
+} from '../kernel/store/standing.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
@@ -149,6 +160,14 @@ import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-g
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
+import { LENSES } from '../kernel/plan/lenses.ts';
+import { allPlaybooks } from '../kernel/plan/playbooks.ts';
+import { LENS_STANDARDS } from '../kernel/plan/standards.ts';
+import {
+  planSkillsUninstall,
+  projectSkillsPack,
+  SKILL_FILENAME,
+} from '../kernel/skills/projection.ts';
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
@@ -195,7 +214,7 @@ function nodeFloorOk(version: string): boolean {
   return minor >= MIN_NODE.minor;
 }
 
-export function doctor(): number {
+export function doctor(cwd: string = process.cwd()): number {
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
   checks.push({
@@ -227,6 +246,14 @@ export function doctor(): number {
   // absence as mid-run errors instead of one line here.
   for (const line of presenceLines(surveyHosts())) {
     checks.push({ name: 'host', ok: true, detail: line });
+  }
+
+  // Predecessor markers in the project tree: reported like host presence,
+  // not gated — finding one says nothing about whether this install is
+  // healthy, only that `construct cleanup` has something to look at. Doctor
+  // only names it; it never removes anything itself.
+  for (const finding of projectTreeLitter(cwd)) {
+    checks.push({ name: 'litter', ok: true, detail: finding.detail });
   }
 
   let failed = 0;
@@ -344,10 +371,26 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
 function withStore<T>(fn: (store: Store) => T): T {
   const store = openStore(storePath(resolvePaths()));
   try {
+    leaveCatalogMark(store);
     return fn(store);
   } finally {
     store.close();
   }
+}
+
+/**
+ * Every open leaves word of the catalog this build carries. The store is the
+ * one place every Construct on the machine visits — the released binary a host
+ * launches and the newer tree the user runs — so it is where an older build's
+ * catalog reads learn they are behind. Advance-only in the store; recording
+ * the same or an older catalog writes nothing.
+ */
+function leaveCatalogMark(store: Store): void {
+  recordCatalogSighting(store, {
+    version: packageVersion(),
+    domains: DOMAINS.length,
+    at: now(),
+  });
 }
 
 /**
@@ -359,6 +402,7 @@ function withStore<T>(fn: (store: Store) => T): T {
 async function withStoreAsync<T>(fn: (store: Store) => Promise<T>): Promise<T> {
   const store = openStore(storePath(resolvePaths()));
   try {
+    leaveCatalogMark(store);
     return await fn(store);
   } finally {
     store.close();
@@ -2752,10 +2796,18 @@ async function applyApproved(
       now(),
     );
     if (result.outcome === 'applied') {
+      if (result.projected) {
+        process.stdout.write(`mirrored as ${result.projected} before it crossed\n`);
+      }
       process.stdout.write(`applied ${proposal}: ${result.detail}\n`);
       return 0;
     }
     if (result.outcome === 'unappliable') {
+      if (result.projected) {
+        process.stdout.write(
+          `mirrored as ${result.projected} before the attempt; the mirror records what was proposed, not a landing\n`,
+        );
+      }
       process.stderr.write(`decide: ${proposal} was not applied — ${result.reason}\n`);
       return 1;
     }
@@ -4180,6 +4232,217 @@ export function mode(argv: string[]): number {
   });
 }
 
+const STANDING_USAGE =
+  'usage: construct standing add --every=<N>m|<N>h|<N>d [--workspace=<name>] [--domains=<name,…>] "<what should keep happening>"\n' +
+  '       construct standing [list] [--all]\n' +
+  '       construct standing retire <id>\n' +
+  '       construct standing --due [--host=… --model=… --binary=… --dir=… --ceiling=… ' +
+  '--concurrency=… --lease-minutes=… --timeout=…]\n' +
+  '         (schedule `construct standing --due` with cron or launchd; nothing here waits or wakes)\n';
+
+/** `--every` in minutes. Days and hours are sugar; the store keeps minutes. */
+function parseCadence(every: string): number {
+  const match = /^(\d+)([mhd])$/.exec(every.trim());
+  if (!match || Number(match[1]) < 1) {
+    throw new Error(`--every takes <N>m, <N>h, or <N>d (minutes, hours, days), got "${every}"`);
+  }
+  const n = Number(match[1]);
+  return match[2] === 'm' ? n : match[2] === 'h' ? n * 60 : n * 1440;
+}
+
+/** The largest exact unit, so a listing reads the way it was declared. */
+function renderCadence(minutes: number): string {
+  if (minutes % 1440 === 0) return `${String(minutes / 1440)}d`;
+  if (minutes % 60 === 0) return `${String(minutes / 60)}h`;
+  return `${String(minutes)}m`;
+}
+
+/**
+ * Fire what has come due: file a fresh, ordinary run per elapsed standing
+ * outcome, then work exactly those runs through the normal work path. The
+ * spend ceiling, leases, and the decision inbox behave exactly as they do for
+ * a typed outcome, because these ARE typed outcomes — the store merely
+ * remembered the typing.
+ */
+async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const { filed, unfinished } = withStore((store) => {
+    const due = dueStanding(store, now());
+    const runs: Array<{ standing: string; run: string }> = [];
+    for (const item of due) {
+      const firedAt = now();
+      const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
+      // Two firings inside one clock tick must not share a run id.
+      let runId = base;
+      for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
+      process.stdout.write(`standing ${item.id} came due (every ${renderCadence(item.everyMinutes)}):\n`);
+      const started =
+        item.domains !== null
+          ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
+          : startRun(store, { runId, outcome: item.outcome, at: firedAt });
+      reportRun(started);
+      planRun(store, started, null, item.workspace, firedAt);
+      // Recorded after the run exists: a crash between the two re-files on the
+      // next firing, which idempotent runs absorb; the other order could mark
+      // fired an intention that never ran.
+      recordFiring(store, { standing: item.id, run: runId, firedAt });
+      runs.push({ standing: item.id, run: runId });
+    }
+
+    // A firing recorded is not a firing finished. A --due killed mid-flight
+    // leaves pending or leased tasks on a run whose cadence now reads as
+    // spent, so every earlier standing-filed run still carrying unsettled
+    // tasks is picked up here, cadence or no cadence — the recipe's
+    // resumability holds on this surface, not only on a bare `work`. Retired
+    // standings included: their runs were filed and stand on the record.
+    const filedIds = new Set(runs.map((r) => r.run));
+    const unsettled: Array<{ standing: string; run: string }> = [];
+    for (const item of listStanding(store, { includeRetired: true })) {
+      for (const firing of firingsFor(store, item.id)) {
+        if (filedIds.has(firing.run)) continue;
+        if (unsettled.some((u) => u.run === firing.run)) continue;
+        const counts = countTasksByState(store, firing.run);
+        if ((counts.pending ?? 0) > 0 || (counts.leased ?? 0) > 0) {
+          unsettled.push({ standing: item.id, run: firing.run });
+        }
+      }
+    }
+    return { filed: runs, unfinished: unsettled };
+  });
+
+  if (filed.length === 0 && unfinished.length === 0) {
+    process.stdout.write('nothing is due.\n');
+    return 0;
+  }
+
+  const passthrough = argv.filter((arg) => arg !== '--due');
+  let worst = 0;
+  for (const firing of unfinished) {
+    process.stdout.write(
+      `\nresuming ${firing.run} (standing ${firing.standing} — unfinished from an earlier firing):\n`,
+    );
+    const code = await work([`--run=${firing.run}`, ...passthrough], hostOverride);
+    if (code > worst) worst = code;
+  }
+  for (const firing of filed) {
+    process.stdout.write(`\nworking ${firing.run} (standing ${firing.standing}):\n`);
+    const code = await work([`--run=${firing.run}`, ...passthrough], hostOverride);
+    if (code > worst) worst = code;
+  }
+  return worst;
+}
+
+/**
+ * Standing outcomes: a recurring intention the spine re-files on its own
+ * cadence. Declaring stores the intention and runs nothing; `--due` files and
+ * works what has elapsed. There is deliberately no daemon and no waiting
+ * here — cron or launchd owns the clock, exactly as docs/scheduled-operation.md
+ * always had it, and the store only knows what is due.
+ */
+export async function standing(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const { flags, words } = splitFlags(argv);
+
+  if (flags.due !== undefined) return standingDue(argv, hostOverride);
+
+  const sub = words[0];
+
+  if (sub === 'add') {
+    const text = words.slice(1).join(' ').trim();
+    if (!text || flags.every === undefined) {
+      process.stderr.write(STANDING_USAGE);
+      return 2;
+    }
+    let everyMinutes: number;
+    try {
+      everyMinutes = parseCadence(flags.every);
+    } catch (error) {
+      process.stderr.write(`standing: ${(error as Error).message}\n`);
+      return 2;
+    }
+    const domains =
+      flags.domains === undefined
+        ? null
+        : flags.domains
+            .split(',')
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0);
+    // A staff typo caught here costs one retype; caught at 3 a.m. by cron it
+    // costs every firing until somebody reads the log.
+    const unknown = (domains ?? []).filter((name) => !DOMAINS.some((d) => d.domain === name));
+    if (unknown.length > 0) {
+      process.stderr.write(
+        `standing: no catalog domain named ${unknown.map((u) => JSON.stringify(u)).join(', ')}\n`,
+      );
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      const id = `standing-${at.replace(/[-:.TZ]/g, '')}`;
+      try {
+        declareStanding(store, {
+          id,
+          workspace: workspaceFlag(flags),
+          outcome: text,
+          domains,
+          everyMinutes,
+          declaredAt: at,
+        });
+      } catch (error) {
+        process.stderr.write(`standing: ${(error as Error).message}\n`);
+        return 1;
+      }
+      process.stdout.write(
+        `declared ${id}: every ${renderCadence(everyMinutes)} (workspace ${workspaceFlag(flags)})\n` +
+          `  outcome: ${text}\n` +
+          '  nothing runs until `construct standing --due` fires — schedule that with cron or launchd.\n',
+      );
+      return 0;
+    });
+  }
+
+  if (sub === 'retire') {
+    const id = (words[1] ?? '').trim();
+    if (!id) {
+      process.stderr.write(STANDING_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      try {
+        retireStanding(store, id, now());
+      } catch (error) {
+        process.stderr.write(`standing: ${(error as Error).message}\n`);
+        return 1;
+      }
+      process.stdout.write(`retired ${id}; its firings stay on the record\n`);
+      return 0;
+    });
+  }
+
+  if (sub === undefined || sub === 'list') {
+    return withStore((store) => {
+      const rows = listStanding(store, { includeRetired: flags.all !== undefined });
+      if (rows.length === 0) {
+        process.stdout.write('no standing outcomes declared.\n');
+        return 0;
+      }
+      for (const row of rows) {
+        const last = lastFiredAt(store, row.id);
+        process.stdout.write(
+          `${row.id}  every ${renderCadence(row.everyMinutes)}  (workspace ${row.workspace})` +
+            (row.domains ? `  staff: ${row.domains.join(', ')}` : '') +
+            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
+            '\n' +
+            `  outcome: ${row.outcome}\n` +
+            `  ${last ? `last fired ${last}` : 'never fired'}\n`,
+        );
+      }
+      return 0;
+    });
+  }
+
+  process.stderr.write(STANDING_USAGE);
+  return 2;
+}
+
 const STAFF_USAGE =
   'usage: construct staff list [--run=<id>]\n' +
   '       construct staff propose --run=<id> --file=<profile.json>\n';
@@ -4290,8 +4553,138 @@ export function staff(argv: string[]): number {
   return 2;
 }
 
+const SKILLS_USAGE = 'usage: construct skills [--out=<dir>] [--uninstall]\n';
+
+/**
+ * The first symbolic link sitting at `root` or on the path from it down to
+ * `target`, or null when every existing component is a real directory. The
+ * walk stops at the first component that does not exist — nothing past it
+ * can be a link to follow.
+ */
+function symlinkToward(root: string, target: string): string | null {
+  const stops = [root];
+  let current = root;
+  for (const part of relative(root, target).split(sep)) {
+    if (!part || part === '.') continue;
+    current = join(current, part);
+    stops.push(current);
+  }
+  for (const stop of stops) {
+    try {
+      if (lstatSync(stop).isSymbolicLink()) return stop;
+    } catch {
+      break;
+    }
+  }
+  return null;
+}
+
+/**
+ * Where the symlink walk toward `out` starts. The checked-out tree is what an
+ * attacker can plant links in, so an `out` under the working directory is
+ * walked from the working directory down — a planted `.claude` parent is a
+ * component on that walk, where lstat of `out` alone would silently follow
+ * it. An `out` elsewhere is walked from itself: its parents are the user's
+ * own machine, not the repository's to plant. Containment is by path
+ * segment, never by string prefix.
+ */
+function symlinkGuardRoot(out: string): string {
+  const cwd = process.cwd();
+  const rel = relative(cwd, out);
+  return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel) ? cwd : out;
+}
+
+/**
+ * Write the Agent Skills pack, or remove one. The pack is output, not state:
+ * every decision about what belongs in it, and which folders removal may
+ * touch, is made by the kernel projection; this command only supplies the
+ * version, does the reading and writing, and says what happened.
+ */
+export function skills(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  const known = new Set(['out', 'uninstall']);
+  const unknown = Object.keys(flags).filter((f) => !known.has(f));
+  if (unknown.length > 0 || flags.out === 'true') {
+    process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+  const out = resolve(flags.out ?? join(process.cwd(), '.claude', 'skills'));
+
+  if (flags.uninstall === 'true') {
+    // Removal reaches through `out` exactly as writing does, so it refuses a
+    // symbolic link the same way — an uninstall redirected by a planted link
+    // would delete construct-* folders somewhere the user never named.
+    const planted = symlinkToward(symlinkGuardRoot(out), out);
+    if (planted) {
+      process.stderr.write(
+        `skills: ${planted} is a symbolic link — removing through it would reach outside ${out}.\n` +
+          '  Remove the link, or point --out at the real directory.\n',
+      );
+      return 1;
+    }
+    if (!existsSync(out)) {
+      process.stdout.write(`skills: nothing to remove — ${out} does not exist\n`);
+      return 0;
+    }
+    const folders = readdirSync(out, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const file = join(out, entry.name, SKILL_FILENAME);
+        return {
+          directory: entry.name,
+          skill: existsSync(file) ? readFileSync(file, 'utf8') : null,
+        };
+      });
+    const verdicts = planSkillsUninstall(folders);
+    for (const verdict of verdicts) {
+      if (verdict.removed) rmSync(join(out, verdict.directory), { recursive: true, force: true });
+      process.stdout.write(
+        `  ${verdict.removed ? 'removed' : 'kept   '} ${verdict.directory} — ${verdict.why}\n`,
+      );
+    }
+    const removed = verdicts.filter((v) => v.removed).length;
+    process.stdout.write(
+      `skills: removed ${String(removed)}, kept ${String(verdicts.length - removed)} in ${out}\n`,
+    );
+    return 0;
+  }
+
+  const files = projectSkillsPack({
+    lenses: LENSES,
+    playbooks: allPlaybooks(),
+    standards: LENS_STANDARDS,
+    version: packageVersion(),
+  });
+  // A write through a symbolic link lands outside the directory the user
+  // named, and a checked-out repository can plant one under its own tree —
+  // a pack folder, `out` itself, or a parent like `.claude`. Every target is
+  // checked before anything at all is created, so a refusal never leaves a
+  // partial pack behind.
+  for (const file of files) {
+    const planted = symlinkToward(symlinkGuardRoot(out), join(out, ...file.path.split('/')));
+    if (planted) {
+      process.stderr.write(
+        `skills: ${planted} is a symbolic link — writing through it would land outside ${out}.\n` +
+          '  Remove the link, or point --out at the real directory.\n',
+      );
+      return 1;
+    }
+  }
+  for (const file of files) {
+    const target = join(out, ...file.path.split('/'));
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, file.content);
+    process.stdout.write(`  wrote ${file.path}\n`);
+  }
+  process.stdout.write(
+    `skills: ${String(files.length)} skill(s) written to ${out}, stamped ${packageVersion()}\n` +
+      '  Remove them with: construct skills --uninstall\n',
+  );
+  return 0;
+}
+
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|standing|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4356,10 +4749,14 @@ async function run(argv: string[]): Promise<number> {
       return plan(argv.slice(1));
     case 'source':
       return source(argv.slice(1));
+    case 'standing':
+      return standing(argv.slice(1));
     case 'mode':
       return mode(argv.slice(1));
     case 'staff':
       return staff(argv.slice(1));
+    case 'skills':
+      return skills(argv.slice(1));
     case 'inbox':
       return inbox();
     case 'decide':

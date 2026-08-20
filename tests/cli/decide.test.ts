@@ -20,6 +20,16 @@ import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { raiseDecision } from '../../src/kernel/store/decisions.ts';
 import { lessonsFor } from '../../src/kernel/store/lessons.ts';
 import { admissionOf, operationalLessonsFor } from '../../src/kernel/lessons/admission.ts';
+import {
+  addSource,
+  decideProposal,
+  proposeWrite,
+  setEngagementMode,
+} from '../../src/kernel/store/sources.ts';
+import { getProjection } from '../../src/kernel/store/projections.ts';
+import type { HostAdapter } from '../../src/kernel/hosts/interface.ts';
+
+const AT = '2026-08-13T00:00:00.000Z';
 
 interface Capture {
   readonly code: number;
@@ -106,4 +116,52 @@ test('an open decision left unresolved leaves no lesson behind', async () => {
     return 0;
   });
   assert.equal(code, 0);
+});
+
+test('an apply in seat mode prints the mirror it recorded before the change crossed', async () => {
+  const outwardHost: HostAdapter = {
+    name: 'stand-in',
+    kind: 'coding',
+    capabilities: ['outward-write'],
+    init: async () => {},
+    invoke: async () => ({
+      id: 'i-1',
+      status: 'ok',
+      output: { text: '{"applied":true,"detail":"moved PROJ-14 to Q4"}' },
+      error: null,
+    }),
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+  };
+
+  let mirrored = false;
+  const { code, out } = await run(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    addSource(store, { id: 'src-1', workspace: 'acme', kind: 'jira', locator: 'PROJ', addedAt: AT });
+    setEngagementMode(store, 'acme', 'seat', AT);
+    proposeWrite(store, {
+      id: 'p-1',
+      workspace: 'acme',
+      run: 'run-1',
+      source: 'src-1',
+      change: 'move PROJ-14 target date to Q4',
+      justification: 'note:n-1#L3',
+      risk: 'low',
+      proposedAt: AT,
+    });
+    decideProposal(store, 'p-1', 'approved', 'yes, move it', AT);
+    store.close();
+
+    const result = await decide(['--apply=p-1'], outwardHost);
+
+    const check = openStore(storePath(resolvePaths()));
+    mirrored = getProjection(check, 'jira:p-1') !== null;
+    check.close();
+    return result;
+  });
+
+  assert.equal(code, 0);
+  assert.ok(mirrored, 'the crossing is on the mirror');
+  assert.match(out, /mirrored as jira:p-1 before it crossed/);
+  assert.match(out, /applied p-1: moved PROJ-14 to Q4/);
 });

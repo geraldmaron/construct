@@ -26,6 +26,13 @@ Program Management, Strategy, Execution, Conflict resolution, Research,
 Requirements gathering — maps onto Construct's architecture as concerns
 owned, because Construct routes by concern (the namer implicates domains
 from the outcome; nobody types a role name, per STRATEGY's end-state UX).
+
+*(Cross-reference, 2026-08-20: "personas" above and at the rubrics line below is
+the stakeholder's own word for org seats — the same register the 2026-08-15
+staff-member directive (construct-1zx1) uses — not the retired v2 synonym for
+`role`. GLOSSARY.md's dated footnote records how the directive's usage binds
+to the table's `role`.)*
+
 The target tree:
 
 | Seat in a human org | Concern (domain) | State today | Plan |

@@ -387,6 +387,42 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
   ];
 }
 
+/**
+ * One detected predecessor marker in the project tree, for `doctor` to name —
+ * an id to key on and a ready-to-print line naming what was found and where
+ * to send it.
+ */
+export interface ProjectLitterFinding {
+  readonly id: string;
+  readonly detail: string;
+}
+
+// buildCleanupCatalog's shape asks for a home directory and XDG Paths even
+// though no project-scope item's detect() reads either — only the
+// machine-scope items do, and doctor never looks at those. These placeholders
+// are never dereferenced by anything projectTreeLitter walks; they exist only
+// so the catalog can be built once and filtered, instead of a second,
+// hand-copied list of "what counts as project litter" drifting from the one
+// `construct cleanup` actually acts on.
+const PROJECT_ONLY_PATHS: Paths = { configDir: '', stateDir: '', dataDir: '', cacheDir: '' };
+
+/**
+ * Predecessor markers detectable in a project tree by itself, with no home
+ * directory or spawned process required — the subset `doctor` can report on.
+ * Built from the same catalog `construct cleanup --scope=project` acts on, so
+ * a marker is taught once and the two surfaces cannot disagree about what
+ * counts as a trace. Detection only: nothing here removes anything.
+ */
+export function projectTreeLitter(cwd: string): ProjectLitterFinding[] {
+  const items = buildCleanupCatalog({ cwd, home: '', paths: PROJECT_ONLY_PATHS });
+  return items
+    .filter((item) => item.scope === 'project' && item.detect())
+    .map((item) => ({
+      id: item.id,
+      detail: `${item.label} — run \`construct cleanup --scope=project\` to review`,
+    }));
+}
+
 function rel(base: string, target: string): string {
   const r = path.relative(base, target);
   return r || target;

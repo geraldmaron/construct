@@ -31,6 +31,8 @@ import {
   createProjectionHandler,
 } from '../../../src/hosts/mcp/projection.ts';
 import { addRecord, updateRecordField } from '../../../src/kernel/store/records.ts';
+import { recordCatalogSighting } from '../../../src/kernel/store/catalog.ts';
+import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
 import type { JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
 
@@ -376,11 +378,58 @@ test('the catalog names the Construct that answered it', async () => {
   try {
     const answered = await f.handle(call('catalog'));
     const { body } = payload(answered);
-    const catalog = body as { construct: string; domains: { domain: string }[] };
+    const catalog = body as { construct: string; stale?: string; domains: { domain: string }[] };
 
     assert.equal(typeof catalog.construct, 'string');
     assert.ok(catalog.construct.length > 0, 'the version answering is not blank');
     assert.ok(catalog.domains.length > 0);
+    // A store nothing richer has opened: the reply is exactly what it was.
+    assert.equal(catalog.stale, undefined);
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The host reaches whatever Construct is installed, not whatever the tree
+ * carries — and the machine's newer build leaves its catalog mark on the
+ * shared store every time it opens it. An answer served through an older
+ * build must say it is behind rather than leaving the reader to count
+ * domains against a list it cannot see.
+ */
+test('a catalog answered by a build behind the store mark says so', async () => {
+  const f = fixture();
+  try {
+    recordCatalogSighting(f.store, {
+      version: '99.0.0',
+      domains: DOMAINS.length + 2,
+      at: AT,
+    });
+
+    const answered = await f.handle(call('catalog'));
+    const { body, isError } = payload(answered);
+    assert.equal(isError, false);
+    const catalog = body as { construct: string; stale?: string; domains: { domain: string }[] };
+
+    assert.ok(catalog.stale, 'skew is stated, not silent');
+    assert.match(catalog.stale, /99\.0\.0/);
+    assert.match(catalog.stale, new RegExp(String(DOMAINS.length + 2)));
+    assert.match(catalog.stale, /behind/);
+    // The domains themselves are unchanged: the line warns, it does not trim.
+    assert.equal(catalog.domains.length, DOMAINS.length);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('a mark at or behind the answering build changes nothing', async () => {
+  const f = fixture();
+  try {
+    // 'test' does not parse as a version, so richness falls to the domain
+    // count — the same count the server answers with, which is not skew.
+    recordCatalogSighting(f.store, { version: 'test', domains: DOMAINS.length, at: AT });
+    const { body } = payload(await f.handle(call('catalog')));
+    assert.equal((body as { stale?: string }).stale, undefined);
   } finally {
     f.cleanup();
   }
