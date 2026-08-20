@@ -110,7 +110,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 14;
+export const SCHEMA_VERSION = 15;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -585,6 +585,33 @@ CREATE TABLE IF NOT EXISTS write_consent (
   allows_low_risk INTEGER NOT NULL CHECK (allows_low_risk IN (0, 1)),
   recorded_at     TEXT NOT NULL
 ) STRICT;
+
+CREATE TABLE IF NOT EXISTS standing_outcomes (
+  id            TEXT PRIMARY KEY,
+  workspace     TEXT NOT NULL,
+  outcome       TEXT NOT NULL,
+  domains       TEXT,
+  every_minutes INTEGER NOT NULL CHECK (every_minutes > 0),
+  declared_at   TEXT NOT NULL,
+  retired_at    TEXT
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS standing_runs (
+  seq      INTEGER PRIMARY KEY AUTOINCREMENT,
+  standing TEXT NOT NULL,
+  run      TEXT NOT NULL,
+  fired_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS standing_runs_standing ON standing_runs (standing, seq);
+
+CREATE TRIGGER IF NOT EXISTS standing_runs_no_update
+BEFORE UPDATE ON standing_runs
+BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its lineage'); END;
+
+CREATE TRIGGER IF NOT EXISTS standing_runs_no_delete
+BEFORE DELETE ON standing_runs
+BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its lineage'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */

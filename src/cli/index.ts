@@ -131,6 +131,14 @@ import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { recordCatalogSighting } from '../kernel/store/catalog.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
+import {
+  declareStanding,
+  dueStanding,
+  lastFiredAt,
+  listStanding,
+  recordFiring,
+  retireStanding,
+} from '../kernel/store/standing.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
@@ -4223,6 +4231,191 @@ export function mode(argv: string[]): number {
   });
 }
 
+const STANDING_USAGE =
+  'usage: construct standing add --every=<N>m|<N>h|<N>d [--workspace=<name>] [--domains=<name,…>] "<what should keep happening>"\n' +
+  '       construct standing [list] [--all]\n' +
+  '       construct standing retire <id>\n' +
+  '       construct standing --due [--host=… --model=… --binary=… --dir=… --ceiling=… ' +
+  '--concurrency=… --lease-minutes=… --timeout=…]\n' +
+  '         (schedule `construct standing --due` with cron or launchd; nothing here waits or wakes)\n';
+
+/** `--every` in minutes. Days and hours are sugar; the store keeps minutes. */
+function parseCadence(every: string): number {
+  const match = /^(\d+)([mhd])$/.exec(every.trim());
+  if (!match || Number(match[1]) < 1) {
+    throw new Error(`--every takes <N>m, <N>h, or <N>d (minutes, hours, days), got "${every}"`);
+  }
+  const n = Number(match[1]);
+  return match[2] === 'm' ? n : match[2] === 'h' ? n * 60 : n * 1440;
+}
+
+/** The largest exact unit, so a listing reads the way it was declared. */
+function renderCadence(minutes: number): string {
+  if (minutes % 1440 === 0) return `${String(minutes / 1440)}d`;
+  if (minutes % 60 === 0) return `${String(minutes / 60)}h`;
+  return `${String(minutes)}m`;
+}
+
+/**
+ * Fire what has come due: file a fresh, ordinary run per elapsed standing
+ * outcome, then work exactly those runs through the normal work path. The
+ * spend ceiling, leases, and the decision inbox behave exactly as they do for
+ * a typed outcome, because these ARE typed outcomes — the store merely
+ * remembered the typing.
+ */
+async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const filed = withStore((store) => {
+    const due = dueStanding(store, now());
+    const runs: Array<{ standing: string; run: string }> = [];
+    for (const item of due) {
+      const firedAt = now();
+      const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
+      // Two firings inside one clock tick must not share a run id.
+      let runId = base;
+      for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
+      process.stdout.write(`standing ${item.id} came due (every ${renderCadence(item.everyMinutes)}):\n`);
+      const started =
+        item.domains !== null
+          ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
+          : startRun(store, { runId, outcome: item.outcome, at: firedAt });
+      reportRun(started);
+      planRun(store, started, null, item.workspace, firedAt);
+      // Recorded after the run exists: a crash between the two re-files on the
+      // next firing, which idempotent runs absorb; the other order could mark
+      // fired an intention that never ran.
+      recordFiring(store, { standing: item.id, run: runId, firedAt });
+      runs.push({ standing: item.id, run: runId });
+    }
+    return runs;
+  });
+
+  if (filed.length === 0) {
+    process.stdout.write('nothing is due.\n');
+    return 0;
+  }
+
+  const passthrough = argv.filter((arg) => arg !== '--due');
+  let worst = 0;
+  for (const firing of filed) {
+    process.stdout.write(`\nworking ${firing.run} (standing ${firing.standing}):\n`);
+    const code = await work([`--run=${firing.run}`, ...passthrough], hostOverride);
+    if (code > worst) worst = code;
+  }
+  return worst;
+}
+
+/**
+ * Standing outcomes: a recurring intention the spine re-files on its own
+ * cadence. Declaring stores the intention and runs nothing; `--due` files and
+ * works what has elapsed. There is deliberately no daemon and no waiting
+ * here — cron or launchd owns the clock, exactly as docs/scheduled-operation.md
+ * always had it, and the store only knows what is due.
+ */
+export async function standing(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  const { flags, words } = splitFlags(argv);
+
+  if (flags.due !== undefined) return standingDue(argv, hostOverride);
+
+  const sub = words[0];
+
+  if (sub === 'add') {
+    const text = words.slice(1).join(' ').trim();
+    if (!text || flags.every === undefined) {
+      process.stderr.write(STANDING_USAGE);
+      return 2;
+    }
+    let everyMinutes: number;
+    try {
+      everyMinutes = parseCadence(flags.every);
+    } catch (error) {
+      process.stderr.write(`standing: ${(error as Error).message}\n`);
+      return 2;
+    }
+    const domains =
+      flags.domains === undefined
+        ? null
+        : flags.domains
+            .split(',')
+            .map((name) => name.trim())
+            .filter((name) => name.length > 0);
+    // A staff typo caught here costs one retype; caught at 3 a.m. by cron it
+    // costs every firing until somebody reads the log.
+    const unknown = (domains ?? []).filter((name) => !DOMAINS.some((d) => d.domain === name));
+    if (unknown.length > 0) {
+      process.stderr.write(
+        `standing: no catalog domain named ${unknown.map((u) => JSON.stringify(u)).join(', ')}\n`,
+      );
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      const id = `standing-${at.replace(/[-:.TZ]/g, '')}`;
+      try {
+        declareStanding(store, {
+          id,
+          workspace: workspaceFlag(flags),
+          outcome: text,
+          domains,
+          everyMinutes,
+          declaredAt: at,
+        });
+      } catch (error) {
+        process.stderr.write(`standing: ${(error as Error).message}\n`);
+        return 1;
+      }
+      process.stdout.write(
+        `declared ${id}: every ${renderCadence(everyMinutes)} (workspace ${workspaceFlag(flags)})\n` +
+          `  outcome: ${text}\n` +
+          '  nothing runs until `construct standing --due` fires — schedule that with cron or launchd.\n',
+      );
+      return 0;
+    });
+  }
+
+  if (sub === 'retire') {
+    const id = (words[1] ?? '').trim();
+    if (!id) {
+      process.stderr.write(STANDING_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      try {
+        retireStanding(store, id, now());
+      } catch (error) {
+        process.stderr.write(`standing: ${(error as Error).message}\n`);
+        return 1;
+      }
+      process.stdout.write(`retired ${id}; its firings stay on the record\n`);
+      return 0;
+    });
+  }
+
+  if (sub === undefined || sub === 'list') {
+    return withStore((store) => {
+      const rows = listStanding(store, { includeRetired: flags.all !== undefined });
+      if (rows.length === 0) {
+        process.stdout.write('no standing outcomes declared.\n');
+        return 0;
+      }
+      for (const row of rows) {
+        const last = lastFiredAt(store, row.id);
+        process.stdout.write(
+          `${row.id}  every ${renderCadence(row.everyMinutes)}  (workspace ${row.workspace})` +
+            (row.domains ? `  staff: ${row.domains.join(', ')}` : '') +
+            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
+            '\n' +
+            `  outcome: ${row.outcome}\n` +
+            `  ${last ? `last fired ${last}` : 'never fired'}\n`,
+        );
+      }
+      return 0;
+    });
+  }
+
+  process.stderr.write(STANDING_USAGE);
+  return 2;
+}
+
 const STAFF_USAGE =
   'usage: construct staff list [--run=<id>]\n' +
   '       construct staff propose --run=<id> --file=<profile.json>\n';
@@ -4399,7 +4592,7 @@ export function skills(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|standing|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4464,6 +4657,8 @@ async function run(argv: string[]): Promise<number> {
       return plan(argv.slice(1));
     case 'source':
       return source(argv.slice(1));
+    case 'standing':
+      return standing(argv.slice(1));
     case 'mode':
       return mode(argv.slice(1));
     case 'staff':
