@@ -129,6 +129,8 @@ import type { StartedRun } from '../kernel/run/outcome.ts';
 import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
 import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
+import { recordCatalogSighting } from '../kernel/store/catalog.ts';
+import { DOMAINS } from '../kernel/implication/domains.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
@@ -360,10 +362,26 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
 function withStore<T>(fn: (store: Store) => T): T {
   const store = openStore(storePath(resolvePaths()));
   try {
+    leaveCatalogMark(store);
     return fn(store);
   } finally {
     store.close();
   }
+}
+
+/**
+ * Every open leaves word of the catalog this build carries. The store is the
+ * one place every Construct on the machine visits — the released binary a host
+ * launches and the newer tree the user runs — so it is where an older build's
+ * catalog reads learn they are behind. Advance-only in the store; recording
+ * the same or an older catalog writes nothing.
+ */
+function leaveCatalogMark(store: Store): void {
+  recordCatalogSighting(store, {
+    version: packageVersion(),
+    domains: DOMAINS.length,
+    at: now(),
+  });
 }
 
 /**
@@ -375,6 +393,7 @@ function withStore<T>(fn: (store: Store) => T): T {
 async function withStoreAsync<T>(fn: (store: Store) => Promise<T>): Promise<T> {
   const store = openStore(storePath(resolvePaths()));
   try {
+    leaveCatalogMark(store);
     return await fn(store);
   } finally {
     store.close();
