@@ -10,7 +10,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main } from '../../src/cli/index.ts';
@@ -169,4 +169,35 @@ test('the command is listed in the usage line', async () => {
   } finally {
     rmSync(result.root, { recursive: true, force: true });
   }
+});
+
+test('a symlink planted under the output tree is refused by name, never written through', async () => {
+  const { code, err, root } = await run((root) => {
+    const out = join(root, 'skills');
+    const elsewhere = join(root, 'elsewhere');
+    mkdirSync(out, { recursive: true });
+    mkdirSync(elsewhere, { recursive: true });
+    // A checked-out repository can carry this: a pack folder that is really
+    // a link pointing outside the directory the user named.
+    symlinkSync(elsewhere, join(out, 'construct-analyst'));
+    return [['skills', `--out=${out}`]];
+  });
+
+  assert.equal(code, 1);
+  assert.match(err, /construct-analyst is a symbolic link/);
+  assert.match(err, /would land outside/);
+  const elsewhere = join(root, 'elsewhere');
+  assert.deepEqual(readdirSync(elsewhere), [], 'nothing crossed the link');
+});
+
+test('an output directory that is itself a symlink is refused, not followed', async () => {
+  const { code, err } = await run((root) => {
+    const elsewhere = join(root, 'elsewhere');
+    mkdirSync(elsewhere, { recursive: true });
+    symlinkSync(elsewhere, join(root, 'linked-skills'));
+    return [['skills', `--out=${join(root, 'linked-skills')}`]];
+  });
+
+  assert.equal(code, 1);
+  assert.match(err, /is a symbolic link/);
 });
