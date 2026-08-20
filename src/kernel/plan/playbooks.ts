@@ -18,7 +18,7 @@
  */
 
 import { DOMAINS } from '../implication/domains.ts';
-import { COMPOSITION_SHAPES } from '../run/shapes.ts';
+import { ACCEPTANCE_CRITERION_CLAUSE, COMPOSITION_SHAPES } from '../run/shapes.ts';
 import { lensForDomain } from './lenses.ts';
 import { PLAYBOOK_STAGES } from './schema.ts';
 import type { DeliverableTemplate, PlaybookStage, Slot } from './schema.ts';
@@ -88,7 +88,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
     slots: [
       ...CORE_SLOTS,
       slot('users-and-problem', 'who this serves and the problem it solves for them, cited to the material or [unverified]'),
-      slot('in-scope', 'what this outcome includes'),
+      slot('in-scope', `what this outcome includes, with ${ACCEPTANCE_CRITERION_CLAUSE}`),
       slot('out-of-scope', 'what it deliberately excludes, so growth is visible as growth'),
       slot('success-measures', 'how the user will know it worked — each one checkable, cited or [unverified]'),
       slot('phasing', 'what ships first and what deliberately waits, with the reason for the split', false),

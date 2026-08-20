@@ -287,7 +287,7 @@ template, and say so.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `users-and-problem` — who this serves and the problem it solves for them, cited to the material or [unverified]
-- `in-scope` — what this outcome includes
+- `in-scope` — what this outcome includes, with a checkable criterion for each — a name, a version, a place to look — or an explicit stated absence, never left silent
 - `out-of-scope` — what it deliberately excludes, so growth is visible as growth
 - `success-measures` — how the user will know it worked — each one checkable, cited or [unverified]
 - `phasing` *(optional)* — what ships first and what deliberately waits, with the reason for the split
