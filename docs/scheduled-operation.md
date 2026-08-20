@@ -1,15 +1,45 @@
 # Running Construct on a schedule
 
-Construct has no scheduler of its own, and that is a current fact rather than
-a principle — a first-class standing outcome is tracked in the backlog. What
-exists today is enough to run it as a scheduled team member, because every
-spine command is idempotent and everything lands in one auditable store: an
-outcome files work, `work` runs whatever is queued and only that, decisions
-wait in the inbox, and a re-run never duplicates what already settled.
+Construct has no scheduler of its own, and that is a principle rather than a
+gap: the predecessor's daemon leak is the recorded lesson, so nothing in this
+tool waits, polls, or wakes. What it has is a **standing outcome** — a
+recurring intention recorded in the store — and a CLI verb that fires whatever
+has come due. The clock stays with whatever the machine already trusts:
+`cron`, `launchd`, a CI job.
 
-## The recipe
+## Standing outcomes
 
-One scheduled invocation is an outcome plus the work that runs it:
+Declare the intention once; it runs nothing until something fires it:
+
+```bash
+construct standing add --every=7d --workspace=ops \
+  "Review the week's roadmap and tracker changes for commitments that no longer agree"
+construct standing               # list them, with cadence and last firing
+construct standing retire <id>   # stop it; its firings stay on the record
+```
+
+Then schedule the one firing line:
+
+```bash
+construct standing --due --host=claude --ceiling=5
+```
+
+Each elapsed intention is re-filed as a fresh, ordinary run — same plan, same
+work log, same inbox as an outcome typed that morning — then worked through
+the normal `work` path with whatever host flags the firing line carries, so
+every execution keeps full run lineage and `construct standing` can show when
+each intention last fired. A `--due` that finds nothing elapsed files nothing
+and says so — but it still resumes any earlier standing-filed run left with
+unfinished tasks, so a firing killed mid-flight is picked up by the next
+`--due` rather than waiting out another cadence. Declaring with `--domains=<name,…>` names the staff outright, so
+an unattended firing spends nothing on inference; the names are checked
+against the catalog at declaration, where a typo costs one retype instead of
+every firing until somebody reads the log.
+
+## The bare recipe
+
+The composed form still works and is still honest — a standing outcome is
+exactly this pair, remembered by the store instead of a crontab:
 
 ```bash
 construct outcome --host=claude --workspace=ops \
@@ -17,8 +47,7 @@ construct outcome --host=claude --workspace=ops \
 && construct work --ceiling=5
 ```
 
-Schedule it with whatever the machine already trusts — `cron`, `launchd`, a CI
-job. The pieces behave the way a scheduled task needs:
+Either way, the pieces behave the way a scheduled task needs:
 
 - **`work` is resumable.** A run killed mid-flight leaves leased tasks that a
   later invocation reclaims after the lease expires; nothing is duplicated and
@@ -38,6 +67,7 @@ job. The pieces behave the way a scheduled task needs:
 ## Checking on it
 
 ```bash
+construct standing       # what stands, and when each last fired
 construct inbox          # what needs a human
 construct log | tail     # what happened last
 construct doctor         # is the machine's install healthy

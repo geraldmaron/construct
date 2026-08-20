@@ -142,3 +142,23 @@ reasons, and the model's answer is strictly better than the fallback's silence.
 One run, one local model, written down as an observation and not a measurement.
 Tracked, with an explicit instruction not to close it by adding `living_status`
 to a keyword list — that tunes the instrument to the one case anybody looked at.
+
+---
+
+## Repair note, 2026-08-20: the stale side of the handshake
+
+The second pass closed half the version-skew finding: the catalog names the
+build answering. The other half — the *older* build saying it is behind — could
+not be closed by naming alone, because the installed Construct has no way to
+see the tree. It now can, through the one place both builds visit: every CLI
+open leaves the store a mark of the richest catalog it has been opened with
+(advance-only, so the older build cannot erase the word the newer one left),
+and a catalog read served by a build behind that mark carries a `stale` line
+naming both versions and both domain counts. When nothing richer has touched
+the store, the reply is byte-for-byte what it was.
+
+Verified as a fixture equivalent of this trial's setup rather than a live
+nanobot re-run: the projection test records a richer sighting on the store and
+asserts the served catalog states the skew, and the sterile CLI test asserts an
+ordinary command leaves the mark. A live re-trial on the next host pass will
+read the line off a real skewed install.
