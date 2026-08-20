@@ -121,6 +121,15 @@ test('admitting needs a lesson that exists and a human who is named', async () =
   assert.equal(missingApprover.code, 2);
   assert.match(missingApprover.err, /admitting needs the lesson and its human/);
 
+  // A bare `--by` parses as the sentinel 'true'; recording it would name the
+  // approver "true" and forge the audit line, so it is a missing name.
+  const bareBy = await run(async () => lessons(['--admit=lesson-x', '--by']));
+  assert.equal(bareBy.code, 2);
+  assert.match(bareBy.err, /admitting needs the lesson and its human/);
+
+  const bareAdmit = await run(async () => lessons(['--admit', '--by=gerald']));
+  assert.equal(bareAdmit.code, 2);
+
   const missingLesson = await run(async () => lessons(['--admit=lesson-x', '--by=gerald']));
   assert.equal(missingLesson.code, 1);
   assert.match(missingLesson.err, /no lesson lesson-x/);

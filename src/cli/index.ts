@@ -2617,8 +2617,13 @@ export function lessons(argv: string[]): number {
 
   if (flags.admit !== undefined) {
     const id = flags.admit.trim();
-    const approver = flags.by?.trim() ?? '';
-    if (!id || !approver) {
+    // A bare `--by` parses as the flag-present sentinel 'true', and a bare
+    // `--admit` the same way. The point of the flag is a named human, so a
+    // sentinel is a missing name, not an approver called "true" — and an
+    // admission recorded against it would forge the exact audit line the
+    // gate exists to keep.
+    const approver = flags.by === 'true' ? '' : (flags.by?.trim() ?? '');
+    if (!id || id === 'true' || !approver) {
       process.stderr.write('lessons: admitting needs the lesson and its human.\n' + LESSONS_USAGE);
       return 2;
     }
