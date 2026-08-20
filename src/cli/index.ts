@@ -2787,10 +2787,18 @@ async function applyApproved(
       now(),
     );
     if (result.outcome === 'applied') {
+      if (result.projected) {
+        process.stdout.write(`mirrored as ${result.projected} before it crossed\n`);
+      }
       process.stdout.write(`applied ${proposal}: ${result.detail}\n`);
       return 0;
     }
     if (result.outcome === 'unappliable') {
+      if (result.projected) {
+        process.stdout.write(
+          `mirrored as ${result.projected} before the attempt; the mirror records what was proposed, not a landing\n`,
+        );
+      }
       process.stderr.write(`decide: ${proposal} was not applied — ${result.reason}\n`);
       return 1;
     }

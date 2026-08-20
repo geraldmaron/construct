@@ -26,11 +26,19 @@
  *     leaves the proposal approved and unapplied — the honest state — because
  *     recording an apply the world did not receive is the one failure this
  *     module exists to prevent.
+ *   - In seat mode, a change bound for the team's tracker is mirrored before
+ *     it crosses: a projection row carrying only the fields the domain may
+ *     assert, written before the host is asked, so a write landing in someone
+ *     else's tracker can never outrun its record here. Team mode and a
+ *     workspace with no tracker source record nothing and behave as before.
  */
 
 import type { Store } from '../store/open.ts';
-import { decisionOf, getProposal, markApplied } from '../store/sources.ts';
+import { decisionOf, engagementMode, getProposal, getSource, markApplied } from '../store/sources.ts';
 import type { WriteProposal } from '../store/sources.ts';
+import { putProjection } from '../store/projections.ts';
+import { buildProjection, projectionId } from '../tracker/projection.ts';
+import { isTrackerSourceKind, proposalIssue } from '../tracker/crossing.ts';
 
 /**
  * What a host reported about carrying out one change. `applied` is a claim
@@ -50,8 +58,8 @@ export interface ApplyReport {
 export type ProposalApplier = (proposal: WriteProposal) => Promise<ApplyReport>;
 
 export type ApplyOutcome =
-  | { readonly outcome: 'applied'; readonly detail: string }
-  | { readonly outcome: 'unappliable'; readonly reason: string }
+  | { readonly outcome: 'applied'; readonly detail: string; readonly projected?: string }
+  | { readonly outcome: 'unappliable'; readonly reason: string; readonly projected?: string }
   | { readonly outcome: 'refused'; readonly reason: string };
 
 /**
@@ -87,6 +95,32 @@ export async function applyProposal(
     return { outcome: 'refused', reason: `it was already applied at ${prior.decidedAt}` };
   }
 
+  // In seat mode, a change bound for the team's tracker is mirrored before it
+  // is handed over: the projection row — carrying only what the domain side
+  // may assert under the authority map — is the record that this crossing was
+  // attempted, written first so neither a crash nor a host that answers
+  // illegibly can leave a write in someone else's tracker with no record on
+  // this side. The row is keyed by the proposal, so a retry updates the same
+  // mirror rather than minting a second. Team mode, a non-tracker source, and
+  // a source nobody declared record nothing and behave exactly as before.
+  const source = getSource(store, record.source);
+  const mirrored =
+    source !== null &&
+    isTrackerSourceKind(source.kind) &&
+    engagementMode(store, record.workspace) === 'seat';
+  if (mirrored) {
+    putProjection(
+      store,
+      buildProjection(proposalIssue(record), {
+        tracker: source.kind,
+        workspace: record.workspace,
+        workId: record.run,
+        importedAt: at,
+      }),
+    );
+  }
+  const projected = mirrored ? { projected: projectionId(record.id, source.kind) } : {};
+
   let report: ApplyReport;
   try {
     report = await apply(record);
@@ -97,6 +131,7 @@ export async function applyProposal(
     return {
       outcome: 'unappliable',
       reason: `the host could not be asked (${(error as Error).message}); it stays approved and unapplied`,
+      ...projected,
     };
   }
 
@@ -106,9 +141,10 @@ export async function applyProposal(
       reason:
         `${report.detail.trim() || 'the host gave no reason'} — it stays approved and unapplied, ` +
         'so the change is still yours to make',
+      ...projected,
     };
   }
 
   markApplied(store, proposal, report.detail.trim() || 'the host reported it applied', at);
-  return { outcome: 'applied', detail: report.detail.trim() };
+  return { outcome: 'applied', detail: report.detail.trim(), ...projected };
 }
