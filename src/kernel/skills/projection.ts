@@ -182,6 +182,26 @@ export function planSkillsUninstall(folders: readonly SkillFolder[]): readonly U
     });
 }
 
+/**
+ * The stamped versions present in a pack that differ from the version
+ * actually installed — the set doctor has something to say about, not a
+ * line per folder. A pack always stamps every folder from one generation
+ * run, so distinct-from-installed is the fact worth surfacing; a folder
+ * whose stamp already matches, or that carries no stamp at all, is silent.
+ */
+export function skillPackSkew(
+  folders: readonly SkillFolder[],
+  installedVersion: string,
+): readonly string[] {
+  const versions = new Set<string>();
+  for (const folder of folders) {
+    if (folder.skill === null) continue;
+    const version = generatedSkillVersion(folder.skill);
+    if (version !== null && version !== installedVersion) versions.add(version);
+  }
+  return [...versions].sort();
+}
+
 /** The frontmatter lines of a file, empty when it has no closed frontmatter block. */
 function frontmatter(text: string): readonly string[] {
   const lines = text.split('\n');

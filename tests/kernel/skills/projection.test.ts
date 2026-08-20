@@ -21,6 +21,7 @@ import {
   isGeneratedSkill,
   planSkillsUninstall,
   projectSkillsPack,
+  skillPackSkew,
   SKILL_FILENAME,
   skillDirectoryName,
 } from '../../../src/kernel/skills/projection.ts';
@@ -209,4 +210,29 @@ test('a marker outside the frontmatter does not make a folder removable', () => 
   const verdicts = planSkillsUninstall([{ directory: 'about-generated-packs', skill: quoting }]);
   assert.equal(verdicts[0].removed, false);
   assert.equal(isGeneratedSkill(quoting), false);
+});
+
+test('skew names each stamped version that differs from installed, once', () => {
+  const stamped = (version: string) =>
+    ['---', 'name: x', 'description: d', 'metadata:', '  generator: construct', `  version: '${version}'`, '---', ''].join(
+      '\n',
+    );
+  const folders = [
+    { directory: 'a', skill: stamped('1.0.0') },
+    { directory: 'b', skill: stamped('1.0.0') }, // same stale version twice — one entry, not two
+    { directory: 'c', skill: stamped('2.0.0') }, // matches installed — silent
+    { directory: 'd', skill: null }, // not a skill folder at all — silent
+    {
+      directory: 'e',
+      skill: ['---', 'name: e', 'description: hand-authored', '---', ''].join('\n'),
+    }, // no marker — silent
+  ];
+  assert.deepEqual(skillPackSkew(folders, '2.0.0'), ['1.0.0']);
+});
+
+test('a pack that matches the installed version everywhere has no skew', () => {
+  const stamped = ['---', 'name: x', 'description: d', 'metadata:', '  generator: construct', "  version: '3.1.4'", '---', ''].join(
+    '\n',
+  );
+  assert.deepEqual(skillPackSkew([{ directory: 'a', skill: stamped }], '3.1.4'), []);
 });
