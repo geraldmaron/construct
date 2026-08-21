@@ -19,7 +19,7 @@ const EXEMPT = [/\.test\.ts$/, /^scripts\/lint-glossary-parity\.mjs$/];
 // real input. Those arrays are blanked before scanning so the glossary still
 // governs every line of actual vocabulary around them — an earlier version of
 // this lint exempted the whole table directory, which also hid the stage names
-// sitting beside the keywords. See construct-egc.
+// sitting beside the keywords.
 function stripUserVocabulary(content) {
   return content.replace(/keywords:\s*\[[^\]]*\]/gs, 'keywords: []');
 }
@@ -57,7 +57,7 @@ function parseGlossary(text) {
  * The files this lint governs: everything git can see in the working tree that
  * is not ignored — tracked, staged, and brand-new alike.
  *
- * It walked `git ls-files` alone until construct-2ua, and that made the normal
+ * It walked `git ls-files` alone at first, and that made the normal
  * working order (write the file, run the gate, git add, commit) put the clean
  * lint run BEFORE the file was visible to the linter. A new file passed lint
  * while untracked and failed the moment it was added, so the violation shipped

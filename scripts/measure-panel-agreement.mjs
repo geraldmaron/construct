@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/measure-panel-agreement.mjs — cross-family annotator agreement over
- * construct-2jb.4's corpus.
+ * the expanded labeled corpus.
  *
  * WHY THIS EXISTS. Every agreement figure this project has quoted came from
  * coders of one model family, and the caveat attached to all of them — observed
@@ -25,7 +25,7 @@
  *    too; it is repeated because this is where the number gets quoted from.
  * 2. Every coder here is still an LLM, and web-scale pretraining overlaps across
  *    all of them. Cross-family is a WEAKER upper bound, not an unbiased
- *    estimate. The human annotation floor stays unmeasured until construct-3ft.
+ *    estimate. The human annotation floor stays unmeasured until the stakeholder-verdict study runs.
  *
  *   node scripts/measure-panel-agreement.mjs
  */
@@ -109,8 +109,8 @@ const exactAgreement = (a, b) => {
   return same;
 };
 
-console.log('--- construct-adf: cross-family annotator agreement ---\n');
-console.log(`Corpus: ${corpus.outcomes.length} outcomes (the measured half of construct-2jb.4's corpus)\n`);
+console.log('--- cross-family annotator agreement ---\n');
+console.log(`Corpus: ${corpus.outcomes.length} outcomes (the measured half of the expanded labeled corpus)\n`);
 console.log('  coder          family        model');
 for (const c of coders) {
   console.log(`  ${c.name.padEnd(14)} ${c.family.padEnd(13)} ${c.model}${c.via ? ` (via ${c.via})` : ''}`);
@@ -172,5 +172,5 @@ What this does NOT license, in either direction:
   - A floor above ${TARGET} does not excuse the map. Compare it against the miss rate
     in RESEARCH-DECISIONS.md section 1 before concluding anything: a miss rate far
     above the floor's upper bound is the map's problem whatever the floor is.
-  - No slice here measures HUMAN agreement. Every coder is an LLM. construct-3ft
+  - No slice here measures HUMAN agreement. Every coder is an LLM. The stakeholder-verdict study
     is the bead that lifts that, and it is not lifted.`);
