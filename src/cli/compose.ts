@@ -26,7 +26,6 @@ import type { ClosingRound } from '../kernel/run/closing.ts';
 import {
   COMPOSITION_SHAPES,
   shapeByName,
-  shapeForOutcome,
   shapeMatchForOutcome,
   shapeNames,
 } from '../kernel/run/shapes.ts';
@@ -110,8 +109,8 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // outcome wants is not a fact the wording alone settles reliably, and a
     // model is one call away the moment a host is named for this run, so it
     // is asked rather than guessed once that host exists (below). The keyword
-    // guess in run/shapes.ts survives as what a host-less run still has and
-    // as the disclosed fallback if the model call itself fails.
+    // guess in run/shapes.ts survives only as the disclosed fallback if the
+    // model call itself fails.
     let shape: CompositionShape | undefined;
     if (flags.shape !== undefined) {
       shape = shapeByName(flags.shape);
@@ -158,11 +157,8 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     }
 
     if (hostFlags.host === undefined && hostOverride === undefined) {
-      // No host named: this run stays free, and shape falls to the keyword
-      // guess run/shapes.ts already has for exactly this path — the same
-      // duality domain inference uses (kernel/implication/map.ts) rather than
-      // an exception invented for this one decision.
-      shape ??= shapeForOutcome(plan.outcome);
+      // No host named: this run stays free, and shape stays unresolved —
+      // it is asked of a model once a host exists, never guessed here.
       process.stdout.write(
         `${String(sources.length)} deliverables are ready to compose (${sources.map((s) => s.role).join(', ')}).\n` +
           'Composing them is model work, at cost — one call to arrange, one per role to check\n' +
