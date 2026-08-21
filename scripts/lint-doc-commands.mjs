@@ -18,19 +18,22 @@
  * that begin with the command. Prose that happens to contain the word, output
  * transcripts, and ASCII diagrams are not commands and are not checked.
  *
- * What this does not catch, stated so nobody reads a pass as more than it is:
- * the verb is checked, and nothing after it. `construct lessons list` passes
- * here because `lessons` is real, though no `list` subcommand exists and that
- * exact line shipped in a walkthrough. Subcommands and flags are not declared
- * anywhere a check could read, so covering them means giving each verb a
- * machine-readable surface first. Until then this catches an invented verb and
- * misses an invented subcommand.
+ * Subcommands are checked too, against a surface measured from the CLI rather
+ * than declared beside it (`lib/cli-surface.mjs`). `construct lessons list`
+ * fails here, which is the line that shipped in a walkthrough and started this.
+ *
+ * What this still does not catch, stated so nobody reads a pass as more than it
+ * is: flags. A verb's usage names them, but a documented command legitimately
+ * carries flags the usage abbreviates, and failing those would train people to
+ * silence the check. Verb and subcommand are checked; the argument after them
+ * is not.
  */
 
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
 import { INTERNAL_VERBS, VERBS } from '../src/cli/index.ts';
+import { probeSurface } from './lib/cli-surface.mjs';
 
 /**
  * Verbs the predecessor carried and this CLI does not. They are listed so a
@@ -55,19 +58,23 @@ function docFiles() {
 
 /**
  * A command line, not a sentence: `construct` opens the line, optionally behind
- * a prompt marker or a runner, and a verb follows on the same line.
+ * a prompt marker or a runner, then the verb, then whatever it was given.
+ *
+ * The trailing group matches only a bare lowercase word, so a flag, a `<id>`
+ * placeholder, a quoted string, and a path are all left as undefined — none of
+ * them is a subcommand, and treating one as a candidate would invent failures.
  */
-const COMMAND_LINE = /^[ \t]*(?:[$>][ \t]*)?(?:npx[ \t]+\S+[ \t]+)?construct[ \t]+([A-Za-z][\w-]*)/;
+const COMMAND = /(?:[$>][ \t]*)?(?:npx[ \t]+\S+[ \t]+)?construct[ \t]+([A-Za-z][\w-]*)(?:[ \t]+([a-z][a-z-]*))?/;
+const COMMAND_LINE = new RegExp(`^[ \\t]*${COMMAND.source}`);
 
 function hitsInShellFences(text) {
   const hits = [];
   for (const fence of text.matchAll(/```([^\n`]*)\n([\s\S]*?)```/g)) {
     if (!SHELL_FENCE.test((fence[1] ?? '').trim())) continue;
-    const bodyAt = fence.index + fence[0].indexOf('\n') + 1;
-    let cursor = bodyAt;
+    let cursor = fence.index + fence[0].indexOf('\n') + 1;
     for (const line of fence[2].split('\n')) {
       const found = COMMAND_LINE.exec(line);
-      if (found) hits.push({ at: cursor, token: found[1], text: line.trim() });
+      if (found) hits.push({ at: cursor, token: found[1], rest: found[2], text: line.trim() });
       cursor += line.length + 1;
     }
   }
@@ -79,13 +86,15 @@ function hitsInInlineSpans(text, fences) {
   for (const span of text.matchAll(/`([^`\n]+)`/g)) {
     const inFence = fences.some((f) => span.index > f.at && span.index < f.at + f.body.length);
     if (inFence) continue;
-    const found = /^(?:[$>][ \t]*)?construct[ \t]+([A-Za-z][\w-]*)/.exec(span[1]);
-    if (found) hits.push({ at: span.index, token: found[1], text: span[1].trim() });
+    const found = new RegExp(`^${COMMAND.source}`).exec(span[1]);
+    if (found) hits.push({ at: span.index, token: found[1], rest: found[2], text: span[1].trim() });
   }
   return hits;
 }
 
 const problems = [];
+/** Every documented command, gathered before probing so only used verbs cost one. */
+const cited = [];
 
 for (const file of docFiles()) {
   let text;
@@ -102,23 +111,65 @@ for (const file of docFiles()) {
   }));
 
   for (const hit of [...hitsInShellFences(text), ...hitsInInlineSpans(text, fences)]) {
-    if (known.has(hit.token) || RETIRED_VERBS.has(hit.token)) continue;
     const line = text.slice(0, hit.at).split('\n').length;
-    problems.push({ file, line, token: hit.token, text: hit.text });
+    if (!known.has(hit.token)) {
+      if (RETIRED_VERBS.has(hit.token)) continue;
+      problems.push({ file, line, text: hit.text, why: `names no CLI verb ('${hit.token}')` });
+      continue;
+    }
+    cited.push({ file, line, verb: hit.token, rest: hit.rest, text: hit.text });
   }
+}
+
+// Only the verbs documentation actually uses with an argument are worth a
+// process, and a verb is asked once however many pages cite it.
+const needProbe = [...new Set(cited.filter((c) => c.rest !== undefined).map((c) => c.verb))];
+const surface = needProbe.length > 0 ? probeSurface(needProbe) : new Map();
+
+for (const use of cited) {
+  if (use.rest === undefined) continue;
+  const probed = surface.get(use.verb);
+  if (!probed) continue;
+
+  // A verb taking a free positional cannot judge the word after it, and one
+  // whose surface never printed cannot judge anything. Both are skipped.
+  if (probed.shape === 'positional' || probed.shape === 'unknown') continue;
+
+  if (probed.shape === 'subcommands') {
+    if (probed.subcommands.has(use.rest)) continue;
+    problems.push({
+      file: use.file,
+      line: use.line,
+      text: use.text,
+      why:
+        `'${use.verb}' has no '${use.rest}' subcommand ` +
+        `(it accepts: ${[...probed.subcommands].sort().join(', ')})`,
+    });
+    continue;
+  }
+
+  // flags-only: the verb printed its own usage and named no subcommand at all,
+  // so a bare word after it is one nobody can run.
+  problems.push({
+    file: use.file,
+    line: use.line,
+    text: use.text,
+    why: `'${use.verb}' takes no subcommand, so '${use.rest}' is not a command`,
+  });
 }
 
 if (problems.length > 0) {
   for (const p of problems) {
-    process.stderr.write(`${p.file}:${p.line}: '${p.text}' names no CLI verb ('${p.token}')\n`);
+    process.stderr.write(`${p.file}:${p.line}: '${p.text}' — ${p.why}\n`);
   }
   process.stderr.write(
-    `\nlint-doc-commands: ${String(problems.length)} documented command(s) no reader could run.\n` +
-      `Known verbs: ${[...known].sort().join(', ')}\n`,
+    `\nlint-doc-commands: ${String(problems.length)} documented command(s) no reader could run.\n`,
   );
   process.exit(1);
 }
 
+const judged = [...surface.values()].filter((s) => s.shape !== "unknown" && s.shape !== "positional").length;
 process.stdout.write(
-  `lint-doc-commands: clean — every documented command names one of ${String(known.size)} verbs\n`,
+  `lint-doc-commands: clean — ${String(cited.length)} documented command(s) against ` +
+    `${String(known.size)} verbs, ${String(judged)} of them with a surface the CLI could state\n`,
 );

@@ -83,9 +83,16 @@ const PROPOSE_USAGE =
  * the id is the difference between a proposal a person can decide on and a
  * change aimed at a system nobody named.
  */
-function targetSource(store: Store, workspace: string, sourceId: string): Source | number {
+function targetSource(
+  store: Store,
+  workspace: string,
+  sourceId: string,
+  // Two verbs share this resolver, and an error is only actionable if it names
+  // the command the reader actually typed.
+  command: 'propose' | 'audit',
+): Source | number {
   if (sourceId === '' || sourceId === 'true') {
-    process.stderr.write('propose: name the source these changes would be made against.\n');
+    process.stderr.write(`${command}: name the source these changes would be made against.\n`);
     const declared = sourcesFor(store, workspace);
     for (const source of declared) {
       process.stderr.write(`  --source=${source.id}  (${source.kind} ${source.locator})\n`);
@@ -238,7 +245,7 @@ function proposeDoc(flags: Record<string, string>): number {
       return 1;
     }
     const workspace = flags.workspace?.trim() || recorded?.workspace || workspaceFlag(flags);
-    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    const target = targetSource(store, workspace, (flags.source ?? '').trim(), 'propose');
     if (typeof target === 'number') return target;
 
     const built = docEditProposal({
@@ -386,7 +393,7 @@ async function proposeTriage(flags: Record<string, string>, hostOverride?: HostA
 
   return withStoreAsync(async (store) => {
     const workspace = workspaceFlag(flags);
-    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    const target = targetSource(store, workspace, (flags.source ?? '').trim(), 'propose');
     if (typeof target === 'number') return target;
 
     const { proposals, matches } = triageProposals({ source: target.id, locator: target.locator, issues });
@@ -587,7 +594,7 @@ export async function propose(argv: string[], hostOverride?: HostAdapter): Promi
     const workspace = flags.workspace?.trim() || recorded.workspace;
 
     const sourceId = (flags.source ?? '').trim();
-    const target = targetSource(store, workspace, sourceId);
+    const target = targetSource(store, workspace, sourceId, 'propose');
     if (typeof target === 'number') return target;
 
     const only = (flags.task ?? '').trim();
@@ -713,7 +720,7 @@ export function audit(argv: string[]): number {
   const { flags } = parseFlags(argv);
   return withStore((store) => {
     const workspace = workspaceFlag(flags);
-    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    const target = targetSource(store, workspace, (flags.source ?? '').trim(), 'audit');
     if (typeof target === 'number') return target;
     if (target.kind !== 'directory' && target.kind !== 'git') {
       process.stderr.write(
