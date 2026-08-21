@@ -576,7 +576,7 @@ is not:
   the share of outcomes that trigger a namer call.
 - **REACH** — the share of that corpus's missed labels that sit behind a silent outcome, i.e. that
   escalate-on-silence hands to a namer at all. Reaching a miss is not recovering it: nothing here
-  measures whether a namer, given the shortlist, names it correctly — that bound is §5.6's
+  measures whether a namer, given the shortlist, names it correctly — that bound is this section's
   oracle-namer-floor / credulous-namer-ceiling sweep, and it requires the live embedder. Every
   reach figure below is a REACH count, never a recovery count.
 
@@ -1702,6 +1702,15 @@ and compares exactly like a clean arm.
 Five arms, one corpus set, one tier, every arm paired against the same recorded
 baseline. Miss is pooled out-of-family (fresh + unspent), the axis the §10 gate
 is stated in; over is the `unspent` rate.
+
+**The `over` column is not §10's false-implicate rate, and the two must not be
+quoted against each other.** §10's headline over-rate is 0.374 (40/107); the
+baseline row below reads 0.376 on the same shipped prompt. They differ because
+they count different things, not because either moved: this column is the
+unspent-arm rate, scoped to this ablation so the five arms are paired against
+one another. The `miss` column *is* §10's axis, which is why 0.280 appears in
+both and why the two columns invite exactly the collision this note exists to
+stop. Cite 0.374 when stating what the shipped router does.
 
 | arm | prompt | miss | over | paired vs shipped |
 |---|---|---|---|---|

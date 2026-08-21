@@ -73,7 +73,7 @@ Adopted as `src/hosts/architecture.ts` (`ARCHITECTURE_NOTES`,
 `architectureNoteFor`), mirroring `floors.ts`'s pattern exactly — dated,
 per-model, named evidence path, silent (not "unknown") for anything
 unmeasured. Wired into the same dispatch-time warning block as
-`dispatchFloorFor` in `src/cli/index.ts` (`construct work`), so the note
+`dispatchFloorFor` in `src/cli/work.ts` (`construct work`), so the note
 surfaces before the dispatch spends a call, not after. Test:
 `tests/hosts/architecture.test.ts`.
 
@@ -117,5 +117,5 @@ harness scoring agent work — it does not conflict with the lesson.
 | Lesson | Verdict | Where |
 |---|---|---|
 | 1. Explicit schema injection | Already present | `src/hosts/namer.ts`, `densifier.ts`, `compose.ts`, `contextloop.ts`; documented absence of host-level schema support in `src/hosts/opencode/pin.ts` |
-| 2. Dense-over-MoE preference note | Missing, adopted | `src/hosts/architecture.ts` (new), wired into `src/cli/index.ts`, tested in `tests/hosts/architecture.test.ts` |
+| 2. Dense-over-MoE preference note | Missing, adopted | `src/hosts/architecture.ts` (new), wired into `src/cli/work.ts`, tested in `tests/hosts/architecture.test.ts` |
 | 3. Side effects, not tool-call traces | Already present | `src/kernel/run/coordinator.ts` (`draftText`/`summarize`), `src/kernel/challenge/catalog.ts`, `scripts/score-org-harness.mjs`, `scripts/smoke-packaged-install.sh` |
