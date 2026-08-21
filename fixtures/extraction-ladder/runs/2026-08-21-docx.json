@@ -1,0 +1,13 @@
+{
+  "extension": ".docx",
+  "sample": "probe.docx",
+  "probedAt": "2026-08-21T04:19:23.953Z",
+  "doclingProbe": {
+    "available": false,
+    "version": null,
+    "detail": "docling not found on PATH (spawn failed)"
+  },
+  "outcome": "refused",
+  "reason": "DOCX extraction requires mammoth or Docling; neither produced usable text.",
+  "remediation": "Install Docling so `docling --version` answers on PATH (pip install docling), ensure mammoth is installed, or convert the document manually."
+}

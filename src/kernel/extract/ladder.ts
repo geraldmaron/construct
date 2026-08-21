@@ -32,6 +32,7 @@
 import {
   AUDIO_VIDEO_EXTS,
   CALENDAR_EXTS,
+  DIAGRAM_EXTS,
   DOCLING_LADDER_FORMATS,
   EMAIL_DOCUMENT_EXTS,
   EXTRACTABLE_DOCUMENT_EXTS,
@@ -220,6 +221,18 @@ export function planExtraction(input: PlanInput): ExtractionPlan {
   const platform = input.platform ?? 'linux';
   const signals = resolveRoutingSignals({ ...input, extension, highFidelity });
   const docling = doclingSteps(signals);
+
+  if (DIAGRAM_EXTS.has(extension)) {
+    return unsupported(extension, {
+      reason:
+        `You asked to extract ${extension} — a diagram/vector format. No rung reads it: ` +
+        'there is no lightweight parser for vector diagrams, and Docling extracts document ' +
+        'and image content, not vector graphics, so installing it would not help either.',
+      remediation:
+        'Describe the diagram in prose yourself, or export a rendered raster (PNG) so an ' +
+        'image-capable rung — Docling OCR, once installed — has pixels to read instead of vectors.',
+    });
+  }
 
   if (!EXTRACTABLE_DOCUMENT_EXTS.has(extension)) {
     return unsupported(extension, {
