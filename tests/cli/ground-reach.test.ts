@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, work } from '../../src/cli/index.ts';
+import { main, parseWorkArgs, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
@@ -146,4 +146,18 @@ test('the override dispatches, and is recorded as a choice rather than a silence
   assert.match(out, /--allow-distant-ground/);
   assert.ok(actions.includes('ground-unreachable-allowed'));
   assert.ok(!actions.includes('ground-unreachable'), 'an override is not also a refusal');
+});
+
+test('the remedy the refusal names works exactly as shown, typed bare', () => {
+  // The refusal ends with the flag bare, so the bare form is the documented
+  // form: refusing a user for typing what the message told them to is the
+  // defect this pins against.
+  assert.equal(parseWorkArgs(['--allow-distant-ground']).allowDistantGround, true);
+  assert.equal(parseWorkArgs(['--allow-distant-ground=true']).allowDistantGround, true);
+  assert.equal(parseWorkArgs(['--allow-distant-ground=false']).allowDistantGround, false);
+  assert.equal(parseWorkArgs([]).allowDistantGround, false);
+  // The bare form is a privilege of boolean flags, not a general rule: a bare
+  // value flag stays dropped and surfaces through its own validation instead
+  // of becoming a silent empty-string default.
+  assert.equal(parseWorkArgs(['--model']).model, undefined);
 });

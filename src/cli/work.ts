@@ -95,11 +95,23 @@ export interface WorkArgs {
  */
 export const DEFAULT_SPEND_CEILING = 10;
 
+/**
+ * The flags that are true by being present. Only these parse bare: the
+ * unreachable-ground refusal shows its remedy bare, so the bare form is the
+ * documented form and dropping it would refuse a user for typing exactly what
+ * the message told them to. A value flag typed bare stays dropped here and
+ * surfaces through its own validation, because mapping it to an empty string
+ * would turn a typo into a silent default (a bare --concurrency would read as
+ * zero and dispatch nothing).
+ */
+const BOOLEAN_FLAGS = ['allow-distant-ground'] as const;
+
 export function parseWorkArgs(argv: string[]): WorkArgs {
   const args: Record<string, string> = {};
   for (const arg of argv) {
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
     if (match) args[match[1]] = match[2];
+    else if ((BOOLEAN_FLAGS as readonly string[]).includes(arg.slice(2))) args[arg.slice(2)] = 'true';
   }
   const run = runFlag(argv);
 
