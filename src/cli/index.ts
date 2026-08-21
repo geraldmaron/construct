@@ -202,6 +202,7 @@ import { join } from 'node:path';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { presenceLines, surveyHosts } from '../hosts/presence.ts';
 import { probeDocling, readSource } from '../hosts/extract.ts';
+import { escapeForTerminal } from '../kernel/render/terminal.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
@@ -314,7 +315,7 @@ export function doctor(cwd: string = process.cwd()): number {
   let failed = 0;
   for (const check of checks) {
     if (!check.ok) failed += 1;
-    process.stdout.write(`${check.ok ? 'ok  ' : 'FAIL'} ${check.name}  ${check.detail}\n`);
+    process.stdout.write(`${check.ok ? 'ok  ' : 'FAIL'} ${check.name}  ${escapeForTerminal(check.detail)}\n`);
   }
   process.stdout.write(failed === 0 ? 'doctor: healthy\n' : `doctor: ${failed} check(s) failed\n`);
   return failed === 0 ? 0 : 1;
@@ -383,7 +384,7 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
       const keeping = item.keeps?.() ?? false;
       if (!keeping) removable += 1;
       const mark = keeping ? '•' : item.risk === 'auto' ? '✓' : '◐';
-      process.stdout.write(`  ${mark} ${item.label}\n      ${item.describe()}\n`);
+      process.stdout.write(`  ${mark} ${item.label}\n      ${escapeForTerminal(item.describe())}\n`);
     }
     process.stdout.write(
       removable === 0
@@ -407,10 +408,10 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
   const kept = result.removed.filter((o) => o.detail.startsWith('kept'));
   const actuallyRemoved = result.removed.filter((o) => !o.detail.startsWith('kept'));
   for (const outcome of actuallyRemoved) {
-    process.stdout.write(`  ✓ ${outcome.label} — ${outcome.detail}\n`);
+    process.stdout.write(`  ✓ ${outcome.label} — ${escapeForTerminal(outcome.detail)}\n`);
   }
   for (const outcome of kept) {
-    process.stdout.write(`  • ${outcome.label} — ${outcome.detail}\n`);
+    process.stdout.write(`  • ${outcome.label} — ${escapeForTerminal(outcome.detail)}\n`);
   }
   process.stdout.write(
     `\ncleanup: removed ${String(actuallyRemoved.length)}, ` +
@@ -817,7 +818,9 @@ function planRun(
       `\n  construct plan ${started.runId}\n`,
   );
   for (const d of plan.discarded) {
-    process.stdout.write(`  discarded: ${d.description} — ${d.reason}\n`);
+    process.stdout.write(
+      `  discarded: ${escapeForTerminal(d.description)} — ${escapeForTerminal(d.reason)}\n`,
+    );
   }
 }
 
@@ -825,14 +828,14 @@ function reportRun(started: StartedRun): void {
   process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
   process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
   for (const implication of started.implicated) {
-    process.stdout.write(`  ${implication.domain}  — ${implication.concern}\n`);
+    process.stdout.write(`  ${implication.domain}  — ${escapeForTerminal(implication.concern)}\n`);
     // Named implications carry no keyword score, so reporting one would
     // invite comparison with numbers that mean something else entirely.
     const evidence =
       started.inferredBy === 'keywords'
         ? `signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})`
         : `reason: ${implication.signals.join(' ')}`;
-    process.stdout.write(`      ${evidence}\n`);
+    process.stdout.write(`      ${escapeForTerminal(evidence)}\n`);
   }
   if (started.inferredBy === 'user') {
     process.stdout.write('\nYou named these; nothing was inferred and no model was consulted.\n');
@@ -848,14 +851,14 @@ function reportRun(started: StartedRun): void {
     // A keyword answer standing in for a model's is a degradation, and the
     // user hears it here as well as in the log.
     process.stdout.write(
-      `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
+      `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); the keyword map answered instead.\n`,
     );
   }
   if (started.namerRetriedAfter !== undefined) {
     // A repaired reply is the model's answer, but it took a second call to
     // get it, and the fragility should not read as a clean first turn.
     process.stdout.write(
-      `\nThe model's first reply could not be parsed (${started.namerRetriedAfter}); ` +
+      `\nThe model's first reply could not be parsed (${escapeForTerminal(started.namerRetriedAfter)}); ` +
         'a corrective retry produced this answer.\n',
     );
   }
@@ -982,29 +985,29 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       });
       if (densified.retriedAfter !== undefined) {
         process.stdout.write(
-          `intake's first reply could not be parsed (${densified.retriedAfter}); ` +
+          `intake's first reply could not be parsed (${escapeForTerminal(densified.retriedAfter)}); ` +
             'a corrective retry produced this understanding.\n',
         );
       }
       process.stdout.write(`as understood (your words are the record; correct this if it is wrong):\n`);
-      process.stdout.write(`  outcome: ${densified.outcome}\n`);
-      for (const c of densified.constraints) process.stdout.write(`  constraint: ${c}\n`);
-      for (const d of densified.decisions) process.stdout.write(`  decided: ${d}\n`);
-      for (const p of densified.parked) process.stdout.write(`  parked: ${p}\n`);
+      process.stdout.write(`  outcome: ${escapeForTerminal(densified.outcome)}\n`);
+      for (const c of densified.constraints) process.stdout.write(`  constraint: ${escapeForTerminal(c)}\n`);
+      for (const d of densified.decisions) process.stdout.write(`  decided: ${escapeForTerminal(d)}\n`);
+      for (const p of densified.parked) process.stdout.write(`  parked: ${escapeForTerminal(p)}\n`);
       // Fail-open, never a gate: staffing proceeds either way. What this buys
       // is the reader seeing, before paying for the run, that the outcome was
       // thin enough to need a guess — rather than finding out only from what
       // the roles guessed.
       if (densified.underspecified.length > 0) {
         process.stdout.write(
-          `  this is thin enough that staffing will have to guess: ${densified.underspecified}\n` +
+          `  this is thin enough that staffing will have to guess: ${escapeForTerminal(densified.underspecified)}\n` +
             '  staffing proceeds on that guess; nothing here blocks the run.\n',
         );
       }
       process.stdout.write('\n');
     } else if (densifyFailure !== undefined) {
       process.stdout.write(
-        `the outcome could not be optimized at intake (${densifyFailure}); the raw text is used as given.\n\n`,
+        `the outcome could not be optimized at intake (${escapeForTerminal(densifyFailure)}); the raw text is used as given.\n\n`,
       );
     }
 
@@ -1024,7 +1027,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
       process.stdout.write(
         started.namerFailure !== undefined
-          ? `no domains implicated. ${host.name} could not be consulted (${started.namerFailure}) ` +
+          ? `no domains implicated. ${host.name} could not be consulted (${escapeForTerminal(started.namerFailure)}) ` +
               'and the keyword map is silent too — this is recorded, not silently dropped.\n'
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
@@ -1135,7 +1138,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
         await host.init();
       } catch (error) {
         process.stderr.write(
-          `ask: host "${host.name}" is not available — ${(error as Error).message}\n`,
+          `ask: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`,
         );
         return 1;
       }
@@ -1177,9 +1180,9 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       return 0;
     }
 
-    process.stdout.write(`answering: ${answering.domain} — ${answering.concern}\n`);
+    process.stdout.write(`answering: ${answering.domain} — ${escapeForTerminal(answering.concern)}\n`);
     process.stdout.write(
-      `  ${started.inferredBy === 'keywords' ? 'signals' : 'reason'}: ${answering.signals.join(' ')}\n`,
+      `  ${started.inferredBy === 'keywords' ? 'signals' : 'reason'}: ${escapeForTerminal(answering.signals.join(' '))}\n`,
     );
     const alsoTouched = started.implicated.filter((i) => i !== answering);
     if (alsoTouched.length > 0) {
@@ -1194,7 +1197,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     }
     if (started.namerFailure !== undefined) {
       process.stdout.write(
-        `\nThe model could not be consulted (${started.namerFailure}); the keyword map answered instead.\n`,
+        `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); the keyword map answered instead.\n`,
       );
     }
     const notice = highRiskNotice(answering.domain, licensedReviewFor(answering.domain));
@@ -1248,13 +1251,13 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     const task = report.settled.map((id) => getTask(store, id)).find((t) => t !== null);
     if (!task || task.state !== 'done') {
       process.stderr.write(
-        `\nno answer: ${task ? failureLine(task.error) : 'the dispatch produced nothing'}\n`,
+        `\nno answer: ${task ? escapeForTerminal(failureLine(task.error)) : 'the dispatch produced nothing'}\n`,
       );
       return 1;
     }
 
     const draft = latestDraft(store, task.id)?.deliverable ?? task.result;
-    const answer = renderClaim(deliverableBody(draft));
+    const answer = escapeForTerminal(renderClaim(deliverableBody(draft)));
     process.stdout.write(`\n${answer.trimEnd()}\n`);
 
     const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
@@ -1262,10 +1265,10 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     // The deliverable's own defects, printed with it rather than left in the
     // log: an answer read without them is an answer read as better than it is.
     for (const concern of deliverableConcerns(task.result)) {
-      process.stdout.write(`⚑ ${concern.detail}\n`);
+      process.stdout.write(`⚑ ${escapeForTerminal(concern.detail)}\n`);
     }
     for (const limit of limitsFor(store, started.runId, task.id)) {
-      process.stdout.write(`⚑ ${limit.label}\n`);
+      process.stdout.write(`⚑ ${escapeForTerminal(limit.label)}\n`);
     }
     if (report.degraded > 0) {
       process.stdout.write(
@@ -1466,9 +1469,9 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       if (!sourceRead.ok) {
         refused += 1;
         process.stderr.write(
-          `notes: ${sourceRead.reason}\n` +
-            (sourceRead.remediation ? `  ${sourceRead.remediation}\n` : '') +
-            `  (docling probe: ${doclingProbe.detail})\n`,
+          `notes: ${escapeForTerminal(sourceRead.reason)}\n` +
+            (sourceRead.remediation ? `  ${escapeForTerminal(sourceRead.remediation)}\n` : '') +
+            `  (docling probe: ${escapeForTerminal(doclingProbe.detail)})\n`,
         );
         // The refusal and its fallback path reach the record, not just
         // stderr — a run reading its log later must see why this source is
@@ -1557,7 +1560,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
       await host.init();
     } catch (error) {
       process.stderr.write(
-        `notes: host "${host.name}" is not available — ${(error as Error).message}. ` +
+        `notes: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}. ` +
           `The ${recorded.length === 1 ? 'note is' : 'notes are'} recorded; run the loop again when the host is.\n`,
       );
       return 1;
@@ -1628,7 +1631,7 @@ async function contextLoopOverNote(
     densified = await createHostDensifier(host)(body);
   } catch (error) {
     process.stderr.write(
-      `notes: the note could not be densified (${(error as Error).message}). ` +
+      `notes: the note could not be densified (${escapeForTerminal((error as Error).message)}). ` +
         `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
     );
     return false;
@@ -1667,13 +1670,13 @@ async function contextLoopOverNote(
     produced = toProducedLoop(reply, noteId);
   } catch (error) {
     process.stderr.write(
-      `notes: the loop could not read the note (${(error as Error).message}). ` +
+      `notes: the loop could not read the note (${escapeForTerminal((error as Error).message)}). ` +
         `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
     );
     return false;
   }
   for (const reason of produced.discarded) {
-    process.stdout.write(`  discarded: ${reason}\n`);
+    process.stdout.write(`  discarded: ${escapeForTerminal(reason)}\n`);
   }
 
   // The screen before the gate: a citation that does not resolve, or a
@@ -1687,7 +1690,7 @@ async function contextLoopOverNote(
     const cited = resolveNoteCitation(store, delta.citation);
     if (!cited) {
       process.stdout.write(
-        `  discarded: delta "${delta.body.slice(0, 60)}" cites ${delta.citation}, which is not a line of this note\n`,
+        `  discarded: delta "${escapeForTerminal(delta.body.slice(0, 60))}" cites ${escapeForTerminal(delta.citation)}, which is not a line of this note\n`,
       );
       continue;
     }
@@ -1696,13 +1699,13 @@ async function contextLoopOverNote(
       challenge = await challenger(delta, cited.text);
     } catch (error) {
       process.stdout.write(
-        `  held back: delta "${delta.body.slice(0, 60)}" could not be challenged (${(error as Error).message}); an unchallenged delta is not recorded\n`,
+        `  held back: delta "${escapeForTerminal(delta.body.slice(0, 60))}" could not be challenged (${escapeForTerminal((error as Error).message)}); an unchallenged delta is not recorded\n`,
       );
       continue;
     }
     if (!challenge.upheld) {
       process.stdout.write(
-        `  refuted: delta "${delta.body.slice(0, 60)}" — ${challenge.detail}\n`,
+        `  refuted: delta "${escapeForTerminal(delta.body.slice(0, 60))}" — ${escapeForTerminal(challenge.detail)}\n`,
       );
       continue;
     }
@@ -1721,13 +1724,13 @@ async function contextLoopOverNote(
   for (const [i, proposal] of produced.proposals.entries()) {
     if (!sourceIds.has(proposal.source)) {
       process.stdout.write(
-        `  discarded: proposal "${proposal.change.slice(0, 60)}" targets ${proposal.source}, which is not a declared source\n`,
+        `  discarded: proposal "${escapeForTerminal(proposal.change.slice(0, 60))}" targets ${escapeForTerminal(proposal.source)}, which is not a declared source\n`,
       );
       continue;
     }
     if (!resolveNoteCitation(store, proposal.justification)) {
       process.stdout.write(
-        `  discarded: proposal "${proposal.change.slice(0, 60)}" cites ${proposal.justification}, which is not a line of this note\n`,
+        `  discarded: proposal "${escapeForTerminal(proposal.change.slice(0, 60))}" cites ${escapeForTerminal(proposal.justification)}, which is not a line of this note\n`,
       );
       continue;
     }
@@ -1747,7 +1750,7 @@ async function contextLoopOverNote(
   for (const update of produced.records) {
     if (!getRecord(store, update.record)) {
       process.stdout.write(
-        `  discarded: record update ${update.record}.${update.field} names a record this workspace does not keep\n`,
+        `  discarded: record update ${escapeForTerminal(update.record)}.${escapeForTerminal(update.field)} names a record this workspace does not keep\n`,
       );
       continue;
     }
@@ -1768,19 +1771,19 @@ async function contextLoopOverNote(
     at,
   );
 
-  process.stdout.write(`\n${result.summary}\n`);
+  process.stdout.write(`\n${escapeForTerminal(result.summary)}\n`);
 
   if (result.admissions.length > 0) {
     process.stdout.write('\nmemory deltas (through the admission gate):\n');
     for (const admission of result.admissions) {
-      process.stdout.write(`  ${admission.verdict}: ${admission.lesson} — ${admission.reason}\n`);
+      process.stdout.write(`  ${admission.verdict}: ${escapeForTerminal(admission.lesson)} — ${escapeForTerminal(admission.reason)}\n`);
     }
   }
   if (result.updated.length > 0) {
     process.stdout.write(
       `\nrecords updated (${String(result.updated.length)}) — each field cites the note line that moved it:\n`,
     );
-    for (const moved of result.updated) process.stdout.write(`  ${moved}\n`);
+    for (const moved of result.updated) process.stdout.write(`  ${escapeForTerminal(moved)}\n`);
   }
   if (result.filed.length > 0) {
     process.stdout.write(
@@ -1822,21 +1825,21 @@ function writeDrift(screened: ScreenResult): void {
       // quotation shortened to fit a line is a document quoted as saying
       // something narrower than it did.
       const cites = flag.citations
-        .map((c) => `${c.source} ${c.document}${c.quote ? ` "${c.quote.trim()}"` : ''}`)
+        .map((c) => `${escapeForTerminal(c.source)} ${escapeForTerminal(c.document)}${c.quote ? ` "${escapeForTerminal(c.quote.trim())}"` : ''}`)
         .join('; ');
-      process.stdout.write(`  ${flag.claim}\n    cites: ${cites}\n`);
+      process.stdout.write(`  ${escapeForTerminal(flag.claim)}\n    cites: ${cites}\n`);
       process.stdout.write(
         flag.wording.length > 0
-          ? `    wording from: ${citationList(flag.wording)}\n`
+          ? `    wording from: ${escapeForTerminal(citationList(flag.wording))}\n`
           : '    wording from: not stated — nothing attributes these words to a document\n',
       );
       if (flag.unverifiedSupport !== null) {
-        process.stdout.write(`    ${flag.unverifiedSupport}\n`);
+        process.stdout.write(`    ${escapeForTerminal(flag.unverifiedSupport)}\n`);
       }
     }
   }
   for (const drop of screened.discarded) {
-    process.stdout.write(`  discarded observation: ${drop.observation.claim.slice(0, 60)} — ${drop.reason}\n`);
+    process.stdout.write(`  discarded observation: ${escapeForTerminal(drop.observation.claim.slice(0, 60))} — ${escapeForTerminal(drop.reason)}\n`);
   }
 }
 
@@ -1906,7 +1909,7 @@ function writeReadEvidence(evidence: GroundReadEvidence, returned: number): Read
     if (evidence.unreadable.length > 0) {
       process.stderr.write('  it reported these unreadable:\n');
       for (const failed of evidence.unreadable) {
-        process.stderr.write(`    ${failed.document} — ${failed.detail}\n`);
+        process.stderr.write(`    ${escapeForTerminal(failed.document)} — ${escapeForTerminal(failed.detail)}\n`);
       }
     }
     process.stderr.write(
@@ -1927,7 +1930,7 @@ function writeReadEvidence(evidence: GroundReadEvidence, returned: number): Read
     if (evidence.unreadable.length > 0) {
       process.stdout.write('  the reviewer could not open:\n');
       for (const failed of evidence.unreadable) {
-        process.stdout.write(`    ${failed.document} — ${failed.detail}\n`);
+        process.stdout.write(`    ${escapeForTerminal(failed.document)} — ${escapeForTerminal(failed.detail)}\n`);
       }
     }
     if (evidence.unaccounted.length > 0) {
@@ -2033,7 +2036,7 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
         `across ${String(sources.length)} source${sources.length === 1 ? '' : 's'}\n`,
     );
     for (const source of unsurveyed) {
-      process.stdout.write(`  not surveyed: ${source.id} — ${source.unreachable ?? ''}\n`);
+      process.stdout.write(`  not surveyed: ${source.id} — ${escapeForTerminal(source.unreachable ?? '')}\n`);
     }
 
     if (args.host === undefined && hostOverride === undefined) {
@@ -2056,7 +2059,7 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
     try {
       await host.init();
     } catch (error) {
-      process.stderr.write(`review: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      process.stderr.write(`review: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
       return 1;
     }
 
@@ -2064,10 +2067,10 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
     try {
       reviewed = toReviewedDrift(await createHostReviewer(host)({ sources: producerSources }));
     } catch (error) {
-      process.stderr.write(`review: the ground could not be read (${(error as Error).message}).\n`);
+      process.stderr.write(`review: the ground could not be read (${escapeForTerminal((error as Error).message)}).\n`);
       return 1;
     }
-    for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${reason}\n`);
+    for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${escapeForTerminal(reason)}\n`);
 
     // What the review can show about its own reading comes before what it
     // found. A pass whose reads the host refused returns a well-formed empty
@@ -2317,7 +2320,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         const where = args.run ? ` for ${args.run}` : '';
         process.stdout.write(`nothing to work${where}.\n`);
         for (const task of listTasks(store, args.run).filter((t) => t.state === 'failed')) {
-          process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${failureLine(task.error)}\n`);
+          process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${escapeForTerminal(failureLine(task.error))}\n`);
         }
         writeTotalFailureRecourse(failedTasks);
         return 1;
@@ -2429,7 +2432,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       await host.init();
     } catch (error) {
       // A host that cannot start must never read as a run with nothing to do.
-      process.stderr.write(`work: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      process.stderr.write(`work: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
       return 1;
     }
 
@@ -2469,7 +2472,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       const task = getTask(store, id);
       if (!task) continue;
       if (task.state === 'failed') {
-        process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${failureLine(task.error)}\n`);
+        process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${escapeForTerminal(failureLine(task.error))}\n`);
         continue;
       }
       const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
@@ -2478,7 +2481,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // The two lines a user has to see: what is wrong with this deliverable,
       // and whether anyone is allowed to rely on it as it stands.
       for (const concern of deliverableConcerns(task.result)) {
-        process.stdout.write(`      ⚑ ${concern.detail}\n`);
+        process.stdout.write(`      ⚑ ${escapeForTerminal(concern.detail)}\n`);
       }
       const review = licensedReviewFor(task.role);
       if (review) {
@@ -2509,7 +2512,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     if (merged.length > 0) {
       process.stdout.write(`\nissues across roles (${String(merged.length)}, merged lexically):\n`);
       for (const [index, issue] of merged.entries()) {
-        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${renderClaim(issue.text)}\n`);
+        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${escapeForTerminal(renderClaim(issue.text))}\n`);
       }
     }
 
@@ -2698,7 +2701,7 @@ export function show(argv: string[]): number {
       // labeling rule of its own, so without this the untuned fact reached
       // nobody reading the deliverable — which is everybody who reads it.
       for (const limit of limitsFor(store, task.run, task.id)) {
-        process.stdout.write(`\n  ${limit.label}`);
+        process.stdout.write(`\n  ${escapeForTerminal(limit.label)}`);
       }
       process.stdout.write('\n');
       // A draft submitted through the write surface is the deliverable of
@@ -2711,7 +2714,7 @@ export function show(argv: string[]): number {
       }
       if (!draft) process.stdout.write('  (from the role\'s reply; no draft was submitted)\n');
       const text = deliverableBody(deliverable);
-      const body = (asRecord ? text : renderDocument(text))
+      const body = escapeForTerminal(asRecord ? text : renderDocument(text))
         .split('\n')
         .map((line) => `  ${line}`)
         .join('\n');
@@ -2736,7 +2739,9 @@ export function show(argv: string[]): number {
           'and not verified by Construct:\n',
       );
       for (const read of external) {
-        process.stdout.write(`  ${read.role}: ${read.locator}\n    took: ${read.took}\n`);
+        process.stdout.write(
+          `  ${read.role}: ${escapeForTerminal(read.locator)}\n    took: ${escapeForTerminal(read.took)}\n`,
+        );
       }
     }
     return 0;
@@ -2756,7 +2761,7 @@ export function log(argv: string[]): number {
     for (const entry of entries) {
       process.stdout.write(
         `${String(entry.seq).padStart(4)}  ${entry.at}  ${entry.role}  ${entry.action}` +
-          `${howInferred(entry.detail)}${reasonClause(entry.action, entry.detail)}\n`,
+          `${howInferred(entry.detail)}${escapeForTerminal(reasonClause(entry.action, entry.detail))}\n`,
       );
     }
     process.stdout.write(`\n${entries.length} entries (append-only).\n`);
@@ -2823,7 +2828,7 @@ function writeRunState(store: Store, run?: string): void {
     for (const [who, n] of flooding) {
       const [role, grant] = who.split(':');
       process.stdout.write(
-        `${role} was denied ${grant} ${String(n)} times — the surface held, and a role ` +
+        `${role} was denied ${escapeForTerminal(grant)} ${String(n)} times — the surface held, and a role ` +
           'retrying one call that many times is reading the refusal as a transient error ' +
           'rather than as an answer.\n',
       );
@@ -2894,10 +2899,10 @@ export function inbox(): number {
     }
     process.stdout.write(`decision inbox (${open.length}):\n\n`);
     for (const decision of open) {
-      process.stdout.write(`  ${decision.id}  ${decision.question}\n`);
+      process.stdout.write(`  ${decision.id}  ${escapeForTerminal(decision.question)}\n`);
       for (const position of decision.positions) {
-        const cited = position.citation ? ` [${position.citation}]` : ' [unverified]';
-        process.stdout.write(`      ${position.role}: ${position.stance}${cited}\n`);
+        const cited = position.citation ? ` [${escapeForTerminal(position.citation)}]` : ' [unverified]';
+        process.stdout.write(`      ${position.role}: ${escapeForTerminal(position.stance)}${cited}\n`);
       }
       process.stdout.write('\n');
     }
@@ -2978,7 +2983,7 @@ export function lessons(argv: string[]): number {
         },
         decidedAt: now(),
       });
-      process.stdout.write(`${decision.verdict} ${id}: ${decision.reason}\n`);
+      process.stdout.write(`${decision.verdict} ${id}: ${escapeForTerminal(decision.reason)}\n`);
       return 0;
     });
   }
@@ -3000,11 +3005,11 @@ export function lessons(argv: string[]): number {
       process.stdout.write(`\n  ${title}:\n`);
       for (const { lesson, verdict } of entries) {
         process.stdout.write(`    ${lesson.id}  [${lesson.kind}]\n`);
-        process.stdout.write(`      ${lesson.body}\n`);
+        process.stdout.write(`      ${escapeForTerminal(lesson.body)}\n`);
         process.stdout.write(
-          `      ${verdict ? `${verdict.verdict}: ${verdict.reason}` : 'held: no verdict recorded — absence of a verdict is a hold nobody wrote down'}\n`,
+          `      ${verdict ? `${verdict.verdict}: ${escapeForTerminal(verdict.reason)}` : 'held: no verdict recorded — absence of a verdict is a hold nobody wrote down'}\n`,
         );
-        process.stdout.write(`      cites ${lesson.citation}\n`);
+        process.stdout.write(`      cites ${escapeForTerminal(lesson.citation)}\n`);
       }
     };
     print(held, 'held');
@@ -3032,9 +3037,9 @@ const DECIDE_USAGE =
  */
 function writeProposalRow(store: Store, proposal: WriteProposal, standing: boolean): void {
   const target = getSource(store, proposal.source)?.locator ?? proposal.source;
-  process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${target}\n`);
-  process.stdout.write(`      ${proposal.change}\n`);
-  process.stdout.write(`      justified by ${proposal.justification}\n`);
+  process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${escapeForTerminal(target)}\n`);
+  process.stdout.write(`      ${escapeForTerminal(proposal.change)}\n`);
+  process.stdout.write(`      justified by ${escapeForTerminal(proposal.justification)}\n`);
   process.stdout.write(
     `      ${
       proposal.risk === 'high'
@@ -3160,7 +3165,7 @@ async function applyApproved(
     try {
       await adapter.init();
     } catch (error) {
-      process.stderr.write(`decide: host "${adapter.name}" is not available — ${(error as Error).message}\n`);
+      process.stderr.write(`decide: host "${adapter.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
       return 1;
     }
     process.stdout.write(
@@ -3177,7 +3182,7 @@ async function applyApproved(
       if (result.projected) {
         process.stdout.write(`mirrored as ${result.projected} before it crossed\n`);
       }
-      process.stdout.write(`applied ${proposal}: ${result.detail}\n`);
+      process.stdout.write(`applied ${proposal}: ${escapeForTerminal(result.detail)}\n`);
       return 0;
     }
     if (result.outcome === 'unappliable') {
@@ -3186,10 +3191,10 @@ async function applyApproved(
           `mirrored as ${result.projected} before the attempt; the mirror records what was proposed, not a landing\n`,
         );
       }
-      process.stderr.write(`decide: ${proposal} was not applied — ${result.reason}\n`);
+      process.stderr.write(`decide: ${proposal} was not applied — ${escapeForTerminal(result.reason)}\n`);
       return 1;
     }
-    process.stderr.write(`decide: ${proposal} cannot be applied — ${result.reason}\n`);
+    process.stderr.write(`decide: ${proposal} cannot be applied — ${escapeForTerminal(result.reason)}\n`);
     return 1;
   });
 }
@@ -3277,11 +3282,11 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
           decidedAt: at,
         });
         process.stdout.write(
-          `distilled ${distilled.id} (${admitted.verdict}): ${admitted.reason}\n`,
+          `distilled ${distilled.id} (${admitted.verdict}): ${escapeForTerminal(admitted.reason)}\n`,
         );
       } catch (error) {
         process.stdout.write(
-          `the decision was resolved but the lesson could not be recorded (${(error as Error).message})\n`,
+          `the decision was resolved but the lesson could not be recorded (${escapeForTerminal((error as Error).message)})\n`,
         );
       }
     }
@@ -3683,7 +3688,7 @@ export function record(argv: string[]): number {
         }
         process.stdout.write(`\n${flags.field}, oldest first:\n`);
         for (const entry of history) {
-          process.stdout.write(`  ${entry.recordedAt}  ${entry.value}\n    cites ${entry.citation}\n`);
+          process.stdout.write(`  ${entry.recordedAt}  ${escapeForTerminal(entry.value)}\n    cites ${escapeForTerminal(entry.citation)}\n`);
         }
         return 0;
       }
@@ -3693,7 +3698,7 @@ export function record(argv: string[]): number {
         return 0;
       }
       for (const field of fields) {
-        process.stdout.write(`  ${field.field}: ${field.value}\n    cites ${field.citation}\n`);
+        process.stdout.write(`  ${escapeForTerminal(field.field)}: ${escapeForTerminal(field.value)}\n    cites ${escapeForTerminal(field.citation)}\n`);
       }
       process.stdout.write('\n  How a field got here:  construct record show <id> --field=<name>\n');
       return 0;
@@ -3854,7 +3859,7 @@ async function closeGaps(input: {
       );
     } catch (error) {
       process.stdout.write(
-        `  ${source.role} could not be asked (${(error as Error).message}); its gaps stand\n`,
+        `  ${source.role} could not be asked (${escapeForTerminal((error as Error).message)}); its gaps stand\n`,
       );
     }
   }
@@ -3974,7 +3979,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     try {
       await host.init();
     } catch (error) {
-      process.stderr.write(`compose: host "${host.name}" is not available — ${(error as Error).message}\n`);
+      process.stderr.write(`compose: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
       return 1;
     }
 
@@ -4010,11 +4015,11 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         shape.sections.map((s) => s.name),
       );
     } catch (error) {
-      process.stderr.write(`compose: the deliverables could not be composed (${(error as Error).message}).\n`);
+      process.stderr.write(`compose: the deliverables could not be composed (${escapeForTerminal((error as Error).message)}).\n`);
       return 1;
     }
     for (const drop of screened.discarded) {
-      process.stdout.write(`  discarded: "${drop.claim.text.slice(0, 60)}" — ${drop.reason}\n`);
+      process.stdout.write(`  discarded: "${escapeForTerminal(drop.claim.text.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`);
     }
 
     // Construct's own read, taken before the roles are asked anything, so the
@@ -4030,11 +4035,11 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       position = read === null ? null : screenPosition(read, sources.map((s) => s.role));
     } catch (error) {
       process.stdout.write(
-        `  no position taken (${(error as Error).message}); the arranged document stands alone\n`,
+        `  no position taken (${escapeForTerminal((error as Error).message)}); the arranged document stands alone\n`,
       );
     }
     for (const drop of position?.refused ?? []) {
-      process.stdout.write(`  refused from the position: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`);
+      process.stdout.write(`  refused from the position: "${escapeForTerminal(drop.text.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`);
     }
 
     // Each role shown its own deliverable beside the claims drawn from it.
@@ -4051,7 +4056,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         verdict = await check(source, mine);
       } catch (error) {
         process.stderr.write(
-          `compose: ${source.role}'s claims could not be checked (${(error as Error).message}); ` +
+          `compose: ${source.role}'s claims could not be checked (${escapeForTerminal((error as Error).message)}); ` +
             'an unverified composition is not promoted.\n',
         );
         return 1;
@@ -4062,14 +4067,14 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       }
       if (verdict.unsupported.length > 0) {
         process.stdout.write(
-          `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${verdict.detail}\n`,
+          `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${escapeForTerminal(verdict.detail)}\n`,
         );
       } else if (verdict.detail.length > 0) {
         // A clean verdict still carries something to say when the check ran
         // same-family: the detail field is where createHostSupportChecker
         // puts the correlated-error caveat, and a check nobody printed a
         // qualification for reads as a stronger verdict than it earned.
-        process.stdout.write(`  ${source.role}: all claims supported — ${verdict.detail}\n`);
+        process.stdout.write(`  ${source.role}: all claims supported — ${escapeForTerminal(verdict.detail)}\n`);
       }
     }
 
@@ -4089,7 +4094,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           if (quote.length > 0) objections.push({ role: source.role, quote });
         } catch (error) {
           process.stdout.write(
-            `  ${source.role} could not be asked about the call (${(error as Error).message}); ` +
+            `  ${source.role} could not be asked about the call (${escapeForTerminal((error as Error).message)}); ` +
               'it stands unobjected-to by that role\n',
           );
         }
@@ -4143,7 +4148,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
             callWasRepaired = true;
             for (const drop of rescreened.refused) {
               process.stdout.write(
-                `  refused from the repaired position: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`,
+                `  refused from the repaired position: "${escapeForTerminal(drop.text.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`,
               );
             }
           } else {
@@ -4155,7 +4160,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         }
       } catch (error) {
         process.stdout.write(
-          `  the call could not be sent back (${(error as Error).message}); it stands with its objections\n`,
+          `  the call could not be sent back (${escapeForTerminal((error as Error).message)}); it stands with its objections\n`,
         );
       }
     }
@@ -4201,7 +4206,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           '> a different state for the same thing. Nothing here picks a side — the run has no\n' +
           '> standing to decide which role read correctly, and choosing by order of arrival would\n' +
           '> put one half of a live disagreement in the document under a single name.\n>\n' +
-          contested.map((fact) => `> - ${contestedLine(fact)}\n`).join(''),
+          contested.map((fact) => `> - ${escapeForTerminal(contestedLine(fact))}\n`).join(''),
       );
     }
 
@@ -4212,7 +4217,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // judgment be made at all.
     if (position !== null) {
       const p = position.position;
-      const say = (text: string) => (asRecord ? text : renderClaim(text));
+      const say = (text: string) => escapeForTerminal(asRecord ? text : renderClaim(text));
       process.stdout.write(`\n## What Construct makes of this\n\n${say(p.approach)}\n`);
       process.stdout.write(
         '\n*This is a judgment across every concern, not any one concern\'s finding. ' +
@@ -4281,7 +4286,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
             '> judgment is Construct\'s to make and the objection is theirs to make, and a reader\n' +
             '> is owed both.\n>\n' +
             collapseObjections(objections)
-              .map((o) => `> - ${o.roles.join(', ')}: "${o.quote}"\n`)
+              .map((o) => `> - ${o.roles.join(', ')}: "${escapeForTerminal(o.quote)}"\n`)
               .join(''),
         );
       }
@@ -4314,7 +4319,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         if (previousKind !== null && !(previousKind === 'bullet' && claim.kind === 'bullet')) {
           process.stdout.write('\n');
         }
-        process.stdout.write(`${renderComposedClaim(claim, asRecord)}\n`);
+        process.stdout.write(`${escapeForTerminal(renderComposedClaim(claim, asRecord))}\n`);
         previousKind = claim.kind;
       }
     }
@@ -4358,9 +4363,9 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // Construct's voice, not the composer's arrangement of a first.
       process.stdout.write('\n## what was open until somebody went and looked\n\n');
       for (const answer of closing.closed) {
-        const text = asRecord ? answer.answer : renderClaim(answer.answer);
+        const text = escapeForTerminal(asRecord ? answer.answer : renderClaim(answer.answer));
         const from = asRecord ? answer.role : renderAttribution(answer.role);
-        process.stdout.write(`- ${answer.gap}\n  → ${text} [${from}]\n`);
+        process.stdout.write(`- ${escapeForTerminal(answer.gap)}\n  → ${text} [${from}]\n`);
       }
     }
     if (closing !== null && closing.contested.length > 0) {
@@ -4369,16 +4374,16 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       // has no standing to resolve, under a single name.
       process.stdout.write('\n## questions two roles answered differently\n\n');
       for (const item of closing.contested) {
-        process.stdout.write(`- ${item.gap}\n`);
+        process.stdout.write(`- ${escapeForTerminal(item.gap)}\n`);
         for (const answer of item.answers) {
-          const text = asRecord ? answer.answer : renderClaim(answer.answer);
+          const text = escapeForTerminal(asRecord ? answer.answer : renderClaim(answer.answer));
           const from = asRecord ? answer.role : renderAttribution(answer.role);
           process.stdout.write(`  → ${text} [${from}]\n`);
         }
       }
     }
     for (const drop of closing?.refused ?? []) {
-      process.stdout.write(`  discarded: "${drop.gap.slice(0, 60)}" — ${drop.reason}\n`);
+      process.stdout.write(`  discarded: "${escapeForTerminal(drop.gap.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`);
     }
 
     // The gap is part of the document, not a footnote under it. A composition
@@ -4392,12 +4397,12 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       process.stdout.write('- every question the composing left open was closed by the round that followed it\n');
     } else {
       for (const item of standing) {
-        process.stdout.write(`- ${item.gap}\n`);
+        process.stdout.write(`- ${escapeForTerminal(item.gap)}\n`);
         // A gap several roles opened their material for and could not settle is
         // a different fact from one nobody looked at, and only the reasons can
         // tell them apart. Without them the second reads as the first.
         for (const reason of item.reasons) {
-          process.stdout.write(`  (${reason.role} looked: ${reason.reason})\n`);
+          process.stdout.write(`  (${reason.role} looked: ${escapeForTerminal(reason.reason)})\n`);
         }
       }
     }
@@ -4454,10 +4459,10 @@ export function plan(argv: string[]): number {
     }
     process.stdout.write(`plan ${found.id} (run ${found.run}, ${found.plannedAt})\n`);
     process.stdout.write(`  outcome: ${found.outcome}\n`);
-    process.stdout.write(`  understood as: ${found.understanding.restated}\n`);
-    for (const c of found.understanding.constraints) process.stdout.write(`  constraint: ${c}\n`);
-    for (const d of found.understanding.decisions) process.stdout.write(`  decided: ${d}\n`);
-    for (const p of found.understanding.parked) process.stdout.write(`  parked: ${p}\n`);
+    process.stdout.write(`  understood as: ${escapeForTerminal(found.understanding.restated)}\n`);
+    for (const c of found.understanding.constraints) process.stdout.write(`  constraint: ${escapeForTerminal(c)}\n`);
+    for (const d of found.understanding.decisions) process.stdout.write(`  decided: ${escapeForTerminal(d)}\n`);
+    for (const p of found.understanding.parked) process.stdout.write(`  parked: ${escapeForTerminal(p)}\n`);
     process.stdout.write(`  risk: ${found.riskTier}  mode: ${found.mode}\n`);
     process.stdout.write(
       found.sourcesDeclared.length > 0
@@ -4469,10 +4474,10 @@ export function plan(argv: string[]): number {
     }
     for (const step of found.steps) {
       const route = found.routing.find((r) => r.step === step.id);
-      process.stdout.write(`\n  ${step.id}  ${step.description}\n`);
+      process.stdout.write(`\n  ${step.id}  ${escapeForTerminal(step.description)}\n`);
       process.stdout.write(
         `    routed to ${step.domain} by ${route?.routedBy ?? 'unknown'}` +
-          (route && route.evidence.length > 0 ? ` (${route.evidence.slice(0, 4).join(', ')})` : '') +
+          (route && route.evidence.length > 0 ? ` (${escapeForTerminal(route.evidence.slice(0, 4).join(', '))})` : '') +
           '\n',
       );
       process.stdout.write(`    stage: ${step.stage}  deliverable: ${step.deliverable.deliverable}\n`);
@@ -4481,7 +4486,7 @@ export function plan(argv: string[]): number {
       if (step.after.length > 0) process.stdout.write(`    after: ${step.after.join(', ')}\n`);
     }
     for (const d of found.discarded) {
-      process.stdout.write(`\n  discarded: ${d.description} — ${d.reason}\n`);
+      process.stdout.write(`\n  discarded: ${escapeForTerminal(d.description)} — ${escapeForTerminal(d.reason)}\n`);
     }
     return 0;
   });
@@ -4760,12 +4765,12 @@ export function propose(argv: string[]): number {
           `${String(extraction.proposals.length)} finding(s) that could be proposed\n`,
       );
       for (const drop of extraction.refused) {
-        process.stdout.write(`  refused: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`);
+        process.stdout.write(`  refused: "${escapeForTerminal(drop.text.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`);
       }
       for (const proposal of extraction.proposals) {
         process.stdout.write(
-          `  ${proposal.id}  [${proposal.risk}, ${proposal.action}]  ${proposal.change}\n` +
-            `      because: ${proposal.justification}\n`,
+          `  ${proposal.id}  [${proposal.risk}, ${proposal.action}]  ${escapeForTerminal(proposal.change)}\n` +
+            `      because: ${escapeForTerminal(proposal.justification)}\n`,
         );
         if (flags['dry-run'] !== undefined) continue;
         if (getProposal(store, proposal.id) !== null) {
@@ -5120,9 +5125,9 @@ export function staff(argv: string[]): number {
       for (const entry of unmet) {
         const d = (entry.detail ?? {}) as Record<string, unknown>;
         process.stdout.write(
-          `${String(entry.seq).padStart(4)}  ${entry.run}  proposed "${String(d.proposed ?? '')}"` +
-            `  [${String(d.reason ?? 'reason not recorded')}]\n` +
-            `      because: ${String(d.why || '(the namer gave no reason, which is what refused it)')}\n`,
+          `${String(entry.seq).padStart(4)}  ${entry.run}  proposed "${escapeForTerminal(String(d.proposed ?? ''))}"` +
+            `  [${escapeForTerminal(String(d.reason ?? 'reason not recorded'))}]\n` +
+            `      because: ${escapeForTerminal(String(d.why || '(the namer gave no reason, which is what refused it)'))}\n`,
         );
       }
       process.stdout.write(
