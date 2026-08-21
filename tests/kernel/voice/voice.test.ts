@@ -13,6 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   HOUSE_VOICE,
+  attributionLine,
   carriesVoice,
   constructIdentity,
   frameHostTask,
@@ -152,6 +153,22 @@ test('a host task is framed once: already-bound tasks pass through untouched', (
   assert.match(overridden, /Write it as a limerick\./);
   for (const rule of HOUSE_VOICE) assert.ok(!overridden.includes(rule.rule));
   assert.ok(carriesVoice(overridden));
+});
+
+test('the attribution a document carries says who framed it and who wrote it', () => {
+  assert.equal(
+    attributionLine(['privacy']),
+    '*Framed by the privacy concern. Written by Construct in one voice, and every claim below ' +
+      'names the concern it came from.*',
+  );
+  assert.match(attributionLine(['privacy', 'security']), /the privacy and security concerns/);
+  assert.match(
+    attributionLine(['privacy', 'security', 'product scoping']),
+    /the privacy, security, and product scoping concerns/,
+  );
+  // Nothing narrower framed it, and the line still says who wrote it rather
+  // than leaving the document unsigned.
+  assert.equal(attributionLine([]), '*Written by Construct, in one voice.*');
 });
 
 test('the CLI carries an override through, and blank is not an override', () => {

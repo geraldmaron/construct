@@ -80,6 +80,7 @@ import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts'
 import { COMPOSITION_SHAPES, shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { renderAttribution, renderClaim, renderComposedClaim, renderHeading } from '../kernel/run/publish.ts';
+import { attributionLine } from '../kernel/voice/voice.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
 import {
   collapseObjections,
@@ -3793,7 +3794,18 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     }
 
     const kept = screened.claims.filter((claim) => !unsupported.has(claim));
+    // The record keeps the markers and the slugs the gates read; a reader gets
+    // sentences. --record asks for the stored form, for anything downstream
+    // that needs to check the text rather than read it.
+    const asRecord = flags.record !== undefined;
     process.stdout.write(`\n# ${plan.outcome}\n`);
+    // Who framed this, in whose name, before anything they framed. A document
+    // that names its concerns only claim by claim leaves the reader to work out
+    // at the end who was in the room, and a reader who does not know that
+    // cannot weigh what is missing from it.
+    process.stdout.write(
+      `\n${attributionLine(sources.map((s) => (asRecord ? s.role : renderAttribution(s.role))))}\n`,
+    );
 
     // Before the claims, not after them. A reader who reaches the end of a
     // document and only then learns that none of its sources passed their own
@@ -3833,7 +3845,6 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // names, which is what lets the judgment be made at all.
     if (position !== null) {
       const p = position.position;
-      const asRecord = flags.record !== undefined;
       const say = (text: string) => (asRecord ? text : renderClaim(text));
       process.stdout.write(`\n## What Construct makes of this\n\n${say(p.approach)}\n`);
       process.stdout.write(
@@ -3927,10 +3938,6 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         empty.push(section.name);
         continue;
       }
-      // The record keeps the markers the gates read; a reader gets sentences.
-      // --record asks for the stored form, for anything downstream that needs
-      // to check the text rather than read it.
-      const asRecord = flags.record !== undefined;
       process.stdout.write(`\n## ${asRecord ? section.name : renderHeading(section.name)}\n\n`);
       // Consecutive bullets read as one list; anything else is a block with
       // its own attribution line, so it gets the blank-line spacing a

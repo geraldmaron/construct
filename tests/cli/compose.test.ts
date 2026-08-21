@@ -269,6 +269,30 @@ test('a run with several deliverables composes, and what no deliverable supports
   assert.match(out, /Shaped as a decision/);
 });
 
+/**
+ * The document says who framed it before it says anything they framed. A
+ * reader who only meets the concerns claim by claim has to reach the end to
+ * learn who was in the room, and cannot weigh what is missing until then.
+ */
+test('a composed document names the staff that framed it, at the top, in Construct\'s name', async () => {
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => compose([`--run=${latestRun()}`], composeHost()),
+  ]);
+  const heading = out.indexOf(`# ${OUTCOME}`);
+  const attribution = out.indexOf('Framed by the');
+  assert.ok(attribution > heading, 'the attribution sits under the title');
+  assert.match(
+    out.slice(attribution, attribution + 200),
+    /Framed by the (product scoping and strategy alignment|strategy alignment and product scoping) concerns\. Written by Construct in one voice/,
+  );
+  // Above every section the claims were placed in, not appended at the end.
+  assert.ok(attribution < out.indexOf('## The choice'), 'it comes before what it frames');
+  // Role ids are keys; a reader is not reading keys.
+  assert.ok(!out.slice(attribution, attribution + 200).includes('strategy-alignment'));
+});
+
 test('a clean support verdict still prints whatever the check attached to it, not just a silent pass', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
