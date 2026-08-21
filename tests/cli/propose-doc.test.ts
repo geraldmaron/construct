@@ -77,7 +77,7 @@ function inStore<T>(fn: (store: ReturnType<typeof openStore>) => T): T {
 }
 
 /** Declare the documents source a change is proposed against. */
-function declareDocs(id = 'docs-1', locator = 'org/docs'): () => number {
+function declareDocs(id = 'docs-1', locator = 'confluence:space:DOCS'): () => number {
   return () => {
     inStore((store) => {
       addSource(store, {
@@ -147,7 +147,7 @@ test('a redline is recorded with its document, both halves and its citation, and
   assert.equal(seen.edit?.proposed, NOW);
 
   // The same change, in the words a person approves and a host would be handed.
-  assert.match(filed[0].change, /^redline docs\/adr\/0007-storage\.md in org\/docs$/m);
+  assert.match(filed[0].change, /^redline docs\/adr\/0007-storage\.md in confluence:space:DOCS$/m);
   assert.match(filed[0].change, /--- was\n.*read-only/);
   assert.match(filed[0].change, /--- now\n.*coordinator alone/);
   assert.equal(filed[0].justification, CITATION);
@@ -243,7 +243,7 @@ test('authoring a document carries its body, files at high risk, and reads from 
   assert.equal(seen.edit?.kind, 'authored');
   assert.equal(seen.edit?.anchor, '', 'a new document displaces nothing');
   assert.equal(seen.edit?.proposed, body);
-  assert.match(filed[0].change, /^author docs\/adr\/0012-storage\.md into org\/docs$/m);
+  assert.match(filed[0].change, /^author docs\/adr\/0012-storage\.md into confluence:space:DOCS$/m);
   assert.match(filed[0].change, /--- new document\n# Storage/);
   assert.match(out, /filed wp-doc-docs-adr-0012-storage-md-[0-9a-f]{12} at high risk/);
 });
