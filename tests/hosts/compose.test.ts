@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import {
   closingPrompt,
   composerPrompt,
+  formGuidanceForShape,
   createHostObjectionChecker,
   createHostSupportChecker,
   positionPrompt,
@@ -24,7 +25,7 @@ import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.t
 import type { SourceDeliverable, ComposedClaim } from '../../src/kernel/run/compose.ts';
 import { CORRELATED_ERROR_CAVEAT } from '../../src/kernel/challenge/familyroute.ts';
 import { HOUSE_VOICE, carriesVoice, constructIdentity } from '../../src/kernel/voice/voice.ts';
-import { DEFAULT_SHAPE } from '../../src/kernel/run/shapes.ts';
+import { COMPOSITION_SHAPES, DEFAULT_SHAPE, shapeByName } from '../../src/kernel/run/shapes.ts';
 import type { ConstructPosition } from '../../src/kernel/run/position.ts';
 
 const SOURCE: SourceDeliverable = { role: 'strategy-alignment', text: 'the deliverable text' };
@@ -194,4 +195,28 @@ test('an unknown producer family still falls back and still caveats, even with a
     assert.equal(other.calls, 0);
     assert.match(verdict.detail, /upper bound on independent agreement/);
   })();
+});
+
+// The composed document is prose-led: paragraph is the stated default, and
+// each shipped shape names form guidance of its own instead of inheriting the
+// review's. These held on the parallel line that first fixed the bullet-wall
+// default and are kept holding here.
+test('the composer prefers prose and names form by document shape', () => {
+  const review = composerPrompt({ outcome: 'Look at the beta plan', sources: [SOURCE], shape: DEFAULT_SHAPE });
+  assert.match(review, /"paragraph" is the default/);
+  assert.doesNotMatch(review, /Most claims are "bullet"/);
+  assert.match(review, /Form for this review/);
+  assert.ok(review.includes(formGuidanceForShape(DEFAULT_SHAPE)));
+  const rfc = composerPrompt({ outcome: 'Write an RFC for shape governance', sources: [SOURCE], shape: shapeByName('rfc')! });
+  assert.match(rfc, /Form for this RFC/);
+});
+
+test('every shipped shape has named form guidance of its own', () => {
+  for (const shape of COMPOSITION_SHAPES) {
+    const guidance = formGuidanceForShape(shape);
+    assert.match(guidance, /Form for this /);
+    if (shape.name !== 'review') {
+      assert.doesNotMatch(guidance, /Form for this review/, `${shape.name} must not inherit review form by falling through`);
+    }
+  }
 });

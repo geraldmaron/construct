@@ -274,6 +274,7 @@ const RFC_SIGNALS = [
 const ADR_SIGNALS = [
   'write an adr', 'draft an adr', 'an adr for', 'adr for',
   'architecture decision record', 'architectural decision record',
+  'write an architecture decision', 'draft an architecture decision',
 ];
 
 /**

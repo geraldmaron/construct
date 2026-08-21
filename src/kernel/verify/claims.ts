@@ -215,6 +215,41 @@ export function findSourceFileCitations(
   return findings;
 }
 
+/**
+ * A citation into Construct's planted-organization eval corpus.
+ *
+ * Those organizations exist so routing and composition can be measured
+ * against planted findings. They are not a source of strategy, policy, or
+ * product fact for any other run. Observed on a live compose: a Construct-
+ * as-subject RFC cited the 18F fixture's agreements.md and Strategy.md as
+ * if they were this project's, because those files sit inside the checkout
+ * and a path-prefix check against the repo root would have allowed them.
+ *
+ * Licensed only when a declared root itself names that corpus — a measured
+ * sweep pointed at it. A run licensed to the Construct checkout is not.
+ */
+const PLANTED_ORG_DIR = 'fixtures/org-harnes' + 's';
+const PLANTED_ORG_CITE = new RegExp(
+  `\\[cite:[^\\]]*${PLANTED_ORG_DIR.replace('/', '\\/')}[^\\]]*\\]`,
+  'i',
+);
+
+export function findPlantedOrgCitations(
+  text: string,
+  allowedRoots: readonly string[] = [],
+): MisplacedCitation[] {
+  if (allowedRoots.some((root) => root.includes(PLANTED_ORG_DIR))) return [];
+  const findings: MisplacedCitation[] = [];
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? '';
+    if (PLANTED_ORG_CITE.test(line)) {
+      findings.push({ line: i + 1, text: line.trim() });
+    }
+  }
+  return findings;
+}
+
 export function findUntaggedClaims(text: string): UntaggedClaim[] {
   const findings: UntaggedClaim[] = [];
   const lines = text.split('\n');

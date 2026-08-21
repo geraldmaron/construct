@@ -27,10 +27,11 @@
  *     the composition wrote. An answer to a gap nobody listed is refused the
  *     way a claim attributed to an absent role is refused — it is the same
  *     failure, an addition wearing the shape of an arrangement.
- *   - THE ROLE'S OWN WORDS. These claims never pass through the composer, so
+ *   - THE ROLE'S ATTRIBUTION. These claims never pass through the composer, so
  *     there is nothing for the support screen to catch: the screen exists
  *     because arranging is where an added sentence hides, and nothing is being
- *     arranged here. They carry the role's name because they are the role's.
+ *     arranged here. They carry the role's name because they answer that role's
+ *     obligation, written in Construct's voice like every other line.
  */
 
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
@@ -43,7 +44,7 @@ export interface ClosedGap {
   readonly gap: string;
   /** The role whose material settled it. */
   readonly role: string;
-  /** What that material says, in the role's words. */
+  /** What that material says, in Construct's voice, carrying this role's name. */
   readonly answer: string;
 }
 

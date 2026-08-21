@@ -111,14 +111,13 @@ export function standingLine(standing: SourceStanding): string {
 }
 
 /**
- * What shape a claim's content takes. Bullet is the default and the right
- * choice for one atomic fact; the others exist because a composed document
- * flattening five paragraphs of grounded reasoning, a real comparison table,
- * or a dependency structure the deliverables themselves describe into
- * one-line bullets throws away depth the underlying deliverables actually
- * had (measured directly: role deliverables in this system are structured,
- * multi-paragraph, citation-bearing prose; the composed document built from
- * them was, until this, bullets and nothing else).
+ * What shape a claim's content takes. Paragraph is what the composer is told
+ * to prefer; bullet is the parse fallback when a model omits or invents a
+ * kind (so an older reply still renders rather than vanishing). The others
+ * exist because a composed document that flattens grounded multi-paragraph
+ * reasoning, a real comparison table, or a dependency structure into one-line
+ * bullets throws away depth the deliverables already had — measured directly
+ * when composition emitted bullets and nothing else.
  */
 export const CLAIM_KINDS = ['bullet', 'paragraph', 'table', 'diagram'] as const;
 export type ClaimKind = (typeof CLAIM_KINDS)[number];

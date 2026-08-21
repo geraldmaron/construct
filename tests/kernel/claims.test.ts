@@ -5,6 +5,7 @@ import {
   findScaffoldingCitations,
   findHarnessCorpusCitations,
   namesHarnessCorpus,
+  findPlantedOrgCitations,
 } from '../../src/kernel/verify/claims.ts';
 
 test('flags a dollar figure with no citation or unverified tag', () => {
@@ -165,4 +166,15 @@ test('namesHarnessCorpus recognizes both fixture directories as ground roots', (
 test('namesHarnessCorpus does not fire on an unrelated declared root', () => {
   assert.equal(namesHarnessCorpus('/ground/repo'), false);
   assert.equal(namesHarnessCorpus('fixtures/org-other'), false);
+});
+
+test('the org-harness corpus is not evidence unless the run was licensed to it', () => {
+  const line =
+    'IAA mechanics live in the agreement [cite:fixtures/org-harness-broad/corpus/policies/agreements.md].';
+  assert.equal(findPlantedOrgCitations(line, ['/repo']).length, 1);
+  assert.equal(findPlantedOrgCitations(line, []).length, 1);
+  assert.equal(
+    findPlantedOrgCitations(line, ['/repo/fixtures/org-harness-broad']).length,
+    0,
+  );
 });

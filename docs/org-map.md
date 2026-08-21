@@ -196,7 +196,7 @@ template, and say so.
 
 **The concern.** Certifications, audits, and regulator-facing obligations.
 
-**What it hands you.** A review memo, with these sections required before the work is called finished:
+**What it hands you.** A compliance review, with these sections required before the work is called finished:
 
 - `finding` — the conclusion, stated first, in plain language
 - `evidence` — what supports the finding, each item citing a source read or the domain catalog

@@ -398,7 +398,7 @@ test('outcome with no text is a usage error, not an empty run', async () => {
 
 test('help lists the spine commands', async () => {
   const { out } = await run(['help']);
-  for (const command of ['outcome', 'work', 'log', 'inbox', 'decide']) {
+  for (const command of ['outcome', 'work', 'log', 'inbox', 'decide', 'lessons']) {
     assert.match(out, new RegExp(command));
   }
 });
@@ -445,9 +445,10 @@ test('construct show renders the deliverable a run produced, with its qualifiers
   ]);
 
   assert.equal(code, 0);
-  assert.match(out, /employment — done/);
+  assert.match(out, /Construct · .*framed through employment — done/);
   assert.match(out, /employment reporting/, 'the deliverable body is readable');
   assert.match(out, /needs review by a licensed attorney/, 'the qualifier travels with the text');
+  assert.match(out, /asks for .*finding/, 'empty required slots are disclosed, not silent');
 });
 
 /**

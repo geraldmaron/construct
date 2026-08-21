@@ -388,15 +388,17 @@ test('a host that throws is a failed task, not a crashed coordinator', async () 
   });
 });
 
-test('the assignment states the role and its concern, and nothing it cannot support', () => {
+test('the assignment states Construct identity, the framing role, and its concern', () => {
   const text = assignmentFor(brief('privacy'));
-  assert.match(text, /privacy role/);
+  assert.match(text, /You are Construct/);
+  assert.match(text, /framed by the privacy role/);
+  assert.doesNotMatch(text, /acting as/);
   assert.match(text, /personal data, consent/, "the domain's own concern is what makes it specific");
   assert.match(text, /launch a paid beta/);
 
   // A role outside the catalog gets no invented concern.
   const unknown = assignmentFor(brief('astrology'));
-  assert.match(unknown, /astrology role/);
+  assert.match(unknown, /framed by the astrology role/);
   assert.ok(!unknown.includes('Your concern:'));
 });
 
@@ -452,7 +454,19 @@ test('an equipped role is shown its lens: posture, questions, escalation, labels
 
   // A domain no lens equips gets no invented posture. Every catalog domain
   // carries a lens now, so the case is exercised by a domain outside it.
-  assert.ok(!assignmentFor(brief('no-such-domain')).includes('Your posture:'));
+  assert.ok(!assignmentFor(brief('no-such-domain')).includes('Posture:'));
+});
+
+test('issue-spotting templates number issues; a PRD is a document, not a list of issues', () => {
+  const privacy = assignmentFor(brief('privacy'));
+  assert.match(privacy, /Number every issue/);
+  assert.match(privacy, /Deliver a privacy review/);
+
+  const prd = assignmentFor(brief('product-scoping'));
+  assert.match(prd, /Deliver a product requirements document/);
+  assert.doesNotMatch(prd, /Number every issue/);
+  assert.match(prd, /Number every requirement/);
+  assert.match(prd, /criterion that says it is met/);
 });
 
 test('an equipped role is told to drop findings another role owns, verbatim', () => {

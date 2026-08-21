@@ -315,6 +315,19 @@ The inbox holds decisions that are genuinely yours to make, which usually means
 two roles disagreed and neither should win by default. An empty inbox is a real
 answer and says so.
 
+When you resolve a decision with `construct decide`, Construct may distill it
+into a held run-derived lesson. Those never auto-admit — familiarity with the
+system's own operation is not verification. List and approve them on the spine:
+
+```bash
+construct lessons list --workspace=<name>
+construct lessons approve <lesson-id> --approver=<you>
+```
+
+`--approver=` is required. An unknown id exits non-zero. Approved lessons enter
+the operational brief that `work` and `ask` already inject; hosts do not get an
+approve surface.
+
 ## Tell it whether it was right
 
 This is the part most tools skip, and it is the part that makes the next run
