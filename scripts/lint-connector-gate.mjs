@@ -19,11 +19,17 @@
  *   - scripts/** and bin/** may not import src/connectors/** — Construct's
  *     own build and its CLI entry point stay connector-free: using
  *     Construct is not building Construct.
- *   - src/connectors/** may import only src/kernel/** and Node builtins —
- *     never a host adapter, never another connector, never anything else.
- *     This direction is an allow-list rather than a forbidden edge, so a
- *     future connector cannot quietly grow a dependency none of the three
- *     rules above happened to name.
+ *   - src/connectors/** may import only src/kernel/**, its own connector's
+ *     own modules, and Node builtins — never a host adapter, never another
+ *     connector, never anything else. This direction is an allow-list rather
+ *     than a forbidden edge, so a future connector cannot quietly grow a
+ *     dependency none of the three rules above happened to name. The
+ *     own-modules half is what the rule always meant by "never ANOTHER
+ *     connector": a vendor's pin, its wire, and the module that reads them
+ *     are one connector, and forbidding them each other would make every
+ *     connector a single file — which the adapter tier next door is not
+ *     either. A sibling vendor directory is still another connector and
+ *     still forbidden.
  *
  * src/cli/** is deliberately not checked. The gate governs what the kernel
  * and the build depend on, not what the CLI surface offers a user who has
@@ -83,13 +89,26 @@ export function isUnderTree(resolvedPath, treePrefix) {
 }
 
 /**
+ * The one connector a file belongs to — `src/connectors/<vendor>` — or null
+ * when it sits at the top of the connectors tree and belongs to no vendor.
+ * A top-level file has no own-modules license: shared connector code nobody
+ * has licensed is exactly the second tool broker the gate exists to refuse.
+ */
+export function connectorRootOf(relPath) {
+  const parts = relPath.split('/');
+  if (parts.length < 4) return null;
+  return `${parts[0]}/${parts[1]}` === CONNECTORS ? `${parts[0]}/${parts[1]}/${parts[2]}` : null;
+}
+
+/**
  * Every connector-gate violation in one file. `role` is `'importer'` for a
  * kernel/host/script/bin file (must not resolve into CONNECTORS) or
- * `'connector'` for a file already inside CONNECTORS (may resolve only into
- * KERNEL, or be a Node builtin).
+ * `'connector'` for a file already inside CONNECTORS (may resolve into
+ * KERNEL or into its own connector's directory, or be a Node builtin).
  */
 export function violationsIn(relPath, text, role) {
   const violations = [];
+  const ownConnector = role === 'connector' ? connectorRootOf(relPath) : null;
   for (const { specifier, line } of extractImportSpecifiers(text)) {
     const resolved = resolveRelativeImport(relPath, specifier);
     if (role === 'importer') {
@@ -99,6 +118,7 @@ export function violationsIn(relPath, text, role) {
     } else {
       const allowed =
         (resolved !== null && isUnderTree(resolved, KERNEL)) ||
+        (resolved !== null && ownConnector !== null && isUnderTree(resolved, ownConnector)) ||
         (resolved === null && isBuiltin(specifier));
       if (!allowed) violations.push({ relPath, line, specifier });
     }
@@ -183,7 +203,8 @@ function main() {
       violations += 1;
       console.error(
         `connector gate: ${v.relPath}:${v.line}: a connector imports outside its licensed set ("${v.specifier}") — ` +
-          'src/connectors/** may import only src/kernel/** and Node builtins, never a host adapter and never another connector.',
+          'src/connectors/** may import only src/kernel/**, its own connector\'s modules, and Node builtins, ' +
+          'never a host adapter and never another connector.',
       );
     }
   }

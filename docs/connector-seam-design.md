@@ -106,8 +106,14 @@ Named as an allow-list, so it also blocks a future connector from quietly
 becoming a dependency:
 
 - `src/kernel/**` may not import `src/connectors/**`.
-- `src/connectors/**` may import only `src/kernel/**` and Node builtins —
-  never a host adapter, never another connector.
+- `src/connectors/**` may import only `src/kernel/**`, its own connector's
+  own modules, and Node builtins — never a host adapter, never another
+  connector. The own-modules clause is what "another connector" always
+  meant, made explicit when the first connector was built: a vendor's pin,
+  its wire, and the module that reads them are one connector, and a rule
+  forbidding them each other would force every connector into a single file
+  while the adapter tier beside it stays multi-file. A sibling vendor
+  directory is still another connector and still forbidden.
 - `src/hosts/**` may not import `src/connectors/**` — a host and a
   connector are separate answers to "how does work reach the outside
   world," and a host reaching for a connector would be the tool-broker
