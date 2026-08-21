@@ -15,7 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { doctor } from '../../src/cli/index.ts';
+import { backup, doctor } from '../../src/cli/index.ts';
+import { openStore, storePath } from '../../src/kernel/store/open.ts';
+import { resolvePaths } from '../../src/kernel/paths.ts';
 
 function captureStdio<T>(fn: () => T): { result: T; out: string; err: string } {
   const realOut = process.stdout.write.bind(process.stdout);
@@ -48,15 +50,23 @@ function mkFixtureDir(): string {
  * doctor's exit code — so they must hand it a writable data dir, or a machine
  * whose HOME is read-only (the sterile CI job) fails the store check and the
  * exit-code assertion inherits a failure that has nothing to do with litter.
+ *
+ * The state dir moves with it. Doctor reads the record of store copies from
+ * there, and a fixture that redirected only the data dir would answer from
+ * whatever the person running the suite happens to have backed up.
  */
-function withWritableDataDir<T>(root: string, fn: () => T): T {
-  const previous = process.env.XDG_DATA_HOME;
+function withIsolatedDirs<T>(root: string, fn: () => T): T {
+  const previousData = process.env.XDG_DATA_HOME;
+  const previousState = process.env.XDG_STATE_HOME;
   process.env.XDG_DATA_HOME = path.join(root, 'share');
+  process.env.XDG_STATE_HOME = path.join(root, 'state');
   try {
     return fn();
   } finally {
-    if (previous === undefined) delete process.env.XDG_DATA_HOME;
-    else process.env.XDG_DATA_HOME = previous;
+    if (previousData === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previousData;
+    if (previousState === undefined) delete process.env.XDG_STATE_HOME;
+    else process.env.XDG_STATE_HOME = previousState;
   }
 }
 
@@ -77,7 +87,7 @@ test('doctor reports each predecessor marker with the cleanup pointer', () => {
     execFileSync('git', ['init', '-q'], { cwd });
     execFileSync('git', ['config', 'core.hooksPath', '.beads/hooks'], { cwd });
 
-    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const litterLines = out.split('\n').filter((line) => line.startsWith('ok   litter'));
     // .construct/launcher/ existing implies .construct/ itself exists too, so
@@ -97,7 +107,7 @@ test('doctor prints no litter lines for a clean project tree, and still exits 0'
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"clean"}\n');
 
-    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' litter '), `expected no litter lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -127,7 +137,7 @@ test('doctor names a skill pack stamped by a different construct version', () =>
     const stale = `${installedVersion()}-fixture-stale`;
     writeGeneratedSkill(path.join(cwd, '.claude', 'skills'), 'construct-example', stale);
 
-    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const skillsLines = out.split('\n').filter((line) => line.startsWith('ok   skills'));
     assert.equal(skillsLines.length, 1, `expected 1 skills line, got:\n${out}`);
@@ -143,7 +153,7 @@ test('doctor is silent when the skill pack matches the installed version', () =>
   try {
     writeGeneratedSkill(path.join(cwd, '.claude', 'skills'), 'construct-example', installedVersion());
 
-    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' skills '), `expected no skills lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -157,9 +167,54 @@ test('doctor is silent when no skill pack is present', () => {
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-pack"}\n');
 
-    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' skills '), `expected no skills lines, got:\n${out}`);
+    assert.equal(result, 0);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+/** The `backup` line, without the surrounding transcript. */
+function backupLine(out: string): string {
+  const line = out.split('\n').find((candidate) => candidate.startsWith('ok   backup'));
+  assert.ok(line !== undefined, `expected one backup line, got:\n${out}`);
+  return line;
+}
+
+test('doctor says plainly when no copy of the store has ever been taken', () => {
+  const cwd = mkFixtureDir();
+  try {
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+
+    const line = backupLine(out);
+    assert.match(line, /no copy of the store has ever been taken/);
+    assert.match(line, /construct backup <dir>/, 'and names what to do about it');
+    assert.equal(result, 0, 'having no copy is reported, never gated');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('doctor names the copy once one has been taken, and stays out of the exit code', () => {
+  const cwd = mkFixtureDir();
+  try {
+    const vault = path.join(cwd, 'vault');
+    const { result, out } = captureStdio(() =>
+      withIsolatedDirs(cwd, () => {
+        // A store to copy. Created directly rather than by a run: what doctor
+        // is being asked here is whether a copy exists, not what is in it.
+        openStore(storePath(resolvePaths())).close();
+        assert.equal(backup([vault]), 0, 'the copy is taken through the real verb');
+        return doctor(cwd);
+      }),
+    );
+
+    const line = backupLine(out);
+    assert.match(line, /last copy taken less than an hour ago: /);
+    assert.ok(line.includes(vault), `expected the copy's location, got: ${line}`);
+    assert.ok(!/no copy of the store/.test(line), 'the absence sentence is gone once a copy exists');
     assert.equal(result, 0);
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
