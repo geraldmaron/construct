@@ -158,6 +158,28 @@ function deniedReadsHost(): HostAdapter {
   };
 }
 
+/**
+ * A reviewer that accounts for every document its own prompt listed and finds
+ * no disagreement — the clean, uneventful pass the source-read delta tests
+ * want, so drift-observation content never has to be reasoned about alongside
+ * the read-record assertions.
+ */
+function cleanReadHost(): HostAdapter {
+  return {
+    name: 'stand-in',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      const read = [...new Set(task.match(/\S+\.md/g) ?? [])];
+      return { id: role, status: 'ok', output: { text: JSON.stringify({ read, observations: [] }) }, error: null };
+    },
+  };
+}
+
 test('a workspace with no declared ground is refused, not dispatched over nothing', async () => {
   const { code, err } = await run(() => [['review']]);
   assert.equal(code, 2);
@@ -199,6 +221,57 @@ test('an empty review that cannot account for opening one document is a failure,
   assert.match(err, /prd\.md/);
   assert.match(err, /strategy\.md/);
   assert.doesNotMatch(out, /no drift survived the screen/);
+});
+
+/**
+ * The source-read delta: what a review's own survey says changed since the
+ * ground was last read, over the append-only read record rather than a
+ * second kind of state. Three states, one test each — first read, unchanged,
+ * and changed — because a fourth read of the same ground should not need a
+ * fourth kind of test to stay honest.
+ */
+test('a first review of a source states there is no baseline, not an invented delta', async () => {
+  const { code, out } = await run((ground) => [declareGround(ground), () => review([], cleanReadHost())]);
+  assert.equal(code, 0);
+  assert.match(out, /read record:/);
+  assert.match(out, /src-docs: no baseline — this is the first recorded read\./);
+});
+
+test('a second review of unchanged ground reports nothing changed, not the same delta again', async () => {
+  const { out } = await run((ground) => [
+    declareGround(ground),
+    () => review([], cleanReadHost()),
+    () => review([], cleanReadHost()),
+  ]);
+  const passes = out.split('read record:');
+  assert.equal(passes.length, 3, 'one "read record:" section per review call');
+  assert.match(passes[1] ?? '', /src-docs: no baseline/, 'the first pass still has nothing to compare against');
+  assert.match(passes[2] ?? '', /src-docs: unchanged since/, 'the second pass compares against the first');
+  assert.doesNotMatch(passes[2] ?? '', /no baseline/, 'a baseline exists by the second pass');
+});
+
+test('a second review names the documents added and removed since the last read', async () => {
+  const { out } = await run((ground) => [
+    declareGround(ground),
+    () => review([], cleanReadHost()),
+    () => {
+      writeFileSync(join(ground, 'roadmap.md'), '# Roadmap\nShip in Q3.\n');
+      rmSync(join(ground, 'strategy.md'));
+      return 0;
+    },
+    () => review([], cleanReadHost()),
+  ]);
+  const passes = out.split('read record:');
+  assert.equal(passes.length, 3);
+  const second = passes[2] ?? '';
+  assert.match(second, /src-docs: 1 document added, 1 document removed since/);
+  assert.match(second, /added:\n\s+\S*roadmap\.md/);
+  assert.match(second, /removed:\n\s+\S*strategy\.md/);
+  assert.match(
+    second,
+    /no read row\n\s+records a document's content, so that is unverified here rather than claimed either way\./,
+    'content within an unchanged path is named unverified, never guessed at',
+  );
 });
 
 test('review takes no positional arguments, and says so rather than ignoring one', async () => {

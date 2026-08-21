@@ -20,6 +20,7 @@ import {
   decisionOf,
   engagementMode,
   getSource,
+  latestSourceReads,
   markApplied,
   pendingProposals,
   proposeWrite,
@@ -133,6 +134,51 @@ test('provenance refuses an unknown source and is append-only once written', () 
     assert.throws(() => store.db.prepare('DELETE FROM source_reads WHERE run = ?').run('run-1'));
     assert.throws(() =>
       store.db.prepare("UPDATE source_reads SET coverage = 'complete' WHERE run = ?").run('run-1'),
+    );
+  });
+});
+
+test('latestSourceReads is empty until a source has been read, then holds only its newest run', () => {
+  withStore((store) => {
+    declare(store);
+    assert.deepEqual(latestSourceReads(store, 'src-1'), [], 'nothing recorded yet is not a run of nothing');
+
+    recordSourceRead(store, {
+      run: 'run-1',
+      source: 'src-1',
+      descriptor: 'issues in PROJ',
+      coverage: 'complete',
+      detail: '3 of 3',
+      recordedAt: AT,
+    });
+    const first = latestSourceReads(store, 'src-1');
+    assert.equal(first.length, 1);
+    assert.equal(first[0]?.run, 'run-1');
+
+    recordSourceRead(store, {
+      run: 'run-2',
+      source: 'src-1',
+      descriptor: 'issues in PROJ',
+      coverage: 'complete',
+      detail: '4 of 4',
+      recordedAt: LATER,
+    });
+    recordSourceRead(store, {
+      run: 'run-2',
+      source: 'src-1',
+      descriptor: 'issues in PROJ closed',
+      coverage: 'complete',
+      detail: '1 of 1',
+      recordedAt: LATER,
+    });
+    const latest = latestSourceReads(store, 'src-1');
+    // Only run-2's rows come back — run-1's are history now, not the baseline.
+    assert.equal(latest.length, 2);
+    assert.ok(latest.every((r) => r.run === 'run-2'));
+    assert.deepEqual(
+      latest.map((r) => r.detail),
+      ['4 of 4', '1 of 1'],
+      'ascending order within the run, same as sourceReadsFor',
     );
   });
 });

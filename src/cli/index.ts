@@ -42,6 +42,7 @@ import {
   retireSource,
   setEngagementMode,
   SOURCE_KINDS,
+  sourceReadsFor,
   sourcesFor,
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
@@ -52,9 +53,9 @@ import {
   resolveFindingCitation,
 } from '../kernel/run/proposals.ts';
 import type { Deliverable } from '../kernel/run/proposals.ts';
-import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
+import { compareAndRecordSourceReads, groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
-import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
+import type { SourceReadComparison, SourceSurvey } from '../kernel/run/sourcereads.ts';
 import { DOCUMENT_CAP, documentWords, listDocuments, surveySource } from '../hosts/sources.ts';
 import type {
   DocEditKind,
@@ -1974,6 +1975,54 @@ function writeReadEvidence(evidence: GroundReadEvidence, returned: number): Read
 }
 
 /**
+ * What a source's own read history says changed since it was last surveyed —
+ * beside the read evidence rather than folded into the drift flags, because
+ * this is Construct's account of its own survey and holds whether or not the
+ * reviewer itself could show it opened anything.
+ *
+ * A source read for the first time carries no baseline to compare against,
+ * and states that rather than inventing one. Every other source is named
+ * against its own last recorded pass, over the document list alone — a path
+ * that still reads at the same coverage as last time may hold different
+ * words underneath, and no read row says either way, so that stays
+ * unverified rather than claimed.
+ */
+function writeSourceReadDelta(comparisons: readonly SourceReadComparison[]): void {
+  if (comparisons.length === 0) return;
+  process.stdout.write('\nread record:\n');
+  let compared = false;
+  for (const c of comparisons) {
+    if (!c.hasBaseline) {
+      process.stdout.write(`  ${c.source}: no baseline — this is the first recorded read.\n`);
+      continue;
+    }
+    compared = true;
+    const since = c.baselineAt ?? 'the last read';
+    const { added, removed, newlyUnreadable } = c.delta;
+    if (c.delta.unchanged) {
+      process.stdout.write(`  ${c.source}: unchanged since ${since}.\n`);
+      continue;
+    }
+    const parts: string[] = [];
+    if (added.length > 0) parts.push(`${plural(added.length, 'document')} added`);
+    if (removed.length > 0) parts.push(`${plural(removed.length, 'document')} removed`);
+    if (newlyUnreadable.length > 0) parts.push(`${plural(newlyUnreadable.length, 'document')} newly unreadable`);
+    process.stdout.write(`  ${c.source}: ${parts.join(', ')} since ${since}.\n`);
+    if (added.length > 0) process.stdout.write('    added:\n' + namedDocuments(added, '      '));
+    if (removed.length > 0) process.stdout.write('    removed:\n' + namedDocuments(removed, '      '));
+    if (newlyUnreadable.length > 0) {
+      process.stdout.write('    newly unreadable:\n' + namedDocuments(newlyUnreadable, '      '));
+    }
+  }
+  if (compared) {
+    process.stdout.write(
+      '  a path that reads at the same coverage as last time may still hold different words: no read row\n' +
+        "  records a document's content, so that is unverified here rather than claimed either way.\n",
+    );
+  }
+}
+
+/**
  * The account of what a review considered, printed whether or not it found
  * anything. Without it the two reviews that report nothing are one output: the
  * one that read the ground and disagreed with none of it, and the one that
@@ -2058,7 +2107,8 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
       return 2;
     }
 
-    const { producerSources, surveyed, words } = driftGround(sources, surveyDeclared(store, sources));
+    const surveys = surveyDeclared(store, sources);
+    const { producerSources, surveyed, words } = driftGround(sources, surveys);
     const documents = producerSources.reduce((sum, s) => sum + s.documents.length, 0);
     const unsurveyed = producerSources.filter((s) => s.unreachable !== undefined);
     process.stdout.write(
@@ -2102,12 +2152,23 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
     }
     for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${escapeForTerminal(reason)}\n`);
 
+    // This pass's own survey joins the append-only read record here, under a
+    // run id scoped to this invocation alone — a fresh one every time, so a
+    // second review of the same ground is compared against the first rather
+    // than skipped as a re-survey of a run that already has reads.
+    const readAt = now();
+    const readBase = `review-${readAt.replace(/[-:.TZ]/g, '')}`;
+    let readRun = readBase;
+    for (let n = 2; sourceReadsFor(store, readRun).length > 0; n += 1) readRun = `${readBase}-${String(n)}`;
+    const comparisons = compareAndRecordSourceReads(store, readRun, surveys, readAt);
+
     // What the review can show about its own reading comes before what it
     // found. A pass whose reads the host refused returns a well-formed empty
     // review, and printed as a clean one it says the ground was read and holds
     // no disagreement — two claims, neither of them made by anything.
     const evidence = groundReadEvidence(producerSources, reviewed.reads);
     const standing = writeReadEvidence(evidence, reviewed.observations.length);
+    writeSourceReadDelta(comparisons);
     if (standing === 'unread') return 1;
 
     const screened = screenObservations(reviewed.observations, sources, surveyed, words);
