@@ -38,6 +38,12 @@ and its interval are in the README and in full in `RESEARCH-DECISIONS.md` §10.
 ladder, and extra required sections. The rest route and carry the default
 template, and say so.
 
+Carrying a lens and answering for a seat are different things, and the counts
+differ. 15 of 17 concerns answer for a job title a human team would
+recognize. The other 2 are marked **no seat owns this**, and that is a finding
+rather than a gap in this page: the questions they carry are the ones that fall
+between job descriptions, which is exactly why nobody is assigned to ask them.
+
 ## The seats
 
 ### Counsel — `privacy`
@@ -464,7 +470,7 @@ template, and say so.
 
 - An unobservable failure mode in shipping work: surface the measurement gap as its own finding, not a footnote.
 
-### unmapped seat — `evidence-provenance`
+### no seat owns this — `evidence-provenance`
 
 **The concern.** Where a claim comes from, what kind of source that is, and whether a reader can check it.
 
@@ -493,7 +499,7 @@ template, and say so.
 
 **Its stated limit, which is the invariant and not a gap.** this lens judges whether a claim is traceable and correctly typed, never whether it is true — a claim citing the right record and misreading it passes here and is still wrong
 
-### unmapped seat — `coverage-gaps`
+### no seat owns this — `coverage-gaps`
 
 **The concern.** What is missing from the record, and whether its absence is a finding or a bias.
 

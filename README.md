@@ -104,7 +104,9 @@ in the right-hand columns.
 catalog carries `evidence-provenance` (where a claim comes from, what kind of
 source that is, and whether a reader can check it) and `coverage-gaps` (what is
 missing from the record, and whether its absence is a finding or a bias), and
-the generated seat map labels each of them, in its own word, an unmapped seat.
+the generated seat map marks each of them, in its own words, `no seat owns
+this` — a declared absence, not a row somebody forgot, and the generator now
+refuses to build a page at all if a catalog concern reaches it unclassified.
 They route from your wording like any other concern and they carry the same
 obligations: provenance adds `claim-provenance` and `single-source-claims` to
 the deliverable, coverage adds `coverage-frame` and `absences`. The boundary
