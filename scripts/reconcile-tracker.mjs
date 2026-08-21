@@ -126,14 +126,17 @@ if (json) {
       process.stdout.write(
         `    ${id}  ${titles.get(id) ?? ''}\n` +
           '      recorded closed in an earlier revision of the export, open now — a close the\n' +
-          '      tracker database lost. Reclose it, or write a dated REOPENED note saying why not.\n',
+          '      tracker database lost. Reclose it, or write a dated note settling it — REOPENED if\n' +
+          "      it was deliberate, or DRIFT ADJUDICATED (lost-close) if it wasn't lost at all.\n",
       );
     }
     for (const id of lost.missingRecords) {
       process.stdout.write(
         `    ${id}  (no record)\n` +
           '      filed in an earlier revision of the export and absent from it now — a bead the\n' +
-          '      tracker database lost. Refile it from that revision.\n',
+          '      tracker database lost. Refile it from that revision, or, if this checkout is just\n' +
+          '      behind another ref, write a dated DRIFT ADJUDICATED (missing-filing) note naming\n' +
+          '      this id — on any current bead, since this one has none of its own.\n',
       );
     }
     // The same known-benign warning the commit-side findings carry, for the same
@@ -148,6 +151,11 @@ if (json) {
   if (lost.reopened.length > 0) {
     process.stdout.write(
       `\n  ${lost.reopened.length} reopened (a dated note on the bead says so): ${lost.reopened.join(', ')}\n`,
+    );
+  }
+  if (lost.adjudicated.length > 0) {
+    process.stdout.write(
+      `\n  ${lost.adjudicated.length} adjudicated (a dated note says why): ${lost.adjudicated.join(', ')}\n`,
     );
   }
 
