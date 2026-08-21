@@ -20,6 +20,7 @@ import type { OpenCodeDeliverable, OpenCodeSpawnFn, SpawnedProcess } from '../..
 import { PINNED_VERSION } from '../../../src/hosts/opencode/pin.ts';
 import { validate } from '../../../src/kernel/hosts/interface.ts';
 import { HostNotReadyError, InvocationError, InvocationTimeoutError } from '../../../src/kernel/hosts/errors.ts';
+import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 
 function fixture(name: string): string {
   return readFileSync(new URL(`fixtures/${name}.ndjson`, import.meta.url), 'utf8');
@@ -386,7 +387,12 @@ test('the role is stated to the host when no OpenCode agent is named', async () 
   assert.ok(run);
   assert.deepEqual(run.args.slice(0, 3), ['run', '--format', 'json']);
   assert.ok(run.args.includes('--model'), 'model is passed through');
-  assert.equal(run.args.at(-1), 'You are acting as: privacy.\n\nIssue-spot this DPA.');
+  // One identity, written where every adapter shares it, with the task under
+  // it exactly as the caller wrote it.
+  assert.equal(
+    run.args.at(-1),
+    `${constructIdentity({ framedBy: 'privacy' })}\n\nIssue-spot this DPA.`,
+  );
   assert.equal(run.cwd, '/w', 'the working directory is injected, never the ambient cwd');
 });
 

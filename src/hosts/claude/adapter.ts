@@ -38,6 +38,7 @@ import { PINNED_VERSION, tierOfModel } from './pin.ts';
 import { tuningOf } from '../tuning.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 import { mcpArgsFor, writeMcpConfig } from './mcpconfig.ts';
+import { frameHostTask } from '../../kernel/voice/voice.ts';
 import type { RoleServeLaunch } from './mcpconfig.ts';
 
 export const HOST_NAME = 'claude';
@@ -169,9 +170,9 @@ function readRoleEnvFrom(context: HostContext | undefined): Record<string, strin
   return Object.fromEntries(entries) as Record<string, string>;
 }
 
-/** Same framing rule as the OpenCode adapter: the role is stated in the prompt. */
+/** Same framing rule as every other adapter, and it is written in one place. */
 function framedTask(request: ClaudeRequest): string {
-  return `You are acting as: ${request.role}.\n\n${request.task}`;
+  return frameHostTask(request);
 }
 
 export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {

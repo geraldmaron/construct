@@ -30,6 +30,7 @@ import { PINNED_VERSION, tierOfModel } from './pin.ts';
 import { tuningOf } from '../tuning.ts';
 import { CONFIG_ENV_VAR, writeAdvisorConfig, writeOpenCodeConfig } from './mcpconfig.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
+import { frameHostTask } from '../../kernel/voice/voice.ts';
 
 export const HOST_NAME = 'opencode';
 
@@ -154,14 +155,17 @@ function buildRunArgs(request: OpenCodeRequest, config: OpenCodeConfig): string[
 }
 
 /**
- * The role's framing is prepended to the task rather than passed as a host
- * concept, because "role" is a Construct idea and OpenCode's `--agent` is a
- * different thing with its own config. Callers that have a real OpenCode agent
- * configured pass `agent` explicitly; everyone else gets the role stated in the
- * prompt, which is honest about what the host was actually told.
+ * The framing is prepended to the task rather than passed as a host concept,
+ * because a Construct concern is not OpenCode's `--agent`: that flag names a
+ * thing OpenCode configures and prompts itself, with an identity Construct
+ * neither wrote nor owns. Callers that have a real OpenCode agent configured
+ * pass `agent` explicitly and their task goes through untouched — framing it
+ * anyway would be Construct's identity arriving on top of one the host has
+ * already set, which is the doubling this seam exists to end. Everyone else
+ * gets the one identity, written where every adapter shares it.
  */
 function framedTask(request: OpenCodeRequest): string {
-  return request.agent ? request.task : `You are acting as: ${request.role}.\n\n${request.task}`;
+  return request.agent ? request.task : frameHostTask(request);
 }
 
 export function createOpenCodeAdapter(config: OpenCodeConfig = {}): OpenCodeAdapter {
