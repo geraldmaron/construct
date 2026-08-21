@@ -84,13 +84,16 @@ wiring, not something either app's policy commits:
 ```
 
 `construct serve` is the projection: presence inside whatever MCP host
-reads this file. Per `docs/first-run.md`, it can record an outcome, read
-the work log and the inbox, relay a decision you made, and record a
-verdict — but it can't dispatch work (spending your money stays behind a
-command you type yourself) and can't advance a deliverable toward
-finished. If `.cursor/mcp.json` doesn't exist yet in the target repo,
-create it with just this. If it exists with other servers already in it,
-add `construct-mcp` as one more key under `mcpServers`.
+reads this file. Per `docs/first-run.md`, it can read the catalog, record
+an outcome, read the work log and where a run's tasks stand, show the
+inbox and the questions roles have put to you, relay a decision or an
+answer, record a verdict, drop a note, and read the workspace's subjects.
+It can't dispatch work (spending your money stays behind a command you
+type yourself), can't run `review` or `compose` for the same reason, can't
+advance a deliverable toward finished, and can't erase anything. If
+`.cursor/mcp.json` doesn't exist yet in the target repo, create it with
+just this. If it exists with other servers already in it, add
+`construct-mcp` as one more key under `mcpServers`.
 
 For a host that isn't Cursor, `docs/first-run.md`'s "other way in" section
 covers the same entry for Claude Code, Codex, and any host that reads a
@@ -120,11 +123,13 @@ What each line means, and whether it can fail the exit code:
 |---|---|---|
 | `node` | your Node meets the 22.18 floor | yes |
 | `paths` | where state resolves to (home-scoped, not this repo) | no — always reports ok |
-| `matrix` | how current the model-tuning evidence is | no — always reports ok |
+| `matrix` | which model families the tuning evidence covers | no — always reports ok |
 | `store` | the sqlite store is writable | yes |
+| `backup` | whether a copy of the store has ever been taken; an uninsured store is not a broken one | no |
 | `host` (one line per host) | opencode/claude/codex/cursor found, version vs. the pin, auth state | no — report only |
 | `litter` (if present) | predecessor-version markers found in *this* repo's tree | no — points at `construct cleanup --scope=project`, changes nothing itself |
 | `skills` (if present) | a generated `.claude/skills` pack in *this* repo stamped by a different Construct version than the one running | no |
+| `stale-draft` (if present) | settled deliverables still sitting at draft with no recorded verdict, past the threshold | no |
 
 `doctor: healthy` and exit 0 means `node` and `store` passed — those are
 the only two lines that can fail it. Everything else is information. A
@@ -147,6 +152,10 @@ remember case by case.
 Both ran clean, from inside each app's own repo, using the direct
 invocation from Step 1 against this checkout:
 `node /Users/geralddagher/Developer/Projects/construct/bin/construct.mjs doctor`.
+
+These two transcripts are what those runs printed, not a promise that the
+line set never grows. The table above is the list to read for what `doctor`
+checks; a run of your own may carry lines these two do not.
 
 **admin-app** (branch `main`):
 
@@ -186,10 +195,11 @@ repo is read it.
 
 ## Known limitations
 
-- `host` lines report a version drift for `claude` (found 2.1.238, pinned
-  2.1.216) in both apps. Doctor doesn't gate on this and nothing in this
-  recipe fixed it; it's the same drift `docs/host-interaction.md` already
-  tracks for this machine, not something new here.
+- `host` lines report a version drift for `claude`: the installed Claude
+  Code is ahead of the version the adapter is pinned to. Doctor doesn't
+  gate on this and nothing in this recipe changes it. The pin, and every
+  behavior it was verified against, is `src/hosts/claude/pin.ts`; that
+  file is what says which version the adapter actually stands behind.
 - `opencode` and `claude` auth is never probed — neither offers a
   non-interactive status command, so "found" is the only signal doctor can
   give for those two. `codex` and `cursor` both get a real

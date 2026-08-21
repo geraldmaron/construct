@@ -1,16 +1,17 @@
 # Your first run
 
 This walks you from nothing to one finished outcome, and it should take about
-ten minutes. Every command below was run as written before this file was
-published; if one of them behaves differently for you, that difference is the
-most useful thing you can report back.
+ten minutes. Every command below was run as written against this CLI, except
+the ones that dispatch to a host and spend money; those are checked against the
+CLI's own usage line rather than dispatched. If one of them behaves differently
+for you, that difference is the most useful thing you can report back.
 
 Construct is an alpha. It works, and it is not finished. Two things are worth
 knowing before you start. Recording an outcome is free and happens on your
-machine, but actually running the work sends it to an agent host (OpenCode or
-the Claude Agent SDK), and that costs whatever your host charges. Construct
-never ships its own agent runtime, so a host has to be present for the second
-half of this walkthrough.
+machine, but actually running the work sends it to an agent host (OpenCode,
+Claude Code, Codex, or Cursor), and that costs whatever your host charges.
+Construct never ships its own agent runtime, so a host has to be present for
+the second half of this walkthrough.
 
 ## Install
 
@@ -26,11 +27,12 @@ construct doctor
 ```
 
 You should see a column of `ok` lines and `doctor: healthy`. It checks Node,
-where state lives, whether the database is writable, which agent hosts are
-present on this machine (and how each compares to the pinned version), leftover
-2.x litter in the project tree, and the installed skills pack. Only the Node
-and store checks gate the exit code; the rest inform. The full check table,
-line by line, is in [consumer-install.md](consumer-install.md).
+where state lives, whether the database is writable, whether the store has ever
+been copied, which agent hosts are present on this machine (and how each
+compares to the pinned version), leftover 2.x litter in the project tree, and
+the installed skills pack. Only the Node and store checks gate the exit code;
+the rest inform. The full check table, line by line, is in
+[consumer-install.md](consumer-install.md).
 
 ## Record an outcome
 
@@ -54,7 +56,16 @@ implicated domains (2):
       signals: contract (score 10)
 
 filed 3 work log entries and queued 2 task(s).
+Run them:  construct work --run run-20260805134446726
+Read back: construct log --run run-20260805134446726
+
+plan plan-run-20260805134446726: 2 steps, risk high, no sources declared
+  construct plan run-20260805134446726
 ```
+
+The last two lines point at the run's recorded plan. Reading it shows which
+concern each step is routed to, on what evidence, and what the deliverable
+owes. `construct plan` takes the run id as a plain word, not a flag.
 
 Nobody typed "employment" or "contracts." That inference is the whole point:
 the obvious concerns are obvious to a team that has done this before, and
@@ -83,13 +94,15 @@ as something the system inferred.
 ## Run the work
 
 ```bash
-construct work --run <your-run-id>
+construct work --run=<your-run-id>
 ```
 
 This is the step that costs money. Each implicated role gets its own
-assignment, works the outcome from its own concern, and reports back. There is
-a spend ceiling across every run on your machine (10 by default, in your host's
-cost units), and hitting it stops dispatch rather than surprising you.
+assignment, works the outcome from its own concern, and reports back. The
+dispatch runs under a spend ceiling (10 by default, in your host's cost units,
+raised with `--ceiling=`), and hitting it stops dispatch rather than surprising
+you. A host that reports no cost cannot be bound by it, and the run says so
+rather than reporting that work as free.
 
 If your host is not installed or not authenticated, this is where you find out,
 and the error says which it was.
@@ -97,7 +110,7 @@ and the error says which it was.
 ## Read the deliverable
 
 ```bash
-construct show --run <your-run-id>
+construct show --run=<your-run-id>
 ```
 
 This is the work itself: each role's deliverable in full, with its promotion
@@ -118,7 +131,7 @@ This is the same spine — the same catalog choosing who answers, the same
 declared sources read before the dispatch, the same work log, the same citation
 check — with one concern answering instead of every concern that was touched,
 and the answer printed here rather than left for `construct show`. It is one
-model call, not four.
+concern's dispatch, not four.
 
 You still never type a role name. If the question touches concerns beyond the
 one answering, they are named on screen so you can see what a full run would
@@ -160,7 +173,7 @@ silent from the inside, arriving as a finished deliverable with nothing behind
 it:
 
 ```bash
-construct work --run <id> --host=claude --dir=/path/to/your/repo
+construct work --run=<id> --host=claude --dir=/path/to/your/repo
 ```
 
 By default the survey ranks prose ahead of code and lists forty documents,
@@ -198,8 +211,10 @@ succeeding:
 construct decide --apply=<proposal-id> --host=claude
 ```
 
-A host with no way to reach the system says so, and the change stays yours to
-make rather than being recorded as made.
+Carrying a change out needs a host that can write, which is `opencode` or
+`claude`. `codex` and `cursor` dispatch read-only and are refused here. A host
+with no way to reach the system says so, and the change stays yours to make
+rather than being recorded as made.
 
 ## Keep facts about the people you work with
 
@@ -285,7 +300,7 @@ deliverables. Each answers its own concern and each is right to decline the
 rest, which leaves the composing to you:
 
 ```bash
-construct compose --run <id> --host=claude
+construct compose --run=<id> --host=claude
 ```
 
 The composer may arrange what the roles established and may not add to it.
@@ -306,7 +321,7 @@ from them, and acting on it usually means retyping each item into whatever
 system the work actually lives in. The retyping is where the citation is lost.
 
 ```bash
-construct propose --run <id> --source <source-id>
+construct propose --run=<id> --source=<source-id>
 ```
 
 Each numbered issue and each what-follows item becomes one write proposal
@@ -327,7 +342,7 @@ carrying one out is a separate, recorded step.
 ## Read back what happened
 
 ```bash
-construct log --run <your-run-id>
+construct log --run=<your-run-id>
 ```
 
 The work log is append-only and every line is in a role's name. It records what
@@ -344,16 +359,18 @@ answer and says so.
 
 When you resolve a decision with `construct decide`, Construct may distill it
 into a held run-derived lesson. Those never auto-admit — familiarity with the
-system's own operation is not verification. List and approve them on the spine:
+system's own operation is not verification. List and admit them on the spine:
 
 ```bash
-construct lessons list --workspace=<name>
-construct lessons approve <lesson-id> --approver=<you>
+construct lessons --workspace=<name>
+construct lessons --admit=<lesson-id> --by=<you>
 ```
 
-`--approver=` is required. An unknown id exits non-zero. Approved lessons enter
-the operational brief that `work` and `ask` already inject; hosts do not get an
-approve surface.
+Listing takes no subcommand: a bare `construct lessons` prints the workspace's
+held and admitted lessons in two groups. `--by=` names the human approving and
+is required; admitting without it exits 2, and an unknown lesson id exits 1.
+Admitted lessons enter the operational brief that `work` and `ask` already
+inject; hosts do not get an admit surface.
 
 ## Tell it whether it was right
 
@@ -361,13 +378,13 @@ This is the part most tools skip, and it is the part that makes the next run
 better:
 
 ```bash
-construct verdict --run <your-run-id>
+construct verdict --run=<your-run-id>
 ```
 
 That lists what surfaced. Then say what you actually think:
 
 ```bash
-construct verdict --run <your-run-id> --confirm=employment --dismiss=contracts
+construct verdict --run=<your-run-id> --confirm=employment --dismiss=contracts
 ```
 
 `--confirm` means it was right to raise this. `--dismiss` means it was not.
@@ -398,17 +415,23 @@ Or, for any host that reads a config file:
 }
 ```
 
-Then talk to your host normally. It can record an outcome, read the work log
-and the inbox, relay a decision you made, and record a verdict. Because the
-model in that host has already read your words, it can name the implicated
-domains itself, and its proposals pass exactly the same gate a subprocess
-model's would: a domain outside the catalog or without a stated reason is
-discarded, and the reply says what was not admitted.
+Then talk to your host normally. It can read the domain catalog and the version
+answering it, record an outcome, read the work log and where a run's tasks
+stand, show the inbox and the questions roles have put to you, relay a decision
+or an answer you gave, record a verdict, drop a note verbatim, and read the
+subjects the workspace keeps facts about. Because the model in that host has
+already read your words, it can name the implicated domains itself, and its
+namings pass exactly the same gate a subprocess model's would: a domain outside
+the catalog or without a stated reason is discarded, and the reply says what
+was not admitted.
 
-Two things are deliberately missing from that surface. It cannot dispatch work,
-because spending your money stays behind a command you type yourself. And it
-cannot advance a deliverable toward finished, because that judgment is not a
-model's to make about its own output.
+What is deliberately missing is as much of the point. The surface cannot
+dispatch work, because spending your money stays behind a command you type
+yourself, and `review` and `compose` are absent for the same reason: they are
+several model calls wearing the clothes of a read. It cannot advance a
+deliverable toward finished, because that judgment is not a model's to make
+about its own output. Erasing a record or a note is not there either. The one
+operation with no way back stays in front of a person at a terminal.
 
 ## When something is wrong
 

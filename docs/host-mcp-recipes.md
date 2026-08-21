@@ -2,19 +2,26 @@
 
 Recipes for pointing a host — Claude Code, OpenCode, Cursor, or any other
 MCP-capable client — at the official, vendor-run MCP servers for Jira and
-Confluence (Atlassian Rovo MCP), GitHub, Linear, and Google Workspace. No
-connector code lives here or anywhere in this repository: commitment 1 and
+Confluence (Atlassian Rovo MCP), GitHub, Linear, and Google Workspace.
+Nothing in this file is connector code: commitment 1 and
 `docs/connector-seam-design.md` license host-MCP-first as the read/write
 path, and these four servers are exactly that path. What follows is
 configuration, not implementation.
 
+(The repository does hold gated connectors, under `src/connectors/`, for
+Jira and GitHub. They are the ladder's second rung, not this one, and
+nothing outside `src/connectors/` and its tests imports them. Which rung
+answered a given read or write is recorded on the work log either way. See
+`docs/connector-seam-design.md` for the gate they were built behind.)
+
 **How the claims below are marked.** Every version, endpoint, install
-command, date, and tool count was re-checked today against the vendor's own
-current material, not recalled from training. A claim reads **(verified:
-`<source>`, checked 2026-08-21)** when it was confirmed against a primary
-source today, or **(unverified: `<why>`)** when it could not be. No number in
-this document is stated bare. Software this new moves fast — re-check before
-relying on anything here more than a few weeks old.
+command, date, and tool count was checked against the vendor's own material
+rather than recalled from training, and every claim carries the date it was
+checked. A claim reads **(verified: `<source>`, checked YYYY-MM-DD)** when it
+was confirmed against a primary source on that date, or **(unverified:
+`<why>`)** when it could not be. No number in this document is stated bare.
+Vendor MCP servers move fast, so read the check date on a claim before you
+rely on it, and re-check anything load-bearing against the source named.
 
 ## Atlassian Rovo MCP Server — Jira and Confluence
 
@@ -87,8 +94,8 @@ service and its published manifest, not something a client installs — there
 is no local binary to pin. Atlassian groups tools by product and by
 read/write/search permission on a dedicated [Supported tools
 page](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/),
-but the page renders its tool table client-side and a reliable total count
-could not be extracted today — **(unverified: exact tool count; check the
+but the page renders its tool table client-side and no reliable total count
+could be extracted from it — **(unverified: exact tool count; check the
 live page, which is what an admin scoping access should read directly
 anyway)**.
 
@@ -188,7 +195,7 @@ repository README, checked 2026-08-21).
 
 **Tools.** Not a flat count — tools are grouped into named **toolsets**, and
 a host enables only the ones it needs to keep prompt size down. Counted
-directly from the repository's own toolset table today: **21 toolsets**
+directly from the repository's own toolset table: **21 toolsets**
 (`context`, `actions`, `code_quality`, `code_security`, `copilot`,
 `copilot_issue_intents`, `dependabot`, `discussions`, `gists`, `git`,
 `issues`, `labels`, `notifications`, `orgs`, `projects`, `pull_requests`,
@@ -333,8 +340,8 @@ own docs show only Google Antigravity (Google's own IDE/CLI) and Claude
 (via its custom-connector, pre-registered-redirect-URI flow) as working
 clients; OpenCode's redirect URI is not one Google's OAuth client screen
 recognizes out of the box, and whether OpenCode's own OAuth handling can
-supply a caller-provided client ID/secret against an arbitrary redirect was
-not confirmed today **(unverified: whether OpenCode can complete Google's
+supply a caller-provided client ID/secret against an arbitrary redirect went
+unconfirmed **(unverified: whether OpenCode can complete Google's
 registered-client OAuth flow at all; test the "Others" generic pattern below
 against a real Google Cloud OAuth client before relying on it)**. Google's
 documented generic pattern for any other client: server name
@@ -352,11 +359,11 @@ shape of the tool surface, not a verified count (verified: same page's
 
 ## Recording a connected source in Construct
 
-None of the above changes what Construct itself does: reads still flow
-through whatever the host's MCP tools return, recorded as provenance, never
-through a connector this repository builds or calls. Once a host is
-attached to one of these servers, the run-time source of record for what
-Construct read is still `construct source add`:
+None of the above changes what Construct itself does. Attaching a host to a
+vendor server means reads flow through whatever that host's MCP tools
+return, recorded as provenance. Once a host is attached to one of these
+servers, the run-time source of record for what Construct read is still
+`construct source add`:
 
 ```bash
 construct source add --kind=jira --locator=<PROJECT-KEY>
@@ -364,18 +371,18 @@ construct source add --kind=github --locator=<org>/<repo>
 construct source add --kind=docs --locator=confluence:space:<SPACE-KEY>
 ```
 
-The `docs` kind's locator convention (`<provider>:<container>:<id>` — see
-`src/kernel/store/sources.ts`) is what makes a Confluence or Google Docs read
-row auditable against the source it was declared for. `jira` and `github`
-are their own, separate source kinds already (`jira`'s locator is a bare
-project key, e.g. `PROJ`); `github` is declared in `SOURCE_KINDS` but, as of
-this writing, has no locator example anywhere in this codebase's tests to
-point to — **(unverified: what a `github`-kind locator should look like in
-practice; nothing in this repository demonstrates or validates one today)**.
-Construct's kernel has no dedicated source kind for Linear at all —
-attaching a host to Linear's MCP server per this recipe does not, by itself,
-give Construct a way to record Linear provenance; that is a gap for a future
-kind, not something this recipe or `sources.ts` closes. This section names
-the wiring that already exists in this repository — it adds nothing new and
-licenses nothing that `docs/connector-seam-design.md` does not already
-license.
+All three run as written. The `docs` kind's locator convention
+(`<provider>:<container>:<id>`) is what makes a Confluence or Google Docs
+read row auditable against the source it was declared for. `jira` and
+`github` are their own, separate source kinds: `jira`'s locator is a bare
+project key (`PROJ`), and a `github` locator is exactly one `<owner>/<repo>`
+pair, refused at declaration time if it carries no slash or more than one.
+Both rules, and the full kind list, live in `src/kernel/store/sources.ts`.
+
+Construct's kernel has no source kind for Linear at all, so attaching a host
+to Linear's MCP server per this recipe does not, by itself, give Construct a
+way to record Linear provenance. That is a gap for a future kind, not
+something this recipe or `sources.ts` closes.
+
+This section names wiring that already exists. It adds nothing and licenses
+nothing that `docs/connector-seam-design.md` does not already license.
