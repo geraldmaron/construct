@@ -20,6 +20,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ACCEPTANCE_CRITERION_CLAUSE,
   COMPOSITION_SHAPES,
   DEFAULT_SHAPE,
   shapeByName,
@@ -173,4 +174,14 @@ test('naming the RFC outranks both a decision word and a neighbouring document t
 
 test('a mention of a proposal in passing does not hijack a plain review', () => {
   assert.equal(shapeForOutcome('Review the auth flow; propose a fix if you find one').name, 'review');
+});
+
+test('a requirement is asked to carry a criterion or its explicit absence, never silence', () => {
+  const requirements = shapeByName('spec')?.sections.find((s) => s.name === 'requirements');
+  assert.ok(requirements, 'the spec shape still names a requirements section');
+  assert.ok(
+    requirements.expects.includes(ACCEPTANCE_CRITERION_CLAUSE),
+    'the requirements section carries the shared checkability clause, not a restated copy of it',
+  );
+  assert.match(ACCEPTANCE_CRITERION_CLAUSE, /explicit stated absence/, 'absence is a real answer, not a gap');
 });

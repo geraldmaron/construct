@@ -114,6 +114,23 @@ const DECISION: CompositionShape = {
  * because a requirement stated with a question mark inside it is not a
  * requirement, it is the same gap wearing the shape of an answer.
  */
+/**
+ * Reused wherever a document lists requirements: the engineer reader's
+ * acceptance standard (docs/, line E3) demands one-step checkability — "a
+ * name, a version, a place to look," not a vague direction — and this is
+ * that standard carried into the template rather than left for a reviewer to
+ * remember. A requirement with no criterion and no reason for lacking one is
+ * a sentence that sounds like a commitment and checks like nothing; an
+ * explicit stated absence is a real answer here, the same way every other
+ * unbacked slot in this catalog treats [unverified] as an answer rather than
+ * a gap. This is guidance carried in the slot's own text, the same as every
+ * other qualitative expectation here (risks, rollback, success-measures) —
+ * not a structural check, because presence cannot tell a real criterion from
+ * a restated requirement, only a reader's judgment can.
+ */
+export const ACCEPTANCE_CRITERION_CLAUSE =
+  'a checkable criterion for each — a name, a version, a place to look — or an explicit stated absence, never left silent';
+
 const SPEC: CompositionShape = {
   name: 'spec',
   answers: 'an ask to define what a feature or change must do before it is built',
@@ -121,7 +138,10 @@ const SPEC: CompositionShape = {
   sections: [
     { name: 'the-problem', expects: 'what is broken or missing, and who it costs, only as the deliverables describe it' },
     { name: 'the-goal', expects: 'what success looks like, stated as an outcome rather than a task' },
-    { name: 'requirements', expects: 'what the solution must do, each tied to the role that established it' },
+    {
+      name: 'requirements',
+      expects: `what the solution must do, each tied to the role that established it, with ${ACCEPTANCE_CRITERION_CLAUSE}`,
+    },
     { name: 'non-goals', expects: 'what this deliberately does not cover, where a deliverable says so' },
     { name: 'open-questions', expects: 'what the deliverables raised and left unresolved, kept as questions rather than folded into a requirement' },
     { name: 'risks', expects: 'what could go wrong, where a deliverable names it' },

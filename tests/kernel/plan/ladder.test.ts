@@ -12,6 +12,7 @@ import { openStore } from '../../../src/kernel/store/open.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { batchAskHuman, nextRung, slotGaps, slotSection } from '../../../src/kernel/plan/ladder.ts';
 import { playbookFor } from '../../../src/kernel/plan/playbooks.ts';
+import { ACCEPTANCE_CRITERION_CLAUSE } from '../../../src/kernel/run/shapes.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -97,6 +98,11 @@ test('product-scoping ships the document a product manager hands a team', () => 
   assert.ok(
     playbookFor('program-sequencing').template.slots.some((s) => s.name === 'milestones'),
     'sequencing carries milestones',
+  );
+  const inScope = template.slots.find((s) => s.name === 'in-scope');
+  assert.ok(
+    inScope?.expects.includes(ACCEPTANCE_CRITERION_CLAUSE),
+    'the slot that carries a PRD\'s requirements demands the same checkability the spec shape does, not a restated copy',
   );
 });
 

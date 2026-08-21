@@ -51,6 +51,14 @@ export interface DomainNaming {
   readonly domain: string;
   /** The namer's stated reason. Becomes the implication's cited evidence. */
   readonly why: string;
+  /**
+   * The namer's own stated confidence, 0 to 1, when it gives one. Absent by
+   * default: no shipped namer states one today, and a naming with no
+   * confidence is judged on catalog membership and reason alone, exactly as
+   * it always was. A namer that does state one below the floor is refused —
+   * see CONFIDENCE_FLOOR — rather than routed on a guess dressed as a match.
+   */
+  readonly confidence?: number;
 }
 
 /**
@@ -65,8 +73,41 @@ export interface DomainNaming {
  * 'duplicate'       — the same domain named twice; the first naming stands.
  * 'over-limit'      — admitted, then cut by the caller's limit. The concern
  *                     was real and the run simply would not carry that many.
+ * 'low-confidence'  — the namer named a real catalog domain, with a reason,
+ *                     but stated its own confidence below the floor. The
+ *                     nanobot trial's failure mode, named: weak evidence for
+ *                     an adjacent concern (privacy vocabulary read as
+ *                     security) silently became a routed match. This reason
+ *                     keeps that from happening without discarding the
+ *                     signal — it still surfaces, marked as what it is.
  */
-export type UnmetReason = 'not-in-catalog' | 'no-reason-given' | 'duplicate' | 'over-limit';
+export type UnmetReason =
+  | 'not-in-catalog'
+  | 'no-reason-given'
+  | 'duplicate'
+  | 'over-limit'
+  | 'low-confidence';
+
+/**
+ * The floor below which a namer's own stated confidence refuses a naming
+ * rather than routing on it.
+ *
+ * Fixed at 0.5, and fixed rather than tuned, for three reasons recorded here
+ * because a judgment call this consequential does not get to hide in a bare
+ * number. First, a margin between the top candidate and the runner-up is the
+ * wrong instrument for what is a multi-label matcher, not a single pick: a
+ * narrow margin between two real concerns means dispatch both, not neither,
+ * so the floor reads each naming's own stated confidence in isolation.
+ * Second, 0.5 is the only point on the scale that explains itself — likelier
+ * wrong than right — and there is no corpus of stated confidences from any
+ * shipped namer to tune a different number against, so anything sharper
+ * would be fabricated precision wearing a decimal point. Third, this floor
+ * applies only to a confidence the namer chose to state; an unstated
+ * confidence is not assumed to be low, and routes exactly as it always has,
+ * because inventing a number the namer never said is the same offense in
+ * the other direction — the invention half of commitment 15.
+ */
+export const CONFIDENCE_FLOOR = 0.5;
 
 /**
  * A concern the namer raised that the run will not act on, kept with the
@@ -126,7 +167,7 @@ export interface NamingCache {
   set(outcome: string, implications: readonly Implication[]): void;
 }
 
-export type InferredBy = 'namer' | 'keywords' | 'cache' | 'none' | 'user';
+export type InferredBy = 'namer' | 'keywords' | 'cache' | 'none' | 'user' | 'coverage-gap';
 
 export interface NamedMap extends ImplicationMap {
   /**
@@ -135,7 +176,16 @@ export interface NamedMap extends ImplicationMap {
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
    * 'user'     — the user named the domains outright; nothing was inferred.
-   * 'none'     — nobody named a domain. Reported, never papered over.
+   * 'none'     — the namer read the catalog and confidently named nothing.
+   *              A genuine answer, not a gap.
+   * 'coverage-gap' — the namer had signal — one or more real catalog domains,
+   *              each with a reason — and none of it crossed its own stated
+   *              confidence floor. Distinct from 'none' on purpose: 'none' is
+   *              the namer's considered answer, 'coverage-gap' is the namer
+   *              seeing something it would not commit to. Routing nothing
+   *              either way, but a reader deciding whether to look closer
+   *              needs to tell the two apart — this is the nanobot trial's
+   *              privacy-read-as-security failure, named rather than routed.
    */
   readonly inferredBy: InferredBy;
   /**
@@ -210,6 +260,15 @@ function admissible(
     }
     if (seen.has(domain.domain)) {
       unmet.push({ proposed: domain.domain, why, reason: 'duplicate' });
+      continue;
+    }
+    // A namer that stated its own confidence and put it below the floor is
+    // refused on that basis specifically — checked ahead of the why-check
+    // because a low-confidence naming can carry a real reason and still not
+    // be a match, and 'low-confidence' says that more precisely than
+    // 'no-reason-given' would.
+    if (naming.confidence !== undefined && naming.confidence < CONFIDENCE_FLOOR) {
+      unmet.push({ proposed: domain.domain, why, reason: 'low-confidence' });
       continue;
     }
     // Same bar as the keyword path: an implication with nothing to cite does
@@ -304,14 +363,27 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       reason: 'over-limit',
     }),
   );
+  const allUnmet = [...unmet, ...cut];
+  // A coverage gap is specifically the namer having weak signal it declined
+  // to commit to — not any empty result. A namer that named nothing at all,
+  // or named only things outside the catalog, still reads as 'none': it is
+  // the low-confidence refusal, not silence in general, that this state
+  // exists to distinguish from a considered "nothing here."
+  const isCoverageGap = limited.length === 0 && allUnmet.some((u) => u.reason === 'low-confidence');
+  const inferredBy: InferredBy = limited.length > 0 ? 'namer' : isCoverageGap ? 'coverage-gap' : 'none';
   // A cached nothing is a real answer: the namer considered the catalog and
-  // named nothing, and the same outcome must not pay to hear it twice.
-  input.cache?.set(input.outcome, limited);
+  // named nothing, and the same outcome must not pay to hear it twice — but
+  // a coverage gap is not that. The cache stores only the implication list,
+  // with no room to carry which empty answer this was, and reading it back
+  // as a plain 'none' (below) is exactly the silent-misroute failure this
+  // state exists to prevent. So a coverage gap is not cached: the next ask
+  // pays for a fresh consultation rather than losing the distinction.
+  if (!isCoverageGap) input.cache?.set(input.outcome, limited);
   return {
     outcome: input.outcome,
     implicated: limited,
-    inferredBy: limited.length > 0 ? 'namer' : 'none',
+    inferredBy,
     ...(retriedAfter !== undefined ? { namerRetriedAfter: retriedAfter } : {}),
-    unmet: [...unmet, ...cut],
+    unmet: allUnmet,
   };
 }
