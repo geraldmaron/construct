@@ -7,7 +7,10 @@
  * every row carries the citation of the finding behind it, the tier follows
  * the action, a second extraction files nothing twice, and no decision is
  * recorded by proposing — the queue comes back pending, which is what makes
- * the apply path somebody else's step.
+ * the apply path somebody else's step. An action's source matters too: an
+ * explicit --action wins outright and is never sent to a model, a configured
+ * host's answer is used and disclosed as such, and a host that cannot decide
+ * falls back to the keyword read exactly as if no host were named at all.
  */
 
 import { test } from 'node:test';
@@ -15,7 +18,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, work } from '../../src/cli/index.ts';
+import { main, propose, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
@@ -92,6 +95,16 @@ function latestRun(): string {
   try {
     const runs = listTasks(store).map((task) => task.run);
     return runs[runs.length - 1] ?? '';
+  } finally {
+    store.close();
+  }
+}
+
+/** The one task a single-domain run dispatched, so a row id can be built without scraping output. */
+function soleTaskId(run: string): string {
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    return listTasks(store, run)[0]?.id ?? '';
   } finally {
     store.close();
   }
@@ -247,4 +260,153 @@ test('a run with no finished deliverable proposes nothing and says where to look
   ]);
   assert.equal(code, 1);
   assert.match(err, /has no finished deliverable to read/);
+});
+
+/** A host that answers the write-action role with a fixed action, for every row. */
+function actionProposingHost(action: string): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'write-action') {
+        return { id: role, status: 'ok', output: { text: `{"action":"${action}"}` }, error: null };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+/** A host whose write-action role always errors, so every row must fall back. */
+function failingActionHost(): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'write-action') {
+        return { id: role, status: 'error', output: null, error: 'the classifier died' };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+/** A host that counts how many times the write-action role was actually asked. */
+function countingActionHost(counts: { calls: number }, action: string): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'write-action') {
+        counts.calls += 1;
+        return { id: role, status: 'ok', output: { text: `{"action":"${action}"}` }, error: null };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+test('--action overrides one row by id, disclosed, and no other row moves', async () => {
+  let taskId = '';
+  let pending: ReturnType<typeof pendingProposals> = [];
+  const { code, out } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    () => {
+      taskId = soleTaskId(latestRun());
+      return 0;
+    },
+    async () => propose([`--run=${latestRun()}`, '--source=src-1', `--action=wp-${taskId}-L8:label`]),
+    () => {
+      const store = openStore(storePath(resolvePaths()));
+      try {
+        pending = pendingProposals(store, 'default');
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+  ]);
+  assert.equal(code, 0);
+  assert.match(out, /wp-\S+-L8 {2}\[low, label \(overridden\)\]/);
+  // The two rows nobody named an action for still read exactly as the keyword path gives them.
+  assert.match(out, /\[low, comment\]/);
+  assert.match(out, /\[high, update\]/);
+  assert.doesNotMatch(out, /\[high, create\]/, 'the overridden row no longer files as a create');
+  const overridden = pending.find((p) => p.id === `wp-${taskId}-L8`);
+  assert.equal(overridden?.risk, 'low', 'the override also moved the tier — label is low, create was high');
+});
+
+test('--action with no colon, or naming an action nobody defined, is a usage error', async () => {
+  const { code, err } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    async () => propose([`--run=${latestRun()}`, '--source=src-1', '--action=nocolonhere']),
+  ]);
+  assert.equal(code, 2);
+  assert.match(err, /--action must be "<row-id>:<action>"/);
+});
+
+test('--action naming an unknown action is refused the same way', async () => {
+  const { code, err } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    async () => propose([`--run=${latestRun()}`, '--source=src-1', '--action=wp-x-L8:delete-everything']),
+  ]);
+  assert.equal(code, 2);
+  assert.match(err, /--action must be "<row-id>:<action>"/);
+});
+
+test('with a host configured, every un-overridden row is model-proposed and disclosed as such', async () => {
+  const { code, out } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    async () => propose([`--run=${latestRun()}`, '--source=src-1'], actionProposingHost('label')),
+  ]);
+  assert.equal(code, 0);
+  const disclosed = out.match(/\(model-proposed\)/g) ?? [];
+  assert.equal(disclosed.length, 3, 'all three rows went through the model, none through the keyword path');
+  assert.match(out, /\[low, label \(model-proposed\)\]/);
+  assert.doesNotMatch(out, /\[low, comment\]/, 'the keyword default never fired once the model answered');
+});
+
+test('a model that cannot classify falls back to the keyword read, and stays silent about it', async () => {
+  const { code, out } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    async () => propose([`--run=${latestRun()}`, '--source=src-1'], failingActionHost()),
+  ]);
+  assert.equal(code, 0);
+  // Byte for byte the same three rows the host-less path already prints.
+  assert.match(out, /\[low, comment\]/);
+  assert.match(out, /\[high, update\]/);
+  assert.match(out, /\[high, create\]/);
+  assert.doesNotMatch(out, /model-proposed/);
+});
+
+test('an override and a host together: the overridden row never reaches the model', async () => {
+  const counts = { calls: 0 };
+  let taskId = '';
+  const { code, out } = await run([
+    ['outcome', '--domains=strategy-alignment', OUTCOME],
+    declareSource(),
+    () => work([], workHost()),
+    () => {
+      taskId = soleTaskId(latestRun());
+      return 0;
+    },
+    async () =>
+      propose(
+        [`--run=${latestRun()}`, '--source=src-1', `--action=wp-${taskId}-L8:comment`],
+        countingActionHost(counts, 'label'),
+      ),
+  ]);
+  assert.equal(code, 0);
+  assert.equal(counts.calls, 2, 'the model answered the two rows nobody named, and no more');
+  assert.match(out, /wp-\S+-L8 {2}\[low, comment \(overridden\)\]/);
+  assert.match(out, /\(model-proposed\)/);
 });

@@ -6,7 +6,10 @@
  * only numbered issues and what-follows items are read, every proposal carries
  * a citation that resolves to the line it came from, the tier follows the
  * action rather than the confidence, and a finding whose words ask for nothing
- * becomes a comment rather than an edit somebody guessed at.
+ * becomes a comment rather than an edit somebody guessed at. An action's
+ * source is the same kind of property: a per-row override always wins, a
+ * model's proposal is used only where nothing overrode it, and with neither
+ * supplied the keyword read is byte for byte what it always was.
  */
 
 import { test } from 'node:test';
@@ -15,9 +18,11 @@ import {
   actionFor,
   findingsIn,
   proposalsFrom,
+  proposeActionsWithModel,
   resolveFindingCitation,
   riskOfAction,
 } from '../../../src/kernel/run/proposals.ts';
+import type { Finding, WriteAction, WriteActionProposer } from '../../../src/kernel/run/proposals.ts';
 
 const DELIVERABLE = {
   task: 't-1',
@@ -156,4 +161,95 @@ test('a deliverable with no numbered issues and no what-follows section proposes
   const { proposals, refused } = proposalsFrom({ deliverable: prose, source: 'src-1', locator: 'PROJ' });
   assert.equal(proposals.length, 0);
   assert.equal(refused.length, 0);
+});
+
+test('with neither an override nor a model action supplied, every row reads as keyword — byte for byte what proposalsFrom always returned', () => {
+  const bare = proposalsFrom({ deliverable: DELIVERABLE, source: 'src-1', locator: 'PROJ' });
+  const withEmptyMaps = proposalsFrom({
+    deliverable: DELIVERABLE,
+    source: 'src-1',
+    locator: 'PROJ',
+    actionOverrides: new Map(),
+    modelActions: new Map(),
+  });
+  assert.deepEqual(bare, withEmptyMaps);
+  for (const proposal of bare.proposals) assert.equal(proposal.actionSource, 'keyword');
+});
+
+test('a per-row override wins outright, and every other row is untouched', () => {
+  const { proposals } = proposalsFrom({
+    deliverable: DELIVERABLE,
+    source: 'src-1',
+    locator: 'PROJ',
+    actionOverrides: new Map([['wp-t-1-L7', 'label']]),
+  });
+  const overridden = proposals.find((p) => p.id === 'wp-t-1-L7');
+  assert.equal(overridden?.action, 'label');
+  assert.equal(overridden?.actionSource, 'override');
+  assert.equal(overridden?.risk, riskOfAction('label'));
+  // Nothing else moved: the same three actions the keyword path always gave.
+  const others = proposals.filter((p) => p.id !== 'wp-t-1-L7').map((p) => p.action);
+  assert.deepEqual(others, ['update', 'create', 'label']);
+  for (const p of proposals.filter((p) => p.id !== 'wp-t-1-L7')) assert.equal(p.actionSource, 'keyword');
+});
+
+test('a model-proposed action is used when nothing overrode that row, and reports its source', () => {
+  const { proposals } = proposalsFrom({
+    deliverable: DELIVERABLE,
+    source: 'src-1',
+    locator: 'PROJ',
+    modelActions: new Map([['wp-t-1-L7', 'create']]),
+  });
+  const proposed = proposals.find((p) => p.id === 'wp-t-1-L7');
+  assert.equal(proposed?.action, 'create');
+  assert.equal(proposed?.actionSource, 'model');
+});
+
+test('an override on a row beats a model action proposed for the same row', () => {
+  const { proposals } = proposalsFrom({
+    deliverable: DELIVERABLE,
+    source: 'src-1',
+    locator: 'PROJ',
+    actionOverrides: new Map([['wp-t-1-L7', 'label']]),
+    modelActions: new Map([['wp-t-1-L7', 'create']]),
+  });
+  const row = proposals.find((p) => p.id === 'wp-t-1-L7');
+  assert.equal(row?.action, 'label');
+  assert.equal(row?.actionSource, 'override');
+});
+
+test('proposeActionsWithModel asks the proposer for every finding and keys the answers by row id', async () => {
+  const asked: string[] = [];
+  const proposer: WriteActionProposer = async (finding: Finding) => {
+    asked.push(finding.citation);
+    return 'label';
+  };
+  const actions = await proposeActionsWithModel(DELIVERABLE, proposer);
+  assert.deepEqual([...actions.entries()].sort(), [
+    ['wp-t-1-L15', 'label'],
+    ['wp-t-1-L16', 'label'],
+    ['wp-t-1-L7', 'label'],
+    ['wp-t-1-L8', 'label'],
+  ]);
+  assert.equal(asked.length, 4);
+});
+
+test('proposeActionsWithModel never asks about a row an override already named', async () => {
+  const asked: string[] = [];
+  const proposer: WriteActionProposer = async (finding: Finding) => {
+    asked.push(finding.citation);
+    return 'create';
+  };
+  const overrides = new Map<string, WriteAction>([['wp-t-1-L7', 'comment']]);
+  const actions = await proposeActionsWithModel(DELIVERABLE, proposer, overrides);
+  assert.ok(!asked.some((citation) => citation.endsWith('#L7')), 'the overridden row was never sent to the model');
+  assert.ok(!actions.has('wp-t-1-L7'), 'the model map carries no answer for a row it was never asked about');
+  assert.equal(actions.get('wp-t-1-L8'), 'create');
+});
+
+test('a finding the model declines to classify is left out of the map rather than guessed at', async () => {
+  const proposer: WriteActionProposer = async (finding: Finding) => (finding.line === 7 ? null : 'update');
+  const actions = await proposeActionsWithModel(DELIVERABLE, proposer);
+  assert.ok(!actions.has('wp-t-1-L7'));
+  assert.equal(actions.get('wp-t-1-L8'), 'update');
 });
