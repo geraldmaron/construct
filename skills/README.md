@@ -4,13 +4,28 @@ Portable method skills for AI agents: one self-contained `SKILL.md` file per ski
 
 ## What's here
 
-Three skills ship today, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed:
+Seven skills ship today, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed. Together they cover a working lifecycle — intake → context → evidence → decision → specification → prose → challenge — and each also works entirely alone:
 
+- **intake** — a messy, multi-concern request becomes an execution plan without asking the requester to restate it.
+- **context-mapping** — an unfamiliar system's entities, typed relationships, and unknowns are mapped before anyone acts inside it. The method only: persistence belongs to whatever memory store the host has.
 - **investigative-research** — multi-source research whose conclusions have to survive a hostile reader.
 - **decision-framing** — decisions that are expensive to revisit: options laid out, one recommendation, a decision record.
+- **requirements-structuring** — an intent becomes a requirements artifact a stranger could build from and verify against.
 - **written-voice** — one plain house voice for prose deliverables, with shapes for spec, proposal, status update, announcement, and README.
+- **adversarial-review** — a finished deliverable or decision is challenged before anyone commits to it, closing in one of four verdicts.
 
 More skills are planned. None are listed here until they ship.
+
+## Operating as…
+
+The skills are shared and role-free — nobody owns a deliverable type. These views are only a reading guide for where to start:
+
+| If you operate as | Start with | Then |
+|---|---|---|
+| a program/technical program manager | intake, context-mapping | decision-framing, written-voice (status updates), adversarial-review |
+| a product manager | requirements-structuring, decision-framing | investigative-research (market claims), written-voice, adversarial-review |
+| a researcher / analyst | investigative-research | written-voice (reports), adversarial-review (before publishing) |
+| a builder in an unfamiliar system | context-mapping | requirements-structuring, adversarial-review (designs) |
 
 ## Working example
 
