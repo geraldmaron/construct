@@ -182,6 +182,16 @@ import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
 import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
+import { snapshotFromSurvey, sourceGroundLine, sourceWatchFindings } from '../kernel/watch/source-ground.ts';
+import type { SourceSnapshot } from '../kernel/watch/source-ground.ts';
+import {
+  declareSourceWatch,
+  dueSourceWatches,
+  latestSourceWatchFiring,
+  listSourceWatches,
+  recordSourceWatchFiring,
+  retireSourceWatch,
+} from '../kernel/store/source-watches.ts';
 import { latestDraft, promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
 import { LENSES } from '../kernel/plan/lenses.ts';
@@ -3432,7 +3442,13 @@ export function corpus(argv: string[]): number {
 
 
 const WATCH_USAGE =
-  'usage: construct watch [--root=<repo>] [--sweep]\n';
+  'usage: construct watch [--root=<repo>]\n' +
+  '       construct watch add --source=<source-id> --every=<N>m|<N>h|<N>d ' +
+  '[--host=<opencode|claude|codex|cursor>]\n' +
+  '       construct watch list [--all]\n' +
+  '       construct watch retire <id>\n' +
+  '       construct watch --due\n' +
+  '         (schedule `construct watch --due` with cron or launchd; nothing here waits or wakes)\n';
 
 /**
  * Whether a root is a checkout of Construct itself, decided from the package
@@ -3453,13 +3469,176 @@ function isConstructCheckout(root: string): boolean {
 }
 
 /**
- * The standing watch, swept once.
+ * Declare a watch over an already-declared source. Cadence and an optional
+ * host are recorded exactly as a standing outcome records them, but nothing
+ * here spends anything: the declaration is a setting, and the first survey
+ * waits for `--due` the same way a standing outcome's first run does.
+ */
+function watchAdd(flags: Record<string, string>): number {
+  const sourceId = (flags.source ?? '').trim();
+  if (sourceId === '' || flags.every === undefined) {
+    process.stderr.write(WATCH_USAGE);
+    return 2;
+  }
+  let everyMinutes: number;
+  try {
+    everyMinutes = parseCadence(flags.every);
+  } catch (error) {
+    process.stderr.write(`watch: ${(error as Error).message}\n`);
+    return 2;
+  }
+  const host = flags.host;
+  if (host !== undefined && !(HOST_NAMES as readonly string[]).includes(host)) {
+    process.stderr.write(`watch: unknown host "${host}" (expected ${HOST_NAMES.join(', ')})\n`);
+    return 2;
+  }
+  return withStore((store) => {
+    const source = getSource(store, sourceId);
+    if (!source) {
+      process.stderr.write(`watch: no source ${sourceId} — declare it first: construct source add\n`);
+      return 1;
+    }
+    const at = now();
+    const id = `srcwatch-${at.replace(/[-:.TZ]/g, '')}`;
+    try {
+      declareSourceWatch(store, {
+        id,
+        workspace: source.workspace,
+        source: sourceId,
+        host: host ?? null,
+        everyMinutes,
+        declaredAt: at,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/UNIQUE/i.test(message)) {
+        process.stderr.write(
+          `watch: ${sourceId} already has an active watch — retire it first to redeclare\n`,
+        );
+        return 1;
+      }
+      process.stderr.write(`watch: ${message}\n`);
+      return 1;
+    }
+    process.stdout.write(
+      `declared ${id}: watching ${sourceGroundLine(source)} every ${renderCadence(everyMinutes)}` +
+        (host ? ` (host ${host} named; structural comparison still runs every sweep)` : '') +
+        '\n' +
+        '  nothing runs until `construct watch --due` fires — schedule that with cron or launchd.\n',
+    );
+    return 0;
+  });
+}
+
+function watchList(flags: Record<string, string>): number {
+  return withStore((store) => {
+    const rows = listSourceWatches(store, { includeRetired: flags.all !== undefined });
+    if (rows.length === 0) {
+      process.stdout.write('no source watches declared.\n');
+      return 0;
+    }
+    for (const row of rows) {
+      const source = getSource(store, row.source);
+      const last = latestSourceWatchFiring(store, row.id);
+      process.stdout.write(
+        `${row.id}  every ${renderCadence(row.everyMinutes)}  (workspace ${row.workspace})` +
+          (row.host ? `  host: ${row.host}` : '') +
+          (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
+          '\n' +
+          `  source: ${row.source}${source ? ` — ${sourceGroundLine(source)}` : ' (no longer declared)'}\n` +
+          `  ${last ? `last fired ${last.firedAt}` : 'never fired'}\n`,
+      );
+    }
+    return 0;
+  });
+}
+
+function watchRetire(id: string | undefined): number {
+  if (!id || id.trim() === '') {
+    process.stderr.write(WATCH_USAGE);
+    return 2;
+  }
+  return withStore((store) => {
+    try {
+      retireSourceWatch(store, id, now());
+    } catch (error) {
+      process.stderr.write(`watch: ${(error as Error).message}\n`);
+      return 1;
+    }
+    process.stdout.write(`retired ${id}; its firings stay on the record\n`);
+    return 0;
+  });
+}
+
+/**
+ * Fire what has come due: survey each elapsed watch's source structurally,
+ * compare the survey to what the last firing recorded, and raise whatever
+ * changed. No host is consulted here regardless of what a declaration names —
+ * a watch always compares structurally, never spending on a model; naming a
+ * host only records intent for whatever reviews the finding next.
+ *
+ * A firing is recorded whether or not anything changed, exactly as a
+ * self-watch sweep always records itself: a watch that stopped running must
+ * not be mistaken for a watch with nothing to report.
+ */
+function watchDue(): number {
+  return withStore((store) => {
+    const due = dueSourceWatches(store, now());
+    if (due.length === 0) {
+      process.stdout.write('nothing is due.\n');
+      return 0;
+    }
+    for (const declared of due) {
+      const source = getSource(store, declared.source);
+      if (!source) {
+        // Sources are retired, never deleted, so this names a stale
+        // reference rather than a source that vanished out from under it.
+        process.stderr.write(`watch: ${declared.id} names no source ${declared.source} — skipped\n`);
+        continue;
+      }
+      const at = now();
+      const target: Watch = { id: declared.id, ground: sourceGroundLine(source) };
+      const run = watchRun(target);
+      if (readWorkLog(store, run).length === 0) startWatch(store, target, at);
+
+      const shape = sourceShape(store, source.id);
+      const survey = surveySource(source, shape ? { emphasis: shape.emphasis, cap: shape.cap } : undefined);
+      const current = snapshotFromSurvey(survey);
+      const priorFiring = latestSourceWatchFiring(store, declared.id);
+      const prior = priorFiring ? (priorFiring.snapshot as SourceSnapshot) : null;
+
+      const findings = sourceWatchFindings({ source, prior, current, firedAt: at });
+      // Raised before recorded: a crash between the two leaves the next sweep
+      // comparing against the same prior state and re-detecting the change,
+      // which a duplicate decision survives; the other order could record a
+      // snapshot whose finding never made it to the inbox.
+      const result = sweepWatch(store, { watch: target, findings, at });
+      recordSourceWatchFiring(store, { watch: declared.id, run, firedAt: at, snapshot: current });
+
+      process.stdout.write(
+        `watch ${declared.id} (every ${renderCadence(declared.everyMinutes)}):\n  ground: ${target.ground}\n`,
+      );
+      process.stdout.write(
+        findings.length === 0
+          ? `  ${prior ? 'no change since the last sweep.' : 'first sweep; recorded a baseline.'}\n`
+          : `  ${String(result.raised.length)} raised as new decision(s).\n`,
+      );
+    }
+    process.stdout.write('\nRead decisions with: construct inbox\n');
+    return 0;
+  });
+}
+
+/**
+ * The standing watch, swept once when the bare form runs; `add`/`list`/
+ * `retire`/`--due` manage watches pointed at declared external sources.
  *
  * A watch is an outcome that never closes, so there is no "start" to run and
  * nothing to schedule: something outside decides when to look, exactly as
- * something outside decides when to `work`. The only ground is Construct
- * itself (commitment 16 made operational), which is why this takes a repo root
- * and nothing else. External ground waits behind its gates.
+ * something outside decides when to `work`. The bare form's only ground is
+ * Construct itself (commitment 16 made operational), which is why it takes a
+ * repo root and nothing else — external ground is declared with `source add`
+ * and followed with `watch add`, never with `--root`.
  *
  * `--root` therefore selects WHICH CHECKOUT of Construct to inspect, and never
  * which project to watch. The findings are drift between this project's
@@ -3470,22 +3649,27 @@ function isConstructCheckout(root: string): boolean {
  * that is not a Construct checkout is refused by name rather than swept.
  */
 export function watch(argv: string[]): number {
-  const flags: Record<string, string> = {};
-  for (const arg of argv) {
-    const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg);
-    if (match) flags[match[1]] = match[2] ?? '';
-  }
+  const { flags, words } = splitFlags(argv);
   if (flags.help !== undefined) {
     process.stdout.write(WATCH_USAGE);
     return 0;
   }
+
+  const sub = words[0];
+  if (sub === 'add') return watchAdd(flags);
+  if (sub === 'list') return watchList(flags);
+  if (sub === 'retire') return watchRetire(words[1]);
+  if (flags.due !== undefined) return watchDue();
+
   const root = flags.root || process.cwd();
   if (!isConstructCheckout(root)) {
     process.stderr.write(
       `watch: ${root} is not a Construct checkout.\n` +
-        'The watch reports drift between this project\'s strategy, tracker, and repo,\n' +
-        'so --root selects which checkout of Construct to inspect, not which project\n' +
-        'to watch. Watching other ground is not built yet.\n',
+        'The bare form reports drift between this project\'s strategy, tracker, and\n' +
+        'repo, so --root selects which checkout of Construct to inspect, not which\n' +
+        'project to watch. To watch other ground, declare it first:\n' +
+        '  construct source add --kind=directory --locator=<path>\n' +
+        '  construct watch add --source=<source-id> --every=<N>m|<N>h|<N>d\n',
     );
     return 1;
   }
