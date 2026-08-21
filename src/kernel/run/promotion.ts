@@ -32,7 +32,7 @@
 
 import type { Store } from '../store/open.ts';
 import { appendWorkLog, readWorkLog } from '../store/worklog.ts';
-import { getTask } from '../store/tasks.ts';
+import { getTask, listTasks } from '../store/tasks.ts';
 import { VERDICT_OUTCOMES, promotionState } from '../completion/promotion.ts';
 import type { Promotion, Verdict, VerdictOutcome } from '../completion/promotion.ts';
 import type { Brief } from '../brief/schema.ts';
@@ -343,4 +343,61 @@ export function waiveChallenge(
     at: input.at,
     detail: { reason: input.reason },
   });
+}
+
+/**
+ * How long a settled deliverable may sit at `draft` before it is worth
+ * naming. Nothing in the store forces a verdict — a deliverable with no
+ * required challenges stays draft forever by design, and one with
+ * outstanding challenges stays draft until somebody answers them
+ * (completion/promotion.ts) — so silence here is normal, not a defect.
+ * Three days is chosen for a single operator running this on their own
+ * machine: short enough that a forgotten draft is still recent when named,
+ * long enough that a weekend away from the machine never trips it on its
+ * own. There is no override for it; a fixed default a person can read in
+ * the line that uses it is more honest than a setting nobody sets.
+ */
+export const DEFAULT_STALE_DRAFT_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** One settled deliverable that has sat at `draft` longer than the threshold. */
+export interface StaleDraft {
+  readonly run: string;
+  readonly task: string;
+  readonly role: string;
+  readonly settledAt: string;
+  /** `now` minus `settledAt`, in milliseconds. */
+  readonly ageMs: number;
+}
+
+/**
+ * Every settled task whose deliverable is still `draft` and has been for
+ * longer than `thresholdMs`, oldest first.
+ *
+ * Built on `promotionOf` rather than a second derivation, so this can never
+ * disagree with it about which tasks are still draft — there is exactly one
+ * place promotion state is computed, and this reads it instead of guessing
+ * at it from the work log directly. A task that never settled — still
+ * running, or failed with no deliverable — is not this function's business:
+ * draft is a property of a produced result, and a task with no result has
+ * nothing to review yet.
+ *
+ * `now` is supplied, never read, for the same reason as everywhere else
+ * under run/: a caller that wants "as of right now" passes its own clock in.
+ */
+export function staleUnreviewedDrafts(
+  store: Store,
+  opts: { readonly now: string; readonly thresholdMs: number },
+): readonly StaleDraft[] {
+  const nowMs = Date.parse(opts.now);
+  const stale: StaleDraft[] = [];
+  for (const task of listTasks(store)) {
+    if (task.state !== 'done' || task.settledAt === null) continue;
+    const promotion = promotionOf(store, task.id);
+    if (promotion === null || promotion.state !== 'draft') continue;
+    const ageMs = nowMs - Date.parse(task.settledAt);
+    if (ageMs > opts.thresholdMs) {
+      stale.push({ run: task.run, task: task.id, role: task.role, settledAt: task.settledAt, ageMs });
+    }
+  }
+  return stale.sort((a, b) => b.ageMs - a.ageMs);
 }

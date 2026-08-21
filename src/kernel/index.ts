@@ -235,6 +235,7 @@ export {
 } from './run/conflicts.ts';
 export type { DeclaredStance, FrameInput, RoleStance, Stance } from './run/conflicts.ts';
 export {
+  DEFAULT_STALE_DRAFT_THRESHOLD_MS,
   DRAFT_ACTION,
   PROMOTION_ACTION,
   VERDICT_ACTION,
@@ -244,9 +245,11 @@ export {
   logPromotion,
   promotionOf,
   recordVerdict,
+  staleUnreviewedDrafts,
 } from './run/promotion.ts';
 export type {
   RecordVerdict,
+  StaleDraft,
   SubmittedDraft,
   TaskPromotion,
   VerdictRecord,
