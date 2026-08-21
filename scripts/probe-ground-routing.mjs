@@ -208,26 +208,41 @@ function completion(transport, model) {
       );
       process.exit(2);
     }
+    // A shared free-tier pool refuses calls it is simply busy with, and an
+    // answer the model was never allowed to give is not evidence about the
+    // model. Waiting out a 429 is the difference between an unmeasured cell
+    // and a fabricated one; the attempts are bounded so a pool that is down
+    // stays reported as down.
+    const BACKOFF_MS = [5000, 20000, 60000];
     return async (prompt) => {
-      const res = await fetch(OPENROUTER, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0,
-          // Reasoning-tuned families spend their budget before the object; a
-          // reply cut off mid-JSON would be recorded as a contract failure the
-          // model did not commit.
-          max_tokens: 8000,
-        }),
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(`openrouter ${String(res.status)}: ${body?.error?.message ?? ''}`);
+      let res;
+      let body;
+      for (let attempt = 0; ; attempt += 1) {
+        res = await fetch(OPENROUTER, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0,
+            // Reasoning-tuned families spend their budget before the object; a
+            // reply cut off mid-JSON would be recorded as a contract failure the
+            // model did not commit.
+            max_tokens: 8000,
+          }),
+          signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        });
+        body = await res.json();
+        const throttled = res.status === 429 || body?.error?.code === 429;
+        if (!throttled || attempt >= BACKOFF_MS.length) break;
+        await new Promise((resolve) => setTimeout(resolve, BACKOFF_MS[attempt]));
+      }
+      if (!res.ok || body?.error) {
+        throw new Error(`openrouter ${String(body?.error?.code ?? res.status)}: ${body?.error?.message ?? ''}`);
+      }
       return body?.choices?.[0]?.message?.content ?? '';
     };
   }
@@ -274,6 +289,10 @@ if (namerSpec) {
     const named = await mapImplicationsNamed({ outcome: text, namer: call });
     return {
       domains: named.implicated.map((i) => i.domain),
+      // The stated reason, kept: whether a naming cites the admitted line or
+      // reaches the same domain by another route is the difference between the
+      // ground doing the work and the ground being present while it happened.
+      why: named.implicated.map((i) => i.signals.join(' ')),
       inferredBy: named.inferredBy,
       unmet: named.unmet.map((u) => u.proposed),
       ...(named.namerFailure ? { namerFailure: named.namerFailure } : {}),
