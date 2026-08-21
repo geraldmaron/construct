@@ -4,14 +4,28 @@
  * to same-family with the correlated-error caveat attached when it is not
  * — which is every real call site in this codebase today, since none of
  * them offer a second family yet.
+ *
+ * And, below those, the prompts themselves: every pass here that writes prose
+ * a person will read writes it in Construct's voice, bound before the call
+ * rather than checked after it.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHostObjectionChecker, createHostSupportChecker } from '../../src/hosts/compose.ts';
+import {
+  closingPrompt,
+  composerPrompt,
+  createHostObjectionChecker,
+  createHostSupportChecker,
+  positionPrompt,
+  positionRepairPrompt,
+} from '../../src/hosts/compose.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import type { SourceDeliverable, ComposedClaim } from '../../src/kernel/run/compose.ts';
 import { CORRELATED_ERROR_CAVEAT } from '../../src/kernel/challenge/familyroute.ts';
+import { HOUSE_VOICE, carriesVoice, constructIdentity } from '../../src/kernel/voice/voice.ts';
+import { DEFAULT_SHAPE } from '../../src/kernel/run/shapes.ts';
+import type { ConstructPosition } from '../../src/kernel/run/position.ts';
 
 const SOURCE: SourceDeliverable = { role: 'strategy-alignment', text: 'the deliverable text' };
 const CLAIM: ComposedClaim = { section: 'the-bet', text: 'a claim', from: 'strategy-alignment', kind: 'bullet' };
@@ -109,6 +123,65 @@ test('objection check: a different family offered answers instead, no caveat', a
   assert.equal(producer.calls, 0);
   assert.equal(other.calls, 1);
   assert.equal(quote, 'this misreads my finding');
+});
+
+/**
+ * The three passes that write prose into the composed document — the
+ * arrangement, the call, and a role's answer to a gap — used to be the one
+ * place in this system where user-visible sentences were produced with no
+ * voice bound at all. The role assignments carried it; these did not, and what
+ * a reader actually holds is mostly this.
+ */
+const POSITION: ConstructPosition = {
+  approach: 'Ship the pilot in Q4.',
+  because: [{ text: 'the blocker is closed', restsOn: ['strategy-alignment'] }],
+  resolved: [],
+  costs: [],
+  first: [],
+  strongestObjection: 'The migration may be the real blocker.',
+  preMortem: 'It ships, nobody uses it.',
+  undecided: [],
+};
+
+test('the prompts that write the document write it in one voice, bound before the call', () => {
+  const prompts: Record<string, string> = {
+    composer: composerPrompt({ outcome: 'Decide the pilot', sources: [SOURCE], shape: DEFAULT_SHAPE }),
+    position: positionPrompt({ outcome: 'Decide the pilot', sources: [SOURCE] }),
+    closing: closingPrompt({
+      outcome: 'Decide the pilot',
+      source: SOURCE,
+      gaps: ['nobody costed the migration'],
+      groundRoots: [],
+    }),
+    repair: positionRepairPrompt({
+      outcome: 'Decide the pilot',
+      sources: [SOURCE],
+      position: POSITION,
+      objections: [{ roles: ['strategy-alignment'], quote: 'the blocker is closed' }],
+    }),
+  };
+  for (const [name, prompt] of Object.entries(prompts)) {
+    assert.ok(carriesVoice(prompt), `the ${name} pass writes prose a reader gets: it owes the voice`);
+    for (const rule of HOUSE_VOICE) {
+      assert.ok(prompt.includes(rule.rule), `the ${name} pass is missing the ${rule.id} rule`);
+    }
+    // One identity, the same one, however the pass was framed.
+    assert.equal(prompt.match(/You are Construct/g)?.length, 1, `${name} declares itself once`);
+    // A JSON reply and a voice block in the same prompt is a real collision,
+    // and it is answered rather than left for the model to guess at.
+    assert.match(prompt, /The reply itself is JSON/);
+  }
+});
+
+test('a role closing a gap is framed by its concern and still writes as Construct', () => {
+  const prompt = closingPrompt({
+    outcome: 'Decide the pilot',
+    source: SOURCE,
+    gaps: ['nobody costed the migration'],
+    groundRoots: [],
+  });
+  assert.ok(prompt.startsWith(constructIdentity({ framedBy: 'strategy-alignment' })));
+  assert.ok(!prompt.includes('You are the strategy-alignment role'), 'the framing is not a second author');
 });
 
 test('an unknown producer family still falls back and still caveats, even with another family offered', () => {
