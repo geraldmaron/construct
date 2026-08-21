@@ -1,0 +1,377 @@
+{
+  "note": "Forty asks a working person might actually type, each labeled with the document shape its author meant. The point of the corpus is the authorship, not the count: the keyword chooser in src/kernel/run/shapes.ts has only ever been scored against wording written beside it, and a phrase matcher scored on phrases its own authors imagined is being asked to remember rather than to reach. These forty were written by a mind that had never read the matcher, the shape catalog, or this repository at all.",
+  "authoring": {
+    "author": "one authoring agent, no repository access",
+    "authored": "2026-08-21",
+    "blind": "The author was given the five shape names and one plain-language sentence about what each shape is for, and nothing else — no keyword list, no catalog entry, no source file, no other corpus. It made zero tool calls in producing the forty, so the blindness is a fact about the transcript rather than an instruction it was trusted to have followed.",
+    "brief": "Eight asks per shape, spread across unrelated settings and registers, with at least twenty deliberately avoiding the shape's own genre word — an ask that MEANS 'write the decision down permanently' without containing 'ADR' or 'decision record'. That half is the corpus's whole purpose: a matcher keyed to genre words is trivially right when the genre word is present, and the deployment-relevant question is what it does when a real person does not happen to say it.",
+    "caveat": "Author, second coder and the prose of this repository are models of one family, so observed agreement is an upper bound on independent agreement. What blindness buys here is independence of WORDING, not independence of error — and it is wording that a keyword matcher is scored on."
+  },
+  "labels": {
+    "primary": "`shape` is the author's own intent: it wrote each ask in order to mean that shape, so the label is not a later reading of ambiguous text.",
+    "second": "`secondCoder` is an independent labeling by a different agent that saw the forty ask texts, the same five one-line definitions, and neither the author's labels nor this repository. It exists to put a number on how much of any measured miss rate is the matcher being wrong and how much is the ask being genuinely ambiguous — a matcher cannot be scored below the rate at which the ground truth contradicts itself.",
+    "adjudication": "Disagreements are NOT adjudicated toward the matcher's answer. They are reported, and every rate is quoted both over all forty and over the subset the two coders agree on."
+  },
+  "asks": [
+    {
+      "id": 1,
+      "ask": "The float pool we stood up on 4 East and 6 West back in March. I need someone to go through it honestly: what's actually holding, what's falling apart (nights are a disaster), and what I change before we take it house-wide in October.",
+      "shape": "review",
+      "avoidsGenreWord": true,
+      "setting": "hospital nurse staffing",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 2,
+      "ask": "Write the spec for the in-house bus routing tool. 214 routes, two-tier bell times, and it has to respect IEP transportation on every stop. Non-goals section is important: no parent-facing tracking in v1, that's next year.",
+      "shape": "spec",
+      "avoidsGenreWord": false,
+      "setting": "school district transportation",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 3,
+      "ask": "We settled on idempotency keys minted by the originating service instead of at the gateway. In eighteen months nobody will remember why and some new lead will try to simplify it. Write down what forced our hand, what we chose, and what we live with now.",
+      "shape": "adr",
+      "avoidsGenreWord": true,
+      "setting": "bank payments engineering",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 4,
+      "ask": "RFC for moving encoding off AWS Elemental onto our own ffmpeg farm. This circulates to the whole platform group before a dollar is committed, so make the alternatives section honest and put the open questions where people will actually see them.",
+      "shape": "rfc",
+      "avoidsGenreWord": false,
+      "setting": "media streaming platform",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 5,
+      "ask": "It's Salesforce NPSP or three more years on Bloomerang. I've landed on one. Write up where we stand, which way we're going and why, what the other road would have cost us, what happens in the first month, and what would make us walk it back.",
+      "shape": "decision",
+      "avoidsGenreWord": true,
+      "setting": "nonprofit development office",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 6,
+      "ask": "Need a full review of Blue Yonder's replenishment module before the renewal lands in Q1. Twelve months of data, all three regions, and be blunt about forecast accuracy in the Southeast because it has been terrible.",
+      "shape": "review",
+      "avoidsGenreWord": false,
+      "setting": "retail chain supply chain",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 7,
+      "ask": "Before this goes out to the integrators I want the whole thing written down: exactly what the line-side andon board must do and why each behavior is there, how it moves from the pilot cell to all six lines, and what it will not touch. No MES changes and nobody rewrites PLC logic.",
+      "shape": "spec",
+      "avoidsGenreWord": true,
+      "setting": "auto parts plant",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "low"
+    },
+    {
+      "id": 8,
+      "ask": "Decision doc please: stay on the legacy ACH gateway through 2027 or cut over to Modern Treasury this year. Current state, the call, the alternatives with real numbers, what happens first, and what would make us revisit.",
+      "shape": "decision",
+      "avoidsGenreWord": false,
+      "setting": "regional bank payments",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 9,
+      "ask": "Banner is the only system of record for enrollment. Nothing else writes to it, everything else reads a replica. That was settled two years ago and two departments have already asked to write directly. Put the reasoning somewhere permanent, with what it costs us, so I stop relitigating it every term.",
+      "shape": "adr",
+      "avoidsGenreWord": true,
+      "setting": "university registrar IT",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 10,
+      "ask": "Before this goes to the consortium I need something the other eleven libraries can mark up: our thinking on the shared off-site storage facility, what else we weighed, how we'd stage it with a checkpoint between phases, what's genuinely unsettled, and what we're leaving alone (cataloging standards don't change).",
+      "shape": "rfc",
+      "avoidsGenreWord": true,
+      "setting": "academic library consortium",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 11,
+      "ask": "Four owner-operators have disputed their settlements in six weeks and I don't think it's them. Go through the driver pay rules in the TMS end to end, tell me what holds up, what's wrong, and the order to fix it in.",
+      "shape": "review",
+      "avoidsGenreWord": true,
+      "setting": "freight carrier back office",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 12,
+      "ask": "PRD for mobile remote deposit capture: limits tiered by member tenure, duplicate-item detection, and the hold schedule ops gave us. Business accounts are out of scope for this release.",
+      "shape": "spec",
+      "avoidsGenreWord": false,
+      "setting": "credit union digital banking",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 13,
+      "ask": "Need an ADR for putting the survey archive in Parquet on object storage instead of the Postgres warehouse everyone expected. Context, decision, consequences. The grad students who inherit this in 2030 shouldn't have to track me down.",
+      "shape": "adr",
+      "avoidsGenreWord": false,
+      "setting": "astronomy survey data",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 14,
+      "ask": "Council meets on the 14th. One page on where we've come out on the meter replacement program: full AMI rollout versus phasing by pressure zone, the tradeoffs side by side, the first three things that happen if they approve, and what would make us change tack.",
+      "shape": "decision",
+      "avoidsGenreWord": true,
+      "setting": "municipal water utility",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 15,
+      "ask": "Draft an RFC for the co-op board and the eleven elevator managers on pooling grain quality test data into one shared record. Phases with a go/no-go at each, alternatives, out of scope, and every open question. The managers will pick it apart, which is the point.",
+      "shape": "rfc",
+      "avoidsGenreWord": false,
+      "setting": "grain cooperative",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 16,
+      "ask": "Two years into the 1:1 Chromebook program and the board wants to know if it was worth it. Give me the straight story before the November meeting: what worked, what didn't, and what we'd do differently.",
+      "shape": "review",
+      "avoidsGenreWord": true,
+      "setting": "school district technology",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 17,
+      "ask": "Functional spec for the rights-expiry alerting service. Must fire at 90, 30 and 7 days before a window closes, must be territory-aware, must not flood the licensing desk with duplicates. Include the alert lifecycle.",
+      "shape": "spec",
+      "avoidsGenreWord": false,
+      "setting": "media rights licensing",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 18,
+      "ask": "Everything is stored metric internally and converted only at the display layer. It's caused two arguments already. Put the reasoning somewhere permanent, including what it costs the field crews, so the next set of engineers doesn't quietly flip it back to feet.",
+      "shape": "adr",
+      "avoidsGenreWord": true,
+      "setting": "land surveying software",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 19,
+      "ask": "Decision memo for the PI: run library prep and sequencing in-house on the NovaSeq for the next two years, or send it to Novogene. Cost per sample, turnaround, and who ends up holding the raw data.",
+      "shape": "decision",
+      "avoidsGenreWord": false,
+      "setting": "genomics lab",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 20,
+      "ask": "Before anyone spends a dollar I want to put something in front of the other county EMS directors: a shared mutual-aid dispatch tier for cross-border calls. The idea, the other ways to do it, staged with a go/no-go at each step, and the questions we honestly can't answer yet. Billing stays out of it.",
+      "shape": "rfc",
+      "avoidsGenreWord": true,
+      "setting": "county EMS",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 21,
+      "ask": "Can you audit how we collect SOC 2 evidence? We passed last year but the auditors left three observations and I want to know how bad it really is before the window opens in April.",
+      "shape": "review",
+      "avoidsGenreWord": false,
+      "setting": "fintech compliance",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 22,
+      "ask": "We're paying a contractor to build the appointment reminder system, so I need the document he builds from: every behavior it must have with the reason attached, the states an appointment moves through from booking to no-show, and a hard list of what we are not asking for so he doesn't gold-plate it.",
+      "shape": "spec",
+      "avoidsGenreWord": true,
+      "setting": "veterinary clinic chain",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 23,
+      "ask": "Land the decision on whether Ashfall ships on Switch 2 at launch or three months later. Weigh it against the cert window and the marketing beat, and tell me what production does Monday morning.",
+      "shape": "decision",
+      "avoidsGenreWord": false,
+      "setting": "game studio production",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 24,
+      "ask": "ADR: provisioning services talk gRPC to each other and the REST gateway goes away. Context is the December outage, and I want the consequences for the field-tools team spelled out, not glossed.",
+      "shape": "adr",
+      "avoidsGenreWord": false,
+      "setting": "regional ISP",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 25,
+      "ask": "Nothing has been agreed yet and I want to keep it that way until people have had a swing at it. Draft something the med exec committee can mark up about one sign-out tool across every service: the idea, what else exists, a staged rollout with a hard stop after the first service line, the open questions, and what this leaves untouched.",
+      "shape": "rfc",
+      "avoidsGenreWord": true,
+      "setting": "hospital clinical informatics",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 26,
+      "ask": "Our build times: ten minutes on Windows, forty on console. I want an honest read on where the time actually goes, what's fixable by us, and what we're stuck with because of the engine.",
+      "shape": "review",
+      "avoidsGenreWord": true,
+      "setting": "game studio build engineering",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 27,
+      "ask": "Two ways out of the crew rest violations: hire six more reserve first officers, or drop the Thursday Fresno rotation. I've picked one. Put it on paper with the numbers behind it, the option I'm not taking, what happens in the first two weeks, and what would flip me.",
+      "shape": "decision",
+      "avoidsGenreWord": true,
+      "setting": "regional airline crew planning",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 28,
+      "ask": "Write up what the gate appointment system has to handle: truckers booking a window, terminal capacity by hour, no-show and late arrival handling, and what happens when a vessel slips a tide. Also write down what it must never grow into. We are not building chassis tracking.",
+      "shape": "spec",
+      "avoidsGenreWord": true,
+      "setting": "port terminal operations",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 29,
+      "ask": "Write down, permanently, why we pull frame-accurate timecode off the SDI embedder instead of trusting the NLE clock. This burned us across the 2023 season and I don't want the next post supervisor undoing it because it looks like an extra step.",
+      "shape": "adr",
+      "avoidsGenreWord": true,
+      "setting": "broadcast post-production",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 30,
+      "ask": "Write a proposal I can circulate to the architecture guild: collapse our four homegrown feature flag systems into one. Nothing is committed, so the alternatives and the open questions matter more than the recommendation.",
+      "shape": "rfc",
+      "avoidsGenreWord": false,
+      "setting": "enterprise platform engineering",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 31,
+      "ask": "Assessment of the preventive maintenance program at the Waukesha plant. Unplanned downtime is up 18% year over year and we added two techs, so something in the program itself isn't working.",
+      "shape": "review",
+      "avoidsGenreWord": false,
+      "setting": "manufacturing maintenance",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 32,
+      "ask": "Draft the requirements for the FNOL intake redesign. Numbered, each with the reason it exists, plus the claim lifecycle from first notice through adjuster assignment. Non-goals: the adjuster mobile app doesn't change this release.",
+      "shape": "spec",
+      "avoidsGenreWord": false,
+      "setting": "P&C insurance claims",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 33,
+      "ask": "I need the decision written down on anesthesia scheduling: QGenda or build on top of what Epic already gives us. Where we are, the call, the options weighed, and what the first thirty days look like.",
+      "shape": "decision",
+      "avoidsGenreWord": false,
+      "setting": "ambulatory surgery center",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 34,
+      "ask": "RFC for the substation engineering leads: every district standardizes on one historian by 2028. They will shred it, so the alternatives need to be real and the phase gates need to survive contact.",
+      "shape": "rfc",
+      "avoidsGenreWord": false,
+      "setting": "electric utility SCADA",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 35,
+      "ask": "Half our pantry sites have no signal, so the tablets keep a local copy and sync when they're docked. Write down what pushed us there and what it costs us, so whoever inherits this in three years doesn't 'fix' it with a live API.",
+      "shape": "adr",
+      "avoidsGenreWord": true,
+      "setting": "food bank operations",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 36,
+      "ask": "Walk the housing clinic intake as it actually runs today and tell me where clients drop out and what we fix first. The volunteers are burning out on double entry and I need something concrete for the board.",
+      "shape": "review",
+      "avoidsGenreWord": true,
+      "setting": "legal aid clinic",
+      "secondCoder": "review",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 37,
+      "ask": "Collections needs a loan tracking tool. Set out the problem it solves, exactly what it has to handle (condition reports, courier legs, insurance values, customs paperwork), the stages a loan passes through from request to return, and what we're deliberately leaving out of the first version.",
+      "shape": "spec",
+      "avoidsGenreWord": true,
+      "setting": "museum collections",
+      "secondCoder": "spec",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 38,
+      "ask": "We're putting the Kansas City DC with a 3PL rather than signing another five-year lease. Capture where that stands, what we weighed it against, what happens in week one, and what would send us back to the lease.",
+      "shape": "decision",
+      "avoidsGenreWord": true,
+      "setting": "beverage distribution",
+      "secondCoder": "decision",
+      "secondCoderConfidence": "low"
+    },
+    {
+      "id": 39,
+      "ask": "Short architecture decision record: Postgres LISTEN/NOTIFY for order events instead of standing up Kafka. Context, decision, consequences, one page.",
+      "shape": "adr",
+      "avoidsGenreWord": false,
+      "setting": "e-commerce platform",
+      "secondCoder": "adr",
+      "secondCoderConfidence": "high"
+    },
+    {
+      "id": 40,
+      "ask": "Before I take this to the district managers I want a document they can argue with: 90-day maintenance fills move to a central fill hub in Reno. What we'd try, what else was on the table, phases with a checkpoint after the first 40 stores, what stays out (acute fills don't change), and the things nobody has an answer for yet.",
+      "shape": "rfc",
+      "avoidsGenreWord": true,
+      "setting": "pharmacy chain",
+      "secondCoder": "rfc",
+      "secondCoderConfidence": "high"
+    }
+  ]
+}

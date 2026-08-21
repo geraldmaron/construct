@@ -278,7 +278,26 @@ const ADR_SIGNALS = [
 ];
 
 /**
- * Which shape an outcome asks for. Falls to the review shape by design.
+ * A shape guess, and whether any phrase actually produced it.
+ *
+ * The default shape carries no signal list, so it is the one answer reachable
+ * without matching anything — which makes a fall-through and a real match
+ * indistinguishable to a caller that reads only the shape. Measured on asks
+ * these lists were not written against, most answers are fall-throughs, so
+ * that ambiguity is the common case rather than an edge. `matched` is what
+ * lets a caller disclose which of the two it is holding instead of presenting
+ * silence as a choice; it is the same distinction kernel/implication/naming.ts
+ * draws between a keyword answer and no answer at all.
+ */
+export interface ShapeChoice {
+  readonly shape: CompositionShape;
+  /** True exactly when a signal phrase matched. False when the default answered. */
+  readonly matched: boolean;
+}
+
+/**
+ * Which shape an outcome asks for, with the fall-through reported as such.
+ * Falls to the review shape by design.
  *
  * RFC, ADR, and spec are all checked before decision, and RFC and ADR before
  * spec: "write an RFC deciding which of two approaches to take" or "an RFC
@@ -292,13 +311,23 @@ const ADR_SIGNALS = [
  * their signal phrases never overlap — an ask naming one never names the
  * other — so their relative order carries no case either way.
  */
-export function shapeForOutcome(outcome: string): CompositionShape {
+export function shapeMatchForOutcome(outcome: string): ShapeChoice {
   const text = outcome.toLowerCase();
-  if (RFC_SIGNALS.some((signal) => text.includes(signal))) return RFC;
-  if (ADR_SIGNALS.some((signal) => text.includes(signal))) return ADR;
-  if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return SPEC;
-  if (DECISION_SIGNALS.some((signal) => text.includes(signal))) return DECISION;
-  return DEFAULT_SHAPE;
+  if (RFC_SIGNALS.some((signal) => text.includes(signal))) return { shape: RFC, matched: true };
+  if (ADR_SIGNALS.some((signal) => text.includes(signal))) return { shape: ADR, matched: true };
+  if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return { shape: SPEC, matched: true };
+  if (DECISION_SIGNALS.some((signal) => text.includes(signal))) {
+    return { shape: DECISION, matched: true };
+  }
+  return { shape: DEFAULT_SHAPE, matched: false };
+}
+
+/**
+ * The shape alone, for callers with nothing to disclose. One matcher backs
+ * both: a second copy of the ordering above is a second place for it to drift.
+ */
+export function shapeForOutcome(outcome: string): CompositionShape {
+  return shapeMatchForOutcome(outcome).shape;
 }
 
 /** A shape by name, for the flag that overrides the inference. */
