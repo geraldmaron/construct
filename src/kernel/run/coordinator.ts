@@ -103,8 +103,10 @@ export interface CoordinatorOptions {
   /** Injected; the kernel never reads the clock. */
   readonly clock: () => string;
   /**
-   * Total spend allowed across every run in this store, in the host's own cost
-   * units. Reaching it halts dispatch; it does not kill work already in flight.
+   * Total spend allowed for this invocation, in the host's own cost units,
+   * measured over what this call dispatches rather than over the store's
+   * lifetime. Reaching it halts dispatch; it does not kill work already in
+   * flight. A host that reports no cost cannot be bound by it.
    */
   readonly spendCeiling: number;
   readonly concurrency?: number;
