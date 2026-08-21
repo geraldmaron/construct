@@ -24,8 +24,12 @@ import {
 import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts';
 import {
   addSource,
+  decideProposal,
   ENGAGEMENT_MODES,
+  getProposal,
+  pendingProposals,
   setSourceShape,
+  setWriteConsent,
   sourceShape,
   SURVEY_EMPHASES,
   engagementMode,
@@ -34,6 +38,7 @@ import {
   setEngagementMode,
   SOURCE_KINDS,
   sourcesFor,
+  writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
 import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
@@ -2757,9 +2762,89 @@ export function lessons(argv: string[]): number {
 
 const DECIDE_USAGE =
   'usage: construct decide <id> "<your call>"\n' +
+  '       construct decide --pending [--workspace=<name>]\n' +
+  '       construct decide --approve=<proposal-id> "<why>"\n' +
+  '       construct decide --reject=<proposal-id> "<why>"\n' +
   '       construct decide --apply=<proposal-id> --host=<opencode|claude> ' +
   '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n' +
   '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
+
+/**
+ * The outward-write queue, made visible.
+ *
+ * A proposal announces itself once, in the run that filed it, and then waits.
+ * Once that line scrolled away the queue was reachable only by opening the
+ * database, so a change nobody could name was a change nobody could decide —
+ * the same invisibility the held-lessons queue had. Listing it is what makes
+ * the two decisions under it something a person can actually make.
+ */
+function pendingQueue(workspace: string): number {
+  return withStore((store) => {
+    const waiting = pendingProposals(store, workspace);
+    if (waiting.length === 0) {
+      process.stdout.write(`no outward changes are waiting in workspace ${workspace}\n`);
+      return 0;
+    }
+    const standing = writeConsentAllowsLowRisk(store, workspace);
+    process.stdout.write(
+      `outward changes waiting in workspace ${workspace} (${String(waiting.length)}):\n\n`,
+    );
+    for (const proposal of waiting) {
+      const target = getSource(store, proposal.source)?.locator ?? proposal.source;
+      process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${target}\n`);
+      process.stdout.write(`      ${proposal.change}\n`);
+      process.stdout.write(`      justified by ${proposal.justification}\n`);
+      process.stdout.write(
+        `      ${
+          proposal.risk === 'high'
+            ? 'waits for you whatever the standing consent says: high risk is never covered by it'
+            : standing
+              ? 'covered by this workspace standing consent for low-risk changes'
+              : 'waits for your decision'
+        }\n`,
+      );
+    }
+    process.stdout.write(
+      '\nApprove one with: construct decide --approve=<id> "<why>"\n' +
+        'Reject one with:  construct decide --reject=<id> "<why>"\n',
+    );
+    return 0;
+  });
+}
+
+/**
+ * Approve or reject one waiting outward change.
+ *
+ * The only path to approved, and it records a human approval every time: a
+ * workspace's standing consent covers the low-risk class and nothing else, so
+ * a high-risk change becomes appliable through this command or not at all.
+ * Approving carries nothing out — the change is still handed to a host by a
+ * separate, named act, because a decision and a write on someone else's
+ * system are two different things to be able to take back.
+ */
+function decideWrite(proposal: string, verdict: 'approved' | 'rejected', reason: string): number {
+  return withStore((store) => {
+    const record = getProposal(store, proposal);
+    if (!record) {
+      process.stderr.write(`decide: no outward change ${proposal} is waiting\n`);
+      return 1;
+    }
+    try {
+      decideProposal(store, proposal, verdict, reason, now());
+    } catch (error) {
+      process.stderr.write(`decide: ${(error as Error).message}\n`);
+      return 1;
+    }
+    process.stdout.write(`${verdict} ${proposal}: ${reason}\n`);
+    if (verdict === 'approved') {
+      process.stdout.write(
+        'Nothing has been written outward yet — carry it out with:\n' +
+          `  construct decide --apply=${proposal} --host=<opencode|claude>\n`,
+      );
+    }
+    return 0;
+  });
+}
 
 /**
  * Carry out one approved outward change through a host.
@@ -2848,6 +2933,26 @@ async function applyApproved(
 
 export async function decide(argv: string[], hostOverride?: HostAdapter): Promise<number> {
   const { flags, words } = splitFlags(argv);
+  if (flags.pending !== undefined) return pendingQueue(workspaceFlag(flags));
+
+  const verdict =
+    flags.approve !== undefined ? 'approved' : flags.reject !== undefined ? 'rejected' : null;
+  if (verdict !== null) {
+    const proposal = (flags.approve ?? flags.reject ?? '').trim();
+    const why = words.join(' ').trim();
+    // A bare --approve leaves nothing to decide about, and a decision with no
+    // reason is the audit line this queue exists to keep. Both are usage
+    // errors rather than defaults, because guessing either one writes a
+    // record about someone else's system that nobody wrote.
+    if (!proposal || !why) {
+      process.stderr.write(
+        'decide: deciding an outward change needs the change and your reason.\n' + DECIDE_USAGE,
+      );
+      return 2;
+    }
+    return decideWrite(proposal, verdict, why);
+  }
+
   if (flags.apply !== undefined) {
     let host: HostFlags;
     try {
@@ -4268,6 +4373,45 @@ export function mode(argv: string[]): number {
   });
 }
 
+const CONSENT_USAGE = 'usage: construct consent [--workspace=<name>] [--set=<on|off>]\n';
+
+/**
+ * Show or set a workspace's standing consent for low-risk outward changes.
+ *
+ * Consent is a setting rather than evidence, so it upserts, and it prints
+ * whether or not this call changed it — the value of the command is knowing
+ * where a workspace stands, which is not something to have to infer from
+ * whether a change went out.
+ *
+ * It covers exactly one class. A low-risk change under standing consent may
+ * be carried out without a decision on that particular change; a high-risk
+ * one never may, in any workspace and under any engagement mode, and turning
+ * consent on says so out loud rather than leaving the reader to discover the
+ * limit from a refusal later. A blanket yes is the wrong shape for the class
+ * of change nobody can take back.
+ */
+export function consent(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  const workspace = workspaceFlag(flags);
+  if (flags.set !== undefined && flags.set !== 'on' && flags.set !== 'off') {
+    process.stderr.write(CONSENT_USAGE);
+    return 2;
+  }
+  return withStore((store) => {
+    if (flags.set !== undefined) setWriteConsent(store, workspace, flags.set === 'on', now());
+    const allows = writeConsentAllowsLowRisk(store, workspace);
+    process.stdout.write(
+      `workspace ${workspace}: standing consent ${allows ? 'on' : 'off'}` +
+        (allows
+          ? ' — a low-risk outward change may be carried out without a decision on each one.\n'
+          : ' — every outward change waits for your decision.\n') +
+        'High-risk changes are never covered by it: each one waits for ' +
+        'construct decide --approve=<id> "<why>".\n',
+    );
+    return 0;
+  });
+}
+
 const STANDING_USAGE =
   'usage: construct standing add --every=<N>m|<N>h|<N>d [--workspace=<name>] [--domains=<name,…>] "<what should keep happening>"\n' +
   '       construct standing [list] [--all]\n' +
@@ -4711,7 +4855,7 @@ export function skills(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|standing|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|standing|record|mode|consent|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4780,6 +4924,8 @@ async function run(argv: string[]): Promise<number> {
       return standing(argv.slice(1));
     case 'mode':
       return mode(argv.slice(1));
+    case 'consent':
+      return consent(argv.slice(1));
     case 'staff':
       return staff(argv.slice(1));
     case 'skills':
