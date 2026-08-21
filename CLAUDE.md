@@ -33,11 +33,21 @@ bd close <id>         # Complete work
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
+   git add .beads/issues.jsonl
+   git commit -m "Tracker state at session close"
    git pull --rebase
    bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
+   The tracker export gets its own commit, and this is the only place it is
+   committed. The pre-commit hook deliberately takes it back out of every other
+   commit, because it is a whole-database snapshot and attaching it to a commit
+   about something else misattributes whichever session happened to be writing
+   at the same moment. Skipping this line does not lose tracker state, which
+   lives in the beads database, but it does thin out the export's own git
+   history, and the reconcile's second witness reads that history to find closes
+   the database lost.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
