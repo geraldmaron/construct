@@ -297,6 +297,31 @@ parts of your outcome no deliverable covered — a composition that quietly
 answers two thirds of what you asked is the failure composing introduces, and
 naming the gap is the whole defence against it.
 
+## Turn the findings into changes somebody can decide on
+
+A finished document ends with numbered issues and a section saying what follows
+from them, and acting on it usually means retyping each item into whatever
+system the work actually lives in. The retyping is where the citation is lost.
+
+```bash
+construct propose --run <id> --source <source-id>
+```
+
+Each numbered issue and each what-follows item becomes one write proposal
+against a source you declared, carrying the citation of the finding behind it —
+`deliverable:<task>#L<n>`, resolvable to the line it was read from. No model
+call, so it is free and re-runnable; the same finding proposes the same row
+twice rather than a second copy of it.
+
+The tier follows the action, not the confidence. Commenting and labelling are
+low; creating and updating are high, and high never applies on standing consent.
+A finding whose words ask for nothing becomes a comment recording it, never a
+change guessed at from a report. Add `--dry-run` to see the rows without filing
+them, and `construct propose list` to read what is waiting.
+
+Nothing here is written outward. A proposal is a row waiting on a decision;
+carrying one out is a separate, recorded step.
+
 ## Read back what happened
 
 ```bash
