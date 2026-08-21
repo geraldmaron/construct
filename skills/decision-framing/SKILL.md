@@ -14,7 +14,7 @@ description: Disciplined framing for decisions that will be expensive to
   deciding well - answer those directly and skip this method entirely.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -182,7 +182,8 @@ Decision record
     <name> — <one-line essence> — <disposition: recommended / viable / disqualified by <constraint>>
     ...
 - Recommendation:    <the one sentence, addressed to the decider>
-- Verdict:           proposed | accepted | accepted with controls: <which> | needs validation: <what, by whom> | rejected
+- VERDICT:           proposed | accepted | accepted with controls: <which> | needs validation: <what, by whom> | rejected
+                     (capitals on purpose: the one line a skimming reader must catch)
 - Consequences accepted: <what the chosen path costs, stated plainly>
 - Strongest objection: <one line; full text under its heading above>
 - Revisit when:      <the concrete triggers from §5>
@@ -241,6 +242,18 @@ The record is presence, not quality: a reader can check in seconds that each
 gate was answered and where, and that is all it proves. Whether the strongest
 objection is genuinely the strongest, and the pre-mortem genuinely the most
 likely failure, is judgment the record never claims to have automated.
+
+
+Two rules travel with this record wherever skills compose. When several
+skills govern one deliverable, the skill that owns the deliverable's shape
+produces its full record, and every other skill contributes exactly one
+line to that same block - its name, then its verdict or a one-clause gate
+summary - never a second full block, because stacked records are how
+ceremony buries content. And every "see <where>" in any record carries a
+short quoted fragment of what it points to, not a bare location - a
+pointer that cannot quote its target is pointing at nothing, and the
+fragment is what makes an empty answer visible to a reader who can only
+check presence.
 
 ## 10. What is enforced, and by what
 

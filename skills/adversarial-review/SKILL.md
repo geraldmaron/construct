@@ -16,7 +16,7 @@ description: A finished deliverable or decision is challenged before anyone
   thinking an artifact rests on, not its line-by-line construction.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -133,7 +133,10 @@ look thorough; never demote a fatal one to be kind.
 
 ## 5. The verdict
 
-Exactly one, first line of the review's output:
+Exactly one, first line of the review's output, and set apart so it
+survives skimming and stacking - written as `VERDICT:` in capitals both
+there and in the record, because the one line that carries the verdict is
+the line a reader numbed by routine records must still catch:
 
 - **Accepted** - challenged on all six, nothing broke that matters.
 - **Accepted with controls** - sound if the named controls are adopted;
@@ -175,7 +178,7 @@ Verification record
 - Steelman stated:    answered — see <where>
 - All six run:        answered — <clean: <which> | findings from: <which>>
 - Findings concrete:  answered — <n> findings: <n> fatal, <n> serious, <n> minor | none
-- One verdict:        answered — <accepted | accepted with controls | needs validation | rejected>
+- VERDICT:            <accepted | accepted with controls | needs validation | rejected>
 - Self-review:        answered — <independent | shared-context, disclosed>
 - No improvement drift: answered — breakage only
 ```
@@ -186,6 +189,18 @@ never deleted, never skipped silently.
 The record is presence, not quality: whether the strongest failure mode is
 genuinely the strongest is judgment, and the record never claims to have
 automated it.
+
+
+Two rules travel with this record wherever skills compose. When several
+skills govern one deliverable, the skill that owns the deliverable's shape
+produces its full record, and every other skill contributes exactly one
+line to that same block - its name, then its verdict or a one-clause gate
+summary - never a second full block, because stacked records are how
+ceremony buries content. And every "see <where>" in any record carries a
+short quoted fragment of what it points to, not a bare location - a
+pointer that cannot quote its target is pointing at nothing, and the
+fragment is what makes an empty answer visible to a reader who can only
+check presence.
 
 ## 8. What is enforced, and by what
 

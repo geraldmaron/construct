@@ -2,7 +2,7 @@
 name: written-voice
 description: One plain, direct house voice for every prose deliverable
   someone else will read, plus per-genre shapes - spec, proposal, status
-  update, announcement, README. The reader's decision or the outcome goes at
+  update, announcement, README, decision log entry, handoff. The reader's decision or the outcome goes at
   the top, hype vocabulary is banned unless defined and earned, and every
   claim of done or tested must have been observed. Use before drafting any
   document a reader will act on - a spec, proposal, update, announcement,
@@ -13,7 +13,7 @@ description: One plain, direct house voice for every prose deliverable
   external template - write those directly and skip this method entirely.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -44,7 +44,7 @@ Stand down when the writing is not a deliverable. A chat reply, a code
 comment, a commit message, a quick answer to a quick question - write it
 plainly and skip the apparatus. Stand down too when an external template
 dictates the format (a legal filing, a grant form, a journal's structure):
-fill the template honestly and apply only §4's claims discipline, which
+fill the template honestly and apply only §5's claims discipline, which
 applies to all prose everywhere. Applying the full method to a two-line
 answer is a failure of this skill, not a safe default.
 
@@ -102,7 +102,60 @@ These rules produce one voice regardless of who or what drafts:
   never have to guess which one a sentence is. Where it could be unclear,
   label it in the sentence itself: "measured", "we infer", "we recommend".
 
-## 4. The claims discipline
+## 4. The presentation
+
+How a document looks decides whether its content is absorbed, and the
+rules here are graded honestly: each one names whether it rests on
+evidence, on convention, or on this house's taste - because a formatting
+rule dressed up as science is exactly the kind of claim §5 exists to
+catch. The grading follows a recorded research pass; the references at
+the end name the sources.
+
+- **Shape follows content.** Tables for discrete, comparable facts a
+  reader will scan for a value (evidence: a pre-registered randomized
+  trial on tabular fact boxes vs. equivalent prose). Numbered lists when
+  sequence or step-reference matters, bulleted when not (convention, and
+  labeled as such). Prose for causal reasoning and narrative - reflexively
+  listifying an explanation measurably helps only re-readers, not
+  first-pass comprehension (evidence, with that condition stated). A page
+  that is all one shape - all prose, all bullets, all tables - is a smell:
+  content rarely arrives that uniform (house judgment).
+- **Segment and signal.** Long continuous material is broken into headed
+  chunks, and each heading states what its section says, because headings
+  are retrieval cues, not decoration (evidence: two independent
+  methodologies). The point of a section lives in its first line
+  (evidence-supported, with the scanning study's own descriptive-not-law
+  caveat). No literal items-per-list or sections-per-page ceiling ships as
+  science - the famous seven-item limit is a memory-span statistic from
+  the wrong domain (its own field corrected it to about four, and readers
+  can re-scan a page anyway); cap lengths for scanability as a design
+  choice, and say so.
+- **Walls of text are a failure of segmentation, not of word count.** A
+  long document reads fine when every screen offers an entry point - a
+  heading, a shape change, a visual. The check: scroll the finished
+  document; any screenful with no entry point gets one (house rule,
+  serving the segmenting evidence).
+- **Visuals.** A diagram or image where content is concrete or
+  comparative beats describing it (evidence: the picture-superiority
+  effect is solid, though its mechanism is disputed). Hand-drawn or
+  sketch-style rendering is the house default for diagrams in drafts and
+  thinking documents - sketchiness invites annotation and honest critique
+  (conditional evidence) - and is avoided where the artifact must read as
+  authoritative or the reader must judge quantities precisely, where
+  sketchiness measurably hurts (evidence, same research line).
+- **Reads human.** Vary sentence length on purpose; uniform rhythm is a
+  documented marker of machine text (evidenced via detection research,
+  with the vendor-mediated caveat). The lexical tics with measured
+  frequency spikes in machine-assisted writing are banned outright:
+  delve, underscore, meticulous, intricate, commendable, realm (evidence:
+  a fourteen-million-abstract corpus study). Formulaic transitions
+  ("moreover," "it's important to note") and the reflexive
+  rule-of-three go too (taste, labeled as such). Em dashes are limited to
+  rare, deliberate use - recorded plainly as house taste: the one
+  dataset-level study found ran the opposite direction, so this rule
+  claims no science, only a voice.
+
+## 5. The claims discipline
 
 This section applies to all prose, everywhere, including prose this skill
 otherwise stands down from:
@@ -125,7 +178,7 @@ otherwise stands down from:
   final paragraph's subordinate clause. Bad news buried is a claim the
   document makes about how well things went, and it is a false one.
 
-## 5. The genre shapes
+## 6. The genre shapes
 
 Each shape is a starting skeleton, not a cage - sections a given document
 does not need are dropped, and the dropping is a judgment the author makes
@@ -156,7 +209,7 @@ Not chosen: alternatives considered, one line each on why not
 ```
 <Title or first line: overall state in one sentence - on track, at risk,
 blocked, done>
-Done: verified-done items (§4 governs the word)
+Done: verified-done items (§5 governs the word)
 In progress: with expected landing, marked [assumed] where it is a guess
 Blocked / needs you: what, and exactly what is needed from whom
 Risks: what could change the picture, and the early signal
@@ -180,7 +233,29 @@ Limits: what this does not do, stated as plainly as what it does
 Status: how maintained and how stable, honestly
 ```
 
-## 6. The unification pass
+**Decision log entry** (reader: future self, or the next session)
+```
+<date> — <the decision, one line>
+Why: <one or two clauses>
+Rejected: <what was not chosen, one clause — or omitted>
+Revisit if: <the trigger, one clause — or omitted>
+```
+Three lines is a complete entry. This genre exists because small decisions
+answered directly (the decision disciplines rightly stand down for them)
+still deserve a durable line, and inventing the shape ad hoc each time is
+the inconsistency templates exist to prevent. It earns no verification
+record - the record would outweigh the entry.
+
+**Handoff** (reader: whoever picks this up next, holding none of your context)
+```
+State: <where things stand — verified-done vs. in-flight, one line each>
+Next move: <the single next action, and why it is next>
+Watch out: <traps, fragile parts, things that look done and are not>
+Where things live: <the paths and links a stranger needs>
+Not done on purpose: <deliberately left undone, so nobody "finishes" it by accident>
+```
+
+## 7. The unification pass
 
 When bringing existing prose into the house voice - one document or a set:
 
@@ -199,7 +274,7 @@ When bringing existing prose into the house voice - one document or a set:
    keep the ambiguity and flag it, or ask - never resolve it by guessing
    fluently.
 
-## 7. The closing gates
+## 8. The closing gates
 
 Before the deliverable is called final, each gate is answered - work shown,
 not work claimed:
@@ -212,13 +287,16 @@ not work claimed:
    evidenced in its passage (§3).
 4. **Claims honest** - every done/tested/working statement was observed;
    load-bearing facts cited, `[unverified]`, or `[assumed]`; failures
-   reported where the reader will see them (§4).
+   reported where the reader will see them (§5).
 5. **Shape held** - the genre's skeleton used; dropped sections dropped on
    purpose, and on request the author can say why (§5).
 6. **One recommendation** - where the document recommends, it recommends one
    thing, with alternatives as considered-and-not-chosen (§3).
+7. **Formatted by shape** - the mix of prose, tables, lists, and visuals
+   follows the content; every screenful has an entry point; the banned
+   tics are absent (§4).
 
-## 8. The verification record
+## 9. The verification record
 
 The deliverable ends with a short block, exactly this shape:
 
@@ -230,6 +308,7 @@ Verification record
 - Claims honest:     answered — <all observed | marked: <count> [unverified]/[assumed]>
 - Shape held:        answered — <genre> | dropped: <sections, or none>
 - One recommendation: answered — see <where> | not applicable: nothing recommended
+- Formatted by shape: answered — <the mix, one clause> | single-shape on purpose: <why>
 ```
 
 For a shipped document where the block would be noise (an announcement, a
@@ -243,7 +322,7 @@ The record is presence, not quality: it proves each gate was answered and
 where, not that the answers are good. Whether the keep-sentence is the right
 sentence is judgment, and the record never claims to have automated it.
 
-## 9. What is enforced, and by what
+## 10. What is enforced, and by what
 
 Nothing in this file is machine-enforced by this file. The voice rules, the
 gates, and the record are obligations on you, made checkable for the reader
@@ -270,3 +349,19 @@ from, and reading them is not required to follow it:
   document (§2, §5).
 - Orwell, "Politics and the English Language," 1946 - inflated vocabulary as
   a way of not saying things (§3).
+- Mayer, *Multimedia Learning*, 3rd ed., 2021 - the segmenting and
+  signaling principles behind §4's chunking rules.
+- Cowan, "The magical number 4 in short-term memory," BBS 2001 - why §4
+  encodes no seven-item ceiling.
+- McDowell et al., registered randomized trial of tabular fact boxes,
+  2020 (PMC7137953) - tables over prose for comparison data (§4).
+- Geiger & Downen, "The Effect of Structure on Memory for Procedural
+  Text," Psychological Reports 2021 - lists beat prose only for re-use,
+  not first-pass reading (§4).
+- Kobak et al., "Delving into LLM-assisted writing," Science Advances -
+  the measured lexical tics §4 bans.
+- Wood, Isenberg et al., "Sketchy Rendering for Information
+  Visualization," IEEE TVCG 2012, and its 2025 follow-up - the
+  conditional case for hand-drawn diagram style (§4).
+- Nielsen Norman Group, F-shaped scanning research - front-loading, cited
+  with its own descriptive-not-prescriptive caveat (§4).

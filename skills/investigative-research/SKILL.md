@@ -13,7 +13,7 @@ description: Disciplined multi-source research over public records and provided
   answer those directly and skip this method entirely.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -257,6 +257,18 @@ The record is presence, not quality: a reader can check in seconds that each
 gate was answered and where, and that is all it proves. Whether the strongest
 objection is genuinely the strongest is judgment, and the record never claims
 to have automated it.
+
+
+Two rules travel with this record wherever skills compose. When several
+skills govern one deliverable, the skill that owns the deliverable's shape
+produces its full record, and every other skill contributes exactly one
+line to that same block - its name, then its verdict or a one-clause gate
+summary - never a second full block, because stacked records are how
+ceremony buries content. And every "see <where>" in any record carries a
+short quoted fragment of what it points to, not a bare location - a
+pointer that cannot quote its target is pointing at nothing, and the
+fragment is what makes an empty answer visible to a reader who can only
+check presence.
 
 ## 11. What is enforced, and by what
 
