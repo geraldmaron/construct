@@ -14,6 +14,7 @@ import {
   renderAttribution,
   renderClaim,
   renderComposedClaim,
+  renderDocument,
   renderHeading,
 } from '../../../src/kernel/run/publish.ts';
 import { runStructuralChallenges } from '../../../src/kernel/challenge/catalog.ts';
@@ -103,6 +104,45 @@ test('a section slug becomes a sentence, not Title Case', () => {
 
 test('a concern id becomes the English it already was', () => {
   assert.equal(renderAttribution('evidence-provenance'), 'evidence provenance');
+});
+
+/**
+ * A deliverable is a document, not a sentence. Its markers render the way a
+ * claim's do; the structure a reader depends on — indentation, nested lists,
+ * blank lines, fenced code — does not get flattened on the way out, which is
+ * what renderClaim's whitespace tidying would have done to it.
+ */
+test('a whole deliverable renders its markers and keeps its shape', () => {
+  const stored = [
+    '## finding',
+    'The retention window is 90 days [cite:docs/policy/retention.md].',
+    '',
+    '1. Rotate the export key [unowned].',
+    '   - the current key was issued in March [unverified].',
+    '',
+    '```',
+    'retention: [unverified]',
+    '```',
+  ].join('\n');
+
+  const rendered = renderDocument(stored);
+  const lines = rendered.split('\n');
+
+  assert.equal(lines.length, stored.split('\n').length, 'a line is a line: nothing is joined or dropped');
+  assert.equal(lines[2], '', 'blank lines survive');
+  assert.match(lines[1], /\(policy\/retention\.md\)/);
+  assert.match(lines[3], /nobody is named for this yet/);
+  assert.ok(lines[4].startsWith('   - '), 'a nested list stays nested');
+  assert.match(lines[4], /still needs checking against a source/);
+  // Fenced content is what somebody wrote, including a marker they were
+  // quoting: rendering it would edit the thing they were showing.
+  assert.equal(lines[7], 'retention: [unverified]');
+});
+
+test('rendering a deliverable is a view, and the stored text is untouched', () => {
+  const stored = 'The window is 90 days [unverified].';
+  assert.match(renderDocument(stored), /still needs checking/);
+  assert.equal(stored, 'The window is 90 days [unverified].', 'a view, never a migration');
 });
 
 /**

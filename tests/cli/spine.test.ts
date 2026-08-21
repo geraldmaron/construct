@@ -450,6 +450,64 @@ test('construct show renders the deliverable a run produced, with its qualifiers
   assert.match(out, /needs review by a licensed attorney/, 'the qualifier travels with the text');
 });
 
+/**
+ * The one surface a person reads a deliverable on was also the one place the
+ * record form reached them. The markers stay in the store, where the gates
+ * read them; what a reader gets is the sentence they stand for, and --record
+ * is still one flag away for anything checking the text.
+ */
+test('construct show hands the reader the publish view, and --record still gives the record', async () => {
+  const marked = (): HostAdapter => ({
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: (request as { role: string }).role,
+      status: 'ok',
+      output: {
+        text: '## finding\n1. Rotate the export key [unowned].\n   - issued in March [unverified].',
+        usage: { cost: 0.01 },
+      },
+      error: null,
+    }),
+  });
+  const runId = async (): Promise<string> => {
+    const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+    try {
+      return (store.db.prepare('SELECT run FROM tasks LIMIT 1').get() as { run: string }).run;
+    } finally {
+      store.close();
+    }
+  };
+
+  // Only what `show` printed: the work summary above it is a run report, and
+  // this is a claim about the surface a person reads the deliverable on.
+  const shown = (text: string) => text.slice(text.lastIndexOf('security — done'));
+
+  const { out } = await runAll([
+    ['outcome', '--domains=security', 'store customer passwords properly'],
+    () => work([], marked()),
+    async () => {
+      const { show } = await import('../../src/cli/index.ts');
+      return show(['--run', await runId()]);
+    },
+  ]);
+  assert.doesNotMatch(shown(out), /\[unowned\]/, 'the reader gets the sentence, not the marker');
+  assert.doesNotMatch(shown(out), /\[unverified\]/);
+  assert.match(shown(out), /nobody is named for this yet/);
+  assert.match(shown(out), /still needs checking against a source/);
+  assert.match(shown(out), /^ {5}- issued in March/m, 'the deliverable keeps the shape it was written in');
+
+  const record = await runAll([
+    ['outcome', '--domains=security', 'store customer passwords properly'],
+    () => work([], marked()),
+    async () => {
+      const { show } = await import('../../src/cli/index.ts');
+      return show(['--run', await runId(), '--record']);
+    },
+  ]);
+  assert.match(shown(record.out), /\[unowned\]/, 'the record form is what the gates read, and it is still reachable');
+  assert.match(shown(record.out), /\[unverified\]/);
+});
+
 test('construct show without a run id is a usage error, not a dump', async () => {
   const { show } = await import('../../src/cli/index.ts');
   const { code, err } = await run(() => Promise.resolve(show([])));
