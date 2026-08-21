@@ -2272,8 +2272,8 @@ did not buy. §10 and §18 keep quoting it because they are stated on it.
 1,224 characters to 0.548 at 12,883, p < 0.0001 at the two large arms), so a
 redraft has to be a swap rather than an addition. The current 17-domain block is
 **1,433 characters**; the redrafted block is **1,491**, +58 or +4.05%. That is
-one thirtieth of §18's smallest measured step (+105%, which moved miss 0.032 at
-p = 0.61), so length is not an explanation for anything below. It is stated
+one twenty-sixth of §18's smallest measured step (+105%, which moved miss 0.032
+at p = 0.61), so length is not an explanation for anything below. It is stated
 because an unstated drift is how a block reaches 12,883 characters.
 
 | domain | line measured against the current one |
