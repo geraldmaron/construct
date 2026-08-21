@@ -25,6 +25,9 @@ import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts'
 import {
   addSource,
   ENGAGEMENT_MODES,
+  getProposal,
+  pendingProposals,
+  proposeWrite,
   setSourceShape,
   sourceShape,
   SURVEY_EMPHASES,
@@ -35,11 +38,19 @@ import {
   SOURCE_KINDS,
   sourcesFor,
 } from '../kernel/store/sources.ts';
+import { proposalsFrom } from '../kernel/run/proposals.ts';
+import type { Deliverable } from '../kernel/run/proposals.ts';
 import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
 import { DOCUMENT_CAP, listDocuments, surveySource } from '../hosts/sources.ts';
-import type { EngagementMode, Source, SourceKind, SurveyEmphasis } from '../kernel/store/sources.ts';
+import type {
+  EngagementMode,
+  Source,
+  SourceKind,
+  SurveyEmphasis,
+  WriteProposal,
+} from '../kernel/store/sources.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
@@ -4087,6 +4098,20 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
           ? `, read from the outcome. Another shape: --shape=<${shapeNames().join('|')}>.\n`
           : ', as asked.\n'),
     );
+
+    // The step after reading it. A document's numbered issues and its
+    // what-follows items are changes somebody is about to retype into whichever
+    // system the work lives in, and the retyping is where the citation goes
+    // missing. Offered only where the workspace has declared somewhere for a
+    // change to go — the alternative is advertising a command that would refuse.
+    const declared = sourcesFor(store, plan.workspace);
+    if (declared.length > 0) {
+      process.stdout.write(
+        '\nThe findings in these deliverables can become write proposals, each citing the finding\n' +
+          'it came from. No model call, nothing written outward, nothing applied:\n' +
+          `  construct propose --run=${run} --source=${declared[0].id}\n`,
+      );
+    }
     return 0;
   });
 }
@@ -4290,6 +4315,185 @@ export function source(argv: string[]): number {
 
   process.stderr.write(SOURCE_USAGE);
   return 2;
+}
+
+const PROPOSE_USAGE =
+  'usage: construct propose --run=<id> --source=<source-id> [--task=<id>] [--workspace=<name>] [--dry-run]\n' +
+  '       construct propose list [--workspace=<name>]\n';
+
+/** One line of the pending queue, written the same way wherever it is printed. */
+function writeProposalLine(proposal: WriteProposal): void {
+  process.stdout.write(
+    `  ${proposal.id}  [${proposal.risk}]  ${proposal.change}\n` +
+      `      because: ${proposal.justification}\n`,
+  );
+}
+
+/**
+ * Turn the findings in a run's finished deliverables into write proposals, and
+ * show the ones already waiting.
+ *
+ * The deliverables ended at the reader: a document with numbered issues and a
+ * what-follows section is a list of changes somebody now retypes into whatever
+ * tracker the work lives in, and the retyping is where the citation is lost —
+ * the sentence arrives in the tracker with nobody able to say which finding it
+ * came from. Extraction is mechanical, costs no model call, and is re-runnable:
+ * ids are derived from the deliverable and the line, so proposing twice
+ * proposes the same rows and the second pass says which were already filed.
+ *
+ * Nothing is written outward here and nothing here can write outward. A
+ * proposal is a row to be decided on; carrying one out is a recorded decision
+ * on a different surface, and low-risk standing consent is the workspace's own
+ * declaration rather than anything this command may assume.
+ */
+export function propose(argv: string[]): number {
+  const { flags, words } = splitFlags(argv);
+
+  if (words[0] === 'list') {
+    return withStore((store) => {
+      const workspace = workspaceFlag(flags);
+      const pending = pendingProposals(store, workspace);
+      if (pending.length === 0) {
+        process.stdout.write(`no proposals waiting for workspace ${workspace}.\n`);
+        return 0;
+      }
+      process.stdout.write(`proposals waiting in workspace ${workspace} (${String(pending.length)}):\n\n`);
+      for (const proposal of pending) writeProposalLine(proposal);
+      process.stdout.write(
+        '\nNothing here has been carried out. A proposal moves only through a recorded decision.\n',
+      );
+      return 0;
+    });
+  }
+
+  if (words.length > 0) {
+    process.stderr.write(`propose: unknown subcommand "${words[0]}"\n${PROPOSE_USAGE}`);
+    return 2;
+  }
+
+  const run = (flags.run ?? '').trim();
+  if (run === '' || run === 'true') {
+    process.stderr.write(PROPOSE_USAGE);
+    return 2;
+  }
+
+  return withStore((store) => {
+    const recorded = planFor(store, run);
+    if (!recorded) {
+      process.stderr.write(`propose: no plan recorded for ${run}\n`);
+      return 1;
+    }
+    const workspace = flags.workspace?.trim() || recorded.workspace;
+
+    const declared = sourcesFor(store, workspace);
+    const sourceId = (flags.source ?? '').trim();
+    if (sourceId === '' || sourceId === 'true') {
+      // Which source a change is made against is never inferred, even where a
+      // workspace declares exactly one: the id is the difference between a
+      // proposal a person can decide on and a change aimed at a system nobody
+      // named.
+      process.stderr.write(`propose: name the source these changes would be made against.\n`);
+      for (const source of declared) {
+        process.stderr.write(`  --source=${source.id}  (${source.kind} ${source.locator})\n`);
+      }
+      if (declared.length === 0) {
+        process.stderr.write(
+          `  workspace ${workspace} has declared none: construct source add --kind=<kind> --locator=<where>\n`,
+        );
+      }
+      return 2;
+    }
+    const target = getSource(store, sourceId);
+    if (!target || target.workspace !== workspace) {
+      process.stderr.write(
+        `propose: workspace ${workspace} declares no source ${sourceId}.\n` +
+          '  construct source list --workspace=' + workspace + '\n',
+      );
+      return 1;
+    }
+    if (target.retiredAt) {
+      // A retired source stays inspectable because past provenance points at
+      // it. Proposing a change into one would aim at a system this workspace
+      // has said it no longer works from.
+      process.stderr.write(
+        `propose: ${sourceId} was retired at ${target.retiredAt}; it is not somewhere to send changes.\n`,
+      );
+      return 1;
+    }
+
+    const only = (flags.task ?? '').trim();
+    const deliverables: Deliverable[] = listTasks(store, run)
+      .filter((task) => task.state === 'done')
+      .filter((task) => only === '' || only === 'true' || task.id === only)
+      .map((task) => ({
+        task: task.id,
+        role: task.role,
+        text: renderDeliverable(latestDraft(store, task.id)?.deliverable ?? task.result),
+      }))
+      .filter((deliverable) => deliverable.text.trim() !== '');
+
+    if (deliverables.length === 0) {
+      process.stderr.write(
+        `propose: ${run} has no finished deliverable to read` +
+          (only === '' || only === 'true' ? '' : ` for task ${only}`) +
+          '.\n  construct show --run ' + run + '\n',
+      );
+      return 1;
+    }
+
+    const at = now();
+    let filed = 0;
+    let already = 0;
+    const risks = { low: 0, high: 0 };
+    for (const deliverable of deliverables) {
+      const extraction = proposalsFrom({ deliverable, source: sourceId, locator: target.locator });
+      process.stdout.write(
+        `\n${deliverable.role} (${deliverable.task}): ` +
+          `${String(extraction.proposals.length)} finding(s) that could be proposed\n`,
+      );
+      for (const drop of extraction.refused) {
+        process.stdout.write(`  refused: "${drop.text.slice(0, 60)}" — ${drop.reason}\n`);
+      }
+      for (const proposal of extraction.proposals) {
+        process.stdout.write(
+          `  ${proposal.id}  [${proposal.risk}, ${proposal.action}]  ${proposal.change}\n` +
+            `      because: ${proposal.justification}\n`,
+        );
+        if (flags['dry-run'] !== undefined) continue;
+        if (getProposal(store, proposal.id) !== null) {
+          process.stdout.write('      already proposed; the earlier row stands\n');
+          already += 1;
+          continue;
+        }
+        proposeWrite(store, {
+          id: proposal.id,
+          workspace,
+          run,
+          source: proposal.source,
+          change: proposal.change,
+          justification: proposal.justification,
+          risk: proposal.risk,
+          proposedAt: at,
+        });
+        filed += 1;
+        risks[proposal.risk] += 1;
+      }
+    }
+
+    if (flags['dry-run'] !== undefined) {
+      process.stdout.write('\nnothing was filed: --dry-run shows what extraction would propose.\n');
+      return 0;
+    }
+    process.stdout.write(
+      `\nfiled ${String(filed)} proposal(s) against ${target.kind} ${target.locator}` +
+        ` (${String(risks.low)} low, ${String(risks.high)} high)` +
+        (already > 0 ? `, ${String(already)} already proposed` : '') +
+        '.\nNothing was written anywhere outside this system, and nothing here can be: a proposal\n' +
+        'moves only through a recorded decision, and a high-risk one only through a human.\n' +
+        `  construct propose list --workspace=${workspace}\n`,
+    );
+    return 0;
+  });
 }
 
 /**
@@ -4763,7 +4967,7 @@ export function skills(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|standing|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|standing|record|mode|staff|skills|watch|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -4828,6 +5032,8 @@ async function run(argv: string[]): Promise<number> {
       return plan(argv.slice(1));
     case 'source':
       return source(argv.slice(1));
+    case 'propose':
+      return propose(argv.slice(1));
     case 'standing':
       return standing(argv.slice(1));
     case 'mode':
