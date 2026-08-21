@@ -179,7 +179,6 @@ import type { StartedRun } from '../kernel/run/outcome.ts';
 import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
 import type { Implication } from '../kernel/implication/map.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
-import { recordCatalogSighting } from '../kernel/store/catalog.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
 import {
   declareStanding,
@@ -195,10 +194,6 @@ import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coor
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { hasCapability } from '../kernel/hosts/interface.ts';
-import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
-import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
-import { createCodexAdapter } from '../hosts/codex/adapter.ts';
-import { createCursorAdapter } from '../hosts/cursor/adapter.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
 import { architectureNoteFor } from '../hosts/architecture.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
@@ -262,38 +257,30 @@ import { tuningStamp } from '../hosts/tuning.ts';
 import { presenceLines, surveyHosts } from '../hosts/presence.ts';
 import { probeDocling, readSource } from '../hosts/extract.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
+import {
+  adapterForHost,
+  HOST_NAMES,
+  now,
+  packageVersion,
+  secretFile,
+  withStore,
+  withStoreAsync,
+} from './runtime.ts';
+import type { HostName } from './runtime.ts';
+import {
+  parseFlags,
+  parseHostFlags,
+  splitFlags,
+  splitList,
+  timeoutFlag,
+  workspaceFlag,
+} from './flags.ts';
+import type { HostFlags } from './flags.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
 
-/**
- * One host name to one adapter, everywhere a --host flag is honored. The
- * default stays opencode; unknown names are the callers' to refuse (work()
- * validates; outcome/ask/notes accept only what their usage line names).
- */
-/**
- * The hosts this CLI can dispatch through. One list, so the flag validator,
- * the error text, and the adapter switch can never disagree about what is
- * dispatchable.
- */
-export const HOST_NAMES = ['opencode', 'claude', 'codex', 'cursor'] as const;
-
-export type HostName = (typeof HOST_NAMES)[number];
-
-function adapterForHost(
-  host: string | undefined,
-  opts: { readonly binary?: string; readonly model?: string; readonly dir?: string; readonly timeoutMs?: number },
-): HostAdapter {
-  if (host === 'claude') return createClaudeAdapter(opts);
-  if (host === 'codex') return createCodexAdapter(opts);
-  if (host === 'cursor') return createCursorAdapter(opts);
-  return createOpenCodeAdapter(opts);
-}
-
-function packageVersion(): string {
-  const raw = readFileSync(new URL('../../package.json', import.meta.url), 'utf8');
-  const parsed: unknown = JSON.parse(raw);
-  return (parsed as { version: string }).version;
-}
+export { HOST_NAMES } from './runtime.ts';
+export type { HostName } from './runtime.ts';
 
 function nodeFloorOk(version: string): boolean {
   const [major = 0, minor = 0] = version.split('.').map(Number);
@@ -609,60 +596,6 @@ export function backup(argv: string[]): number {
     process.stderr.write(`backup: ${error.message}\n`);
     return 2;
   }
-}
-
-/**
- * The spine commands. The CLI is the host here, so it is the CLI that supplies
- * the clock and the run id — the kernel does neither.
- */
-function withStore<T>(fn: (store: Store) => T): T {
-  const store = openStore(storePath(resolvePaths()));
-  try {
-    leaveCatalogMark(store);
-    return fn(store);
-  } finally {
-    store.close();
-  }
-}
-
-/**
- * Every open leaves word of the catalog this build carries. The store is the
- * one place every Construct on the machine visits — the released binary a host
- * launches and the newer tree the user runs — so it is where an older build's
- * catalog reads learn they are behind. Advance-only in the store; recording
- * the same or an older catalog writes nothing.
- */
-function leaveCatalogMark(store: Store): void {
-  recordCatalogSighting(store, {
-    version: packageVersion(),
-    domains: DOMAINS.length,
-    at: now(),
-  });
-}
-
-/**
- * The async twin. Separate rather than generic over both, because a `finally`
- * that closes the store around a function returning a promise closes it while
- * the work is still running — the failure mode is a coordinator writing to a
- * closed database, and it only shows up under load.
- */
-async function withStoreAsync<T>(fn: (store: Store) => Promise<T>): Promise<T> {
-  const store = openStore(storePath(resolvePaths()));
-  try {
-    leaveCatalogMark(store);
-    return await fn(store);
-  } finally {
-    store.close();
-  }
-}
-
-function now(): string {
-  return new Date().toISOString();
-}
-
-/** Where the token-signing secret lives: next to the store it guards. */
-function secretFile(): string {
-  return join(resolvePaths().dataDir, 'capability-secret');
 }
 
 /**
@@ -1525,62 +1458,6 @@ export interface NotesArgs {
   readonly dir?: string;
   /** How long one host invocation may run, in milliseconds. Host default when unset. */
   readonly timeoutMs?: number;
-}
-
-/** Split `--key=value` flags from positional words, in argv order. */
-function splitFlags(argv: string[]): { flags: Record<string, string>; words: string[] } {
-  const flags: Record<string, string> = {};
-  const words: string[] = [];
-  for (const arg of argv) {
-    const valued = /^--([a-z-]+)=(.*)$/.exec(arg);
-    if (valued) {
-      flags[valued[1]] = valued[2];
-      continue;
-    }
-    // A flag carrying no value is present, not absent, and not a positional.
-    // Every surface that documents one — --no-close, --record — tests it with
-    // `!== undefined`, so the empty string is the right value; the alternative
-    // was that a bare flag fell through to `words` and was read as whatever
-    // positional came first, which for compose is the run id.
-    const bare = /^--([a-z-]+)$/.exec(arg);
-    if (bare) flags[bare[1]] = '';
-    else words.push(arg);
-  }
-  return { flags, words };
-}
-
-interface HostFlags {
-  readonly host?: HostName;
-  readonly model?: string;
-  readonly binary?: string;
-  readonly dir?: string;
-  readonly timeoutMs?: number;
-}
-
-/**
- * The host selection every model-calling surface takes, parsed once. A host
- * tuning flag with no host named is refused rather than ignored: silently
- * dropping `--model` on a surface that was never going to call a model is how
- * a user comes to believe a model ran.
- */
-function parseHostFlags(flags: Record<string, string>): HostFlags {
-  const host = flags.host;
-  if (host !== undefined && !(HOST_NAMES as readonly string[]).includes(host)) {
-    throw new Error(`unknown host "${host}" (expected ${HOST_NAMES.join(', ')})`);
-  }
-  const named = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
-  if (host === undefined && named.length > 0) {
-    throw new Error(
-      `--${named[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
-    );
-  }
-  return {
-    host: host as HostName | undefined,
-    model: flags.model,
-    binary: flags.binary,
-    dir: flags.dir,
-    ...(timeoutFlag(flags) === undefined ? {} : { timeoutMs: timeoutFlag(flags) }),
-  };
 }
 
 export function parseNotesArgs(argv: string[]): NotesArgs {
@@ -3588,13 +3465,6 @@ export interface VerdictArgs {
   readonly source: string;
 }
 
-function splitList(value: string): string[] {
-  return value
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
-}
-
 export function parseVerdictArgs(argv: string[]): VerdictArgs {
   const args: Record<string, string> = {};
   for (const arg of argv) {
@@ -5123,46 +4993,6 @@ export function plan(argv: string[]): number {
     }
     return 0;
   });
-}
-
-/**
- * Sources and mode default to the "default" workspace rather than inferring
- * one from the directory: an inferred workspace that guessed wrong would file
- * one client's sources under another, which is the exact failure the lesson
- * store was rebuilt to make unrepresentable. Naming a workspace is cheap;
- * un-crossing two is not.
- */
-function workspaceFlag(flags: Record<string, string>): string {
-  return flags.workspace?.trim() || 'default';
-}
-
-/**
- * `--timeout=<minutes>`, in milliseconds, or undefined for the host's own
- * declared default.
- *
- * Stated in minutes because the wall a user hits is measured in minutes of
- * their afternoon, and taken as a flag because the alternative — one constant
- * for every model — makes a 4b model and a 120b model wait the same, which is
- * a limit nobody measured either way.
- */
-function timeoutFlag(flags: Record<string, string>): number | undefined {
-  if (flags.timeout === undefined) return undefined;
-  const minutes = Number(flags.timeout);
-  if (!Number.isFinite(minutes) || minutes <= 0) {
-    throw new Error(`--timeout must be a positive number of minutes, got "${flags.timeout}"`);
-  }
-  return minutes * 60 * 1000;
-}
-
-function parseFlags(argv: string[]): { flags: Record<string, string>; rest: string[] } {
-  const flags: Record<string, string> = {};
-  const rest: string[] = [];
-  for (const arg of argv) {
-    const match = /^--([a-z-]+)(?:=(.*))?$/.exec(arg);
-    if (match) flags[match[1]] = match[2] ?? 'true';
-    else rest.push(arg);
-  }
-  return { flags, rest };
 }
 
 /**
