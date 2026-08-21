@@ -136,7 +136,6 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
   };
 }
 
-
 /**
  * Dispatch the queued tasks to a host. `hostOverride` exists so the CLI's own
  * wiring can be tested without a binary present; production callers never pass
@@ -354,7 +353,6 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       manifests: readRepoManifest,
       ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
     });
-
 
     process.stdout.write(
       `worked ${String(report.dispatched)} task(s) on ${host.name}: ` +

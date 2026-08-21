@@ -38,7 +38,6 @@ const DECIDE_USAGE =
   '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n' +
   '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
 
-
 /**
  * The outward-write queue, made visible.
  *
