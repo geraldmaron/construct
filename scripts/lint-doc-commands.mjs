@@ -32,7 +32,7 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { INTERNAL_VERBS, VERBS } from '../src/cli/index.ts';
 import { probeSurface } from './lib/cli-surface.mjs';
@@ -52,18 +52,28 @@ const SHELL_FENCE = /^(bash|sh|shell|zsh|console)$/i;
 const known = new Set([...VERBS, ...INTERNAL_VERBS]);
 
 /**
- * Every page in the repository, whatever directory this was invoked from. A
+ * The repository this lint scans, whatever directory it was invoked from. A
  * `git ls-files` run from a subdirectory sees only that subtree, so the check
  * would quietly narrow to a fraction of the corpus and still report success.
+ *
+ * Overridable by a first CLI argument, which exists for one reason: a test
+ * that plants a fixture page has nowhere sterile to put it otherwise, since
+ * discovery below goes through `git ls-files` and that has nothing to answer
+ * from outside a git working tree. Pointing it at a scratch git repo lets the
+ * fixture live in a tmpdir instead of the real docs/ directory, where two
+ * concurrent lint runs can plant and delete the same path. The bare
+ * invocation `npm run lint` calls (no argument) resolves exactly as before.
  */
-const REPO = fileURLToPath(new URL('../', import.meta.url));
+const ROOT = process.argv[2]
+  ? resolve(process.argv[2])
+  : fileURLToPath(new URL('../', import.meta.url));
 
 function docFiles() {
   const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '*.md'], {
-    cwd: REPO,
+    cwd: ROOT,
     encoding: 'utf8',
   });
-  return out.split('\n').filter(Boolean).map((path) => join(REPO, path));
+  return out.split('\n').filter(Boolean).map((path) => join(ROOT, path));
 }
 
 /**
@@ -170,7 +180,7 @@ for (const use of cited) {
 
 if (problems.length > 0) {
   for (const p of problems) {
-    process.stderr.write(`${relative(REPO, p.file)}:${p.line}: '${p.text}' — ${p.why}\n`);
+    process.stderr.write(`${relative(ROOT, p.file)}:${p.line}: '${p.text}' — ${p.why}\n`);
   }
   process.stderr.write(
     `\nlint-doc-commands: ${String(problems.length)} documented command(s) no reader could run.\n`,

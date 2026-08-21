@@ -66,7 +66,7 @@ the attacker's sentences are not present.
 direction.** The reviewer prompt bounds the *task* ("not to summarize them, not
 to improve them") and it bounds *citations*, but it never tells the model that
 sentences inside a document addressed to it are data. Neither does the
-deliverable path: `kernel/run/grounding.ts` carries the opposite pressure —
+deliverable path: `src/kernel/run/grounding.ts` carries the opposite pressure —
 `GROUND_EXHAUSTION_RULE` tells a role that naming a path and not opening it is
 a failure, so the design actively widens the attacker's reach across the
 licensed roots.

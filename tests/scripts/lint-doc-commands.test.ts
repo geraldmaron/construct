@@ -4,9 +4,14 @@
  * directly), and whether the real lint fires on a documented command nobody
  * can run and stays quiet on one they can.
  *
- * The second half plants a fixture page in this repo rather than a tmpdir,
- * mirroring `lint-connector-gate.test.ts`: the lint finds pages through
- * `git ls-files`, which has nothing to answer from outside the tree.
+ * The second half plants a fixture page in a scratch git repository this test
+ * owns alone, not in this repo's own docs/ directory. The lint finds pages
+ * through `git ls-files`, which needs a working tree to answer from and has
+ * nothing to say about a bare tmpdir — so the fixture root is a freshly
+ * `git init`ed tmpdir, passed to the lint as the root argument it now
+ * accepts. Writing the fixture straight into docs/lint-doc-commands-fixture.md
+ * and deleting it, as an earlier version of this test did, raced concurrent
+ * lint runs from other sessions over the same path.
  *
  * The failing cases are the ones that shipped. `construct lessons list` was in
  * the first-run walkthrough and names a subcommand that has never existed;
@@ -14,10 +19,11 @@
  * the check passed it, so it is pinned here rather than trusted.
  */
 
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFile } from 'node:child_process';
-import { existsSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { execFile, execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -29,11 +35,25 @@ type Surface = { shape: string; subcommands: Set<string> };
 const execFileAsync = promisify(execFile);
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const LINT = fileURLToPath(new URL('../../scripts/lint-doc-commands.mjs', import.meta.url));
-const FIXTURE = 'docs/lint-doc-commands-fixture.md';
+
+/**
+ * A scratch git repository holding nothing but this file's fixture page.
+ * `git init` gives `git ls-files` — the real lint's own discovery mechanism —
+ * a working tree to answer from; nothing here is ever committed, since
+ * `-co --exclude-standard` already reports an untracked, unignored file as
+ * one of its own. One directory for the whole file, matching the original
+ * design of one fixture path reused test to test, now pointed away from the
+ * repository every other session and gate run shares.
+ */
+const DOCROOT = mkdtempSync(join(tmpdir(), 'construct-lint-doc-commands-'));
+execFileSync('git', ['init', '--quiet'], { cwd: DOCROOT });
+after(() => rmSync(DOCROOT, { recursive: true, force: true }));
+
+const FIXTURE = join(DOCROOT, 'fixture.md');
 
 async function runLint(): Promise<{ code: number; stderr: string }> {
   try {
-    const { stderr } = await execFileAsync(process.execPath, [LINT], { cwd: REPO });
+    const { stderr } = await execFileAsync(process.execPath, [LINT, DOCROOT], { cwd: REPO });
     return { code: 0, stderr };
   } catch (err) {
     const e = err as { code?: number; stderr?: string };
@@ -42,11 +62,11 @@ async function runLint(): Promise<{ code: number; stderr: string }> {
 }
 
 async function withPage(body: string, check: (r: { code: number; stderr: string }) => void) {
-  writeFileSync(REPO + FIXTURE, body);
+  writeFileSync(FIXTURE, body);
   try {
     check(await runLint());
   } finally {
-    rmSync(REPO + FIXTURE, { force: true });
+    rmSync(FIXTURE, { force: true });
   }
 }
 

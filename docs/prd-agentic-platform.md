@@ -98,14 +98,14 @@ Each an observation, thresholds labeled for what they are:
   than guessing.
 - **Audit answerability:** for a sampled past run, the log yields actor,
   authority, and obligations without reading any chat transcript (checked
-  manually today; a chosen bar, not a measured standard).
+  manually 2026-08-21; a chosen bar, not a measured standard).
 
 ## Constraints
 
 - Zero runtime dependencies in the kernel; storage is built-in
   `node:sqlite`; the work log's append-only property is enforced by DB
   triggers, not caller discipline (source: architecture, standing).
-- Only `kernel/paths.ts` reads the environment; everything else takes an
+- Only `src/kernel/paths.ts` reads the environment; everything else takes an
   injected `Paths` (source: architecture, standing).
 - Skills conform to the six-field Agent Skills frontmatter, under 500
   lines, no host tool names, no repo paths (source: AUTHORING.md, linted).
@@ -211,11 +211,10 @@ Each an observation, thresholds labeled for what they are:
 
 ## Open questions
 
-The verification record below (`Questions earned`) reports 2 open questions
-as of this PRD's authoring, both reserved by the decider. Both have since
-been answered and shipped: installed-skill state is disk-inferred, no
-manifest (`construct skills installed` reads the target directory directly),
-and install takes both explicit names and an `--all` flag (`construct skills
+Both open questions the verification record below reports (`Questions
+earned`) are answered: installed-skill state is disk-inferred, no manifest
+(`construct skills installed` reads the target directory directly), and
+install takes both explicit names and an `--all` flag (`construct skills
 install --all [--dir=<dir>]`). Default host directory is `~/.claude/skills`,
 override with `--dir`.
 
