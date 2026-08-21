@@ -60,6 +60,13 @@ test('an ask that wants a report still gets exactly the review shape', () => {
   assert.deepEqual(shapeForOutcome('Review this').sections, DEFAULT_SHAPE.sections);
 });
 
+test('the review shape attributes each concern without inviting a different register', () => {
+  const established = DEFAULT_SHAPE.sections.find((s) => s.name === 'what-each-concern-established');
+  assert.ok(established);
+  assert.match(established.expects, /written in one voice/);
+  assert.doesNotMatch(established.expects, /in its own terms/);
+});
+
 /**
  * "Plan" is the word the chooser deliberately does not read. Half its uses are
  * "tell me what the plan is", which is a review, and a chooser that gets the
@@ -206,6 +213,11 @@ test('an ask naming the ADR gets the adr shape', () => {
     'Draft an ADR for the export tool',
     'An ADR for the auth migration',
     'Write an architecture decision record for the notification pipeline',
+    'Write an ADR for the caching layer',
+    'Draft an ADR for the auth migration',
+    'An ADR for the export tool',
+    'Write an architecture decision record for the storage backend',
+    'Draft an architectural decision record for the queue',
   ]) {
     assert.equal(shapeForOutcome(outcome).name, 'adr', outcome);
   }
@@ -223,6 +235,19 @@ test('the adr shape has exactly the five specified sections, in order', () => {
  */
 test('a mention of the ADR in passing does not hijack a plain review', () => {
   assert.equal(shapeForOutcome('Review the auth flow; the ADR is out of date, note that').name, 'review');
+});
+
+test('the adr shape records status and stays silent on cost and sequence', () => {
+  const adr = shapeForOutcome('Write an ADR for the caching layer').sections.map((s) => s.name);
+  assert.ok(adr.includes('context'));
+  assert.ok(adr.includes('decision'), 'the choice being recorded');
+  assert.ok(adr.includes('status'), 'without status, a proposal and an accepted record look the same');
+  assert.ok(adr.includes('consequences'));
+  assert.ok(adr.includes('alternatives-considered'), 'a record that never names alternatives has not been chosen between');
+  assert.ok(!adr.includes('what-it-costs'), 'cost belongs to a decision about what to commit to next');
+  assert.ok(!adr.includes('what-happens-first'));
+  assert.ok(!adr.includes('the-proposal'), 'a proposal is an RFC; this is a standing record');
+  assert.ok(!adr.includes('requirements'), 'requirements belong to a spec for something already chosen');
 });
 
 /**

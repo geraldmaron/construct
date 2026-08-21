@@ -79,6 +79,11 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
       slot('mitigations', 'what reduces each exposure, tied to the surface it reduces'),
     ],
   },
+  compliance: {
+    deliverable: 'compliance review',
+    form: 'issues',
+    slots: [...CORE_SLOTS],
+  },
   'program-sequencing': {
     deliverable: 'sequencing plan',
     form: 'sequence',

@@ -181,8 +181,10 @@ test('the answer is printed, not left for a second command to collect', async ()
   const { code, out, dataHome } = await runAsk(['--host=opencode', ROADMAP_Q], host);
   try {
     assert.equal(code, 0);
-    assert.match(out, /the roadmap defers it \[unverified\]/);
-    assert.match(out, /— product-scoping, \$/);
+    assert.match(out, /the roadmap defers it/);
+    assert.doesNotMatch(out, /\[unverified\]/);
+    assert.match(out, /still needs checking against a source/);
+    assert.match(out, /— Construct, framed through product-scoping, \$/);
     assert.match(out, /construct log --run /);
   } finally {
     rmSync(dataHome, { recursive: true, force: true });

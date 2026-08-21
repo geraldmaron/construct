@@ -19,3 +19,5 @@ scripts/labeling-kit/returned/*.json
 
 # Agent worktrees: ephemeral per-agent checkouts, auto-cleaned, never committed.
 .claude/worktrees/
+# Session Typst/PDF dogfood lives next to the checkout, not in the product tree.
+tmp/
