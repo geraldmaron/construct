@@ -169,6 +169,45 @@ test('a binary document no rung can read is refused with the ladder reason, not 
   });
 });
 
+/**
+ * The same "refused, not dropped" guarantee, per filetype, with no Docling
+ * installed — the realistic zero-dependency state this package ships in.
+ * Bytes come from the committed extraction-ladder probe fixtures
+ * (fixtures/extraction-ladder/samples/), built by
+ * scripts/build-extraction-ladder-fixtures.mjs, so this exercises the exact
+ * same files the dated runs in fixtures/extraction-ladder/runs/ record.
+ */
+const NO_DOCLING = { available: false, version: null, detail: 'docling not found on PATH' } as const;
+
+const REFUSED_FILETYPES: readonly { readonly name: string; readonly reasonPattern: RegExp }[] = [
+  { name: 'report.pdf', reasonPattern: /PDF extraction requires unpdf or Docling/ },
+  { name: 'memo.docx', reasonPattern: /DOCX extraction requires mammoth or Docling/ },
+  { name: 'sheet.xlsx', reasonPattern: /\.xlsx has no lightweight parser; Docling is unavailable/ },
+  { name: 'deck.pptx', reasonPattern: /\.pptx has no lightweight parser; Docling is unavailable/ },
+  { name: 'photo.png', reasonPattern: /\.png has no lightweight parser; Docling is unavailable/ },
+  { name: 'diagram.svg', reasonPattern: /diagram\/vector format.*No rung reads it/s },
+];
+
+for (const { name, reasonPattern } of REFUSED_FILETYPES) {
+  test(`${name} surveys as a refused document with a stated reason, not a silent skip`, () => {
+    withGround((root) => {
+      // Content is irrelevant to every one of these outcomes: none of them
+      // reach a provider that reads the bytes without Docling installed.
+      writeFileSync(join(root, name), Buffer.from('placeholder'));
+      const survey = surveySource(declared('directory', root), {
+        extract: { cacheRoot: join(root, '.cache'), docling: NO_DOCLING },
+      });
+      assert.equal(survey.outcome, 'listed');
+      if (survey.outcome !== 'listed') return;
+      assert.equal(survey.documents.length, 1, `${name} must appear in the survey, not vanish`);
+      const doc = survey.documents[0];
+      assert.equal(doc?.extraction?.outcome, 'refused');
+      if (doc?.extraction?.outcome !== 'refused') return;
+      assert.match(doc.extraction.reason, reasonPattern);
+    });
+  });
+}
+
 test('without an extract option nothing is extracted and the walk is unchanged', () => {
   withGround((root) => {
     writeFileSync(join(root, 'kickoff.ics'), 'BEGIN:VCALENDAR\nEND:VCALENDAR\n');
