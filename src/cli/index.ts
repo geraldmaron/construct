@@ -59,9 +59,12 @@ import {
   claimsDeliverable,
   docEditProposal,
   proposalsFrom,
+  proposeActionsWithModel,
   resolveFindingCitation,
+  WRITE_ACTIONS,
 } from '../kernel/run/proposals.ts';
-import type { Deliverable } from '../kernel/run/proposals.ts';
+import type { Deliverable, WriteAction, WriteActionProposer } from '../kernel/run/proposals.ts';
+import { createHostActionProposer } from '../hosts/writeaction.ts';
 import { auditProposals, evaluateGates, renderAuditDeliverable } from '../kernel/run/repoaudit.ts';
 import { gatherRepoFacts } from '../hosts/repo/audit.ts';
 import { compareAndRecordSourceReads, groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
@@ -5329,6 +5332,7 @@ export function source(argv: string[]): number {
 
 const PROPOSE_USAGE =
   'usage: construct propose --run=<id> --source=<source-id> [--task=<id>] [--workspace=<name>] [--dry-run]\n' +
+  `         [--action=<row-id>:<${WRITE_ACTIONS.join('|')}>] [--host=<opencode|claude|codex|cursor>]\n` +
   '       construct propose doc --source=<source-id> --document=<path in that source>\n' +
   '         --kind=redline|insertion|authored --because=<what grounds it>\n' +
   '         [--was=<words it replaces>|--was-file=<path>]   (redline)\n' +
@@ -5609,7 +5613,7 @@ function proposeDoc(flags: Record<string, string>): number {
  * on a different surface, and low-risk standing consent is the workspace's own
  * declaration rather than anything this command may assume.
  */
-export function propose(argv: string[]): number {
+export async function propose(argv: string[], hostOverride?: HostAdapter): Promise<number> {
   const { flags, words } = splitFlags(argv);
 
   if (words[0] === 'list') {
@@ -5644,7 +5648,37 @@ export function propose(argv: string[]): number {
     return 2;
   }
 
-  return withStore((store) => {
+  // A row's action named outright, ahead of anything else deciding it — the
+  // same "an explicit choice is resolved before either guess runs" rule
+  // --shape gets against compose's shape chooser. Parsed before the store
+  // opens so a malformed flag is a usage error, not a run half-read. Split on
+  // the LAST colon, not the first: a row id embeds its task id, and a task id
+  // is itself `<run>:<role>`, so only the rightmost colon is ever the one
+  // this flag added.
+  const actionFlag = (flags.action ?? '').trim();
+  let actionOverrides: ReadonlyMap<string, WriteAction> | undefined;
+  if (actionFlag !== '' && actionFlag !== 'true') {
+    const sep = actionFlag.lastIndexOf(':');
+    const rowId = sep === -1 ? '' : actionFlag.slice(0, sep).trim();
+    const named = sep === -1 ? '' : actionFlag.slice(sep + 1).trim();
+    if (rowId === '' || !(WRITE_ACTIONS as readonly string[]).includes(named)) {
+      process.stderr.write(
+        `propose: --action must be "<row-id>:<action>" with action one of ${WRITE_ACTIONS.join(', ')}, got "${actionFlag}"\n`,
+      );
+      return 2;
+    }
+    actionOverrides = new Map([[rowId, named as WriteAction]]);
+  }
+
+  let hostFlags: HostFlags;
+  try {
+    hostFlags = parseHostFlags(flags);
+  } catch (error) {
+    process.stderr.write(`propose: ${(error as Error).message}\n${PROPOSE_USAGE}`);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
     const recorded = planFor(store, run);
     if (!recorded) {
       process.stderr.write(`propose: no plan recorded for ${run}\n`);
@@ -5668,12 +5702,44 @@ export function propose(argv: string[]): number {
       return 1;
     }
 
+    // A host named is a host already being paid for, so a row the caller has
+    // not already decided is put to the model rather than left to the
+    // keyword read alone — the same duality compose already carries between
+    // its keyword shape guess and createHostShapeChooser.
+    let proposer: WriteActionProposer | undefined;
+    if (hostFlags.host !== undefined || hostOverride !== undefined) {
+      const host =
+        hostOverride ??
+        adapterForHost(hostFlags.host, {
+          binary: hostFlags.binary,
+          model: hostFlags.model,
+          dir: hostFlags.dir,
+          timeoutMs: hostFlags.timeoutMs,
+        });
+      try {
+        await host.init();
+      } catch (error) {
+        process.stderr.write(`propose: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
+        return 1;
+      }
+      proposer = createHostActionProposer(host);
+    }
+
     const at = now();
     let filed = 0;
     let already = 0;
     const risks = { low: 0, high: 0 };
     for (const deliverable of deliverables) {
-      const extraction = proposalsFrom({ deliverable, source: sourceId, locator: target.locator });
+      const modelActions = proposer
+        ? await proposeActionsWithModel(deliverable, proposer, actionOverrides)
+        : undefined;
+      const extraction = proposalsFrom({
+        deliverable,
+        source: sourceId,
+        locator: target.locator,
+        actionOverrides,
+        modelActions,
+      });
       process.stdout.write(
         `\n${deliverable.role} (${deliverable.task}): ` +
           `${String(extraction.proposals.length)} finding(s) that could be proposed\n`,
@@ -5682,8 +5748,14 @@ export function propose(argv: string[]): number {
         process.stdout.write(`  refused: "${escapeForTerminal(drop.text.slice(0, 60))}" — ${escapeForTerminal(drop.reason)}\n`);
       }
       for (const proposal of extraction.proposals) {
+        // Silence here would let a model's guess, or a caller's override,
+        // read as the same mechanical default the keyword path is — the
+        // "never silently" rule the shape chooser's own disclosure follows.
+        const disclosure =
+          proposal.actionSource === 'model' ? ' (model-proposed)' :
+          proposal.actionSource === 'override' ? ' (overridden)' : '';
         process.stdout.write(
-          `  ${proposal.id}  [${proposal.risk}, ${proposal.action}]  ${escapeForTerminal(proposal.change)}\n` +
+          `  ${proposal.id}  [${proposal.risk}, ${proposal.action}${disclosure}]  ${escapeForTerminal(proposal.change)}\n` +
             `      because: ${escapeForTerminal(proposal.justification)}\n`,
         );
         if (flags['dry-run'] !== undefined) continue;
