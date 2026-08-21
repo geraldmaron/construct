@@ -210,6 +210,7 @@ import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { listProjections } from '../kernel/store/projections.ts';
 import { reconcileAll } from '../kernel/tracker/reconcile.ts';
+import { syncProjections } from '../kernel/store/reconcile.ts';
 import { driftDecisions } from '../kernel/tracker/reconcileDecisions.ts';
 import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
@@ -4002,7 +4003,8 @@ export function watch(argv: string[]): number {
 
 const RECONCILE_USAGE =
   'usage: construct reconcile [--tracker=<name>]\n' +
-  '       construct reconcile --tracker=<name> --live=<file>\n';
+  '       construct reconcile --tracker=<name> --live=<file>\n' +
+  '       construct reconcile --tracker=<name> --live=<file> --absorb\n';
 
 /**
  * Whether a projected proposal (kernel/store/projections.ts) still agrees
@@ -4036,9 +4038,19 @@ const RECONCILE_USAGE =
  * unless the same disagreement is already waiting there — the decision id is
  * derived from the projection and which fields disagree, so a second run
  * over an unchanged disagreement raises nothing new. Nothing here resolves a
- * decision, absorbs a tracker-owned change back into the stored projection,
- * or writes anywhere outside this store: deciding which side is right, and
- * syncing the mirror once it is decided, both stay outside this command.
+ * decision: which side is right on a domain-owned conflict stays a person's
+ * call, made through `construct decide`, never this command.
+ *
+ * `--absorb` is the one thing that does write the stored mirror: it runs
+ * kernel/store/reconcile.ts's `syncProjections` over the same live read, so a
+ * tracker-owned change this run finds is adopted into the snapshot instead of
+ * being reported as `reconciling` again next time. It is never implied by a
+ * bare `--live` read — a run that only reports drift stays side-effect free,
+ * so absorbing what it found is a second, explicit ask, recorded on the work
+ * log. A domain-owned conflict is untouched either way: `syncProjections`
+ * leaves the stored domain value exactly as it was and the projection stays
+ * `drifted`, so `--absorb` changes when the mirror catches up, never who is
+ * right about a disagreement.
  */
 export function reconcile(argv: string[]): number {
   const { flags } = parseFlags(argv);
@@ -4050,6 +4062,7 @@ export function reconcile(argv: string[]): number {
   const tracker = trackerFlag && trackerFlag !== 'true' ? trackerFlag : undefined;
   const liveFlag = flags.live?.trim();
   const liveFile = liveFlag && liveFlag !== 'true' ? liveFlag : undefined;
+  const absorb = flags.absorb !== undefined;
 
   if (liveFile !== undefined && tracker === undefined) {
     process.stderr.write(
@@ -4107,7 +4120,10 @@ export function reconcile(argv: string[]): number {
     }
 
     const at = now();
-    const report = reconcileAll(projections, liveIssues, at);
+    const run = `reconcile:${tracker}`;
+    const report = absorb
+      ? syncProjections(store, liveIssues, at, { tracker })
+      : reconcileAll(projections, liveIssues, at);
     process.stdout.write(
       `${String(report.counts.total)} projected proposal(s) against the supplied live ${tracker} read:\n\n`,
     );
@@ -4128,13 +4144,31 @@ export function reconcile(argv: string[]): number {
         `${String(report.counts.drifted)} drifted, ${String(report.counts.missing)} missing.\n`,
     );
 
+    if (absorb) {
+      appendWorkLog(store, {
+        run,
+        role: 'construct',
+        action: 'reconcile-absorbed',
+        detail: {
+          tracker,
+          absorbed: report.absorbed.map((result) => result.external_id),
+          drifted: report.counts.drifted,
+          missing: report.counts.missing,
+        },
+        at,
+      });
+      process.stdout.write(
+        `\n${String(report.counts.absorbed)} tracker-owned change(s) absorbed into the stored mirror ` +
+          '(recorded on the work log). Domain-owned conflicts are unchanged and still need a decision.\n',
+      );
+    }
+
     const decisions = driftDecisions(report, projections);
     if (decisions.length === 0) {
       process.stdout.write('\nnothing drifted. Nothing was raised.\n');
       return 0;
     }
 
-    const run = `reconcile:${tracker}`;
     let raised = 0;
     let standing = 0;
     process.stdout.write('\n');
