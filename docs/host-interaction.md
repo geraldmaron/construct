@@ -138,7 +138,7 @@ Only if every of these is true at once:
    the situation.
 2. The missing surface is something hosts cannot project (inbox batching UX,
    packet review) *and* cannot be a thin local viewer over the existing store.
-3. Gerald accepts the commitment-1 exception in STRATEGY with a dated amendment.
+3. Gerald accepts the commitment-1 exception, and STRATEGY states it.
 
 Until then: **suck it up means harness hosts, not build a chat product.** If a
 thin local *viewer* for composed PDFs / packets is needed later, that is a
