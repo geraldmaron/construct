@@ -76,8 +76,29 @@ export { consent, mode } from './settings.ts';
 export { standing } from './standing.ts';
 export { staff } from './staff.ts';
 
-const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|audit|standing|record|mode|consent|staff|skills|watch|reconcile|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|backup|cleanup|version>\n';
+/**
+ * Every verb a user may type, and the one source that answers the question.
+ *
+ * The usage line below is built from this array rather than written beside it,
+ * so a verb cannot exist in the dispatch table while the help text denies it.
+ * Documentation is checked against the same array, which is what stops a guide
+ * teaching a command the CLI has never accepted.
+ */
+export const VERBS: readonly string[] = Object.freeze([
+  'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
+  'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
+  'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
+  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'doctor', 'backup',
+  'cleanup', 'version', 'help',
+]);
+
+/**
+ * Dispatched to by the coordinator, never typed by a person, so it stays out
+ * of the usage line while remaining a real verb the docs may name.
+ */
+export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve']);
+
+const USAGE = `usage: construct <${VERBS.join('|')}>\n`;
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may

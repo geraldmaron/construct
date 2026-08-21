@@ -36,6 +36,19 @@ import { lensForDomain } from '../src/kernel/plan/lenses.ts';
 import { challengeById } from '../src/kernel/challenge/catalog.ts';
 import { concernChallenges } from '../src/kernel/run/outcome.ts';
 
+/**
+ * Some concerns answer for no job title at all, and that is a finding rather
+ * than a hole in the table below: the questions they carry are the ones that
+ * fall between job descriptions, which is why nobody is assigned to ask them.
+ *
+ * It is declared with this marker instead of being left out, because a
+ * concern nobody has classified yet and a concern nothing owns are different
+ * facts, and a lookup that renders them identically cannot tell a reader
+ * which one they are looking at. Every catalog domain must appear below; a
+ * missing one stops the build rather than printing a placeholder.
+ */
+const NO_SEAT = 'no seat owns this';
+
 /** The human seats each concern answers for. Declared, never inferred. */
 const SEATS = {
   'product-scoping': 'Product manager',
@@ -53,6 +66,8 @@ const SEATS = {
   compliance: 'Compliance',
   'commerce-tax': 'Finance / billing',
   'marketing-claims': 'Marketing',
+  'evidence-provenance': NO_SEAT,
+  'coverage-gaps': NO_SEAT,
 };
 
 const OUT = join('docs', 'org-map.md');
@@ -67,7 +82,15 @@ function section(domain) {
   const declared = concernChallenges(domain.domain);
 
   const lines = [];
-  lines.push(`### ${SEATS[domain.domain] ?? 'unmapped seat'} — \`${domain.domain}\``);
+  const seat = SEATS[domain.domain];
+  if (seat === undefined) {
+    throw new Error(
+      `generate-org-map: '${domain.domain}' is in the catalog with no seat declared. ` +
+        'Add it to SEATS with the job title it answers for, or with NO_SEAT if none does. ' +
+        'Leaving it undeclared would print a placeholder that reads like a real answer.',
+    );
+  }
+  lines.push(`### ${seat} — \`${domain.domain}\``);
   lines.push('');
   lines.push(`**The concern.** ${domain.concern[0].toUpperCase()}${domain.concern.slice(1)}.`);
   lines.push('');
@@ -117,6 +140,7 @@ function section(domain) {
 }
 
 const withLens = DOMAINS.filter((d) => lensForDomain(d.domain)).length;
+const seated = DOMAINS.filter((d) => SEATS[d.domain] !== undefined && SEATS[d.domain] !== NO_SEAT).length;
 
 const page = `# The org map: which seat each concern answers for
 
@@ -157,6 +181,12 @@ and its interval are in the README and in full in \`RESEARCH-DECISIONS.md\` §10
 ${String(withLens)} of ${String(DOMAINS.length)} concerns carry a lens — a posture, an escalation
 ladder, and extra required sections. The rest route and carry the default
 template, and say so.
+
+Carrying a lens and answering for a seat are different things, and the counts
+differ. ${String(seated)} of ${String(DOMAINS.length)} concerns answer for a job title a human team would
+recognize. The other ${String(DOMAINS.length - seated)} are marked **${NO_SEAT}**, and that is a finding
+rather than a gap in this page: the questions they carry are the ones that fall
+between job descriptions, which is exactly why nobody is assigned to ask them.
 
 ## The seats
 
