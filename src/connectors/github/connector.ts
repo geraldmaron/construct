@@ -27,11 +27,12 @@ import { proposalIssue } from '../../kernel/tracker/crossing.ts';
 // `version-flag-reports-the-version` was checked against a real, local `gh`
 // binary while this connector was written — `gh --version` names only its
 // own binary, no network and no repository involved. Every other expectation
-// here needs a live call to GitHub's API to verify, which this build was
-// scoped not to make; UNPROBED_EXPECTATIONS says so rather than letting the
-// gap pass as verified. A session with permission to read a scratch
-// repository is what should clear it, the same way `npm run probe:opencode`
-// clears the opencode pin's.
+// was live-verified 2026-08-21 against a real, disposable scratch repository
+// (see VERIFIED's own doc comment for what that trace found, including one
+// correction and one previously-unnamed limitation). One claim,
+// `repo-lookup-404s-honestly`, stays in UNPROBED_EXPECTATIONS: the trace never
+// exercised that code path, and clearing it needs a repository this token
+// cannot see, not merely one that does not exist.
 // ---------------------------------------------------------------------------
 
 export const PINNED_VERSION = 'gh version 2.96.0 (2026-07-02)';
@@ -100,13 +101,39 @@ export const CONFORMANCE_EXPECTATIONS: readonly ConformanceExpectation[] = [
   },
 ];
 
-export const UNPROBED_EXPECTATIONS: readonly string[] = [
+/**
+ * Live-verified 2026-08-21 against a real, disposable private scratch repo
+ * (created and deleted within the same session), driving `createGitHubConnector`
+ * itself end to end rather than approximating its `gh` calls by hand.
+ *
+ * One claim above needed a correction, not just a checkmark: a search against a
+ * repository name that does not resolve does not return `total_count: 0` the
+ * way an empty-but-real repository does — it fails outright with a non-zero
+ * exit and "gh: Validation Failed (HTTP 422)" on stderr, caught by the
+ * `search.status !== 0` branch before `read` ever reaches the
+ * `totalCount === 0` check that calls the repo-lookup fallback. The fallback
+ * itself (`repo-lookup-404s-honestly`) was therefore never exercised by this
+ * trace and stays unverified below — it would need a repository this token
+ * cannot see (private, someone else's) rather than one that plain does not
+ * exist, and testing against a repository this session does not own was out
+ * of scope.
+ *
+ * A genuine limitation this trace found and the original pin did not name:
+ * GitHub's search API is not read-your-writes consistent. `apply` created an
+ * issue and an immediate `read` still reported `total: 0` for it; the same
+ * read succeeded once retried after roughly twenty seconds. Anything chaining
+ * an apply into an immediate read of the same repository should expect this
+ * lag — it is search-index latency on GitHub's side, not a connector defect.
+ */
+export const VERIFIED: readonly string[] = [
+  'version-flag-reports-the-version',
   'api-get-with-fields-needs-an-explicit-method',
   'search-issues-reports-an-exact-total-but-not-existence',
-  'repo-lookup-404s-honestly',
   'create-issue-returns-the-created-record',
   'failed-call-exits-nonzero-with-the-reason-on-stderr',
 ];
+
+export const UNPROBED_EXPECTATIONS: readonly string[] = ['repo-lookup-404s-honestly'];
 
 // ---------------------------------------------------------------------------
 // Client: running `gh` and turning its answers into typed results. No
