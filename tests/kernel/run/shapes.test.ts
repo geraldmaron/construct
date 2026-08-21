@@ -93,6 +93,30 @@ test('every shape names its sections uniquely and says what ask it answers', () 
   assert.deepEqual(shapeNames(), [...names]);
 });
 
+/**
+ * A section that asks for a role's substance "in its own terms" is asking the
+ * composer for that role's register, and a document assembled from six of them
+ * sounds like six products. Attribution is what the section actually wants, and
+ * attribution survives being written in one voice.
+ */
+test('no section asks a document to be written in a register of its own', () => {
+  const invitesItsOwnRegister = /in (?:its|their|his|her) own (?:terms|words|voice|register|style)/i;
+  for (const shape of COMPOSITION_SHAPES) {
+    for (const section of shape.sections) {
+      assert.doesNotMatch(
+        section.expects,
+        invitesItsOwnRegister,
+        `${shape.name}/${section.name} invites a register of its own`,
+      );
+    }
+  }
+  const established = DEFAULT_SHAPE.sections.find((s) => s.name === 'what-each-concern-established');
+  assert.ok(established);
+  // What the section is for did not change: whose finding it is, still said.
+  assert.match(established.expects, /named to the role it came from/);
+  assert.match(established.expects, /one voice/);
+});
+
 test('an ask naming the document type gets the spec shape', () => {
   for (const outcome of [
     'Write a PRD for the referral feature',

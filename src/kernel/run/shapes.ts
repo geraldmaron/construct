@@ -68,7 +68,15 @@ const REVIEW: CompositionShape = {
   article: 'a',
   sections: [
     { name: 'the-answer', expects: 'what the roles together actually answer, stated first and plainly' },
-    { name: 'what-each-concern-established', expects: 'the substance each role contributed, in its own terms' },
+    {
+      name: 'what-each-concern-established',
+      // "in its own terms" is what this used to ask for, and it was an
+      // invitation to write each role's part in a register of that role's own
+      // — six concerns, six voices, one document. What the section is actually
+      // for is the substance and who established it, and both survive being
+      // written in one voice.
+      expects: 'the substance each role established, named to the role it came from and written in one voice',
+    },
     { name: 'where-they-disagree', expects: 'points two deliverables cannot both be acted on, or "none" explicitly' },
     { name: 'what-follows', expects: 'the actions the deliverables together support, only where they say so' },
   ],
