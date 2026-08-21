@@ -218,7 +218,66 @@ const ADR: CompositionShape = {
   ],
 };
 
-export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC, ADR];
+/**
+ * The shape of an exec one-pager: a decision or ask put in front of a leader
+ * on one page, at the altitude a leader reads at rather than the altitude the
+ * work was done at.
+ *
+ * The easy way to build one is by deletion — cut a review or a decision down
+ * until it fits a page — and that produces exactly the wrong document. A
+ * truncated review keeps the review's order (context first, verdict last) and
+ * loses only the words, so the one thing a leader needs first is still the
+ * one thing missing on page one. This shape is not review or decision cut
+ * short; the-ask leads its section order, and everything after it is there
+ * for the reader who needs more before they answer, not for the reader who
+ * stopped at the first sentence.
+ *
+ * Closest to DECISION, and the difference is altitude, not content.
+ * what-it-costs is reused from DECISION rather than re-argued, because the
+ * price of a choice does not change with who is reading it — but
+ * where-things-stand, what-was-on-the-table, what-happens-first, and
+ * what-would-change-it all assume a reader already inside the choice, and
+ * this reader is being brought in for one call and no more. What this shape
+ * needs instead is whose-call: a decision document is already addressed to
+ * the person making it, and a one-pager is handed up, so it has to say, in
+ * its own words, whose desk this lands on. evidence and risks are the same
+ * two slots every finding rests on and every spec names, condensed here to
+ * what a reader deciding from one page needs in order to trust the ask, not
+ * the analysis behind it.
+ */
+const ONEPAGER: CompositionShape = {
+  name: 'onepager',
+  answers: 'an ask to put one decision or ask in front of a leader on a single page, at strategy altitude',
+  // "onepager" is spelled with a leading vowel letter and spoken with a
+  // leading consonant sound ("won-pay-jer") — the same mismatch the article
+  // field exists to get right where a spelling heuristic would not.
+  article: 'a',
+  sections: [
+    {
+      name: 'the-ask',
+      expects: 'the decision or ask this document wants, stated first, in one or two sentences a reader could act on without reading further',
+    },
+    {
+      name: 'what-changes',
+      expects: 'what is different once this is approved, stated as the outcome rather than the work, only as the deliverables describe it',
+    },
+    { name: 'what-it-costs', expects: 'what stops, slips, or goes unstaffed to pay for it, where a deliverable says so' },
+    {
+      name: 'whose-call',
+      expects: 'who has the authority to make this call, and what exactly they are being asked to approve, reject, or send back',
+    },
+    {
+      name: 'evidence',
+      expects: 'the finding each concern established that the ask rests on, condensed to what a reader needs to trust it in one page, named to the role that established it',
+    },
+    {
+      name: 'risks',
+      expects: "what could go wrong, where a deliverable names it — the risk that would change the reader's answer, not a full register",
+    },
+  ],
+};
+
+export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC, ADR, ONEPAGER];
 
 export const DEFAULT_SHAPE = REVIEW;
 
@@ -278,6 +337,23 @@ const ADR_SIGNALS = [
 ];
 
 /**
+ * The words a person uses asking for a one-page brief pitched at a leader
+ * making one call, not a report on everything that was found. Kept as tight
+ * as RFC_SIGNALS and for the same reason: "summary" and "brief" alone are far
+ * too common in an ordinary review ask ("summarize this review") to trust
+ * bare, so every phrase here either names the document outright
+ * ("one-pager") or anchors the ask to the audience that makes it one — "for
+ * the board", "for leadership" — which a review is never pitched at.
+ */
+export const ONEPAGER_SIGNALS = [
+  'one-pager', 'one pager',
+  'exec summary for the board', 'executive summary for the board',
+  'exec summary for leadership', 'executive summary for leadership',
+  'one page for leadership', 'one page for the board',
+  'brief for the board', 'brief for leadership',
+];
+
+/**
  * A shape guess, and whether any phrase actually produced it.
  *
  * The default shape carries no signal list, so it is the one answer reachable
@@ -316,6 +392,12 @@ export function shapeMatchForOutcome(outcome: string): ShapeChoice {
   if (RFC_SIGNALS.some((signal) => text.includes(signal))) return { shape: RFC, matched: true };
   if (ADR_SIGNALS.some((signal) => text.includes(signal))) return { shape: ADR, matched: true };
   if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return { shape: SPEC, matched: true };
+  // A one-pager is a document-type name, so it outranks a bare decision word
+  // in the same sentence: "a one-pager deciding whether to ship" is a
+  // one-pager about a decision, not a decision memo.
+  if (ONEPAGER_SIGNALS.some((signal) => text.includes(signal))) {
+    return { shape: ONEPAGER, matched: true };
+  }
   if (DECISION_SIGNALS.some((signal) => text.includes(signal))) {
     return { shape: DECISION, matched: true };
   }

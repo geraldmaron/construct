@@ -63,6 +63,22 @@ export function formGuidanceForShape(shape: CompositionShape): string {
     'short numbered paragraph instead of faking a diagram.',
   ].join(' ');
   switch (shape.name) {
+    case 'onepager':
+      return [
+        'Form for this exec one-pager: the whole document fits one page — a leader',
+        'reads it in under two minutes, so every section is a sentence or two or a',
+        'short list, never a wall of paragraphs. the-ask leads, in one or two',
+        'sentences, before anything else, so a reader who stops there still knows',
+        'what is being asked. whose-call is one sentence naming who decides and',
+        'what they are being asked to do about it. what-changes, what-it-costs,',
+        'and evidence are each a short paragraph or a tight bullet list — never a',
+        'table; a one-pager asks for one thing, it does not compare several.',
+        'risks is at most two or three bullets, only the ones that would change',
+        "the reader's answer, not a register. A diagram is rarely earned at this",
+        'length — use one only if a single arrow replaces a paragraph, and then',
+        figureRule,
+        'Do not tag every sentence with a role; attribute once per claim.',
+      ].join(' ');
     case 'adr':
       return [
         'Form for this ADR: context and decision are paragraphs a later reader can',
