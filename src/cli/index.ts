@@ -150,6 +150,7 @@ import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { createCodexAdapter } from '../hosts/codex/adapter.ts';
 import { createCursorAdapter } from '../hosts/cursor/adapter.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
+import { architectureNoteFor } from '../hosts/architecture.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
@@ -2194,6 +2195,18 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
             '    Or give it less ground:  construct source add --workspace=<name> …  then ' +
             'construct outcome --workspace=<name> …\n' +
             `    Evidence: ${floor.evidence}\n`,
+        );
+      }
+
+      // Same discipline as the floor above: named model, dated run, evidence
+      // path — never a claim that this dispatch's model will behave like the
+      // one measured, only the nearest recorded observation.
+      const architectureNote = architectureNoteFor(host.model ?? model);
+      if (architectureNote) {
+        process.stdout.write(
+          `  ⚑ architecture note (${architectureNote.observedOn}, ${architectureNote.measuredOn}): ` +
+            `${architectureNote.observation}.\n` +
+            `    Evidence: ${architectureNote.evidence}\n`,
         );
       }
     }
