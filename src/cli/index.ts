@@ -27,6 +27,7 @@ import {
   decideProposal,
   ENGAGEMENT_MODES,
   getProposal,
+  pendingProposalCount,
   pendingProposals,
   proposeWrite,
   setSourceShape,
@@ -2875,8 +2876,20 @@ function writeRunState(store: Store, run?: string): void {
 export function inbox(): number {
   return withStore((store) => {
     const open = openDecisions(store);
+    // Waiting outward changes are calls on the user exactly as decisions are,
+    // and an inbox that says "nothing needs you" while proposals wait is
+    // wrong. A pointer, not a second rendering: the queue has one listing.
+    const waiting = pendingProposalCount(store);
+    const waitingLine =
+      waiting > 0
+        ? `${String(waiting)} outward change${waiting === 1 ? '' : 's'} waiting — see: construct decide --pending\n`
+        : '';
     if (open.length === 0) {
-      process.stdout.write('decision inbox: empty. Nothing needs you right now.\n');
+      process.stdout.write(
+        waiting > 0
+          ? `decision inbox: no open decisions.\n${waitingLine}`
+          : 'decision inbox: empty. Nothing needs you right now.\n',
+      );
       return 0;
     }
     process.stdout.write(`decision inbox (${open.length}):\n\n`);
@@ -2888,7 +2901,7 @@ export function inbox(): number {
       }
       process.stdout.write('\n');
     }
-    process.stdout.write('Resolve with: construct decide <id> "<your call>"\n');
+    process.stdout.write(`Resolve with: construct decide <id> "<your call>"\n${waitingLine}`);
     return 0;
   });
 }
@@ -3013,6 +3026,27 @@ const DECIDE_USAGE =
   '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
 
 /**
+ * One waiting outward change, written the same way wherever the queue is
+ * printed. The decide surface and `propose list` both end here, because two
+ * renderings of the same queue would drift into two answers about what waits.
+ */
+function writeProposalRow(store: Store, proposal: WriteProposal, standing: boolean): void {
+  const target = getSource(store, proposal.source)?.locator ?? proposal.source;
+  process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${target}\n`);
+  process.stdout.write(`      ${proposal.change}\n`);
+  process.stdout.write(`      justified by ${proposal.justification}\n`);
+  process.stdout.write(
+    `      ${
+      proposal.risk === 'high'
+        ? 'waits for you whatever the standing consent says: high risk is never covered by it'
+        : standing
+          ? 'covered by this workspace standing consent for low-risk changes'
+          : 'waits for your decision'
+    }\n`,
+  );
+}
+
+/**
  * The outward-write queue, made visible.
  *
  * A proposal announces itself once, in the run that filed it, and then waits.
@@ -3032,21 +3066,7 @@ function pendingQueue(workspace: string): number {
     process.stdout.write(
       `outward changes waiting in workspace ${workspace} (${String(waiting.length)}):\n\n`,
     );
-    for (const proposal of waiting) {
-      const target = getSource(store, proposal.source)?.locator ?? proposal.source;
-      process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${target}\n`);
-      process.stdout.write(`      ${proposal.change}\n`);
-      process.stdout.write(`      justified by ${proposal.justification}\n`);
-      process.stdout.write(
-        `      ${
-          proposal.risk === 'high'
-            ? 'waits for you whatever the standing consent says: high risk is never covered by it'
-            : standing
-              ? 'covered by this workspace standing consent for low-risk changes'
-              : 'waits for your decision'
-        }\n`,
-      );
-    }
+    for (const proposal of waiting) writeProposalRow(store, proposal, standing);
     process.stdout.write(
       '\nApprove one with: construct decide --approve=<id> "<why>"\n' +
         'Reject one with:  construct decide --reject=<id> "<why>"\n',
@@ -4615,14 +4635,6 @@ const PROPOSE_USAGE =
   'usage: construct propose --run=<id> --source=<source-id> [--task=<id>] [--workspace=<name>] [--dry-run]\n' +
   '       construct propose list [--workspace=<name>]\n';
 
-/** One line of the pending queue, written the same way wherever it is printed. */
-function writeProposalLine(proposal: WriteProposal): void {
-  process.stdout.write(
-    `  ${proposal.id}  [${proposal.risk}]  ${proposal.change}\n` +
-      `      because: ${proposal.justification}\n`,
-  );
-}
-
 /**
  * Turn the findings in a run's finished deliverables into write proposals, and
  * show the ones already waiting.
@@ -4651,10 +4663,12 @@ export function propose(argv: string[]): number {
         process.stdout.write(`no proposals waiting for workspace ${workspace}.\n`);
         return 0;
       }
+      const standing = writeConsentAllowsLowRisk(store, workspace);
       process.stdout.write(`proposals waiting in workspace ${workspace} (${String(pending.length)}):\n\n`);
-      for (const proposal of pending) writeProposalLine(proposal);
+      for (const proposal of pending) writeProposalRow(store, proposal, standing);
       process.stdout.write(
-        '\nNothing here has been carried out. A proposal moves only through a recorded decision.\n',
+        '\nNothing here has been carried out. A proposal moves only through a recorded decision:\n' +
+          '  construct decide --approve=<id> "<why>"   (or --reject)\n',
       );
       return 0;
     });

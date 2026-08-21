@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { consent, decide } from '../../src/cli/index.ts';
+import { consent, decide, inbox, propose } from '../../src/cli/index.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import type { Store } from '../../src/kernel/store/open.ts';
@@ -332,4 +332,26 @@ test('an unreadable consent setting is a usage error, not a silent no', async ()
   const { code, err } = await run(async () => consent(['--workspace=acme', '--set=maybe']));
   assert.equal(code, 2);
   assert.match(err, /usage: construct consent/);
+});
+
+test('the queue is one listing: propose list renders the same rows, and the inbox points at them', async () => {
+  const { code, out } = await run(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    seedQueue(store);
+    store.close();
+
+    const emptyInboxFirst = inbox();
+    assert.equal(emptyInboxFirst, 0);
+    const listed = propose(['list', '--workspace=acme']);
+    return listed;
+  });
+  assert.equal(code, 0);
+  // The inbox never says nothing needs you while outward changes wait.
+  assert.doesNotMatch(out, /Nothing needs you right now/);
+  assert.match(out, /2 outward changes waiting — see: construct decide --pending/);
+  // propose list prints the decide surface's rows, not a second rendering.
+  assert.match(out, /p-low {2}\[low risk] {2}PROJ/);
+  assert.match(out, /justified by note:n-1#L3/);
+  assert.match(out, /high risk is never covered by it/);
+  assert.match(out, /A proposal moves only through a recorded decision/);
 });
