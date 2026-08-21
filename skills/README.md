@@ -1,0 +1,37 @@
+# Skills
+
+Portable method skills for AI agents: one self-contained `SKILL.md` file per skill, for anyone who wants expert-shaped method (research, decisions, writing) without training in the underlying discipline.
+
+## What's here
+
+Three skills ship today, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed:
+
+- **investigative-research** — multi-source research whose conclusions have to survive a hostile reader.
+- **decision-framing** — decisions that are expensive to revisit: options laid out, one recommendation, a decision record.
+- **written-voice** — one plain house voice for prose deliverables, with shapes for spec, proposal, status update, announcement, and README.
+
+More skills are planned. None are listed here until they ship.
+
+## Working example
+
+Copy `skills/investigative-research/SKILL.md` and paste its contents into any agent's system prompt or skill-loading mechanism, then ask it a research question you need a defensible answer to. The skill governs the agent's method from that point — sourcing, corroboration, how it flags an unverified claim — without anything else installed.
+
+## Install
+
+Two ways to get a skill into your agent:
+
+1. **Copy the file.** Take the single `SKILL.md` for the skill you want and paste it into your agent's skills location. No dependency on this repository once it's copied — the skill has to work as a standalone file.
+2. **Use the installer.** `npx skills add geraldmaron/construct` pulls skills from this repo via git.
+
+Each skill is self-contained: no other file in this repository, and no checkout of it, is required for the skill to run. That claim is checked per skill with what this project calls the naked-file test — the file is pasted into an agent with no repository present and run for real. `[unverified]` — the exact naked-file test procedure and its output are not reproduced here; see the repository's `docs/` directory for the use ledger and recorded runs.
+
+## Limits
+
+- Each skill carries its own scope rules and is written to stand down — do nothing, or defer to a more specific skill — when the task in front of it doesn't match. A skill firing on the wrong task is a defect in that skill, not expected behavior.
+- The naked-file test proves a skill runs standalone across agent harnesses and model families. It does not prove the skill's judgment is good on every task; that's a separate, ongoing check (see Status).
+- The audience this project is built for has no formal training in research method, decision analysis, or professional writing. The guardrails in each skill exist because of that — they are load-bearing, not optional ceremony, and removing them changes what the skill is safe to hand to.
+- Coverage is narrow by design: three method areas, not a general-purpose skill library. A need outside research, decisions, or writing has nothing here yet.
+
+## Status
+
+Early and actively developed. Three skills shipped as of this writing. A skill ships only after recorded use on real work, not on completed drafting — the use ledger and the recorded runs behind each shipped skill live in this repository's `docs/` directory.
