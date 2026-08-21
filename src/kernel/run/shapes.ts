@@ -176,7 +176,41 @@ const RFC: CompositionShape = {
   ],
 };
 
-export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC];
+/**
+ * The shape of an ADR: one architectural decision, recorded — why it was
+ * needed, what was decided, what state that decision is currently in, and
+ * what follows from it.
+ *
+ * Close to DECISION and easy to conflate with it, the same way RFC needed
+ * its own distinction drawn. DECISION chooses among a portfolio — what to
+ * commit to, what to stop, in what order — and its what-happens-first and
+ * what-would-change-it sections exist because a portfolio choice is also a
+ * schedule and a bet someone can be held to. An ADR fixes one specific
+ * architectural point for the reader who will ask "why did we do it this
+ * way" once nobody remembers arguing about it — it is not scheduling work,
+ * so it has no what-happens-first, and it is not a bet under test, so it has
+ * no what-would-change-it. What it has instead, and DECISION does not, is
+ * status: a portfolio decision is acted on and moves on, but an
+ * architectural decision is a standing record that can itself be deprecated
+ * or superseded later, and a record that cannot say what state it is
+ * currently in has failed the one job a record has. Consequences takes the
+ * place of what-it-costs for the same reason: a standing record owes the
+ * reader everything that followed from the choice, not only its price.
+ */
+const ADR: CompositionShape = {
+  name: 'adr',
+  answers: 'an ask to record one architectural decision, why it was made, and what follows from it',
+  article: 'an',
+  sections: [
+    { name: 'context', expects: 'the forces, constraints, or events that made the decision necessary, only as the deliverables describe it' },
+    { name: 'decision', expects: 'what the deliverables together settled on, stated plainly as the choice made' },
+    { name: 'status', expects: 'whether this decision is proposed, accepted, deprecated, or superseded, and by what if superseded' },
+    { name: 'consequences', expects: 'what follows from the decision, easier and harder alike, where a deliverable says so' },
+    { name: 'alternatives-considered', expects: 'other approaches weighed and why this one was chosen over them, each tied to the role that established it' },
+  ],
+};
+
+export const COMPOSITION_SHAPES: readonly CompositionShape[] = [REVIEW, DECISION, SPEC, RFC, ADR];
 
 export const DEFAULT_SHAPE = REVIEW;
 
@@ -223,20 +257,36 @@ const RFC_SIGNALS = [
 ];
 
 /**
+ * The words a person uses naming the record itself rather than the decision
+ * it documents — kept as narrow as RFC_SIGNALS and for the same reason: the
+ * bare word "decision" is far too common to trust (DECISION_SIGNALS already
+ * owns that judgment), so every phrase here names the document type, either
+ * by its full name or by the acronym anchored to "for" the way "rfc for" is.
+ */
+const ADR_SIGNALS = [
+  'write an adr', 'draft an adr', 'an adr for', 'adr for',
+  'architecture decision record', 'architectural decision record',
+];
+
+/**
  * Which shape an outcome asks for. Falls to the review shape by design.
  *
- * RFC and spec are both checked before decision, and RFC before spec: "write
- * an RFC deciding which of two approaches to take" or "an RFC for the export
- * tool's requirements" name the document type over the judgment or the
- * neighbouring document type in the same breath, and the document type is
- * what a reader would notice missing — a decision-shaped document with no
- * alternatives-considered section is not the RFC that was asked for, and a
- * spec's requirements read differently from an RFC's proposal even when both
- * describe the same feature.
+ * RFC, ADR, and spec are all checked before decision, and RFC and ADR before
+ * spec: "write an RFC deciding which of two approaches to take" or "an RFC
+ * for the export tool's requirements" name the document type over the
+ * judgment or the neighbouring document type in the same breath, and the
+ * document type is what a reader would notice missing — a decision-shaped
+ * document with no alternatives-considered section is not the RFC or ADR
+ * that was asked for, and a spec's requirements read differently from an
+ * RFC's proposal or an ADR's record even when both describe the same
+ * feature. ADR is checked alongside RFC rather than folded into it because
+ * their signal phrases never overlap — an ask naming one never names the
+ * other — so their relative order carries no case either way.
  */
 export function shapeForOutcome(outcome: string): CompositionShape {
   const text = outcome.toLowerCase();
   if (RFC_SIGNALS.some((signal) => text.includes(signal))) return RFC;
+  if (ADR_SIGNALS.some((signal) => text.includes(signal))) return ADR;
   if (SPEC_SIGNALS.some((signal) => text.includes(signal))) return SPEC;
   if (DECISION_SIGNALS.some((signal) => text.includes(signal))) return DECISION;
   return DEFAULT_SHAPE;
