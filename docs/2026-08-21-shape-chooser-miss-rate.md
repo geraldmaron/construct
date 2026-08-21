@@ -188,6 +188,21 @@ reports `inferredBy: 'keywords'` when the map actually matched something and
 an empty one. The shape fallback should carry the same distinction, for the same
 reason, and by mirroring that pattern rather than inventing a second one.
 
+**Adopted 2026-08-21, on the 0.800 fall-through figure.** `shapeMatchForOutcome`
+returns the shape with a `matched` flag, `shapeForOutcome` delegates to it so one
+matcher backs both and the ordering cannot drift between two copies, and the
+compose fallback prints the two cases differently:
+
+```
+shape: spec   (the model could not be asked; falling back to the keyword guess)
+shape: review (the model could not be asked, and no keyword matched either —
+               this is the default, not a reading of your ask; pass --shape to choose)
+```
+
+No phrase list changed and no shape's behavior changed: re-running the harness
+after the change reproduces every figure in this document byte for byte, which is
+the point. The chooser is exactly as wrong as it was, and now says so.
+
 **What is deliberately not done.**
 
 - *No keyword tuning.* Adding "write the spec for", "prd for", "adr:" and the
