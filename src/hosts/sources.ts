@@ -22,7 +22,7 @@
  * what a run may cite changes.
  */
 
-import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, join, extname } from 'node:path';
 import {
@@ -206,6 +206,41 @@ function extractDocument(document: string, opts: ExtractOptions, docling: Doclin
     };
   }
   return { outcome: 'extracted', tier: read.tier, path, characters: read.text.length };
+}
+
+/**
+ * The words a surveyed document holds, for the screen that checks a quotation
+ * against the document it names.
+ *
+ * This is the IO half doing what the kernel may not: the screen decides what a
+ * quotation proves, and only this side can open the file. A document put into
+ * words by the ladder is read through those words rather than through its own
+ * bytes — a quotation of a PDF is a quotation of what the extraction says it
+ * says, which is the only text anybody in this pipeline ever saw.
+ *
+ * Null is a real answer everywhere it appears: a document nobody surveyed, a
+ * binary no rung could put into words, a file that has since moved. The screen
+ * reports an unchecked quotation as unchecked, so a read that fails costs the
+ * reader a disclosure rather than a finding.
+ */
+export function documentWords(surveys: readonly SourceSurvey[]): (document: string) => string | null {
+  const readable = new Map<string, string>();
+  for (const survey of surveys) {
+    if (survey.outcome !== 'listed') continue;
+    for (const doc of survey.documents) {
+      if (!doc.binary) readable.set(doc.path, doc.path);
+      else if (doc.extraction?.outcome === 'extracted') readable.set(doc.path, doc.extraction.path);
+    }
+  }
+  return (document) => {
+    const path = readable.get(document);
+    if (path === undefined) return null;
+    try {
+      return readFileSync(path, 'utf8');
+    } catch {
+      return null;
+    }
+  };
 }
 
 /**

@@ -84,7 +84,14 @@ test('a surveyed source shows its documents, and an unsurveyed one says so inste
   assert.match(prompt, /\/ground\/prd\.md/);
   assert.match(prompt, /\/ground\/strategy\.md/);
   assert.match(prompt, /not surveyed \(no jira connector\)/);
-  assert.match(prompt, /citing a\s+document that is not listed under its source will be discarded/);
+  // The rules are read with the wrapping collapsed: where a sentence breaks is
+  // a rendering choice, and an assertion that fails when one rewraps is an
+  // assertion about the wrap.
+  const rules = prompt.replace(/\s+/g, ' ');
+  assert.match(rules, /citing a document that is not listed under its source will be discarded/);
+  // Both halves of what a citation owes: the document, and the words in it.
+  assert.match(rules, /quoting from each the words the contradiction turns on, copied exactly/);
+  assert.match(rules, /whose quote that document does not contain/);
 });
 
 test('the producer prompt carries the settled-vs-parked rule: a parked item is not a delta', () => {
