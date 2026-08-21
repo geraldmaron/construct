@@ -39,6 +39,7 @@ import { getLesson, lessonsFor, type Lesson } from '../store/lessons.ts';
 import { getDecision } from '../store/decisions.ts';
 import { DOMAINS } from '../implication/domains.ts';
 import { DECISION_CITATION_PREFIX } from './fromDecisions.ts';
+import type { ModelTier } from '../brief/tiers.ts';
 
 export type RiskTier = 'low' | 'high';
 
@@ -50,6 +51,26 @@ export function riskTierFor(domain: string): RiskTier {
   const found = DOMAINS.find((d) => d.domain === domain);
   if (!found) return 'high';
   return found.licensedReview ? 'high' : 'low';
+}
+
+/**
+ * The model floor a domain's own brief should declare, read off the same
+ * licensed-review fact riskTierFor already derives rather than a second
+ * hand-maintained table. TIER_MEANING's frontier bar (brief/tiers.ts) is
+ * genuine judgment: staking a position, weighing a conflict, advising. A
+ * domain riskTierFor already rates high, because a licensed professional must
+ * clear its output before anyone relies on it, is asking a model to spot an
+ * exposure a non-expert would miss, which is that judgment, not
+ * pattern-matching, so it declares `frontier`. Every other cataloged domain
+ * still turns an outcome's free text into a structured deliverable checked
+ * against postconditions and challenges, which needs reliable
+ * instruction-following even when the subject carries no licensed-review
+ * stake, so it declares `capable` rather than the unfloored `any`: `any` is
+ * for work whose correctness does not depend on model strength at all, and no
+ * dispatched domain's analysis is that.
+ */
+export function modelFloorForDomain(domain: string): ModelTier {
+  return riskTierFor(domain) === 'high' ? 'frontier' : 'capable';
 }
 
 /** Whether a lesson's citation marks it as distilled from this run's own decisions. */

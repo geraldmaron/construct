@@ -19,6 +19,7 @@ import { recordLesson, getLesson } from '../../../src/kernel/store/lessons.ts';
 import {
   admissionOf,
   decideAdmission,
+  modelFloorForDomain,
   operationalLessonsFor,
   riskTierFor,
   runDerived,
@@ -62,6 +63,15 @@ test('the risk tier is derived, and an unknown domain is high-risk', () => {
   assert.equal(riskTierFor(LOW_RISK as string), 'low');
   assert.equal(riskTierFor(HIGH_RISK as string), 'high');
   assert.equal(riskTierFor('a-domain-nobody-rated'), 'high');
+});
+
+test('the model floor mirrors the risk tier: high risk declares frontier, everything else declares capable, and neither ever declares any', () => {
+  assert.equal(modelFloorForDomain(LOW_RISK as string), 'capable');
+  assert.equal(modelFloorForDomain(HIGH_RISK as string), 'frontier');
+  // An unrated domain reads as high risk (riskTierFor's own rule), so it gets
+  // the same frontier floor rather than the unfloored 'any' a missing rating
+  // might otherwise suggest.
+  assert.equal(modelFloorForDomain('a-domain-nobody-rated'), 'frontier');
 });
 
 test('a low-risk lesson admits only through a recorded adversarial pass', () => {
