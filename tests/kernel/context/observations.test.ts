@@ -6,6 +6,12 @@
  * fabricated provenance, drift requires two distinct documents, and roles
  * restating the same drift merge into one attributed flag whose citations
  * union rather than repeat.
+ *
+ * A claim's wording is screened as provenance too, by the same rule and for
+ * the same reason. It is the answer to a different question from the citations
+ * — which single document this sentence was carried in from, as against which
+ * two documents disagree — and it is routinely a document neither citation
+ * names.
  */
 
 import { test } from 'node:test';
@@ -150,6 +156,57 @@ test('a bare basename resolves when one document carries it, and not when two do
   const screened = screenObservations([byBasename], SOURCES, ambiguous);
   assert.equal(screened.flags.length, 0, 'choosing between two documents is not the screen\'s call');
   assert.match(screened.discarded[0]!.reason, /prd\.md/);
+});
+
+test('a claim keeps the third document its wording came from, which neither citation names', () => {
+  const carried: Observation = {
+    ...DRIFT,
+    wording: { source: 'src-git', document: 'vendor-brief.md' },
+  };
+  const surveyed = new Map([
+    ['src-docs', new Set(['docs/prd.md', 'docs/strategy.md'])],
+    ['src-git', new Set(['vendor-brief.md'])],
+  ]);
+  const result = screenObservations([carried], SOURCES, surveyed);
+  assert.equal(result.flags.length, 1);
+  assert.deepEqual(result.flags[0]?.wording, [{ source: 'src-git', document: 'vendor-brief.md' }]);
+  // And it is not one of the two sides: drift still takes two cited documents.
+  assert.equal(result.flags[0]?.citations.length, 2);
+});
+
+test('a wording naming a document the survey never found is discarded as fabricated provenance', () => {
+  const surveyed = new Map([['src-docs', new Set(['docs/prd.md', 'docs/strategy.md'])]]);
+  const invented: Observation = {
+    ...DRIFT,
+    wording: { source: 'src-docs', document: 'docs/vendor-brief.md' },
+  };
+  const result = screenObservations([invented], SOURCES, surveyed);
+  assert.equal(result.flags.length, 0);
+  assert.match(result.discarded[0]?.reason ?? '', /takes its wording from docs\/vendor-brief\.md/);
+});
+
+test('an observation attributing its wording to nothing keeps an empty attribution, not a guess', () => {
+  const result = screenObservations([DRIFT], SOURCES);
+  assert.deepEqual(result.flags[0]?.wording, []);
+});
+
+test('merged restatements union their wording documents rather than keeping the first', () => {
+  const first: Observation = { ...DRIFT, wording: { source: 'src-docs', document: 'docs/prd.md' } };
+  const restated: Observation = {
+    role: 'reviewer',
+    claim: 'strategy defers identity work to next year while the PRD promises SSO at launch',
+    citations: [
+      { source: 'src-docs', document: 'docs/strategy.md' },
+      { source: 'src-git', document: 'README.md' },
+    ],
+    wording: { source: 'src-git', document: 'README.md' },
+  };
+  const result = screenObservations([first, restated], SOURCES);
+  assert.equal(result.flags.length, 1);
+  assert.deepEqual(result.flags[0]?.wording, [
+    { source: 'src-docs', document: 'docs/prd.md' },
+    { source: 'src-git', document: 'README.md' },
+  ]);
 });
 
 test('a source nobody could survey is screened on the source alone, not refused', () => {

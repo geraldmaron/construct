@@ -214,7 +214,7 @@ export function toObservations(
 ): Observation[] {
   const observations: Observation[] = [];
   for (const item of Array.isArray(value) ? value : []) {
-    const o = item as { claim?: unknown; citations?: unknown } | null;
+    const o = item as { claim?: unknown; citations?: unknown; wording?: unknown } | null;
     const claim = asString(o?.claim);
     if (!claim) {
       discarded.push('an observation with no claim was dropped');
@@ -222,12 +222,18 @@ export function toObservations(
     }
     const citations: DriftCitation[] = [];
     for (const c of Array.isArray(o?.citations) ? o.citations : []) {
-      const cite = c as { source?: unknown; document?: unknown } | null;
-      const source = asString(cite?.source);
-      const document = asString(cite?.document);
-      if (source && document) citations.push({ source, document });
+      const citation = toCitation(c);
+      if (citation) citations.push(citation);
     }
-    observations.push({ role, claim, citations });
+    observations.push({ role, claim, citations, wording: toCitation(o?.wording) });
   }
   return observations;
+}
+
+/** One {source, document} pair, or null where either half is missing. */
+function toCitation(value: unknown): DriftCitation | null {
+  const cite = value as { source?: unknown; document?: unknown } | null;
+  const source = asString(cite?.source);
+  const document = asString(cite?.document);
+  return source && document ? { source, document } : null;
 }

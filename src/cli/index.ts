@@ -114,7 +114,7 @@ import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
-import type { ScreenResult } from '../kernel/context/observations.ts';
+import type { DriftCitation, ScreenResult } from '../kernel/context/observations.ts';
 import {
   operationalLessonsFor,
   decideAdmission,
@@ -1782,18 +1782,32 @@ async function contextLoopOverNote(
   return true;
 }
 
+function citationList(citations: readonly DriftCitation[]): string {
+  return citations.map((c) => `${c.source} ${c.document}`).join('; ');
+}
+
 /**
  * Print what a drift screen kept and what it dropped. One writer because the
  * note loop and the standalone review both end here, and a reader comparing
  * the two surfaces should not have to work out whether they mean the same
  * thing by a flag.
+ *
+ * Every flag names two provenances, because they answer different questions.
+ * The citations say which documents disagree. The wording says which single
+ * document the sentence in front of the reader was carried in from, which is
+ * routinely neither of them — a claim can be phrased by a third document that
+ * the citations will never mention, and printed without that line the reader
+ * cannot tell whose words they are reading.
  */
 function writeDrift(screened: ScreenResult): void {
   if (screened.flags.length > 0) {
     process.stdout.write('\ncross-source drift:\n');
     for (const flag of screened.flags) {
+      process.stdout.write(`  ${flag.claim}\n    cites: ${citationList(flag.citations)}\n`);
       process.stdout.write(
-        `  ${flag.claim}\n    cites: ${flag.citations.map((c) => `${c.source} ${c.document}`).join('; ')}\n`,
+        flag.wording.length > 0
+          ? `    wording from: ${citationList(flag.wording)}\n`
+          : '    wording from: not stated — nothing attributes these words to a document\n',
       );
     }
   }
@@ -1827,10 +1841,10 @@ function plural(count: number, noun: string): string {
  */
 function writeReadDisclosure(): void {
   process.stdout.write(
-    "  Construct surveyed these documents itself; it did not watch them being read. They are\n" +
+    '  Construct surveyed these documents itself; it did not watch them being read. They are\n' +
       "  opened with the host's own tools and their content never passes through Construct, so\n" +
-      '  the account of what was opened is the reviewer\'s own word, and no line above says a\n' +
-      '  finding came from a document rather than from the reviewer.\n',
+      '  which of them were opened, and which one any wording above came from, is the reviewer\n' +
+      '  giving its own account of its own work.\n',
   );
 }
 

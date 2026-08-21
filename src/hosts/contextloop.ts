@@ -135,7 +135,11 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     '  each other, each {claim, citations: [{source: declared id, document}, ...]}',
     '  citing BOTH sides by the document paths as listed. An observation citing a',
     '  document that is not listed under its source will be discarded — a',
-    '  disagreement you remember rather than read is not an observation.',
+    '  disagreement you remember rather than read is not an observation. Add',
+    '  {wording: {source, document}} where the claim takes its framing, its terms',
+    '  or its conclusion from one document in particular — including a document',
+    '  that is neither of the two you cite. Leave it out where the sentence is',
+    '  yours rather than a document\'s.',
     '',
     SETTLED_VS_PARKED_RULE,
     '',
@@ -201,6 +205,13 @@ export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
     'discarded, and so will one that cites only one side — a disagreement you',
     'remember rather than read is not an observation.',
     '',
+    'Say where each claim\'s own wording came from. Where the sentence you write',
+    'takes its framing, its terms or its conclusion from one document in',
+    'particular, name that document as "wording" — including where it is neither',
+    'of the two documents you cite, which is the case worth naming: the citations',
+    'say which documents disagree and can never say which one you are echoing.',
+    'Where the sentence is yours, drawn from both sides, leave it out.',
+    '',
     'Account for your reading as well as your findings. Name every document',
     'above that you actually opened, and every one you tried to open and could',
     'not, with the error you got back. A document you never opened belongs in',
@@ -216,7 +227,8 @@ export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
     '{"read":["<path you opened, exactly as listed above>"],' +
       '"unreadable":[{"document":"<path>","reason":"<the error you got>"}],' +
       '"observations":[{"claim":"<what disagrees, in one sentence>",' +
-      '"citations":[{"source":"<declared id>","document":"<path as listed>"},…]}]}',
+      '"citations":[{"source":"<declared id>","document":"<path as listed>"},…],' +
+      '"wording":{"source":"<declared id>","document":"<path as listed>"}}]}',
   ].join('\n');
 }
 
