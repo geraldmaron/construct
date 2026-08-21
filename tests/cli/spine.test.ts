@@ -22,6 +22,13 @@ import { catalogHighWater } from '../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../src/kernel/implication/domains.ts';
 import { planFor } from '../../src/kernel/store/plans.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 /** Fixed points for the staged-crash test below; the CLI's own clock is real. */
 const SETTLED_AT = '2026-08-03T00:00:00.000Z';

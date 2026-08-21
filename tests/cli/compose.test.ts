@@ -19,6 +19,12 @@ import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.t
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 interface Capture {
   readonly code: number;
