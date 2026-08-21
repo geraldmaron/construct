@@ -16,9 +16,13 @@
  * reason instead of leaving the proposal sitting approved forever. What the
  * kernel owns is the discipline around that answer:
  *
- *   - Only an approved proposal is handed over. Applying without authority is
- *     already refused by the store; this refuses it a step earlier so nothing
- *     is attempted that could not be recorded.
+ *   - Only a change with authority behind it is handed over, and there are two
+ *     kinds: a human approval on this proposal, or the workspace's standing
+ *     consent, which covers the low-risk class and nothing else. High risk is
+ *     outside standing consent in every workspace — it waits for a person.
+ *     The store refuses to record an apply without one of those two; this
+ *     refuses it a step earlier so nothing is attempted that could not be
+ *     recorded.
  *   - A rejection is never overridden. A proposal a human said no to is not
  *     retried by a surface that can also apply.
  *   - The applied decision is written only from what the host reported
@@ -34,7 +38,14 @@
  */
 
 import type { Store } from '../store/open.ts';
-import { decisionOf, engagementMode, getProposal, getSource, markApplied } from '../store/sources.ts';
+import {
+  decisionOf,
+  engagementMode,
+  getProposal,
+  getSource,
+  markApplied,
+  writeConsentAllowsLowRisk,
+} from '../store/sources.ts';
 import type { WriteProposal } from '../store/sources.ts';
 import { putProjection } from '../store/projections.ts';
 import { buildProjection, projectionId } from '../tracker/projection.ts';
@@ -79,19 +90,28 @@ export async function applyProposal(
   if (!record) return { outcome: 'refused', reason: `no proposal ${proposal}` };
 
   const prior = decisionOf(store, proposal);
-  if (!prior) {
+  // The two authorities the store accepts when it writes the applied row,
+  // asked here so nothing is handed to a host that could not be recorded
+  // afterwards. Standing consent is a workspace's blanket yes to the low-risk
+  // class; a high-risk change is never inside it, so an unapproved one stops
+  // at this line rather than reaching someone else's system.
+  const standing = record.risk === 'low' && writeConsentAllowsLowRisk(store, record.workspace);
+  if (!prior && !standing) {
     return {
       outcome: 'refused',
-      reason: 'nobody has decided it yet — an undecided proposal is not one to carry out',
+      reason:
+        record.risk === 'high'
+          ? 'nobody has approved it, and a high-risk change is never carried out on standing consent'
+          : 'nobody has decided it yet — an undecided proposal is not one to carry out',
     };
   }
-  if (prior.verdict === 'rejected') {
+  if (prior?.verdict === 'rejected') {
     return {
       outcome: 'refused',
       reason: `it was rejected (${prior.reason}); a rejection is not overridden by applying anyway`,
     };
   }
-  if (prior.verdict === 'applied') {
+  if (prior?.verdict === 'applied') {
     return { outcome: 'refused', reason: `it was already applied at ${prior.decidedAt}` };
   }
 
