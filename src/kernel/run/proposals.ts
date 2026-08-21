@@ -39,6 +39,26 @@
  * so a second extraction of the same document proposes the same ids and the
  * store's own uniqueness is what keeps the queue from doubling.
  *
+ * Numbered issues are read from anywhere in the document; the section
+ * carrying what follows from them is read from one fixed place, and that
+ * place is not the same heading in every composition shape (kernel/run/
+ * shapes.ts). Review names its own section "what follows"; every other shape
+ * asks the identical question in the words that fit what the shape is for,
+ * and reading only review's word would leave every other shape's follow-up
+ * material unread. The mapping, checked against each shape's actual sections
+ * rather than assumed (FOLLOW_UP_SECTION_BY_SHAPE, below):
+ *
+ *   review    what-follows          the section already named for exactly this
+ *   decision  what-happens-first    the order committed to once the choice is made
+ *   spec      requirements          each one already reads as an instruction
+ *   rfc       tradeoffs             what a reader has to weigh before agreeing
+ *   adr       consequences          its own wording is "what follows from the decision"
+ *
+ * Onepager has no entry. shapes.ts leaves what-happens-first out of that shape
+ * on the grounds that its reader approves or rejects one call rather than
+ * carrying one out, so there is no section in it for this module to read as
+ * follow-up either.
+ *
  * A change to a document is the same kind of proposal, composed rather than
  * read: its words are stated, not found in a deliverable, because no sentence
  * of a report is a redline. The four rules above hold unchanged — nothing is
@@ -51,6 +71,7 @@
 
 import { createHash } from 'node:crypto';
 import type { DocEditKind } from '../store/sources.ts';
+import { COMPOSITION_SHAPES } from './shapes.ts';
 
 /** What a proposal would do to the source it names. */
 export const WRITE_ACTIONS = ['comment', 'label', 'create', 'update'] as const;
@@ -122,6 +143,44 @@ function normalizeHeading(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/**
+ * Shape name to its follow-up section name. See the module doc above for why
+ * each shape maps to the section it does, and why onepager maps to none.
+ */
+const FOLLOW_UP_SECTION_BY_SHAPE: Readonly<Record<string, string>> = {
+  review: 'what-follows',
+  decision: 'what-happens-first',
+  spec: 'requirements',
+  rfc: 'tradeoffs',
+  adr: 'consequences',
+};
+
+/**
+ * FOLLOW_UP_SECTION_BY_SHAPE's sections, normalized once for exact heading
+ * matching and checked against shapes.ts's own catalog rather than trusted as
+ * a copy of it: a section renamed or dropped there should break extraction
+ * loudly, not keep matching a heading that no longer exists.
+ *
+ * Matched exactly rather than as a substring, unlike the old single-phrase
+ * check this replaces: "what follows" was distinctive enough that a loose
+ * match cost little, but "requirements" and "tradeoffs" are ordinary words a
+ * heading like "Non-functional requirements" could carry without being this
+ * section, and a widened set of things to match for is exactly where a loose
+ * match starts costing something.
+ */
+const FOLLOW_UP_HEADINGS: ReadonlySet<string> = new Set(
+  Object.entries(FOLLOW_UP_SECTION_BY_SHAPE).map(([shapeName, sectionName]) => {
+    const shape = COMPOSITION_SHAPES.find((candidate) => candidate.name === shapeName);
+    const section = shape?.sections.find((candidate) => candidate.name === sectionName);
+    if (!section) {
+      throw new Error(
+        `the ${shapeName} shape no longer has a "${sectionName}" section: the follow-up mapping has nothing to read`,
+      );
+    }
+    return normalizeHeading(sectionName);
+  }),
+);
+
 const NUMBERED = /^\s{0,3}(\d{1,3})[.)]\s+(.*\S)\s*$/;
 const BULLET = /^\s{0,3}[-*+]\s+(.*\S)\s*$/;
 const HEADING = /^\s{0,3}#{1,6}\s+(.*\S)\s*$/;
@@ -145,19 +204,22 @@ function stripFurniture(text: string): string {
 const SHORTEST_FINDING = 20;
 
 /**
- * Every numbered issue and what-follows item in one deliverable, in document
+ * Every numbered issue and follow-up item in one deliverable, in document
  * order.
  *
- * A numbered line inside a what-follows section is a what-follows item and is
- * read once, not twice: the section it sits in says what it is, and counting
- * it both ways would put the same sentence in the queue under two ids.
- * Fenced blocks are skipped whole — a numbered line inside a code sample is
- * sample text, and proposing a change out of it would propose the sample.
+ * "Follow-up" means whichever section FOLLOW_UP_SECTION_BY_SHAPE names for
+ * the shape this deliverable happens to be written in — review's what-follows,
+ * or the section another shape asks the identical question under (see the
+ * module doc above). A numbered line inside that section is a follow-up item
+ * and is read once, not twice: the section it sits in says what it is, and
+ * counting it both ways would put the same sentence in the queue under two
+ * ids. Fenced blocks are skipped whole — a numbered line inside a code sample
+ * is sample text, and proposing a change out of it would propose the sample.
  */
 export function findingsIn(deliverable: Deliverable): Finding[] {
   const findings: Finding[] = [];
   const lines = deliverable.text.split('\n');
-  let inWhatFollows = false;
+  let inFollowUpSection = false;
   let fenced = false;
 
   lines.forEach((raw, index) => {
@@ -169,7 +231,7 @@ export function findingsIn(deliverable: Deliverable): Finding[] {
 
     const heading = HEADING.exec(raw);
     if (heading) {
-      inWhatFollows = normalizeHeading(heading[1]).includes('what follows');
+      inFollowUpSection = FOLLOW_UP_HEADINGS.has(normalizeHeading(heading[1]));
       return;
     }
 
@@ -177,16 +239,16 @@ export function findingsIn(deliverable: Deliverable): Finding[] {
     const bullet = BULLET.exec(raw);
     const body = numbered ? numbered[2] : bullet ? bullet[1] : null;
     if (body === null) return;
-    // A bullet outside a what-follows section is ordinary prose furniture —
+    // A bullet outside a follow-up section is ordinary prose furniture —
     // evidence, a list of documents read, a caveat — and reading every bullet
     // in a document as a proposed change would file the document.
-    if (bullet && !inWhatFollows) return;
+    if (bullet && !inFollowUpSection) return;
 
     const text = stripFurniture(body);
     if (text.length < SHORTEST_FINDING) return;
     const line = index + 1;
     findings.push({
-      kind: inWhatFollows ? 'what-follows' : 'numbered-issue',
+      kind: inFollowUpSection ? 'what-follows' : 'numbered-issue',
       text,
       line,
       citation: `deliverable:${deliverable.task}#L${String(line)}`,
