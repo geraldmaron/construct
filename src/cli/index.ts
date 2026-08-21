@@ -25,10 +25,12 @@ import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts'
 import {
   addSource,
   decideProposal,
+  DOC_EDIT_KINDS,
   ENGAGEMENT_MODES,
   getProposal,
   pendingProposalCount,
   pendingProposals,
+  proposeDocEdit,
   proposeWrite,
   setSourceShape,
   setWriteConsent,
@@ -42,13 +44,19 @@ import {
   sourcesFor,
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
-import { proposalsFrom } from '../kernel/run/proposals.ts';
+import {
+  claimsDeliverable,
+  docEditProposal,
+  proposalsFrom,
+  resolveFindingCitation,
+} from '../kernel/run/proposals.ts';
 import type { Deliverable } from '../kernel/run/proposals.ts';
 import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
 import { DOCUMENT_CAP, documentWords, listDocuments, surveySource } from '../hosts/sources.ts';
 import type {
+  DocEditKind,
   EngagementMode,
   Source,
   SourceKind,
@@ -3026,14 +3034,35 @@ const DECIDE_USAGE =
   '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
 
 /**
+ * How many lines of one change the queue prints before it says how many more
+ * there are. Enough for a redline and its two halves; short enough that a
+ * document body does not bury the rows under it.
+ */
+const CHANGE_LINES = 16;
+
+/**
  * One waiting outward change, written the same way wherever the queue is
  * printed. The decide surface and `propose list` both end here, because two
  * renderings of the same queue would drift into two answers about what waits.
+ *
+ * A change is as long as the words it proposes: a redline carries the text it
+ * would strike and the text that would stand there, so every line of it is
+ * indented into the row and a change too long to show says how much was left
+ * off. Truncating silently would hand somebody a partial redline to approve
+ * with no sign that it was partial.
  */
 function writeProposalRow(store: Store, proposal: WriteProposal, standing: boolean): void {
   const target = getSource(store, proposal.source)?.locator ?? proposal.source;
   process.stdout.write(`  ${proposal.id}  [${proposal.risk} risk]  ${target}\n`);
-  process.stdout.write(`      ${proposal.change}\n`);
+  const lines = proposal.change.split('\n');
+  for (const line of lines.slice(0, CHANGE_LINES)) {
+    process.stdout.write(line === '' ? '\n' : `      ${line}\n`);
+  }
+  if (lines.length > CHANGE_LINES) {
+    process.stdout.write(
+      `      … ${String(lines.length - CHANGE_LINES)} more line(s), not shown here\n`,
+    );
+  }
   process.stdout.write(`      justified by ${proposal.justification}\n`);
   process.stdout.write(
     `      ${
@@ -4633,7 +4662,251 @@ export function source(argv: string[]): number {
 
 const PROPOSE_USAGE =
   'usage: construct propose --run=<id> --source=<source-id> [--task=<id>] [--workspace=<name>] [--dry-run]\n' +
+  '       construct propose doc --source=<source-id> --document=<path in that source>\n' +
+  '         --kind=redline|insertion|authored --because=<what grounds it>\n' +
+  '         [--was=<words it replaces>|--was-file=<path>]   (redline)\n' +
+  '         [--at=<where it goes>|--at-file=<path>]         (insertion)\n' +
+  '         [--now=<words that stand there>|--now-file=<path>]\n' +
+  '         [--run=<id>] [--workspace=<name>] [--dry-run]\n' +
+  '         (a flag value is one line; words spanning more than one go in a file)\n' +
   '       construct propose list [--workspace=<name>]\n';
+
+/**
+ * The declared, still-active source a change would be made against, or the
+ * exit code that says why there is none.
+ *
+ * Which source is never inferred, even where a workspace declares exactly one:
+ * the id is the difference between a proposal a person can decide on and a
+ * change aimed at a system nobody named.
+ */
+function targetSource(store: Store, workspace: string, sourceId: string): Source | number {
+  if (sourceId === '' || sourceId === 'true') {
+    process.stderr.write('propose: name the source these changes would be made against.\n');
+    const declared = sourcesFor(store, workspace);
+    for (const source of declared) {
+      process.stderr.write(`  --source=${source.id}  (${source.kind} ${source.locator})\n`);
+    }
+    if (declared.length === 0) {
+      process.stderr.write(
+        `  workspace ${workspace} has declared none: construct source add --kind=<kind> --locator=<where>\n`,
+      );
+    }
+    return 2;
+  }
+  const target = getSource(store, sourceId);
+  if (!target || target.workspace !== workspace) {
+    process.stderr.write(
+      `propose: workspace ${workspace} declares no source ${sourceId}.\n` +
+        '  construct source list --workspace=' + workspace + '\n',
+    );
+    return 1;
+  }
+  if (target.retiredAt) {
+    // A retired source stays inspectable because past provenance points at it.
+    // Proposing a change into one would aim at a system this workspace has
+    // said it no longer works from.
+    process.stderr.write(
+      `propose: ${sourceId} was retired at ${target.retiredAt}; it is not somewhere to send changes.\n`,
+    );
+    return 1;
+  }
+  return target;
+}
+
+/** A run's finished deliverables, optionally narrowed to one task. */
+function finishedDeliverables(store: Store, run: string, only: string): Deliverable[] {
+  return listTasks(store, run)
+    .filter((task) => task.state === 'done')
+    .filter((task) => only === '' || only === 'true' || task.id === only)
+    .map((task) => ({
+      task: task.id,
+      role: task.role,
+      text: deliverableBody(latestDraft(store, task.id)?.deliverable ?? task.result),
+    }))
+    .filter((deliverable) => deliverable.text.trim() !== '');
+}
+
+/**
+ * One side of a change, given inline or read from a file.
+ *
+ * Both ways in exist because a redline's halves are the words of a document
+ * and a document's words do not fit on a command line. Naming both at once is
+ * a usage error rather than a silent preference for one: a person who wrote
+ * the change twice does not know which copy is about to be proposed.
+ */
+function changeSide(
+  flags: Record<string, string>,
+  name: string,
+): { text: string } | { error: string } {
+  const inline = flags[name];
+  const file = flags[`${name}-file`];
+  if (inline !== undefined && file !== undefined) {
+    return { error: `--${name} and --${name}-file both name those words; give one of them` };
+  }
+  if (file !== undefined) {
+    if (file.trim() === '') return { error: `--${name}-file names no file` };
+    try {
+      return { text: readFileSync(file, 'utf8') };
+    } catch (error) {
+      return { error: `cannot read --${name}-file ${file}: ${(error as Error).message}` };
+    }
+  }
+  return { text: inline ?? '' };
+}
+
+/** Whether either form of a side was given at all, empty or not. */
+function gaveSide(flags: Record<string, string>, name: string): boolean {
+  return flags[name] !== undefined || flags[`${name}-file`] !== undefined;
+}
+
+/**
+ * Propose one change to a document: a redline of words already there, an
+ * insertion beside them, or a document authored into the source.
+ *
+ * The same record, the same two tiers and the same gate as a change to a
+ * ticket, because it is the same act — words landing in a system this tool
+ * does not own. Both document tiers come out high: a redline's struck words
+ * are not on the page afterwards for a reader to put back, and a documents
+ * source is what runs read as organizational context, so a workspace's
+ * standing yes to low-risk changes must never be what publishes prose into
+ * one. Nothing here writes outward and nothing here can; carrying the change
+ * out is a separate recorded act on the decide surface.
+ */
+function proposeDoc(flags: Record<string, string>): number {
+  const kind = (flags.kind ?? '').trim();
+  if (!(DOC_EDIT_KINDS as readonly string[]).includes(kind)) {
+    process.stderr.write(
+      `propose: --kind must be one of ${DOC_EDIT_KINDS.join(', ')}` +
+        (kind === '' ? '' : `, not "${kind}"`) +
+        `\n${PROPOSE_USAGE}`,
+    );
+    return 2;
+  }
+  // Each kind has its own word for its anchor, because they are not the same
+  // thing: --was quotes words that will be gone, --at names a place where
+  // nothing is displaced. Accepting either word for either kind would let a
+  // redline be filed as an insertion, which is the one distinction the person
+  // deciding is reading the row for.
+  if (kind === 'redline' && gaveSide(flags, 'at')) {
+    process.stderr.write('propose: a redline names the words it replaces with --was, not --at.\n');
+    return 2;
+  }
+  if (kind === 'insertion' && gaveSide(flags, 'was')) {
+    process.stderr.write('propose: an insertion names where it goes with --at, not --was.\n');
+    return 2;
+  }
+  const sides = { was: changeSide(flags, 'was'), at: changeSide(flags, 'at'), now: changeSide(flags, 'now') };
+  for (const side of Object.values(sides)) {
+    if ('error' in side) {
+      process.stderr.write(`propose: ${side.error}\n`);
+      return 2;
+    }
+  }
+  const anchor = gaveSide(flags, 'was')
+    ? (sides.was as { text: string }).text
+    : gaveSide(flags, 'at')
+      ? (sides.at as { text: string }).text
+      : '';
+
+  return withStore((store) => {
+    const asked = (flags.run ?? '').trim();
+    const run = asked === '' || asked === 'true' ? '' : asked;
+    const recorded = run === '' ? null : planFor(store, run);
+    if (run !== '' && !recorded) {
+      process.stderr.write(`propose: no plan recorded for ${run}\n`);
+      return 1;
+    }
+    const workspace = flags.workspace?.trim() || recorded?.workspace || workspaceFlag(flags);
+    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    if (typeof target === 'number') return target;
+
+    const built = docEditProposal({
+      kind: kind as DocEditKind,
+      source: target.id,
+      locator: target.locator,
+      document: (flags.document ?? '').trim(),
+      anchor,
+      proposed: (sides.now as { text: string }).text,
+      citation: (flags.because ?? '').trim(),
+    });
+    if (built.refused !== undefined) {
+      process.stderr.write(`propose: nothing was filed — ${built.refused}\n`);
+      return 1;
+    }
+    const proposal = built.proposal;
+
+    // A citation that claims a line of a deliverable has to resolve to one.
+    // The words of a redline are not in the deliverable — a finding says what
+    // is wrong, not what the document should say instead — so what is checked
+    // is that the cited line exists, which is the same check extraction makes
+    // and the reason a proposal can be read back to its origin at all.
+    if (claimsDeliverable(proposal.justification)) {
+      if (run === '') {
+        process.stderr.write(
+          `propose: ${proposal.justification} cites a deliverable, so name the run it belongs to:\n` +
+            '  --run=<id>\n',
+        );
+        return 1;
+      }
+      const grounded = finishedDeliverables(store, run, '').some(
+        (deliverable) => resolveFindingCitation(deliverable, proposal.justification) !== null,
+      );
+      if (!grounded) {
+        process.stderr.write(
+          `propose: ${proposal.justification} resolves to no line of any finished deliverable in ${run}.\n`,
+        );
+        return 1;
+      }
+    }
+
+    const at = now();
+    const row: WriteProposal = {
+      id: proposal.id,
+      workspace,
+      run: run === '' ? null : run,
+      source: proposal.source,
+      change: proposal.change,
+      justification: proposal.justification,
+      risk: proposal.risk,
+      proposedAt: at,
+    };
+    // Shown through the queue's own renderer before it is filed, so what a
+    // person reads here is exactly what they will read when they decide it.
+    process.stdout.write(
+      `against ${target.kind} ${target.locator}, as the queue will show it:\n\n`,
+    );
+    writeProposalRow(store, row, writeConsentAllowsLowRisk(store, workspace));
+
+    if (flags['dry-run'] !== undefined) {
+      process.stdout.write('\nnothing was filed: --dry-run shows what would be proposed.\n');
+      return 0;
+    }
+    if (getProposal(store, proposal.id) !== null) {
+      process.stdout.write('\nalready proposed; the earlier row stands.\n');
+      return 0;
+    }
+    try {
+      proposeDocEdit(store, row, {
+        kind: proposal.kind,
+        document: proposal.document,
+        anchor: proposal.anchor,
+        proposed: proposal.proposed,
+        recordedAt: at,
+      });
+    } catch (error) {
+      process.stderr.write(`propose: ${(error as Error).message}\n`);
+      return 1;
+    }
+    process.stdout.write(
+      `\nfiled ${proposal.id} at ${proposal.risk} risk.\n` +
+        'Nothing was written to that document, and nothing here can be: the change moves only\n' +
+        'through a recorded decision, and a high-risk one only through a person.\n' +
+        `  construct propose list --workspace=${workspace}\n` +
+        `  construct decide --approve=${proposal.id} "<why>"\n`,
+    );
+    return 0;
+  });
+}
 
 /**
  * Turn the findings in a run's finished deliverables into write proposals, and
@@ -4674,6 +4947,8 @@ export function propose(argv: string[]): number {
     });
   }
 
+  if (words[0] === 'doc') return proposeDoc(flags);
+
   if (words.length > 0) {
     process.stderr.write(`propose: unknown subcommand "${words[0]}"\n${PROPOSE_USAGE}`);
     return 2;
@@ -4693,52 +4968,12 @@ export function propose(argv: string[]): number {
     }
     const workspace = flags.workspace?.trim() || recorded.workspace;
 
-    const declared = sourcesFor(store, workspace);
     const sourceId = (flags.source ?? '').trim();
-    if (sourceId === '' || sourceId === 'true') {
-      // Which source a change is made against is never inferred, even where a
-      // workspace declares exactly one: the id is the difference between a
-      // proposal a person can decide on and a change aimed at a system nobody
-      // named.
-      process.stderr.write(`propose: name the source these changes would be made against.\n`);
-      for (const source of declared) {
-        process.stderr.write(`  --source=${source.id}  (${source.kind} ${source.locator})\n`);
-      }
-      if (declared.length === 0) {
-        process.stderr.write(
-          `  workspace ${workspace} has declared none: construct source add --kind=<kind> --locator=<where>\n`,
-        );
-      }
-      return 2;
-    }
-    const target = getSource(store, sourceId);
-    if (!target || target.workspace !== workspace) {
-      process.stderr.write(
-        `propose: workspace ${workspace} declares no source ${sourceId}.\n` +
-          '  construct source list --workspace=' + workspace + '\n',
-      );
-      return 1;
-    }
-    if (target.retiredAt) {
-      // A retired source stays inspectable because past provenance points at
-      // it. Proposing a change into one would aim at a system this workspace
-      // has said it no longer works from.
-      process.stderr.write(
-        `propose: ${sourceId} was retired at ${target.retiredAt}; it is not somewhere to send changes.\n`,
-      );
-      return 1;
-    }
+    const target = targetSource(store, workspace, sourceId);
+    if (typeof target === 'number') return target;
 
     const only = (flags.task ?? '').trim();
-    const deliverables: Deliverable[] = listTasks(store, run)
-      .filter((task) => task.state === 'done')
-      .filter((task) => only === '' || only === 'true' || task.id === only)
-      .map((task) => ({
-        task: task.id,
-        role: task.role,
-        text: deliverableBody(latestDraft(store, task.id)?.deliverable ?? task.result),
-      }))
-      .filter((deliverable) => deliverable.text.trim() !== '');
+    const deliverables: Deliverable[] = finishedDeliverables(store, run, only);
 
     if (deliverables.length === 0) {
       process.stderr.write(

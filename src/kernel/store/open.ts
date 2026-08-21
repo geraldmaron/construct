@@ -85,7 +85,17 @@
  * triggers are dropped and recreated rather than created-if-absent, because a
  * stale trigger in an existing store would refuse the erasure it was rewritten
  * to allow — the one case where leaving an old definition in place is not
- * harmless.
+ * harmless. Schema version 16 adds `doc_edits`, additive and immutable: the
+ * parts of an outward change to a document — which document, whether it
+ * replaces words or adds them or authors a whole file, the words on each side
+ * — kept beside the proposal they detail. The proposal's own `change` column
+ * still carries the whole change in the words it will be approved in, because
+ * that is what a decision is about and what a host is handed; this table is
+ * the same change in its parts, so a surface showing a redline reads fields
+ * rather than parsing prose. Its own table rather than columns on
+ * `write_proposals` for the reason `source_shapes` is its own: this schema is
+ * created, never altered, and a column added to an existing table would
+ * silently not exist in a store that already has one.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -110,7 +120,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -612,6 +622,25 @@ BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its 
 CREATE TRIGGER IF NOT EXISTS standing_runs_no_delete
 BEFORE DELETE ON standing_runs
 BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its lineage'); END;
+
+CREATE TABLE IF NOT EXISTS doc_edits (
+  proposal    TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL CHECK (kind IN ('redline', 'insertion', 'authored')),
+  document    TEXT NOT NULL,
+  anchor      TEXT NOT NULL,
+  proposed    TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS doc_edits_document ON doc_edits (document, proposal);
+
+CREATE TRIGGER IF NOT EXISTS doc_edits_no_update
+BEFORE UPDATE ON doc_edits
+BEGIN SELECT RAISE(ABORT, 'a proposed document change is immutable; its fate is a decision row'); END;
+
+CREATE TRIGGER IF NOT EXISTS doc_edits_no_delete
+BEFORE DELETE ON doc_edits
+BEGIN SELECT RAISE(ABORT, 'a proposed document change is immutable; its fate is a decision row'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
