@@ -30,6 +30,7 @@ import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { readFeedback } from '../../../src/kernel/store/feedback.ts';
 import { raiseDecision, openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { answeredAsksFor, frameAsk } from '../../../src/kernel/run/asks.ts';
+import { startRunSelected } from '../../../src/kernel/run/outcome.ts';
 import { readRunDispatch } from '../../../src/kernel/store/dispatch.ts';
 import { getNote, notesFor } from '../../../src/kernel/store/notes.ts';
 import {
@@ -191,6 +192,75 @@ test('omitting namings is the deterministic keyword path — no model is claimed
   }
 });
 
+/**
+ * A cache hit is not a rejection: the admission gate never ran against the
+ * second call's proposals at all, an earlier consultation's cached answer
+ * stood in unevaluated. That is a different fact from a naming genuinely
+ * refused for being outside the catalog or reasonless, and the reply must not
+ * make a caller infer the difference by cross-referencing inferredBy itself.
+ */
+test('a cache hit is named in notAdmittedBecause, not left to be inferred from inferredBy alone', async () => {
+  const f = fixture();
+  try {
+    const outcome = 'Migrate the customer database to a new hosting region';
+    const firstReply = await f.handle(
+      call('record_outcome', {
+        outcome,
+        namings: [{ domain: 'privacy', why: 'customer data crosses a new jurisdiction on migration.' }],
+      }),
+    );
+    const first = payload(firstReply).body as { inferredBy: string; notAdmitted?: string[] };
+    assert.equal(first.inferredBy, 'namer');
+    assert.equal(first.notAdmitted?.length ?? 0, 0, 'nothing was rejected on the first consultation');
+
+    // The exact same outcome text, a second time, with a fresh proposal that
+    // would be perfectly admissible on its own merits — real catalog domain,
+    // real reason. The point is that it is never actually checked.
+    const secondReply = await f.handle(
+      call('record_outcome', {
+        outcome,
+        namings: [{ domain: 'security', why: 'a well-formed reason the gate never sees' }],
+      }),
+    );
+    const second = payload(secondReply).body as {
+      inferredBy: string;
+      implicated: Array<{ domain: string }>;
+      notAdmitted: string[];
+      notAdmittedBecause?: string;
+    };
+    assert.equal(second.inferredBy, 'cache');
+    // The first call's cached answer stands — not the second call's proposal.
+    assert.deepEqual(second.implicated.map((i) => i.domain), ['privacy']);
+    assert.deepEqual(second.notAdmitted, ['security']);
+    assert.ok(second.notAdmittedBecause, 'the reply says outright that this is a cache hit');
+    assert.match(second.notAdmittedBecause as string, /cache/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('a genuine catalog rejection carries no notAdmittedBecause — that field is cache-hits only', async () => {
+  const f = fixture();
+  try {
+    const reply = await f.handle(
+      call('record_outcome', {
+        outcome: 'An outcome nothing has ever consulted before',
+        namings: [{ domain: 'astrology', why: 'not a catalog domain' }],
+      }),
+    );
+    const body = payload(reply).body as {
+      inferredBy: string;
+      notAdmitted: string[];
+      notAdmittedBecause?: string;
+    };
+    assert.notEqual(body.inferredBy, 'cache');
+    assert.deepEqual(body.notAdmitted, ['astrology']);
+    assert.equal(body.notAdmittedBecause, undefined, 'a real rejection must not be mislabeled as a cache hit');
+  } finally {
+    f.cleanup();
+  }
+});
+
 test('exercising every read leaves task state and completion untouched', async () => {
   const f = fixture();
   try {
@@ -216,6 +286,46 @@ test('exercising every read leaves task state and completion untouched', async (
     assert.deepEqual(after, before, 'no read moved a task');
     assert.equal(readWorkLog(f.store).length, logBefore, 'no read appended to the log');
     assert.ok(before.every((t) => t.state === 'pending'), 'nothing was dispatched');
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('work_log refuses an unscoped call and names what to pass, unlike its optionally-scoped siblings', async () => {
+  const f = fixture();
+  try {
+    // Two runs — the second seeded directly against the store with its own
+    // explicit id, since the fixture's clock is fixed and a second call
+    // through record_outcome would derive the same run id as the first — so
+    // a run-scoped read has something real to exclude, not just an empty log.
+    const first = await f.handle(
+      call('record_outcome', { outcome: 'First outcome', namings: [{ domain: 'privacy', why: 'x' }] }),
+    );
+    const runA = (payload(first).body as { run: string }).run;
+    const runB = 'run-work-log-other';
+    startRunSelected(f.store, { runId: runB, outcome: 'Second outcome', at: AT, domains: ['security'] });
+    assert.notEqual(runA, runB);
+
+    const unscoped = await f.handle(call('work_log'));
+    const { body, isError } = payload(unscoped);
+    assert.equal(isError, true, 'an unscoped call is refused rather than dumping the whole table');
+    assert.match((body as { error: string }).error, /run/);
+
+    // run_status and asks stay optionally scoped: their unscoped answer is
+    // naturally small because it reflects only current state, not history.
+    const statusReply = await f.handle(call('run_status'));
+    assert.equal(payload(statusReply).isError, false, 'run_status stays optional');
+
+    // A scoped call is exactly as it was: bounded to its own run's entries.
+    const scoped = await f.handle(call('work_log', { run: runA }));
+    const { body: scopedBody, isError: scopedIsError } = payload(scoped);
+    assert.equal(scopedIsError, false);
+    const entries = (scopedBody as { entries: Array<{ run: string }> }).entries;
+    assert.ok(entries.length > 0, 'the scoped run has entries');
+    assert.ok(
+      entries.every((e) => e.run === runA),
+      'a run-scoped read carries only that run — runB never leaks in',
+    );
   } finally {
     f.cleanup();
   }
@@ -465,6 +575,7 @@ test('bad arguments come back as readable tool errors, not transport failures', 
       call('verdict', { run: 'run-nope', confirm: ['privacy'] }),
       call('verdict', { run: 'run-1', confirm: 'privacy' }),
       call('validate_brief', {}),
+      call('work_log', {}),
     ]) {
       const reply = await f.handle(bad);
       const { body, isError } = payload(reply);
@@ -679,6 +790,20 @@ test('drop_note says plainly that nothing is learned until someone runs the loop
   const note = PROJECTION_TOOLS.find((tool) => tool.name === 'drop_note');
   assert.match(note?.description ?? '', /does not run the context loop/);
   assert.match(note?.description ?? '', /construct notes --run/);
+});
+
+/**
+ * The description is the only thing a calling host or model reads before
+ * calling the tool. It stated an exhaustive-sounding list of discard reasons
+ * (outside the catalog, no reason given) that left out a third: an outcome
+ * text already consulted once answers from a cache instead of evaluating a
+ * fresh, well-formed proposal at all.
+ */
+test('record_outcome names the cache override in its own description', () => {
+  const tool = PROJECTION_TOOLS.find((t) => t.name === 'record_outcome');
+  assert.match(tool?.description ?? '', /already consulted/);
+  assert.match(tool?.description ?? '', /cache/);
+  assert.match(tool?.description ?? '', /notAdmittedBecause/);
 });
 
 const SRC = fileURLToPath(new URL('../../../src/', import.meta.url));

@@ -117,10 +117,16 @@ export const PROJECTION_TOOLS = [
       'namings entirely leaves the inference to the deterministic keyword ' +
       'map. Your namings are proposals: anything outside the catalog or ' +
       'without a reason is discarded by the kernel, and the reply says what ' +
-      'was admitted. Optionally state your own `confidence` (0 to 1) on a ' +
-      "naming when you are unsure it truly applies — below 0.5 it is kept " +
-      'as a named coverage gap rather than routed, so a weak read does not ' +
-      'silently become a match. Leave it out when you are simply sure.',
+      'was admitted — except when this exact outcome text was already ' +
+      'consulted once before, by any host in any prior session: that first ' +
+      'answer is served from a cache instead, your namings are not evaluated ' +
+      'against the catalog at all, `inferredBy` reads "cache", and any of ' +
+      'your proposed domains missing from the cached answer land in ' +
+      '`notAdmitted` with `notAdmittedBecause` saying why. Optionally state ' +
+      'your own `confidence` (0 to 1) on a naming when you are unsure it ' +
+      "truly applies — below 0.5 it is kept as a named coverage gap rather " +
+      'than routed, so a weak read does not silently become a match. Leave ' +
+      'it out when you are simply sure.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -151,10 +157,13 @@ export const PROJECTION_TOOLS = [
     name: 'work_log',
     description:
       'Read the append-only work log: what was inferred, reviewed, and flagged, ' +
-      'in whose name. Optionally scoped to one run.',
+      'in whose name, for one run. Requires a run id — unlike run_status and ' +
+      'asks, this log has no natural bound (it is the whole ever-growing ' +
+      'table, not current state) and an unscoped read does not fit a host reply.',
     inputSchema: {
       type: 'object',
       properties: { run: { type: 'string', description: 'A run id, to scope the read.' } },
+      required: ['run'],
     },
   },
   {
@@ -339,6 +348,9 @@ function toolResult(id: unknown, payload: unknown, isError = false): JsonRpcResp
 /** The reply `record_outcome` sends back: what was admitted, and how. */
 function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): unknown {
   const admitted = new Set(started.implicated.map((i) => i.domain));
+  const notAdmitted = proposed
+    ?.map((n) => n?.domain)
+    .filter((d): d is string => typeof d === 'string' && !admitted.has(d));
   return {
     run: started.runId,
     outcome: started.outcome,
@@ -351,9 +363,24 @@ function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): 
     tasksQueued: started.tasks.length,
     ...(started.namerFailure !== undefined ? { namerFailure: started.namerFailure } : {}),
     // Proposals the kernel did not admit, named so the model hears the gate
-    // rather than assuming everything it said was accepted.
-    ...(proposed
-      ? { notAdmitted: proposed.map((n) => n?.domain).filter((d) => typeof d === 'string' && !admitted.has(d)) }
+    // rather than assuming everything it said was accepted. On a cache hit
+    // this list means something different from every other inferredBy: the
+    // admission gate (catalog membership, a stated reason, dedup) never ran
+    // against these proposals at all — the cached answer from whoever
+    // consulted this exact outcome text first stands in unevaluated. That is
+    // not a catalog or reason rejection, so it is said outright rather than
+    // left for the reader to work out by cross-referencing inferredBy.
+    ...(notAdmitted
+      ? {
+          notAdmitted,
+          ...(started.inferredBy === 'cache' && notAdmitted.length > 0
+            ? {
+                notAdmittedBecause:
+                  'a cache hit: an earlier consultation of this exact outcome text already answered, ' +
+                  'so these proposals were never checked against the catalog — not a catalog or reason rejection',
+              }
+            : {}),
+        }
       : {}),
   };
 }
@@ -487,8 +514,22 @@ async function callTool(
       }
       case 'record_outcome':
         return toolResult(id, await recordOutcome(core, client, input));
-      case 'work_log':
+      case 'work_log': {
+        // Required, unlike run_status/asks/inbox's optional run: those reflect
+        // only currently-open or currently-active state, which stays small by
+        // construction. work_log is the literal, ever-growing append-only
+        // table with no cap, so an unscoped read has no bounded answer to
+        // give. Refusing and naming what to pass is the same rule records,
+        // record, answer, decide, and verdict already use above for a
+        // required field with no reasonable default — not a new convention,
+        // just this tool's own optional-looking schema catching up to it.
+        if (run === undefined) {
+          throw new RangeError(
+            'work_log requires a string "run" — the unscoped log has no bound; pass the run id to scope it',
+          );
+        }
         return toolResult(id, { entries: readWorkLog(core.store, run) });
+      }
       case 'run_status':
         return toolResult(id, runStatus(core, run));
       case 'inbox':
