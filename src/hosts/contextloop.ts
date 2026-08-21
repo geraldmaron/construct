@@ -45,6 +45,9 @@ import { REVIEWER_ROLE } from '../kernel/context/review.ts';
 import { GROUND_IS_MATERIAL_RULE } from '../kernel/run/grounding.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
+import { mappedFieldsByAuthority, splitFieldsByAuthority } from '../kernel/tracker/authority.ts';
+import { proposalIssue } from '../kernel/tracker/crossing.ts';
+import { trackerApplySection, trackerRecipeFor } from './tracker.ts';
 
 /** The roles these passes run as. Not catalog domains — they run around them. */
 export const PRODUCER_ROLE = 'context-producer';
@@ -334,13 +337,37 @@ export const APPLIER_ROLE = 'change-applier';
  * model that believes a refusal will disappoint will report a success it did
  * not have, and a falsely recorded apply is worse than no apply at all —
  * nobody goes and makes the change that the record says was already made.
+ *
+ * A change bound for a tracker gets one more section: the official MCP server
+ * for that tracker, the action on it that carries this kind of change, and the
+ * two field lists — what this crossing may assert, and what the tracker owns
+ * and nothing here may move. Both lists are read off the authority map, and
+ * the writable one is built from the very issue record the mirror row is built
+ * from, so the fields a model is told it may set and the fields the projection
+ * actually records cannot come apart. Every other kind of source — a
+ * directory, a docs system, a source nobody declared — gets this prompt
+ * exactly as it was, because no recipe exists to be precise with.
  */
 export function applierPrompt(proposal: {
+  readonly id: string;
   readonly source: string;
+  readonly kind: string;
   readonly locator: string;
   readonly change: string;
   readonly justification: string;
 }): string {
+  const recipe = trackerRecipeFor(proposal.kind);
+  const tracker = recipe
+    ? [
+        ...trackerApplySection({
+          recipe,
+          locator: proposal.locator,
+          projects: splitFieldsByAuthority(proposalIssue(proposal)).domain,
+          neverTouches: mappedFieldsByAuthority().tracker,
+        }),
+        '',
+      ]
+    : [];
   return [
     'A person has approved one change to a system outside this tool, and you are',
     'being asked to carry it out with your own tools. Only this change.',
@@ -350,6 +377,7 @@ export function applierPrompt(proposal: {
     proposal.change,
     `Why it was approved: ${proposal.justification}`,
     '',
+    ...tracker,
     'Make exactly that change and nothing adjacent to it. Do not fix anything',
     'else you notice, do not tidy, do not update a second field because it looked',
     'wrong. What was approved is what was approved.',
@@ -366,19 +394,36 @@ export function applierPrompt(proposal: {
 }
 
 /**
+ * Where a change is bound, as the caller's own source registry answers it. The
+ * kind decides which tracker recipe the instruction carries, so a source
+ * nobody declared answers with a kind no recipe matches and the change goes
+ * out under the plain instruction rather than under a guess.
+ */
+export interface ApplyTarget {
+  readonly kind: string;
+  readonly locator: string;
+}
+
+/**
  * Build a `ProposalApplier` backed by a host adapter; caller owns init().
  *
  * A reply missing its boolean throws rather than defaulting either way: a
  * default of true records an apply nobody witnessed, and a default of false
  * would silently discard a change that may have landed.
  */
-export function createHostApplier(host: HostAdapter, locatorFor: (source: string) => string): ProposalApplier {
+export function createHostApplier(
+  host: HostAdapter,
+  targetFor: (source: string) => ApplyTarget,
+): ProposalApplier {
   return async (proposal) => {
+    const target = targetFor(proposal.source);
     const result = await host.invoke({
       role: APPLIER_ROLE,
       task: applierPrompt({
+        id: proposal.id,
         source: proposal.source,
-        locator: locatorFor(proposal.source),
+        kind: target.kind,
+        locator: target.locator,
         change: proposal.change,
         justification: proposal.justification,
       }),
