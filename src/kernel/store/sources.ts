@@ -443,6 +443,17 @@ export function markApplied(store: Store, proposal: string, reason: string, deci
 }
 
 /** Proposals in a workspace with no decision yet, oldest first: the human's queue. */
+/** How many outward changes wait for a decision, across every workspace. */
+export function pendingProposalCount(store: Store): number {
+  const row = store.db
+    .prepare(
+      `SELECT COUNT(*) AS waiting FROM write_proposals p
+       WHERE NOT EXISTS (SELECT 1 FROM proposal_decisions d WHERE d.proposal = p.id)`,
+    )
+    .get() as unknown as { waiting: number };
+  return row.waiting;
+}
+
 export function pendingProposals(store: Store, workspace: string): WriteProposal[] {
   const rows = store.db
     .prepare(
