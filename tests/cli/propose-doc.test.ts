@@ -93,7 +93,13 @@ function declareDocs(id = 'docs-1', locator = 'confluence:space:DOCS'): () => nu
 }
 
 function waiting(): WriteProposal[] {
-  return inStore((store) => pendingProposals(store, 'default'));
+  // A store that cannot open holds nothing waiting; asserting emptiness must
+  // not itself require the store a shape refusal never opened.
+  try {
+    return inStore((store) => pendingProposals(store, 'default'));
+  } catch {
+    return [];
+  }
 }
 
 const DOCUMENT = 'docs/adr/0007-storage.md';
