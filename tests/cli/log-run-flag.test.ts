@@ -2,11 +2,11 @@
  * tests/cli/log-run-flag.test.ts — `construct log --run=<id>` scopes exactly
  * as `construct log --run <id>` does.
  *
- * log's own sibling `show()` in the same file, and work.ts's and verdict.ts's
- * arg parsers, all accept both forms; log itself only recognized the spaced
- * one. The equals form matched no case and left `run` undefined, so it fell
- * through to the unscoped branch silently — no error, no warning, just a
- * much longer reply than the one line the caller asked for.
+ * Every verb that takes a run reads it through cli/flags.ts's `runFlag`, so
+ * both forms scope the same on all of them. What this pins is that the equals
+ * form is not silently unscoped: a form that matches no case leaves `run`
+ * undefined and falls through to the whole-store dump with no error and no
+ * warning, just a much longer reply than the one the caller asked for.
  */
 
 import { test } from 'node:test';
