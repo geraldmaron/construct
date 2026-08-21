@@ -175,7 +175,7 @@ justification for a change already made*, and they justify it comfortably: the
 thing that was demoted deserved demoting.
 
 **What the figures do warrant is narrower, and it is about disclosure.** The
-fallback currently prints `shape: review (the model could not be asked; falling
+fallback prints `shape: review (the model could not be asked; falling
 back to the keyword guess)`. That sentence is honest about *who* chose and silent
 about *whether anything matched* — and the measurement says that 0.800 of the
 time, nothing did. A reader cannot act on that message, because the same words
