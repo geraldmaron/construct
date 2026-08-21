@@ -19,6 +19,8 @@ export interface FixtureRepo {
   git(...args: string[]): string;
   /** Write the tracker export and commit it with the given message. */
   export(records: readonly Record<string, unknown>[], message: string): void;
+  /** A commit that changes nothing, so a message can be placed on a branch. */
+  commit(message: string): void;
   cleanup(): void;
 }
 
@@ -56,6 +58,9 @@ export function fixtureRepo(mainBranch = 'main'): FixtureRepo {
       writeFileSync(join(root, '.beads/issues.jsonl'), `${lines}\n`);
       git('add', '.beads/issues.jsonl');
       git('commit', '-m', message);
+    },
+    commit(message) {
+      git('commit', '--allow-empty', '-m', message);
     },
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };

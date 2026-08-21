@@ -13,7 +13,8 @@
  * database itself lost — the bead reads open, no commit contradicts it, and the
  * whole regression prints as agreement. So the export's own version history is
  * swept too, and a record it once held that the export no longer holds is
- * reported.
+ * reported. Both are read from one branch's view, so the report opens by saying
+ * where that branch stands and which beads already have commits it cannot see.
  *
  * Every judgement lives in src/kernel/tracker/session-drift.ts, which is pure
  * and tested against fixtures rather than against whatever this repo happens to
@@ -33,8 +34,18 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { reconcileSession, describeConflict, lostRecords } from '../src/kernel/tracker/session-drift.ts';
-import { gatherRepoEvidence, isFailure, recordedHistory } from '../src/hosts/repo/evidence.ts';
+import {
+  reconcileSession,
+  describeConflict,
+  describeDivergence,
+  lostRecords,
+} from '../src/kernel/tracker/session-drift.ts';
+import {
+  gatherRepoEvidence,
+  gatherDivergence,
+  isFailure,
+  recordedHistory,
+} from '../src/hosts/repo/evidence.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN_BRANCH = 'main';
@@ -61,10 +72,21 @@ const report = reconcileSession(issues, evidence, reconciledAt);
 // lost reads there as agreement: the bead says open, no one closed it, nothing
 // disagrees. The export's own version history remembers otherwise.
 const lost = lostRecords(issues, recordedHistory(ROOT) ?? undefined);
-const allClean = report.clean && lost.clean;
+
+// Every finding above is made from one branch's view. Sessions working main and
+// a direction branch in parallel implemented the same beads twice because the
+// branch session could not see the commits that already carried them, so where
+// the checkout stands is said before anything else is judged from it.
+const divergence = describeDivergence(
+  gatherDivergence({ root: ROOT, mainBranch: MAIN_BRANCH }) ?? undefined,
+);
+
+const allClean = report.clean && lost.clean && !divergence.diverged;
 
 if (json) {
-  process.stdout.write(`${JSON.stringify({ ...report, lost, clean: allClean }, null, 2)}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ ...report, lost, divergence, clean: allClean }, null, 2)}\n`,
+  );
 } else if (!(quiet && allClean)) {
   const titles = new Map(issues.map((i) => [i.id, i.title ?? '']));
   process.stdout.write(
@@ -73,6 +95,10 @@ if (json) {
       ` ${report.counts.adjudicated} adjudicated,` +
       ` ${report.contradictions.length} contradiction(s)\n`,
   );
+  if (divergence.diverged) {
+    process.stdout.write('\n  this checkout is not where the work is:\n');
+    for (const line of divergence.lines) process.stdout.write(`    ${line}\n`);
+  }
   for (const result of report.drifted) {
     process.stdout.write(`\n  ${result.external_id}  ${titles.get(result.external_id) ?? ''}\n`);
     for (const c of result.conflicts) {

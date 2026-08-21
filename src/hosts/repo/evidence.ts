@@ -19,7 +19,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import type { BeadIssue, EvidenceBySlug } from '../../kernel/tracker/session-drift.ts';
 
-import type { RecordedHistory } from '../../kernel/tracker/session-drift.ts';
+import type { RecordedHistory, Divergence } from '../../kernel/tracker/session-drift.ts';
 
 /** Where the tracker writes the export this repository version-controls. */
 const EXPORT_PATH = '.beads/issues.jsonl';
@@ -193,6 +193,35 @@ export function recordedHistory(root: string, cap: number = HISTORY_COMMIT_CAP):
  * Trailers are matched against the known id set rather than by shape, so
  * a parent id never matches inside one of its own child ids.
  */
+/** The `%H%x00%B%x01` log format, unpacked. */
+function parseLog(log: string): { sha: string; message: string }[] {
+  const commits: { sha: string; message: string }[] = [];
+  for (const entry of log.split('\x01')) {
+    const [sha, message] = entry.split('\x00');
+    if (!sha || !message) continue;
+    commits.push({ sha: sha.trim(), message });
+  }
+  return commits;
+}
+
+/**
+ * The tokens a commit message carries in trailer position: the last
+ * parenthesised group on a line, wherever in the message that line sits.
+ * Whether a token is an id this repository knows is the caller's question.
+ */
+function trailerTokens(message: string): string[] {
+  const tokens: string[] = [];
+  for (const line of message.split('\n')) {
+    const trailer = /\(([^()]*)\)$/.exec(line.trim());
+    if (!trailer) continue;
+    for (const token of trailer[1].split(/[,\s]+/)) {
+      const trimmed = token.trim();
+      if (trimmed !== '') tokens.push(trimmed);
+    }
+  }
+  return tokens;
+}
+
 export function landingCommits(
   root: string,
   ids: readonly string[],
@@ -208,16 +237,9 @@ export function landingCommits(
   if (log === null) return null;
   const known = new Set(ids);
   const found = new Map<string, string[]>(ids.map((id) => [id, []]));
-  for (const entry of log.split('\x01')) {
-    const [sha, message] = entry.split('\x00');
-    if (!sha || !message) continue;
-    for (const line of message.split('\n')) {
-      const trailer = /\(([^()]*)\)$/.exec(line.trim());
-      if (!trailer) continue;
-      for (const token of trailer[1].split(/[,\s]+/)) {
-        const id = token.trim();
-        if (known.has(id)) found.get(id)?.push(sha.trim().slice(0, 12));
-      }
+  for (const { sha, message } of parseLog(log)) {
+    for (const id of trailerTokens(message)) {
+      if (known.has(id)) found.get(id)?.push(sha.slice(0, 12));
     }
   }
   // A commit naming the same bead on two lines is one landing commit.
@@ -239,6 +261,69 @@ export function inFlight(root: string, ids: readonly string[]): Set<string> {
     git(root, ['stash', 'list']) ?? '',
   ].join('\n');
   return new Set(ids.filter((id) => haystack.includes(id)));
+}
+
+/** `git rev-list --left-right --count A...B` — commits only in A, only in B. */
+function countBoth(root: string, left: string, right: string): [number, number] {
+  const counts = git(root, ['rev-list', '--left-right', '--count', `${left}...${right}`]);
+  if (counts === null) return [0, 0];
+  const [onlyLeft, onlyRight] = counts.trim().split(/\s+/).map(Number);
+  return [Number.isFinite(onlyLeft) ? onlyLeft : 0, Number.isFinite(onlyRight) ? onlyRight : 0];
+}
+
+/**
+ * Where this checkout stands relative to main and to its upstream, and which
+ * beads have commits on main that it does not contain.
+ *
+ * Local refs only, and deliberately: a gather that fetched would report a
+ * different repository than the one the session is working in, would need the
+ * network to answer at all, and would make a commit-time check depend on being
+ * online. The question here is what this machine already knows and the session
+ * has not looked at.
+ */
+export function gatherDivergence(input: GatherInput): Divergence | null {
+  const root = input.root;
+  const mainBranch = input.mainBranch ?? 'main';
+  if (git(root, ['rev-parse', '--verify', '--quiet', `${mainBranch}^{commit}`]) === null) {
+    return null;
+  }
+  const head = (git(root, ['rev-parse', '--abbrev-ref', 'HEAD']) ?? '').trim() || 'HEAD';
+  const [behindMain, aheadOfMain] = countBoth(root, mainBranch, 'HEAD');
+
+  const upstreamRaw = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
+  const upstream = upstreamRaw === null ? null : upstreamRaw.trim() || null;
+  const [behindUpstream, aheadOfUpstream] = upstream
+    ? countBoth(root, upstream, 'HEAD')
+    : [0, 0];
+
+  // The load-bearing part. A session that cannot see these commits will judge
+  // the work in them missing and do it a second time, which is what happened.
+  const ids = loadIssues(root)?.map((issue) => issue.id) ?? [];
+  const prefixes = new Set(ids.map((id) => id.split('-')[0]).filter((p) => p !== ''));
+  const beadsOnlyOnMain: string[] = [];
+  const seen = new Set<string>();
+  if (behindMain > 0) {
+    const log = git(root, ['log', '--format=%H%x00%B%x01', `HEAD..${mainBranch}`]) ?? '';
+    for (const { message } of parseLog(log)) {
+      for (const token of trailerTokens(message)) {
+        if (!prefixes.has(token.split('-')[0]) || !token.includes('-')) continue;
+        if (seen.has(token)) continue;
+        seen.add(token);
+        beadsOnlyOnMain.push(token);
+      }
+    }
+  }
+
+  return {
+    head,
+    mainBranch,
+    aheadOfMain,
+    behindMain,
+    upstream,
+    aheadOfUpstream,
+    behindUpstream,
+    beadsOnlyOnMain,
+  };
 }
 
 /**
