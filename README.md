@@ -2,19 +2,25 @@
 
 An outcome engine. Point at an outcome; a learning staff of roles fills in the rest. Work happens in the background; only genuine decisions surface; deliverables arrive finished and traceable.
 
-This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full direction, [GLOSSARY.md](GLOSSARY.md) for the vocabulary every surface uses, and [CHANGELOG.md](CHANGELOG.md) for what shipped. The code shares nothing with the predecessor (1.x/2.x), which lives on archived and read-only at `construct-legacy`, but the package is the same one: `@geraldmaron/construct`, continuing past `2.1.1` as `3.0.0-alpha.11`. The `construct` CLI command name is unchanged, as it always was.
+This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full direction, [GLOSSARY.md](GLOSSARY.md) for the vocabulary every surface uses, and [CHANGELOG.md](CHANGELOG.md) for what shipped. The code shares nothing with the predecessor (1.x/2.x), which lives on archived and read-only at `construct-legacy`, but the package is the same one: `@geraldmaron/construct`, continuing past `2.1.1` as `3.0.0-alpha.12`. The `construct` CLI command name is unchanged, as it always was.
 
 Nothing installed today changes under you. Alphas publish under the `alpha` tag, so `latest` stays on the predecessor's `2.1.1` until the Phase 5 stakeholder-acceptance gate passes and `3.0.0` is promoted deliberately — an existing `npm install @geraldmaron/construct` cannot wander into the rewrite.
 
 ## Status
 
-**Phases 1 through 3 have landed; Phase 4 is open** (`3.0.0-alpha.11`). The spine runs end to end — outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families it has actually validated instead of implying all of them. Phase 4 stays open honestly: its depth criterion was withdrawn (next paragraph), and its second-tuned-family criterion was converted to per-skill measurement rather than left blocking (STRATEGY.md, Phase 4, fifth amendment).
+The spine runs end to end: outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families have actually been validated instead of implying all of them.
 
-**As of 2026-08-20 the program's direction is decided and recorded** (STRATEGY.md Phase 5; `RESEARCH-DECISIONS.md` §22): Construct is a personal tool first, with one product wedge — the method it carries ships as portable, severable skills under `skills/`, one self-contained file per skill, usable in any agent host with no construct checkout present. Three are shipped — `investigative-research`, `decision-framing`, `written-voice` — with recorded runs in `docs/skill-runs/`. The skills are deliberately not inside this npm package: get them by copying the single `SKILL.md` you want from [skills/](skills/), or with `npx skills add geraldmaron/construct` (decision record: `docs/skill-runs/2026-08-20-decision-framing-run-2.md`).
+**Phase status lives in exactly one place, [STRATEGY.md](STRATEGY.md)**, which carries the phase plan, every dated amendment to it, and which exit criteria are met, unmet, or withdrawn. This page does not restate it, because a second copy drifts. [CHANGELOG.md](CHANGELOG.md) says what each alpha changed.
+
+**The program's direction is decided and recorded** (STRATEGY.md Phase 5; `RESEARCH-DECISIONS.md` §22): Construct is a personal tool first, with one product wedge. The method it carries ships as portable, severable skills under `skills/`, one self-contained file per skill, usable in any agent host with no construct checkout present. Seven ship: `adversarial-review`, `context-mapping`, `decision-framing`, `intake`, `investigative-research`, `requirements-structuring`, `written-voice`. Each has at least one recorded real-work run under `docs/skill-runs/`.
+
+Shipped and measured are different claims, so the second one has an instrument. `docs/skill-use-ledger.md` is pre-registered: it states what would refute the skills bet before the first use (ten real invocations producing zero gate-changed outcomes refutes the method; not reaching ten invocations within about four weeks of install refutes the triggering and distribution instead, not the method), and one line goes in per real invocation with the receipt for its verdict. Its caveat travels with it rather than sitting in a footnote: the sample is small and it is scored by this program's own sessions against those pre-registered criteria, which is not independent evaluation. The instrument also requires honest no-rows, so the ledger records a no wherever the gate genuinely changed nothing, because a table of nothing but wins is a marketing page rather than a measurement.
+
+The skills are deliberately not inside the npm package (`files` is `bin`, `dist`, `schemas`): get them by copying the single `SKILL.md` you want from [skills/](skills/), or with `npx skills add geraldmaron/construct` (decision record: `docs/skill-runs/2026-08-20-decision-framing-run-2.md`). From a checkout, `construct skills list` prints the set with versions and `construct skills install <name>` copies one into a host's skills directory.
 
 **One claim was retired on 2026-08-10, and it was this project's headline one.** Construct used to say that giving a role its own question set made it see what the other roles miss. That was tested — two independently authored fixture organizations, plants keyed to each role's own territory, full sweeps, an independent judge pass — and it is not true: asked different questions over the same material, the roles return the same findings naming the same mechanisms. The external record agrees and got there first (personas measured across 162 variants and four model families do not improve performance; the diversity that does raise independent reasoning is *model* diversity, not persona diversity). So the claim is withdrawn rather than reworded, and the evidence for withdrawing it is published in full: `RESEARCH-DECISIONS.md` §§14–15, with every sweep, score and judged matrix under `fixtures/org-harness*/runs/`.
 
-What that leaves is smaller, and it is the part that was always doing the work: **coverage, obligation, and provenance.** Which concerns a piece of work touches, what each of them owes before anyone relies on the result, and who said what — made explicit, routed without being asked, and auditable afterward. Phase 4's other unmet criterion stands unchanged: only one model family is tuned.
+What that leaves is smaller, and it is the part that was always doing the work: **coverage, obligation, and provenance.** Which concerns a piece of work touches, what each of them owes before anyone relies on the result, and who said what — made explicit, routed without being asked, and auditable afterward. The staggered model matrix is also unchanged: one family is tuned, and the second-tuned-family criterion stopped gating a phase and became per-skill measurement instead of quietly staying blocked (STRATEGY.md, Phase 4, fifth amendment).
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is dogfood-only**, and the legal pack declares no covered jurisdiction until a licensed attorney accepts its corpus, so its findings are flagged for licensed review, never issued as advice. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
@@ -28,7 +34,28 @@ construct outcome "We want to hire a contractor in Poland"
 
 `construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Running work needs an agent host present, because Construct never ships its own agent runtime (commitment 1). Four are wired: OpenCode and the Claude Code CLI, plus two that spend a subscription rather than an API key — the Codex CLI (ChatGPT login) and the Cursor CLI (Cursor login). Every adapter is pinned to a probed version (`npm run probe:<host>`), and `construct doctor` now reports each host's presence: found, version against the pin, and auth state. A model family nobody has tuned for still runs on any of them; it is labeled best-effort on the work log, never refused.
+Those six are the spine, not the whole surface. The surface is 32 verbs. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
+
+| What you are doing | Verbs |
+|---|---|
+| Starting work | `outcome` `ask` `standing` `watch` |
+| Running it | `work` `notes` |
+| Reading back | `show` `log` `plan` `inbox` `corpus` |
+| Outward changes and decisions | `propose` `audit` `decide` `waive` `revoke` |
+| Ground | `source` `review` |
+| Learning and governance | `lessons` `verdict` `staff` |
+| Workspace settings | `mode` `consent` `record` |
+| Composition and reconciliation | `compose` `reconcile` |
+| Presence | `serve` |
+| Maintenance | `doctor` `backup` `cleanup` `skills` `version` |
+
+There is a 33rd, `role-serve`, and you never type it: the dispatcher launches it as one role's write surface, with the role's token in the environment rather than in arguments.
+
+Which of these spend money is worth knowing before you run one. `ask`, `work`, `review`, `compose`, `notes` when it reasons over what you drop in, `outcome --host`, `propose triage --host`, and `decide --apply` all dispatch to a host. Everything else, all of reading back included, is free and local.
+
+Running work needs an agent host present, because Construct never ships its own agent runtime (commitment 1). Four are wired: OpenCode and the Claude Code CLI, plus two that spend a subscription rather than an API key, the Codex CLI (ChatGPT login) and the Cursor CLI (Cursor login). Every adapter is pinned to a probed version (`npm run probe:<host>`), and `construct doctor` reports each host's presence: found, version against the pin, and auth state. A model family nobody has tuned for still runs on any of them; it is labeled best-effort on the work log, never refused.
+
+**Four wired is not four equal, and the difference is declared rather than discovered.** Each adapter states its capabilities, and only `opencode` and `claude` declare `outward-write`, because only those two dispatch with no sandbox flag. Codex dispatches `-s read-only` and Cursor dispatches `--mode plan`, both probed, so a model under either cannot carry out a change however it is asked. That makes `decide --apply` an `opencode`-or-`claude` command, and it says so before a model call is spent rather than after one comes back having failed. The read-only posture is not a gap to work around: it is what makes a review role safe. The same asymmetry runs the other way, and it is stated on screen at apply time: an apply through an unconfined host runs with whatever reach your own install of that host grants it.
 
 If you already work inside an agent host, `construct serve` puts the spine inside it over MCP, so Claude Code, Codex, VS Code agent mode, and OpenCode reach the same store with no CLI to learn:
 
@@ -73,7 +100,20 @@ in the right-hand columns.
 | Marketing | `marketing-claims` | claims inventory: substantiation that exists today, or who can pull the claim | — |
 | Engineer | — | deliberately absent: your host is the engineer | — |
 
-All fifteen concerns carry a lens — a posture, a question set, extra
+**Two concerns are not in that table, because no job title claims them.** The
+catalog carries `evidence-provenance` (where a claim comes from, what kind of
+source that is, and whether a reader can check it) and `coverage-gaps` (what is
+missing from the record, and whether its absence is a finding or a bias), and
+the generated seat map labels each of them, in its own word, an unmapped seat.
+They route from your wording like any other concern and they carry the same
+obligations: provenance adds `claim-provenance` and `single-source-claims` to
+the deliverable, coverage adds `coverage-frame` and `absences`. The boundary
+between them is stated in the catalog itself: provenance asks whether what is
+said is traceable, coverage asks whether what is unsaid is a bias. These are
+the concerns that fall between the seats, which is exactly why nobody on a
+human team is assigned to notice them.
+
+All seventeen concerns carry a lens — a posture, a question set, extra
 deliverable slots, and an escalation ladder — and each lens states what its
 method stands on: the external standards its questions descend from where a
 primary standard exists (OWASP ASVS for security, WCAG 2.2 for accessibility,
@@ -117,11 +157,12 @@ anyone can re-derive them without paying for the run.
 
 Two things that number is not. It is not a completeness claim — nothing here
 asserts that every concern an outcome touches is found, and the 0.280 is exactly
-the size of the gap. And it predates the five concerns added on 2026-08-10
-(strategy, system design, operations, user experience, measurement): the labeled
-corpora carry no labels for them, so every correct fire on a new concern scores
-as a false one. The over-rate above is therefore an upper bound on the real one,
-and re-measurement is filed rather than assumed.
+the size of the gap. And it predates seven of the seventeen concerns: the five
+added on 2026-08-10 (strategy, system design, operations, user experience,
+measurement) and the two added on 2026-08-13 (evidence provenance, coverage
+gaps). The labeled corpora carry no labels for any of them, so every correct
+fire on a later concern scores as a false one. The over-rate above is therefore
+an upper bound on the real one, and re-measurement is filed rather than assumed.
 
 **Nothing here claims anything about anyone but its author.** No external
 subjects are sampled anywhere in this program, by standing decision, so no
@@ -171,13 +212,12 @@ and especially, when the project is the one making it.
 
 ```bash
 npm install
-npm test          # sterile suite via node --test, native TS type-stripping
-npm run lint       # no-absolute-paths + glossary parity
-npm run typecheck
-npm run smoke      # packaged-install smoke: build, pack, install, run
+npm run lint && npm run typecheck && npm test && npm run smoke
 ```
 
-Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it runs natively via Node's type-stripping in development — no build step for `npm test`. `npm run build` produces the published `dist/` for packaging.
+That line is the whole gate; nothing is done without it. `npm run lint` is a chain of small checks rather than a linter: no absolute paths, glossary parity, no tracker ids in code, skill-spec conformance, reader-rubric parity, the connector gate, terminal-escape safety, and a regeneration of `docs/org-map.md` compared against the committed copy, so a catalog edit that would quietly falsify that page fails here instead. `npm test` is the sterile suite through `node --test`. `npm run smoke` packs the package, installs it into a scratch project, and runs the spine as a consumer would.
+
+Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it runs natively via Node's type-stripping in development, with no build step for `npm test`. `npm run build` produces the published `dist/` for packaging.
 
 ## License
 
