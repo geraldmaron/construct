@@ -15,6 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  closeGaps,
   foldClosingRound,
   screenClosedAnswers,
   toClosingReply,
@@ -216,4 +217,62 @@ test('an answer that names a document it never opened is still refused', () => {
 
   assert.equal(screened.closed.length, 0);
   assert.match(screened.refused[0].reason, /ground-exhausted/);
+});
+
+/**
+ * The round itself, rather than the pieces it is made of. It is where the
+ * fail-soft rule lives: a role that cannot be reached costs the run that
+ * role's answers and nothing else, and the reader is told which role went
+ * quiet rather than reading a document that is silently one concern short.
+ */
+test('a role that cannot be asked leaves its gaps standing and is named for it', async () => {
+  const said: string[] = [];
+  const round = await closeGaps({
+    close: async (source, gaps) => {
+      if (source.role === 'security') throw new Error('the host returned no text');
+      return {
+        closed: [{ gap: gaps[0], role: source.role, answer: 'It is supabase [cite:/repo/auth.md].' }],
+        unclosed: [],
+        refused: [],
+      };
+    },
+    groundRoots: ['/repo'],
+    sources: [
+      { role: 'privacy', text: 'the privacy deliverable' },
+      { role: 'security', text: 'the security deliverable' },
+    ],
+    briefs: new Map([
+      ['privacy', brief(['claims-cited'])],
+      ['security', brief(['claims-cited'])],
+    ]),
+    gaps: GAPS,
+    report: { say: (t) => said.push(t), warn: () => undefined },
+  });
+
+  assert.equal(round.closed.length, 1, "the reachable role's answer still lands");
+  assert.equal(round.closed[0]?.role, 'privacy');
+  assert.deepEqual(
+    round.standing.map((s) => s.gap),
+    [GAPS[1]],
+  );
+  assert.match(said.join(''), /security could not be asked/);
+  assert.match(said.join(''), /2 unanswered question\(s\) back to 2 role\(s\)/);
+});
+
+test('a role whose brief could not be read is asked and then not admitted', async () => {
+  const round = await closeGaps({
+    close: async (source, gaps) => ({
+      closed: [{ gap: gaps[0], role: source.role, answer: 'It is supabase [cite:/repo/auth.md].' }],
+      unclosed: [],
+      refused: [],
+    }),
+    groundRoots: ['/repo'],
+    sources: [{ role: 'privacy', text: 'the privacy deliverable' }],
+    briefs: new Map(),
+    gaps: GAPS,
+    report: { say: () => undefined, warn: () => undefined },
+  });
+
+  assert.equal(round.closed.length, 0);
+  assert.match(round.refused[0]?.reason ?? '', /brief could not be read/);
 });
