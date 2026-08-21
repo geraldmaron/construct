@@ -124,6 +124,12 @@ function lowerFirst(text: string): string {
  * then re-renders on a redraw would otherwise accumulate clauses.
  */
 export function renderClaim(text: string): string {
+  // Two clauses colliding at a sentence end read worse than either alone.
+  return substituted(text).replace(/\s+—\s+—\s+/g, ' — ').replace(/\s{2,}/g, ' ').trim();
+}
+
+/** Every marker in one string, rendered; whitespace left exactly as it was. */
+function substituted(text: string): string {
   let rendered = text;
   for (const { pattern, render } of RENDERINGS) {
     rendered = rendered.replace(pattern, (...args) => {
@@ -131,8 +137,42 @@ export function renderClaim(text: string): string {
       return render(match);
     });
   }
-  // Two clauses colliding at a sentence end read worse than either alone.
-  return rendered.replace(/\s+—\s+—\s+/g, ' — ').replace(/\s{2,}/g, ' ').trim();
+  return rendered;
+}
+
+/**
+ * A whole deliverable, in the words a reader gets.
+ *
+ * Line by line rather than all at once, and deliberately gentler than
+ * renderClaim: a deliverable is a document, and its indentation, nested lists,
+ * and blank lines are structure a reader depends on. renderClaim's whitespace
+ * collapse is right for one sentence and would flatten a document into a
+ * paragraph, which is why the substitution loop is shared and the tidying is
+ * not.
+ *
+ * Fenced code is left exactly as written. A marker inside a fence is content —
+ * somebody quoting the notation, or a config that happens to use brackets —
+ * and rendering it would edit the thing the author was showing.
+ */
+export function renderDocument(text: string): string {
+  const lines: string[] = [];
+  let inFence = false;
+  for (const line of text.split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      lines.push(line);
+      continue;
+    }
+    if (inFence) {
+      lines.push(line);
+      continue;
+    }
+    const indent = /^\s*/.exec(line)?.[0] ?? '';
+    lines.push(
+      indent + substituted(line.slice(indent.length)).replace(/\s+—\s+—\s+/g, ' — ').replace(/ {2,}/g, ' ').trimEnd(),
+    );
+  }
+  return lines.join('\n');
 }
 
 /**

@@ -79,7 +79,13 @@ import {
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
 import { COMPOSITION_SHAPES, shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
-import { renderAttribution, renderClaim, renderComposedClaim, renderHeading } from '../kernel/run/publish.ts';
+import {
+  renderAttribution,
+  renderClaim,
+  renderComposedClaim,
+  renderDocument,
+  renderHeading,
+} from '../kernel/run/publish.ts';
 import { attributionLine } from '../kernel/voice/voice.ts';
 import { contestedFacts, contestedLine } from '../kernel/run/contested.ts';
 import {
@@ -2427,13 +2433,22 @@ function renderDeliverable(deliverable: unknown): string {
  * names, and the text a user paid for sat in the store readable only by hand.
  * A spine that ends at "done" without showing the work is missing its last
  * step.
+ *
+ * What it shows is the reader's view, the same one compose hands back. The
+ * stored deliverable keeps every marker the gates read and this command
+ * printed them verbatim, so the one surface a person reads a deliverable on
+ * was the one place the record form reached them — "[unverified]" three times
+ * down a page reads as evasion, and the sentence underneath is not evasive.
+ * `--record` asks for the stored form, for anything checking the text rather
+ * than reading it.
  */
 export function show(argv: string[]): number {
   const runIndex = argv.indexOf('--run');
   const run = argv.find((a) => a.startsWith('--run='))?.slice('--run='.length)
     ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+  const asRecord = argv.includes('--record');
   if (!run) {
-    process.stderr.write('usage: construct show --run <id>\n');
+    process.stderr.write('usage: construct show --run <id> [--record]\n');
     return 2;
   }
 
@@ -2470,7 +2485,8 @@ export function show(argv: string[]): number {
         continue;
       }
       if (!draft) process.stdout.write('  (from the role\'s reply; no draft was submitted)\n');
-      const body = renderDeliverable(deliverable)
+      const text = renderDeliverable(deliverable);
+      const body = (asRecord ? text : renderDocument(text))
         .split('\n')
         .map((line) => `  ${line}`)
         .join('\n');
