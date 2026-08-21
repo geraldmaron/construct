@@ -9,7 +9,7 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 | playbook | trunk | The shared operational method every role draws on. |
 | brief | contract | A declaration of what a task needs: inputs, tool capabilities, postconditions. |
 | dispatcher | router | Resolves a brief's requirements against available tools and roles. |
-| host | harness | The agent runtime a role actually executes on (OpenCode, Claude Agent SDK, Claude Code). |
+| host | harness | The agent runtime a role actually executes on. Four adapters ship: OpenCode, Claude Code, the Codex CLI, and the Cursor CLI. Only OpenCode and Claude Code carry `outward-write`; Codex and Cursor dispatch read-only. |
 | deliverable | artifact | The finished, traceable output of a run. |
 | work log | accountability ledger | The append-only record of what was done, by whom, under what role. |
 | decision inbox | — | The short list of calls that are genuinely the user's to make. |
