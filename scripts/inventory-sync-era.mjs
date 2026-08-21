@@ -13,11 +13,16 @@
  * writes or deletes anything — it produces a manifest a person or a later,
  * separate step acts on.
  *
- * Detection is marker-driven, not a hardcoded file list: a generation marker
- * has to actually appear in a file (or, for .cursor/mcp.json, inside a parsed
- * server entry) before anything is reported. The five target locations below
- * only narrow WHERE the marker search looks; they do not themselves count as
- * hits.
+ * Detection is marker-driven, not a hardcoded file list, with one named
+ * exception: a generation marker has to actually appear in a file (or, for
+ * .cursor/mcp.json, inside a parsed server entry) before anything is
+ * reported. The five target locations below only narrow WHERE the marker
+ * search looks; they do not themselves count as hits. The exception is the
+ * `.construct-manifest` sidecar under .github/agents/ and .github/prompts/:
+ * it is a bare filename pointing at a generated agent or prompt file, and
+ * once that file is deleted the sidecar carries no marker of its own to find
+ * — its own presence, not its content, is the signal, so the agents/prompts
+ * scans check for it by name alongside their marker search.
  *
  * Usage:
  *   node scripts/inventory-sync-era.mjs [root] [--json]
@@ -126,8 +131,12 @@ function walkFiles(dir, notes, out) {
 // ---------------------------------------------------------------------------
 
 /**
- * .cursor/rules/construct-*.mdc — the filename glob narrows which files get
- * their content searched; a marker still has to appear in that content.
+ * .cursor/rules/construct.mdc, construct-*.mdc, and construct.*.mdc — the
+ * filename glob narrows which files get their content searched; a marker
+ * still has to appear in that content. The front-door rule file ships as
+ * bare `construct.mdc` (no separator at all), which a hyphen-only glob
+ * never opens despite the file carrying every marker verbatim; the
+ * character class covers a hyphen or a dot after `construct`, or nothing.
  */
 export function scanCursorRules(projectDir, notes) {
   const dir = path.join(projectDir, '.cursor', 'rules');
@@ -138,7 +147,7 @@ export function scanCursorRules(projectDir, notes) {
   }
   const hits = [];
   for (const entry of entries) {
-    if (!entry.isFile() || !/^construct-.*\.mdc$/.test(entry.name)) continue;
+    if (!entry.isFile() || !/^construct([.-].*)?\.mdc$/.test(entry.name)) continue;
     const full = path.join(dir, entry.name);
     const content = readTextSafe(full);
     if (content === null) {
@@ -215,16 +224,49 @@ function scanMarkerTree(projectDir, subdirParts, artifactClass, notes) {
   return hits;
 }
 
+/**
+ * A `.construct-manifest` file sitting directly in `subdirParts` — a sidecar
+ * that used to name the generated agent or prompt file beside it (its whole
+ * content is that one filename, nothing else). Once the artifact it points
+ * at is deleted, the sidecar is orphaned but carries no generation marker of
+ * its own to find, so `scanMarkerTree`'s content search can never see it;
+ * the file's own presence is the signal. `content` is reported as `detail`
+ * so a reader can see what deleted artifact it used to name.
+ */
+function manifestSidecarHit(projectDir, subdirParts, artifactClass, notes) {
+  const file = path.join(projectDir, ...subdirParts, '.construct-manifest');
+  if (!fs.existsSync(file)) return [];
+  const content = readTextSafe(file);
+  if (content === null) {
+    notes.push(`skipped ${file}: unreadable`);
+    return [];
+  }
+  return [
+    {
+      file: path.relative(projectDir, file),
+      marker: 'orphaned .construct-manifest sidecar',
+      class: artifactClass,
+      detail: content.trim(),
+    },
+  ];
+}
+
 export function scanSkillsTree(projectDir, notes) {
   return scanMarkerTree(projectDir, ['.claude', 'skills'], 'skills-tree', notes);
 }
 
 export function scanGithubAgents(projectDir, notes) {
-  return scanMarkerTree(projectDir, ['.github', 'agents'], 'github-agent', notes);
+  return [
+    ...scanMarkerTree(projectDir, ['.github', 'agents'], 'github-agent', notes),
+    ...manifestSidecarHit(projectDir, ['.github', 'agents'], 'github-agent-manifest', notes),
+  ];
 }
 
 export function scanGithubPrompts(projectDir, notes) {
-  return scanMarkerTree(projectDir, ['.github', 'prompts'], 'github-prompt', notes);
+  return [
+    ...scanMarkerTree(projectDir, ['.github', 'prompts'], 'github-prompt', notes),
+    ...manifestSidecarHit(projectDir, ['.github', 'prompts'], 'github-prompt-manifest', notes),
+  ];
 }
 
 /** All five target locations for one project. Never throws. */
