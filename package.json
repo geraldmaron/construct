@@ -53,6 +53,8 @@
     "probe:claude": "node scripts/probe-claude-conformance.mjs",
     "probe:codex": "node scripts/probe-codex-conformance.mjs",
     "probe:cursor": "node scripts/probe-cursor-conformance.mjs",
+    "probe:goose": "node scripts/probe-goose-conformance.mjs",
+    "probe:pi": "node scripts/probe-pi-conformance.mjs",
     "probe:tracker": "node scripts/probe-tracker-conformance.mjs",
     "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp",
     "check:research": "node scripts/check-research-discipline.mjs",

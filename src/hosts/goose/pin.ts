@@ -3,7 +3,7 @@
  * scripts/probe-goose-conformance.mjs checks against a live binary.
  *
  * goose is a probe target, not yet an execution adapter: "goose and pi are
- * probe targets pinned the same way OpenCode is" (STRATEGY). This file
+ * probe targets pinned the way OpenCode is" (STRATEGY). This file
  * carries only the claims a probe can check — spawn mechanics, output shape,
  * exit codes — not a HostAdapter. Building the adapter that dispatches real
  * work to this host is separate, later work; what a caller would need to

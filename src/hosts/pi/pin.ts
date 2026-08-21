@@ -8,7 +8,7 @@
  * installed package name before trusting anything named "pi" on a machine.
  *
  * pi is a probe target, not yet an execution adapter: "goose and pi are probe
- * targets pinned the same way OpenCode is" (STRATEGY). This file carries only
+ * targets pinned the way OpenCode is" (STRATEGY). This file carries only
  * the claims a probe can check — spawn mechanics, output shape, exit codes —
  * not a HostAdapter. Building the adapter that dispatches real work to this
  * host is separate, later work; what a caller would need to trust first is
@@ -84,11 +84,17 @@ export const EXPECTATIONS: readonly Expectation[] = [
       'from the provider — the inverse of codex/cursor\'s client-side refusal.',
   },
   {
-    name: 'failed-turn-exits-nonzero-stdout-stays-clean',
+    name: 'failed-turn-exit-signal-depends-on-mode',
     claim:
-      'On a request the backend refuses (measured: the 404 from unknown-model-is-forwarded-not-refused), pi exits 1; the ' +
-      'warning and the error detail both print to stderr, and stdout is empty. Contrast with goose, where the equivalent ' +
-      'failure exits 0 with the error folded into ordinary assistant-role text.',
+      'On a request the backend refuses (measured: the 404 from unknown-model-is-forwarded-not-refused), the exit code is ' +
+      'not a reliable signal across modes, so a caller must not treat "exit 0" as "the turn succeeded". Under the default ' +
+      '`--mode text` pi exits 1, stdout is empty, and the warning plus error detail both print to stderr — matching the ' +
+      'client-side-refusal shape of codex/cursor. Under `--mode json`, the mode a machine-readable caller would actually ' +
+      'parse, the SAME failure exits 0: stdout carries the full NDJSON event stream through to a terminal ' +
+      '`agent_end`/`agent_settled`, and the failure surfaces only as `stopReason:"error"` plus an `errorMessage` string on ' +
+      'the assistant message, alongside the same stderr warning. A json-mode caller must inspect `stopReason`, never the ' +
+      'exit code. This is closer to goose (also exits 0 on a refused request) than to codex/cursor, but unlike goose the ' +
+      'error is a structured field, not text folded into an ordinary assistant reply.',
   },
   {
     name: 'tools-are-on-by-default',
