@@ -93,7 +93,13 @@ import {
   createHostSupportChecker,
 } from '../hosts/compose.ts';
 import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
-import { COMPOSITION_SHAPES, shapeByName, shapeForOutcome, shapeNames } from '../kernel/run/shapes.ts';
+import {
+  COMPOSITION_SHAPES,
+  shapeByName,
+  shapeForOutcome,
+  shapeMatchForOutcome,
+  shapeNames,
+} from '../kernel/run/shapes.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import {
   renderAttribution,
@@ -3994,9 +4000,18 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         shape = resolved;
         process.stdout.write(`shape: ${chosen} (chosen by the model)\n`);
       } else {
-        shape = shapeForOutcome(plan.outcome);
+        // Which of the two fallbacks this is matters to the reader. A phrase
+        // that matched is a guess with something behind it; the default shape
+        // is what comes back when nothing matched at all, and it is a real
+        // shape name, so printing it alone would read as a choice. Measured on
+        // wording the phrase lists were not written against, nothing matches
+        // far more often than something does.
+        const guess = shapeMatchForOutcome(plan.outcome);
+        shape = guess.shape;
         process.stdout.write(
-          `shape: ${shape.name} (the model could not be asked; falling back to the keyword guess)\n`,
+          guess.matched
+            ? `shape: ${shape.name} (the model could not be asked; falling back to the keyword guess)\n`
+            : `shape: ${shape.name} (the model could not be asked, and no keyword matched either — this is the default, not a reading of your ask; pass --shape to choose)\n`,
         );
       }
     }

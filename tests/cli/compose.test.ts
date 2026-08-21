@@ -751,6 +751,36 @@ test('a shape call that fails falls back to the keyword guess, disclosed as a fa
   assert.match(out, /shape: spec \(the model could not be asked; falling back to the keyword guess\)/);
 });
 
+test('a fallback that matched no keyword at all says so rather than naming the default like a choice', async () => {
+  let composed = 0;
+  const failing: HostAdapter = {
+    ...specHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role } = request as { role: string };
+      if (role === 'composition-shape') {
+        return { id: role, status: 'error', output: null, error: 'the classifier died' };
+      }
+      return specHost().invoke(request);
+    },
+  };
+  // Means "write this decision down permanently" and names none of the phrases
+  // the chooser knows, so the default answers. Without the disclosure the
+  // reader sees a real shape name and cannot tell it was nobody's reading of
+  // the ask.
+  const { out, err } = await run([
+    [
+      'outcome',
+      '--domains=strategy-alignment,product-scoping',
+      'Put the reasoning somewhere permanent, with what it costs us, so I stop relitigating it',
+    ],
+    () => work([], workHost()),
+    async () => ((composed = await compose([`--run=${latestRun()}`], failing)), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /shape: review \(the model could not be asked, and no keyword matched either/);
+  assert.match(out, /this is the default, not a reading of your ask; pass --shape to choose\)/);
+});
+
 test('an explicit --shape flag never calls the model', async () => {
   let calledShapeRole = false;
   const watching: HostAdapter = {
