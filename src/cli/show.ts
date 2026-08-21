@@ -25,6 +25,7 @@ import { unheadedSlots } from '../kernel/plan/ladder.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { withStore } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
+import { runFlag } from './flags.ts';
 
 /**
  * How an entry's inference was reached, when that is not the free default
@@ -102,9 +103,7 @@ export function reasonClause(action: string, detail: unknown): string {
  * than reading it.
  */
 export function show(argv: string[]): number {
-  const runIndex = argv.indexOf('--run');
-  const run = argv.find((a) => a.startsWith('--run='))?.slice('--run='.length)
-    ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+  const run = runFlag(argv);
   const asRecord = argv.includes('--record');
   if (!run) {
     process.stderr.write('usage: construct show --run <id> [--record]\n');
@@ -183,8 +182,7 @@ export function show(argv: string[]): number {
 }
 
 export function log(argv: string[]): number {
-  const runIndex = argv.indexOf('--run');
-  const run = runIndex >= 0 ? argv[runIndex + 1] : undefined;
+  const run = runFlag(argv);
 
   return withStore((store) => {
     const entries = readWorkLog(store, run);
