@@ -17,7 +17,7 @@ description: Before acting inside an unfamiliar or half-familiar system - a
   good map contains.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -109,8 +109,11 @@ Every mapped fact carries how it was observed, one of four:
 - **read** - you saw the primary thing: the code, the config, the contract,
   the org page, the document.
 - **ran** - you executed or exercised it and observed the behavior.
-- **was-told** - a person or document asserted it; name which. What you
-  were told is real evidence and still not the same as seeing it.
+- **was-told** - a person or document asserted it; name which. Your own
+  recollection of a system you built or ran counts here too, named as
+  self-testimony ("was-told: own memory") - memory of building a thing is
+  testimony about it, not a fresh look at it. What you were told is real
+  evidence and still not the same as seeing it.
 - **inferred** - you concluded it from structure, naming, or resemblance.
   Inference is allowed and must be visible, because it is exactly the
   channel false familiarity arrives through.
@@ -203,6 +206,18 @@ never deleted, never skipped silently.
 The record is presence, not quality: whether the entities chosen are the
 ones that matter is judgment, and the record never claims to have
 automated it.
+
+
+Two rules travel with this record wherever skills compose. When several
+skills govern one deliverable, the skill that owns the deliverable's shape
+produces its full record, and every other skill contributes exactly one
+line to that same block - its name, then its verdict or a one-clause gate
+summary - never a second full block, because stacked records are how
+ceremony buries content. And every "see <where>" in any record carries a
+short quoted fragment of what it points to, not a bare location - a
+pointer that cannot quote its target is pointing at nothing, and the
+fragment is what makes an empty answer visible to a reader who can only
+check presence.
 
 ## 10. What is enforced, and by what
 

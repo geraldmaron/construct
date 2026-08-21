@@ -77,6 +77,15 @@ a reader, the written-voice skill governs voice, if present" — and works
 identically when the neighbor is absent. A skill that needs another skill to
 function has failed the naked-file test by other means.
 
+Composition also has an output rule, carried in every skill's record
+section: when several skills govern one deliverable, the skill owning the
+deliverable's shape produces its full record and every other skill
+contributes one line to that same block - never a second full block. And
+record pointers quote a fragment of what they point at, so presence-only
+checking cannot be satisfied by a well-formed empty answer. Both exist
+because the failure mode of well-behaved templates is compositional:
+stacked ceremony burying content.
+
 ## Severability tripwires
 
 Machine-checked, and worth knowing while writing: no tracker ids, no paths
