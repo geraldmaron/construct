@@ -43,7 +43,7 @@ import type { Deliverable } from '../kernel/run/proposals.ts';
 import { groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
-import { DOCUMENT_CAP, listDocuments, surveySource } from '../hosts/sources.ts';
+import { DOCUMENT_CAP, documentWords, listDocuments, surveySource } from '../hosts/sources.ts';
 import type {
   EngagementMode,
   Source,
@@ -113,7 +113,7 @@ import { eraseNote, eraseRecord } from '../kernel/store/erasure.ts';
 import { applyProposal } from '../kernel/run/apply.ts';
 import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/context/produce.ts';
 import { screenObservations } from '../kernel/context/observations.ts';
-import type { ScreenResult } from '../kernel/context/observations.ts';
+import type { DocumentWords, ScreenResult } from '../kernel/context/observations.ts';
 import {
   operationalLessonsFor,
   decideAdmission,
@@ -663,14 +663,19 @@ function surveyDeclared(store: Store, sources: readonly Source[]): SourceSurvey[
 }
 
 /**
- * The two views a drift pass needs of the same survey: what the producer is
- * shown, and what the screen checks its citations against. Built together so
- * the model can never be shown one set of documents and graded on another.
+ * The three views a drift pass needs of the same survey: what the producer is
+ * shown, what the screen checks its citations against, and the words those
+ * documents actually hold so a quotation can be located in one. Built together
+ * so the model can never be shown one set of documents and graded on another.
  */
 function driftGround(
   sources: readonly Source[],
   surveys: readonly SourceSurvey[],
-): { readonly producerSources: ProducerSource[]; readonly surveyed: Map<string, Set<string>> } {
+): {
+  readonly producerSources: ProducerSource[];
+  readonly surveyed: Map<string, Set<string>>;
+  readonly words: DocumentWords;
+} {
   const bySource = new Map(surveys.map((s) => [s.source, s]));
   const surveyed = new Map<string, Set<string>>();
   const producerSources = sources.map((source) => {
@@ -683,7 +688,7 @@ function driftGround(
     surveyed.set(source.id, new Set(documents));
     return { ...base, documents };
   });
-  return { producerSources, surveyed };
+  return { producerSources, surveyed, words: documentWords(surveys) };
 }
 
 export interface GroundingPass {
@@ -1557,7 +1562,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     // with — so the survey is what turns the drift pass into an observation.
     // Surveyed once for the batch: it is the same ground for every note.
     const sources = sourcesFor(store, args.workspace);
-    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(store, sources));
+    const { producerSources, surveyed, words } = driftGround(sources, surveyDeclared(store, sources));
 
     let failed = 0;
     for (const { noteId, body } of reasoning) {
@@ -1570,6 +1575,7 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
         sources,
         producerSources,
         surveyed,
+        words,
       });
       if (!ok) failed += 1;
     }
@@ -1587,6 +1593,7 @@ interface LoopContext {
   readonly sources: readonly Source[];
   readonly producerSources: readonly ProducerSource[];
   readonly surveyed: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly words: DocumentWords;
 }
 
 /**
@@ -1603,7 +1610,7 @@ async function contextLoopOverNote(
   host: HostAdapter,
   context: LoopContext,
 ): Promise<boolean> {
-  const { noteId, body, workspace, sources, producerSources, surveyed } = context;
+  const { noteId, body, workspace, sources, producerSources, surveyed, words } = context;
   const at = now();
 
   // Densify first: the confirm-intent summary is a restatement of this
@@ -1776,7 +1783,7 @@ async function contextLoopOverNote(
     for (const id of result.filed) process.stdout.write(`  ${id}\n`);
   }
 
-  writeDrift(screenObservations(produced.observations, sources, surveyed));
+  writeDrift(screenObservations(produced.observations, sources, surveyed, words));
 
   return true;
 }
@@ -1791,9 +1798,18 @@ function writeDrift(screened: ScreenResult): void {
   if (screened.flags.length > 0) {
     process.stdout.write('\ncross-source drift:\n');
     for (const flag of screened.flags) {
-      process.stdout.write(
-        `  ${flag.claim}\n    cites: ${flag.citations.map((c) => `${c.source} ${c.document}`).join('; ')}\n`,
-      );
+      // The quoted words travel with the citation, in full. A reader who can
+      // see what the document was said to say can go and check it; one shown a
+      // path alone is being asked to take the finding's word for it, and a
+      // quotation shortened to fit a line is a document quoted as saying
+      // something narrower than it did.
+      const cites = flag.citations
+        .map((c) => `${c.source} ${c.document}${c.quote ? ` "${c.quote.trim()}"` : ''}`)
+        .join('; ');
+      process.stdout.write(`  ${flag.claim}\n    cites: ${cites}\n`);
+      if (flag.unverifiedSupport !== null) {
+        process.stdout.write(`    ${flag.unverifiedSupport}\n`);
+      }
     }
   }
   for (const drop of screened.discarded) {
@@ -1849,7 +1865,7 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
       return 2;
     }
 
-    const { producerSources, surveyed } = driftGround(sources, surveyDeclared(store, sources));
+    const { producerSources, surveyed, words } = driftGround(sources, surveyDeclared(store, sources));
     const documents = producerSources.reduce((sum, s) => sum + s.documents.length, 0);
     const unsurveyed = producerSources.filter((s) => s.unreachable !== undefined);
     process.stdout.write(
@@ -1893,7 +1909,7 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
     }
     for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${reason}\n`);
 
-    const screened = screenObservations(reviewed.observations, sources, surveyed);
+    const screened = screenObservations(reviewed.observations, sources, surveyed, words);
     writeDrift(screened);
     if (screened.flags.length === 0) {
       process.stdout.write('\nno drift survived the screen.\n');

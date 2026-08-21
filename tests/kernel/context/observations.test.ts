@@ -6,6 +6,13 @@
  * fabricated provenance, drift requires two distinct documents, and roles
  * restating the same drift merge into one attributed flag whose citations
  * union rather than repeat.
+ *
+ * And the property that separates a document existing from a document
+ * agreeing: where a citation quotes the document it names, the quotation is
+ * located in that document's actual words, and a quotation the document does
+ * not hold is fabricated provenance however real the path is. Where nothing
+ * checkable was quoted, the flag stands and says so — the screen may not
+ * silently credit a claim with support it never established.
  */
 
 import { test } from 'node:test';
@@ -150,6 +157,173 @@ test('a bare basename resolves when one document carries it, and not when two do
   const screened = screenObservations([byBasename], SOURCES, ambiguous);
   assert.equal(screened.flags.length, 0, 'choosing between two documents is not the screen\'s call');
   assert.match(screened.discarded[0]!.reason, /prd\.md/);
+});
+
+/**
+ * A ground of two documents that really do disagree, with the PRD's sentence
+ * wrapped the way a document wraps one — a reading pass quotes the sentence,
+ * not the line breaks.
+ */
+const GROUND: ReadonlyMap<string, string> = new Map([
+  [
+    'docs/prd.md',
+    '# PRD\n\nSSO ships at launch, in the first release, with no\nadditional licence required.\n',
+  ],
+  ['docs/strategy.md', '# Strategy\n\nIdentity work is deferred to next year.\n'],
+  // Listed by the survey and unreadable to the screen: a document the walk saw
+  // and nothing could open.
+  ['docs/pricing.pdf', ''],
+]);
+
+const SURVEYED = new Map([
+  ['src-docs', new Set(['docs/prd.md', 'docs/strategy.md', 'docs/pricing.pdf'])],
+]);
+
+function wordsOf(document: string): string | null {
+  const text = GROUND.get(document);
+  return text ? text : null;
+}
+
+function citing(quotes: Readonly<Record<string, string | undefined>>): Observation {
+  return {
+    ...DRIFT,
+    citations: Object.entries(quotes).map(([document, quote]) => ({
+      source: 'src-docs',
+      document,
+      ...(quote === undefined ? {} : { quote }),
+    })),
+  };
+}
+
+test('a claim quoting words its document holds stands, with nothing left unverified', () => {
+  const screened = screenObservations(
+    [
+      citing({
+        'docs/prd.md': 'SSO ships at launch',
+        'docs/strategy.md': 'Identity work is deferred to next year',
+      }),
+    ],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(screened.flags.length, 1);
+  assert.equal(screened.flags[0]?.unverifiedSupport, null);
+  assert.equal(screened.discarded.length, 0);
+});
+
+test('a claim putting words in a document that really exists is discarded as fabricated', () => {
+  const screened = screenObservations(
+    [
+      citing({
+        'docs/prd.md': 'SSO ships at launch',
+        // The document is real, listed, and says the opposite of this.
+        'docs/strategy.md': 'identity work ships in the same release as SSO',
+      }),
+    ],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(screened.flags.length, 0);
+  assert.equal(screened.discarded.length, 1);
+  assert.match(screened.discarded[0]!.reason, /docs\/strategy\.md/);
+  assert.match(screened.discarded[0]!.reason, /which that document does not say/);
+});
+
+test('a citation that quotes nothing keeps its flag and discloses that support was not checked', () => {
+  const screened = screenObservations([DRIFT], SOURCES, SURVEYED, wordsOf);
+  assert.equal(screened.flags.length, 1);
+  assert.match(screened.flags[0]?.unverifiedSupport ?? '', /docs\/prd\.md is cited without quoting it/);
+  assert.match(screened.flags[0]?.unverifiedSupport ?? '', /rests on the documents existing/);
+});
+
+test('a quotation is located across the line breaks and elisions a reader introduces', () => {
+  const reflowed = screenObservations(
+    [
+      citing({
+        'docs/prd.md': 'sso ships at launch, in the first release, with no additional licence required.',
+        'docs/strategy.md': 'Identity work is deferred',
+      }),
+    ],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(reflowed.flags.length, 1, 'a sentence quoted whole is the same sentence unwrapped');
+  assert.equal(reflowed.flags[0]?.unverifiedSupport, null);
+
+  const elided = screenObservations(
+    [citing({ 'docs/prd.md': 'SSO ships at launch … additional licence required', 'docs/strategy.md': 'deferred to next year' })],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(elided.flags.length, 1);
+
+  // The order an elision asserts is part of what it asserts.
+  const reversed = screenObservations(
+    [citing({ 'docs/prd.md': 'additional licence required … SSO ships at launch', 'docs/strategy.md': 'deferred to next year' })],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(reversed.flags.length, 0);
+  assert.match(reversed.discarded[0]!.reason, /does not say/);
+});
+
+test('a document nobody could open, and a quote too short to locate, are disclosed rather than credited', () => {
+  const unreadable = screenObservations(
+    [citing({ 'docs/prd.md': 'SSO ships at launch', 'docs/pricing.pdf': 'pricing rises in Q3' })],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(unreadable.flags.length, 1, 'a document the screen cannot read is not thereby a fabrication');
+  assert.match(unreadable.flags[0]?.unverifiedSupport ?? '', /docs\/pricing\.pdf could not be opened/);
+
+  const brief = screenObservations(
+    [citing({ 'docs/prd.md': 'SSO', 'docs/strategy.md': 'Identity work is deferred to next year' })],
+    SOURCES,
+    SURVEYED,
+    wordsOf,
+  );
+  assert.equal(brief.flags.length, 1);
+  assert.match(brief.flags[0]?.unverifiedSupport ?? '', /quoted too briefly/);
+});
+
+test('a restatement that quoted nothing cannot launder the flag it merges into', () => {
+  const quoted = citing({
+    'docs/prd.md': 'SSO ships at launch',
+    'docs/strategy.md': 'Identity work is deferred to next year',
+  });
+  const restated: Observation = {
+    role: 'reviewer',
+    claim: 'strategy defers identity work to next year while the PRD promises SSO at launch',
+    citations: [
+      { source: 'src-docs', document: 'docs/strategy.md' },
+      { source: 'src-docs', document: 'docs/prd.md' },
+    ],
+  };
+  const screened = screenObservations([quoted, restated], SOURCES, SURVEYED, wordsOf);
+  assert.equal(screened.flags.length, 1);
+  assert.deepEqual(screened.flags[0]?.roles, ['strategist', 'reviewer']);
+  assert.match(screened.flags[0]?.unverifiedSupport ?? '', /cited without quoting it/);
+});
+
+test('a caller with no way to open the documents checks no quotation and says so on every flag', () => {
+  const screened = screenObservations(
+    [
+      citing({
+        'docs/prd.md': 'SSO ships at launch',
+        'docs/strategy.md': 'Identity work is deferred to next year',
+      }),
+    ],
+    SOURCES,
+    SURVEYED,
+  );
+  assert.equal(screened.flags.length, 1, 'an unreadable ground is not a fabricated one');
+  assert.match(screened.flags[0]?.unverifiedSupport ?? '', /could not be opened/);
 });
 
 test('a source nobody could survey is screened on the source alone, not refused', () => {
