@@ -31,6 +31,8 @@ import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { recordPlan } from '../../../src/kernel/store/plans.ts';
 import { buildPlan } from '../../../src/kernel/plan/planner.ts';
 import { recordLesson } from '../../../src/kernel/store/lessons.ts';
+import { addSource } from '../../../src/kernel/store/sources.ts';
+import { recordRunSourceReads } from '../../../src/kernel/run/sourcereads.ts';
 import { decideAdmission } from '../../../src/kernel/lessons/admission.ts';
 import { playbookFor } from '../../../src/kernel/plan/playbooks.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
@@ -1300,5 +1302,72 @@ test('a deliverable that heads every required section raises no slot-gap decisio
     const report = await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
     assert.equal(report.slotGapsRaised, 0);
     assert.ok(!readWorkLog(store, 'run-1').some((e) => e.action === 'slot-gaps-raised'));
+  });
+});
+
+/**
+ * The gate obligation's seam. The kernel reads no filesystem, so what a
+ * declared repository checks about itself arrives through an injected reader —
+ * and a reader the coordinator never calls, or calls on the wrong paths, is
+ * the failure this covers. The obligation itself is proven in
+ * tests/kernel/plan/gates.test.ts.
+ */
+test('the declared ground root is the only path the manifest reader is asked about', async () => {
+  await withStoreAsync(async (store) => {
+    addSource(store, {
+      id: 'src-1',
+      workspace: 'default',
+      kind: 'directory',
+      locator: '/ground/consumer-app',
+      addedAt: AT,
+    });
+    recordRunSourceReads(
+      store,
+      'run-1',
+      [
+        {
+          source: 'src-1',
+          locator: '/ground/consumer-app',
+          outcome: 'listed',
+          documents: [{ path: '/ground/consumer-app/README.md', bytes: 40 }],
+          total: 1,
+        },
+      ],
+      AT,
+    );
+    seed(store, ['security']);
+
+    const asked: string[] = [];
+    const host = fakeHost();
+    await workRun(store, host, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+      manifests: (root) => {
+        asked.push(root);
+        return {
+          root,
+          scripts: [{ name: 'test:security', command: 'node scripts/check.mjs' }],
+        };
+      },
+    });
+
+    assert.deepEqual(asked, ['/ground/consumer-app'], 'only declared ground is read');
+    assert.match(
+      host.assignments[0]!,
+      /this repo has a gate for security — test:security — and the work must pass it/,
+    );
+  });
+});
+
+test('a coordinator given no manifest reader still states the obligation, on the standard', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['security']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
+    const assignment = host.assignments[0]!;
+    assert.match(assignment, /the obligation is the standard itself/);
+    assert.match(assignment, /Application Security Verification Standard/);
+    assert.ok(!assignment.includes('has a gate for security'));
   });
 });

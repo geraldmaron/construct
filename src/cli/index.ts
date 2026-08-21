@@ -196,6 +196,7 @@ import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
 import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
+import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { listProjections } from '../kernel/store/projections.ts';
 import { reconcileAll } from '../kernel/tracker/reconcile.ts';
@@ -1288,6 +1289,10 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       leaseMs: DEFAULT_LEASE_MINUTES_ASK * 60 * 1000,
       run: started.runId,
       capabilitySecret: loadOrCreateSecret(secretFile()),
+      // What the declared ground already checks about itself, so a lens's
+      // obligation can name the repository's own gate instead of only the
+      // standard behind it.
+      manifests: readRepoManifest,
     });
 
     const task = report.settled.map((id) => getTask(store, id)).find((t) => t !== null);
@@ -2554,6 +2559,10 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       // Establishes the signing secret on first dispatch; every task gets a
       // capability token scoped to its own lease (commitment 14).
       capabilitySecret: loadOrCreateSecret(secretFile()),
+      // What the declared ground already checks about itself, so a lens's
+      // obligation can name the repository's own gate instead of only the
+      // standard behind it.
+      manifests: readRepoManifest,
       ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
     });
 

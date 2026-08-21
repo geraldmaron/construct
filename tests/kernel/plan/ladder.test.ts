@@ -26,7 +26,14 @@ test('an empty or whitespace required slot is a gap; optional slots never are', 
     // risks, attack-surface, mitigations missing; open-questions is optional
   });
   const names = gaps.map((g) => g.slot.name);
-  assert.deepEqual(names, ['evidence', 'risks', 'attack-surface', 'mitigations', 'threat-paths']);
+  assert.deepEqual(names, [
+    'evidence',
+    'risks',
+    'attack-surface',
+    'mitigations',
+    'threat-paths',
+    'security-obligation',
+  ]);
   assert.ok(!names.includes('open-questions'));
 });
 
