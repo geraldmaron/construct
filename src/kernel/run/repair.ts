@@ -44,6 +44,7 @@
  */
 
 import type { StructuralResult } from '../challenge/catalog.ts';
+import { escapeForPrompt } from './sourcereads.ts';
 
 /** A repaired deliverable lands as a new draft; this names the event beside it. */
 export const REPAIR_ACTION = 'repair-requested';
@@ -222,7 +223,9 @@ export function repairAssignment(request: RepairRequest): string {
       'You still hold the same license you held the first time. Any document ' +
         'under these roots is yours to open, by its full path, whatever your ' +
         'first draft happened to read:',
-      ...request.groundRoots.map((root) => `- ${root}`),
+      // A declared root a control character could turn into a forged line;
+      // rendered through escapeForPrompt so the list stays one root per line.
+      ...request.groundRoots.map((root) => `- ${escapeForPrompt(root)}`),
       '',
       'A file you named and did not open is the most common reason a draft comes ' +
         'back. Open it. If it will not open, say what error you got — that is a ' +
