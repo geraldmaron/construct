@@ -1,12 +1,13 @@
 /**
- * tests/cli/doctor.test.ts — CLI-surface coverage for `construct doctor`'s
- * project-tree litter reporting: a fixture tree carrying predecessor markers
- * is reported one line per marker, each pointing at `construct cleanup`; a
- * clean fixture tree adds no litter lines. Doctor's other checks (node, paths,
- * matrix, store, host) read the real environment regardless of `cwd` — that
+ * tests/cli/doctor.test.ts — CLI-surface coverage for three of `construct
+ * doctor`'s reported-not-gated checks: project-tree litter (a fixture tree
+ * carrying predecessor markers is reported one line per marker, each pointing
+ * at `construct cleanup`), skill pack version skew, and settled deliverables
+ * stuck at draft past the staleness threshold. Doctor's other checks (node,
+ * paths, matrix, host) read the real environment regardless of `cwd` — that
  * is pre-existing doctor behavior this feature does not change — so these
- * tests only assert on the `litter` lines and on doctor's exit code, not on
- * the whole transcript.
+ * tests only assert on the lines each check owns and on doctor's exit code,
+ * not on the whole transcript.
  */
 
 import { test } from 'node:test';
@@ -16,6 +17,8 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { doctor } from '../../src/cli/index.ts';
+import { openStore } from '../../src/kernel/store/open.ts';
+import { claimTask, completeTask, enqueueTask } from '../../src/kernel/store/tasks.ts';
 
 function captureStdio<T>(fn: () => T): { result: T; out: string; err: string } {
   const realOut = process.stdout.write.bind(process.stdout);
@@ -160,6 +163,98 @@ test('doctor is silent when no skill pack is present', () => {
     const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' skills '), `expected no skills lines, got:\n${out}`);
+    assert.equal(result, 0);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+/**
+ * The store path `doctor` resolves once XDG_DATA_HOME is redirected under
+ * `root` — matching kernel/paths.ts's own join so a store written here is the
+ * one `resolvePaths()` inside `doctor()` will find.
+ */
+function storePathUnder(root: string): string {
+  return path.join(root, 'share', 'construct', 'construct.db');
+}
+
+/** A task settled `settledAt` ago with no verdict — still `draft` by construction. */
+function seedSettledDraft(root: string, opts: { id: string; run: string; settledAt: string }): void {
+  const store = openStore(storePathUnder(root));
+  try {
+    enqueueTask(store, {
+      id: opts.id,
+      run: opts.run,
+      role: 'writer',
+      brief: { challenges: [] },
+      at: opts.settledAt,
+    });
+    const leased = claimTask(store, {
+      owner: 'test',
+      leaseUntil: '2099-01-01T00:00:00.000Z',
+      now: opts.settledAt,
+      run: opts.run,
+    });
+    assert.ok(leased, 'expected to claim the task it just enqueued');
+    completeTask(store, {
+      id: opts.id,
+      owner: 'test',
+      token: leased.token,
+      result: { text: 'a deliverable' },
+      spend: 0,
+      spendReported: false,
+      at: opts.settledAt,
+    });
+  } finally {
+    store.close();
+  }
+}
+
+test('doctor names a settled deliverable stuck at draft past the threshold', () => {
+  const cwd = mkFixtureDir();
+  try {
+    const settledAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    seedSettledDraft(cwd, { id: 't-fixture-stale', run: 'run-fixture', settledAt });
+
+    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+
+    const staleLines = out.split('\n').filter((line) => line.startsWith('ok   stale-draft'));
+    assert.equal(staleLines.length, 1, `expected 1 stale-draft line, got:\n${out}`);
+    assert.match(out, /1 settled deliverable\(s\) still draft with no recorded verdict/);
+    assert.match(out, /3-day threshold/, 'the threshold is named in the check\'s own output');
+    assert.match(out, /oldest: run run-fixture task t-fixture-stale/);
+    assert.equal(result, 0, 'a stale draft is reported, not gated');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('doctor is silent about stale drafts when none have settled past the threshold', () => {
+  const cwd = mkFixtureDir();
+  try {
+    // Settled a moment ago, well inside the threshold — present in the store,
+    // still draft, but not yet worth naming.
+    seedSettledDraft(cwd, { id: 't-fresh', run: 'run-fresh', settledAt: new Date().toISOString() });
+
+    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+
+    assert.ok(!out.includes(' stale-draft '), `expected no stale-draft lines, got:\n${out}`);
+    assert.equal(result, 0);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('doctor is silent about stale drafts when the store does not exist yet', () => {
+  const cwd = mkFixtureDir();
+  try {
+    fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-store-yet"}\n');
+    assert.ok(!fs.existsSync(storePathUnder(cwd)), 'sanity: no store has been created for this fixture');
+
+    const { result, out } = captureStdio(() => withWritableDataDir(cwd, () => doctor(cwd)));
+
+    assert.ok(!out.includes(' stale-draft '), `expected no stale-draft lines, got:\n${out}`);
+    assert.ok(!fs.existsSync(storePathUnder(cwd)), 'doctor must not create a database merely by being asked a question');
     assert.equal(result, 0);
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
