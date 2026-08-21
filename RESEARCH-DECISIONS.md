@@ -15,8 +15,28 @@ A number that appears here and cannot be printed by that script is a number nobo
 and should be deleted rather than defended. Same discipline as `probe-*-conformance.mjs`,
 applied to statistics instead of to a host.
 
+**That script measures against the catalog as it stands when it runs, and the catalog has
+grown, so §§1, 3, 4 and 5 no longer reprint the figures written in them.** Those sections were
+measured against roughly ten domains. Seventeen ship now: five concerns landed 2026-08-10 and
+two more 2026-08-13, after the corpora were labeled. The consequence is one-directional and
+mechanical. A domain nobody could label can still fire, so every over-shaped statistic reads
+higher today and every silence-shaped one lower, while **miss is untouched** because it only
+asks whether an old label was found. Re-running now prints pooled over 0.363 where §1 records
+0.252, 377 catalog keywords where §3 records 207, and `unspent` escalation reach 0.564 where §5
+records 0.691; every miss figure in those sections still reprints exactly.
+
+The recorded figures stay as recorded. They are what the instrument said on the catalog it was
+pointed at, which is the only thing any measurement is. What is corrected here is the Status
+line below claiming they track the live catalog: they do not, and a reader re-running the
+script would otherwise read the difference as a defect rather than as a catalog that moved.
+§§10 and 18 are unaffected, because they froze their per-outcome answers into
+`fixtures/namer-arms/` and are re-derived by `npm run check:figures` against those fixtures
+rather than against a catalog that can drift underneath them. That is the pattern the earlier
+sections predate, and the one to follow when they are next re-measured.
+
 **Status of this document.** Sections 1, 2, 3, 4, 5, 6, 9, and 10 are measured against the real
-corpora and the live catalog — §6's measurement is a negative result (no ground truth exists to
+corpora, and against the catalog as it stood when each was run rather than the live one (see the
+paragraph above) — §6's measurement is a negative result (no ground truth exists to
 calibrate the intake ramp against), stated as such rather than worked around. Sections 7 and 8
 identify the right formalism and state what would have to be collected to apply it; their
 conclusions are explicitly marked as pending data, not presented as results. §10 is measured
