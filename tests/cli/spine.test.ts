@@ -266,6 +266,16 @@ test('parseWorkArgs distinguishes a typed --host from the default', async () => 
   assert.equal(parseWorkArgs(['--host=opencode']).hostExplicit, true, 'a typed choice must win');
 });
 
+test('work reads a run id in either flag form, as every verb that takes one does', () => {
+  assert.equal(parseWorkArgs(['--run=run-1']).run, 'run-1');
+  assert.equal(parseWorkArgs(['--run', 'run-1']).run, 'run-1', 'the spaced form log and verdict accept');
+  // Unscoped is a real state, not a missing one: work with no run named works
+  // whatever is pending. A parser that read a bare `--run` as the id would
+  // scope the dispatch to a task that does not exist.
+  assert.equal(parseWorkArgs([]).run, undefined);
+  assert.equal(parseWorkArgs(['--run']).run, undefined);
+});
+
 const DENSIFIED = JSON.stringify({
   outcome: 'Ensure the organization has the standard contracts it is missing',
   constraints: ['include the ones that are often ignored'],

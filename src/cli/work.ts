@@ -40,7 +40,7 @@ import { surveyResources } from '../hosts/census.ts';
 import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
-import { timeoutFlag } from './flags.ts';
+import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
 import { failureLine, money, writeTotalFailureRecourse } from './present.ts';
 
@@ -101,8 +101,7 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
     if (match) args[match[1]] = match[2];
   }
-  const runIndex = argv.indexOf('--run');
-  const run = args.run ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+  const run = runFlag(argv);
 
   const number = (name: string, fallback: number): number => {
     if (args[name] === undefined) return fallback;

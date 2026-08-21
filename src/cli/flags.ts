@@ -46,11 +46,12 @@ export function parseFlags(argv: string[]): { flags: Record<string, string>; res
  * `--run=<id>` or `--run <id>`, in argv order. Takes argv directly rather than
  * a parsed flags record: splitFlags/parseFlags turn the spaced form's `--run`
  * token into a bare flag and strand `<id>` as an unrelated positional word,
- * losing the pairing between them. `show()` in cli/show.ts accepts both forms
- * and so do work.ts's and verdict.ts's own arg parsers, each because a user
- * who learned the spaced form on one verb types it on the next — one place
- * deciding what "found" means keeps a verb from being the one surface that
- * refuses it.
+ * losing the pairing between them.
+ *
+ * Every verb that reads a run reads it here (`show`, `log`, `work`,
+ * `verdict`), because a user who learned the spaced form on one verb types it
+ * on the next, and one place deciding what "found" means is what keeps any
+ * one surface from being the one that refuses it.
  */
 export function runFlag(argv: string[]): string | undefined {
   const eq = argv.find((a) => a.startsWith('--run='));
