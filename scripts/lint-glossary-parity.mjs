@@ -24,6 +24,21 @@ function stripUserVocabulary(content) {
   return content.replace(/keywords:\s*\[[^\]]*\]/gs, 'keywords: []');
 }
 
+// fixtures/org-harness and fixtures/org-harness-broad are real, pre-existing
+// fixture directories — invented organizations used to measure routing and
+// composition (see fixtures/org-harness*/README.md) — already named this way
+// throughout scripts/ and tests/, outside this lint's scope. The compound
+// "org-harness" collides on the substring "harness" with the retired v2
+// synonym for `host` (the agent runtime) purely by coincidence of spelling;
+// it does not carry that meaning, the same way the persona/role footnote in
+// GLOSSARY.md documents a word with one retired sense and other live ones.
+// Blanking only the literal "org-harness[-suffix]" token, not bare "harness",
+// keeps the check meaningful: prose that actually uses "harness" to mean
+// "host" is still caught.
+function stripOrgHarnessFixtureName(content) {
+  return content.replace(/\borg-harness(?:-[\w-]+)?\b/gi, 'org-fixture-family');
+}
+
 function parseGlossary(text) {
   const rows = [];
   for (const line of text.split('\n')) {
@@ -74,7 +89,7 @@ const retiredTerms = parseGlossary(glossaryText);
 
 let violations = 0;
 for (const file of lintableFiles()) {
-  const content = stripUserVocabulary(readFileSync(file, 'utf8'));
+  const content = stripOrgHarnessFixtureName(stripUserVocabulary(readFileSync(file, 'utf8')));
   for (const { term, retired } of retiredTerms) {
     const re = new RegExp(`\\b${retired}\\b`, 'i');
     if (re.test(content)) {

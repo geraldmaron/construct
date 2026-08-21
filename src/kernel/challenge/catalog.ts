@@ -280,25 +280,26 @@ export const CHALLENGES: readonly Challenge[] = [
         };
       }
       // Fourth shape of the same failure family: a citation naming the
-      // harness-fixture corpus (fixtures/org-harness, fixtures/org-harness-broad)
-      // as though it were Construct's own strategy or policy. Those
+      // org-harness corpus (fixtures/org-harness, fixtures/org-harness-broad)
+      // as though it were Construct's own strategy or policy. Those fixture
       // organizations exist so routing and composition can be measured
-      // against invented content; they are ground for a harness sweep and
-      // nothing else. A run whose own declared ground roots name that corpus
-      // IS a harness sweep — the measured work the fixture tree exists for —
-      // so the refusal below applies only when no declared root says so.
-      const sweepingHarness = (context?.groundRoots ?? []).some(namesHarnessCorpus);
-      if (!sweepingHarness) {
-        const harness = findHarnessCorpusCitations(deliverable);
-        if (harness.length > 0) {
-          const shown = harness.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
+      // against invented content; they are ground for a fixture-sweep run
+      // and nothing else. A run whose own declared ground roots name that
+      // corpus IS such a run — the measured work that fixture tree exists
+      // for — so the refusal below applies only when no declared root says
+      // so.
+      const sweepsOrgHarness = (context?.groundRoots ?? []).some(namesHarnessCorpus);
+      if (!sweepsOrgHarness) {
+        const orgHarnessCites = findHarnessCorpusCitations(deliverable);
+        if (orgHarnessCites.length > 0) {
+          const shown = orgHarnessCites.slice(0, 3).map((c) => `line ${String(c.line)}`).join(', ');
           return {
             passed: false,
             detail:
-              `${String(harness.length)} citation(s) name the harness-fixture corpus as their source: ` +
-              `${shown}. fixtures/org-harness* exists to measure routing and composition against invented ` +
-              'organizations, not as evidence about a real domain — mark the claim [unverified] instead, ' +
-              'unless this run is itself a declared harness sweep.',
+              `${String(orgHarnessCites.length)} citation(s) name the org-harness fixture corpus as their ` +
+              `source: ${shown}. fixtures/org-harness* exists to measure routing and composition against ` +
+              'invented organizations, not as evidence about a real domain — mark the claim [unverified] ' +
+              'instead, unless this run is itself a declared fixture sweep.',
           };
         }
       }
