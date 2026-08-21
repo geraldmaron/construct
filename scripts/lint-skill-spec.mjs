@@ -16,6 +16,13 @@
  * has silently recoupled to it, and the naked-file test this lint backstops
  * — the single file, pasted into a host that has never seen this repo, still
  * works — would fail on every machine but this one.
+ *
+ * Last, the shape checks from skills/AUTHORING.md, presence only: a
+ * stand-down rule (a skill that always interposes teaches readers to ignore
+ * it), a closing record block (enforcement travels as visible output shape,
+ * not harness machinery), and an enforcement statement (the file says what
+ * enforces it). Presence is all a lint can see; whether the stand-down is
+ * honest or the record honest is judgment, and stays on the checklist.
  */
 
 import { execSync } from 'node:child_process';
@@ -102,6 +109,16 @@ for (const file of files) {
     else if (description.length > MAX_DESCRIPTION) {
       fail(file, `description is ${description.length} chars — the format caps it at ${MAX_DESCRIPTION}`);
     }
+  }
+
+  if (!/stand[- ]down|stand[s]? down/i.test(body)) {
+    fail(file, 'no stand-down rule — the skill must say when it does not engage (AUTHORING.md rule 5)');
+  }
+  if (!/^#{2,3}[^\n]*record/im.test(body)) {
+    fail(file, 'no closing record section — enforcement travels as a visible output shape (AUTHORING.md rule 3)');
+  }
+  if (!/enforce/i.test(body)) {
+    fail(file, 'no enforcement statement — the skill must say what enforces it and what does not (AUTHORING.md rule 3)');
   }
 
   body.split('\n').forEach((line, i) => {
