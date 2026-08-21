@@ -298,6 +298,8 @@ export interface LostRecordReport {
   readonly missingRecords: readonly string[];
   /** Closes a dated reopening note accounts for, kept out of the working list. */
   readonly reopened: readonly string[];
+  /** Lost closes and missing filings a dated adjudication note already explains. */
+  readonly adjudicated: readonly string[];
   readonly commitsScanned: number;
   readonly truncated: boolean;
   /** True when nothing recorded went missing. */
@@ -320,6 +322,60 @@ function wasReopened(issue: BeadIssue | undefined): boolean {
 }
 
 /**
+ * The two lost-record directions, alongside the four disagreements
+ * `ADJUDICABLE` names above. Neither is a `field:tracker` disagreement — a
+ * lost-record finding is an id present or absent from a list, not a value the
+ * tracker and the repo each assert — so there is no conflict key to settle,
+ * only the id itself, read the same way `adjudicatedConflicts` reads one.
+ */
+const LOST_CLOSE = 'lost-close';
+const MISSING_FILING = 'missing-filing';
+
+/**
+ * Whether `text` names `id` as a whole token rather than merely containing it
+ * as a prefix. Bead ids nest (`construct-a1` and `construct-a1.2` are
+ * different beads), so a plain substring test would let a note about one
+ * claim a finding that belongs to the other.
+ */
+function namesBead(text: string, id: string): boolean {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`${escaped}(?![a-zA-Z0-9_.-])`).test(text);
+}
+
+/**
+ * Whether a lost-close finding for `issue` is settled.
+ *
+ * A lost close is found on a bead that still exists — only its status
+ * regressed — so, like the four field disagreements, the verdict belongs on
+ * that bead's own record. No id needs restating inside the marker: being on
+ * the bead's own notes already says which finding it is about.
+ */
+function lostCloseAdjudicated(issue: BeadIssue | undefined): boolean {
+  const notes = typeof issue?.notes === 'string' ? issue.notes : '';
+  return (notes.match(ADJUDICATION_MARKER) ?? []).some((marker) => marker.includes(LOST_CLOSE));
+}
+
+/**
+ * Whether a missing-filing finding for `id` is settled.
+ *
+ * A missing filing has no bead of its own left to carry the note — that is
+ * the finding itself — so the documented equivalent is a marker on any
+ * current bead, the same way an epic's notes can carry a decision that
+ * belongs to no single child. Naming the id inside the marker is mandatory
+ * here in a way it is not for the other five directions, because nothing
+ * about where the note lives can supply it.
+ */
+function missingFilingAdjudicated(issues: readonly BeadIssue[], id: string): boolean {
+  for (const issue of issues) {
+    const notes = typeof issue?.notes === 'string' ? issue.notes : '';
+    for (const marker of notes.match(ADJUDICATION_MARKER) ?? []) {
+      if (marker.includes(MISSING_FILING) && namesBead(marker, id)) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Records the tracker database lost.
  *
  * The reconcile above compares the tracker against the repository's commits,
@@ -333,6 +389,13 @@ function wasReopened(issue: BeadIssue | undefined): boolean {
  * the export now shows open is a regression; the reverse — a bead closed now and
  * never closed in history — is just today's work, and reporting it would bury
  * the finding in every close ever made.
+ *
+ * Branch lag produces the same shape as a real loss — a checkout sitting
+ * behind another ref sees that ref's later closes and filings as absent — so
+ * both findings are adjudicable the same way the four conflict directions
+ * are: a dated `DRIFT ADJUDICATED (lost-close)` or `(missing-filing)` note
+ * settles one id and is read back out on every later run, same as
+ * `adjudicatedConflicts` above.
  */
 export function lostRecords(
   issues: readonly BeadIssue[],
@@ -344,18 +407,27 @@ export function lostRecords(
 
   const lostCloses: string[] = [];
   const reopened: string[] = [];
+  const adjudicated: string[] = [];
   for (const id of everClosed) {
     const issue = byId.get(id);
     if (!issue || issue.status === 'closed') continue;
     if (wasReopened(issue)) reopened.push(id);
+    else if (lostCloseAdjudicated(issue)) adjudicated.push(id);
     else lostCloses.push(id);
   }
-  const missingRecords = everFiled.filter((id) => !byId.has(id));
+
+  const missingRecords: string[] = [];
+  for (const id of everFiled) {
+    if (byId.has(id)) continue;
+    if (missingFilingAdjudicated(issues ?? [], id)) adjudicated.push(id);
+    else missingRecords.push(id);
+  }
 
   return {
     lostCloses,
     missingRecords,
     reopened,
+    adjudicated,
     commitsScanned: history?.commitsScanned ?? 0,
     truncated: history?.truncated === true,
     clean: lostCloses.length === 0 && missingRecords.length === 0,

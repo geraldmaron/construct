@@ -12,7 +12,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { gatherDivergence, recordedHistory } from '../../../src/hosts/repo/evidence.ts';
 import { describeDivergence, lostRecords } from '../../../src/kernel/tracker/session-drift.ts';
-import { fixtureRepo } from './fixture-repo.ts';
+import { DEFAULT_COMMIT_DATE, fixtureRepo } from './fixture-repo.ts';
+
+// `recordedHistory` windows its walk relative to `now`, and every fixture
+// commit lands on DEFAULT_COMMIT_DATE unless a test backdates it — so a fixed
+// `now` derived from that same constant keeps these deterministic and inside
+// the default window regardless of the real wall clock the suite happens to
+// run on, and stays in sync if the fixture's default ever moves.
+const NOW = new Date(Date.parse(DEFAULT_COMMIT_DATE) + 14 * 24 * 60 * 60 * 1000).toISOString();
 
 test('a close recorded in an earlier revision of the export is found again', () => {
   const repo = fixtureRepo();
@@ -42,7 +49,7 @@ test('a close recorded in an earlier revision of the export is found again', () 
       'a stale database overwrites the export',
     );
 
-    const history = recordedHistory(repo.root);
+    const history = recordedHistory(repo.root, undefined, NOW);
     assert.ok(history, 'the export has a history and it must be readable');
     assert.equal(history.commitsScanned, 3);
     assert.equal(history.truncated, false);
@@ -72,7 +79,7 @@ test('the sweep reads every local ref, not only the branch checked out', () => {
     repo.export([{ id: 'construct-a', status: 'closed', title: 'a' }], 'close it on a branch');
     repo.git('checkout', 'main');
 
-    const history = recordedHistory(repo.root);
+    const history = recordedHistory(repo.root, undefined, NOW);
     assert.deepEqual(history?.everClosed, ['construct-a']);
   } finally {
     repo.cleanup();
@@ -84,7 +91,7 @@ test('a repository whose export agrees with its own history reports nothing', ()
   try {
     const records = [{ id: 'construct-a', status: 'closed', title: 'a' }];
     repo.export(records, 'file and close');
-    const report = lostRecords(records, recordedHistory(repo.root) ?? undefined);
+    const report = lostRecords(records, recordedHistory(repo.root, undefined, NOW) ?? undefined);
     assert.equal(report.clean, true);
   } finally {
     repo.cleanup();
@@ -94,14 +101,31 @@ test('a repository whose export agrees with its own history reports nothing', ()
 test('the walk stops at its cap and says that it did', () => {
   const repo = fixtureRepo();
   try {
-    for (let i = 0; i < 4; i += 1) {
-      repo.export([{ id: `construct-${String(i)}`, status: 'open', title: 'x' }], `revision ${String(i)}`);
-    }
-    const history = recordedHistory(repo.root, 2);
+    // Two revisions well outside a 2-day window, two inside it.
+    repo.export([{ id: 'construct-0', status: 'open', title: 'x' }], 'revision 0', '2026-01-01T00:00:00Z');
+    repo.export([{ id: 'construct-1', status: 'open', title: 'x' }], 'revision 1', '2026-01-05T00:00:00Z');
+    repo.export([{ id: 'construct-2', status: 'open', title: 'x' }], 'revision 2', '2026-01-09T00:00:00Z');
+    repo.export([{ id: 'construct-3', status: 'open', title: 'x' }], 'revision 3', '2026-01-10T00:00:00Z');
+
+    const history = recordedHistory(repo.root, 2, '2026-01-10T00:00:00Z');
     assert.equal(history?.commitsScanned, 2);
     assert.equal(history?.truncated, true);
-    // The two newest revisions, so the older ids were genuinely not read.
+    // Only the revisions inside the window, so the older ids were genuinely not read.
     assert.deepEqual(history?.everFiled, ['construct-2', 'construct-3']);
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test('a revision exactly on the cap boundary is read, not treated as older history', () => {
+  const repo = fixtureRepo();
+  try {
+    repo.export([{ id: 'construct-o', status: 'open', title: 'x' }], 'one day too old', '2026-01-07T23:59:59Z');
+    repo.export([{ id: 'construct-e', status: 'open', title: 'x' }], 'exactly on the cutoff', '2026-01-08T00:00:00Z');
+
+    const history = recordedHistory(repo.root, 2, '2026-01-10T00:00:00Z');
+    assert.equal(history?.truncated, true);
+    assert.deepEqual(history?.everFiled, ['construct-e']);
   } finally {
     repo.cleanup();
   }
@@ -110,7 +134,7 @@ test('the walk stops at its cap and says that it did', () => {
 test('a directory with no export and no history is not a finding', () => {
   const repo = fixtureRepo();
   try {
-    const history = recordedHistory(repo.root);
+    const history = recordedHistory(repo.root, undefined, NOW);
     assert.deepEqual(history, {
       everFiled: [],
       everClosed: [],
