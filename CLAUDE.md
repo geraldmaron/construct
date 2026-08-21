@@ -22,6 +22,13 @@ bd close <id>         # Complete work
 - Run `bd prime` for detailed command reference and session close protocol
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 
+<!-- END BEADS INTEGRATION -->
+
+<!-- The section below is this repository's own protocol, deliberately outside
+     the bd-managed markers above: a bd upgrade may regenerate that section,
+     and the protocol must not be clobbered by it or drift back to tool
+     defaults (an earlier revision kept it inside and it nearly was). -->
+
 ## Session Completion
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
@@ -36,7 +43,6 @@ bd close <id>         # Complete work
    git add .beads/issues.jsonl
    git commit -m "Tracker state at session close"
    git pull --rebase
-   bd dolt push
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -47,7 +53,8 @@ bd close <id>         # Complete work
    at the same moment. Skipping this line does not lose tracker state, which
    lives in the beads database, but it does thin out the export's own git
    history, and the reconcile's second witness reads that history to find closes
-   the database lost.
+   the database lost. Tracker sync travels as this committed export; there is
+   no dolt remote configured, so no `bd dolt push` step exists.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
@@ -57,18 +64,15 @@ bd close <id>         # Complete work
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-<!-- END BEADS INTEGRATION -->
 
-**Override to the block above (Gerald, 2026-08-03):** `git push` runs only with Gerald's explicit per-push approval. Commit locally per bead as usual; at session close, ask to push rather than pushing. A session that ends with approved-but-unpushed commits is complete; a session that pushed without asking is not.
+**Push is part of session completion (Gerald, 2026-08-21).** Commit locally per bead as usual; push at close with no separate ask first. A per-push approval gate existed and is lifted; what still gates on Gerald is named explicitly in the standing rule below, never implied by silence.
 
-**Amended (Gerald, 2026-08-21): the per-push approval gate is lifted.** Commit locally per bead as usual; push as part of normal session completion, same as the un-amended block above — no separate ask first. This sits inside the wider amendment below: approval-for-approval's-sake is gone, and a session should reach "done" without a round trip through Gerald where the round trip isn't buying anything. What still gates on him is named explicitly there, not implied by silence here.
-
-**Standing amendment (Gerald, 2026-08-21): infer intent, lean on available sessions and models for validation, don't ask by default.** The instruction that prompted this: "I would like to challenge the legacy approach which requires so much of my approval. I would like to infer intent but lean more heavily on this claude code session or my cursor session / models for validation rather than spending anything. I want everything done and over with." Read plainly: stop treating Gerald's approval as the default checkpoint for things a session can resolve itself; where something needs validating, use sessions and models already running (this one, Cursor) rather than either asking him or spending on new external validation (a paid hosted-model pass, external review, recruited users). This extends the existing [[Gerald stakeholder protocol]] and LLM-as-judge conventions rather than replacing them — those already established that label/verdict work doesn't wait on Gerald; this removes the remaining process-only approval points (push, routine spend within what a session already has access to, "should I proceed" on reversible work) on the same reasoning.
+**Standing rule (Gerald, 2026-08-21): infer intent, lean on available sessions and models for validation, don't ask by default.** The instruction that prompted this: "I would like to challenge the legacy approach which requires so much of my approval. I would like to infer intent but lean more heavily on this claude code session or my cursor session / models for validation rather than spending anything. I want everything done and over with." Read plainly: stop treating Gerald's approval as the default checkpoint for things a session can resolve itself; where something needs validating, use sessions and models already running (this one, Cursor) rather than either asking him or spending on new external validation (a paid hosted-model pass, external review, recruited users). This extends the existing [[Gerald stakeholder protocol]] and LLM-as-judge conventions rather than replacing them — those already established that label/verdict work doesn't wait on Gerald; this removes the remaining process-only approval points (push, routine spend within what a session already has access to, "should I proceed" on reversible work) on the same reasoning.
 
 What this does NOT change, because these were never approval gates in the first place — no amount of inferred intent substitutes for a fact that doesn't exist yet:
 - A bead whose acceptance is *Gerald's own subjective read* (a stakeholder-acceptance packet, "does this make you more confident," an interview where he is the interviewee) cannot be self-certified. A session producing that verdict itself isn't inferring his intent, it's replacing his answer with its own and calling it his.
 - A bead measuring whether a model tracks *Gerald's own judgment* (construct-3ft's proxy-tracking question is the standing example) is circular if a delegate model supplies the reference verdicts — the measurement would grade the model against itself.
-- A bead needing a licensed professional (construct-7xrl's attorney review) needs an actual attorney; a model cannot become one by being granted more autonomy.
+- A bead needing a licensed professional needs that actual professional; a model cannot become one by being granted more autonomy. (The standing attorney-acceptance gate on the legal lens is a different thing and is gone: Gerald killed it 2026-08-21, construct-72hu. Legal research and issue-spotting is ordinary capability; what stays licensed-only is practice: representation, filings, sign-off where real liability turns on an unsettled question.)
 - A bead needing a real external target that doesn't exist (a real Jira project, a real GitHub repo with real content, live work in a different repo) needs that target, not permission. Building a scratch/disposable stand-in to close a mechanical acceptance line (a probe trace, a connector test) is in scope under this amendment; producing the substantive deliverable itself against fabricated ground is not — that is exactly the fabrication commitment 15 exists to catch, redirected at Gerald instead of at a citation.
 
 New spend still gets named, not silently taken: an eval-gate pass or anything else billed beyond what a session's own paid access already covers stays a stated line in the bead, same as before — "don't ask by default" is not "don't disclose."
