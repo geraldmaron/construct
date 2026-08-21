@@ -19,10 +19,9 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { legacyCheckout } from './lib/legacy-checkout.mjs';
 
-const LEGACY =
-  process.env.CONSTRUCT_LEGACY ?? join(process.env.HOME ?? '', 'Developer/Projects/construct-legacy');
+const LEGACY = legacyCheckout();
 
 const { buildProjection, projectionFieldsByAuthority, canonicalJson, valuesEqual, projectionId } =
   await import(`${LEGACY}/lib/tracker-projection/projection.mjs`);
