@@ -12,6 +12,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   describeConflict,
+  describeDivergence,
+  lostRecords,
   projectBead,
   reconcileSession,
   repoAnswers,
@@ -255,4 +257,157 @@ test('a bead with no notes is unaffected, and adjudication never invents agreeme
   assert.equal(report.counts.adjudicated, 0);
   assert.equal(report.counts.drifted, 1);
   assert.equal(report.clean, false);
+});
+
+/**
+ * The regression the commit-side reconcile is structurally blind to: a close
+ * recorded before an un-pushed database state, overwritten when a later session
+ * started from the pushed one. No commit changed, so nothing on the commit side
+ * disagrees. The export's own history is the only witness left.
+ */
+
+function history(
+  everClosed: string[],
+  everFiled: string[] = everClosed,
+  extra: Record<string, unknown> = {},
+) {
+  return { everClosed, everFiled, commitsScanned: 12, truncated: false, ...extra };
+}
+
+test('a bead history recorded closed and the export now shows open is a lost close', () => {
+  const report = lostRecords([bead('construct-a', 'open')], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, ['construct-a']);
+  assert.deepEqual(report.missingRecords, []);
+  assert.equal(report.clean, false);
+  assert.equal(report.commitsScanned, 12);
+});
+
+test('a bead history filed and the export no longer carries is a lost record', () => {
+  const report = lostRecords([bead('construct-a', 'open')], history([], ['construct-a', 'construct-b']));
+  assert.deepEqual(report.missingRecords, ['construct-b']);
+  assert.equal(report.clean, false);
+});
+
+test('a dated reopening note explains the disagreement and keeps it off the list', () => {
+  const note = '2026-08-21 REOPENED: the deliverable it promised was never produced.';
+  const report = lostRecords([bead('construct-a', 'open', { notes: note })], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.reopened, ['construct-a']);
+  assert.equal(report.clean, true);
+});
+
+test('an undated mention of reopening does not excuse a lost close', () => {
+  // A record a stranger cannot date is a record a stranger cannot check.
+  const report = lostRecords(
+    [bead('construct-a', 'open', { notes: 'we might have REOPENED this at some point' })],
+    history(['construct-a']),
+  );
+  assert.deepEqual(report.lostCloses, ['construct-a']);
+});
+
+test('a bead still closed in the export agrees with its own history', () => {
+  const report = lostRecords([bead('construct-a', 'closed')], history(['construct-a']));
+  assert.equal(report.clean, true);
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.reopened, []);
+});
+
+test('a close made today and never seen in history is work, not a regression', () => {
+  // The sweep is one-directional on purpose: reporting every close that history
+  // has not caught up with yet would bury the closes that actually went missing.
+  const report = lostRecords([bead('construct-a', 'closed')], history([], ['construct-a']));
+  assert.equal(report.clean, true);
+});
+
+test('a truncated walk says so rather than passing off a partial sweep as a whole one', () => {
+  const report = lostRecords([], history([], [], { truncated: true, commitsScanned: 200 }));
+  assert.equal(report.truncated, true);
+  assert.equal(report.commitsScanned, 200);
+  assert.equal(report.clean, true);
+});
+
+test('no history gathered is no finding', () => {
+  const report = lostRecords([bead('construct-a', 'open')], undefined);
+  assert.equal(report.clean, true);
+  assert.equal(report.commitsScanned, 0);
+  assert.equal(report.truncated, false);
+});
+
+/**
+ * Four beads were implemented twice because sessions worked main and a
+ * direction branch in parallel and the branch session judged the earlier work
+ * lost. What it needed was not a smarter search: it was being told, before it
+ * started, which beads already had commits it could not see.
+ */
+
+function standing(extra: Record<string, unknown> = {}) {
+  return {
+    head: 'side',
+    mainBranch: 'main',
+    aheadOfMain: 0,
+    behindMain: 0,
+    upstream: null,
+    aheadOfUpstream: 0,
+    behindUpstream: 0,
+    beadsOnlyOnMain: [],
+    ...extra,
+  };
+}
+
+test('a checkout behind main names the beads whose commits it cannot see', () => {
+  const report = describeDivergence(
+    standing({ aheadOfMain: 3, behindMain: 2, beadsOnlyOnMain: ['construct-a', 'construct-b'] }),
+  );
+  assert.equal(report.diverged, true);
+  assert.deepEqual(report.beadsOnlyOnMain, ['construct-a', 'construct-b']);
+  const said = report.lines.join('\n');
+  assert.match(said, /3 commits ahead of main and 2 commits behind it/);
+  assert.match(said, /construct-a, construct-b/);
+  assert.match(said, /before re-implementing/);
+  // Never a fetch: the report has to be true of what this machine already knows.
+  assert.match(said, /nothing was fetched/);
+});
+
+test('an up-to-date checkout says nothing at all', () => {
+  const report = describeDivergence(standing({ head: 'main' }));
+  assert.equal(report.diverged, false);
+  assert.deepEqual(report.lines, []);
+});
+
+test('being ahead is what a branch is for, not a divergence to report', () => {
+  // A branch with commits main lacks, and a local commit not yet pushed, are
+  // both the designed state here. Reporting them would fire on every commit.
+  const report = describeDivergence(
+    standing({ aheadOfMain: 7, upstream: 'origin/side', aheadOfUpstream: 7 }),
+  );
+  assert.equal(report.diverged, false);
+});
+
+test('an upstream carrying commits this checkout lacks is divergence too', () => {
+  const report = describeDivergence(
+    standing({ upstream: 'origin/side', behindUpstream: 4, aheadOfUpstream: 1 }),
+  );
+  assert.equal(report.diverged, true);
+  assert.match(report.lines.join('\n'), /1 commit ahead of origin\/side and 4 commits behind it/);
+});
+
+test('a branch tracking nothing is not described as tracking something', () => {
+  const report = describeDivergence(standing({ behindMain: 1 }));
+  assert.equal(
+    report.lines.some((line) => line.includes('upstream')),
+    false,
+  );
+});
+
+test('commits this checkout lacks that name no bead are still worth saying', () => {
+  const report = describeDivergence(standing({ behindMain: 1 }));
+  assert.equal(report.diverged, true);
+  assert.match(report.lines.join('\n'), /names a bead/);
+});
+
+test('a repository with no main to compare against is not a finding', () => {
+  const report = describeDivergence(undefined);
+  assert.equal(report.diverged, false);
+  assert.deepEqual(report.lines, []);
+  assert.deepEqual(report.beadsOnlyOnMain, []);
 });

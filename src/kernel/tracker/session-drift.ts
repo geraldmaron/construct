@@ -38,6 +38,15 @@
  * waiting on Gerald — and that is reported separately, in its own vocabulary,
  * rather than dressed up as a reconciliation result it is not.
  *
+ * Alongside the reconcile sit two sweeps that ask a different question. The
+ * reconcile trusts the tracker's current export to say what the tracker
+ * believes; `lostRecords` asks whether that export still carries what earlier
+ * revisions of itself recorded, which is the only way to see a close a rolled
+ * back database swallowed. And `describeDivergence` asks where the checkout
+ * itself is standing, because every judgement above is made from one branch's
+ * view and a session that cannot see main's commits will judge the work in them
+ * missing.
+ *
  * Pure, like the rest of kernel/tracker: the evidence is gathered by a caller
  * that may run git, and arrives here as data.
  */
@@ -264,6 +273,167 @@ export function reconcileSession(
     contradictions,
     clean: ok && contradictions.length === 0,
   };
+}
+
+/**
+ * What the export's own version history recorded, gathered by a caller that may
+ * run git and arriving here as data.
+ */
+export interface RecordedHistory {
+  /** Every id the export has ever carried, in any scanned revision. */
+  readonly everFiled: readonly string[];
+  /** Every id the export ever recorded with status closed. */
+  readonly everClosed: readonly string[];
+  /** How many revisions of the export were read. */
+  readonly commitsScanned: number;
+  /** True when the walk hit its cap and older revisions went unread. */
+  readonly truncated: boolean;
+}
+
+/** Records the current export no longer carries but its history says it did. */
+export interface LostRecordReport {
+  /** Closed in a past revision, not closed now, and nothing says it reopened. */
+  readonly lostCloses: readonly string[];
+  /** Filed in a past revision and absent from the export entirely. */
+  readonly missingRecords: readonly string[];
+  /** Closes a dated reopening note accounts for, kept out of the working list. */
+  readonly reopened: readonly string[];
+  readonly commitsScanned: number;
+  readonly truncated: boolean;
+  /** True when nothing recorded went missing. */
+  readonly clean: boolean;
+}
+
+/**
+ * A dated line saying the bead was deliberately reopened.
+ *
+ * Reopening is a legitimate move and produces exactly the shape this sweep is
+ * built to catch: history says closed, the export says open. Only a dated line
+ * counts, because the record has to say when the decision was taken for a
+ * stranger to be able to check it.
+ */
+const REOPENED_NOTE = /^\s*\d{4}-\d{2}-\d{2}\b[^\n]*\bREOPENED\b/m;
+
+function wasReopened(issue: BeadIssue | undefined): boolean {
+  const notes = typeof issue?.notes === 'string' ? issue.notes : '';
+  return REOPENED_NOTE.test(notes);
+}
+
+/**
+ * Records the tracker database lost.
+ *
+ * The reconcile above compares the tracker against the repository's commits,
+ * which cannot see this failure at all: a close recorded before an un-pushed
+ * database state, then overwritten when a later session started from the pushed
+ * one, leaves the tracker asserting open over work that was really finished. The
+ * commits are untouched, so the commit-side check reports agreement. The export
+ * this repository version-controls is the second witness, and it disagrees.
+ *
+ * Warn-only and one-directional on purpose. History showing a bead closed that
+ * the export now shows open is a regression; the reverse — a bead closed now and
+ * never closed in history — is just today's work, and reporting it would bury
+ * the finding in every close ever made.
+ */
+export function lostRecords(
+  issues: readonly BeadIssue[],
+  history: RecordedHistory | undefined,
+): LostRecordReport {
+  const byId = new Map((issues ?? []).filter((i) => i?.id).map((i) => [i.id, i] as const));
+  const everClosed = history?.everClosed ?? [];
+  const everFiled = history?.everFiled ?? [];
+
+  const lostCloses: string[] = [];
+  const reopened: string[] = [];
+  for (const id of everClosed) {
+    const issue = byId.get(id);
+    if (!issue || issue.status === 'closed') continue;
+    if (wasReopened(issue)) reopened.push(id);
+    else lostCloses.push(id);
+  }
+  const missingRecords = everFiled.filter((id) => !byId.has(id));
+
+  return {
+    lostCloses,
+    missingRecords,
+    reopened,
+    commitsScanned: history?.commitsScanned ?? 0,
+    truncated: history?.truncated === true,
+    clean: lostCloses.length === 0 && missingRecords.length === 0,
+  };
+}
+
+/**
+ * Where the checkout is standing relative to the branches it cannot see.
+ * Gathered by a caller that may run git; local refs only, never a fetch.
+ */
+export interface Divergence {
+  /** The branch checked out, or `HEAD` when it is detached. */
+  readonly head: string;
+  readonly mainBranch: string;
+  readonly aheadOfMain: number;
+  readonly behindMain: number;
+  /** The configured upstream, or null when the branch tracks nothing. */
+  readonly upstream: string | null;
+  readonly aheadOfUpstream: number;
+  readonly behindUpstream: number;
+  /** Beads named by commits on main that this checkout does not contain. */
+  readonly beadsOnlyOnMain: readonly string[];
+}
+
+export interface DivergenceReport {
+  /** True only when something exists that this checkout cannot see. */
+  readonly diverged: boolean;
+  /** What to say about it, in the order a person reads it. */
+  readonly lines: readonly string[];
+  readonly beadsOnlyOnMain: readonly string[];
+}
+
+function plural(n: number, one: string): string {
+  return `${String(n)} ${one}${n === 1 ? '' : 's'}`;
+}
+
+/**
+ * Tell a session where its checkout stands before it re-implements what it
+ * cannot see.
+ *
+ * Sessions working main and a direction branch in parallel implemented the same
+ * beads twice: the branch session found no trace of the earlier work, judged it
+ * lost, and did it again. Every check in this module is made from one branch's
+ * view, so the view itself has to be stated.
+ *
+ * Being *ahead* of anything is not divergence. A branch with commits main lacks
+ * is what a branch is for, and an unpushed local commit is the designed state
+ * here; reporting either would make this fire on every commit and be turned
+ * off. What is worth saying is the reverse: commits exist that this checkout
+ * does not contain. The load-bearing part is which beads those commits name.
+ */
+export function describeDivergence(divergence: Divergence | undefined): DivergenceReport {
+  const beadsOnlyOnMain = divergence?.beadsOnlyOnMain ?? [];
+  if (!divergence || (divergence.behindMain <= 0 && divergence.behindUpstream <= 0)) {
+    return { diverged: false, lines: [], beadsOnlyOnMain: [] };
+  }
+
+  const { head, mainBranch, aheadOfMain, behindMain, upstream } = divergence;
+  const lines: string[] = [
+    `${head} is ${plural(aheadOfMain, 'commit')} ahead of ${mainBranch} and ` +
+      `${plural(behindMain, 'commit')} behind it (local refs only — nothing was fetched).`,
+  ];
+  if (upstream) {
+    lines.push(
+      `${head} is ${plural(divergence.aheadOfUpstream, 'commit')} ahead of ${upstream} and ` +
+        `${plural(divergence.behindUpstream, 'commit')} behind it.`,
+    );
+  }
+  if (beadsOnlyOnMain.length > 0) {
+    lines.push(
+      `${plural(beadsOnlyOnMain.length, 'bead')} already have commits on ${mainBranch} that this ` +
+        `checkout does not contain: ${beadsOnlyOnMain.join(', ')}.`,
+      `Read those commits before re-implementing any of them: git log ${head}..${mainBranch}`,
+    );
+  } else if (behindMain > 0) {
+    lines.push(`No commit on ${mainBranch} that this checkout lacks names a bead.`);
+  }
+  return { diverged: true, lines, beadsOnlyOnMain };
 }
 
 /**
