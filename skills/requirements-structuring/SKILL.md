@@ -15,7 +15,7 @@ description: Turns an intent - "we should build X" - into a requirements
   surface, not to specify around.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   source: geraldmaron/construct
 ---
 
@@ -139,14 +139,22 @@ acceptance (§3), or non-goals (§4).
 ```
 <Title: the capability, plainly>
 Outcome: what is true when this is done - the one-paragraph version
+Users: who this is for and who else is affected - and what changes for
+  each of them, stated as their experience, not the system's internals
 Context: only what a builder needs; history goes elsewhere
 Decided: the standing decisions this builds on, attributed
 Outcomes: numbered, observable
+Success measures: how anyone will know it worked - each an observation or
+  a measurement; thresholds sourced or labeled chosen, by whom (§3's rules
+  apply here in full)
 Constraints: labeled, sourced
 Assumptions: [assumed], each with what settles it
 Non-goals: one line each, with reasons
 Acceptance criteria: numbered, each a stranger-checkable observation
 Priorities: critical path / now / next / later
+Risks: the strongest case against this working, one line each - the full
+  challenge belongs to an adversarial review before commitment, if that
+  discipline is present
 Open questions: earned only - who answers, what is blocked
 ```
 
