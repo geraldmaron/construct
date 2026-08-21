@@ -1,7 +1,9 @@
 /**
  * tests/kernel/run/apply.test.ts — carrying out an approved outward change.
  *
- * The properties held here: only an approved proposal is handed to a host, a
+ * The properties held here: a change is handed to a host only with authority
+ * behind it — a human approval on the proposal, or the workspace's standing
+ * consent, which covers the low-risk class and never a high-risk change — a
  * rejection is never overridden by a surface that can also apply, and the
  * applied decision is written only from what the host reported succeeding —
  * a host that failed, that could not be reached, or that answered
@@ -21,6 +23,7 @@ import {
   decisionOf,
   proposeWrite,
   setEngagementMode,
+  setWriteConsent,
 } from '../../../src/kernel/store/sources.ts';
 import { countProjections, getProjection } from '../../../src/kernel/store/projections.ts';
 import { projectionFieldsByAuthority } from '../../../src/kernel/tracker/projection.ts';
@@ -146,6 +149,47 @@ test('an undecided proposal, an unknown one, and one already applied are all ans
     const again = await applyProposal(store, applier({ applied: true, detail: 'd' }), 'p-1', LATER);
     assert.equal(again.outcome, 'refused');
     assert.match(again.outcome === 'refused' ? again.reason : '', /already applied/);
+  });
+});
+
+test('standing consent hands a low-risk change over, and a high-risk one stops before the host', async () => {
+  await withStore(async (store) => {
+    seed(store);
+    setWriteConsent(store, 'acme', true, AT);
+    proposeWrite(store, {
+      id: 'p-high',
+      workspace: 'acme',
+      run: 'run-1',
+      source: 'src-1',
+      change: 'close PROJ-9 as will-not-do',
+      justification: 'note:n-1#L7',
+      risk: 'high',
+      proposedAt: AT,
+    });
+
+    // Neither has a decision of its own. The workspace's standing yes is
+    // authority for the low-risk one, which is why it is asked at all.
+    const low = await applyProposal(store, applier({ applied: true, detail: 'moved it' }), 'p-1', LATER);
+    assert.equal(low.outcome, 'applied');
+    assert.equal(decisionOf(store, 'p-1')?.basis, 'standing-consent');
+
+    let asked = false;
+    const high = await applyProposal(
+      store,
+      async () => {
+        asked = true;
+        return { applied: true, detail: 'closed it' };
+      },
+      'p-high',
+      LATER,
+    );
+    assert.equal(high.outcome, 'refused');
+    assert.match(
+      high.outcome === 'refused' ? high.reason : '',
+      /high-risk change is never carried out on standing consent/,
+    );
+    assert.equal(asked, false, 'the high-risk change never reached the host');
+    assert.equal(decisionOf(store, 'p-high'), null, 'and left no decision behind');
   });
 });
 
