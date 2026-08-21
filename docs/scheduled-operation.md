@@ -64,10 +64,46 @@ Either way, the pieces behave the way a scheduled task needs:
   what was done in whose name; the work log is append-only, enforced by the
   store, not by discipline.
 
+## Watching an external source
+
+A standing outcome re-files an intention through a host; a **source watch**
+does not spend anything by default. It points at a source you have already
+declared (`construct source add`) and, on its own cadence, compares what is
+there now against what its last firing recorded. Nothing is interpreted — no
+host is consulted unless the declaration names one — so the comparison is
+exactly the structural fact a filesystem walk can state: which documents
+exist, how large they are, and whether the source can be reached at all.
+
+```bash
+construct source add --kind=directory --locator=/path/to/docs-repo --workspace=ops
+construct watch add --source=<source-id> --every=1d
+construct watch list             # every declared watch, with cadence and last firing
+construct watch retire <id>      # stop it; its firings stay on the record
+```
+
+Then schedule the one firing line, exactly as a standing outcome's:
+
+```bash
+construct watch --due
+```
+
+Each due watch surveys its source, compares the survey to the snapshot its
+last firing recorded, and raises whatever changed as one decision in
+`construct inbox` — it never resolves anything, never edits the source, and
+never spends on a model: naming `--host=<opencode|claude|codex|cursor>` at
+declaration only records intent for whatever reviews the finding next. A
+firing is recorded whether or not anything changed, so a watch whose ground
+has not moved fires quietly — the firing lands on the work log
+(`construct log --run watch-<id>`), but no decision follows it. A newly
+declared watch's first sweep is quiet the same way: there is no prior
+snapshot yet to compare against, only one being recorded for the next sweep
+to use.
+
 ## Checking on it
 
 ```bash
 construct standing       # what stands, and when each last fired
+construct watch list     # every declared source watch, and when each last fired
 construct inbox          # what needs a human
 construct log | tail     # what happened last
 construct doctor         # is the machine's install healthy
