@@ -1,0 +1,479 @@
+/**
+ * cli/work.ts — dispatching a run's queued tasks to a host.
+ *
+ * Everything expensive happens here, so everything this file prints is about
+ * what was spent and what came back: the grounding pass before the first call,
+ * the measured floor a small model is about to miss, the per-task cost, the
+ * concerns under each deliverable, and the recourse when nothing came back at
+ * all. `hostOverride` exists so the wiring can be tested without a binary
+ * present; production callers never pass it.
+ */
+
+import { resolve } from 'node:path';
+import { readRunDispatch } from '../kernel/store/dispatch.ts';
+import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
+import { appendWorkLog } from '../kernel/store/worklog.ts';
+import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
+import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
+import { latestDraft } from '../kernel/run/promotion.ts';
+import { renderClaim } from '../kernel/run/publish.ts';
+import { groundingSummary, groundRun } from '../kernel/run/groundpass.ts';
+import { groundRootsFor } from '../kernel/run/sourcereads.ts';
+import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
+import { synthesizeIssues } from '../kernel/run/synthesis.ts';
+import { loadOrCreateSecret } from '../kernel/capabilities/secretfile.ts';
+import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { escapeForTerminal } from '../kernel/render/terminal.ts';
+import { architectureNoteFor } from '../hosts/architecture.ts';
+import { dispatchFloorFor } from '../hosts/floors.ts';
+import { readRepoManifest } from '../hosts/repo/gates.ts';
+import { adapterForHost, now, secretFile, withStoreAsync } from './runtime.ts';
+import { timeoutFlag } from './flags.ts';
+import { surveyor } from './survey.ts';
+import { failureLine, money, writeTotalFailureRecourse } from './present.ts';
+
+/**
+ * The flag that dispatches anyway when ground sits outside the working
+ * directory. Named once so the refusal, the override and the log entry cannot
+ * drift into naming three different things.
+ */
+const UNREACHABLE_GROUND_FLAG = '--allow-distant-ground';
+
+export interface WorkArgs {
+  readonly run?: string;
+  readonly concurrency: number;
+  readonly ceiling: number;
+  readonly leaseMinutes: number;
+  readonly model?: string;
+  readonly binary?: string;
+  readonly dir?: string;
+  /**
+   * Dispatch even where a licensed ground root sits outside the directory the
+   * roles will run in. Off by default: the roles would be graded on material
+   * they cannot open. On when the operator knows this host reaches wider than
+   * its working directory, which Construct cannot see from here.
+   */
+  readonly allowDistantGround: boolean;
+  /** Which host executes: 'opencode' (default) or 'claude'. */
+  readonly host: string;
+  /**
+   * Whether --host was actually typed. The default and the recorded choice
+   * must be distinguishable, or the recorded choice could never win.
+   */
+  readonly hostExplicit: boolean;
+  /**
+   * The user asking for a voice other than Construct's, in their own words.
+   * Absent is the house voice — the case that needs no flag and no record.
+   */
+  readonly voice?: string;
+  /**
+   * How long one host invocation may run, in milliseconds. Host default when
+   * unset. A grounded dispatch over a real repository on a small local model
+   * was measured producing nothing inside the ten-minute default, so the limit
+   * is the caller's to set rather than one constant for every model.
+   */
+  readonly timeoutMs?: number;
+}
+
+/**
+ * The ceiling is total spend across every run this machine has recorded, not
+ * this invocation's — ten runs of nine dollars is exactly what a per-run cap
+ * misses. It is deliberately low enough to be hit, since a ceiling nobody ever
+ * reaches has never been tested.
+ */
+export const DEFAULT_SPEND_CEILING = 10;
+
+export function parseWorkArgs(argv: string[]): WorkArgs {
+  const args: Record<string, string> = {};
+  for (const arg of argv) {
+    const match = /^--([a-z-]+)=(.*)$/.exec(arg);
+    if (match) args[match[1]] = match[2];
+  }
+  const runIndex = argv.indexOf('--run');
+  const run = args.run ?? (runIndex >= 0 ? argv[runIndex + 1] : undefined);
+
+  const number = (name: string, fallback: number): number => {
+    if (args[name] === undefined) return fallback;
+    const value = Number(args[name]);
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error(`Invalid --${name}=${args[name]}; expected a non-negative number`);
+    }
+    return value;
+  };
+
+  const host = args.host ?? 'opencode';
+  if (host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
+    throw new Error(`Invalid --host=${host}; expected opencode|claude|codex|cursor`);
+  }
+
+  const leaseMinutes = number('lease-minutes', 15);
+  const timeoutMs = timeoutFlag(args);
+  // The lease exceeds the invocation limit by design: a task whose lease
+  // expires while the host is still working it is handed to a second worker,
+  // and the same work is then paid for twice. Raising the limit past the lease
+  // silently would arrange exactly that, so it is refused with the other flag
+  // named rather than accepted and warned about.
+  if (timeoutMs !== undefined && timeoutMs >= leaseMinutes * 60 * 1000) {
+    throw new Error(
+      `--timeout=${args.timeout} exceeds --lease-minutes=${String(leaseMinutes)}; a task still running ` +
+        'when its lease expires is dispatched again and paid for twice. Raise --lease-minutes past the timeout.',
+    );
+  }
+
+  return {
+    run,
+    concurrency: number('concurrency', DEFAULT_CONCURRENCY),
+    ceiling: number('ceiling', DEFAULT_SPEND_CEILING),
+    leaseMinutes,
+    model: args.model,
+    binary: args.binary,
+    dir: args.dir,
+    allowDistantGround: args['allow-distant-ground'] === 'true' || args['allow-distant-ground'] === '',
+    host,
+    hostExplicit: args.host !== undefined,
+    voice: args.voice?.trim() ? args.voice.trim() : undefined,
+    ...(timeoutMs === undefined ? {} : { timeoutMs }),
+  };
+}
+
+
+/**
+ * Dispatch the queued tasks to a host. `hostOverride` exists so the CLI's own
+ * wiring can be tested without a binary present; production callers never pass
+ * it, exactly as with cleanup's spawn override.
+ */
+export async function work(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  let args: WorkArgs;
+  try {
+    args = parseWorkArgs(argv);
+  } catch (error) {
+    process.stderr.write(`work: ${(error as Error).message}\n`);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    // The run remembers the surface it was filed with; a flag typed now still
+    // wins, and the divergence goes on the record rather than passing silently.
+    const recorded = args.run ? readRunDispatch(store, args.run) : null;
+    const hostName = args.hostExplicit ? args.host : (recorded?.host ?? args.host);
+    const model = args.model ?? recorded?.model ?? undefined;
+    const binary = args.binary ?? recorded?.binary ?? undefined;
+    const dir = args.dir ?? recorded?.dir ?? undefined;
+
+    if (recorded && args.run) {
+      const overrides: string[] = [];
+      if (args.hostExplicit && args.host !== recorded.host) {
+        overrides.push(`host ${recorded.host} -> ${args.host}`);
+      }
+      if (args.model !== undefined && recorded.model !== null && args.model !== recorded.model) {
+        overrides.push(`model ${recorded.model} -> ${args.model}`);
+      }
+      if (overrides.length > 0) {
+        appendWorkLog(store, {
+          run: args.run,
+          task: null,
+          role: 'construct',
+          action: 'dispatch-overridden',
+          detail: { overrides, recordedAt: recorded.recordedAt },
+          at: now(),
+        });
+      }
+    }
+
+    const host =
+      hostOverride ?? adapterForHost(hostName, { binary, model, dir, timeoutMs: args.timeoutMs });
+
+    const waiting = countTasksByState(store, args.run).pending ?? 0;
+    if (waiting === 0) {
+      // Nothing to dispatch is not the same as nothing to do. If a previous
+      // invocation settled this run's tasks and then died before framing —
+      // a SIGTERM, an OOM, a closed laptop, and the window is the whole run —
+      // the decision those deliverables imply has never been raised, and this
+      // guard used to return before anything could reach it.
+      // Framing needs no host and no spend, so it runs before the guard reports.
+      const raised = frameConflicts(store, [], { clock: now, run: args.run });
+
+      const counts = countTasksByState(store, args.run);
+      const done = counts.done ?? 0;
+      const failedTasks = counts.failed ?? 0;
+
+      if (done === 0 && failedTasks === 0) {
+        process.stdout.write(
+          'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
+        );
+        return 0;
+      }
+
+      // A run where every task failed is not a run that finished, and saying
+      // "already settled" in the same words used for a successful one leaves the
+      // user with a dead run id and no stated path. The store is
+      // right that a failed task is terminal and that the host owns retries
+      // (commitment 1) — nothing here adds a retry policy. What was missing is
+      // that two different things were being reported identically: the task a
+      // host genuinely could not do, and the task that never reached a working
+      // host at all. The recorded error is what tells them apart, so it is shown.
+      if (done === 0) {
+        const where = args.run ? ` for ${args.run}` : '';
+        process.stdout.write(`nothing to work${where}.\n`);
+        for (const task of listTasks(store, args.run).filter((t) => t.state === 'failed')) {
+          process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${escapeForTerminal(failureLine(task.error))}\n`);
+        }
+        writeTotalFailureRecourse(failedTasks);
+        return 1;
+      }
+
+      process.stdout.write(
+        args.run
+          ? `nothing to work for ${args.run}. Its tasks are already settled.\n`
+          : 'nothing to work. Every task in the store is already settled.\n',
+      );
+      if (failedTasks > 0) {
+        process.stdout.write(
+          `${String(failedTasks)} of ${String(done + failedTasks)} task(s) failed; ` +
+            'their roles produced no deliverable.\n',
+        );
+      }
+      if (raised > 0) {
+        process.stdout.write(
+          `\n${String(raised)} decision(s) need you — the roles disagree.\n` + 'See: construct inbox\n',
+        );
+      }
+      return 0;
+    }
+
+    // The producer half of grounding, run before any dispatch: what each run's
+    // declared sources actually hold is surveyed and recorded, so materialFor
+    // answers the coordinator from evidence rather than from silence. Once per
+    // run — the record is evidence, not a cache — and a run whose plan
+    // declared no sources is left exactly as it was.
+    const pendingRuns = new Set(
+      listTasks(store, args.run)
+        .filter((t) => t.state === 'pending')
+        .map((t) => t.run),
+    );
+    // Where the roles will actually run: the host's --dir when given, and
+    // otherwise wherever this process was invoked, which is what every adapter
+    // inherits when nothing is passed.
+    const dispatchDirectory = resolve(args.dir ?? process.cwd());
+
+    for (const runId of pendingRuns) {
+      const pass = groundRun(store, runId, now(), surveyor(store));
+      if (!pass || pass.skipped) continue;
+      const documents = pass.documents;
+      process.stdout.write(`grounded ${runId}: ${groundingSummary(pass)}\n`);
+
+      // Licensing ground the dispatch cannot open is how a run comes back
+      // three-tasks-done with every file read failed and every deliverable
+      // ungrounded. Knowable here, before a model call is paid for.
+      const reach = groundReach(groundRootsFor(store, runId), dispatchDirectory);
+      const unreachable = unreachableGroundMessage(reach, dispatchDirectory, UNREACHABLE_GROUND_FLAG);
+      if (unreachable && !args.allowDistantGround) {
+        process.stderr.write(`work: ${unreachable}`);
+        appendWorkLog(store, {
+          run: runId,
+          role: 'construct',
+          action: 'ground-unreachable',
+          detail: { from: dispatchDirectory, unreachable: reach.unreachable, reachable: reach.reachable },
+          at: now(),
+        });
+        return 1;
+      }
+      if (unreachable) {
+        // Overridden, not absent: the operator said this host reaches past its
+        // working directory, and the record must show that was a choice.
+        process.stdout.write(`  ⚑ ${UNREACHABLE_GROUND_FLAG}: ${String(reach.unreachable.length)} root(s) outside ${dispatchDirectory}\n`);
+        appendWorkLog(store, {
+          run: runId,
+          role: 'construct',
+          action: 'ground-unreachable-allowed',
+          detail: { from: dispatchDirectory, unreachable: reach.unreachable },
+          at: now(),
+        });
+      }
+
+      // Where a measured floor is met before it is paid for, rather than ten
+      // minutes per role later. It is stated as the nearest recorded
+      // observation and names the model it was measured on, because a
+      // measurement on a neighbouring model is not a prediction about this
+      // one — and both ways out are named, since a caution with no next move
+      // is just a slower failure.
+      const floor = dispatchFloorFor(host.model ?? model, documents);
+      if (floor) {
+        const limit = host.invocationTimeoutMs ?? floor.timeoutMs;
+        process.stdout.write(
+          `  ⚑ nearest recorded observation (${floor.observedOn}, ${floor.measuredOn}): ${floor.observation}.\n` +
+            `    This dispatch has ${String(documents)} document${documents === 1 ? '' : 's'} and ` +
+            `${String(Math.round(limit / 60000))} minute(s) per role.\n` +
+            '    Give it longer:  construct work --timeout=<minutes> --lease-minutes=<more>\n' +
+            '    Or give it less ground:  construct source add --workspace=<name> …  then ' +
+            'construct outcome --workspace=<name> …\n' +
+            `    Evidence: ${floor.evidence}\n`,
+        );
+      }
+
+      // Same discipline as the floor above: named model, dated run, evidence
+      // path — never a claim that this dispatch's model will behave like the
+      // one measured, only the nearest recorded observation.
+      const architectureNote = architectureNoteFor(host.model ?? model);
+      if (architectureNote) {
+        process.stdout.write(
+          `  ⚑ architecture note (${architectureNote.observedOn}, ${architectureNote.measuredOn}): ` +
+            `${architectureNote.observation}.\n` +
+            `    Evidence: ${architectureNote.evidence}\n`,
+        );
+      }
+    }
+
+    try {
+      await host.init();
+    } catch (error) {
+      // A host that cannot start must never read as a run with nothing to do.
+      process.stderr.write(`work: host "${host.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`);
+      return 1;
+    }
+
+    if (args.voice) {
+      // Said out loud, not only written down: an deliverable that will not sound
+      // like Construct is a thing the user should see themselves choosing.
+      process.stdout.write(`voice overridden for this run: ${args.voice}\n`);
+    }
+
+    const report = await workRun(store, host, {
+      owner: `cli-${String(process.pid)}`,
+      clock: now,
+      spendCeiling: args.ceiling,
+      concurrency: args.concurrency,
+      leaseMs: args.leaseMinutes * 60 * 1000,
+      run: args.run,
+      // Establishes the signing secret on first dispatch; every task gets a
+      // capability token scoped to its own lease (commitment 14).
+      capabilitySecret: loadOrCreateSecret(secretFile()),
+      // What the declared ground already checks about itself, so a lens's
+      // obligation can name the repository's own gate instead of only the
+      // standard behind it.
+      manifests: readRepoManifest,
+      ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
+    });
+
+
+    process.stdout.write(
+      `worked ${String(report.dispatched)} task(s) on ${host.name}: ` +
+        `${String(report.completed)} done, ${String(report.failed)} failed.\n`,
+    );
+    if (report.slotGapsRaised > 0) {
+      process.stdout.write(
+        `${String(report.slotGapsRaised)} deliverable(s) came back with required sections unfilled; ` +
+          'each is one inbox decision carrying the default the draft proceeds on. See: construct inbox\n',
+      );
+    }
+    // Only what this invocation settled. Listing everything settled in the
+    // store would report a second run's work as this one's.
+    for (const id of report.settled) {
+      const task = getTask(store, id);
+      if (!task) continue;
+      if (task.state === 'failed') {
+        process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${escapeForTerminal(failureLine(task.error))}\n`);
+        continue;
+      }
+      const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
+      process.stdout.write(`  ✓ ${task.role.padEnd(20)} ${cost}\n`);
+
+      // The two lines a user has to see: what is wrong with this deliverable,
+      // and whether anyone is allowed to rely on it as it stands.
+      for (const concern of deliverableConcerns(task.result)) {
+        process.stdout.write(`      ⚑ ${escapeForTerminal(concern.detail)}\n`);
+      }
+      const review = licensedReviewFor(task.role);
+      if (review) {
+        process.stdout.write(
+          `      → issue-spotting only: needs review by a licensed ${review} before you rely on it\n`,
+        );
+      }
+    }
+
+    // One merged issue list instead of N overlapping essays. The merge is
+    // lexical and labeled; a duplicate it fails to merge shows twice rather
+    // than losing anything.
+    const settledDeliverables = report.settled
+      .map((id) => getTask(store, id))
+      .filter((task) => task !== null && task.state === 'done')
+      .map((task) => {
+        const draft = latestDraft(store, task!.id)?.deliverable ?? task!.result;
+        const text =
+          typeof draft === 'string'
+            ? draft
+            : typeof (draft as { text?: unknown } | null)?.text === 'string'
+              ? ((draft as { text: string }).text)
+              : null;
+        return text === null ? null : { role: task!.role, text };
+      })
+      .filter((d): d is { role: string; text: string } => d !== null);
+    const merged = synthesizeIssues(settledDeliverables);
+    if (merged.length > 0) {
+      process.stdout.write(`\nissues across roles (${String(merged.length)}, merged lexically):\n`);
+      for (const [index, issue] of merged.entries()) {
+        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${escapeForTerminal(renderClaim(issue.text))}\n`);
+      }
+    }
+
+    // "spend 0 of 10.00 ceiling" after a run where nothing completed reads as
+    // "this was cheap" when the true statement is that nothing ran. The
+    // costSilent branch below does not cover it: these tasks failed rather than
+    // completing without reporting a cost.
+    if (report.completed === 0 && report.failed > 0) {
+      writeTotalFailureRecourse(report.failed);
+    } else {
+      // What this invocation spent, against what it was allowed to spend. The
+      // lifetime total is a different fact and was being printed under this
+      // sentence, so a store with history read as a run that had nearly
+      // exhausted its budget before starting.
+      process.stdout.write(
+        `\nreported cost ${money(report.spendAfter - report.spendBefore)} of ` +
+          `${money(report.spendCeiling)} allowed for this run ` +
+          `(${money(report.spendAfter)} recorded across every run in this store).\n`,
+      );
+    }
+    if (report.conflicts > 0) {
+      // The inbox is the point of the whole run: work happened in the
+      // background, and this is the part that is genuinely the user's.
+      process.stdout.write(
+        `\n${String(report.conflicts)} decision(s) need you — the roles disagree.\n` +
+          'See: construct inbox\n',
+      );
+    }
+    if (report.recovered > 0) {
+      process.stdout.write(
+        `recovered ${String(report.recovered)} task(s) from an earlier run that did not finish.\n`,
+      );
+    }
+    if (report.degraded > 0) {
+      // Degrade loudly. The run happened and the deliverables
+      // are real; what must not happen is anyone citing them without knowing
+      // what produced them.
+      process.stdout.write(
+        `${String(report.degraded)} task(s) ran below the model capability floor their brief declared. ` +
+          'Those deliverables are qualified by the model that produced them — see: construct log\n',
+      );
+    }
+    if (report.costSilent > 0) {
+      // Saying "under the ceiling" about spend nobody measured is the same
+      // class of claim commitment 15 exists to forbid.
+      process.stdout.write(
+        `${String(report.costSilent)} task(s) ran on a host that reported no cost. ` +
+          'The ceiling did not bind on those.\n',
+      );
+    }
+    if (report.halted === 'spend-ceiling') {
+      const left = countTasksByState(store, args.run).pending ?? 0;
+      process.stdout.write(
+        `\nhalted: this run reached the ${money(report.spendCeiling)} ceiling. ` +
+          `${String(left)} task(s) left pending — raise it with --ceiling=<amount> to continue.\n` +
+          'The figure is what a host reports each call costs. On a subscription host that is an ' +
+          'estimate of work done rather than an amount charged, so the ceiling bounds how much ' +
+          'work a run may do and is not a spending limit.\n',
+      );
+      return 1;
+    }
+    return report.failed > 0 ? 1 : 0;
+  });
+}
