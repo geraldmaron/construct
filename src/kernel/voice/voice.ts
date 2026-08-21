@@ -219,11 +219,11 @@ function joinNames(names: readonly string[]): string {
  * WHAT SHAPE THE CONTENT TAKES, which is not the same question as what voice
  * it is in.
  *
- * One directive used to demand numbered issues of every deliverable in the
- * system, including the ones whose own template asks for something else: a PRD
- * got told to number its issues, and so did a strategy review, a sequencing
- * plan, and an interview guide. The template already knew what shape it wanted;
- * the directive simply talked over it. So form is declared by the template
+ * One directive used to demand numbered issues of every deliverable it
+ * dispatched, including the ones whose own template asks for something else: a
+ * PRD got told to number its issues, and so did a strategy review and a
+ * sequencing plan. The template already knew what shape it wanted; the
+ * directive simply talked over it. So form is declared by the template
  * (plan/schema.ts) and spoken here, and the rules every work product owes —
  * an owner for a step, a labeled assumption instead of a stall, nothing
  * asserted that cannot be supported — are the same whatever the form is.
