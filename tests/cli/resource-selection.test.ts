@@ -21,6 +21,12 @@ import type { ProbeExec } from '../../src/hosts/presence.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 const OUTCOME = 'launch a paid beta to EU users next month';
 

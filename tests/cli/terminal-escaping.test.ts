@@ -26,6 +26,12 @@ import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { addSource } from '../../src/kernel/store/sources.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 const ESC = String.fromCodePoint(0x1b);
 /** Cursor up, erase the whole line: what rewrites the line already printed. */

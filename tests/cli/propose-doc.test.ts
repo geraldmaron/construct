@@ -32,6 +32,12 @@ import {
   setWriteConsent,
 } from '../../src/kernel/store/sources.ts';
 import type { DocEdit, ProposalDecision, WriteProposal } from '../../src/kernel/store/sources.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 type Step = string[] | ((root: string) => Promise<number> | number);
 
