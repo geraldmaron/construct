@@ -17,6 +17,13 @@
  * memo — a template that fits everything is still better than prose that
  * fits nothing, because its empty slots are visible.
  *
+ * A domain a lens equips (plan/lenses.ts) adds that lens's own slots on top
+ * of the base template; a domain no lens equips adds the method slot
+ * instead (below, beside DEFAULT_TEMPLATE), so a deliverable produced with
+ * no owning method says so in its own structure rather than reading like
+ * one lens-governed deliverable among others. The two never both fire and
+ * never both stay silent.
+ *
  * The file also carries the elicitation family at the bottom: templates for
  * the documents a run hands back when the missing information lives in
  * somebody's head rather than in a source. They are keyed by their own name
@@ -182,6 +189,34 @@ const DEFAULT_TEMPLATE: DeliverableTemplate = {
 };
 
 /**
+ * The slot a domain with NO owning lens carries, in place of a lens's own
+ * slots. A lens is an obligation set: its own question set, its own extra
+ * deliverable slots, its own escalation ladder. A domain the catalog names
+ * but no lens equips has none of those, and before this slot existed the
+ * template said nothing about it — the deliverable read exactly like one
+ * produced under a lens that simply had nothing extra to add, and a reader
+ * had no way to tell the two apart.
+ *
+ * This is how the deliverable itself carries the difference: not a caveat
+ * folded under evidence, but the reader's first question after finding —
+ * not "was it any good" but "under what method was it produced" — answered
+ * plainly, once, in the deliverable's own structure. run/coordinator.ts's
+ * lens directive carries the matching instruction that tells the role what
+ * belongs here; run/accountability.ts's limitsFor carries the same fact
+ * again, surfaced beside the deliverable rather than inside it, the way a
+ * degraded model floor already is.
+ */
+const NO_LENS_SLOT: Slot = slot(
+  'method',
+  'that no lens equips this concern — say so plainly, then name what a lens ' +
+    'would have supplied that this deliverable does not have: its question ' +
+    'set, its extra deliverable obligations, its escalation ladder. State ' +
+    'what was done instead (working the shared default playbook) without ' +
+    'apologizing for the absence or claiming the improvised approach matches ' +
+    'a named method — that is for the reader to judge',
+);
+
+/**
  * The playbook for a domain. Unknown domains get the default memo rather than
  * an error: the planner may route to a domain the catalog gains later, and a
  * generic template with visible empty slots beats refusing to plan.
@@ -189,12 +224,13 @@ const DEFAULT_TEMPLATE: DeliverableTemplate = {
 export function playbookFor(domain: string): Playbook {
   const base = TEMPLATES[domain] ?? DEFAULT_TEMPLATE;
   // A lens that deepens this domain adds its slots to the template, so lens
-  // depth is checkable sufficiency, not prose the deliverable may skip. Slots
-  // the base template already names are not doubled.
+  // depth is checkable sufficiency, not prose the deliverable may skip. A
+  // domain no lens equips adds the method slot above instead — exactly one
+  // of the two ever fires, so the template always says which produced it.
+  // Slots the base template already names are not doubled either way.
   const lens = lensForDomain(domain);
-  const added = (lens?.slots ?? []).filter(
-    (s) => !base.slots.some((existing) => existing.name === s.name),
-  );
+  const additions = lens ? lens.slots : [NO_LENS_SLOT];
+  const added = additions.filter((s) => !base.slots.some((existing) => existing.name === s.name));
   const template =
     added.length > 0 ? { ...base, slots: [...base.slots, ...added] } : base;
   return {

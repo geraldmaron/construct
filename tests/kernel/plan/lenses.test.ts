@@ -80,9 +80,17 @@ test('an equipped domain template carries the lens slots, undoubled', () => {
   assert.ok(contracts.slots.some((s) => s.name === 'provenance-and-authorship'));
 });
 
-test('a domain no lens equips keeps its template untouched', () => {
+test('a domain no lens equips gets the method slot, naming what a lens would have supplied', () => {
   assert.equal(lensForDomain('no-such-domain'), undefined);
-  assert.deepEqual(playbookFor('no-such-domain').template, playbookFor('also-unknown').template);
+  const template = playbookFor('no-such-domain').template;
+  const method = template.slots.find((s) => s.name === 'method');
+  assert.ok(method, 'a lensless domain must carry the slot that says so — silence is not the base template');
+  assert.equal(method.required, true);
+  assert.match(method.expects, /question set/);
+  assert.match(method.expects, /escalation ladder/);
+  // Any two unknown domains are lensless the same way, so they still produce
+  // identical templates — the absence is uniform, not per-domain guesswork.
+  assert.deepEqual(template, playbookFor('also-unknown').template);
 });
 
 test('every catalog domain carries a lens, so no concern routes bare', () => {
