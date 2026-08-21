@@ -181,6 +181,12 @@ test('the host path reads the surveyed documents and screens every citation agai
     out,
     /discarded observation: the pricing memo contradicts the PRD.*survey of that source did not find/,
   );
+  // What it considered to get there, on the record rather than inferred from
+  // the length of the output.
+  assert.match(
+    out,
+    /considered: 2 documents surveyed, 2 the reviewer accounts for opening, 2 observations returned, 1 screened out\./,
+  );
 });
 
 test('an empty review that cannot account for opening one document is a failure, not a clean line', async () => {

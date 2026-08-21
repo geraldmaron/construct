@@ -200,6 +200,48 @@ test('a reviewer that accounts for reading only part of the ground says which pa
   assert.doesNotMatch(out, /no drift survived the screen/);
 });
 
+test('a review steered into silence prints a state a clean review cannot borrow', async () => {
+  const { code, out } = await reviewInjectedGround((prompt) => havingReadEverything(prompt, []));
+  assert.equal(code, 0);
+  assert.match(out, /no observations were returned at all/);
+  assert.match(out, /nothing reached the screen, so nothing survived it/);
+  assert.match(out, /Silence is not a finding/);
+  // The line a review that considered and discarded gets is not available here.
+  assert.doesNotMatch(out, /no drift survived the screen/);
+});
+
+test('the account of what was considered is printed, not inferred from an absence', async () => {
+  const { out } = await reviewInjectedGround((prompt) => havingReadEverything(prompt, []));
+  assert.match(
+    out,
+    /considered: 4 documents surveyed, 4 the reviewer accounts for opening, 0 observations returned, 0 screened out\./,
+  );
+  // And what that count is worth: Construct surveyed the ground, it did not
+  // watch the reading.
+  assert.match(out, /did not watch them being read/);
+});
+
+test('a review that considered the ground and discarded what it found still prints the clean line', async () => {
+  const { code, out } = await reviewInjectedGround((prompt) =>
+    havingReadEverything(prompt, [
+      {
+        claim: 'the export terms disagree with the approved commercial terms',
+        citations: [
+          { source: 'src-ground', document: documentIn(prompt, 'roadmap.md') },
+          { source: 'src-ground', document: 'finance/pricing-approval.md' },
+        ],
+      },
+    ]),
+  );
+  assert.equal(code, 0);
+  assert.match(
+    out,
+    /considered: 4 documents surveyed, 4 the reviewer accounts for opening, 1 observation returned, 1 screened out\./,
+  );
+  assert.match(out, /no drift survived the screen/);
+  assert.doesNotMatch(out, /no observations were returned at all/);
+});
+
 test('a fabricated citation is caught only when the document it names does not exist', async () => {
   const { code, out } = await reviewInjectedGround((prompt) => {
     const roadmap = documentIn(prompt, 'roadmap.md');
