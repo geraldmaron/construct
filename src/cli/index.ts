@@ -1896,11 +1896,47 @@ function writeReadEvidence(evidence: GroundReadEvidence, returned: number): Read
       process.stdout.write('  the reviewer accounted for neither opening nor failing to open:\n');
       process.stdout.write(namedDocuments(evidence.unaccounted, '    '));
     }
-    writeReadDisclosure();
     return 'partial';
   }
 
   return 'shown';
+}
+
+/**
+ * The account of what a review considered, printed whether or not it found
+ * anything. Without it the two reviews that report nothing are one output: the
+ * one that read the ground and disagreed with none of it, and the one that
+ * returned nothing because something it read asked it to. Counting what came
+ * back and what the screen dropped is a positive signal rather than a filter,
+ * and it is drawn from the record the pass already produced — no second model
+ * reads the ground to supply it.
+ */
+function writeConsidered(evidence: GroundReadEvidence, returned: number, screened: ScreenResult): void {
+  process.stdout.write(
+    `\nconsidered: ${plural(evidence.surveyed.length, 'document')} surveyed, ` +
+      `${String(evidence.read.length)} the reviewer accounts for opening, ` +
+      `${plural(returned, 'observation')} returned, ` +
+      `${String(screened.discarded.length)} screened out.\n`,
+  );
+  writeReadDisclosure();
+}
+
+/**
+ * What an empty answer over readable ground says for itself. Nothing reached
+ * the screen, so nothing survived it — the line reporting the screen's verdict
+ * is not available to a pass that gave the screen nothing to judge, and
+ * printing it anyway is what let a review steered into silence wear the words
+ * of one that looked and found nothing.
+ */
+function writeSilence(evidence: GroundReadEvidence): void {
+  process.stdout.write(
+    '\nno observations were returned at all: nothing reached the screen, so nothing survived it.\n' +
+      `  The reviewer accounts for opening ${String(evidence.read.length)} of ` +
+      `${plural(evidence.surveyed.length, 'surveyed document')} and reported no disagreement at all.\n` +
+      '  Silence is not a finding. A review steered into silence by something it read returns this\n' +
+      '  same empty answer, and nothing here can tell the two apart — read the ground yourself, or\n' +
+      '  ask again over a narrower part of it.\n',
+  );
 }
 
 const REVIEW_USAGE =
@@ -2005,7 +2041,18 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
 
     const screened = screenObservations(reviewed.observations, sources, surveyed);
     writeDrift(screened);
-    if (screened.flags.length === 0 && standing === 'shown') {
+    if (standing === 'no-ground') return 0;
+
+    writeConsidered(evidence, reviewed.observations.length, screened);
+    if (screened.flags.length > 0) return 0;
+    if (reviewed.observations.length === 0) {
+      writeSilence(evidence);
+      return 0;
+    }
+    // The clean line is the screen's verdict, so it prints only where the
+    // screen was given something to judge and every read behind it is
+    // accounted for. A pass that returned nothing at all screened nothing.
+    if (standing === 'shown') {
       process.stdout.write('\nno drift survived the screen.\n');
     }
     return 0;
