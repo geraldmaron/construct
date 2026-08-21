@@ -13,7 +13,7 @@ description: One plain, direct house voice for every prose deliverable
   external template - write those directly and skip this method entirely.
 license: Apache-2.0
 metadata:
-  version: 0.2.0
+  version: 0.3.0
   source: geraldmaron/construct
 ---
 
@@ -110,6 +110,28 @@ evidence, on convention, or on this house's taste - because a formatting
 rule dressed up as science is exactly the kind of claim §5 exists to
 catch. The grading follows a recorded research pass; the references at
 the end name the sources.
+
+- **Every document opens with the standard header.** One block, always
+  the same fields in the same order, so any document answers the reader's
+  first questions - what is this, can I rely on it, whose is it, is it
+  current - before its first paragraph:
+
+  ```
+  <Title>
+  Status: draft | proposed | accepted | final | superseded
+  Author: <who wrote it> — Contributors: <everyone else who shaped it;
+    models are contributors and are named honestly>
+  Created: <YYYY-MM-DD> — Last updated: <YYYY-MM-DD>
+  Tags: <three to six, lowercase, chosen for retrieval>
+  ```
+
+  Status comes right after the title because it is the reader's first
+  question. Where the document carries a verdict, its status uses the
+  verdict vocabulary. The last-updated date is under the claims
+  discipline (§5): content changed while the date stood still is a false
+  claim about freshness, caught by the same gate that catches "tests
+  pass". Chat-sized genres (the decision log entry) skip the header for
+  the same reason they skip the record - it would outweigh the entry.
 
 - **Shape follows content.** Tables for discrete, comparable facts a
   reader will scan for a value (evidence: a pre-registered randomized

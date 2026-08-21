@@ -15,7 +15,7 @@ description: Turns an intent - "we should build X" - into a requirements
   surface, not to specify around.
 license: Apache-2.0
 metadata:
-  version: 0.3.0
+  version: 0.4.0
   source: geraldmaron/construct
 ---
 
@@ -138,6 +138,9 @@ acceptance (§3), or non-goals (§4).
 **Full requirements document / PRD** (reader: builders, and a later checker)
 ```
 <Title: the capability, plainly>
+Status / Author — Contributors / Created — Last updated / Tags
+  (the standard document header; if a written-voice skill is present its
+  definition governs, and the fields are these either way)
 Outcome: what is true when this is done - the one-paragraph version
 Users: who this is for and who else is affected - and what changes for
   each of them, stated as their experience, not the system's internals
@@ -162,6 +165,7 @@ Open questions: earned only - who answers, what is blocked
 **One-page brief** (reader: someone deciding whether to invest more time)
 ```
 <Title>
+Status / Author — Contributors / Created — Last updated / Tags
 Outcome: two sentences
 The three lists that matter most here: outcomes, constraints, non-goals
 Acceptance: the three to five criteria that define done
@@ -171,6 +175,7 @@ Open: only what blocks starting
 **Change-request addendum** (reader: someone holding the original artifact)
 ```
 <Title: the change, plainly>
+Status / Author — Contributors / Created — Last updated / Tags
 What changes: outcome/constraint/criterion, quoted before and after
 Why: the event or evidence that forced it
 What it invalidates: which existing criteria, assumptions, priorities move

@@ -17,7 +17,7 @@ description: Before acting inside an unfamiliar or half-familiar system - a
   good map contains.
 license: Apache-2.0
 metadata:
-  version: 0.2.0
+  version: 0.3.0
   source: geraldmaron/construct
 ---
 
@@ -73,8 +73,10 @@ One page, exactly this shape. Small systems fill it thinly; that is
 correct, not underuse.
 
 ```
-Context map: <system> — as of <date>
-Mapped by: <who> — for: <the task or decision this map serves>
+Context map: <system>
+Status: draft | final — Created: <date> — Last updated: <date>
+Mapped by: <who> — Contributors: <others, models named> — Tags: <for retrieval>
+For: <the task or decision this map serves>
 
 Entities
 - <name> — <what it is, one clause> — [seen: read | ran | was-told | inferred]
@@ -196,7 +198,7 @@ Verification record
 - Evidence tagged:    answered — read <n> / ran <n> / was-told <n> / inferred <n>
 - Load-bearing upgraded: answered — <which, and to what> | none lean hard
 - Unknowns classified: answered — <n> unknowns: <n>/<n>/<n> by kind | zero, justified at <where>
-- Dated:              answered — as of <date> | refreshed: <what>
+- Dated:              answered — created <date>, last updated <date> | refreshed: <what>
 - Handoff passes:     answered — run as stranger; added: <what, or nothing>
 ```
 
