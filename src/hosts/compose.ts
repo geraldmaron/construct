@@ -23,6 +23,7 @@ import type { GapCloser } from '../kernel/run/closing.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
 import { chooseChallengeFamily } from '../kernel/challenge/familyroute.ts';
+import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
 import { extractJson } from './contextloop.ts';
 import { familyOf } from './family.ts';
 
@@ -561,7 +562,7 @@ export function closingPrompt(input: {
     ...(input.groundRoots.length > 0
       ? [
           'You may read and cite any document under these roots, by its full path:',
-          ...input.groundRoots.map((root) => `- ${root}`),
+          ...input.groundRoots.map((root) => `- ${escapeForPrompt(root)}`),
           'If one of these questions is settled by a document you can go and open,',
           'open it and report what it says. That is the entire point of this pass:',
           'the reader has the same list you do and cannot close it any faster.',

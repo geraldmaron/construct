@@ -1403,7 +1403,9 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
   // ingested must be the same ground.
   let documents: string[];
   try {
-    documents = statSync(args.file).isDirectory() ? listDocuments(args.file).map((d) => d.path) : [args.file];
+    documents = statSync(args.file).isDirectory()
+      ? listDocuments(args.file).documents.map((d) => d.path)
+      : [args.file];
   } catch (error) {
     process.stderr.write(`notes: cannot read ${args.file} — ${(error as Error).message}\n`);
     return 1;

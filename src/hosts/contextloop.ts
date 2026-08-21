@@ -43,6 +43,7 @@ import type { ProposalApplier } from '../kernel/run/apply.ts';
 import type { DriftReviewer } from '../kernel/context/review.ts';
 import { REVIEWER_ROLE } from '../kernel/context/review.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
 
 /** The roles these passes run as. Not catalog domains — they run around them. */
 export const PRODUCER_ROLE = 'context-producer';
@@ -71,14 +72,23 @@ function numbered(body: string): string {
  * survey says so: the model is told the documents are unknown rather than
  * shown an empty list, because an empty list reads as "this holds nothing"
  * and the screen downstream exempts exactly this case from its document check.
+ *
+ * Every piece of survey-derived text renders through `escapeForPrompt`: a
+ * directory source lets whoever can write into it choose the document names,
+ * so the id, locator, unreachable reason, and document paths are all text
+ * this function cannot trust to be free of a raw newline or other control
+ * character that could otherwise forge a line of its own.
  */
 function sourceListing(source: ProducerSource): string {
-  const head = `- ${source.id} (${source.kind}: ${source.locator})`;
+  const head = `- ${escapeForPrompt(source.id)} (${source.kind}: ${escapeForPrompt(source.locator)})`;
   if (source.unreachable !== undefined) {
-    return `${head}\n    not surveyed (${source.unreachable}) — cite a document here only if you read it yourself`;
+    return (
+      `${head}\n    not surveyed (${escapeForPrompt(source.unreachable)}) — cite a document here only if ` +
+      'you read it yourself'
+    );
   }
   if (source.documents.length === 0) return `${head}\n    surveyed: no documents`;
-  return `${head}\n${source.documents.map((d) => `    ${d}`).join('\n')}`;
+  return `${head}\n${source.documents.map((d) => `    ${escapeForPrompt(d)}`).join('\n')}`;
 }
 
 /**
@@ -288,7 +298,7 @@ export function applierPrompt(proposal: {
     'A person has approved one change to a system outside this tool, and you are',
     'being asked to carry it out with your own tools. Only this change.',
     '',
-    `The system: ${proposal.source} (${proposal.locator})`,
+    `The system: ${escapeForPrompt(proposal.source)} (${escapeForPrompt(proposal.locator)})`,
     'The change, in the words it was approved in:',
     proposal.change,
     `Why it was approved: ${proposal.justification}`,

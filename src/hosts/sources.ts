@@ -28,6 +28,7 @@ import { basename, join, extname } from 'node:path';
 import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS, EXTRACTABLE_DOCUMENT_EXTS } from '../kernel/extract/formats.ts';
 import type { Source, SurveyEmphasis } from '../kernel/store/sources.ts';
 import type { SourceSurvey, SurveyedDocument, DocumentExtraction } from '../kernel/run/sourcereads.ts';
+import { hasUnsafePathText } from '../kernel/run/sourcereads.ts';
 import { readSource, probeDocling, type DoclingProbe } from './extract.ts';
 
 /**
@@ -93,19 +94,31 @@ function isRemoteGitLocator(locator: string): boolean {
 /**
  * Walk the locator, collecting readable documents. Sorted at every level so
  * the survey is deterministic, hidden entries and build-output directories
- * skipped, symlinks skipped so a cycle cannot hang a dispatch.
+ * skipped, symlinks skipped so a cycle cannot hang a dispatch. An entry whose
+ * name carries a control character is refused the same way a binary document
+ * with no rung to read it is refused: counted rather than added to `found`,
+ * because a raw newline in a name can forge a line wherever paths are later
+ * joined one per line into a prompt, and no rendering of it is both safe to
+ * show and still the literal name a host would need to open it by. A
+ * directory whose own name is unsafe is not descended into at all — every
+ * path beneath it would inherit the same unsafe component, so refusing it
+ * once at the top is the same outcome as refusing every file under it.
  */
-function walk(dir: string, found: SurveyedDocument[]): void {
+function walk(dir: string, found: SurveyedDocument[], unsafe: { count: number }): void {
   const entries = readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
     a.name.localeCompare(b.name),
   );
   for (const entry of entries) {
     if (entry.name.startsWith('.')) continue;
     if (entry.isSymbolicLink()) continue;
+    if (hasUnsafePathText(entry.name)) {
+      unsafe.count += 1;
+      continue;
+    }
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (SKIPPED_DIRS.has(entry.name)) continue;
-      walk(path, found);
+      walk(path, found, unsafe);
       continue;
     }
     if (!entry.isFile()) continue;
@@ -118,6 +131,13 @@ function walk(dir: string, found: SurveyedDocument[]): void {
   }
 }
 
+/** What one walk found: the documents it could safely list, and how many it could not. */
+export interface DocumentListing {
+  readonly documents: SurveyedDocument[];
+  /** Entries the walk found but withheld because their name held a control character. */
+  readonly unsafeNames: number;
+}
+
 /**
  * Every document under a directory, ranked as the survey ranks them: prose a
  * role can definitely open first, plain text next, binary last, deterministic
@@ -128,10 +148,11 @@ function walk(dir: string, found: SurveyedDocument[]): void {
  * Throws what the filesystem throws: a directory that cannot be walked is the
  * caller's to report, and the survey's own answer for it is unreachable.
  */
-export function listDocuments(dir: string, emphasis: SurveyEmphasis = 'prose'): SurveyedDocument[] {
+export function listDocuments(dir: string, emphasis: SurveyEmphasis = 'prose'): DocumentListing {
   const found: SurveyedDocument[] = [];
-  walk(dir, found);
-  return found.sort((a, b) => {
+  const unsafe = { count: 0 };
+  walk(dir, found, unsafe);
+  const documents = found.sort((a, b) => {
     const rank = (d: SurveyedDocument): number => {
       // Binary is last under every emphasis: a document that may not open at
       // all does not outrank one that certainly will, whatever is being read
@@ -146,6 +167,7 @@ export function listDocuments(dir: string, emphasis: SurveyEmphasis = 'prose'): 
     if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return a.path.localeCompare(b.path);
   });
+  return { documents, unsafeNames: unsafe.count };
 }
 
 /**
@@ -244,8 +266,11 @@ export function surveySource(
   // Prose first, plain text next, binary last: when the cap bites, the
   // documents a role can definitely open outrank the ones it may not.
   let ranked: SurveyedDocument[];
+  let unsafeNames = 0;
   try {
-    ranked = listDocuments(source.locator, emphasis);
+    const listing = listDocuments(source.locator, emphasis);
+    ranked = listing.documents;
+    unsafeNames = listing.unsafeNames;
   } catch (error) {
     // A walk that died partway proves nothing about what it saw first: the
     // honest answer for the whole source is that it could not be read.
@@ -280,5 +305,8 @@ export function surveySource(
     // the shape of what it was not shown can go and open a file it names;
     // one told only a number cannot tell a large document set from a codebase.
     ...(unlistedCode > 0 ? { unlistedCode } : {}),
+    // Refused, never silent: a source whose walk saw an unsafely named entry
+    // says so on the record even though nothing about it can be listed.
+    ...(unsafeNames > 0 ? { unsafeNames } : {}),
   };
 }
