@@ -23,6 +23,7 @@ import {
   docsReadNamesLocatorContainer,
   engagementMode,
   getSource,
+  githubLocatorProblem,
   latestSourceReads,
   markApplied,
   parseDocsLocator,
@@ -371,6 +372,40 @@ test('a docs locator missing its provider, container, or id is refused in plain 
     );
     assert.equal(sourcesFor(store, 'acme').length, 0);
   });
+});
+
+test('a github locator that names an owner and repository is declared like any other source', () => {
+  withStore((store) => {
+    addSource(store, {
+      id: 'src-gh',
+      workspace: 'acme',
+      kind: 'github',
+      locator: 'anthropics/claude-code',
+      addedAt: AT,
+    });
+    assert.equal(getSource(store, 'src-gh')?.locator, 'anthropics/claude-code');
+    assert.equal(sourcesFor(store, 'acme').length, 1);
+  });
+});
+
+test('a github locator missing its owner or repository, or naming more than one, is refused in plain language, not stored', () => {
+  withStore((store) => {
+    const declareGithub = (locator: string): void =>
+      addSource(store, { id: 'src-bad', workspace: 'acme', kind: 'github', locator, addedAt: AT });
+
+    // A blank locator is caught by the same generic check every kind shares
+    // (exercised elsewhere); what is specific to github starts at "claude-code".
+    assert.throws(() => declareGithub('claude-code'), /has no "\/" separating them/);
+    assert.throws(() => declareGithub('/claude-code'), /leaves it empty/);
+    assert.throws(() => declareGithub('anthropics/'), /leaves the repository empty/);
+    assert.throws(() => declareGithub('anthropics/claude-code/issues/4'), /names more than that/);
+    assert.equal(sourcesFor(store, 'acme').length, 0);
+  });
+});
+
+test('githubLocatorProblem names an empty locator directly, the one shape addSource never lets reach it, and clears a well-formed one', () => {
+  assert.match(githubLocatorProblem('') ?? '', /names no repository/);
+  assert.equal(githubLocatorProblem('anthropics/claude-code'), null);
 });
 
 test('docsLocatorProblem names an empty locator directly, the one shape addSource never lets reach it', () => {

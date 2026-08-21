@@ -71,6 +71,52 @@ export interface SourceRead {
 }
 
 /**
+ * The github source kind's locator convention.
+ *
+ * `github` is already a provider-specific kind, so unlike `docs` below its
+ * locator only has to say which repository:
+ *
+ *   <owner>/<repo>
+ *
+ * The same pointer GitHub's own URLs use (github.com/<owner>/<repo>), and the
+ * shape `hosts/tracker.ts` already assumes when it calls the locator
+ * "owner/repository" in a write proposal's apply instructions.
+ *
+ * A locator names the repository a run reads and writes issues against, not
+ * an issue, branch, or path inside it, so anything past the owner and the
+ * repository — "<owner>/<repo>/issues/4" — names more than a repository and
+ * is refused the same as a missing owner or repository would be.
+ *
+ * Example: "anthropics/claude-code".
+ */
+export function githubLocatorProblem(locator: string): string | null {
+  const trimmed = locator.trim();
+  if (trimmed === '') {
+    return 'a github locator names no repository';
+  }
+  const parts = trimmed.split('/');
+  if (parts.length < 2) {
+    return (
+      `a github locator names its owner and repository as "<owner>/<repo>" ` +
+      `(for example anthropics/claude-code) — "${trimmed}" has no "/" separating them`
+    );
+  }
+  if (parts.length > 2) {
+    return `a github locator names one repository, "<owner>/<repo>" — "${trimmed}" names more than that`;
+  }
+  const [ownerPart, repoPart] = parts;
+  const owner = ownerPart.trim();
+  const repo = repoPart.trim();
+  if (owner === '') {
+    return `a github locator names which owner the repository belongs to — "${trimmed}" leaves it empty`;
+  }
+  if (repo === '') {
+    return `a github locator names which repository ${owner} owns — "${trimmed}" leaves the repository empty`;
+  }
+  return null;
+}
+
+/**
  * The docs source kind's locator convention.
  *
  * `jira` and `github` are already provider-specific kinds, so their locators
@@ -304,6 +350,12 @@ export function addSource(
     const problem = docsLocatorProblem(source.locator);
     if (problem) {
       throw new Error(`addSource: ${source.id} has a malformed docs locator — ${problem}`);
+    }
+  }
+  if (source.kind === 'github') {
+    const problem = githubLocatorProblem(source.locator);
+    if (problem) {
+      throw new Error(`addSource: ${source.id} has a malformed github locator — ${problem}`);
     }
   }
   store.db
