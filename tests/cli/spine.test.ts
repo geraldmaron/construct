@@ -1033,6 +1033,20 @@ test('source without a subcommand or with a kind nobody defined prints usage', a
   assert.match(bad.err, /usage: construct source/);
 });
 
+test('a docs source needs a locator naming its provider and container, or the CLI refuses it as a sentence', async () => {
+  const malformed = await run(['source', 'add', '--kind=docs', '--locator=wiki']);
+  assert.equal(malformed.code, 2);
+  assert.match(malformed.err, /names no provider/);
+  assert.ok(!/ {4}at /.test(malformed.err), 'a plain-language refusal, not a stack');
+
+  const declared = await runAll([
+    ['source', 'add', '--kind=docs', '--locator=confluence:space:ENG'],
+    ['source', 'list'],
+  ]);
+  assert.equal(declared.code, 0);
+  assert.match(declared.out, /declared src-\d+: docs confluence:space:ENG \(workspace default\)/);
+});
+
 test('an outcome records a plan and construct plan renders it, sequenced and labeled', async () => {
   const result = await runAll([
     ['source', 'add', '--kind=jira', '--locator=PROJ'],
