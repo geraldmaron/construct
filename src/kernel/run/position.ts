@@ -407,7 +407,7 @@ export function positionRepairIsAnImprovement(
   before: PositionAttempt,
   after: PositionAttempt,
 ): boolean {
-  const objectionKey = (o: PositionObjection): string => `${o.role} ${quoteKey(o.quote)}`;
+  const objectionKey = (o: PositionObjection): string => `${o.role}\u0000${quoteKey(o.quote)}`;
   const was = new Set(before.objections.map(objectionKey));
   const now = new Set(after.objections.map(objectionKey));
   if (now.size >= was.size) return false;
