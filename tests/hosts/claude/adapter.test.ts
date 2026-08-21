@@ -18,6 +18,7 @@ import { MCP_SERVER_NAME, ROLE_TOOL_NAMES, writeMcpConfig } from '../../../src/h
 import type { ClaudeDeliverable, SpawnedProcess } from '../../../src/hosts/claude/adapter.ts';
 import { modelDrifted, reduceEnvelope } from '../../../src/hosts/claude/result.ts';
 import { PINNED_VERSION } from '../../../src/hosts/claude/pin.ts';
+import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 import { deliverableConcerns } from '../../../src/kernel/run/accountability.ts';
 import { spendOf } from '../../../src/kernel/run/coordinator.ts';
 import { validate } from '../../../src/kernel/hosts/interface.ts';
@@ -99,10 +100,11 @@ test('a captured success envelope becomes a deliverable with real cost', async (
   assert.equal(spend.reported, true, 'cost must count as reported');
   assert.ok(spend.spend > 0);
 
-  // The prompt carries the role framing and rides -p.
+  // The prompt carries the one identity — who is writing, what framed it, and
+  // the voice it is written in — and rides -p.
   const runCall = fake.calls.find((call) => call.args[0] === '-p');
   assert.ok(runCall);
-  assert.match(runCall.args[1], /^You are acting as: privacy\./);
+  assert.equal(runCall.args[1], `${constructIdentity({ framedBy: 'privacy' })}\n\nsay ok`);
   assert.ok(runCall.args.includes('--model'));
 });
 

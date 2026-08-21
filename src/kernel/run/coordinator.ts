@@ -72,7 +72,7 @@ import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
 import { standardsFor } from '../plan/standards.ts';
-import { voiceProtocol } from '../voice/voice.ts';
+import { constructIdentity } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
@@ -367,7 +367,14 @@ export function assignmentFor(
   } = {},
 ): string {
   const domain = domainsByName(catalog).get(brief.role);
-  const concern = domain ? `\nYour concern: ${domain.concern}.` : '';
+  // One identity instruction, not two. The role frames the work and the voice
+  // writes it, and a dispatch that stated them separately was handing the model
+  // two answers to the same question.
+  const identity = constructIdentity({
+    framedBy: brief.role,
+    concern: domain?.concern,
+    voice: options.voice,
+  });
   // Why this role is here, in the words the record holds. A role that knows
   // which concern fired can open from it; one that does not has to guess at
   // its own remit, and the evidence was sitting in the brief the whole time.
@@ -453,7 +460,7 @@ export function assignmentFor(
       : '';
   const asking = brief.question !== undefined;
   return (
-    `You are acting as the ${brief.role} role.${concern}\n\n` +
+    `${identity}\n\n` +
     (asking
       ? `The question the user asked: ${brief.question}\n\n`
       : `The outcome the user asked for: ${brief.outcome}\n\n`) +
@@ -468,7 +475,6 @@ export function assignmentFor(
     '\n\n' +
     obligations +
     answered +
-    `${voiceProtocol(options.voice)}\n\n` +
     `${surface}\n\n` +
     (asking ? '' : `${STANCE_PROTOCOL}\n\n`) +
     ASK_PROTOCOL

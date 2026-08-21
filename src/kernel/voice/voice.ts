@@ -1,9 +1,17 @@
 /**
- * kernel/voice/voice.ts — how Construct sounds, defined once.
+ * kernel/voice/voice.ts — how Construct sounds, and who it says wrote the
+ * work, defined once.
  *
  * Commitment 17: deliverables sound like Construct — plain, direct, no hype
  * vocabulary; the register STRATEGY.md is written in — unless the user
  * overrides it, and the override is recorded.
+ *
+ * The seam is three things that have to agree, which is why they live in one
+ * module: the identity a dispatch is given (constructIdentity), the voice it
+ * is written in (voiceProtocol), and the shape the content takes
+ * (contentShapeProtocol). Framing — a concern, a lens, a rubric line — is
+ * internal and becomes attribution on the deliverable; it never becomes a
+ * voice of its own.
  *
  * Two decisions are load-bearing here, and both are reactions to how the
  * predecessor did it:
@@ -89,6 +97,8 @@ export interface VoiceOverride {
 const HOUSE_HEADER =
   'Write in Construct\'s voice. It is the same on every deliverable, and it is not yours to adjust:';
 
+const OVERRIDE_HEADER = 'Write in the voice the user asked for, which replaces Construct\'s own:';
+
 /**
  * The block bound into a role's assignment.
  *
@@ -98,10 +108,170 @@ const HOUSE_HEADER =
  */
 export function voiceProtocol(override?: VoiceOverride): string {
   if (override) {
-    return [
-      'Write in the voice the user asked for, which replaces Construct\'s own:',
-      override.instruction,
-    ].join('\n');
+    return [OVERRIDE_HEADER, override.instruction].join('\n');
   }
   return [HOUSE_HEADER, ...HOUSE_VOICE.map((v) => `- ${v.rule}`)].join('\n');
+}
+
+/**
+ * Whether a prompt already carries a voice binding.
+ *
+ * The question a caller actually has is not "does this text mention
+ * Construct" but "has the voice already been bound into it", and the two
+ * headers above are the only ways it ever is. Asked so that a task built by
+ * the coordinator, which arrives at a host already framed, is not framed a
+ * second time on the way in.
+ */
+export function carriesVoice(task: string): boolean {
+  return task.includes(HOUSE_HEADER) || task.includes(OVERRIDE_HEADER);
+}
+
+/**
+ * WHO FRAMED THE WORK, AND WHO WROTE IT.
+ *
+ * A concern, a lens, and a rubric line are all framing: they decide what gets
+ * examined, what the work owes, and what the record says the deliverable
+ * answers. None of them is an author. Construct writes, in one voice, and the
+ * framing is exposed on the deliverable as attribution: who framed this, in
+ * whose name.
+ *
+ * Before this existed, a dispatch said both things and left the model to pick:
+ * "you are acting as the privacy role", and then, further down, the house
+ * voice. Two identity instructions in one prompt is the same defect as two
+ * voice blocks, and it fails the same way — quietly, by the model choosing one
+ * and never saying which. So they are one instruction here, and there is
+ * exactly one place that writes it.
+ */
+export interface Attribution {
+  /** The concern, lens, or role that framed this work. Absent when nothing narrower than Construct did. */
+  readonly framedBy?: string;
+  /** What that framing asks for, in the catalog's own words. */
+  readonly concern?: string;
+  /** The user's instruction to sound like something else, when one is in force. */
+  readonly voice?: VoiceOverride;
+}
+
+/**
+ * The single identity instruction: who is writing, what framed the work, and
+ * the voice it is written in, as one statement rather than two.
+ */
+export function constructIdentity(attribution: Attribution = {}): string {
+  const framing =
+    attribution.framedBy === undefined
+      ? 'Everything you write here is published in Construct\'s name.'
+      : `This work is framed by the ${attribution.framedBy} role.` +
+        (attribution.concern === undefined ? '' : ` Your concern: ${attribution.concern}.`) +
+        ' That framing decides what you examine and what you owe, and it is what a reader is ' +
+        'told about the result: which concern framed it, and that Construct wrote it. It is not ' +
+        'a second identity and it carries no register of its own.';
+  return (
+    `You are Construct. ${framing} Construct has one voice, and it is this one:\n\n` +
+    voiceProtocol(attribution.voice)
+  );
+}
+
+/**
+ * The identity a host adapter binds onto a task before dispatching it.
+ *
+ * Every adapter used to hand-roll this, and each one wrote a bare "you are
+ * acting as: <role>" that the voice never travelled with — so a prompt built
+ * by the coordinator arrived carrying its identity twice, and a prompt built
+ * anywhere else arrived carrying none. Both are one call now: a task already
+ * bound to the voice is passed through untouched, and anything else is framed
+ * before it leaves.
+ */
+export function frameHostTask(request: {
+  readonly role: string;
+  readonly task: string;
+  readonly voice?: VoiceOverride;
+}): string {
+  if (carriesVoice(request.task)) return request.task;
+  return `${constructIdentity({ framedBy: request.role, voice: request.voice })}\n\n${request.task}`;
+}
+
+/**
+ * The attribution a composed document carries at the top: who framed it, in
+ * whose name.
+ *
+ * The internal half of this seam tells a role that its framing is not an
+ * authorship; this is the half a reader sees, and the two have to say the same
+ * thing or the document quietly claims several authors. Names arrive in the
+ * form the surface wants them — rendered for a reader, raw ids for the record
+ * — because which form is right is the caller's question, not this one's.
+ */
+export function attributionLine(framedBy: readonly string[]): string {
+  if (framedBy.length === 0) return '*Written by Construct, in one voice.*';
+  const concerns = framedBy.length === 1 ? 'concern' : 'concerns';
+  return (
+    `*Framed by the ${joinNames(framedBy)} ${concerns}. Written by Construct in one voice, ` +
+    'and every claim below names the concern it came from.*'
+  );
+}
+
+/** A list of names as a sentence reads it, rather than as a comma-joined array. */
+function joinNames(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? '';
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+}
+
+/**
+ * WHAT SHAPE THE CONTENT TAKES, which is not the same question as what voice
+ * it is in.
+ *
+ * One directive used to demand numbered issues of every deliverable in the
+ * system, including the ones whose own template asks for something else: a PRD
+ * got told to number its issues, and so did a strategy review, a sequencing
+ * plan, and an interview guide. The template already knew what shape it wanted;
+ * the directive simply talked over it. So form is declared by the template
+ * (plan/schema.ts) and spoken here, and the rules every work product owes —
+ * an owner for a step, a labeled assumption instead of a stall, nothing
+ * asserted that cannot be supported — are the same whatever the form is.
+ */
+export const CONTENT_FORMS = ['issues', 'requirements', 'sequence', 'questions', 'prose'] as const;
+
+export type ContentForm = (typeof CONTENT_FORMS)[number];
+
+const FORM_RULES: Readonly<Record<ContentForm, string>> = {
+  issues:
+    '- Number every issue. Each issue states the problem in one sentence, then the concrete ' +
+    'step that resolves it, then who takes that step.',
+  requirements:
+    '- Number every requirement. Each one says what the solution must do, in a sentence a ' +
+    'reader could check, with the criterion that says it is met. A requirement with a question ' +
+    'inside it is an open question, and belongs in that section instead.',
+  sequence:
+    '- Number the steps in the order they happen. Each step says what happens, what must be ' +
+    'true before the next one starts, and who does it. Steps with no stated dependency between ' +
+    'them are a list, and a reader will run them in any order.',
+  questions:
+    '- Number every question. Each one says what an answer to it would settle, and what a ' +
+    'different answer would change. A question that settles nothing when answered is a topic, ' +
+    'and it comes out.',
+  prose:
+    '- Write it as prose under the sections above: what you found, what supports it, and what ' +
+    'follows from it. Number something only where the count or the order is the point, because ' +
+    'a list imposed on connected reasoning hands the reader fragments to reassemble.',
+};
+
+/**
+ * The rules for a work product of a given form. An unrecognized form gets
+ * prose, which is the shape that assumes least about the content.
+ */
+export function contentShapeProtocol(form: ContentForm | undefined): string {
+  return [
+    'Rules for the work product:',
+    FORM_RULES[form ?? 'prose'] ?? FORM_RULES.prose,
+    // A resolving step with nobody attached is a step nobody takes. Naming a
+    // role, a team, or a named person all count; what does not count is
+    // leaving it out, so the honest answer when the material does not say gets
+    // its own marker rather than silence.
+    '- Every step you recommend names an owner — a role, a team, or a person. If the material ' +
+      'does not say who owns it, write [unowned] and say who would have to decide.',
+    '- Missing information is never the deliverable. If something cannot be determined from the ' +
+      'outcome, state the assumption you proceed on, label it [assumed], and deliver the work ' +
+      'that assumption allows.',
+    '- Do not assert anything you cannot support.',
+    '- Keep it as short as it can be while the reader can still follow how you got there.',
+  ].join('\n');
 }
