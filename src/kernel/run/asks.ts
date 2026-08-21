@@ -18,7 +18,7 @@
 
 import { labeled, undecorate } from './conflicts.ts';
 import type { Position, RaiseDecision } from '../store/decisions.ts';
-import { resolvedDecisions } from '../store/decisions.ts';
+import { openDecisions, resolvedDecisions } from '../store/decisions.ts';
 import type { Store } from '../store/open.ts';
 
 /** The two lines a role adds when a user-held fact would change the work. */
@@ -89,6 +89,50 @@ export function frameAsk(input: FrameAskInput): RaiseDecision {
   };
 }
 
+/**
+ * An ask is an inbox decision raised under this suffix, and nothing else is.
+ * Every reader of the inbox that needs to tell the two apart asks here, so the
+ * convention is written down once instead of in each surface that reads it.
+ */
+export function isAsk(decisionId: string): boolean {
+  return decisionId.endsWith(':ask');
+}
+
+export interface OpenAsk {
+  readonly id: string;
+  readonly run: string;
+  readonly role: string;
+  readonly question: string;
+  /**
+   * The reversible default already carrying the work, in the words the inbox
+   * holds. Null only if the decision was written without one.
+   */
+  readonly standingDefault: string | null;
+  readonly raisedAt: string;
+}
+
+/**
+ * The asks waiting on the user, oldest first, optionally scoped to one run.
+ *
+ * The default travels with the question because the two only mean anything
+ * together: a surface that showed the question alone would make silence look
+ * like a stalled deliverable, and the whole point of the protocol is that the
+ * work already shipped on the stated assumption.
+ */
+export function openAsksFor(store: Store, run?: string): OpenAsk[] {
+  return openDecisions(store, run)
+    .filter((decision) => isAsk(decision.id))
+    .map((decision) => ({
+      id: decision.id,
+      run: decision.run,
+      role: decision.positions[0]?.role ?? 'unknown',
+      question: decision.question,
+      standingDefault:
+        decision.positions.find((position) => position.role === 'construct')?.stance ?? null,
+      raisedAt: decision.raisedAt,
+    }));
+}
+
 export interface AnsweredAsk {
   readonly role: string;
   readonly question: string;
@@ -102,7 +146,7 @@ export interface AnsweredAsk {
  */
 export function answeredAsksFor(store: Store, run: string): AnsweredAsk[] {
   return resolvedDecisions(store, run)
-    .filter((decision) => decision.id.endsWith(':ask') && decision.resolution !== null)
+    .filter((decision) => isAsk(decision.id) && decision.resolution !== null)
     .map((decision) => ({
       role: decision.positions[0]?.role ?? 'unknown',
       question: decision.question,
