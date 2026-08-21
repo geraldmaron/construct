@@ -12,6 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   describeConflict,
+  describeDivergence,
   lostRecords,
   projectBead,
   reconcileSession,
@@ -330,4 +331,83 @@ test('no history gathered is no finding', () => {
   assert.equal(report.clean, true);
   assert.equal(report.commitsScanned, 0);
   assert.equal(report.truncated, false);
+});
+
+/**
+ * Four beads were implemented twice because sessions worked main and a
+ * direction branch in parallel and the branch session judged the earlier work
+ * lost. What it needed was not a smarter search: it was being told, before it
+ * started, which beads already had commits it could not see.
+ */
+
+function standing(extra: Record<string, unknown> = {}) {
+  return {
+    head: 'side',
+    mainBranch: 'main',
+    aheadOfMain: 0,
+    behindMain: 0,
+    upstream: null,
+    aheadOfUpstream: 0,
+    behindUpstream: 0,
+    beadsOnlyOnMain: [],
+    ...extra,
+  };
+}
+
+test('a checkout behind main names the beads whose commits it cannot see', () => {
+  const report = describeDivergence(
+    standing({ aheadOfMain: 3, behindMain: 2, beadsOnlyOnMain: ['construct-a', 'construct-b'] }),
+  );
+  assert.equal(report.diverged, true);
+  assert.deepEqual(report.beadsOnlyOnMain, ['construct-a', 'construct-b']);
+  const said = report.lines.join('\n');
+  assert.match(said, /3 commits ahead of main and 2 commits behind it/);
+  assert.match(said, /construct-a, construct-b/);
+  assert.match(said, /before re-implementing/);
+  // Never a fetch: the report has to be true of what this machine already knows.
+  assert.match(said, /nothing was fetched/);
+});
+
+test('an up-to-date checkout says nothing at all', () => {
+  const report = describeDivergence(standing({ head: 'main' }));
+  assert.equal(report.diverged, false);
+  assert.deepEqual(report.lines, []);
+});
+
+test('being ahead is what a branch is for, not a divergence to report', () => {
+  // A branch with commits main lacks, and a local commit not yet pushed, are
+  // both the designed state here. Reporting them would fire on every commit.
+  const report = describeDivergence(
+    standing({ aheadOfMain: 7, upstream: 'origin/side', aheadOfUpstream: 7 }),
+  );
+  assert.equal(report.diverged, false);
+});
+
+test('an upstream carrying commits this checkout lacks is divergence too', () => {
+  const report = describeDivergence(
+    standing({ upstream: 'origin/side', behindUpstream: 4, aheadOfUpstream: 1 }),
+  );
+  assert.equal(report.diverged, true);
+  assert.match(report.lines.join('\n'), /1 commit ahead of origin\/side and 4 commits behind it/);
+});
+
+test('a branch tracking nothing is not described as tracking something', () => {
+  const report = describeDivergence(standing({ behindMain: 1 }));
+  assert.equal(
+    report.lines.some((line) => line.includes('upstream')),
+    false,
+  );
+});
+
+test('commits this checkout lacks that name no bead are still worth saying', () => {
+  const report = describeDivergence(standing({ behindMain: 1 }));
+  assert.equal(report.diverged, true);
+  assert.match(report.lines.join('\n'), /names a bead/);
+});
+
+test('a repository with no main to compare against is not a finding', () => {
+  const report = describeDivergence(undefined);
+  assert.equal(report.diverged, false);
+  assert.deepEqual(report.lines, []);
+  assert.deepEqual(report.beadsOnlyOnMain, []);
 });

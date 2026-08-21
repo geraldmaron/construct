@@ -10,8 +10,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { recordedHistory } from '../../../src/hosts/repo/evidence.ts';
-import { lostRecords } from '../../../src/kernel/tracker/session-drift.ts';
+import { gatherDivergence, recordedHistory } from '../../../src/hosts/repo/evidence.ts';
+import { describeDivergence, lostRecords } from '../../../src/kernel/tracker/session-drift.ts';
 import { fixtureRepo } from './fixture-repo.ts';
 
 test('a close recorded in an earlier revision of the export is found again', () => {
@@ -117,6 +117,68 @@ test('a directory with no export and no history is not a finding', () => {
       commitsScanned: 0,
       truncated: false,
     });
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test('a branch behind main learns which beads main already carries', () => {
+  const repo = fixtureRepo();
+  try {
+    repo.export(
+      [
+        { id: 'construct-a', status: 'open', title: 'a' },
+        { id: 'construct-b', status: 'open', title: 'b' },
+      ],
+      'file two beads',
+    );
+    repo.git('checkout', '-b', 'side');
+    repo.commit('work the side branch does (construct-b)');
+    repo.git('checkout', 'main');
+    repo.commit('the same work, done first (construct-a)');
+    repo.commit('a commit naming nothing');
+    repo.git('checkout', 'side');
+
+    const divergence = gatherDivergence({ root: repo.root });
+    assert.ok(divergence);
+    assert.equal(divergence.head, 'side');
+    assert.equal(divergence.aheadOfMain, 1);
+    assert.equal(divergence.behindMain, 2);
+    assert.equal(divergence.upstream, null);
+    // Only main's side of the divergence. The branch's own commits are visible
+    // to the session already; the point is what it cannot see.
+    assert.deepEqual(divergence.beadsOnlyOnMain, ['construct-a']);
+
+    const report = describeDivergence(divergence);
+    assert.equal(report.diverged, true);
+    assert.match(report.lines.join('\n'), /construct-a/);
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test('a checkout sitting on main reports no divergence', () => {
+  const repo = fixtureRepo();
+  try {
+    repo.export([{ id: 'construct-a', status: 'open', title: 'a' }], 'file one bead');
+    repo.commit('more work (construct-a)');
+
+    const divergence = gatherDivergence({ root: repo.root });
+    assert.equal(divergence?.behindMain, 0);
+    assert.equal(divergence?.aheadOfMain, 0);
+    assert.deepEqual(divergence?.beadsOnlyOnMain, []);
+    assert.equal(describeDivergence(divergence ?? undefined).diverged, false);
+  } finally {
+    repo.cleanup();
+  }
+});
+
+test('a repository without the main branch is refused rather than guessed at', () => {
+  const repo = fixtureRepo('trunk');
+  try {
+    repo.export([{ id: 'construct-a', status: 'open', title: 'a' }], 'file one bead');
+    assert.equal(gatherDivergence({ root: repo.root }), null);
+    assert.equal(gatherDivergence({ root: repo.root, mainBranch: 'trunk' })?.head, 'trunk');
   } finally {
     repo.cleanup();
   }
