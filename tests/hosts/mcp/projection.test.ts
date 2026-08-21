@@ -7,7 +7,9 @@
  * append_work_log, no promote. Completion is kernel-owned and the role
  * server's token-scoped writes are the only role door; a projection that grew
  * either would let a host model spend money or certify work as a side effect
- * of being present.
+ * of being present. The strongest of them is structural rather than
+ * by-name: no module this surface can reach, transitively, is able to spawn a
+ * host, so no tool on it can spend whatever a later one is written to do.
  *
  * The positive assertions: the caller-as-namer path drives the SAME admission
  * gate the CLI's subprocess namer drives (catalog membership, a stated
@@ -17,7 +19,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
@@ -25,6 +29,8 @@ import { listTasks } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { readFeedback } from '../../../src/kernel/store/feedback.ts';
 import { raiseDecision, openDecisions } from '../../../src/kernel/store/decisions.ts';
+import { answeredAsksFor, frameAsk } from '../../../src/kernel/run/asks.ts';
+import { readRunDispatch } from '../../../src/kernel/store/dispatch.ts';
 import { getNote, notesFor } from '../../../src/kernel/store/notes.ts';
 import {
   PROJECTION_TOOLS,
@@ -79,6 +85,8 @@ function payload(reply: JsonRpcResponse | null): { body: unknown; isError: boole
 test('the tool surface is exactly the read/append set — nothing dispatches, nothing advances completion', async () => {
   const names = PROJECTION_TOOLS.map((t) => t.name).sort();
   assert.deepEqual(names, [
+    'answer',
+    'asks',
     'catalog',
     'decide',
     'drop_note',
@@ -93,10 +101,12 @@ test('the tool surface is exactly the read/append set — nothing dispatches, no
   ]);
 
   // The role server's writes and any completion verb are refused by name, not
-  // merely absent from the list.
+  // merely absent from the list. `ask` is refused with them: a question put to
+  // the staff dispatches a role and is paid for, which is the opposite of the
+  // ask protocol `asks` and `answer` relay.
   const f = fixture();
   try {
-    for (const forbidden of ['submit_draft', 'append_work_log', 'promote', 'work']) {
+    for (const forbidden of ['submit_draft', 'append_work_log', 'promote', 'work', 'ask']) {
       const reply = await f.handle(call(forbidden, {}));
       assert.ok(reply?.error, `${forbidden} must be refused`);
       assert.match(reply.error.message, /unknown tool/);
@@ -236,6 +246,170 @@ test('decide relays the user call and closes the decision', async () => {
     // model can read, not a transport error.
     const again = payload(await f.handle(call('decide', { id: 'dec-1', resolution: 'Ship.' })));
     assert.equal(again.isError, true);
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The ask protocol, end to end on this surface: a role's question reaches the
+ * user where they already are, and the answer they give lands on the run so
+ * the next dispatch reads it as settled. Both directions are relay — the
+ * question was written by work already done and paid for, and the answer is
+ * the user's own words.
+ */
+test('a role\'s question reaches the user and the answer lands on the run', async () => {
+  const f = fixture();
+  try {
+    raiseDecision(
+      f.store,
+      frameAsk({
+        run: 'run-1',
+        task: 't-privacy',
+        role: 'privacy',
+        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        at: AT,
+      }),
+    );
+
+    const unscoped = payload(await f.handle(call('asks')));
+    assert.equal(unscoped.isError, false);
+    const queue = unscoped.body as {
+      open: Array<{ id: string; run: string; role: string; question: string; standingDefault: string }>;
+      answered?: unknown;
+    };
+    assert.equal(queue.open.length, 1);
+    assert.equal(queue.open[0].id, 't-privacy:ask');
+    assert.equal(queue.open[0].role, 'privacy');
+    assert.match(queue.open[0].question, /Which regions launch first\?/);
+    // The default travels with the question, so the user is never shown a
+    // question mark where the work is in fact already done.
+    assert.match(queue.open[0].standingDefault, /EU only/);
+    // Answers are a per-run fact, and an unscoped read says so by omission
+    // rather than by an empty list that would read as "never answered".
+    assert.equal(queue.answered, undefined);
+
+    const scoped = payload(await f.handle(call('asks', { run: 'run-1' })));
+    assert.deepEqual((scoped.body as { answered: unknown[] }).answered, []);
+
+    const answered = payload(
+      await f.handle(call('answer', { id: 't-privacy:ask', answer: 'EU and UK; US waits for tax review.' })),
+    );
+    assert.equal(answered.isError, false);
+    assert.equal((answered.body as { run: string }).run, 'run-1');
+
+    // On record where the next dispatch of the run reads it back.
+    const onRecord = answeredAsksFor(f.store, 'run-1');
+    assert.equal(onRecord.length, 1);
+    assert.equal(onRecord[0]?.role, 'privacy');
+    assert.equal(onRecord[0]?.answer, 'EU and UK; US waits for tax review.');
+    assert.equal(openDecisions(f.store).length, 0, 'the question is no longer waiting');
+
+    const after = payload(await f.handle(call('asks', { run: 'run-1' })));
+    const settled = after.body as { open: unknown[]; answered: Array<{ answer: string }> };
+    assert.deepEqual(settled.open, []);
+    assert.equal(settled.answered[0]?.answer, 'EU and UK; US waits for tax review.');
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * A judgment between cited positions and a fact only the user holds are not
+ * interchangeable, and a surface that let one be recorded as the other would
+ * put a choice on record as evidence.
+ */
+test('answer takes ask ids only, once, and names decide for the rest', async () => {
+  const f = fixture();
+  try {
+    raiseDecision(f.store, {
+      id: 'dec-1',
+      run: 'run-1',
+      question: 'Ship now or wait for legal?',
+      positions: [
+        { role: 'legal', stance: 'wait', citation: null },
+        { role: 'program-sequencing', stance: 'ship', citation: null },
+      ],
+      raisedAt: AT,
+    });
+    const wrongKind = payload(await f.handle(call('answer', { id: 'dec-1', answer: 'Wait.' })));
+    assert.equal(wrongKind.isError, true);
+    assert.match((wrongKind.body as { error: string }).error, /decide/);
+    assert.equal(openDecisions(f.store).length, 1, 'the decision is untouched');
+
+    const missing = payload(await f.handle(call('answer', { id: 'nobody:ask', answer: 'x' })));
+    assert.equal(missing.isError, true);
+
+    raiseDecision(
+      f.store,
+      frameAsk({
+        run: 'run-1',
+        task: 't-privacy',
+        role: 'privacy',
+        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        at: AT,
+      }),
+    );
+    assert.equal(
+      payload(await f.handle(call('answer', { id: 't-privacy:ask', answer: 'EU and UK' }))).isError,
+      false,
+    );
+    // A second answer to a question already answered is refused as a readable
+    // result, exactly as a second resolution of a decision is.
+    const again = payload(await f.handle(call('answer', { id: 't-privacy:ask', answer: 'US too' })));
+    assert.equal(again.isError, true);
+
+    for (const bad of [
+      call('answer', { id: 't-privacy:ask' }),
+      call('answer', { answer: 'EU and UK' }),
+      call('answer', { id: '  ', answer: 'EU and UK' }),
+      call('answer', { id: 't-privacy:ask', answer: '   ' }),
+    ]) {
+      assert.equal(payload(await f.handle(bad)).isError, true);
+    }
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The spend boundary, at the level of behavior: relaying a question and an
+ * answer moves no task and dispatches nothing. `construct work` is what
+ * spends, and it is not on this surface.
+ */
+test('relaying a question and its answer dispatches nothing and moves no task', async () => {
+  const f = fixture();
+  try {
+    const recorded = payload(
+      await f.handle(
+        call('record_outcome', {
+          outcome: 'Launch a paid beta to EU users next month',
+          namings: [{ domain: 'privacy', why: 'EU users means GDPR obligations before launch.' }],
+        }),
+      ),
+    );
+    const run = (recorded.body as { run: string }).run;
+    raiseDecision(
+      f.store,
+      frameAsk({
+        run,
+        task: 't-privacy',
+        role: 'privacy',
+        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        at: AT,
+      }),
+    );
+    const before = listTasks(f.store).map((t) => ({ id: t.id, state: t.state }));
+    const logBefore = readWorkLog(f.store).length;
+
+    await f.handle(call('asks'));
+    await f.handle(call('asks', { run }));
+    await f.handle(call('answer', { id: 't-privacy:ask', answer: 'EU and UK' }));
+
+    assert.deepEqual(listTasks(f.store).map((t) => ({ id: t.id, state: t.state })), before);
+    assert.ok(before.every((t) => t.state === 'pending'), 'nothing was dispatched');
+    assert.equal(readWorkLog(f.store).length, logBefore, 'the relay appended no work');
+    assert.equal(readRunDispatch(f.store, run), null, 'no dispatch was recorded against the run');
   } finally {
     f.cleanup();
   }
@@ -489,9 +663,9 @@ test('a subject reads through the projection with its history and citations', as
  * externally reachable channels: the ones that spend the user's money, and the
  * one with no way back.
  */
-test('review, compose and erasure are absent from this surface by decision', () => {
+test('review, compose, ask and erasure are absent from this surface by decision', () => {
   const names: string[] = PROJECTION_TOOLS.map((tool) => tool.name);
-  for (const absent of ['review', 'compose', 'record_erase', 'erase', 'work']) {
+  for (const absent of ['review', 'compose', 'ask', 'record_erase', 'erase', 'work']) {
     assert.equal(names.includes(absent), false, `${absent} must not be projected`);
   }
 });
@@ -505,4 +679,58 @@ test('drop_note says plainly that nothing is learned until someone runs the loop
   const note = PROJECTION_TOOLS.find((tool) => tool.name === 'drop_note');
   assert.match(note?.description ?? '', /does not run the context loop/);
   assert.match(note?.description ?? '', /construct notes --run/);
+});
+
+const SRC = fileURLToPath(new URL('../../../src/', import.meta.url));
+
+/**
+ * Every module this surface can reach by importing, transitively. Relative
+ * specifiers carry their extension throughout the tree, so following them is
+ * the whole graph; a specifier that resolves to nothing is skipped rather than
+ * guessed at.
+ */
+function importClosure(entry: string): Map<string, string> {
+  const reached = new Map<string, string>();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.pop() as string;
+    if (reached.has(file)) continue;
+    const text = readFileSync(file, 'utf8');
+    reached.set(file, text);
+    for (const match of text.matchAll(/from\s*'(\.[^']+\.ts)'/g)) {
+      const next = resolve(dirname(file), match[1]);
+      if (existsSync(next)) queue.push(next);
+    }
+  }
+  return reached;
+}
+
+/**
+ * The spend boundary as a property of the code rather than a promise in a
+ * comment: nothing the projection can reach is able to start a host process.
+ * Spending happens by running a model, running a model happens by spawning a
+ * host, and no module in this closure can spawn anything — so no tool on this
+ * surface can spend, whatever a future one is written to do. The ask relay is
+ * inside that closure, which is what makes it a read rather than a dispatch
+ * wearing the clothes of one.
+ */
+test('nothing the projection can reach is able to spawn a host', () => {
+  const reached = importClosure(join(SRC, 'hosts', 'mcp', 'projection.ts'));
+  assert.ok(reached.size > 10, `the walk found only ${reached.size} modules; it did not follow the graph`);
+  assert.ok(
+    [...reached.keys()].some((file) => file.endsWith(join('kernel', 'run', 'asks.ts'))),
+    'the ask protocol is inside the closure this proves things about',
+  );
+
+  for (const [file, text] of reached) {
+    const where = relative(SRC, file);
+    assert.doesNotMatch(text, /from\s*'node:child_process'/, `${where} can spawn a process`);
+    assert.doesNotMatch(text, /import\(\s*'node:child_process'\s*\)/, `${where} can spawn a process`);
+    // Host adapters are the execution transports. The projection is presence,
+    // so the only host code it reaches is the MCP surface itself.
+    assert.ok(
+      !where.startsWith(`hosts${sep}`) || where.startsWith(join('hosts', 'mcp') + sep),
+      `${where} is an execution transport and the projection can reach it`,
+    );
+  }
 });
