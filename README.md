@@ -24,7 +24,7 @@ The two directions are not separate products. A run reads the machine's agent sk
 
 What that leaves is smaller, and it is the part that was always doing the work: **coverage, obligation, and provenance.** Which concerns a piece of work touches, what each of them owes before anyone relies on the result, and who said what — made explicit, routed without being asked, and auditable afterward. The staggered model matrix is also unchanged: one family is tuned, and the second-tuned-family criterion stopped gating a phase and became per-skill measurement instead of quietly staying blocked (STRATEGY.md, Phase 4).
 
-Three limits are load-bearing rather than fine print. **Legal and compliance output is dogfood-only**, and the legal pack declares no covered jurisdiction until a licensed attorney accepts its corpus, so its findings are flagged for licensed review, never issued as advice. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
+Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
 **[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version:
 
@@ -90,8 +90,8 @@ in the right-hand columns.
 |---|---|---|---|
 | Product manager | `product-scoping` | scope in/out, success signal | — |
 | Program manager / TPM | `program-sequencing` | order, dependencies, date realism | — |
-| Counsel | `contracts`, `privacy`, `employment` | issue-spotting, jurisdiction declared, referral package | **attorney review; dogfood-only** |
-| Compliance | `compliance` | controls, evidence, auditability | **attorney review; dogfood-only** |
+| Counsel | `contracts`, `privacy`, `employment` | issue-spotting, governing text cited from the primary source, referral package | labeled research, not legal advice |
+| Compliance | `compliance` | controls, evidence, auditability | labeled analysis, not an audit opinion |
 | Director / VP | `strategy-alignment` | what it displaces, what was promised, who owns the call | — |
 | Designer / UX | `user-experience`, `accessibility` | task completion, exclusion by disability | — |
 | Data / analyst | `measurement` | whether the claim is observable at all | — |

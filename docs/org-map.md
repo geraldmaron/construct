@@ -57,7 +57,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `data-inventory` — what personal data the outcome touches, or "none" explicitly
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
 
 **What it must answer before anyone relies on it.**
@@ -68,12 +68,12 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 
@@ -117,7 +117,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `parties-and-terms` — who is bound and to what, as read from the source
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
 
 **What it must answer before anyone relies on it.**
@@ -128,12 +128,12 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 
@@ -148,7 +148,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 
 **What it must answer before anyone relies on it.**
 
@@ -158,12 +158,12 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 

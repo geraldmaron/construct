@@ -83,7 +83,8 @@ source classes and the unverified marks preserved:
   cross-tier floors) that is itself unusual in the surveyed ecosystem —
   [seen: ran; inferred: unusual, from its absence in every collection read].
 - Constraints that are strategy, not fine print: solo operator; no
-  cross-user claims; legal/compliance dogfood-only; no agent runtime of its
+  cross-user claims; legal/compliance labeled research-not-advice (the
+  dogfood-only acceptance gate was lifted 2026-08-21); no agent runtime of its
   own, by commitment — [seen: read, STRATEGY.md].
 
 ## The decision

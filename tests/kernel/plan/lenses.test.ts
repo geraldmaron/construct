@@ -1,8 +1,8 @@
 /**
- * tests/kernel/plan/lenses.test.ts — the role lenses are committed depth:
+ * tests/kernel/plan/lenses.test.ts — the role lenses are committed data:
  * every lens points at real catalog domains, the deepened templates carry the
- * lens slots, the legal lens declares its jurisdiction boundary honestly, and
- * the engineering lens states its own ceiling.
+ * lens slots, no label waits on a licensed acceptance, and the engineering
+ * lens states its own ceiling.
  */
 
 import { test } from 'node:test';
@@ -109,7 +109,7 @@ test('every catalog domain carries a lens, so no concern routes bare', () => {
 test('the commerce lens equips taking money with obligations named where they attach', () => {
   const lens = lensForDomain('commerce-tax');
   assert.equal(lens?.lens, 'commerce');
-  assert.match(lens!.labeling ?? '', /never tax advice/);
+  assert.match(lens!.labeling ?? '', /not tax advice/);
   assert.ok(playbookFor('commerce-tax').template.slots.some((s) => s.name === 'money-flow'));
 });
 
@@ -136,17 +136,27 @@ test('the design lens equips both the new experience concern and accessibility',
   );
 });
 
-test('the legal lens declares no covered jurisdiction until licensed review, and labels for review', () => {
+test('the legal lens labels research rather than advice, and declares no acceptance gate', () => {
   const legal = lensByName('legal');
   assert.ok(legal);
-  assert.equal(legal.jurisdictions?.covered.length, 0);
-  assert.match(legal.jurisdictions?.outside ?? '', /licensed/i);
-  assert.match(legal.labeling ?? '', /template-for-review/);
-  assert.match(legal.labeling ?? '', /dogfood-only/);
+  assert.match(legal.labeling ?? '', /not legal advice/);
+  // Jurisdiction is a question the method answers (which law governs, what
+  // the governing text says), not a coverage boundary the lens refuses past.
+  assert.equal(legal.jurisdictions, undefined);
+  assert.ok(
+    legal.questions.some((q) => /governing text/.test(q)),
+    'the navigation question travels with the lens',
+  );
 });
 
-test('the compliance lens is labeled dogfood-only until licensed review', () => {
-  assert.match(lensByName('compliance')?.labeling ?? '', /dogfood-only/);
+test('no lens labeling waits on a licensed acceptance', () => {
+  for (const lens of LENSES) {
+    assert.doesNotMatch(lens.labeling ?? '', /dogfood-only|until a licensed/i, lens.lens);
+  }
+});
+
+test('the compliance lens labels analysis, not an audit opinion', () => {
+  assert.match(lensByName('compliance')?.labeling ?? '', /not an audit opinion/);
 });
 
 test('the engineering lens states its own ceiling and equips no domain', () => {

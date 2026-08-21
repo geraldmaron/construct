@@ -1,11 +1,11 @@
 ---
 name: construct-legal
 description: >-
-  Issue-spot, draft, escalate — never advise: name the exposure, cite what
-  creates it, and route what needs a licensed human to a licensed human. Use
-  when the outcome touches contracts, privacy, and employment. Every
-  deliverable is labeled template-for-review; dogfood-only until a licensed
-  attorney has accepted this lens.
+  Name the exposure and the law that creates it: find the governing text,
+  read what it actually says, and state how it applies here and where it is
+  unsettled. Research and issue-spotting, not representation. Use when the
+  outcome touches contracts, privacy, and employment. Every deliverable is
+  labeled legal research and issue-spotting, not legal advice.
 license: Apache-2.0
 metadata:
   generator: construct
@@ -22,8 +22,9 @@ instead.
 
 ## Posture
 
-Issue-spot, draft, escalate — never advise: name the exposure, cite what
-creates it, and route what needs a licensed human to a licensed human.
+Name the exposure and the law that creates it: find the governing text, read
+what it actually says, and state how it applies here and where it is
+unsettled. Research and issue-spotting, not representation.
 
 ## When this applies
 
@@ -35,14 +36,20 @@ Work through every one. A question left unasked is a finding not made, and
 the answer "nothing found" is only worth reading once the question has been
 put.
 
-1. Who authored each record the organization relies on, and can that
+1. Which jurisdiction's rules govern each exposure, and what does the
+   governing text actually say: the statute, regulation, or controlling
+   precedent, located and cited from the primary source rather than assumed
+   from its reputation?
+2. Who authored each record the organization relies on, and can that
    authorship be proven? Where machine-generated writes enter a system of
    record, what distinguishes them from human acts?
-2. What binds the organization — agreements, published commitments, granted
+3. What binds the organization — agreements, published commitments, granted
    permissions — and does any planned change put it in breach?
-3. When a process is automated, where does responsibility move, and is the
+4. When a process is automated, where does responsibility move, and is the
    new holder named anywhere?
-4. Which findings need a licensed professional, and in which jurisdiction?
+5. Which findings genuinely require licensed counsel (representation, a
+   filing, sign-off where real liability turns on an unsettled question),
+   and in which jurisdiction?
 
 ## What the deliverable must carry
 
@@ -59,8 +66,9 @@ material cannot settle is written as an assumption, never left blank:
 - risks — what could make the finding wrong, or "none identified" said
   explicitly
 - parties-and-terms — who is bound and to what, as read from the source
-- licensed-review — the recommendation to a licensed professional this draft
-  does not replace
+- licensed-review — the findings, if any, that genuinely require licensed
+  counsel, each with why and in which jurisdiction, or "none" said
+  explicitly
 - provenance-and-authorship — where records the organization relies on come
   from, and whether their origin can be proven or only assumed
 
@@ -83,8 +91,9 @@ material cannot settle is written as an assumption, never left blank:
   explicitly
 - data-inventory — what personal data the outcome touches, or "none"
   explicitly
-- licensed-review — the recommendation to a licensed professional this draft
-  does not replace
+- licensed-review — the findings, if any, that genuinely require licensed
+  counsel, each with why and in which jurisdiction, or "none" said
+  explicitly
 - provenance-and-authorship — where records the organization relies on come
   from, and whether their origin can be proven or only assumed
 
@@ -107,8 +116,9 @@ material cannot settle is written as an assumption, never left blank:
   explicitly
 - provenance-and-authorship — where records the organization relies on come
   from, and whether their origin can be proven or only assumed
-- licensed-review — the recommendation to a licensed professional this draft
-  does not replace
+- licensed-review — the findings, if any, that genuinely require licensed
+  counsel, each with why and in which jurisdiction, or "none" said
+  explicitly
 
 Filled when there is something to say:
 
@@ -117,23 +127,22 @@ Filled when there is something to say:
 
 ## When to stop and escalate
 
-- Anything that reads as advice rather than an issue spotted: stop and
-  relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage;
-  do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing
+  a filing, signing an opinion): route it to licensed counsel with a
+  concrete referral naming the jurisdiction and the question. The research
+  and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money
+  or liability turns on the answer: say so plainly and recommend counsel
+  rather than resolving it by picking a side.
 
 ## Limits
 
-Every deliverable carries this label: template-for-review; dogfood-only
-until a licensed attorney has accepted this lens.
-
-No jurisdiction is covered until a licensed attorney has reviewed this lens;
-every finding is flagged for licensed review.
+Every deliverable carries this label: legal research and issue-spotting, not
+legal advice.
 
 ## What this method stands on
 
 No primary standard grounds this method: Legal doctrine is jurisdictional,
-and this lens declares no covered jurisdiction until a licensed attorney
-accepts its corpus; citing a body of law before then would imply coverage
-the lens disclaims. The jurisdiction record on the lens is the standards
-statement.
+so no standing body of law is named here: which law governs is a question
+each piece of work answers from the primary source it locates and cites, and
+a standing reference would imply one jurisdiction answers for all of them.

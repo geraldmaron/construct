@@ -5,7 +5,9 @@ description: >-
   naming what this makes hard to undo, not judging the code that implements
   it. Use when the outcome touches system-design. Limit: This lens reviews
   the shape of the system and never the code that realizes it: no code
-  review, no implementation opinion, no patch.
+  review, no implementation opinion, no patch. The hosts are the engineers.
+  Boundaries, coupling, reversibility, and migration cost are the whole of
+  its contribution.
 license: Apache-2.0
 metadata:
   generator: construct

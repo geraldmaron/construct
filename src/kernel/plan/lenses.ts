@@ -50,14 +50,17 @@ export interface RoleLens {
   readonly escalation: readonly string[];
   /**
    * A standing label every deliverable under this lens must carry, present
-   * where review status has weight (legal and compliance output is drafted
-   * for review, never issued as advice).
+   * where the deliverable's standing needs saying out loud: research and
+   * issue-spotting output says it is not advice, an opinion, or a
+   * certification, the same honesty a person doing the work would owe.
    */
   readonly labeling?: string;
   /**
-   * Jurisdictions this lens's doctrine covers. An empty `covered` list is the
-   * honest state until a licensed reviewer has accepted the corpus: everything
-   * is flagged for licensed review and nothing is asserted as covered.
+   * Jurisdictions this lens's doctrine declares coverage for, when a lens
+   * bounds itself that way. Optional by design: a lens that treats
+   * jurisdiction as a question its method answers (which law governs, what
+   * the governing text says) declares none here and carries that work in its
+   * questions instead.
    */
   readonly jurisdictions?: {
     readonly covered: readonly string[];
@@ -105,15 +108,20 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
       'A control gap with no owner: put the ownership question in the decision inbox.',
       'A regulator-facing obligation possibly breached: route to licensed review before anything relies on the finding.',
     ],
-    labeling: 'dogfood-only until a licensed reviewer has accepted this lens',
+    labeling: 'compliance analysis, not an audit opinion or a certification',
   },
   {
     lens: 'legal',
     domains: ['contracts', 'privacy', 'employment'],
     posture:
-      'Issue-spot, draft, escalate — never advise: name the exposure, cite what ' +
-      'creates it, and route what needs a licensed human to a licensed human.',
+      'Name the exposure and the law that creates it: find the governing text, ' +
+      'read what it actually says, and state how it applies here and where it ' +
+      'is unsettled. Research and issue-spotting, not representation.',
     questions: [
+      "Which jurisdiction's rules govern each exposure, and what does the " +
+        'governing text actually say: the statute, regulation, or controlling ' +
+        'precedent, located and cited from the primary source rather than ' +
+        'assumed from its reputation?',
       'Who authored each record the organization relies on, and can that ' +
         'authorship be proven? Where machine-generated writes enter a system of ' +
         'record, what distinguishes them from human acts?',
@@ -121,7 +129,9 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
         'permissions — and does any planned change put it in breach?',
       'When a process is automated, where does responsibility move, and is the ' +
         'new holder named anywhere?',
-      'Which findings need a licensed professional, and in which jurisdiction?',
+      'Which findings genuinely require licensed counsel (representation, a ' +
+        'filing, sign-off where real liability turns on an unsettled ' +
+        'question), and in which jurisdiction?',
     ],
     slots: [
       slot(
@@ -131,20 +141,15 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
       ),
       slot(
         'licensed-review',
-        'the recommendation to a licensed professional this draft does not replace',
+        'the findings, if any, that genuinely require licensed counsel, each ' +
+          'with why and in which jurisdiction, or "none" said explicitly',
       ),
     ],
     escalation: [
-      'Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.',
-      'A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.',
+      'Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.',
+      'A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.',
     ],
-    labeling: 'template-for-review; dogfood-only until a licensed attorney has accepted this lens',
-    jurisdictions: {
-      covered: [],
-      outside:
-        'No jurisdiction is covered until a licensed attorney has reviewed this ' +
-        'lens; every finding is flagged for licensed review.',
-    },
+    labeling: 'legal research and issue-spotting, not legal advice',
   },
   {
     lens: 'program',
@@ -530,7 +535,7 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
       'A tax obligation in a jurisdiction with no registration or filing owner: route to a licensed tax professional before anything relies on the finding.',
       'A promised refund term the billing system cannot enforce: put the ownership question in the decision inbox with both citations.',
     ],
-    labeling: 'drafted for review by a licensed tax professional — never tax advice',
+    labeling: 'tax research and issue-spotting, not tax advice',
   },
   {
     lens: 'brand',

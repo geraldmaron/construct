@@ -4,7 +4,16 @@ description: >-
   Cross-reference only: tie each reported symptom to the design decision
   that explains it, and stop there. Use only for the cross-reference named
   here; no domain routes to this lens on its own. Limit: Engineering stays
-  thin by design: the hosts are the engineers.
+  thin by design: the hosts are the engineers. This lens contributes
+  cross-references tying symptoms to design documents and nothing deeper —
+  no code review, no implementation judgment. The limit is the invariant,
+  not a gap to fill. Its empty domain list is therefore deliberate and
+  permanent: no catalog domain routes to it, because dispatching an
+  engineering role is the one thing the host already does better. It reaches
+  runs only through the roster surfaces. The adjacent architectural concern
+  — whether the shape of the system survives a change — is the system-design
+  domain, which is a different question from reviewing an implementation and
+  carries its own lens.
 license: Apache-2.0
 metadata:
   generator: construct

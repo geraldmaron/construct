@@ -441,12 +441,14 @@ test('an equipped role is shown its lens: posture, questions, escalation, labels
   assert.match(text, /Your posture: Controls and evidence over intent/);
   assert.match(text, /which identity acts/, 'the question set travels with the dispatch');
   assert.match(text, /Escalate rather than push past your remit/);
-  assert.match(text, /dogfood-only/);
+  assert.match(text, /not an audit opinion/);
 
-  // A legal-lens domain declares the jurisdiction boundary out loud.
+  // A legal-lens domain carries its honest label, and no licensed-acceptance
+  // gate: the label says what the work is, not whose sign-off it waits on.
   const contracts = assignmentFor(brief('contracts'));
-  assert.match(contracts, /template-for-review/);
-  assert.match(contracts, /No jurisdiction is covered/);
+  assert.match(contracts, /not legal advice/);
+  assert.doesNotMatch(contracts, /No jurisdiction is covered/);
+  assert.doesNotMatch(contracts, /dogfood-only/);
 
   // The security lens carries a stated ceiling, and the ceiling reaches the
   // dispatch — a defensive-only limit the role never sees is not a limit.
@@ -751,7 +753,7 @@ test('the work log records what was flagged and what needs a licensed human', as
     const escalation = entries.find((e) => e.action === 'licensed-review-required');
     assert.equal(escalation?.role, 'privacy');
     assert.equal((escalation?.detail as { profession: string }).profession, 'attorney');
-    assert.match((escalation?.detail as { why: string }).why, /issue-spotting, not advice/);
+    assert.match((escalation?.detail as { why: string }).why, /research and issue-spotting, not advice/);
 
     assert.ok(
       !entries.some((e) => e.role === 'product-scoping' && e.action === 'licensed-review-required'),

@@ -180,7 +180,7 @@ export interface RunReport {
   readonly recovered: number;
   /** Deliverables carrying a host-reported defect. See run/accountability.ts. */
   readonly flagged: number;
-  /** Deliverables routed to a licensed professional before anyone relies on them. */
+  /** Deliverables in domains naming a licensed profession, so the referral duty stays visible. */
   readonly escalated: number;
   /**
    * Dispatches that ran below the brief's declared model capability floor
@@ -1410,7 +1410,10 @@ export async function workRun(
             action: 'licensed-review-required',
             detail: {
               profession: review,
-              why: `${task.role} output is issue-spotting, not advice — review by a licensed ${review} is required before anyone relies on it`,
+              why:
+                `${task.role} output is research and issue-spotting, not advice; ` +
+                `work that is practice (representation, filings, sign-off where ` +
+                `real liability turns on an unsettled question) belongs to a licensed ${review}`,
             },
             at: settledAt,
           });
