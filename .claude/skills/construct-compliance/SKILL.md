@@ -4,7 +4,7 @@ description: >-
   Controls and evidence over intent: a change is what it does to who can
   act, what gets recorded, and what an auditor can verify afterward. Use
   when the outcome touches compliance. Every deliverable is labeled
-  dogfood-only until a licensed reviewer has accepted this lens.
+  compliance analysis, not an audit opinion or a certification.
 license: Apache-2.0
 metadata:
   generator: construct
@@ -83,8 +83,8 @@ Filled when there is something to say:
 
 ## Limits
 
-Every deliverable carries this label: dogfood-only until a licensed reviewer
-has accepted this lens.
+Every deliverable carries this label: compliance analysis, not an audit
+opinion or a certification.
 
 ## What this method stands on
 

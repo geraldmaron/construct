@@ -3,8 +3,8 @@ name: construct-commerce
 description: >-
   Money that moves creates obligations at the moment it moves; the job is
   naming each obligation where it attaches, not after it has accrued. Use
-  when the outcome touches commerce-tax. Every deliverable is labeled
-  drafted for review by a licensed tax professional — never tax advice.
+  when the outcome touches commerce-tax. Every deliverable is labeled tax
+  research and issue-spotting, not tax advice.
 license: Apache-2.0
 metadata:
   generator: construct
@@ -80,8 +80,8 @@ Filled when there is something to say:
 
 ## Limits
 
-Every deliverable carries this label: drafted for review by a licensed tax
-professional — never tax advice.
+Every deliverable carries this label: tax research and issue-spotting, not
+tax advice.
 
 ## What this method stands on
 

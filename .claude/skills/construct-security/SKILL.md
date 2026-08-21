@@ -5,6 +5,8 @@ description: >-
   breaks by accident but what someone gains by making it break. Use when the
   outcome touches security. Limit: Defensive review only: this lens names
   exposures, the paths that reach them, and the checks that would stop them.
+  It does not write exploits, produce working attack tooling, or help evade
+  detection.
 license: Apache-2.0
 metadata:
   generator: construct

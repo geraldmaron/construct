@@ -65,7 +65,11 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
     slots: [
       ...CORE_SLOTS,
       slot('data-inventory', 'what personal data the outcome touches, or "none" explicitly'),
-      slot('licensed-review', 'the recommendation to a licensed professional this draft does not replace'),
+      slot(
+        'licensed-review',
+        'the findings, if any, that genuinely require licensed counsel, each ' +
+          'with why and in which jurisdiction, or "none" said explicitly',
+      ),
     ],
   },
   contracts: {
@@ -74,7 +78,11 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
     slots: [
       ...CORE_SLOTS,
       slot('parties-and-terms', 'who is bound and to what, as read from the source'),
-      slot('licensed-review', 'the recommendation to a licensed professional this draft does not replace'),
+      slot(
+        'licensed-review',
+        'the findings, if any, that genuinely require licensed counsel, each ' +
+          'with why and in which jurisdiction, or "none" said explicitly',
+      ),
     ],
   },
   security: {
