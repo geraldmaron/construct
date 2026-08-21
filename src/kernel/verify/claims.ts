@@ -24,6 +24,12 @@
  * Whether a cited statute actually supports the claim made on it is not
  * checkable without reading the statute — that is the substantive model-run
  * legal pass's job, not this tier's.
+ *
+ * A ranking (a priority tier, an ordinal position) is checked separately,
+ * below, against a narrower pair of tags: a citation or an explicit
+ * [assumed] label, never a bare [unverified]. A fact can be left merely
+ * unverified; a ranking is a judgment call the deliverable made, and the
+ * honest options are to ground it or to say what it assumes.
  */
 
 export interface UntaggedClaim {
@@ -256,6 +262,57 @@ export function findUntaggedClaims(text: string): UntaggedClaim[] {
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i] ?? '';
     if (CLAIM.test(line) && !TAG.test(line)) {
+      findings.push({ line: i + 1, text: line.trim() });
+    }
+  }
+  return findings;
+}
+
+export interface UngroundedRanking {
+  readonly line: number;
+  readonly text: string;
+}
+
+/**
+ * A ranking-shaped line: an explicit priority tier or ordinal rank, in the
+ * distinctive forms a backlog or roadmap actually uses rather than a fuzzy
+ * priority word. P0-P4 is this project's own tracker priority vocabulary (a
+ * tracker-owned field, kernel/tracker/authority.ts, whose values a projected
+ * issue actually carries — see the P0/P2 fixtures in
+ * tests/kernel/store/projections.test.ts). The rest are the numbered and
+ * named forms of the same claim: "priority 1", "priority: 2", "#1 priority",
+ * "3rd priority", "top priority", "rank 2", "ranked #1". Vaguer priority language
+ * ("this matters most", "we should prioritize this") is deliberately not
+ * matched, for the same reason CLAIM above stops short of bare spelled-out
+ * quantities: it saturates ordinary prose, and flagging it would teach every
+ * author to write around the matcher rather than to ground the ranking.
+ */
+const RANKING =
+  /\bP[0-4]\b|\bpriority\s*[:#]?\s*\d+\b|#\d+\s*priority\b|\b\d+(?:st|nd|rd|th)[\s-]priority\b|\b(?:top|highest|lowest|first|second|third|fourth|fifth)[\s-]priority\b|\brank(?:ed)?\s*#?\d+\b/i;
+
+/**
+ * What discharges a ranking: cited data ground, or an explicit labeled
+ * assumption. Deliberately narrower than TAG above — [unverified] admits
+ * only that nothing was checked, and a ranking is a judgment call rather
+ * than a fact that can be left at that: the honest options are to ground it
+ * in data or to say plainly what it assumes, the same distinction the
+ * acquisition ladder draws between an unfilled slot and one that climbed to
+ * assume-and-label.
+ */
+const GROUND_OR_ASSUMPTION = /\[(?:cite:[^\]]+|research:[^\]]+|assumed(?::[^\]]+)?)\]/i;
+
+/**
+ * Rankings (a priority tier, an ordinal position) with no citation and no
+ * [assumed] label on the same line — the prioritization-deliverable
+ * counterpart of findUntaggedClaims above, checking the narrower pair of
+ * tags a ranking owes rather than the three a general claim does.
+ */
+export function findUngroundedRankings(text: string): UngroundedRanking[] {
+  const findings: UngroundedRanking[] = [];
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? '';
+    if (RANKING.test(line) && !GROUND_OR_ASSUMPTION.test(line)) {
       findings.push({ line: i + 1, text: line.trim() });
     }
   }
