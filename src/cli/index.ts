@@ -54,6 +54,8 @@ import {
   resolveFindingCitation,
 } from '../kernel/run/proposals.ts';
 import type { Deliverable } from '../kernel/run/proposals.ts';
+import { auditProposals, evaluateGates, renderAuditDeliverable } from '../kernel/run/repoaudit.ts';
+import { gatherRepoFacts } from '../hosts/repo/gates.ts';
 import { compareAndRecordSourceReads, groundRootsFor, recordRunSourceReads } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import type { SourceReadComparison, SourceSurvey } from '../kernel/run/sourcereads.ts';
@@ -5520,6 +5522,84 @@ export function propose(argv: string[]): number {
 }
 
 /**
+ * Audit a declared source's own files against the enablement gates
+ * (accessibility tests, security tests, CI, lint strictness, typecheck), and
+ * file a write proposal for every gate this pass found missing.
+ *
+ * The judgment is kernel/run/repoaudit.ts's, read from facts
+ * hosts/repo/gates.ts gathered off the source's own locator. This function is
+ * the store-touching glue construct propose already has a shape for: resolve
+ * the declared source, run the pure pass over what it reads, and file what it
+ * found through proposeWrite, the one door an outward change has. Nothing
+ * here writes to the audited repository, and nothing here can — a proposal is
+ * a row to be decided on, and carrying one out is a different, separately
+ * recorded act.
+ */
+function audit(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  return withStore((store) => {
+    const workspace = workspaceFlag(flags);
+    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    if (typeof target === 'number') return target;
+    if (target.kind !== 'directory' && target.kind !== 'git') {
+      process.stderr.write(
+        `audit: ${target.id} is a ${target.kind} source; an enablement audit reads a repository's own ` +
+          'files, which only a directory or git source has.\n',
+      );
+      return 1;
+    }
+
+    const facts = gatherRepoFacts(target.locator);
+    if (facts.outcome === 'unreachable') {
+      process.stderr.write(`audit: ${target.locator} — ${facts.reason}\n`);
+      return 1;
+    }
+
+    const findings = evaluateGates(facts);
+    const proposals = auditProposals({ findings, source: target.id, locator: target.locator });
+    process.stdout.write(renderAuditDeliverable({ locator: target.locator, findings, proposals }));
+    process.stdout.write('\n');
+
+    if (flags['dry-run'] !== undefined) {
+      process.stdout.write('nothing was filed: --dry-run shows what would be proposed.\n');
+      return 0;
+    }
+
+    const at = now();
+    let filed = 0;
+    let already = 0;
+    const risks = { low: 0, high: 0 };
+    for (const proposal of proposals) {
+      if (getProposal(store, proposal.id) !== null) {
+        already += 1;
+        continue;
+      }
+      proposeWrite(store, {
+        id: proposal.id,
+        workspace,
+        run: null,
+        source: proposal.source,
+        change: proposal.change,
+        justification: proposal.justification,
+        risk: proposal.risk,
+        proposedAt: at,
+      });
+      filed += 1;
+      risks[proposal.risk] += 1;
+    }
+    process.stdout.write(
+      `filed ${String(filed)} proposal(s) against ${target.kind} ${target.locator}` +
+        ` (${String(risks.low)} low, ${String(risks.high)} high)` +
+        (already > 0 ? `, ${String(already)} already proposed` : '') +
+        '.\nNothing was written to that repository, and nothing here can be: a proposal moves only\n' +
+        'through a recorded decision, and a high-risk one only through a human.\n' +
+        `  construct propose list --workspace=${workspace}\n`,
+    );
+    return 0;
+  });
+}
+
+/**
  * Show or set how a workspace engages: `team` (Construct is the whole team,
  * work tracked its own way) or `seat` (it fills one role on a human team and
  * works inside their tracker). Downstream consent postures read this, so it
@@ -6296,7 +6376,7 @@ export function skills(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|standing|record|mode|consent|staff|skills|watch|reconcile|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|audit|standing|record|mode|consent|staff|skills|watch|reconcile|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -6365,6 +6445,8 @@ async function run(argv: string[]): Promise<number> {
       return source(argv.slice(1));
     case 'propose':
       return propose(argv.slice(1));
+    case 'audit':
+      return audit(argv.slice(1));
     case 'standing':
       return standing(argv.slice(1));
     case 'mode':
