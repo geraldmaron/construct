@@ -222,10 +222,15 @@ export function toObservations(
     }
     const citations: DriftCitation[] = [];
     for (const c of Array.isArray(o?.citations) ? o.citations : []) {
-      const cite = c as { source?: unknown; document?: unknown } | null;
+      const cite = c as { source?: unknown; document?: unknown; quote?: unknown } | null;
       const source = asString(cite?.source);
       const document = asString(cite?.document);
-      if (source && document) citations.push({ source, document });
+      // A missing quotation is carried as a missing quotation, not defaulted to
+      // an empty one: the screen tells the reader which citations pointed at a
+      // document without pointing at anything in it, and it can only do that if
+      // the difference survives parsing.
+      const quote = asString(cite?.quote);
+      if (source && document) citations.push({ source, document, ...(quote ? { quote } : {}) });
     }
     observations.push({ role, claim, citations });
   }

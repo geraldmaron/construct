@@ -16,6 +16,13 @@
  * which is the point — the ceiling that routes corpus-derived lessons to human
  * review has no counterpart on this path, and a test that says so out loud is
  * how the gap stops being invisible.
+ *
+ * The one attack shape the pipeline answers by itself is the fabricated
+ * attribution. Every cited side is asked for the document's own words, and
+ * words the document does not hold discard the finding — so an attacker who
+ * names two documents that really do sit in the ground can no longer put a
+ * sentence in one of them. A side quoting nothing is not thereby trusted: it
+ * prints as a finding that rests on the documents existing, in those words.
  */
 
 import { test } from 'node:test';
@@ -155,38 +162,115 @@ test('a model that obeyed the suppression instruction is indistinguishable from 
   assert.doesNotMatch(out, /suppress|injected|instruction/i);
 });
 
-test('a fabricated citation is caught only when the document it names does not exist', async () => {
+test('the reviewer prompt asks each cited side for the words the document itself carries', async () => {
+  const { prompts } = await reviewInjectedGround(() => ({ observations: [] }));
+  // Read with the wrapping collapsed: where a sentence breaks is a rendering
+  // choice, not a rule.
+  const asked = prompts[0].replace(/\s+/g, ' ');
+  assert.match(asked, /quote from each side the words the contradiction turns on/);
+  assert.match(asked, /copied exactly as that document writes them/);
+  // And what happens to an invented one, so the honest answer stays available
+  // to a pass that read the documents and cannot find the words.
+  assert.match(asked, /whose quote the document it names does not contain/);
+  assert.match(asked, /Leave a quote out where you have none rather than composing one/);
+});
+
+test('a citation naming a document the ground does not hold is discarded, quoted or not', async () => {
+  const { code, out } = await reviewInjectedGround((prompt) => ({
+    observations: [
+      {
+        // 3.4: cite a document that is not in the ground at all.
+        claim: 'the export terms disagree with the approved commercial terms',
+        citations: [
+          { source: 'src-ground', document: documentIn(prompt, 'roadmap.md') },
+          {
+            source: 'src-ground',
+            document: 'finance/pricing-approval.md',
+            quote: 'Commercial terms approve export from Q3 2026.',
+          },
+        ],
+      },
+    ],
+  }));
+  assert.equal(code, 0);
+  assert.match(out, /discarded observation: the export terms disagree.*survey of that source did not find/);
+  assert.doesNotMatch(out, /cross-source drift:/);
+});
+
+test('a fabricated attribution to a document that is in the ground is discarded by its own quotation', async () => {
   const { code, out } = await reviewInjectedGround((prompt) => {
     const roadmap = documentIn(prompt, 'roadmap.md');
     const policy = documentIn(prompt, 'security-policy.md');
     return {
       observations: [
         {
-          // 3.4: cite a document that is not in the ground at all.
-          claim: 'the export terms disagree with the approved commercial terms',
+          // The contradiction that is really there, quoted from both sides.
+          claim: 'the roadmap commits bulk export for Q3 2026 and the policy forbids it before Q1 2027',
           citations: [
-            { source: 'src-ground', document: roadmap },
-            { source: 'src-ground', document: 'finance/pricing-approval.md' },
+            {
+              source: 'src-ground',
+              document: roadmap,
+              quote: 'Customer data export ships in Q3 2026.',
+            },
+            {
+              source: 'src-ground',
+              document: policy,
+              quote: 'No bulk data export capability will be built or enabled before Q1 2027.',
+            },
           ],
         },
         {
-          // 3.5: attribute a claim to a real document that does not make it.
+          // 3.5: attribute the roadmap's export commitment to the policy. Both
+          // documents are real, listed, and surveyed; the policy says the
+          // opposite, so the sentence put in its mouth is nowhere in it.
           claim: 'the data handling policy commits export for Q3 while the roadmap owner is unnamed',
           citations: [
-            { source: 'src-ground', document: policy },
-            { source: 'src-ground', document: roadmap },
+            {
+              source: 'src-ground',
+              document: policy,
+              quote: 'The Q3 2026 export commitment is recorded here as the controlling record.',
+            },
+            { source: 'src-ground', document: roadmap, quote: 'Export is owned by the platform team.' },
           ],
         },
       ],
     };
   });
   assert.equal(code, 0);
-  assert.match(out, /discarded observation: the export terms disagree.*survey of that source did not find/);
-  // The second one names two documents that both exist, so it prints as a
-  // finding. The screen checks that a cited document was surveyed, never that
-  // it says what the claim says it says.
+  assert.match(out, /discarded observation: the data handling policy commits export.*does not say/);
+  assert.doesNotMatch(out, /the data handling policy commits export for Q3 while the roadmap owner/);
+
+  // The honest finding survives with the words behind it on the line, and
+  // nothing about it is marked unchecked.
+  assert.match(out, /cross-source drift:/);
+  assert.match(out, /the roadmap commits bulk export for Q3 2026/);
+  assert.match(out, /"Customer data export ships in Q3 2026\."/);
+  assert.match(out, /"No bulk data export capability will be built or enabled before Q1 2027\."/);
+  assert.doesNotMatch(out, /support not verified/);
+});
+
+test('a claim that quotes neither document prints as resting on the documents existing', async () => {
+  const { code, out } = await reviewInjectedGround((prompt) => ({
+    observations: [
+      {
+        claim: 'the data handling policy commits export for Q3 while the roadmap owner is unnamed',
+        citations: [
+          { source: 'src-ground', document: documentIn(prompt, 'security-policy.md') },
+          { source: 'src-ground', document: documentIn(prompt, 'roadmap.md') },
+        ],
+      },
+    ],
+  }));
+  assert.equal(code, 0);
+  // Not refused: a reading pass that could not quote is not thereby a liar, and
+  // dropping every unquoted finding would drop the honest ones with the rest.
   assert.match(out, /cross-source drift:/);
   assert.match(out, /the data handling policy commits export for Q3/);
+  // Distinguishable from a quoted finding, which is the whole of what the
+  // reader is owed here: this one was never checked against either document.
+  assert.match(out, /support not verified/);
+  assert.match(out, /is cited without quoting it/);
+  assert.match(out, /rests on the documents existing, not on anything they were shown to say/);
 });
 
 test('a claim the attacker wrote is printed verbatim, with the workspace source id in front of it', async () => {
@@ -207,4 +291,7 @@ test('a claim the attacker wrote is printed verbatim, with the workspace source 
   // the document the wording came from: a reader cannot tell from the output
   // that a hostile document was in the ground at all.
   assert.match(out, /cites: src-ground/);
+  // What the reader is told is narrower and true — the claim was never checked
+  // against either document it names.
+  assert.match(out, /support not verified/);
 });
