@@ -3,7 +3,7 @@
  * extraction-ladder harvest, frozen into
  * tests/kernel/extract/fixtures/ladder-golden.json.
  *
- * v2 sources ported by construct-506.3:
+ * v2 sources ported during the kernel harvest:
  *   lib/document-extract/extraction-ladder.mjs
  *   lib/document-extract/formats.mjs
  *   lib/document-extract/routing-thresholds.mjs

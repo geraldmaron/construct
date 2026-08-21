@@ -93,7 +93,7 @@ for (const domain of DOMAINS) {
 const entries = [...seen.entries()].sort((a, b) => b[1].fires - a[1].fires || a[0].localeCompare(b[0]));
 
 // Printed, not written. A table nothing imports is a measurement; a table the
-// kernel imports is a behaviour change, and construct-2jb.5 measured that
+// kernel imports is a behaviour change, and the IDF study measured that
 // change and found no effect.
 console.log(`\nPer-keyword document frequency over ${N} pooled outcomes (unsealed corpora only).`);
 console.log(`Keywords that never fired are omitted: no evidence exists to weight them.\n`);

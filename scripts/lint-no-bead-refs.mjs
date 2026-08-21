@@ -25,14 +25,17 @@
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
-const BEAD = /construct-(?!mcp|role)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
+const BEAD = /construct-(?!mcp|role|repo|sync)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
 
-const files = execSync(
-  "git ls-files 'src/**/*.ts' 'tests/**/*.ts' 'scripts/**/*.mjs' 'scripts/**/*.sh' 'skills/**/*.md'",
-  { encoding: 'utf8' },
-)
+// Trailing-slash pathspecs with extension filtering in JS, not double-star
+// globs: this git's pathspec matching does not treat `dir/**/*.ext` as
+// matching dir's own direct children, so a glob here silently skips most of
+// scripts/ — the files this gate most needs to read.
+const EXTENSIONS = ['.ts', '.mjs', '.sh', '.md'];
+const files = execSync("git ls-files 'src/' 'tests/' 'scripts/' 'skills/'", { encoding: 'utf8' })
   .split('\n')
   .filter(Boolean)
+  .filter((f) => EXTENSIONS.some((ext) => f.endsWith(ext)))
   .filter(
     (f) =>
       !f.includes('reconcile-tracker') && !f.includes('repo-gate') && !f.includes('labeling-kit'),

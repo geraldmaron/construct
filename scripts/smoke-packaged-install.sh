@@ -115,7 +115,7 @@ printf '%s\n' "$decide_out"
 expect_contains "construct decide" "$decide_out" "no open decision no-such-decision"
 
 echo "== a state dir the CLI cannot write =="
-# This is where construct-0co was found: doctor called an unwritable data dir
+# A past regression lived here: doctor called an unwritable data dir
 # healthy, and the next command died with a node:sqlite stack trace. chmod does
 # not bind root, so under a root CI container the check would pass vacuously —
 # skip it out loud instead.
@@ -149,7 +149,7 @@ else
   trap 'rm -rf "$scratch"' EXIT
 fi
 
-# The successor must survive its own uninstaller (construct-a5q). v3 resolves its
+# The successor must survive its own uninstaller. v3 resolves its
 # directories from the same XDG variables under the same app name as the
 # predecessor, so `~/.local/share/construct` is at once "a v2 trace" and the
 # running Construct's home. Before the fix, `construct cleanup --yes` deleted the
