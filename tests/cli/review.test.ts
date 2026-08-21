@@ -95,7 +95,9 @@ function declareGround(ground: string): () => number {
 /**
  * A reviewer that answers from the documents its own prompt listed — one real
  * contradiction, and one about a document that was never surveyed, which is
- * the failure mode the listing exists to catch.
+ * the failure mode the listing exists to catch. It accounts for opening both
+ * documents, because a reply that accounts for no read is refused before its
+ * findings are looked at.
  */
 function reviewHost(): HostAdapter {
   return {
@@ -110,6 +112,7 @@ function reviewHost(): HostAdapter {
       const prd = /(\S+prd\.md)/.exec(task)?.[1] ?? 'prd.md';
       const strategy = /(\S+strategy\.md)/.exec(task)?.[1] ?? 'strategy.md';
       const text = JSON.stringify({
+        read: [prd, strategy],
         observations: [
           {
             claim: 'the PRD ships SSO at launch while the strategy defers identity work',
@@ -129,6 +132,29 @@ function reviewHost(): HostAdapter {
       });
       return { id: role, status: 'ok', output: { text }, error: null };
     },
+  };
+}
+
+/**
+ * A reviewer whose own file reads were refused by the host's permission gate:
+ * it answers, the answer is well formed, and it saw no document. The reply is
+ * byte-identical to the one a reviewer that read everything and found nothing
+ * would send, which is why the reading account is asked for at all.
+ */
+function deniedReadsHost(): HostAdapter {
+  return {
+    name: 'stand-in',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => ({
+      id: (request as { role: string }).role,
+      status: 'ok',
+      output: { text: JSON.stringify({ observations: [] }) },
+      error: null,
+    }),
   };
 }
 
@@ -155,6 +181,18 @@ test('the host path reads the surveyed documents and screens every citation agai
     out,
     /discarded observation: the pricing memo contradicts the PRD.*survey of that source did not find/,
   );
+});
+
+test('an empty review that cannot account for opening one document is a failure, not a clean line', async () => {
+  const { code, out, err } = await run((ground) => [
+    declareGround(ground),
+    () => review([], deniedReadsHost()),
+  ]);
+  assert.equal(code, 1);
+  assert.match(err, /cannot show that it read the ground/);
+  assert.match(err, /prd\.md/);
+  assert.match(err, /strategy\.md/);
+  assert.doesNotMatch(out, /no drift survived the screen/);
 });
 
 test('review takes no positional arguments, and says so rather than ignoring one', async () => {

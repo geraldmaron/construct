@@ -67,7 +67,8 @@ import {
 import { applyContextLoop } from '../kernel/context/loop.ts';
 import type { MemoryDelta, PropagationProposal, RecordUpdate } from '../kernel/context/loop.ts';
 import { toProducedLoop } from '../kernel/context/produce.ts';
-import { toReviewedDrift } from '../kernel/context/review.ts';
+import { groundReadEvidence, toReviewedDrift } from '../kernel/context/review.ts';
+import type { GroundReadEvidence } from '../kernel/context/review.ts';
 import { subjectsOf } from '../kernel/context/subjects.ts';
 import {
   claimsFrom,
@@ -1801,6 +1802,107 @@ function writeDrift(screened: ScreenResult): void {
   }
 }
 
+/** How many document paths a read report names before it falls back to a count. */
+const NAMED_DOCUMENT_CAP = 12;
+
+function namedDocuments(documents: readonly string[], indent: string): string {
+  const shown = documents.slice(0, NAMED_DOCUMENT_CAP);
+  const rest = documents.length - shown.length;
+  return (
+    shown.map((document) => `${indent}${document}\n`).join('') +
+    (rest > 0 ? `${indent}…and ${String(rest)} more\n` : '')
+  );
+}
+
+function plural(count: number, noun: string): string {
+  return `${String(count)} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+/**
+ * The one thing a read account may never leave unsaid. Construct surveys the
+ * ground itself, so which documents exist is its own evidence; whether any was
+ * opened is not, and never can be on this path — the reviewer opens them with
+ * the host's own tools and their content never passes through Construct. Every
+ * account is therefore printed as testimony, not as proof.
+ */
+function writeReadDisclosure(): void {
+  process.stdout.write(
+    "  Construct surveyed these documents itself; it did not watch them being read. They are\n" +
+      "  opened with the host's own tools and their content never passes through Construct, so\n" +
+      '  the account of what was opened is the reviewer\'s own word, and no line above says a\n' +
+      '  finding came from a document rather than from the reviewer.\n',
+  );
+}
+
+/**
+ * How far a review's own account of its reading goes.
+ *
+ * `unread` is the case worth naming: a well-formed reply over ground the host
+ * was never permitted to open looks exactly like a reply over ground read end
+ * to end, and reporting the second when the first happened is how "read
+ * nothing" and "found nothing" became the same output.
+ */
+type ReadStanding = 'no-ground' | 'unread' | 'partial' | 'shown';
+
+/**
+ * Print what the review can and cannot show about its own reading, and return
+ * how far that evidence reaches. Loud where it falls short: a read the review
+ * cannot account for is material the review does not have, and a reader who is
+ * not told that reads silence about a document as agreement with it.
+ */
+function writeReadEvidence(evidence: GroundReadEvidence, returned: number): ReadStanding {
+  const surveyed = evidence.surveyed.length;
+  if (surveyed === 0) {
+    process.stdout.write(
+      '\nno readable document was surveyed, so this review read nothing and can conclude nothing.\n',
+    );
+    return 'no-ground';
+  }
+
+  if (evidence.read.length === 0) {
+    process.stderr.write(
+      '\nreview: this review cannot show that it read the ground.\n' +
+        `  surveyed ${plural(surveyed, 'document')}; the reviewer's account names none of them as opened:\n` +
+        namedDocuments(evidence.surveyed, '    '),
+    );
+    if (evidence.unreadable.length > 0) {
+      process.stderr.write('  it reported these unreadable:\n');
+      for (const failed of evidence.unreadable) {
+        process.stderr.write(`    ${failed.document} — ${failed.detail}\n`);
+      }
+    }
+    process.stderr.write(
+      `  ${plural(returned, 'observation')} came back and ${returned === 1 ? 'is' : 'are'} not ` +
+        'reported here: a pass that opened no document did not read them out of one.\n' +
+        "  Documents are opened with the host's own tools and never pass through Construct, so the\n" +
+        '  reviewer\'s account is the only evidence any was opened — and it claims none.\n',
+    );
+    return 'unread';
+  }
+
+  if (evidence.unreadable.length > 0 || evidence.unaccounted.length > 0) {
+    const missing = evidence.unreadable.length + evidence.unaccounted.length;
+    process.stdout.write(
+      `\nread evidence is incomplete: ${String(missing)} of ${plural(surveyed, 'surveyed document')} ` +
+        'cannot be shown to have been read.\n',
+    );
+    if (evidence.unreadable.length > 0) {
+      process.stdout.write('  the reviewer could not open:\n');
+      for (const failed of evidence.unreadable) {
+        process.stdout.write(`    ${failed.document} — ${failed.detail}\n`);
+      }
+    }
+    if (evidence.unaccounted.length > 0) {
+      process.stdout.write('  the reviewer accounted for neither opening nor failing to open:\n');
+      process.stdout.write(namedDocuments(evidence.unaccounted, '    '));
+    }
+    writeReadDisclosure();
+    return 'partial';
+  }
+
+  return 'shown';
+}
+
 const REVIEW_USAGE =
   'usage: construct review [--workspace=<name>] ' +
   '[--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]]\n';
@@ -1893,9 +1995,17 @@ export async function review(argv: string[], hostOverride?: HostAdapter): Promis
     }
     for (const reason of reviewed.discarded) process.stdout.write(`  discarded: ${reason}\n`);
 
+    // What the review can show about its own reading comes before what it
+    // found. A pass whose reads the host refused returns a well-formed empty
+    // review, and printed as a clean one it says the ground was read and holds
+    // no disagreement — two claims, neither of them made by anything.
+    const evidence = groundReadEvidence(producerSources, reviewed.reads);
+    const standing = writeReadEvidence(evidence, reviewed.observations.length);
+    if (standing === 'unread') return 1;
+
     const screened = screenObservations(reviewed.observations, sources, surveyed);
     writeDrift(screened);
-    if (screened.flags.length === 0) {
+    if (screened.flags.length === 0 && standing === 'shown') {
       process.stdout.write('\nno drift survived the screen.\n');
     }
     return 0;

@@ -172,6 +172,13 @@ export function challengerPrompt(delta: ProducedDelta, citedLine: string): strin
  * the one question a review exists to answer. No note, so nothing to cite a
  * line of, so nothing but observations is asked for — a review that proposed
  * memory deltas would be proposing conclusions with no evidence behind them.
+ *
+ * It asks for one thing besides the findings: an account of which listed
+ * documents were actually opened. The documents are opened with the host's own
+ * tools and their content never passes through Construct, so without that
+ * account a reply of no findings over unopened ground is byte-identical to a
+ * reply of no findings over ground read end to end. The account is the model's
+ * own word and proves nothing by itself; its absence proves plenty.
  */
 export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
   return [
@@ -194,10 +201,21 @@ export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
     'discarded, and so will one that cites only one side — a disagreement you',
     'remember rather than read is not an observation.',
     '',
-    'An empty list is a valid answer, and a better one than a reach.',
+    'Account for your reading as well as your findings. Name every document',
+    'above that you actually opened, and every one you tried to open and could',
+    'not, with the error you got back. A document you never opened belongs in',
+    'neither list. Say this accurately even where it is unflattering: reporting',
+    'that you opened nothing costs you nothing and is the answer that gets the',
+    'reads fixed, while a review whose reading cannot be accounted for is thrown',
+    'out whatever it found.',
+    '',
+    'An empty list of findings is a valid answer, and a better one than a reach —',
+    'alongside an account of what you opened to reach it.',
     '',
     'Reply with JSON only, no prose outside it:',
-    '{"observations":[{"claim":"<what disagrees, in one sentence>",' +
+    '{"read":["<path you opened, exactly as listed above>"],' +
+      '"unreadable":[{"document":"<path>","reason":"<the error you got>"}],' +
+      '"observations":[{"claim":"<what disagrees, in one sentence>",' +
       '"citations":[{"source":"<declared id>","document":"<path as listed>"},…]}]}',
   ].join('\n');
 }

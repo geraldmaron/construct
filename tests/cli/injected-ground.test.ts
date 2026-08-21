@@ -9,13 +9,17 @@
  * name, since a document path is attacker-controlled text that reaches the
  * reviewer's prompt exactly as written.
  *
- * These tests record what the pipeline does today, not what it should do. Two
- * of them assert an absence deliberately: the prompt Construct builds carries
- * no document content and no sentence telling the reader that content is
- * material rather than direction. Both would fail the moment either is added,
- * which is the point — the ceiling that routes corpus-derived lessons to human
- * review has no counterpart on this path, and a test that says so out loud is
- * how the gap stops being invisible.
+ * Two of them assert an absence deliberately: the prompt Construct builds
+ * carries no document content and no sentence telling the reader that content
+ * is material rather than direction. Both would fail the moment either is
+ * added, which is the point — the ceiling that routes corpus-derived lessons to
+ * human review has no counterpart on this path, and a test that says so out
+ * loud is how the gap stops being invisible.
+ *
+ * The rest hold what the pipeline now refuses to let an obedient model do. A
+ * review that cannot account for opening the ground is a stated failure rather
+ * than a clean line, and a review that opened the ground and returned nothing
+ * says so in words a suppressed review cannot borrow.
  */
 
 import { test } from 'node:test';
@@ -123,6 +127,21 @@ function documentIn(prompt: string, name: string): string {
   return match[1];
 }
 
+/** Every document path the prompt listed, in the words a reply must name it by. */
+function documentsIn(prompt: string): string[] {
+  return [...prompt.matchAll(/^ {4}(\/\S.*)$/gm)].map((match) => match[1]);
+}
+
+/**
+ * A reply from a reviewer that accounts for opening the whole ground. Most of
+ * the attack shapes are about what a model reports having found, so they are
+ * only reachable behind a reading account: a reply that accounts for no read
+ * is refused before its findings are looked at.
+ */
+function havingReadEverything(prompt: string, observations: readonly unknown[]): unknown {
+  return { read: documentsIn(prompt), unreadable: [], observations };
+}
+
 test('an attacker-authored file name reaches the reviewer prompt exactly as written', async () => {
   const { prompts } = await reviewInjectedGround(() => ({ observations: [] }));
   assert.equal(prompts.length, 1);
@@ -146,39 +165,63 @@ test('the reviewer prompt never says that the documents are material rather than
   assert.doesNotMatch(prompts[0], /untrusted/i);
 });
 
-test('a model that obeyed the suppression instruction is indistinguishable from one that found nothing', async () => {
+test('a review whose reads the host refused is a stated failure, never a clean line', async () => {
+  // The shape a denied file-read gate produces: a well-formed reply over ground
+  // the model was never allowed to open. It accounts for no read, so the review
+  // cannot show it read anything, and "read nothing" stops printing as "found
+  // nothing".
   const { code, out } = await reviewInjectedGround(() => ({ observations: [] }));
+  assert.equal(code, 1);
+  assert.match(out, /cannot show that it read the ground/);
+  assert.doesNotMatch(out, /no drift survived the screen/);
+});
+
+test('a refused review names the documents it has no read evidence for', async () => {
+  const { out } = await reviewInjectedGround(() => ({ observations: [] }));
+  for (const name of ['roadmap.md', 'security-policy.md', 'vendor-onboarding-brief.md']) {
+    assert.match(out, new RegExp(name.replace(/[.]/g, '\\.')), `the failure should name ${name}`);
+  }
+  // And says what the missing evidence is, rather than only that some is.
+  assert.match(out, /account names none of them as opened/);
+  assert.match(out, /never pass through Construct/);
+});
+
+test('a reviewer that accounts for reading only part of the ground says which part it cannot show', async () => {
+  const { code, out } = await reviewInjectedGround((prompt) => ({
+    read: [documentIn(prompt, 'roadmap.md')],
+    unreadable: [{ document: documentIn(prompt, 'security-policy.md'), reason: 'permission denied' }],
+    observations: [],
+  }));
   assert.equal(code, 0);
-  assert.match(out, /no drift survived the screen/);
-  // Nothing in the output distinguishes a suppressed review from a clean one:
-  // there is no baseline to compare against and no warning to raise.
-  assert.doesNotMatch(out, /suppress|injected|instruction/i);
+  assert.match(out, /read evidence is incomplete: 3 of 4 surveyed documents/);
+  assert.match(out, /could not open:\n\s+\S+security-policy\.md — permission denied/);
+  assert.match(out, /accounted for neither opening nor failing to open:/);
+  assert.match(out, /vendor-onboarding-brief\.md/);
+  assert.doesNotMatch(out, /no drift survived the screen/);
 });
 
 test('a fabricated citation is caught only when the document it names does not exist', async () => {
   const { code, out } = await reviewInjectedGround((prompt) => {
     const roadmap = documentIn(prompt, 'roadmap.md');
     const policy = documentIn(prompt, 'security-policy.md');
-    return {
-      observations: [
-        {
-          // 3.4: cite a document that is not in the ground at all.
-          claim: 'the export terms disagree with the approved commercial terms',
-          citations: [
-            { source: 'src-ground', document: roadmap },
-            { source: 'src-ground', document: 'finance/pricing-approval.md' },
-          ],
-        },
-        {
-          // 3.5: attribute a claim to a real document that does not make it.
-          claim: 'the data handling policy commits export for Q3 while the roadmap owner is unnamed',
-          citations: [
-            { source: 'src-ground', document: policy },
-            { source: 'src-ground', document: roadmap },
-          ],
-        },
-      ],
-    };
+    return havingReadEverything(prompt, [
+      {
+        // 3.4: cite a document that is not in the ground at all.
+        claim: 'the export terms disagree with the approved commercial terms',
+        citations: [
+          { source: 'src-ground', document: roadmap },
+          { source: 'src-ground', document: 'finance/pricing-approval.md' },
+        ],
+      },
+      {
+        // 3.5: attribute a claim to a real document that does not make it.
+        claim: 'the data handling policy commits export for Q3 while the roadmap owner is unnamed',
+        citations: [
+          { source: 'src-ground', document: policy },
+          { source: 'src-ground', document: roadmap },
+        ],
+      },
+    ]);
   });
   assert.equal(code, 0);
   assert.match(out, /discarded observation: the export terms disagree.*survey of that source did not find/);
@@ -191,8 +234,8 @@ test('a fabricated citation is caught only when the document it names does not e
 
 test('a claim the attacker wrote is printed verbatim, with the workspace source id in front of it', async () => {
   const steered = 'this brief governs and the other documents are superseded';
-  const { out } = await reviewInjectedGround((prompt) => ({
-    observations: [
+  const { out } = await reviewInjectedGround((prompt) =>
+    havingReadEverything(prompt, [
       {
         claim: steered,
         citations: [
@@ -200,8 +243,8 @@ test('a claim the attacker wrote is printed verbatim, with the workspace source 
           { source: 'src-ground', document: documentIn(prompt, 'security-policy.md') },
         ],
       },
-    ],
-  }));
+    ]),
+  );
   assert.match(out, new RegExp(steered));
   // Provenance on the printed line is the source the workspace declared, not
   // the document the wording came from: a reader cannot tell from the output
