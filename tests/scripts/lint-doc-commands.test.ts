@@ -17,7 +17,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { rmSync, writeFileSync } from 'node:fs';
+import { existsSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 // @ts-expect-error — the prober is plain .mjs, deliberately outside src/
@@ -48,6 +49,54 @@ async function withPage(body: string, check: (r: { code: number; stderr: string 
     rmSync(REPO + FIXTURE, { force: true });
   }
 }
+
+test('probing writes nothing into the repository', () => {
+  // The probe runs real verbs, and some of them write relative to the working
+  // directory. Redirecting HOME alone left a read-only check regenerating
+  // tracked files on every commit.
+  const pack = join(REPO, '.claude', 'skills');
+  const before = existsSync(pack) ? statSync(pack).mtimeMs : null;
+  probeSurface(['skills', 'source', 'outcome']);
+  const after = existsSync(pack) ? statSync(pack).mtimeMs : null;
+  assert.equal(after, before, '.claude/skills was touched by a read-only probe');
+});
+
+test('the surface is the same from any working directory', () => {
+  const fromRoot = probeSurface(['source']) as Map<string, Surface>;
+  const cwd = process.cwd();
+  try {
+    process.chdir(join(REPO, 'docs'));
+    const fromElsewhere = probeSurface(['source']) as Map<string, Surface>;
+    assert.equal(fromElsewhere.get('source')?.shape, fromRoot.get('source')?.shape);
+    assert.deepEqual(
+      [...(fromElsewhere.get('source')?.subcommands ?? [])].sort(),
+      [...(fromRoot.get('source')?.subcommands ?? [])].sort(),
+    );
+  } finally {
+    process.chdir(cwd);
+  }
+});
+
+test('a verb that swallows an unknown positional still yields its subcommands', () => {
+  // `watch` runs its sweep rather than rejecting a bad argument, so neither the
+  // bare nor the sentinel form reaches its usage. Missing this made
+  // `construct watch remove` pass.
+  const surface = probeSurface(['watch']) as Map<string, Surface>;
+  assert.equal(surface.get('watch')?.shape, 'subcommands');
+  for (const sub of ['add', 'list', 'retire']) {
+    assert.ok(surface.get('watch')?.subcommands.has(sub), `watch should accept ${sub}`);
+  }
+});
+
+test('a verb whose usage ends in free text is positional, not flag-driven', () => {
+  // `construct outcome [--flags…] "<what you want>"` opens with flags and ends
+  // with the argument. Reading only the first token called it flags-only and
+  // rejected `construct outcome ship the docs`, which works.
+  for (const verb of ['outcome', 'ask']) {
+    const surface = probeSurface([verb]) as Map<string, Surface>;
+    assert.equal(surface.get(verb)?.shape, 'positional', `${verb} takes free text`);
+  }
+});
 
 test('a verb with a closed subcommand set reports it', () => {
   const surface = probeSurface(['source']) as Map<string, Surface>;

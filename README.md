@@ -34,7 +34,7 @@ construct outcome "We want to hire a contractor in Poland"
 
 `construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Those six are the spine, not the whole surface. The surface is 32 verbs. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
+Those six are the spine, not the whole surface. The surface is 33 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 
 | What you are doing | Verbs |
 |---|---|
@@ -49,9 +49,9 @@ Those six are the spine, not the whole surface. The surface is 32 verbs. `constr
 | Presence | `serve` |
 | Maintenance | `doctor` `backup` `cleanup` `skills` `version` |
 
-There is a 33rd, `role-serve`, and you never type it: the dispatcher launches it as one role's write surface, with the role's token in the environment rather than in arguments.
+There is a 34th, `role-serve`, and you never type it: the dispatcher launches it as one role's write surface, with the role's token in the environment rather than in arguments.
 
-Which of these spend money is worth knowing before you run one. `ask`, `work`, `review`, `compose`, `notes` when it reasons over what you drop in, `outcome --host`, `propose triage --host`, and `decide --apply` all dispatch to a host. Everything else, all of reading back included, is free and local.
+Which of these spend money is worth knowing before you run one. `ask`, `work`, `review`, `compose`, `notes` when it reasons over what you drop in, `outcome --host`, `propose --host` (the plain form as well as `triage`), `standing --due --host` (it runs the full work loop for every firing that has come due), and `decide --apply` all dispatch to a host. Everything else, all of reading back included, is free and local.
 
 Running work needs an agent host present, because Construct never ships its own agent runtime (commitment 1). Four are wired: OpenCode and the Claude Code CLI, plus two that spend a subscription rather than an API key, the Codex CLI (ChatGPT login) and the Cursor CLI (Cursor login). Every adapter is pinned to a probed version (`npm run probe:<host>`), and `construct doctor` reports each host's presence: found, version against the pin, and auth state. A model family nobody has tuned for still runs on any of them; it is labeled best-effort on the work log, never refused.
 
@@ -217,7 +217,7 @@ npm install
 npm run lint && npm run typecheck && npm test && npm run smoke
 ```
 
-That line is the whole gate; nothing is done without it. `npm run lint` is a chain of small checks rather than a linter: no absolute paths, glossary parity, no tracker ids in code, skill-spec conformance, reader-rubric parity, the connector gate, terminal-escape safety, and a regeneration of `docs/org-map.md` compared against the committed copy, so a catalog edit that would quietly falsify that page fails here instead. `npm test` is the sterile suite through `node --test`. `npm run smoke` packs the package, installs it into a scratch project, and runs the spine as a consumer would.
+That line is the whole gate; nothing is done without it. `npm run lint` is a chain of small checks rather than a linter: no absolute paths, glossary parity, no tracker ids in code, skill-spec conformance, reader-rubric parity, the connector gate, terminal-escape safety, a check that every command printed in the documentation names a verb and subcommand the CLI actually accepts (asked of the CLI, not of a table beside it), and a regeneration of `docs/org-map.md` compared against the committed copy, so a catalog edit that would quietly falsify that page fails here instead. `npm test` is the sterile suite through `node --test`. `npm run smoke` packs the package, installs it into a scratch project, and runs the spine as a consumer would.
 
 Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it runs natively via Node's type-stripping in development, with no build step for `npm test`. `npm run build` produces the published `dist/` for packaging.
 

@@ -20,6 +20,14 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * Resolved from this file rather than from the caller's directory, because a
+ * relative launcher makes the probe silently unable to run and every verb
+ * unclassifiable — which reads as a clean pass instead of a broken check.
+ */
+const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
 /**
  * Servers, not commands: they hold stdin open and would hang a probe. Their
@@ -41,8 +49,17 @@ function sandboxEnv(dir) {
   };
 }
 
-function run(env, args) {
-  const result = spawnSync('node', ['bin/construct.mjs', ...args], {
+/**
+ * Run inside the sandbox, not beside the repository.
+ *
+ * Redirecting HOME and the XDG variables is not enough on its own: some verbs
+ * write relative to the working directory, so a probe left in the checkout
+ * rewrites real files as a side effect of a read-only check. The sandbox is
+ * the working directory too.
+ */
+function run(dir, env, args) {
+  const result = spawnSync('node', [LAUNCHER, ...args], {
+    cwd: dir,
     env,
     encoding: 'utf8',
     timeout: 20_000,
@@ -66,17 +83,41 @@ function shapeOf(text, verb) {
   const subcommands = new Set();
   let positional = false;
   let flags = false;
-  const pattern = new RegExp(`construct ${verb}[ \\t]+(\\S+)`, 'g');
-  for (const match of text.matchAll(pattern)) {
-    const token = match[1];
-    if (/^\[?</.test(token) || /^"/.test(token)) positional = true;
-    else if (/^\[?--/.test(token)) flags = true;
-    else {
-      const word = /^\[?([a-z][a-z-]*)\]?$/.exec(token);
-      if (word) subcommands.add(word[1]);
-      else positional = true;
+
+  // Every token of every usage line, not just the first. `construct outcome`
+  // puts its flags first and its free-text argument last, so reading only the
+  // opening token calls it flag-driven and then rejects the documented form
+  // that actually works.
+  const lines = new RegExp(`construct ${verb}[ \\t]+(.*)$`, 'gm');
+  for (const line of text.matchAll(lines)) {
+    let first = true;
+    // A placeholder right after a flag that has no `=` is that flag's value,
+    // not an argument of the verb: `--run <id>` takes an id, it does not mean
+    // the verb accepts a bare positional.
+    let awaitingFlagValue = false;
+
+    for (const token of line[1].split(/\s+/).filter(Boolean)) {
+      const isPlaceholder = /^\[?</.test(token) || /^"/.test(token);
+      const isFlag = /^\[?--/.test(token);
+
+      if (isPlaceholder && awaitingFlagValue) {
+        awaitingFlagValue = false;
+      } else if (isPlaceholder) {
+        positional = true;
+      } else if (isFlag) {
+        flags = true;
+        awaitingFlagValue = !token.includes('=');
+      } else if (first) {
+        const word = /^\[?([a-z][a-z-]*)\]?$/.exec(token);
+        if (word) subcommands.add(word[1]);
+        else positional = true;
+      } else {
+        awaitingFlagValue = false;
+      }
+      first = false;
     }
   }
+
   if (subcommands.size > 0) return { shape: 'subcommands', subcommands };
   if (positional) return { shape: 'positional', subcommands };
   if (flags) return { shape: 'flags-only', subcommands };
@@ -93,24 +134,42 @@ function shapeOf(text, verb) {
  * nothing after that verb can be judged — which is the honest result, not a
  * reason to guess.
  */
-export function probeVerb(verb, env) {
+export function probeVerb(verb, dir, env) {
   if (NEVER_PROBE.has(verb)) return { verb, shape: 'unknown', subcommands: new Set() };
 
-  for (const args of [[verb], [verb, SENTINEL]]) {
-    const text = run(env, args);
-    const first = text.split('\n')[0] ?? '';
-    if (!new RegExp(`^usage: construct ${verb}\\b`).test(first)) continue;
+  // `--help` is tried because some verbs swallow an unknown positional and do
+  // their work anyway, so neither the bare nor the sentinel form ever reaches
+  // their usage. Without it those verbs look like they constrain nothing.
+  for (const args of [[verb], [verb, '--help'], [verb, SENTINEL]]) {
+    const text = run(dir, env, args);
+    // Anywhere in the output, not only the opening line: several verbs print a
+    // diagnostic first and their usage under it.
+    if (!new RegExp(`^usage: construct ${verb}\\b`, 'm').test(text)) continue;
     return { verb, ...shapeOf(text, verb) };
   }
   return { verb, shape: 'unknown', subcommands: new Set() };
 }
 
-/** Probe a set of verbs, sharing one sandbox. */
+/**
+ * Probe a set of verbs, sharing one sandbox.
+ *
+ * The canary runs first. If the launcher cannot be reached the probe answers
+ * nothing for every verb, which is indistinguishable from a surface that
+ * constrains nothing, and the caller would report a clean pass having checked
+ * none of it. A check that cannot run must say so rather than agree.
+ */
 export function probeSurface(verbs) {
   const dir = mkdtempSync(join(tmpdir(), 'construct-surface-'));
   try {
     const env = sandboxEnv(dir);
-    return new Map(verbs.map((verb) => [verb, probeVerb(verb, env)]));
+    const canary = run(dir, env, ['version']);
+    if (!/^\d+\.\d+\.\d+/m.test(canary)) {
+      throw new Error(
+        `cli-surface: the CLI at ${LAUNCHER} did not answer 'version' with a version, so no ` +
+          `surface could be measured. Refusing to report an unchecked pass. Output: ${canary.slice(0, 200)}`,
+      );
+    }
+    return new Map(verbs.map((verb) => [verb, probeVerb(verb, dir, env)]));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

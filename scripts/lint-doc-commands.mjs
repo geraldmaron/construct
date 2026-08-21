@@ -32,6 +32,8 @@
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import process from 'node:process';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { INTERNAL_VERBS, VERBS } from '../src/cli/index.ts';
 import { probeSurface } from './lib/cli-surface.mjs';
 
@@ -49,11 +51,19 @@ const SHELL_FENCE = /^(bash|sh|shell|zsh|console)$/i;
 
 const known = new Set([...VERBS, ...INTERNAL_VERBS]);
 
+/**
+ * Every page in the repository, whatever directory this was invoked from. A
+ * `git ls-files` run from a subdirectory sees only that subtree, so the check
+ * would quietly narrow to a fraction of the corpus and still report success.
+ */
+const REPO = fileURLToPath(new URL('../', import.meta.url));
+
 function docFiles() {
   const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '*.md'], {
+    cwd: REPO,
     encoding: 'utf8',
   });
-  return out.split('\n').filter(Boolean);
+  return out.split('\n').filter(Boolean).map((path) => join(REPO, path));
 }
 
 /**
@@ -160,7 +170,7 @@ for (const use of cited) {
 
 if (problems.length > 0) {
   for (const p of problems) {
-    process.stderr.write(`${p.file}:${p.line}: '${p.text}' — ${p.why}\n`);
+    process.stderr.write(`${relative(REPO, p.file)}:${p.line}: '${p.text}' — ${p.why}\n`);
   }
   process.stderr.write(
     `\nlint-doc-commands: ${String(problems.length)} documented command(s) no reader could run.\n`,
