@@ -2244,3 +2244,156 @@ precision (§21), and inherits these figures rather than §20's.
 **Recorded by:** `fixtures/ground-routing/2026-08-21-namer-panel.json`, produced
 by the probe above, 2026-08-21. Deterministic arm re-run the same day and
 identical to §20's table but for one document added to the ground since.
+
+## 24. Five concern lines, redrafted against their lenses and not adopted (2026-08-21)
+
+Five domains carried concern lines that described less than their lens obliges.
+The catalog's concern line is the only thing the model namer reads about a
+domain (`namerPrompt` in `hosts/namer.ts` renders the catalog as
+`- <domain>: <concern>` and nothing else), so a line that omits half its lens's
+question set is the router's whole knowledge of that half. The proposal was to
+swap all five lines at once. This is the measurement, and it says keep the lines
+that are there.
+
+### Why a fresh baseline had to be paid for
+
+`fixtures/namer-arms/shipped.json` was recorded 2026-08-11 against a 15-domain
+catalog. `evidence-provenance` and `coverage-gaps` were added 2026-08-13, and
+the serving build moved. Both halves of that gap matter: it is not the same
+prompt and not the same model. Scored against the current corpora it reads miss
+0.280, and a same-day re-recording of the *unchanged* lines reads **0.194**. The
+older arm is not a wrong figure, it is a figure about a different router, and
+using it as the baseline would have credited the redraft with 0.086 of miss it
+did not buy. §10 and §18 keep quoting it because they are stated on it.
+
+### The change, and what it cost in prompt length
+
+§18 measured miss degrading monotonically with catalog-block length (0.280 at
+1,224 characters to 0.548 at 12,883, p < 0.0001 at the two large arms), so a
+redraft has to be a swap rather than an addition. The current 17-domain block is
+**1,433 characters**; the redrafted block is **1,491**, +58 or +4.05%. That is
+one thirtieth of §18's smallest measured step (+105%, which moved miss 0.032 at
+p = 0.61), so length is not an explanation for anything below. It is stated
+because an unstated drift is how a block reaches 12,883 characters.
+
+| domain | line measured against the current one |
+|---|---|
+| marketing-claims | what you publish or promote, what others say of you, and whether it holds |
+| privacy | records about people: what you keep, who sees them, where they go |
+| compliance | rules you must follow, and the proof that you follow them |
+| commerce-tax | money owed or paid: pricing, billing, tax, refunds, failed payments |
+| product-scoping | what is in, what is out, and where reality disagrees |
+
+### The arms
+
+Both recorded the same day, same corpora, same admission gate, both verified
+single-tier `claude-sonnet-5`, both refused-on-failure clean (0 of 126). Pool is
+the out-of-family corpora `fresh` + `unspent`: 82 outcomes, 93 (outcome,
+expected label) pairs.
+
+**Two frames are reported because 7 of the 17 domains carry no gold anywhere in
+this pool.** A domain the labelers never marked can only ever contribute a false
+implicate, so the overall over-rate charges the router for naming concerns the
+corpus holds no opinion about. In-frame restricts the named set to the 10
+domains that do carry gold. Miss is identical in both frames by construction,
+since every expected label is in-frame.
+
+| arm | block | miss | over overall | over in-frame |
+|---|---|---|---|---|
+| current lines (`shipped-17-domain.json`) | 1,433 ch | 0.194 (18/93) [0.126, 0.285] | 0.537 (87/162) [0.460, 0.612] | 0.370 (44/119) [0.288, 0.459] |
+| five redrafted lines (`five-concern-lines.json`) | 1,491 ch | 0.183 (17/93) [0.117, 0.273] | 0.483 (71/147) [0.404, 0.563] | 0.339 (39/115) [0.259, 0.430] |
+| zero-model keyword map (A0, both arms) | n/a | 0.634 (59/93) [0.533, 0.725] | 0.507 (35/69) [0.392, 0.622] | 0.414 (24/58) [0.296, 0.542] |
+
+All intervals Wilson 95%, per §1. Paired on the miss axis: **5 lost, 6
+recovered, McNemar exact p = 1.0000**, on 11 discordant pairs of 93.
+
+### The reading, and it is not the aggregate
+
+The aggregate looks like a mild win on both axes. It is not one, and the reason
+is visible per domain rather than in the totals.
+
+| domain | edited | gold | miss before | miss after | lost | recovered |
+|---|---|---|---|---|---|---|
+| marketing-claims | yes | 14 | 0.429 | **0.643** | 3 | 0 |
+| privacy | yes | 7 | 0.143 | 0.000 | 0 | 1 |
+| compliance | yes | 12 | 0.083 | 0.000 | 0 | 1 |
+| commerce-tax | yes | 15 | 0.133 | 0.133 | 1 | 1 |
+| product-scoping | yes | 5 | 0.800 | 0.800 | 0 | 0 |
+| contracts | no | 12 | 0.167 | 0.000 | 0 | 2 |
+| employment | no | 17 | 0.118 | 0.059 | 0 | 1 |
+| program-sequencing | no | 4 | 0.000 | 0.250 | 1 | 0 |
+| accessibility, security | no | 7 | 0.000 | 0.000 | 0 | 0 |
+
+**The net gain sits entirely on domains the change did not touch.** Split the 11
+discordant pairs by whether the domain's line was edited: the five edited
+domains net **−1** (4 lost, 3 recovered, p = 1.0000), and the untouched domains
+net **+2** (1 lost, 3 recovered, p = 0.6250). Three concern lines that are
+byte-identical across the two arms disagree on four label-pairs, which is this
+instrument's noise floor stated in its own units, and it is as large as the
+effect on the lines that changed.
+
+**The intended recoveries are real and named**, which is why this is a rejection
+on evidence rather than a null result. Each of the three lands on exactly the
+case its redraft was written for: `compliance` on "which volunteers haven't had
+their background check renewed" (a rule you are subject to, not a regulator you
+are dealing with), `privacy` on "a bad review claiming we lost a student's
+paperwork" (records, which the line never said), `commerce-tax` on "which of our
+six towns are behind on paying the small family fee" (money owed rather than
+money taken). The redraft's diagnosis was right about what those lines omitted.
+
+**They were paid for on marketing-claims, and the bill is larger.** That line
+was the first target and lost three pairs while recovering none, moving 0.429 to
+0.643. One of the three is "a flyer we can hand out at the middle schools
+announcing fall sign-ups", which the redraft was written to catch and which the
+*unchanged* line already caught on this build. Widening a line to name more of
+what its lens covers is not free: "what you publish or promote, what others say
+of you" is three things where "what you say publicly" was one, and the namer
+named the domain less often, not more.
+
+**And the worst line is untouched by the result.** `product-scoping` at 0.800
+miss on 5 gold labels moved neither way, 0 lost and 0 recovered. The one domain
+whose defect is not marginal is the one the redraft bought nothing on.
+
+### Verdict: keep the current lines
+
+Not adopted. Under §21's asymmetry, recall is not this project's currency to
+spend, and the only directional per-domain movement in the table is a recall
+loss on the domain the change was written for. Everything favourable is either
+inside p = 1.0000 or sitting on lines the change did not make. This is §18's
+finding arriving from a different direction: the model's own reading of a short
+line is doing more work than the extra clauses do, and adding clauses is not
+reliably additive even at 58 characters.
+
+What is **not** claimed: that the redrafted lines are worse. 11 discordant pairs
+of 93 cannot establish that either, and three genuine recoveries are on the
+record above. What is claimed is narrower and sufficient: on this corpus, at this
+tier, the swap does not earn its adoption, and a change that cannot be shown to
+help does not get to move the router.
+
+What this leaves open is `product-scoping` and `marketing-claims`, the two
+domains carrying real miss (0.800 and 0.429) that neither the current lines nor
+this redraft address. A corpus of 5 and 14 gold labels cannot adjudicate a line
+change on either; §18's `construct-9933` already holds the corpus-power
+precondition, and this section is the second measurement to run into it.
+
+### Evidence provenance
+
+Both arms recorded 2026-08-21 through the shipped seam
+(`createHostNamer(createClaudeAdapter(...))`), host `claude`, model pinned
+`claude-sonnet-5` and verified single-tier in `modelsRan`, 126 consultations
+each, 0 failures, 10 and 8 corrective retries, mean latency 8,860 ms and
+8,242 ms. Catalog 17 domains. Pool 82 outcomes / 93 label-pairs over
+`fresh-outcomes.json` + `unspent-outcomes.json`; the sealed corpus is absent, as
+everywhere. Prompt fingerprints `aafa18d6937b` (current lines) and
+`4806f14b059a` (redraft). Metered spend **$34.69** across the two recorded arms
+($17.54 + $17.15), plus **$17.06** on a first candidate run the harness refused
+to record because 1 of 126 consultations returned malformed JSON after its
+corrective retry; that refusal is the rule from §18 working, and the refused run
+reproduced the same gate-axis figures (miss 0.183, 5 lost / 6 recovered), which
+is stated as a coincidence of two runs rather than as a second measurement.
+Where a corpus's labels and the namer share a model family, observed agreement
+is an upper bound on independent agreement (the construct-adf caveat travels
+with these numbers). Re-derivable by `node scripts/score-namer-arms.mjs
+--expect`, which runs under `npm run lint`.
+
+Recorded for `construct-xn5g`.
