@@ -3169,7 +3169,13 @@ async function applyApproved(
     );
     const result = await applyProposal(
       store,
-      createHostApplier(adapter, (id) => getSource(store, id)?.locator ?? 'an undeclared source'),
+      createHostApplier(adapter, (id) => {
+        const declared = getSource(store, id);
+        return {
+          kind: declared?.kind ?? '',
+          locator: declared?.locator ?? 'an undeclared source',
+        };
+      }),
       proposal,
       now(),
     );
