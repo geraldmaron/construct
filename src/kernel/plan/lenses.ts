@@ -291,6 +291,13 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
         'operability-gaps',
         'each failure path with its detection signal and its owner, or the gap named where one of the three is missing',
       ),
+      slot(
+        'performance-obligation',
+        'the performance obligation this work must meet: the gate the declared ' +
+          'repository runs, named by the script that runs it, or the standard ' +
+          'this method descends from where it declares none — with how a reader ' +
+          'would check the work against it',
+      ),
     ],
     escalation: [
       'A failure path with no detection: surface it as a finding — an outage nobody notices is the expensive kind.',
@@ -320,6 +327,13 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
         'flow-dead-ends',
         'each point where the user can get stuck, with what the interface says there and what it should offer instead',
       ),
+      slot(
+        'accessibility-obligation',
+        'the accessibility obligation this work must meet: the gate the declared ' +
+          'repository runs, named by the script that runs it, or the standard ' +
+          'this method descends from where it declares none — with how a reader ' +
+          'would check the work against it',
+      ),
     ],
     escalation: [
       'A dead end with no recovery path: surface it as a finding, not a polish item.',
@@ -348,6 +362,13 @@ export const LENSES: readonly RoleLens[] = Object.freeze([
       slot(
         'threat-paths',
         'each path from who can reach it to what they gain, feeding the attack-surface slot, with the check that stops it or the gap where none does',
+      ),
+      slot(
+        'security-obligation',
+        'the security obligation this work must meet: the gate the declared ' +
+          'repository runs, named by the script that runs it, or the standard ' +
+          'this method descends from where it declares none — with how a reader ' +
+          'would check the work against it',
       ),
     ],
     escalation: [
