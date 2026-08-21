@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
-import { extractImportSpecifiers, resolveRelativeImport, isUnderTree, violationsIn } from '../../scripts/lint-connector-gate.mjs';
+import { extractImportSpecifiers, resolveRelativeImport, isUnderTree, violationsIn, connectorRootOf } from '../../scripts/lint-connector-gate.mjs';
 
 type ImportSpec = { specifier: string; line: number };
 type Violation = { relPath: string; line: number; specifier: string };
@@ -105,10 +105,11 @@ test('violationsIn flags an importer resolving into src/connectors and nothing e
   assert.equal(violations[0].line, 1);
 });
 
-test('violationsIn on a connector file allows kernel and builtins, forbids everything else', () => {
+test('violationsIn on a connector file allows kernel, its own modules, and builtins, forbids everything else', () => {
   const text = [
     "import type { ConnectorRead } from '../../kernel/connectors/seam.ts';",
     "import { createHash } from 'node:crypto';",
+    "import { PINNED_API_VERSION } from './pin.ts';",
     "import { createClaudeAdapter } from '../../hosts/claude/adapter.ts';",
     "import { otherVendor } from '../github/client.ts';",
   ].join('\n');
@@ -116,7 +117,15 @@ test('violationsIn on a connector file allows kernel and builtins, forbids every
   assert.deepEqual(
     violations.map((v) => v.specifier),
     ['../../hosts/claude/adapter.ts', '../github/client.ts'],
+    "a vendor's own pin is the same connector; a sibling vendor is another one",
   );
+});
+
+test('connectorRootOf names the one connector a file belongs to, and nothing for a top-level file', () => {
+  assert.equal(connectorRootOf('src/connectors/jira/client.ts'), 'src/connectors/jira');
+  assert.equal(connectorRootOf('src/connectors/jira/wire/http.ts'), 'src/connectors/jira');
+  assert.equal(connectorRootOf('src/connectors/shared.ts'), null, 'shared connector code is licensed by nobody');
+  assert.equal(connectorRootOf('src/kernel/run/apply.ts'), null);
 });
 
 // ---------------------------------------------------------------------------
@@ -132,14 +141,17 @@ const FIXTURES = {
   cli: 'src/cli/__connector-gate-lint-fixture__.ts',
 };
 
+/** The planted vendor alone, never the connectors tree: real connectors live there now. */
+const FIXTURE_VENDOR = 'src/connectors/__connector-gate-lint-fixture-vendor__';
+
 function cleanupFixtures(): void {
   for (const f of Object.values(FIXTURES)) removeTree(f);
-  removeTree('src/connectors');
+  removeTree(FIXTURE_VENDOR);
 }
 
 test('the fixture is what makes the lint fail, not the repo', async () => {
   cleanupFixtures();
-  assert.equal(existsSync(REPO + 'src/connectors'), false, 'a previous run left its fixture behind');
+  assert.equal(existsSync(REPO + FIXTURE_VENDOR), false, 'a previous run left its fixture behind');
   const { code } = await runLint();
   assert.equal(code, 0, 'the repo itself has a connector-gate violation — fix that first');
 });
