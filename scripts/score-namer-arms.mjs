@@ -12,7 +12,7 @@
  * This scores the recorded arms and, with `--expect`, fails when a headline
  * figure no longer comes out of its own fixture.
  *
- * Definitions, kept the way `RESEARCH-DECISIONS.md` §10 and §18 state them:
+ * Definitions, kept the way `RESEARCH-DECISIONS.md` §10, §18 and §24 state them:
  *
  *   miss  = expected labels the arm did not name, over all expected labels,
  *           pooled over the out-of-family corpora (fresh + unspent). Naming a
@@ -21,6 +21,18 @@
  *           the same pool. §18's ablation table reports a different `over`
  *           scoped to the unspent arm alone; the two are not comparable and
  *           this script computes §10's.
+ *
+ * **Two frames, because most of the catalog carries no gold here.** Ten of the
+ * catalog's domains are marked on at least one outcome in this pool and the
+ * rest are marked on none. A domain the labelers never marked anywhere can only
+ * ever contribute a false implicate, so the OVERALL over-rate charges the
+ * router for naming concerns this corpus holds no opinion about — silence there
+ * is the corpus's, not the router's. IN-FRAME restricts the named set to the
+ * domains that carry gold. Miss is identical in both frames by construction,
+ * since every expected label is in-frame, and is printed twice anyway so the
+ * pair is never quoted as though only one of them had moved. The frame is read
+ * from the corpora themselves rather than hard-coded, so a corpus that grows a
+ * label moves the frame instead of silently disagreeing with it.
  *
  * The columns are the arms as recorded: `A0` is the zero-model keyword map,
  * `B` the shipped model namer. A fixture is never rewritten to fit a later
@@ -31,29 +43,65 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 
-const FIXTURE = fileURLToPath(new URL('../fixtures/namer-arms/shipped.json', import.meta.url));
+const DIR = fileURLToPath(new URL('../fixtures/namer-arms/', import.meta.url));
+const CORPORA = fileURLToPath(new URL('../tests/kernel/implication/fixtures/', import.meta.url));
 
 /** The out-of-family pool: wording whose authors had never seen the catalog. */
 const OUT_OF_FAMILY = ['fresh-outcomes.json', 'unspent-outcomes.json'];
 
+/** The domains this pool actually marks. Everything else can only over-fire. */
+const IN_FRAME = new Set(
+  OUT_OF_FAMILY.flatMap((corpus) =>
+    JSON.parse(readFileSync(CORPORA + corpus, 'utf8')).outcomes.flatMap((o) => o.expect),
+  ),
+);
+
 /**
- * The figures the README and RESEARCH-DECISIONS §10 state, and the arm each
- * belongs to. A change that moves one of these has changed what the project
- * claims in public, which is a decision rather than a side effect.
+ * The figures the README and `RESEARCH-DECISIONS.md` §10 and §24 state, and the
+ * arm each belongs to. A change that moves one of these has changed what the
+ * project claims in public, which is a decision rather than a side effect.
+ *
+ * The three arms are not interchangeable and the reason is the point of §24:
+ * `shipped.json` was recorded against a 15-domain catalog on the Claude build
+ * of 2026-08-11, and the two 2026-08-21 arms against the 17-domain catalog on
+ * that day's build. Only same-day arms are a paired comparison; the older arm
+ * is kept because §10 and §18 are stated on it.
  */
-const PUBLISHED = [
-  { column: 'B', label: 'shipped model namer', miss: '0.280', over: '0.374' },
-  { column: 'A0', label: 'zero-model keyword map', miss: '0.634', over: null },
+const ARMS = [
+  {
+    file: 'shipped.json',
+    note: '15-domain catalog, the arm §10 and §18 are stated on',
+    columns: [
+      { column: 'B', label: 'shipped model namer', miss: '0.280', over: '0.374', inFrame: '0.163' },
+      { column: 'A0', label: 'zero-model keyword map', miss: '0.634', over: null, inFrame: null },
+    ],
+  },
+  {
+    file: 'shipped-17-domain.json',
+    note: '17-domain catalog, the paired baseline §24 measures against',
+    columns: [
+      { column: 'B', label: 'current concern lines', miss: '0.194', over: '0.537', inFrame: '0.370' },
+      { column: 'A0', label: 'zero-model keyword map', miss: '0.634', over: '0.507', inFrame: '0.414' },
+    ],
+  },
+  {
+    file: 'five-concern-lines.json',
+    note: '17-domain catalog, five concern lines redrafted against their lenses',
+    columns: [
+      { column: 'B', label: 'five redrafted concern lines', miss: '0.183', over: '0.483', inFrame: '0.339' },
+    ],
+  },
 ];
 
-function score(rows, column) {
+function score(rows, column, frame) {
   let expected = 0;
   let missed = 0;
   let named = 0;
   let over = 0;
   for (const row of rows) {
     const want = new Set(row.expect);
-    const got = new Set(row[column] ?? []);
+    const all = row[column] ?? [];
+    const got = new Set(frame === 'in-frame' ? all.filter((d) => IN_FRAME.has(d)) : all);
     expected += want.size;
     named += got.size;
     for (const label of want) if (!got.has(label)) missed++;
@@ -77,29 +125,48 @@ function rate(hits, total) {
   return total === 0 ? '—' : (hits / total).toFixed(3);
 }
 
-const fixture = JSON.parse(readFileSync(FIXTURE, 'utf8'));
-const pool = OUT_OF_FAMILY.flatMap((corpus) => fixture.perOutcome[corpus] ?? []);
-
 process.stdout.write(
-  `namer arms — arm "${fixture.arm}", host ${fixture.host}, recorded ${fixture.recordedAt}\n` +
-    `pool: ${OUT_OF_FAMILY.join(' + ')} (${String(pool.length)} outcomes)\n\n`,
+  `namer arms — in-frame is ${String(IN_FRAME.size)} gold-carrying domains; ` +
+    `overall is the whole catalog\npool: ${OUT_OF_FAMILY.join(' + ')}\n`,
 );
 
 const failures = [];
-for (const { column, label, miss, over } of PUBLISHED) {
-  const s = score(pool, column);
-  const missRate = rate(s.missed, s.expected);
-  const overRate = rate(s.over, s.named);
-  const [ml, mh] = wilson(s.missed, s.expected);
+for (const arm of ARMS) {
+  const fixture = JSON.parse(readFileSync(DIR + arm.file, 'utf8'));
+  const pool = OUT_OF_FAMILY.flatMap((corpus) => fixture.perOutcome[corpus] ?? []);
   process.stdout.write(
-    `${column}  ${label}\n` +
-      `    miss ${missRate} (${String(s.missed)}/${String(s.expected)}) ` +
-      `Wilson 95% [${ml.toFixed(3)}, ${mh.toFixed(3)}]\n` +
-      `    over ${overRate} (${String(s.over)}/${String(s.named)})\n`,
+    `\narm "${fixture.arm}" (${arm.file}) — ${arm.note}\n` +
+      `  host ${fixture.host}, model ${String(fixture.model)}, ran ${fixture.modelsRan.join(', ')}, ` +
+      `prompt ${fixture.promptFingerprint}, recorded ${fixture.recordedAt}\n` +
+      `  ${String(pool.length)} outcomes, ${String(fixture.consultations)} consultations, ` +
+      `${String(fixture.failures)} failed, ${String(fixture.repairs)} repaired\n`,
   );
-  if (missRate !== miss) failures.push(`${column} miss: published ${miss}, fixture gives ${missRate}`);
-  if (over !== null && overRate !== over) {
-    failures.push(`${column} over: published ${over}, fixture gives ${overRate}`);
+  for (const { column, label, miss, over, inFrame } of arm.columns) {
+    const overall = score(pool, column, 'overall');
+    const framed = score(pool, column, 'in-frame');
+    const missRate = rate(overall.missed, overall.expected);
+    const overRate = rate(overall.over, overall.named);
+    const inFrameRate = rate(framed.over, framed.named);
+    const [ml, mh] = wilson(overall.missed, overall.expected);
+    const [ol, oh] = wilson(overall.over, overall.named);
+    const [fl, fh] = wilson(framed.over, framed.named);
+    process.stdout.write(
+      `  ${column.padEnd(2)} ${label}\n` +
+        `      miss          ${missRate} (${String(overall.missed)}/${String(overall.expected)}) ` +
+        `Wilson 95% [${ml.toFixed(3)}, ${mh.toFixed(3)}]  (same in both frames)\n` +
+        `      over overall  ${overRate} (${String(overall.over)}/${String(overall.named)}) ` +
+        `Wilson 95% [${ol.toFixed(3)}, ${oh.toFixed(3)}]\n` +
+        `      over in-frame ${inFrameRate} (${String(framed.over)}/${String(framed.named)}) ` +
+        `Wilson 95% [${fl.toFixed(3)}, ${fh.toFixed(3)}]\n`,
+    );
+    const where = `${fixture.arm} ${column}`;
+    if (missRate !== miss) failures.push(`${where} miss: published ${miss}, fixture gives ${missRate}`);
+    if (over !== null && overRate !== over) {
+      failures.push(`${where} over overall: published ${over}, fixture gives ${overRate}`);
+    }
+    if (inFrame !== null && inFrameRate !== inFrame) {
+      failures.push(`${where} over in-frame: published ${inFrame}, fixture gives ${inFrameRate}`);
+    }
   }
 }
 
@@ -110,7 +177,7 @@ if (failures.length > 0) {
   for (const failure of failures) process.stderr.write(`  ${failure}\n`);
   process.stderr.write(
     '\nEither the fixture changed, or the figure quoted in README.md and ' +
-      'RESEARCH-DECISIONS.md §10 is wrong. Both are decisions, not typos.\n',
+      'RESEARCH-DECISIONS.md §10 and §24 is wrong. Both are decisions, not typos.\n',
   );
   process.exit(1);
 }

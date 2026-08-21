@@ -1,0 +1,2569 @@
+{
+  "arm": "five-concern-lines",
+  "recordedAt": "2026-08-21T21:36:49.297Z",
+  "host": "claude",
+  "model": "claude-sonnet-5",
+  "modelsRan": [
+    "claude-sonnet-5"
+  ],
+  "promptFingerprint": "4806f14b059a",
+  "consultations": 126,
+  "failures": 0,
+  "repairs": 8,
+  "perOutcome": {
+    "labeled-outcomes.json": [
+      {
+        "outcome": "Launch a paid beta to EU users next month",
+        "expect": [
+          "privacy",
+          "commerce-tax",
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "program-sequencing",
+          "privacy",
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "A1": [
+          "program-sequencing",
+          "privacy",
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "B": [
+          "privacy",
+          "commerce-tax",
+          "compliance",
+          "contracts",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Migrate our authentication to SSO before the SOC 2 audit",
+        "expect": [
+          "security",
+          "compliance",
+          "program-sequencing"
+        ],
+        "A0": [
+          "security",
+          "compliance",
+          "program-sequencing"
+        ],
+        "A1": [
+          "security",
+          "compliance",
+          "program-sequencing"
+        ],
+        "B": [
+          "security",
+          "compliance",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Hire two contractors to run our support desk",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "contracts",
+          "operations"
+        ],
+        "A1": [
+          "employment",
+          "contracts",
+          "operations"
+        ],
+        "B": [
+          "employment",
+          "contracts",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Sign a new vendor agreement for our analytics provider",
+        "expect": [
+          "contracts",
+          "privacy"
+        ],
+        "A0": [
+          "contracts",
+          "measurement",
+          "privacy"
+        ],
+        "A1": [
+          "contracts",
+          "measurement",
+          "privacy"
+        ],
+        "B": [
+          "contracts",
+          "privacy",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Run a marketing campaign for the spring product launch",
+        "expect": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "A0": [
+          "marketing-claims",
+          "program-sequencing",
+          "strategy-alignment"
+        ],
+        "A1": [
+          "marketing-claims",
+          "program-sequencing",
+          "strategy-alignment"
+        ],
+        "B": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Rebuild the checkout flow to accept subscriptions",
+        "expect": [
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "A0": [
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "A1": [
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "B": [
+          "commerce-tax",
+          "system-design",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Respond to a customer's data subject deletion request",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "privacy",
+          "compliance",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Set up payroll for our first employees",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "commerce-tax",
+          "compliance",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Complete a security questionnaire from an enterprise prospect",
+        "expect": [
+          "compliance",
+          "security"
+        ],
+        "A0": [
+          "compliance",
+          "security"
+        ],
+        "A1": [
+          "compliance",
+          "security"
+        ],
+        "B": [
+          "security",
+          "compliance",
+          "privacy",
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Publish a press release announcing our funding",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "A1": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "B": [
+          "marketing-claims",
+          "evidence-provenance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Add screen reader support to the dashboard",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "accessibility",
+          "measurement",
+          "operations",
+          "product-scoping"
+        ],
+        "A1": [
+          "accessibility",
+          "measurement",
+          "operations",
+          "product-scoping"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Roll out feature flags across the platform this quarter",
+        "expect": [
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "product-scoping",
+          "system-design",
+          "program-sequencing"
+        ],
+        "A1": [
+          "product-scoping",
+          "system-design",
+          "program-sequencing"
+        ],
+        "B": [
+          "program-sequencing",
+          "system-design",
+          "operations",
+          "product-scoping"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Draft terms of service for the new self-serve plan",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "contracts"
+        ],
+        "A1": [
+          "contracts"
+        ],
+        "B": [
+          "contracts",
+          "commerce-tax",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Plan a phased rollout of the new pricing to existing customers",
+        "expect": [
+          "commerce-tax",
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "program-sequencing",
+          "commerce-tax"
+        ],
+        "A1": [
+          "program-sequencing",
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "program-sequencing",
+          "contracts",
+          "strategy-alignment",
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Rotate our API keys after a contractor left",
+        "expect": [
+          "security",
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "contracts",
+          "security"
+        ],
+        "A1": [
+          "employment",
+          "contracts",
+          "security"
+        ],
+        "B": [
+          "security",
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Prepare for a HIPAA audit of our health data storage",
+        "expect": [
+          "compliance",
+          "privacy"
+        ],
+        "A0": [
+          "privacy",
+          "compliance"
+        ],
+        "A1": [
+          "privacy",
+          "compliance"
+        ],
+        "B": [
+          "compliance",
+          "privacy",
+          "security",
+          "evidence-provenance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Onboard a reseller partner in Germany",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "contracts",
+          "product-scoping"
+        ],
+        "A1": [
+          "contracts",
+          "product-scoping"
+        ],
+        "B": [
+          "contracts",
+          "commerce-tax",
+          "compliance",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Encrypt customer data at rest before the enterprise deal closes",
+        "expect": [
+          "security",
+          "privacy"
+        ],
+        "A0": [
+          "privacy",
+          "security",
+          "program-sequencing"
+        ],
+        "A1": [
+          "privacy",
+          "security",
+          "program-sequencing"
+        ],
+        "B": [
+          "security",
+          "privacy",
+          "compliance",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Write a newsletter to announce the beta",
+        "expect": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "A0": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "A1": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "B": [
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Ship the mobile app redesign by Friday",
+        "expect": [
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A1": [
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "B": [
+          "program-sequencing",
+          "product-scoping",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      }
+    ],
+    "held-out-outcomes.json": [
+      {
+        "outcome": "A hospital system wants to buy our product and sent over a security questionnaire I do not know how to answer",
+        "expect": [
+          "compliance",
+          "security",
+          "privacy"
+        ],
+        "A0": [
+          "compliance",
+          "privacy",
+          "security"
+        ],
+        "A1": [
+          "compliance",
+          "privacy",
+          "security"
+        ],
+        "B": [
+          "security",
+          "compliance",
+          "privacy",
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Sign the reseller agreement with the Dutch distributor before the quarter closes",
+        "expect": [
+          "contracts",
+          "commerce-tax",
+          "program-sequencing"
+        ],
+        "A0": [
+          "contracts",
+          "program-sequencing",
+          "commerce-tax"
+        ],
+        "A1": [
+          "contracts",
+          "program-sequencing",
+          "commerce-tax"
+        ],
+        "B": [
+          "contracts",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A customer wants us to delete everything we hold on one of their staff",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "privacy",
+          "coverage-gaps",
+          "employment"
+        ],
+        "A1": [
+          "privacy",
+          "coverage-gaps",
+          "employment"
+        ],
+        "B": [
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The company we buy our components from wants us to agree to their terms",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "contracts"
+        ],
+        "A1": [
+          "contracts"
+        ],
+        "B": [
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Someone reported they could see another customer's invoices",
+        "expect": [
+          "security",
+          "privacy"
+        ],
+        "A0": [
+          "privacy",
+          "security",
+          "commerce-tax"
+        ],
+        "A1": [
+          "privacy",
+          "security",
+          "commerce-tax"
+        ],
+        "B": [
+          "privacy",
+          "security",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need to prove to a bank that our controls are real before they will sign anything",
+        "expect": [
+          "compliance",
+          "contracts"
+        ],
+        "A0": [
+          "compliance",
+          "program-sequencing"
+        ],
+        "A1": [
+          "compliance",
+          "program-sequencing"
+        ],
+        "B": [
+          "compliance",
+          "evidence-provenance",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Bring on two part-time people to help with support over the holidays",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "operations"
+        ],
+        "A1": [
+          "employment",
+          "operations"
+        ],
+        "B": [
+          "employment",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Put out a press release saying we are the fastest tool in our category",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "A1": [
+          "marketing-claims",
+          "program-sequencing"
+        ],
+        "B": [
+          "marketing-claims",
+          "evidence-provenance",
+          "measurement"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Start charging our European customers in euros instead of dollars",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax",
+          "privacy",
+          "strategy-alignment"
+        ],
+        "A1": [
+          "commerce-tax",
+          "privacy",
+          "strategy-alignment"
+        ],
+        "B": [
+          "commerce-tax",
+          "system-design",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Get our customer list out of the spreadsheet and into something real",
+        "expect": [
+          "privacy",
+          "security"
+        ],
+        "A0": [
+          "privacy",
+          "security"
+        ],
+        "A1": [
+          "privacy",
+          "security"
+        ],
+        "B": [
+          "privacy",
+          "system-design",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Let go of the contractor who has been doing our design work",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "contracts"
+        ],
+        "A1": [
+          "employment",
+          "contracts"
+        ],
+        "B": [
+          "contracts",
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Send a monthly note to everyone who ever signed up",
+        "expect": [
+          "marketing-claims",
+          "privacy"
+        ],
+        "A0": [
+          "marketing-claims",
+          "coverage-gaps",
+          "privacy"
+        ],
+        "A1": [
+          "marketing-claims",
+          "coverage-gaps",
+          "privacy"
+        ],
+        "B": [
+          "privacy",
+          "compliance",
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Work out what we owe now that we have customers in three more countries",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "compliance",
+          "commerce-tax",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Give the sales team a discount they can offer without asking anyone",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "product-scoping",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Find someone to take over the books from the person doing them now",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Move the database to Postgres over the holiday weekend",
+        "expect": [
+          "program-sequencing"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "program-sequencing",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Replace the login system with single sign-on before the enterprise pilot",
+        "expect": [
+          "security",
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "product-scoping",
+          "program-sequencing",
+          "security",
+          "system-design"
+        ],
+        "A1": [
+          "product-scoping",
+          "program-sequencing",
+          "security",
+          "system-design"
+        ],
+        "B": [
+          "security",
+          "system-design",
+          "program-sequencing",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Put the photos of people's IDs somewhere safer than they are now",
+        "expect": [
+          "security",
+          "privacy"
+        ],
+        "A0": [
+          "privacy",
+          "security"
+        ],
+        "A1": [
+          "privacy",
+          "security"
+        ],
+        "B": [
+          "privacy",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Cut the signup flow down to a single screen",
+        "expect": [
+          "product-scoping"
+        ],
+        "A0": [
+          "product-scoping"
+        ],
+        "A1": [
+          "product-scoping"
+        ],
+        "B": [
+          "product-scoping",
+          "user-experience",
+          "accessibility",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Let people sign in with their work Google account",
+        "expect": [
+          "security"
+        ],
+        "A0": [
+          "security"
+        ],
+        "A1": [
+          "security"
+        ],
+        "B": [
+          "security",
+          "privacy",
+          "system-design"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Make the app usable by our blind customers",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "accessibility",
+          "user-experience"
+        ],
+        "A1": [
+          "accessibility",
+          "user-experience"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Open a pilot with three schools in California",
+        "expect": [
+          "privacy",
+          "product-scoping"
+        ],
+        "A0": [
+          "privacy",
+          "product-scoping"
+        ],
+        "A1": [
+          "privacy",
+          "product-scoping"
+        ],
+        "B": [
+          "contracts",
+          "privacy",
+          "compliance",
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Let people who cannot use a mouse get all the way through checkout",
+        "expect": [
+          "accessibility",
+          "commerce-tax"
+        ],
+        "A0": [
+          "accessibility",
+          "commerce-tax"
+        ],
+        "A1": [
+          "accessibility",
+          "commerce-tax"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Ship the new dashboard to everyone by the end of the quarter",
+        "expect": [
+          "program-sequencing",
+          "product-scoping"
+        ],
+        "A0": [
+          "program-sequencing",
+          "coverage-gaps",
+          "measurement",
+          "product-scoping"
+        ],
+        "A1": [
+          "program-sequencing",
+          "coverage-gaps",
+          "measurement",
+          "product-scoping"
+        ],
+        "B": [
+          "program-sequencing",
+          "product-scoping",
+          "accessibility",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      }
+    ],
+    "fresh-outcomes.json": [
+      {
+        "outcome": "Our biggest client wants us to keep their data in Germany and nowhere else",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance",
+          "privacy",
+          "contracts",
+          "system-design"
+        ],
+        "B": [
+          "compliance",
+          "privacy",
+          "contracts",
+          "system-design"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Let people pay us with invoices instead of cards because finance keeps complaining",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax",
+          "strategy-alignment"
+        ],
+        "A1": [
+          "commerce-tax",
+          "strategy-alignment"
+        ],
+        "B": [
+          "commerce-tax",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to run a raffle for anyone who joins before Friday",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "contracts",
+          "compliance",
+          "privacy",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Turn on the thing where people can log in with their work Google account",
+        "expect": [
+          "security"
+        ],
+        "A0": [
+          "security"
+        ],
+        "A1": [
+          "security"
+        ],
+        "B": [
+          "security",
+          "privacy",
+          "system-design"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Let go of the two people who came on for the holidays",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A customer wrote in saying she cannot use our checkout with her voice software",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "accessibility"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The state of Texas sent us a letter asking how we handle student records",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "evidence-provenance",
+          "privacy"
+        ],
+        "A1": [
+          "evidence-provenance",
+          "privacy"
+        ],
+        "B": [
+          "privacy",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Ship the mobile app to the app store before the conference",
+        "expect": [
+          "program-sequencing"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "program-sequencing",
+          "product-scoping",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Tell everyone on the mailing list about the new pricing",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "privacy",
+          "commerce-tax",
+          "coverage-gaps"
+        ],
+        "A1": [
+          "privacy",
+          "commerce-tax",
+          "coverage-gaps"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Bring on a contractor in Poland to help with the backend",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "contracts"
+        ],
+        "A1": [
+          "employment",
+          "contracts"
+        ],
+        "B": [
+          "employment",
+          "contracts",
+          "compliance",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      }
+    ],
+    "unspent-outcomes.json": [
+      {
+        "outcome": "We want to raise the price of our sourdough loaves without scaring off our regulars.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A customer wrote in saying her cake arrived crushed after three days in transit.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [],
+        "A1": [],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We'd like a local news reporter to come do a story on our third shop opening.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to add a gluten-free bread to the lineup but aren't sure people will buy it.",
+        "expect": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "A0": [],
+        "A1": [
+          "measurement",
+          "product-scoping"
+        ],
+        "B": [
+          "measurement",
+          "product-scoping"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The health inspector left a notice about our handwashing sink and we need to respond.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance",
+          "operations"
+        ],
+        "B": [
+          "compliance",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A regular customer says she can't read the ingredient list because the print is too small.",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "accessibility"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Two of our bakers want the same week off in July and we only have one to spare.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A city official wants proof that our new delivery van is properly registered.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance"
+        ],
+        "B": [
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We're trying to decide if we should hire a fourth person for the morning shift.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to raise our prices a little without scaring off regulars who've been coming for years.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "An older patient keeps calling because he can't figure out how to join his video appointment.",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We'd like more people in town to actually know we now do appointments over video.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [
+          "marketing-claims",
+          "user-experience",
+          "measurement"
+        ],
+        "B": [
+          "marketing-claims",
+          "user-experience",
+          "measurement"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a letter asking us to prove our four sites all meet the same care standards.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance"
+        ],
+        "B": [
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A patient's family is asking why her old paper file never made it into the computer system.",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "privacy",
+          "coverage-gaps",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The company that built our notes software went quiet and stopped answering our calls.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "operations"
+        ],
+        "A1": [
+          "operations"
+        ],
+        "B": [
+          "contracts",
+          "operations",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A patient complained that a staff member could be overheard through the wall during her session.",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "employment",
+          "privacy"
+        ],
+        "A1": [
+          "employment",
+          "privacy"
+        ],
+        "B": [
+          "privacy",
+          "security"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A local paper wants to interview one of our therapists about the new video sessions.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A supplier delivered the wrong exercise equipment twice and won't return our calls about it.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "contracts",
+          "operations"
+        ],
+        "A1": [
+          "contracts",
+          "operations"
+        ],
+        "B": [
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Our publisher wants to know why we're asking for more money before the game even ships.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "strategy-alignment",
+          "program-sequencing",
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A player emailed saying the flashing lights in our second level gave her a headache and she wants a warning added.",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [],
+        "A1": [
+          "accessibility"
+        ],
+        "B": [
+          "accessibility"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Someone on the team quit two weeks before a big milestone and we need to cover their work.",
+        "expect": [
+          "employment",
+          "program-sequencing"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "program-sequencing",
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a letter saying our studio name might be too close to another company's trademark.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [
+          "contracts",
+          "compliance",
+          "marketing-claims"
+        ],
+        "B": [
+          "contracts",
+          "compliance",
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A reviewer wrote a long piece calling our game boring halfway through and we're not sure how to respond.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [
+          "marketing-claims"
+        ],
+        "B": [
+          "marketing-claims"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Our landlord says the studio's lease is up and wants a big rent increase to renew.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [],
+        "A1": [
+          "contracts"
+        ],
+        "B": [
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to send free copies to streamers before launch but don't know who to pick.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A player who is blind wrote in asking if we could add sound cues so they can play too.",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "accessibility"
+        ],
+        "A1": [
+          "accessibility"
+        ],
+        "B": [
+          "accessibility"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Our accountant flagged that we may owe taxes in a country where a lot of our players live.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to raise what we charge shippers on the busy lanes without scaring off our regulars.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need to hire two more people to answer phones during the morning rush before drivers start quitting on us.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "program-sequencing"
+        ],
+        "A1": [
+          "employment",
+          "program-sequencing"
+        ],
+        "B": [
+          "employment",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a letter from the state saying they want proof our drivers are properly classified as contractors.",
+        "expect": [
+          "compliance",
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "contracts"
+        ],
+        "A1": [
+          "employment",
+          "contracts"
+        ],
+        "B": [
+          "employment",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A big grocery chain wants to talk about moving all their regional loads through us instead of their current broker.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "strategy-alignment"
+        ],
+        "A1": [
+          "strategy-alignment"
+        ],
+        "B": [
+          "contracts",
+          "strategy-alignment",
+          "operations",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "An older driver keeps calling in because he can't find the button to upload his delivery photos.",
+        "expect": [
+          "accessibility"
+        ],
+        "A0": [
+          "user-experience"
+        ],
+        "A1": [
+          "user-experience"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A customer is threatening to walk because their last three shipments arrived a full day late.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [],
+        "A1": [
+          "contracts",
+          "operations"
+        ],
+        "B": [
+          "contracts",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Someone from the labor department called asking about overtime pay for our warehouse staff.",
+        "expect": [
+          "compliance",
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Our biggest customer wants a guarantee in writing that late deliveries will come with a discount.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "contracts",
+          "commerce-tax",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A driver who doesn't read English well is having trouble filling out the paperwork after each delivery.",
+        "expect": [],
+        "A0": [],
+        "A1": [
+          "accessibility",
+          "user-experience"
+        ],
+        "B": [
+          "accessibility",
+          "user-experience"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to see which of our six towns are behind on paying the small family fee this term.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "contracts"
+        ],
+        "A1": [
+          "contracts"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need a simple way to know which volunteers haven't had their background check renewed.",
+        "expect": [
+          "compliance",
+          "employment"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance",
+          "privacy"
+        ],
+        "B": [
+          "compliance",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to plan out which weeks each town's programme is closed for school holidays next year.",
+        "expect": [
+          "program-sequencing"
+        ],
+        "A0": [
+          "privacy",
+          "program-sequencing"
+        ],
+        "A1": [
+          "privacy",
+          "program-sequencing"
+        ],
+        "B": [
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We'd like a flyer we can hand out at the middle schools announcing fall sign-ups.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to thank the donors who gave over a certain amount before the year ends.",
+        "expect": [],
+        "A0": [
+          "program-sequencing"
+        ],
+        "A1": [
+          "program-sequencing"
+        ],
+        "B": [
+          "privacy",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a letter from the state asking to confirm our nonprofit paperwork is still current.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance"
+        ],
+        "B": [
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Someone posted a bad review online claiming we lost a student's paperwork.",
+        "expect": [
+          "marketing-claims",
+          "privacy"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "marketing-claims",
+          "privacy",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A staff member asked whether her hours count toward health coverage under the new rule.",
+        "expect": [
+          "compliance",
+          "employment"
+        ],
+        "A0": [
+          "coverage-gaps",
+          "employment"
+        ],
+        "A1": [
+          "coverage-gaps",
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Two schools want a written agreement before they'll let us use their classrooms next year.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "program-sequencing",
+          "contracts",
+          "privacy"
+        ],
+        "A1": [
+          "program-sequencing",
+          "contracts",
+          "privacy"
+        ],
+        "B": [
+          "contracts",
+          "program-sequencing"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to raise the price of the sensor by five dollars without scaring off the garden chains.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need to hire someone to answer customer emails since Priya is drowning in them.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to figure out if we can afford to give everyone a small raise this year.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "coverage-gaps"
+        ],
+        "A1": [
+          "coverage-gaps"
+        ],
+        "B": [
+          "commerce-tax",
+          "employment",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a letter saying our packaging doesn't meet a new recycling rule in one state.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance"
+        ],
+        "B": [
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A customs officer is holding a shipment at the port and we don't know why.",
+        "expect": [
+          "commerce-tax",
+          "compliance"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance",
+          "operations"
+        ],
+        "B": [
+          "compliance",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "An older customer called saying she can't figure out how to charge the sensor at all.",
+        "expect": [
+          "product-scoping"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to know how much money is actually left after paying the factory this month.",
+        "expect": [],
+        "A0": [],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need to figure out who covers the front desk while Marcus is out for surgery.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a notice that we owe back taxes on equipment we imported last year.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to raise the price of a wash load by fifty cents at all three locations.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We need to hire two more van drivers before the holidays get busy.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment",
+          "program-sequencing"
+        ],
+        "A1": [
+          "employment",
+          "program-sequencing"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to offer a discount to anyone who signs up for weekly pickup.",
+        "expect": [
+          "commerce-tax",
+          "marketing-claims"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We'd like to put up flyers around the new neighborhood we just started serving.",
+        "expect": [
+          "marketing-claims"
+        ],
+        "A0": [],
+        "A1": [],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We're thinking about teaming up with a nearby dry cleaner to share our vans.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [],
+        "A1": [
+          "contracts",
+          "operations"
+        ],
+        "B": [
+          "contracts",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to figure out how many more machines we'd need to add same-day pickup.",
+        "expect": [
+          "product-scoping",
+          "program-sequencing"
+        ],
+        "A0": [],
+        "A1": [
+          "operations",
+          "measurement",
+          "strategy-alignment"
+        ],
+        "B": [
+          "operations",
+          "measurement",
+          "strategy-alignment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We got a notice saying our business license is up for renewal next month.",
+        "expect": [
+          "compliance"
+        ],
+        "A0": [
+          "contracts",
+          "program-sequencing"
+        ],
+        "A1": [
+          "contracts",
+          "program-sequencing"
+        ],
+        "B": [
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A part-time attendant quit without notice and we need someone to cover her shifts.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "An employee said her paycheck was short and wants it fixed right away.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to raise the price of our Italy coach tour without losing the people who already put a deposit down.",
+        "expect": [
+          "commerce-tax",
+          "contracts"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax",
+          "contracts"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We're thinking about hiring a second person just to answer the phones during the busy spring months.",
+        "expect": [
+          "employment"
+        ],
+        "A0": [
+          "employment"
+        ],
+        "A1": [
+          "employment"
+        ],
+        "B": [
+          "employment"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "An elderly gentleman on the Rhine cruise fell getting off the coach and his family is asking who pays for the hospital bill.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [
+          "privacy"
+        ],
+        "A1": [
+          "privacy"
+        ],
+        "B": [
+          "contracts",
+          "commerce-tax",
+          "compliance"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The coach company in Greece wants more money halfway through the season and we're not sure we can say no.",
+        "expect": [
+          "contracts"
+        ],
+        "A0": [],
+        "A1": [
+          "contracts",
+          "commerce-tax"
+        ],
+        "B": [
+          "contracts",
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We keep losing track of who's paid their balance and who still owes us for the Scotland trip.",
+        "expect": [
+          "commerce-tax"
+        ],
+        "A0": [
+          "commerce-tax"
+        ],
+        "A1": [
+          "commerce-tax"
+        ],
+        "B": [
+          "commerce-tax"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "Someone tried to book online three times and their card kept getting rejected, so she gave up and called us in tears.",
+        "expect": [
+          "commerce-tax",
+          "product-scoping"
+        ],
+        "A0": [
+          "user-experience"
+        ],
+        "A1": [
+          "user-experience"
+        ],
+        "B": [
+          "commerce-tax",
+          "user-experience",
+          "operations"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "A regular customer wants to know if next year's Portugal trip includes the wine tasting like last time.",
+        "expect": [
+          "marketing-claims",
+          "product-scoping"
+        ],
+        "A0": [],
+        "A1": [],
+        "B": [],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "We want to send a thank-you card to everyone who's booked with us more than five times.",
+        "expect": [
+          "privacy"
+        ],
+        "A0": [
+          "coverage-gaps"
+        ],
+        "A1": [
+          "coverage-gaps"
+        ],
+        "B": [
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      },
+      {
+        "outcome": "The council sent something about data protection rules and we're not sure our old paper filing system meets them.",
+        "expect": [
+          "compliance",
+          "privacy"
+        ],
+        "A0": [],
+        "A1": [
+          "compliance",
+          "privacy"
+        ],
+        "B": [
+          "compliance",
+          "privacy"
+        ],
+        "servedBy": [
+          "claude-sonnet-5"
+        ]
+      }
+    ]
+  }
+}

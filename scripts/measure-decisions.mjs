@@ -892,7 +892,12 @@ if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs key
       invoke: async (request, context) => {
         const result = await adapter.invoke(request, context);
         const out = result?.output;
-        if (out && typeof out.cost === 'number') costUsd += out.cost;
+        // The Claude adapter reports spend under `usage.cost` (result.ts); a
+        // read of `out.cost` alone summed a well-formed zero for every paid
+        // run, which is indistinguishable from subscription auth reporting
+        // nothing. Both shapes are accepted so a run that cost money says so.
+        const spend = typeof out?.cost === 'number' ? out.cost : out?.usage?.cost;
+        if (typeof spend === 'number') costUsd += spend;
         // modelRan is string[] on the Claude adapter (adapter.ts) — a string
         // check here silently reported 'unreported' for a run that named its
         // model in every envelope. Accept both shapes.
