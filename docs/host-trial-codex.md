@@ -3,20 +3,20 @@
 Dated 2026-08-21. What happened attaching Construct's MCP projection to
 `codex exec`, Codex's non-interactive mode, against a real subject. This is a
 presence trial, not a dispatch trial: presence held (the server attaches, the
-model discovers and calls its tools with well-formed arguments); dispatch — a
-call actually reaching and mutating the store — did not, for a reason this
+model discovers and calls its tools with well-formed arguments). Dispatch (a
+call actually reaching and mutating the store) did not, for a reason this
 trial diagnosed rather than assumed.
 
 ## What was set up
 
 - **Host:** codex-cli 0.145.0 (`codex --version`), signed in through a ChatGPT
-  subscription (`codex login status` answers "Logged in using ChatGPT" —
+  subscription (`codex login status` answers "Logged in using ChatGPT":
   capacity, not a metered key). This matches `src/hosts/codex/pin.ts`'s
   pinned version exactly.
 - **Attach mechanism.** Construct is not one of Gerald's persisted MCP
   servers in `~/.codex/config.toml` (`codex mcp list` before this trial
   named atlassian, computer-use, context7, filesystem, github, linear,
-  node_repl, notion, playwright, and sequential-thinking — no construct).
+  node_repl, notion, playwright, and sequential-thinking, no construct).
   Rather than add a persisted entry to a config file used for real,
   everyday work, this trial attached construct ad hoc, per invocation, with
   `-c` overrides:
@@ -31,24 +31,23 @@ trial diagnosed rather than assumed.
 
   `--ephemeral` (no session persisted), `--skip-git-repo-check`, `-s
   read-only` (denies writes from any model-run shell command), and stdin
-  explicitly closed — the same isolation posture `src/hosts/codex/pin.ts`
+  explicitly closed: the same isolation posture `src/hosts/codex/pin.ts`
   already verifies, applied here to a projection-attach run instead of a
   dispatch run. `~/.codex/config.toml` was never written to: its checksum
   before and after this entire trial is identical
   (`e235f6033c3c402e2c1532c43e579e1d`).
-- **Model.** Whichever model `codex exec` resolves — codex's own JSONL
-  never names it (`events-never-name-the-model`, already pinned). Runs that
-  loaded the real `~/.codex/config.toml` (most of this trial) would resolve
-  its `model = "gpt-5.5"`; runs that passed `--ignore-user-config` skip that
-  file and resolve to codex's internal default instead. Neither is
-  confirmed by any run's own output, so both are stated as inference, not
-  measurement.
+- **Model.** Whichever model `codex exec` resolves: codex's own JSONL never
+  names it (`events-never-name-the-model`, already pinned). Runs that loaded
+  the real `~/.codex/config.toml` (most of this trial) would resolve its
+  `model = "gpt-5.5"`; runs that passed `--ignore-user-config` skip that file
+  and resolve to codex's internal default instead. Neither is confirmed by
+  any run's own output, so both are stated as inference, not measurement.
 - **Subject.** The same real, current BlackStory question construct-chno.4's
   goose trial used (`docs/host-trial-goose.md`): "Decide whether canonical
   merges and bulk edits should enforce recent reauthentication
   (`assertRecentReauth`) the same way publish, retract, rights, policy, and
   role changes already do, given the cookie-session path has no `auth_time`
-  to check it against" — chosen deliberately, so this trial's result sits
+  to check it against." Chosen deliberately, so this trial's result sits
   next to goose's on the identical real input rather than a fresh one.
 
 ## What held
@@ -62,11 +61,11 @@ entirely and let `record_outcome` fall through to the deterministic keyword
 path, reasoning in its own final message that it would "avoid inventing
 catalog domain names because the record call discards anything outside that
 list." That is the correct read of the tool's own description, arrived at
-without ever seeing the description's warning play out — a small, real
-data point that a frontier model reasons about the admission gate correctly
-even under a degraded transport. Contrast this with the same scenario later
-under Cursor (`docs/host-trial-cursor.md`), whose model filled the identical
-gap with five fabricated, non-catalog domain names instead.
+without ever seeing the description's warning play out: a small, real data
+point that a frontier model reasons about the admission gate correctly even
+under a degraded transport. Contrast this with the same scenario later under
+Cursor (`docs/host-trial-cursor.md`), whose model filled the identical gap
+with five fabricated, non-catalog domain names instead.
 
 Directly against the transport, independent of any host: `echo
 '{"jsonrpc":"2.0","id":1,"method":"initialize",...} {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"catalog","arguments":{}}}'
@@ -77,7 +76,7 @@ Construct's own server being slow to start or slow to answer.
 ## What it exposed
 
 **A codex-attached call to an ad-hoc MCP server is blocked before it reaches
-Construct, and the block is honest — no phantom write.** Every tool call
+Construct, and the block is honest: no phantom write.** Every tool call
 against the `-c`-declared `construct` server, across this trial's diagnostic
 runs, returned the same shape: `{"error":{"message":"user cancelled MCP
 tool call"}}`, `"status":"failed"`, regardless of which tool was called
@@ -95,55 +94,55 @@ problem rather than codex's:
    with `--ignore-user-config`.
 3. **Not a blanket "codex exec can't call MCP tools at all."** A control
    call, same invocation shape, same session, against `sequential-thinking`
-   — already a real entry in `~/.codex/config.toml`, no auth required —
+   (already a real entry in `~/.codex/config.toml`, no auth required)
    completed normally with a real result relayed to the model. Only the
    ad-hoc `construct` server was blocked.
 
 That leaves "declared via `-c` override" as the best-supported distinguishing
 variable from this session's evidence, though it was not conclusively
 isolated: doing so cleanly would mean running `codex mcp add construct --
-node <checkout>/bin/construct.mjs serve`, a real, persisted registration —
-which this trial did not do, deliberately, because it would rewrite a config
+node <checkout>/bin/construct.mjs serve`, a real, persisted registration.
+This trial did not do that, deliberately, because it would rewrite a config
 file Gerald uses for real work, and this bead's rules require that kind of
 change to be his call, not a session's.
 
 **This session filed and then retracted a bug on this finding, and the
 retraction is worth recording rather than erasing.** The first pass found a
 cancelled `record_outcome` call and, moments later, two work-log entries
-near that same timestamp for the same outcome text, and concluded —
-wrongly — that the call had silently succeeded despite the reported
-cancellation. This is a real, live, multi-session store, and both entries
-turned out to belong to construct-chno.4's own goose trial running at the
-same time on the identical real BlackStory sentence, not to anything this
-session did: `docs/host-trial-goose.md` cites its claude-code run as
+near that same timestamp for the same outcome text, and concluded, wrongly,
+that the call had silently succeeded despite the reported cancellation. This
+is a real, live, multi-session store, and both entries turned out to belong
+to construct-chno.4's own goose trial running at the same time on the
+identical real BlackStory sentence, not to anything this session did:
+`docs/host-trial-goose.md` cites its claude-code run as
 `run-20260821214915287`, matching the first entry exactly, and its second,
 close-behind entry matches that same packet's own description of
 reproducing its cache finding directly against the server right after
-(`construct-chno.7`). Neither was this session's doing; the coincidence
-only looked like proof because two sessions were probing the same shared
-store with the same real text at the same time. A follow-up test built to
-remove that ambiguity for good — a `record_outcome` call carrying a unique,
+(`construct-chno.7`). Neither was this session's doing; the coincidence only
+looked like proof because two sessions were probing the same shared store
+with the same real text at the same time. A follow-up test built to remove
+that ambiguity for good, a `record_outcome` call carrying a unique,
 never-before-used marker string precisely so any match in the log could
-only be this session's own — settled it: the marker never appears. The
+only be this session's own, settled it: the marker never appears. The
 cancellation is real and the call never reaches the store. `construct-rws5`
-was filed on the wrong read and closed the same session
-with the correction on record, once the unique-marker test disproved it.
-Corrected, the finding is the same shape as Cursor's (below): a host's own
-non-interactive approval gate blocking a write cleanly, not Construct
-mishandling anything, and not a host lying about what happened.
+was filed on the wrong read and closed the same session with the correction
+on record, once the unique-marker test disproved it. Corrected, the finding
+is the same shape as Cursor's (below): a host's own non-interactive approval
+gate blocking a write cleanly, not Construct mishandling anything, and not a
+host lying about what happened.
 
 ## What is unmeasured
 
 - **Real dispatch.** No tool call against the ad-hoc `construct` server ever
-  completed. Only presence — attach, discovery, argument-shaping — was
+  completed. Only presence (attach, discovery, argument-shaping) was
   measured; the projection's actual behavior under codex (what
   `record_outcome`, `catalog`, or any other tool returns when a call gets
   through) was not exercised at all here. Compare `docs/host-trial-goose.md`
   and `docs/host-trial-nanobot.md`, where a call did land.
 - **Whether `codex mcp add` (persisted registration) resolves the
-  cancellation.** The `sequential-thinking` control makes this plausible —
-  it is the one structural difference this trial found between a server that
-  works and one that doesn't — but it was not directly tested for
+  cancellation.** The `sequential-thinking` control makes this plausible: it
+  is the one structural difference this trial found between a server that
+  works and one that doesn't. But it was not directly tested for
   `construct` itself, for the config-file reason stated above. Confirming
   it needs either Gerald's own action or his explicit go-ahead for a session
   to take it.
@@ -154,12 +153,12 @@ mishandling anything, and not a host lying about what happened.
   thing an approval prompt exists to ask about) is untested.
 - Sandbox modes other than `-s read-only`, and whether `-a`/`--ask-for-approval`
   (a real flag on the interactive `codex` command, confirmed absent from
-  `codex exec` specifically — `error: unexpected argument '-a' found`) has
+  `codex exec` specifically: `error: unexpected argument '-a' found`) has
   any equivalent for `exec`.
 
 ## Spend, for the record
 
-Real ChatGPT subscription capacity, not a metered API key — matching
+Real ChatGPT subscription capacity, not a metered API key, matching
 `src/hosts/codex/pin.ts`'s own note that this host spends "the user's
 subscription, not an API key," and that cost is honestly unmeasurable per
 run (`usage-counts-tokens-not-dollars`; no run in this trial emitted a cost
@@ -168,8 +167,8 @@ across this trial's diagnostic path (establishing the cancellation, ruling
 out startup time, the `sequential-thinking` control, and the unique-marker
 disproof); a ninth attempt failed at argument parsing before any model was
 reached (`codex exec` does not accept `-a`, spending nothing). None looped
-the same call hoping for a different answer — each tested a distinct,
-named hypothesis. Two representative token counts, from this session's own
+the same call hoping for a different answer: each tested a distinct, named
+hypothesis. Two representative token counts, from this session's own
 output: the `sequential-thinking` control used 55,650 input / 165 output
 tokens; the main outcome-recording attempt used 97,592 input / 1,401 output
 tokens (the larger reasoning trace matches its two retried tool calls before
