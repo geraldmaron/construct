@@ -1,5 +1,13 @@
 # PRD: Construct as an agentic platform
 
+```
+Status: draft
+Author: Claude Fable (drafting session) — Contributors: Claude Sonnet
+  (validation runs the cited records come from), Gerald (requirements, decider)
+Created: 2026-08-21 — Last updated: 2026-08-21
+Tags: prd, platform, requirements, skills, kernel, provenance
+```
+
 **Outcome:** An operator states an outcome in plain words and receives a
 finished, traceable deliverable: the platform routes the concerns that
 outcome touches, runs the work through whatever agent host is present,

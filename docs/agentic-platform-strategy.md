@@ -1,5 +1,13 @@
 # Strategy: where construct plays in the agentic platform landscape
 
+```
+Status: proposed
+Author: Claude Fable (drafting session) — Contributors: Claude Sonnet
+  (landscape research, adversarial review), Gerald (direction, decider)
+Created: 2026-08-21 — Last updated: 2026-08-21
+Tags: strategy, agentic-platforms, positioning, skills, provenance
+```
+
 *For Gerald, the decider. This document recommends where to concentrate the
 program's effort given the August 2026 platform landscape. It was produced
 under the suite's own skills — intake, context-mapping, investigative-research
