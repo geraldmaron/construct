@@ -363,21 +363,22 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       reason: 'over-limit',
     }),
   );
-  // A cached nothing is a real answer: the namer considered the catalog and
-  // named nothing, and the same outcome must not pay to hear it twice.
-  input.cache?.set(input.outcome, limited);
   const allUnmet = [...unmet, ...cut];
   // A coverage gap is specifically the namer having weak signal it declined
   // to commit to — not any empty result. A namer that named nothing at all,
   // or named only things outside the catalog, still reads as 'none': it is
   // the low-confidence refusal, not silence in general, that this state
   // exists to distinguish from a considered "nothing here."
-  const inferredBy: InferredBy =
-    limited.length > 0
-      ? 'namer'
-      : allUnmet.some((u) => u.reason === 'low-confidence')
-        ? 'coverage-gap'
-        : 'none';
+  const isCoverageGap = limited.length === 0 && allUnmet.some((u) => u.reason === 'low-confidence');
+  const inferredBy: InferredBy = limited.length > 0 ? 'namer' : isCoverageGap ? 'coverage-gap' : 'none';
+  // A cached nothing is a real answer: the namer considered the catalog and
+  // named nothing, and the same outcome must not pay to hear it twice — but
+  // a coverage gap is not that. The cache stores only the implication list,
+  // with no room to carry which empty answer this was, and reading it back
+  // as a plain 'none' (below) is exactly the silent-misroute failure this
+  // state exists to prevent. So a coverage gap is not cached: the next ask
+  // pays for a fresh consultation rather than losing the distinction.
+  if (!isCoverageGap) input.cache?.set(input.outcome, limited);
   return {
     outcome: input.outcome,
     implicated: limited,
