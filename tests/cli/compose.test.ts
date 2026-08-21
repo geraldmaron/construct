@@ -121,6 +121,44 @@ function composeHost(): HostAdapter {
   };
 }
 
+/**
+ * A composer whose support check finds nothing unsupported, but still
+ * returns a non-empty detail — the shape a same-family fallback's
+ * correlated-error caveat takes, without needing a real second family to
+ * exercise the CLI's print site for it.
+ */
+function cleanComposeHost(detail: string): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'composer') {
+        const cited = /--- ([a-z-]+) ---/.exec(task)?.[1] ?? 'strategy-alignment';
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              claims: [{ section: 'the-choice', text: `${cited} concluded its own part`, from: cited }],
+              uncovered: [],
+            }),
+          },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ unsupported: [], detail }) },
+          error: null,
+        };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
 /** A call, in the shape the position pass asks for. */
 function call(approach: string, restsOn: string): string {
   return JSON.stringify({
@@ -229,6 +267,15 @@ test('a run with several deliverables composes, and what no deliverable supports
   assert.match(out, /the decision shape asks for .*where-things-stand.*what-it-costs/);
   assert.match(out, /not about the roles who wrote them/);
   assert.match(out, /Shaped as a decision/);
+});
+
+test('a clean support verdict still prints whatever the check attached to it, not just a silent pass', async () => {
+  const { out } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    () => compose([`--run=${latestRun()}`], cleanComposeHost('same family produced and checked this')),
+  ]);
+  assert.match(out, /: all claims supported — same family produced and checked this/);
 });
 
 /**

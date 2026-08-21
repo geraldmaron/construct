@@ -22,7 +22,9 @@ import type { ConstructPosition, SharedObjection } from '../kernel/run/position.
 import type { GapCloser } from '../kernel/run/closing.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
+import { chooseChallengeFamily } from '../kernel/challenge/familyroute.ts';
 import { extractJson } from './contextloop.ts';
+import { familyOf } from './family.ts';
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
@@ -466,11 +468,55 @@ export function objectionPrompt(
   ].join('\n');
 }
 
+/**
+ * Which adapter actually answers a challenge or judge pass, and the caveat
+ * to carry if it falls back to the same family that produced the deliverable
+ * under check.
+ *
+ * `otherFamilyHosts` is every other adapter this caller happens to have on
+ * hand — empty for every call site in this codebase today, because a run
+ * dispatches through exactly one host and nothing here spawns a second one.
+ * Passing none is not a missing feature to route around; it is today's
+ * honest state, and the empty list is why the fallback (same family, caveat
+ * attached) is what actually runs everywhere right now. The seam exists so
+ * that changes the day a caller can genuinely offer a second family, not a
+ * day sooner.
+ */
+function challengeHost(
+  host: HostAdapter,
+  otherFamilyHosts: readonly HostAdapter[],
+): { readonly host: HostAdapter; readonly caveat: string | null } {
+  const choice = chooseChallengeFamily({
+    producerFamily: familyOf(host),
+    availableFamilies: otherFamilyHosts.map((h) => familyOf(h)).filter((f): f is string => f !== null),
+  });
+  if (choice.sameFamily) return { host, caveat: choice.caveat };
+  const chosen = otherFamilyHosts.find((h) => familyOf(h) === choice.family);
+  // chosen is always found here: chooseChallengeFamily only names a family
+  // that came from this exact list, so its absence would be this function
+  // disagreeing with itself, not a real caller state — but the same-family
+  // host is what a caller can trust either way, so a fallback to it is safe
+  // rather than a thrown surprise over a defect that has nothing to do with
+  // the caller's request.
+  return chosen ? { host: chosen, caveat: null } : { host, caveat: choice.caveat };
+}
+
 export function createHostObjectionChecker(
   host: HostAdapter,
+  otherFamilyHosts: readonly HostAdapter[] = [],
 ): (source: SourceDeliverable, position: string, isRepair?: boolean) => Promise<string> {
   return async (source, position, isRepair = false) => {
-    const text = await invokeRetrying(host, {
+    // Cross-family dispatch applies here exactly as it does to the support
+    // check; the caveat does not. What this returns is presented downstream
+    // as the model's own quoted words — deduplicated across roles by exact
+    // text match, and quoted verbatim in the composed document. Appending
+    // prose to it would misrepresent a direct quotation as saying something
+    // the model did not say, which is a worse defect than an unattached
+    // caveat. A same-family fallback here is silent on the page; it is not
+    // silent in the record, because the work log entry this checker's
+    // caller writes is where a correlated-error qualification belongs.
+    const { host: answering } = challengeHost(host, otherFamilyHosts);
+    const text = await invokeRetrying(answering, {
       role: SUPPORT_ROLE,
       task: objectionPrompt(source, position, isRepair),
     });
@@ -613,9 +659,13 @@ async function invokeRetrying(
  * than trusted: a checker that miscounts must not be able to remove a claim it
  * never read.
  */
-export function createHostSupportChecker(host: HostAdapter): SupportChecker {
+export function createHostSupportChecker(
+  host: HostAdapter,
+  otherFamilyHosts: readonly HostAdapter[] = [],
+): SupportChecker {
   return async (source, claims) => {
-    const text = await invokeRetrying(host, { role: SUPPORT_ROLE, task: supportPrompt(source, claims) });
+    const { host: answering, caveat } = challengeHost(host, otherFamilyHosts);
+    const text = await invokeRetrying(answering, { role: SUPPORT_ROLE, task: supportPrompt(source, claims) });
     const parsed = extractJson(text) as {
       unsupported?: unknown;
       detail?: unknown;
@@ -626,9 +676,14 @@ export function createHostSupportChecker(host: HostAdapter): SupportChecker {
     const unsupported = parsed.unsupported
       .map((value) => Number(value))
       .filter((index) => Number.isInteger(index) && index >= 0 && index < claims.length);
+    const detail = typeof parsed.detail === 'string' ? parsed.detail.trim() : '';
     return {
       unsupported,
-      detail: typeof parsed.detail === 'string' ? parsed.detail.trim() : '',
+      // The caveat rides the detail field regardless of the verdict — unlike
+      // an objection's empty string, "every claim is supported" is still a
+      // verdict this checker reached, and a same-family verdict of "clean"
+      // deserves the same qualification a same-family "N unsupported" would.
+      detail: caveat !== null ? (detail.length > 0 ? `${detail} (${caveat})` : caveat) : detail,
     };
   };
 }

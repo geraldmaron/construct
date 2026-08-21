@@ -106,7 +106,10 @@ export const PROJECTION_TOOLS = [
       'namings entirely leaves the inference to the deterministic keyword ' +
       'map. Your namings are proposals: anything outside the catalog or ' +
       'without a reason is discarded by the kernel, and the reply says what ' +
-      'was admitted.',
+      'was admitted. Optionally state your own `confidence` (0 to 1) on a ' +
+      "naming when you are unsure it truly applies — below 0.5 it is kept " +
+      'as a named coverage gap rather than routed, so a weak read does not ' +
+      'silently become a match. Leave it out when you are simply sure.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -119,6 +122,12 @@ export const PROJECTION_TOOLS = [
             properties: {
               domain: { type: 'string', description: 'A domain name from the catalog tool.' },
               why: { type: 'string', description: 'Why this outcome implicates that domain.' },
+              confidence: {
+                type: 'number',
+                description:
+                  'Optional, 0 to 1: how sure you are this domain truly applies. ' +
+                  'Below 0.5 is kept as a coverage gap rather than routed.',
+              },
             },
             required: ['domain', 'why'],
           },

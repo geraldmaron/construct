@@ -86,6 +86,8 @@ The tracker and the repo drift apart the moment either moves without the other. 
 
 A bead without a DISPATCH note is human-or-interactive by default; do not fan it out to agents.
 
+**Worktree agents (2026-08-20, from a reproduced incident):** uncommitted state in a linked worktree is volatile — treat it as already lost. An agent working in a worktree commits a checkpoint before any long-running step and never parks work-in-progress uncommitted; the `reset: moving to HEAD` entry every worktree's reflog carries at creation is git's own internals, not evidence of interference. `bd` invoked from inside a worktree resolves the main checkout's workspace — run tracker commands from the main checkout only.
+
 ## Build & Test
 
 No build step: TypeScript is erasable-syntax only, run natively by Node >= 22.18 type-stripping.

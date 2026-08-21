@@ -43,7 +43,7 @@ const CATALOG: readonly Domain[] = [
 const ANSWERED = 'Put out a press release this week';
 const SILENT = 'We want to run a raffle for anyone who joins before Friday';
 
-function namer(namings: Array<{ domain: string; why: string }>): {
+function namer(namings: Array<{ domain: string; why: string; confidence?: number }>): {
   fn: DomainNamer;
   calls: string[];
   catalogs: (readonly Domain[])[];
@@ -275,6 +275,102 @@ test('a concern cut by the limit is recorded as cut, not as one the catalog lack
   assert.deepEqual(result.unmet, [
     { proposed: 'privacy', why: 'a signup list is personal data', reason: 'over-limit' },
   ]);
+});
+
+test('a naming below the confidence floor is refused as a coverage gap, not routed', async () => {
+  // The nanobot trial's actual failure, reproduced: privacy vocabulary read
+  // as adjacent-but-wrong. Here the namer states its own uncertainty instead
+  // of guessing, and the floor is what keeps that honesty from being
+  // overridden into a silent match.
+  const stub = namer([
+    { domain: 'privacy', why: 'the wording is closer to access control than to personal data', confidence: 0.3 },
+  ]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated, [], 'not routed on a guess the namer itself doubted');
+  assert.equal(result.inferredBy, 'coverage-gap');
+  assert.deepEqual(result.unmet, [
+    {
+      proposed: 'privacy',
+      why: 'the wording is closer to access control than to personal data',
+      reason: 'low-confidence',
+    },
+  ]);
+});
+
+test('a naming at or above the confidence floor routes exactly as an unstated confidence would', async () => {
+  const stub = namer([{ domain: 'privacy', why: 'a signup list is personal data', confidence: 0.5 }]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['privacy']);
+  assert.equal(result.inferredBy, 'namer');
+  assert.deepEqual(result.unmet, []);
+});
+
+test('an unstated confidence is not assumed to be low — routing is unchanged from before this floor existed', async () => {
+  const stub = namer([{ domain: 'privacy', why: 'a signup list is personal data' }]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['privacy']);
+  assert.equal(result.inferredBy, 'namer');
+});
+
+test('coverage-gap is the low-confidence refusal specifically, not any empty result', async () => {
+  // A namer that names nothing at all is a considered answer ('none'), and a
+  // namer that names only something outside the catalog is a coverage gap in
+  // the catalog, not in confidence — 'not-in-catalog' already says that.
+  // Neither is this state.
+  const namesNothing = namer([]);
+  const nothing = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: namesNothing.fn });
+  assert.equal(nothing.inferredBy, 'none');
+
+  const outsideCatalog = namer([{ domain: 'astrology', why: 'the stars say so' }]);
+  const outside = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: outsideCatalog.fn });
+  assert.equal(outside.inferredBy, 'none');
+});
+
+test('a coverage gap is not cached — a second ask pays for a fresh consultation rather than reading back as none', async () => {
+  const cache = memoryCache();
+  const gapStub = namer([
+    { domain: 'privacy', why: 'the wording is closer to access control than to personal data', confidence: 0.3 },
+  ]);
+  const first = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: gapStub.fn, cache });
+  assert.equal(first.inferredBy, 'coverage-gap');
+  assert.equal(cache.entries.has(SILENT), false, 'a coverage gap leaves nothing in the cache to mislead a later hit');
+
+  // A second ask, now confident, must be free to change the answer — proof
+  // the first result was never cached as a settled 'none'.
+  const confidentStub = namer([{ domain: 'privacy', why: 'a signup list is personal data', confidence: 0.9 }]);
+  const second = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: confidentStub.fn, cache });
+  assert.equal(confidentStub.calls.length, 1, 'the second ask really did re-consult the namer');
+  assert.equal(second.inferredBy, 'namer');
+  assert.deepEqual(second.implicated.map((i) => i.domain), ['privacy']);
+});
+
+test('a genuine "nothing here" answer is still cached, and a repeat still reads as cache', async () => {
+  const cache = memoryCache();
+  const namesNothing = namer([]);
+  const first = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: namesNothing.fn, cache });
+  assert.equal(first.inferredBy, 'none');
+  assert.equal(cache.entries.has(SILENT), true, 'a considered "nothing here" is a real answer worth caching');
+
+  const shouldNotBeCalled = namer([{ domain: 'privacy', why: 'would change the answer if consulted' }]);
+  const second = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: shouldNotBeCalled.fn, cache });
+  assert.equal(shouldNotBeCalled.calls.length, 0, 'the cache answered; the namer was never re-asked');
+  // An empty cached result reads as 'none' rather than 'cache', the same way
+  // a fresh empty answer does — provenance is not over-claimed for a result
+  // that carries nothing either way. This is pre-existing behavior; the
+  // point of this test is only that it still gets a real cache hit at all.
+  assert.equal(second.inferredBy, 'none');
+  assert.deepEqual(second.implicated, []);
+});
+
+test('one confident naming beside one low-confidence one still routes the confident one', async () => {
+  const stub = namer([
+    { domain: 'marketing-claims', why: 'a raffle is a regulated promotion', confidence: 0.9 },
+    { domain: 'privacy', why: 'maybe, unsure', confidence: 0.2 },
+  ]);
+  const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
+  assert.deepEqual(result.implicated.map((i) => i.domain), ['marketing-claims']);
+  assert.equal(result.inferredBy, 'namer', 'a real routed match, not a coverage gap, once anything is admitted');
+  assert.deepEqual(result.unmet.map((u) => u.reason), ['low-confidence']);
 });
 
 test('the keyword fallback reports no unmet concerns, because it cannot propose outside the catalog', async () => {
