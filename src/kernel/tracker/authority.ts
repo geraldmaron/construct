@@ -84,3 +84,16 @@ export function splitFieldsByAuthority(issue: unknown): FieldsByAuthority {
   }
   return { domain, tracker };
 }
+
+/**
+ * Every field the map names, split by side. What a projection writes and what
+ * an outward write is told never to touch both ask this rather than keeping
+ * their own list, so a field that changes sides changes in one place.
+ *
+ * It answers for the mapped fields only. An unmapped field is tracker-owned by
+ * the rule above but cannot be enumerated, because nothing knows it exists
+ * until an issue carrying it arrives.
+ */
+export function mappedFieldsByAuthority(): FieldsByAuthority {
+  return splitFieldsByAuthority(FIELD_AUTHORITY);
+}
