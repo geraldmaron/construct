@@ -208,12 +208,12 @@ const DEFAULT_TEMPLATE: DeliverableTemplate = {
  */
 const NO_LENS_SLOT: Slot = slot(
   'method',
-  'that no lens equips this concern — say so plainly, then name what a lens ' +
+  'that no lens equips this concern. Say so plainly, then name what a lens ' +
     'would have supplied that this deliverable does not have: its question ' +
     'set, its extra deliverable obligations, its escalation ladder. State ' +
     'what was done instead (working the shared default playbook) without ' +
     'apologizing for the absence or claiming the improvised approach matches ' +
-    'a named method — that is for the reader to judge',
+    'a named method. That judgment belongs to the reader',
 );
 
 /**

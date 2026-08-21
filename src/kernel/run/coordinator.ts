@@ -289,15 +289,15 @@ function noLensDirective(statesObligation: boolean): string {
   const absence =
     'No lens equips this concern: no established question set, no extra ' +
     'deliverable obligations, and no escalation ladder are declared for it. ' +
-    'Work it from your own domain knowledge and the material at hand — that ' +
+    'Work it from your own domain knowledge and the material at hand. That ' +
     'is improvisation against the shared default playbook, not a smaller ' +
     'version of a named method, and it is not worse for being that; the ' +
     'reader decides. Do not write as though a lens shaped this work.\n\n';
   const section = statesObligation
     ? 'Say this plainly in the method section your template names below: ' +
       'that this concern has no owning lens, and specifically what a lens ' +
-      'would otherwise have supplied — its question set, its extra ' +
-      'deliverable obligations, its escalation ladder. State it once, ' +
+      'would otherwise have supplied (its question set, its extra ' +
+      'deliverable obligations, its escalation ladder). State it once, ' +
       'without apology and without claiming the improvised approach is ' +
       'equivalent to a named method.\n\n'
     : '';
