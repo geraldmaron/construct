@@ -17,6 +17,12 @@
  * — the single file, pasted into a host that has never seen this repo, still
  * works — would fail on every machine but this one.
  *
+ * The kernel's list of shipped names is checked against the directories
+ * themselves. A published package carries no skill files, so an installed
+ * spine can only tell which folders in a skills directory are this project's
+ * by carrying the names; a list that drifted from the directories would have
+ * the spine offering a skill nobody ships or missing one everybody has.
+ *
  * Last, the shape checks from skills/AUTHORING.md, presence only: a
  * stand-down rule (a skill that always interposes teaches readers to ignore
  * it), a closing record block (enforcement travels as visible output shape,
@@ -127,6 +133,26 @@ for (const file of files) {
     if (SRC_PATH.test(line)) fail(file, `line ${at}: repository path — a severable skill cannot point into this repo`);
     if (ABSOLUTE_PATH.test(line)) fail(file, `line ${at}: absolute path — the file must work on a machine that is not this one`);
   });
+}
+
+const shippedDirs = [...new Set(files.map((file) => basename(dirname(file))))].sort();
+const declared = readFileSync('src/kernel/skills/library.ts', 'utf8');
+const listed = /export const SHIPPED_SKILLS[\s\S]*?Object\.freeze\(\[([\s\S]*?)\]\)/.exec(declared);
+if (!listed) {
+  violations += 1;
+  console.error('skill spec: src/kernel/skills/library.ts: no SHIPPED_SKILLS list to check the directories against');
+} else {
+  const names = [...listed[1].matchAll(/'([^']+)'/g)].map((match) => match[1]).sort();
+  const missing = shippedDirs.filter((dir) => !names.includes(dir));
+  const extra = names.filter((name) => !shippedDirs.includes(name));
+  for (const dir of missing) {
+    violations += 1;
+    console.error(`skill spec: skills/${dir}: shipped on disk but absent from SHIPPED_SKILLS`);
+  }
+  for (const name of extra) {
+    violations += 1;
+    console.error(`skill spec: SHIPPED_SKILLS names "${name}", which no skills/ directory ships`);
+  }
 }
 
 if (violations > 0) {

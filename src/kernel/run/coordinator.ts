@@ -71,6 +71,8 @@ import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
+import { skillsDirective, skillsOffered } from '../skills/reach.ts';
+import type { SkillsReachable } from '../skills/reach.ts';
 import { standardsFor } from '../plan/standards.ts';
 import { gateObligation } from '../plan/gates.ts';
 import type { GroundGates, RepoManifest } from '../plan/gates.ts';
@@ -147,6 +149,17 @@ export interface CoordinatorOptions {
    * standard instead, which is the honest fallback rather than a silence.
    */
   readonly manifests?: (root: string) => RepoManifest | null;
+  /**
+   * What the portable method library on this machine can offer a role, read by
+   * the caller for the same reason manifests are: the surface that owns paths
+   * does the looking. Called once per invocation, not once per dispatch, since
+   * every role in one run reaches the same two directories.
+   *
+   * Absent means nobody looked, and the assignment says nothing about method
+   * skills at all. That is different from looking and finding none, which is
+   * said plainly, and the difference is why this is not defaulted here.
+   */
+  readonly skills?: () => SkillsReachable;
 }
 
 export interface RunReport {
@@ -402,6 +415,14 @@ export function assignmentFor(
     /** Local roots the role may read beyond the listed documents. */
     readonly groundRoots?: readonly string[];
     /**
+     * What the portable method library on this machine can offer this role.
+     * Absent means nobody looked and nothing is said about method skills;
+     * present with no offers means the machine was read and holds none, which
+     * is said plainly so a deliverable cannot cite a method that was never
+     * there.
+     */
+    readonly skills?: SkillsReachable;
+    /**
      * What those roots declare they check about themselves, as a host read
      * them. Absent means nothing was read, and every obligation falls back to
      * its standard — the honest state, not a broken one.
@@ -533,6 +554,7 @@ export function assignmentFor(
       { roots: options.groundRoots ?? [], manifests: options.manifests ?? [] },
       !asking,
     ) +
+    (options.skills ? skillsDirective(options.skills) : '') +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
     '\n\n' +
@@ -805,6 +827,13 @@ export async function workRun(
   // in-flight work settles, not instead of it.
   let fatal: unknown = null;
 
+  // What the portable method library on this machine can offer the roles this
+  // invocation dispatches, read once. Every role in one run reaches the same
+  // two directories, so asking again per dispatch buys the same answer at a
+  // cost per role. Null means nobody looked, which the assignment and the
+  // record both distinguish from looking and finding nothing.
+  const reachable = options.skills?.() ?? null;
+
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
 
@@ -976,6 +1005,21 @@ export async function workRun(
       });
     }
 
+    // What method the role could actually reach, written whether or not it
+    // reaches for any of it. A deliverable naming a skill is checkable against
+    // this line, and one produced on a machine holding none cannot read as
+    // though the library had been at hand.
+    if (reachable) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'skills-offered',
+        detail: skillsOffered(reachable),
+        at: options.clock(),
+      });
+    }
+
     // Commitment 14's second half: the write surface a role reaches back
     // through. The bearer goes to the adapter as env for the role's serving
     // process (see roleenv.ts) — NEVER into the assignment text, which crosses
@@ -1028,6 +1072,7 @@ export async function workRun(
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),
             mode: plan?.mode,
+            ...(reachable ? { skills: reachable } : {}),
           }),
         },
         { invocationId: task.id, roleEnv },

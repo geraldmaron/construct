@@ -37,9 +37,11 @@ import {
   skillDescription,
   skillStatuses,
   skillVersion,
+  SHIPPED_SKILLS,
   type InstalledFolder,
   type SkillSource,
 } from '../kernel/skills/library.ts';
+import { skillsReachable, type SkillsReachable } from '../kernel/skills/reach.ts';
 import { LENSES } from '../kernel/plan/lenses.ts';
 import { allPlaybooks } from '../kernel/plan/playbooks.ts';
 import { LENS_STANDARDS } from '../kernel/plan/standards.ts';
@@ -168,6 +170,30 @@ function readInstalledFolders(dir: string): readonly InstalledFolder[] {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => readInstalledFolder(dir, entry.name));
+}
+
+/**
+ * What a dispatched role can get at from the portable method library on this
+ * machine. A run reads exactly two directories and no others: the agent skills
+ * directory a host loads from, and this checkout's own copies where the
+ * install has them. Neither is chosen by the role, and nothing here is copied,
+ * rewritten, or wrapped, so a skill the role loads is the same file anyone
+ * else would load.
+ *
+ * The reading is here rather than in the kernel for the reason every other
+ * disk read is: the kernel receives described values, and the surface that
+ * owns paths does the looking.
+ */
+export function readReachableSkills(installDir = resolveSkillsDir()): SkillsReachable {
+  const sourceDir = sourceSkillsDir().replace(new RegExp(`${sep}+$`), '');
+  const shipped = existsSync(sourceDir);
+  return skillsReachable({
+    shipped: SHIPPED_SKILLS,
+    sources: shipped ? readSkillSources(sourceDir) : [],
+    installed: readInstalledFolders(installDir),
+    installDir,
+    sourceDir: shipped ? sourceDir : null,
+  });
 }
 
 function padded(values: readonly string[]): (value: string) => string {

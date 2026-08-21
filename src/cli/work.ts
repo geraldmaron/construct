@@ -31,6 +31,7 @@ import {
   selectionDetail,
 } from '../kernel/hosts/selection.ts';
 import type { Selection, WorkNeed } from '../kernel/hosts/selection.ts';
+import { readReachableSkills } from './skills.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { architectureNoteFor } from '../hosts/architecture.ts';
 import { dispatchShapeNoteFor } from '../hosts/dispatchshape.ts';
@@ -445,6 +446,9 @@ export async function work(
       // obligation can name the repository's own gate instead of only the
       // standard behind it.
       manifests: readRepoManifest,
+      // What method the machine can offer a role beyond its lens: the skills
+      // library, read where it actually sits rather than assumed present.
+      skills: readReachableSkills,
       ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
     });
 
