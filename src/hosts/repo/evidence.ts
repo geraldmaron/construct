@@ -19,6 +19,25 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import type { BeadIssue, EvidenceBySlug } from '../../kernel/tracker/session-drift.ts';
 
+import type { RecordedHistory } from '../../kernel/tracker/session-drift.ts';
+
+/** Where the tracker writes the export this repository version-controls. */
+const EXPORT_PATH = '.beads/issues.jsonl';
+
+/**
+ * How far back the export's own history is swept.
+ *
+ * The sweep exists to catch records the tracker database lost, and a database
+ * loses them at a session boundary rather than across years, so a bounded walk
+ * finds what an unbounded one would at a fraction of the cost. The bound is
+ * reported whenever it truncates, because a sweep that quietly stopped looking
+ * would be indistinguishable from one that found nothing.
+ */
+export const HISTORY_COMMIT_CAP = 200;
+
+/** Blobs are read a chunk at a time so a long history never materialises whole. */
+const BLOB_CHUNK = 20;
+
 export interface GatherInput {
   /** Repository root. Supplied by the caller; nothing here reads the cwd. */
   readonly root: string;
@@ -47,15 +66,118 @@ function git(root: string, args: readonly string[]): string | null {
   return result.stdout;
 }
 
+/**
+ * The issue records inside one export.
+ *
+ * A malformed line is skipped rather than thrown on: this parses blobs out of
+ * git history as well as the working tree, and one truncated old revision must
+ * not take down a sweep whose whole purpose is to read the past.
+ */
+function parseExport(text: string): BeadIssue[] {
+  const issues: BeadIssue[] = [];
+  for (const line of text.split('\n')) {
+    if (line.trim() === '') continue;
+    let record: Record<string, unknown>;
+    try {
+      record = JSON.parse(line) as Record<string, unknown>;
+    } catch {
+      continue;
+    }
+    if (record._type !== 'issue' || typeof record.id !== 'string') continue;
+    issues.push(record as unknown as BeadIssue);
+  }
+  return issues;
+}
+
 export function loadIssues(root: string): BeadIssue[] | null {
-  const path = join(root, '.beads/issues.jsonl');
+  const path = join(root, EXPORT_PATH);
   if (!existsSync(path)) return null;
-  return readFileSync(path, 'utf8')
+  return parseExport(readFileSync(path, 'utf8'));
+}
+
+/**
+ * The contents of several blobs, in one git process.
+ *
+ * One spawn per revision is the obvious shape and costs an order of magnitude
+ * more than the reading does; a batch keeps the sweep cheap enough to run on
+ * every commit, which is the only reason it runs at all.
+ */
+function readBlobs(root: string, specs: readonly string[]): string[] {
+  if (specs.length === 0) return [];
+  const result = spawnSync('git', ['cat-file', '--batch'], {
+    cwd: root,
+    input: `${specs.join('\n')}\n`,
+    maxBuffer: 1024 * 1024 * 512,
+  });
+  const out = result.error || result.status !== 0 ? null : (result.stdout as Buffer | null);
+  if (!out) return [];
+  const contents: string[] = [];
+  let offset = 0;
+  while (offset < out.length) {
+    const newline = out.indexOf(0x0a, offset);
+    if (newline < 0) break;
+    const header = out.toString('utf8', offset, newline).split(' ');
+    // `<oid> missing` for a revision this repository does not have; nothing follows it.
+    if (header.length < 3) {
+      offset = newline + 1;
+      continue;
+    }
+    const size = Number(header[2]);
+    if (!Number.isFinite(size)) break;
+    const start = newline + 1;
+    contents.push(out.toString('utf8', start, start + size));
+    offset = start + size + 1;
+  }
+  return contents;
+}
+
+/**
+ * Every id the export has ever recorded, and every one it ever recorded closed.
+ *
+ * The working tree's export says what the tracker database believes right now,
+ * and a database that was rolled back believes something the repository already
+ * wrote down. Comparing the current export only against commit messages cannot
+ * see that: the closes were real, the commits were real, and the record of them
+ * survives only in this file's own history. So the history is swept.
+ *
+ * Local refs only. A sweep that fetched would answer a different question on a
+ * machine that happens to be online.
+ */
+export function recordedHistory(root: string, cap: number = HISTORY_COMMIT_CAP): RecordedHistory | null {
+  const log = git(root, [
+    'log',
+    '--all',
+    `--max-count=${String(cap + 1)}`,
+    '--format=%H',
+    '--',
+    EXPORT_PATH,
+  ]);
+  if (log === null) return null;
+  const shas = log
     .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => JSON.parse(line) as Record<string, unknown>)
-    .filter((record) => record._type === 'issue' && typeof record.id === 'string')
-    .map((record) => record as unknown as BeadIssue);
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+  const truncated = shas.length > cap;
+  const scanned = shas.slice(0, cap);
+
+  const everFiled = new Set<string>();
+  const everClosed = new Set<string>();
+  for (let i = 0; i < scanned.length; i += BLOB_CHUNK) {
+    const specs = scanned.slice(i, i + BLOB_CHUNK).map((sha) => `${sha}:${EXPORT_PATH}`);
+    for (const content of readBlobs(root, specs)) {
+      for (const issue of parseExport(content)) {
+        everFiled.add(issue.id);
+        if (issue.status === 'closed') everClosed.add(issue.id);
+      }
+    }
+  }
+
+  return {
+    everFiled: [...everFiled].sort(),
+    everClosed: [...everClosed].sort(),
+    commitsScanned: scanned.length,
+    truncated,
+  };
 }
 
 /**

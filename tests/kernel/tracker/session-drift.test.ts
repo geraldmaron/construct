@@ -12,6 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   describeConflict,
+  lostRecords,
   projectBead,
   reconcileSession,
   repoAnswers,
@@ -255,4 +256,78 @@ test('a bead with no notes is unaffected, and adjudication never invents agreeme
   assert.equal(report.counts.adjudicated, 0);
   assert.equal(report.counts.drifted, 1);
   assert.equal(report.clean, false);
+});
+
+/**
+ * The regression the commit-side reconcile is structurally blind to: a close
+ * recorded before an un-pushed database state, overwritten when a later session
+ * started from the pushed one. No commit changed, so nothing on the commit side
+ * disagrees. The export's own history is the only witness left.
+ */
+
+function history(
+  everClosed: string[],
+  everFiled: string[] = everClosed,
+  extra: Record<string, unknown> = {},
+) {
+  return { everClosed, everFiled, commitsScanned: 12, truncated: false, ...extra };
+}
+
+test('a bead history recorded closed and the export now shows open is a lost close', () => {
+  const report = lostRecords([bead('construct-a', 'open')], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, ['construct-a']);
+  assert.deepEqual(report.missingRecords, []);
+  assert.equal(report.clean, false);
+  assert.equal(report.commitsScanned, 12);
+});
+
+test('a bead history filed and the export no longer carries is a lost record', () => {
+  const report = lostRecords([bead('construct-a', 'open')], history([], ['construct-a', 'construct-b']));
+  assert.deepEqual(report.missingRecords, ['construct-b']);
+  assert.equal(report.clean, false);
+});
+
+test('a dated reopening note explains the disagreement and keeps it off the list', () => {
+  const note = '2026-08-21 REOPENED: the deliverable it promised was never produced.';
+  const report = lostRecords([bead('construct-a', 'open', { notes: note })], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.reopened, ['construct-a']);
+  assert.equal(report.clean, true);
+});
+
+test('an undated mention of reopening does not excuse a lost close', () => {
+  // A record a stranger cannot date is a record a stranger cannot check.
+  const report = lostRecords(
+    [bead('construct-a', 'open', { notes: 'we might have REOPENED this at some point' })],
+    history(['construct-a']),
+  );
+  assert.deepEqual(report.lostCloses, ['construct-a']);
+});
+
+test('a bead still closed in the export agrees with its own history', () => {
+  const report = lostRecords([bead('construct-a', 'closed')], history(['construct-a']));
+  assert.equal(report.clean, true);
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.reopened, []);
+});
+
+test('a close made today and never seen in history is work, not a regression', () => {
+  // The sweep is one-directional on purpose: reporting every close that history
+  // has not caught up with yet would bury the closes that actually went missing.
+  const report = lostRecords([bead('construct-a', 'closed')], history([], ['construct-a']));
+  assert.equal(report.clean, true);
+});
+
+test('a truncated walk says so rather than passing off a partial sweep as a whole one', () => {
+  const report = lostRecords([], history([], [], { truncated: true, commitsScanned: 200 }));
+  assert.equal(report.truncated, true);
+  assert.equal(report.commitsScanned, 200);
+  assert.equal(report.clean, true);
+});
+
+test('no history gathered is no finding', () => {
+  const report = lostRecords([bead('construct-a', 'open')], undefined);
+  assert.equal(report.clean, true);
+  assert.equal(report.commitsScanned, 0);
+  assert.equal(report.truncated, false);
 });
