@@ -209,6 +209,12 @@ test('the composer prefers prose and names form by document shape', () => {
   assert.ok(review.includes(formGuidanceForShape(DEFAULT_SHAPE)));
   const rfc = composerPrompt({ outcome: 'Write an RFC for shape governance', sources: [SOURCE], shape: shapeByName('rfc')! });
   assert.match(rfc, /Form for this RFC/);
+  const onepager = composerPrompt({
+    outcome: 'Draft an exec one-pager for the board on shape governance',
+    sources: [SOURCE],
+    shape: shapeByName('onepager')!,
+  });
+  assert.match(onepager, /Form for this exec one-pager/);
 });
 
 test('every shipped shape has named form guidance of its own', () => {
@@ -219,6 +225,25 @@ test('every shipped shape has named form guidance of its own', () => {
       assert.doesNotMatch(guidance, /Form for this review/, `${shape.name} must not inherit review form by falling through`);
     }
   }
+});
+
+/**
+ * The length and altitude framing this shape exists for are named in its own
+ * guidance, not left to be inferred from the section list alone — the same
+ * bar every other shape's form guidance already clears for its own
+ * distinguishing content (a lifecycle diagram for spec, a status sentence for
+ * ADR).
+ */
+test('the onepager form guidance names its own length bound and altitude framing', () => {
+  const guidance = formGuidanceForShape(shapeByName('onepager')!);
+  assert.match(guidance, /Form for this exec one-pager/);
+  assert.match(guidance, /fits one page/);
+  assert.match(guidance, /the-ask leads/);
+  assert.match(guidance, /whose-call/);
+  assert.match(guidance, /what-changes/);
+  assert.match(guidance, /what-it-costs/);
+  assert.doesNotMatch(guidance, /Form for this review/);
+  assert.doesNotMatch(guidance, /Form for this decision/);
 });
 
 /**

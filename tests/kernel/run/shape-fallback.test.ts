@@ -69,3 +69,12 @@ test('the shape-only chooser answers exactly as the reporting one does', () => {
     assert.equal(shapeForOutcome(outcome), shapeMatchForOutcome(outcome).shape, outcome);
   }
 });
+
+test('a one-pager ask reaches the one-pager through the keyword path, and outranks a decision word beside it', () => {
+  const asked = shapeMatchForOutcome('Draft a one-pager for the board deciding whether to ship');
+  assert.equal(asked.shape.name, 'onepager');
+  assert.equal(asked.matched, true);
+  const review = shapeMatchForOutcome('Summarize this review');
+  assert.equal(review.shape.name, 'review');
+  assert.equal(review.matched, false);
+});
