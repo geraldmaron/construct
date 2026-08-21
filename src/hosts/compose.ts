@@ -23,8 +23,24 @@ import type { GapCloser } from '../kernel/run/closing.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
 import { chooseChallengeFamily } from '../kernel/challenge/familyroute.ts';
+import { constructIdentity } from '../kernel/voice/voice.ts';
 import { extractJson } from './contextloop.ts';
 import { familyOf } from './family.ts';
+
+/**
+ * The line every prompt here needs beside the voice, because every prompt here
+ * asks for JSON.
+ *
+ * The composed document is prose a person reads — a claim, a caption, a call,
+ * an answer to a gap — and it reaches them through these JSON fields. The
+ * voice governs what is inside them. Saying so is cheaper than the two ways it
+ * goes wrong: a model that reads a voice block as permission to write prose
+ * around the JSON, or one that treats "reply with JSON" as licence to write
+ * the prose inside it in machine register.
+ */
+const VOICE_INSIDE_THE_JSON =
+  'The reply itself is JSON. The voice above is how the prose inside it is written — every ' +
+  'sentence in it is read by a person — and it is not a licence to write anything outside the JSON.';
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
@@ -100,6 +116,13 @@ export function composerPrompt(input: {
   readonly shape: CompositionShape;
 }): string {
   return [
+    // The composer writes the document a person reads, so it writes in the one
+    // voice. Nothing framed this pass in particular: arranging every concern is
+    // Construct's own job, not any one concern's.
+    constructIdentity(),
+    '',
+    VOICE_INSIDE_THE_JSON,
+    '',
     'Several specialists were each asked about one concern of the same outcome.',
     'They have finished, their work has been checked, and each of them was right',
     'to answer only their own concern. Your job is to arrange what they said into',
@@ -177,7 +200,9 @@ const POSITION_CHECK: readonly string[] = [
   'and you were not asked for it. What you are asked is narrower and only you',
   'can answer it: does it state your work as something other than what you',
   'established — firmer than you put it, resolved where you left it open, or',
-  'resting on you for something you did not say? Quote the sentence if so.',
+  'resting on you for something you did not say? Quote the sentence if so,',
+  'word for word as it is written above: the quote is shown to the reader as',
+  'the call\'s own words, so a tidied or restated one is put in its mouth.',
 ];
 
 /**
@@ -276,10 +301,14 @@ export function positionPrompt(input: {
   readonly sources: readonly SourceDeliverable[];
 }): string {
   return [
-    'You are Construct. Several specialists have each finished one concern of the',
-    'same outcome, their work has been checked, and you are the only participant',
-    'who has read all of it. What it adds up to is the question none of them was',
-    'asked, and it is yours.',
+    constructIdentity(),
+    '',
+    VOICE_INSIDE_THE_JSON,
+    '',
+    'Several specialists have each finished one concern of the same outcome, their',
+    'work has been checked, and you are the only participant who has read all of',
+    'it. What it adds up to is the question none of them was asked, and it is',
+    'yours.',
     '',
     `What was asked:\n${input.outcome}`,
     '',
@@ -374,7 +403,11 @@ export function positionRepairPrompt(input: {
   readonly objections: readonly SharedObjection[];
 }): string {
   return [
-    'You are Construct. You took a position across every specialist on this',
+    constructIdentity(),
+    '',
+    VOICE_INSIDE_THE_JSON,
+    '',
+    'You took a position across every specialist on this',
     'outcome, and each of them was then shown the call beside their own finished',
     'work and asked one question: does it state their work as something other',
     'than what they established? These are the ones who said it does. They are',
@@ -545,10 +578,16 @@ export function closingPrompt(input: {
   readonly groundRoots: readonly string[];
 }): string {
   return [
-    `You are the ${input.source.role} role. You have already delivered your work on`,
-    'this outcome, several other specialists delivered theirs, and the whole was',
-    'composed into one document. The composing found questions the document does',
-    'not answer, and they are below.',
+    // Framed by the role that delivered the work, written in the one voice: an
+    // answer that closes a gap lands in the document a person reads.
+    constructIdentity({ framedBy: input.source.role }),
+    '',
+    VOICE_INSIDE_THE_JSON,
+    '',
+    'You have already delivered your work on this outcome, several other',
+    'specialists delivered theirs, and the whole was composed into one document.',
+    'The composing found questions the document does not answer, and they are',
+    'below.',
     '',
     `The outcome:\n${input.outcome}`,
     '',
