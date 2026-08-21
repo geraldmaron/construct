@@ -1894,7 +1894,9 @@ the path that actually ran and actually missed. Under this project's own standar
 an improvement claim needs more than one run and more than one model family, so
 the implementation carries that obligation rather than inheriting this table as
 its evidence. The probe is committed as `scripts/probe-ground-routing.mjs` so the
-follow-up measures with an instrument that already exists.
+follow-up measures with an instrument that already exists. *(That obligation was
+discharged 2026-08-21; §23 carries the namer figures, and they do not read the
+way this section's table would lead a reader to expect.)*
 
 **One correction to the record.** The bead that raised this stated that the
 keyword map, run as a control, "names NOTHING at all" on this text. Re-run today
@@ -2074,3 +2076,142 @@ skills; vercel-labs skills CLI (GitHub, read 2026-08-20). Vendor and security
 reporting on skill supply-chain attacks (2025–2026, read 2026-08-20).
 Gerald's statement of intent and endorsement, in-session chat, 2026-08-20.
 Full research trail: the vision-direction session of 2026-08-20.
+
+## 23. The same ground, measured on the model namer (2026-08-21)
+
+§20 decided a direction and named its own limit in the same breath: its table is
+one outcome, one project and the deterministic keyword router only, and it "says
+nothing about the model namer, which is the path that actually ran and actually
+missed." This is that obligation discharged. Nothing here changes routing and no
+improvement is claimed. What changes is that the namer now has figures of its
+own, and they neither reproduce §20's table nor refute its direction.
+
+**The instrument.** `scripts/probe-ground-routing.mjs`, extended rather than
+replaced. `--namer=<transport>/<model>` runs the shipped seam — `namerPrompt`
+and `parseNamings` from `hosts/namer.ts`, the one corrective retry in
+`jsonrepair.ts`, `mapImplicationsNamed`'s catalog admission — over a bare
+transport, the same direct-fetch pattern `measure-decisions.mjs` already uses
+for its own live namer section. Only the bytes are local to the probe;
+everything that decides what a naming means is code the product runs. The two
+arms frame the same admitted lines differently and say so: the keyword arm
+concatenates, byte-identical to the run already on the record, and the namer arm
+labels the lines as the project's own documents, because a namer told that a
+boundaries table is the user's own wording is being asked a question no
+implementation would ask it. Compare conditions within an arm; across arms, only
+the direction is comparable.
+
+**What was asked.** Five outcomes over two grounds. G1 is §20's outcome
+verbatim; the other four were written for this measurement from each ground's
+own documents, chosen on whether the ground carries a binding at all — which is
+what makes an item valid — and never on how any model answered. The keyword arm,
+which costs nothing to re-run:
+
+| | ground | project term | expected | keywords: alone → line → ±4 |
+|---|---|---|---|---|
+| G1 | BlackStory (355 docs) | `living_status` | privacy | 1, missed → 4, reached → 12, reached |
+| G2 | BlackStory | `claim_versions` | evidence-provenance | 1, missed → 3, reached → 7, reached |
+| G3 | BlackStory | `kill_switches` | security | 2, missed → 13, reached → 17, reached |
+| G4 | BlackStory | `publicPrecisionRules` | privacy | 1, missed → 1, missed → 1, missed |
+| G5 | `fixtures/org-harness/corpus` (22 docs) | `rollingSync` | program-sequencing | 0, missed → 10, reached → 13, reached |
+
+G2's binding is the project's own sentence — "Claim versions are append-only (no
+UPDATE/DELETE grants)" — and G4's term appears in no prose document at all: it
+is a key in a JSON policy file, so the survey admits nothing for it. G4 is
+therefore the null control, and it earns its place twice over below.
+
+**The panel.** Six families were asked and five answered: gpt-oss (`gpt-oss:20b`)
+and qwen (`qwen3.6:35b`) locally on Ollama; nemotron
+(`nemotron-3-super-120b-a12b`), liquid (`lfm-2.5-2.6b`) and dots
+(`dots-3-note-preview`) on OpenRouter's free tier. Named rather than skipped:
+gemma answered 3 of its 13 rows and was refused on the rest by its upstream
+shared pool (HTTP 429 through the probe's bounded backoff), and its smaller
+sibling answered none; glm and poolside were refused before a single outcome
+ran; cohere returned a one-word reachability check in 2.8s and then nothing
+inside the probe's fifteen-minute call limit, twice. `qwen3.5:4b` was excluded on
+evidence rather than taste — its namer contract fell through on both trials the
+same day (`fixtures/model-floors/2026-08-21-ollama-qwen3.5-4b.json`). Every
+family here is untuned by this repo's own matrix, so all of them ran best-effort,
+and the model behind the run §20 recorded is written down nowhere in this
+repository, so it cannot be placed on this panel at all.
+
+That leaves **26 measured cells**: five outcomes, five to six families, one run
+per cell at temperature 0.
+
+**Finding 1 — the keyword router's blindness is not the namer's.** The keyword
+router reaches the expected concern from the outcome alone in 0 of 5 outcomes.
+The namer reaches it in 15 of 26 cells, and on two of the five outcomes — G3 and
+G5 — every measured family reaches it from the outcome's own words with no
+ground at all. §20's framing — the concern is in the catalog and the outcome's
+words cannot reach it — describes the router, and describes the namer only
+sometimes.
+
+**Finding 2 — where the namer *did* miss, the line rescued it, every time.** On
+G1, §20's own outcome, two of the five measured families named privacy from the
+outcome alone and three did not. All three reached it once the line was
+admitted, so five of five reach privacy at line scope. That is §20's premise
+reproduced on the path §20 could not test — on one outcome, at n=5.
+
+**Finding 3 — and it cost a concern elsewhere.** On G2 the line took privacy's
+place badly: two families that named evidence-provenance from the outcome alone
+stopped naming it once the append-only line was admitted. Across all 26 cells:
+3 reached only with the line, 2 lost by admitting it, 13 reached either way, 8
+reached in neither. Net +1 on 26 draws. Under §21's asymmetry — recall is not
+this project's currency to spend — a change that loses a concern on 2 of 26 is
+not adoptable as a replacement, whatever its average.
+
+**Finding 4 — keeping both consultations is the shape the numbers actually
+favour.** Read as a union rather than a substitution, the same 26 cells reach
+18, against 15 for the outcome alone and 16 for the line alone, for a mean of
+3.65 domains named against 2.88 and 2.58. Every cell either arm reached is
+reached, and nothing is lost by construction. This is a re-reading of data
+already paid for, not a measured implementation, and it doubles the model calls;
+it is recorded as the shape a proposal should be measured in, not as a proposal.
+
+**Finding 5 — the width curve does not replicate.** The keyword arm's monotonic
+cost is why §20 chose the line. The namer has no such curve. Of the two families
+run at every width on G1: nemotron went 5, 2, 6, 5, 2 domains across alone,
+line, ±1, ±2, ±4, holding privacy throughout; gpt-oss went 6, 6, 0, 4, 3, naming
+*nothing at all* at ±1 and losing privacy at ±4. Nothing here argues for a wider
+window, and the constraint against widening it stands unchallenged — but the
+reason is now "no evidence for it and a family that degrades under it," not
+"monotonic precision loss."
+
+**Finding 6 — the mechanism is inert exactly where the failure mode lives, and
+that is not a defect of the mechanism.** G4 states a privacy question in the
+project's own vocabulary; no family named privacy at any condition and neither
+did the router. The ground could not help because the project never wrote the
+binding down in prose. This is the clearest thing the panel says about the
+rejected alternative: a workspace-declared glossary would have been the only
+thing that could reach G4, and §20 rejected it for reasons this section does not
+disturb. The honest statement is that both mechanisms fail here, for different
+reasons.
+
+**Finding 7 — the effects are close to the noise.** G4's two rows are
+byte-identical input, so their gap is this panel's noise floor: three of six
+families returned a *different domain set* on the same prompt, median absolute
+difference one domain. Over the 20 pairs where the ground does admit lines, the
+median absolute difference is two domains. An effect twice the noise, measured
+once per cell, is a direction, not a magnitude. No confidence interval is quoted
+because none computed at this n would mean anything.
+
+**What this does not license.** Five outcomes, two grounds, five to six
+families, one run per cell, one day, one free-tier's weather. Four of the five
+outcomes were authored for this measurement by an Anthropic model reading each
+ground, which is a selection this session made and cannot audit itself; only G1
+is verbatim from a recorded run, and it is also the outcome carrying the
+strongest result, which is exactly the coincidence a reader should discount for.
+The namer prompt asks for a reason grounded in the outcome's own words, so the
+whys do not quote admitted lines and their silence is not evidence the lines were
+ignored. Nothing here is a claim about production behavior: the probe frames the
+ground as labeled evidence, and no shipped code path does that yet.
+
+**What is decided.** Nothing is adopted and nothing is reversed. §20's direction
+survives — line scope, ground rather than declared glossary — and §20's *table*
+stops being usable as the business case for it, because the router's clean
+monotone story does not describe the namer at all. An implementation proposal
+after this section must say which arm it improves, must not spend recall to buy
+precision (§21), and inherits these figures rather than §20's.
+
+**Recorded by:** `fixtures/ground-routing/2026-08-21-namer-panel.json`, produced
+by the probe above, 2026-08-21. Deterministic arm re-run the same day and
+identical to §20's table but for one document added to the ground since.
