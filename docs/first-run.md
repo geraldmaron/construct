@@ -25,10 +25,12 @@ healthy:
 construct doctor
 ```
 
-You should see three `ok` lines and `doctor: healthy`. It checks Node, where
-state lives, and whether the database is writable. It does not yet check
-whether an agent host is reachable, which is a gap worth knowing about rather
-than discovering later.
+You should see a column of `ok` lines and `doctor: healthy`. It checks Node,
+where state lives, whether the database is writable, which agent hosts are
+present on this machine (and how each compares to the pinned version), leftover
+2.x litter in the project tree, and the installed skills pack. Only the Node
+and store checks gate the exit code; the rest inform. The full check table,
+line by line, is in [consumer-install.md](consumer-install.md).
 
 ## Record an outcome
 
