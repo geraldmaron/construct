@@ -43,6 +43,16 @@ export const IMAGE_DOCUMENT_EXTS: ReadonlySet<string> = new Set([
   '.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp', '.webp',
 ]);
 
+/**
+ * Vector/diagram formats. Unlike IMAGE_DOCUMENT_EXTS, nothing in the ladder —
+ * not a lightweight parser, not Docling — reads these; there is no rung at
+ * all, not merely an unavailable one. Kept separate from
+ * EXTRACTABLE_DOCUMENT_EXTS so planExtraction can name that gap honestly
+ * instead of folding it into the generic "convert to PDF/DOCX/text/email"
+ * message, which is not a path a diagram has.
+ */
+export const DIAGRAM_EXTS: ReadonlySet<string> = new Set(['.svg']);
+
 export const EXTRACTABLE_DOCUMENT_EXTS: ReadonlySet<string> = new Set([
   ...UTF8_TEXT_EXTS,
   ...TRANSCRIPT_EXTS,
