@@ -547,6 +547,7 @@ template, and say so.
 
 - An unsubstantiated claim already published: put it in the decision inbox naming who can substantiate it or pull it — silence leaves it running.
 - A claim in regulated territory: route to licensed review; substantiation discipline is not a legal opinion.
+
 ## The seat that is deliberately empty
 
 There is no engineer concern. Your host is the engineer: Construct dispatches

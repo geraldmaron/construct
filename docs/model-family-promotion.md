@@ -44,7 +44,10 @@ not failed: the free catalogs churn monthly, which is exactly why every
 artifact here is dated and per-model, and why no result is ever generalized to
 "the free tier".
 
-## Record so far (2026-08-06)
+## Record so far
+
+Each entry below carries its own date; this section is appended to, not
+rewritten, as new probes and harness runs land.
 
 - `claude` — tuned 2026-08-05 (clean-context lens runs, all rungs).
 - `qwen3.6:35b` (local) — contract clean; harness FAIL on the composed
