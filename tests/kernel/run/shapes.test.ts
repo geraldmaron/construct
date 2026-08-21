@@ -23,6 +23,7 @@ import {
   ACCEPTANCE_CRITERION_CLAUSE,
   COMPOSITION_SHAPES,
   DEFAULT_SHAPE,
+  ONEPAGER_SIGNALS,
   shapeByName,
   shapeForOutcome,
   shapeNames,
@@ -275,4 +276,90 @@ test('a requirement is asked to carry a criterion or its explicit absence, never
     'the requirements section carries the shared checkability clause, not a restated copy of it',
   );
   assert.match(ACCEPTANCE_CRITERION_CLAUSE, /explicit stated absence/, 'absence is a real answer, not a gap');
+});
+
+/**
+ * The exec one-pager is reachable by name, the same as every other shape.
+ */
+test('the onepager shape is found by name, refused under the wrong one', () => {
+  assert.equal(shapeByName('onepager')?.name, 'onepager');
+  assert.equal(shapeByName('  ONEPAGER ')?.name, 'onepager', 'a user typing it is not a parser');
+  assert.equal(shapeByName('one-pager'), undefined, 'the catalog key has no hyphen; the prose form does');
+  assert.ok(shapeNames().includes('onepager'), 'the usage line and --shape both read this list');
+});
+
+test('the onepager shape leads with the ask and has exactly the six specified sections, in order', () => {
+  const onepager = shapeByName('onepager')!;
+  assert.deepEqual(onepager.sections.map((s) => s.name), [
+    'the-ask',
+    'what-changes',
+    'what-it-costs',
+    'whose-call',
+    'evidence',
+    'risks',
+  ]);
+});
+
+/**
+ * "Reuses the core slots" is a specific claim, not just a family resemblance:
+ * what-it-costs carries DECISION's own wording rather than a paraphrase of it,
+ * because the price of a choice does not change with who is reading it.
+ */
+test('the onepager shape reuses what-it-costs from decision rather than re-arguing it', () => {
+  const onepagerCost = shapeByName('onepager')?.sections.find((s) => s.name === 'what-it-costs');
+  const decisionCost = shapeByName('decision')?.sections.find((s) => s.name === 'what-it-costs');
+  assert.ok(onepagerCost && decisionCost);
+  assert.equal(onepagerCost.expects, decisionCost.expects);
+});
+
+/**
+ * The one-pager's altitude is what separates it from a truncated review or a
+ * truncated decision: whose-call and what-changes exist because a leader
+ * reading one page needs both, and neither review nor decision poses them
+ * (decision addresses the person already making the choice, and never asks
+ * what changes as its own question).
+ */
+test('the onepager shape asks what neither review nor decision poses', () => {
+  const onepager = shapeByName('onepager')!.sections.map((s) => s.name);
+  assert.ok(onepager.includes('whose-call'), 'handed up rather than addressed to the chooser, unlike decision');
+  assert.ok(onepager.includes('what-changes'), 'the consequence, stated as its own question');
+  assert.ok(!onepager.includes('where-things-stand'), 'that reader is being brought in for one call, not the whole choice');
+  assert.ok(!onepager.includes('what-happens-first'), 'sequencing belongs to a decision document, not a page handed up');
+  assert.ok(!onepager.includes('what-would-change-it'), 'falsifiability belongs to a bet under test, not a single ask');
+});
+
+/**
+ * Reachability lives in the signal list itself today (see ONEPAGER_SIGNALS'
+ * own comment: shapeForOutcome does not read it yet, by design, because a
+ * concurrent pass owns that wiring). This proves the list matches the ordinary
+ * wordings this shape must be reachable from and none of the wordings that
+ * mean a plain review — the same property shapeForOutcome's own matching
+ * (`text.includes(signal)` on the lowercased outcome) would give once wired,
+ * exercised directly against the exported list rather than through the
+ * function this task does not own.
+ */
+test('the onepager signal list reaches ordinary leadership-brief wording and stays out of review wording', () => {
+  const reaches = (outcome: string): boolean => {
+    const text = outcome.toLowerCase();
+    return ONEPAGER_SIGNALS.some((signal) => text.includes(signal));
+  };
+  assert.ok(reaches('Write a one-pager for the caching layer redesign'), 'one-pager');
+  assert.ok(reaches('An exec summary for the board on the pricing change'), 'exec summary for the board');
+  assert.ok(reaches('One page for leadership on the migration'), 'one page for leadership');
+
+  // The same wordings the review-shape tests already rely on to stay review.
+  assert.ok(!reaches('Review the authentication flow and tell us what you find'));
+  assert.ok(!reaches('What does our roadmap say about the billing migration'));
+  assert.ok(!reaches('Assess whether the retention policy covers the new data'));
+  assert.ok(!reaches('Summarize this review'), 'the exact case the tight signal list exists to keep out');
+  assert.ok(!reaches('What is the plan for the migration'), '"plan" alone must not become a one-pager either');
+});
+
+test('every onepager signal names the document or an audience a review is never pitched at', () => {
+  for (const signal of ONEPAGER_SIGNALS) {
+    assert.ok(
+      signal.includes('pager') || signal.includes('board') || signal.includes('leadership'),
+      `"${signal}" is not anchored to the document name or a leadership audience`,
+    );
+  }
 });
