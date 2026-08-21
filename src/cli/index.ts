@@ -113,7 +113,7 @@ import {
   createHostShapeChooser,
   createHostSupportChecker,
 } from '../hosts/compose.ts';
-import { foldClosingRound, screenClosedAnswers } from '../kernel/run/closing.ts';
+import { closeGaps } from '../kernel/run/closing.ts';
 import {
   COMPOSITION_SHAPES,
   shapeByName,
@@ -123,6 +123,7 @@ import {
 } from '../kernel/run/shapes.ts';
 import type { CompositionShape } from '../kernel/run/shapes.ts';
 import {
+  deliverableBody,
   renderAttribution,
   renderClaim,
   renderComposedClaim,
@@ -147,13 +148,12 @@ import type { DeltaChallenge, ProducedLoop, ProducerSource } from '../kernel/con
 import { screenObservations } from '../kernel/context/observations.ts';
 import type { DocumentWords, DriftCitation, ScreenResult } from '../kernel/context/observations.ts';
 import {
-  operationalLessonsFor,
+  admissionDomainFor,
   decideAdmission,
   admissionOf,
   riskTierFor,
-  runDerived,
 } from '../kernel/lessons/admission.ts';
-import { distillDecisionLesson, DECISION_CITATION_PREFIX } from '../kernel/lessons/fromDecisions.ts';
+import { distillDecisionLesson } from '../kernel/lessons/fromDecisions.ts';
 import { recordLesson, getLesson, lessonsFor, type Lesson } from '../kernel/store/lessons.ts';
 import {
   createHostApplier,
@@ -263,9 +263,14 @@ import {
   now,
   packageVersion,
   secretFile,
+  terminalReport,
   withStore,
   withStoreAsync,
 } from './runtime.ts';
+import { driftGround, surveyDeclared } from './survey.ts';
+import { groundingSummary, groundRun } from '../kernel/run/groundpass.ts';
+import type { SourceSurveyor } from '../kernel/run/groundpass.ts';
+import { runNoteLoop } from '../kernel/context/note-loop.ts';
 import type { HostName } from './runtime.ts';
 import {
   parseFlags,
@@ -762,138 +767,9 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   };
 }
 
-/**
- * Where extracted text is materialized. Under the cache root rather than the
- * user's ground: an extraction is a rendering Construct produced, and writing
- * it into the directory the user declared would put Construct's output inside
- * its own evidence.
- */
-function extractionCacheRoot(): string {
-  return join(resolvePaths().cacheDir, 'extractions');
-}
-
-/**
- * Survey a set of declared sources, extracting whatever the walk could not
- * read. The one place a survey is asked for, so every surface that grounds
- * itself — a run's dispatch, a drift pass over a workspace — sees the same
- * documents, extracted the same way, with one Docling probe between them.
- */
-function surveyDeclared(store: Store, sources: readonly Source[]): SourceSurvey[] {
-  if (sources.length === 0) return [];
-  const extract = { cacheRoot: extractionCacheRoot(), docling: probeDocling() };
-  return sources.map((source) => {
-    // A source nobody shaped is surveyed the way every source was before the
-    // setting existed, so declaring nothing keeps today's behavior exactly.
-    const shape = sourceShape(store, source.id);
-    return surveySource(source, {
-      extract,
-      ...(shape ? { emphasis: shape.emphasis, cap: shape.cap } : {}),
-    });
-  });
-}
-
-/**
- * The three views a drift pass needs of the same survey: what the producer is
- * shown, what the screen checks its citations against, and the words those
- * documents actually hold so a quotation can be located in one. Built together
- * so the model can never be shown one set of documents and graded on another.
- */
-function driftGround(
-  sources: readonly Source[],
-  surveys: readonly SourceSurvey[],
-): {
-  readonly producerSources: ProducerSource[];
-  readonly surveyed: Map<string, Set<string>>;
-  readonly words: DocumentWords;
-} {
-  const bySource = new Map(surveys.map((s) => [s.source, s]));
-  const surveyed = new Map<string, Set<string>>();
-  const producerSources = sources.map((source) => {
-    const survey = bySource.get(source.id);
-    const base = { id: source.id, kind: source.kind, locator: source.locator };
-    if (!survey || survey.outcome !== 'listed') {
-      return { ...base, documents: [], unreachable: survey?.reason ?? 'no survey was taken' };
-    }
-    const documents = survey.documents.map((d) => d.path);
-    surveyed.set(source.id, new Set(documents));
-    return { ...base, documents };
-  });
-  return { producerSources, surveyed, words: documentWords(surveys) };
-}
-
-export interface GroundingPass {
-  readonly surveys: readonly SourceSurvey[];
-  readonly recorded: number;
-  /** True when the run already had reads and this pass wrote nothing. */
-  readonly skipped: boolean;
-  readonly documents: number;
-  readonly unreachable: number;
-  readonly extracted: number;
-}
-
-/**
- * The producer half of grounding for one run: survey every declared source,
- * put its unreadable documents into words, record what was read, and log it.
- *
- * One function because `outcome --answer` and `work` were doing this
- * identically in two places, and two copies of a grounding pass is two
- * chances for a run to be graded against ground it was never licensed.
- * Recording is once per run — the read record is evidence, not a cache — so a
- * second pass reports skipped and writes nothing.
- */
-function groundRun(store: Store, run: string, at: string): GroundingPass | null {
-  const plan = planFor(store, run);
-  if (!plan || plan.sourcesDeclared.length === 0) return null;
-
-  const declared = plan.sourcesDeclared
-    .map((id) => getSource(store, id))
-    .filter((s): s is Source => s !== null && s !== undefined);
-  const surveys = surveyDeclared(store, declared);
-
-  const { recorded, skipped } = recordRunSourceReads(store, run, surveys, at);
-  const listed = surveys.filter((s) => s.outcome === 'listed');
-  const documents = listed.reduce((sum, s) => sum + s.documents.length, 0);
-  const extracted = listed.reduce(
-    (sum, s) => sum + s.documents.filter((d) => d.extraction?.outcome === 'extracted').length,
-    0,
-  );
-  const pass: GroundingPass = {
-    surveys,
-    recorded,
-    skipped,
-    documents,
-    unreachable: surveys.length - listed.length,
-    extracted,
-  };
-  if (skipped) return pass;
-
-  appendWorkLog(store, {
-    run,
-    role: 'construct',
-    action: 'sources-read',
-    detail: {
-      sources: surveys.length,
-      documents,
-      unreachable: pass.unreachable,
-      extracted,
-      reads: recorded,
-      // Licensed vs listed, on the record: the listed documents are the read
-      // rows; the roots are what the roles may read past them.
-      licensedRoots: listed.map((s) => s.locator).sort(),
-    },
-    at,
-  });
-  return pass;
-}
-
-/** The one-line grounding summary both survey surfaces print. */
-function groundingSummary(pass: GroundingPass): string {
-  return (
-    `${String(pass.documents)} document${pass.documents === 1 ? '' : 's'} ` +
-    `from ${String(pass.surveys.length)} source${pass.surveys.length === 1 ? '' : 's'}` +
-    (pass.extracted > 0 ? `, ${String(pass.extracted)} extracted` : '') +
-    (pass.unreachable > 0 ? ` (${String(pass.unreachable)} unreachable)` : '')
-  );
+/** This CLI's own walk of a workspace's declared sources, handed to the kernel pass. */
+function surveyor(store: Store): SourceSurveyor {
+  return (sources) => surveyDeclared(store, sources);
 }
 
 /**
@@ -1349,7 +1225,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     // The same grounding pass `work` runs, on this one run: what the declared
     // sources actually hold, surveyed and recorded before the dispatch that
     // will cite them.
-    const pass = groundRun(store, started.runId, now());
+    const pass = groundRun(store, started.runId, now(), surveyor(store));
     if (pass) {
       if (!pass.skipped) process.stdout.write(`\ngrounded: ${groundingSummary(pass)}\n`);
     } else {
@@ -1437,14 +1313,6 @@ const UNREACHABLE_GROUND_FLAG = '--allow-distant-ground';
 
 /** Model calls one note costs: densify, produce, and one challenge per delta. */
 const CALLS_PER_NOTE = 3;
-
-/**
- * How many of the subjects a note names are shown to the loop. A note that
- * genuinely concerns a dozen clients at once is a note about a portfolio, and
- * the loop is not the surface for it; what the cap drops is stated rather than
- * silently trimmed off the end of a prompt.
- */
-const SUBJECTS_PER_NOTE = 10;
 
 export interface NotesArgs {
   readonly file: string;
@@ -1646,20 +1514,29 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
     const sources = sourcesFor(store, args.workspace);
     const { producerSources, surveyed, words } = driftGround(sources, surveyDeclared(store, sources));
 
+    const calls = {
+      densify: createHostDensifier(host),
+      produce: createHostProducer(host),
+      challenge: createHostChallenger(host),
+    };
+
     let failed = 0;
     for (const { noteId, body } of reasoning) {
       if (reasoning.length > 1) process.stdout.write(`\n── ${noteId} ──\n`);
-      const ok = await contextLoopOverNote(store, host, {
+      const outcome = await runNoteLoop(store, calls, {
         noteId,
         body,
         workspace: args.workspace,
         run: args.run,
+        at: now(),
         sources,
         producerSources,
         surveyed,
         words,
+        report: terminalReport,
       });
-      if (!ok) failed += 1;
+      if (outcome.ran) writeDrift(outcome.drift);
+      else failed += 1;
     }
     // Every note that could not be reasoned over is still recorded evidence,
     // so a batch where some loops failed is a partial success, not a failure.
@@ -1667,208 +1544,6 @@ export async function notes(argv: string[], hostOverride?: HostAdapter): Promise
   });
 }
 
-interface LoopContext {
-  readonly noteId: string;
-  readonly body: string;
-  readonly workspace: string;
-  readonly run?: string;
-  readonly sources: readonly Source[];
-  readonly producerSources: readonly ProducerSource[];
-  readonly surveyed: ReadonlyMap<string, ReadonlySet<string>>;
-  readonly words: DocumentWords;
-}
-
-/**
- * Run the context loop over one recorded note: densify, produce, challenge
- * each delta adversarially, then apply — deltas through the admission gate,
- * proposals into the rung 0 queue, observations through the citation screen.
- *
- * Returns whether the loop completed. A note whose loop failed keeps its row:
- * the evidence landed before any model was consulted, and a later pass can
- * always run over it.
- */
-async function contextLoopOverNote(
-  store: Store,
-  host: HostAdapter,
-  context: LoopContext,
-): Promise<boolean> {
-  const { noteId, body, workspace, sources, producerSources, surveyed, words } = context;
-  const at = now();
-
-  // Densify first: the confirm-intent summary is a restatement of this
-  // reading, and a loop that cannot state its reading has nothing to
-  // confirm. The note is already safe, so failing here loses no evidence.
-  let densified: DensifiedIntake;
-  try {
-    densified = await createHostDensifier(host)(body);
-  } catch (error) {
-    process.stderr.write(
-      `notes: the note could not be densified (${escapeForTerminal((error as Error).message)}). ` +
-        `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
-    );
-    return false;
-  }
-
-  const subjects = subjectsOf(body, recordsFor(store, workspace), SUBJECTS_PER_NOTE);
-  if (subjects.withheld > 0) {
-    process.stdout.write(
-      `  ${String(subjects.withheld)} record${subjects.withheld === 1 ? '' : 's'} this note names ` +
-        `${subjects.withheld === 1 ? 'was' : 'were'} not shown to the loop (limit ${String(SUBJECTS_PER_NOTE)}); ` +
-        'nothing was recorded against them.\n',
-    );
-  }
-
-  let produced: ProducedLoop;
-  try {
-    const reply = await createHostProducer(host)({
-      noteBody: body,
-      noteId,
-      lessons: operationalLessonsFor(store, workspace).map((l) => l.body),
-      sources: producerSources,
-      // Only the subjects this note names, with what each says now. Two
-      // reasons, and the first is the serious one: a workspace holding several
-      // clients would otherwise put one client's fields into the prompt
-      // reasoning over another's call notes. The second is that an update must
-      // name the record it changes, so a subject the note never mentions is
-      // one the note cannot determine anything about — showing it buys
-      // nothing and risks a fact being filed against the wrong client.
-      records: subjects.shown.map((r) => ({
-        id: r.id,
-        kind: r.kind,
-        name: r.name,
-        fields: currentFields(store, r.id).map((f) => ({ field: f.field, value: f.value })),
-      })),
-    });
-    produced = toProducedLoop(reply, noteId);
-  } catch (error) {
-    process.stderr.write(
-      `notes: the loop could not read the note (${escapeForTerminal((error as Error).message)}). ` +
-        `It is recorded as ${noteId}; run the loop again when the host answers.\n`,
-    );
-    return false;
-  }
-  for (const reason of produced.discarded) {
-    process.stdout.write(`  discarded: ${escapeForTerminal(reason)}\n`);
-  }
-
-  // The screen before the gate: a citation that does not resolve, or a
-  // proposal against an undeclared source, is dropped here with its reason
-  // so one bad item does not abort the pass; the loop's hard gate stays the
-  // backstop for anything that slips past.
-  const sourceIds = new Set(sources.map((s) => s.id));
-  const challenger = createHostChallenger(host);
-  const deltas: MemoryDelta[] = [];
-  for (const [i, delta] of produced.deltas.entries()) {
-    const cited = resolveNoteCitation(store, delta.citation);
-    if (!cited) {
-      process.stdout.write(
-        `  discarded: delta "${escapeForTerminal(delta.body.slice(0, 60))}" cites ${escapeForTerminal(delta.citation)}, which is not a line of this note\n`,
-      );
-      continue;
-    }
-    let challenge: DeltaChallenge;
-    try {
-      challenge = await challenger(delta, cited.text);
-    } catch (error) {
-      process.stdout.write(
-        `  held back: delta "${escapeForTerminal(delta.body.slice(0, 60))}" could not be challenged (${escapeForTerminal((error as Error).message)}); an unchallenged delta is not recorded\n`,
-      );
-      continue;
-    }
-    if (!challenge.upheld) {
-      process.stdout.write(
-        `  refuted: delta "${escapeForTerminal(delta.body.slice(0, 60))}" — ${escapeForTerminal(challenge.detail)}\n`,
-      );
-      continue;
-    }
-    deltas.push({
-      id: `${noteId}-d${i + 1}`,
-      kind: delta.kind,
-      domain: delta.domain,
-      body: delta.body,
-      citation: delta.citation,
-      external: delta.external,
-      basis: { kind: 'adversarial-pass', detail: challenge.detail },
-    });
-  }
-
-  const proposals: PropagationProposal[] = [];
-  for (const [i, proposal] of produced.proposals.entries()) {
-    if (!sourceIds.has(proposal.source)) {
-      process.stdout.write(
-        `  discarded: proposal "${escapeForTerminal(proposal.change.slice(0, 60))}" targets ${escapeForTerminal(proposal.source)}, which is not a declared source\n`,
-      );
-      continue;
-    }
-    if (!resolveNoteCitation(store, proposal.justification)) {
-      process.stdout.write(
-        `  discarded: proposal "${escapeForTerminal(proposal.change.slice(0, 60))}" cites ${escapeForTerminal(proposal.justification)}, which is not a line of this note\n`,
-      );
-      continue;
-    }
-    proposals.push({
-      id: `${noteId}-p${i + 1}`,
-      source: proposal.source,
-      change: proposal.change,
-      justification: proposal.justification,
-      risk: proposal.risk,
-    });
-  }
-
-  // The same screen the proposals get: an update naming a record this
-  // workspace does not keep is dropped with its reason rather than aborting
-  // the pass, and the loop's hard refusal stays the backstop.
-  const records: RecordUpdate[] = [];
-  for (const update of produced.records) {
-    if (!getRecord(store, update.record)) {
-      process.stdout.write(
-        `  discarded: record update ${escapeForTerminal(update.record)}.${escapeForTerminal(update.field)} names a record this workspace does not keep\n`,
-      );
-      continue;
-    }
-    records.push(update);
-  }
-
-  const result = applyContextLoop(
-    store,
-    {
-      workspace,
-      run: context.run ?? noteId,
-      noteId,
-      densified,
-      deltas,
-      proposals,
-      records,
-    },
-    at,
-  );
-
-  process.stdout.write(`\n${escapeForTerminal(result.summary)}\n`);
-
-  if (result.admissions.length > 0) {
-    process.stdout.write('\nmemory deltas (through the admission gate):\n');
-    for (const admission of result.admissions) {
-      process.stdout.write(`  ${admission.verdict}: ${escapeForTerminal(admission.lesson)} — ${escapeForTerminal(admission.reason)}\n`);
-    }
-  }
-  if (result.updated.length > 0) {
-    process.stdout.write(
-      `\nrecords updated (${String(result.updated.length)}) — each field cites the note line that moved it:\n`,
-    );
-    for (const moved of result.updated) process.stdout.write(`  ${escapeForTerminal(moved)}\n`);
-  }
-  if (result.filed.length > 0) {
-    process.stdout.write(
-      `\nfiled ${result.filed.length} propagation proposal${result.filed.length === 1 ? '' : 's'} — ` +
-        'each waits for a decision; nothing was written outward:\n',
-    );
-    for (const id of result.filed) process.stdout.write(`  ${id}\n`);
-  }
-
-  writeDrift(screenObservations(produced.observations, sources, surveyed, words));
-
-  return true;
-}
 
 function citationList(citations: readonly DriftCitation[]): string {
   return citations.map((c) => `${c.source} ${c.document}`).join('; ');
@@ -2493,7 +2168,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     const dispatchDirectory = resolve(args.dir ?? process.cwd());
 
     for (const runId of pendingRuns) {
-      const pass = groundRun(store, runId, now());
+      const pass = groundRun(store, runId, now(), surveyor(store));
       if (!pass || pass.skipped) continue;
       const documents = pass.documents;
       process.stdout.write(`grounded ${runId}: ${groundingSummary(pass)}\n`);
@@ -2775,20 +2450,6 @@ export function reasonClause(action: string, detail: unknown): string {
 }
 
 /**
- * The stored deliverable as text. A string is the text itself; an object with
- * a `text` field was a role wrapping its prose; anything else is shown as
- * formatted JSON rather than hidden. This is the record form — markers intact
- * — because compose sources, challenges, and the work log all read those
- * markers. A reader surface runs it through renderClaim.
- */
-function deliverableBody(deliverable: unknown): string {
-  if (typeof deliverable === 'string') return deliverable;
-  const text = (deliverable as { text?: unknown } | null)?.text;
-  if (typeof text === 'string') return text;
-  return JSON.stringify(deliverable, null, 2);
-}
-
-/**
  * The deliverable is the product, and until this command existed no surface
  * showed it: `work` reported "done" with the cost, `log` reported action
  * names, and the text a user paid for sat in the store readable only by hand.
@@ -3050,23 +2711,6 @@ export function inbox(): number {
 const LESSONS_USAGE =
   'usage: construct lessons [--workspace=<name>]\n' +
   '       construct lessons --admit=<lesson-id> --by=<approver> [--detail="<why>"] [--workspace=<name>]\n';
-
-/**
- * The domain a human review tiers a lesson by, re-derived rather than asked
- * for. A run-derived lesson cites the decision it was distilled from, so the
- * same worst-tier pick the decide command made is recoverable from the store;
- * any other lesson's domain is not recorded, and "unrated" derives high-risk,
- * which is the honest default — under a human-approval basis the tier changes
- * nothing, and no caller gets to declare its own lesson low-risk.
- */
-function admissionDomainFor(store: Store, lesson: Lesson): string {
-  if (!runDerived(lesson)) return 'unrated';
-  const decision = getDecision(store, lesson.citation.slice(DECISION_CITATION_PREFIX.length));
-  const domains = decision
-    ? [...new Set(decision.positions.filter((p) => p.role !== 'construct').map((p) => p.role))]
-    : [];
-  return domains.find((d) => riskTierFor(d) === 'high') ?? domains[0] ?? 'unrated';
-}
 
 /**
  * The held-lessons queue, made visible, and the one write a human makes on it.
@@ -4311,56 +3955,6 @@ const COMPOSE_USAGE =
   `[--shape=<${shapeNames().join('|')}>] [--record]\n`;
 
 /**
- * Put the composition's gaps back to the roles, once.
- *
- * Fail-soft by construction: a role whose closing call fails leaves its gaps
- * standing, which is exactly the state the document was in before this round
- * existed. A closing round is work the run can do on top of an answer it
- * already has, so it must never be able to cost the answer.
- */
-async function closeGaps(input: {
-  readonly host: HostAdapter;
-  readonly outcome: string;
-  readonly groundRoots: readonly string[];
-  readonly sources: readonly SourceDeliverable[];
-  readonly briefs: ReadonlyMap<string, Brief>;
-  readonly gaps: readonly string[];
-}): Promise<ClosingRound> {
-  const close = createHostGapCloser(input.host, input.outcome, input.groundRoots);
-  const replies: ClosingReply[] = [];
-  process.stdout.write(
-    `\nclosing round: ${String(input.gaps.length)} unanswered question(s) back to ` +
-      `${String(input.sources.length)} role(s) — one call each\n`,
-  );
-  for (const source of input.sources) {
-    try {
-      const reply = await close(source, input.gaps);
-      // A role whose brief cannot be read is asked and then not admitted: the
-      // checks it owed are the ones its answer must pass, and running a
-      // different set against it would be a weaker gate wearing the same name.
-      const brief = input.briefs.get(source.role);
-      replies.push(
-        brief === undefined
-          ? {
-              closed: [],
-              unclosed: reply.unclosed,
-              refused: reply.closed.map((answer) => ({
-                gap: answer.gap,
-                reason: `${source.role}'s brief could not be read, so its answer could not be held to the checks it owed`,
-              })),
-            }
-          : screenClosedAnswers(reply, brief, input.groundRoots),
-      );
-    } catch (error) {
-      process.stdout.write(
-        `  ${source.role} could not be asked (${escapeForTerminal((error as Error).message)}); its gaps stand\n`,
-      );
-    }
-  }
-  return foldClosingRound(input.gaps, replies);
-}
-
-/**
  * Write one document from the several a run produced.
  *
  * The roles each answered their own concern and each was right to decline the
@@ -4847,17 +4441,18 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // it. Skipped when nothing is open, and skippable on purpose — it is a
     // model call per role, and a reader who only wants the arrangement should
     // not pay for the round that follows it.
-    const closing =
-      screened.uncovered.length > 0 && flags['no-close'] === undefined
-        ? await closeGaps({
-            host,
-            outcome: plan.outcome,
-            groundRoots: groundRootsFor(store, run),
-            sources,
-            briefs,
-            gaps: screened.uncovered,
-          })
-        : null;
+    let closing: ClosingRound | null = null;
+    if (screened.uncovered.length > 0 && flags['no-close'] === undefined) {
+      const groundRoots = groundRootsFor(store, run);
+      closing = await closeGaps({
+        close: createHostGapCloser(host, plan.outcome, groundRoots),
+        groundRoots,
+        sources,
+        briefs,
+        gaps: screened.uncovered,
+        report: terminalReport,
+      });
+    }
 
     if (closing !== null && closing.closed.length > 0) {
       // A separate section rather than mixed into the composed ones, because

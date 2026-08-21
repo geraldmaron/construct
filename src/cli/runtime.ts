@@ -15,6 +15,7 @@ import type { Store } from '../kernel/store/open.ts';
 import { recordCatalogSighting } from '../kernel/store/catalog.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import type { Report } from '../kernel/render/report.ts';
 import { createOpenCodeAdapter } from '../hosts/opencode/adapter.ts';
 import { createClaudeAdapter } from '../hosts/claude/adapter.ts';
 import { createCodexAdapter } from '../hosts/codex/adapter.ts';
@@ -103,3 +104,13 @@ export function now(): string {
 export function secretFile(): string {
   return join(resolvePaths().dataDir, 'capability-secret');
 }
+
+/** The operator's own two streams, as the sink a long kernel pass reports into. */
+export const terminalReport: Report = {
+  say: (text) => {
+    process.stdout.write(text);
+  },
+  warn: (text) => {
+    process.stderr.write(text);
+  },
+};
