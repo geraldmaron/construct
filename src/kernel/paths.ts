@@ -36,3 +36,20 @@ export function resolvePaths(
     cacheDir: join(env.XDG_CACHE_HOME ?? join(home, '.cache'), APP),
   };
 }
+
+/**
+ * The personal-tier Agent Skills directory: the ecosystem's convention for
+ * skills that belong to a person rather than to one project, which keeps its
+ * own `.claude/skills` beside itself. Not XDG — the format names this path, so
+ * following it is what makes an installed skill discoverable at all.
+ *
+ * It reads home the same way resolvePaths does, and for the same reason: this
+ * module is the only one permitted to, so a test that redirects HOME redirects
+ * every path the tool will touch.
+ */
+export function resolveSkillsDir(
+  env: PathsEnv = process.env,
+  home: string = env.HOME ?? homedir(),
+): string {
+  return join(home, '.claude', 'skills');
+}
