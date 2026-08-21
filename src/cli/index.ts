@@ -25,6 +25,7 @@ import { readRunDispatch, recordRunDispatch } from '../kernel/store/dispatch.ts'
 import {
   addSource,
   decideProposal,
+  docsLocatorProblem,
   ENGAGEMENT_MODES,
   getProposal,
   pendingProposalCount,
@@ -4544,6 +4545,17 @@ export function source(argv: string[]): number {
     if (!(SOURCE_KINDS as readonly string[]).includes(kind) || locator.trim() === '') {
       process.stderr.write(SOURCE_USAGE);
       return 2;
+    }
+    // docs spans three unrelated providers (Google Docs, Confluence, Notion),
+    // so unlike jira or github its locator must self-identify both — caught
+    // here, before the store, so the refusal is a sentence and not a thrown
+    // error the generic catch below would have to decide what to do with.
+    if (kind === 'docs') {
+      const problem = docsLocatorProblem(locator);
+      if (problem) {
+        process.stderr.write(`source: ${problem}\n`);
+        return 2;
+      }
     }
     // How this source is walked, declared with it. Both flags are optional and
     // absent means today's behavior, so nothing about an existing workspace
