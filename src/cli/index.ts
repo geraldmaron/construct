@@ -16,6 +16,14 @@ import type { CleanupOptions } from '../kernel/cleanup/run.ts';
 import { writeFileSync } from 'node:fs';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
+import {
+  backupDisclosure,
+  backupLedgerPath,
+  BackupRefusedError,
+  checksumSidecar,
+  takeBackup,
+  verifyBackup,
+} from '../kernel/store/backup.ts';
 import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
 import {
   CAPABILITY_DENIED_ACTION,
@@ -324,6 +332,17 @@ export function doctor(cwd: string = process.cwd()): number {
     detail: problem === null ? store : `${store} — ${problem}`,
   });
 
+  // Whether a copy of the store exists anywhere. Reported, never gated: an
+  // install with no copy is not broken, it is uninsured, and the append-only
+  // triggers that protect its rows protect nothing against the file being
+  // removed. Silence about that gap is what turns one deletion into a
+  // discovery, so doctor says which of the two states this store is in.
+  checks.push({
+    name: 'backup',
+    ok: true,
+    detail: backupDisclosure(backupLedgerPath(paths), now()),
+  });
+
   // Hosts are reported, never gated: a missing host is information, because
   // serve-only use is legitimate. Before this, a user without a host met the
   // absence as mid-run errors instead of one line here.
@@ -460,6 +479,78 @@ export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
       `kept ${String(kept.length)}, skipped ${String(result.skipped.length)}.\n`,
   );
   return actuallyRemoved.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
+}
+
+const BACKUP_USAGE =
+  'usage: construct backup <dir>            copy the store into <dir>, outside the store\'s own directory\n' +
+  '       construct backup --verify <file>  recompute a copy\'s checksum against the one recorded with it\n';
+
+/**
+ * Take a copy of the store, or check one already taken.
+ *
+ * Manual on purpose. Nothing here schedules anything, sends anything anywhere,
+ * or encrypts anything: those are decisions with their own trade-offs and none
+ * of them has been made. What exists is the primitive an operator can run, and
+ * `doctor` saying plainly when nobody has run it.
+ *
+ * The verify half is not a formality. A copy nobody can check is a copy nobody
+ * should trust, so the checksum is written when the copy is taken and this is
+ * how it gets held against the bytes on disk — reported as it comes out,
+ * including "cannot be verified", which is its own answer and not a pass.
+ */
+export function backup(argv: string[]): number {
+  const { flags, rest } = parseFlags(argv);
+  const paths = resolvePaths();
+
+  if (flags.verify !== undefined) {
+    // `--verify <file>` and `--verify=<file>` both reach here; the first
+    // leaves the path in `rest`.
+    const target = flags.verify === 'true' ? rest[0] : flags.verify;
+    if (target === undefined || target === '') {
+      process.stderr.write(BACKUP_USAGE);
+      return 2;
+    }
+    const file = resolve(target);
+    const verdict = verifyBackup(file);
+    if (verdict.matched) {
+      process.stdout.write(`backup: ${file} ${verdict.detail}\n  sha256 ${String(verdict.actual)}\n`);
+      return 0;
+    }
+    process.stderr.write(
+      `backup: ${file} ${verdict.detail}\n` +
+        (verdict.recorded === null ? '' : `  recorded  ${verdict.recorded}\n`) +
+        (verdict.actual === null ? '' : `  on disk   ${verdict.actual}\n`) +
+        '  This copy is not the bytes that were taken. Opening a copy with anything that writes to it\n' +
+        '  — including construct itself — counts as a change; short of that, do not restore from it.\n',
+    );
+    return 1;
+  }
+
+  const destination = rest[0];
+  if (destination === undefined || destination === '') {
+    process.stderr.write(BACKUP_USAGE);
+    return 2;
+  }
+
+  const store = storePath(paths);
+  try {
+    const record = takeBackup({
+      storeFile: store,
+      destDir: resolve(destination),
+      ledgerFile: backupLedgerPath(paths),
+      at: now(),
+    });
+    process.stdout.write(
+      `backup: copied ${store} to ${record.file} (${String(record.bytes)} bytes)\n` +
+        `  sha256 ${record.sha256}, recorded in ${checksumSidecar(record.file)}\n` +
+        `  Check it any time with: construct backup --verify ${record.file}\n`,
+    );
+    return 0;
+  } catch (error) {
+    if (!(error instanceof BackupRefusedError)) throw error;
+    process.stderr.write(`backup: ${error.message}\n`);
+    return 2;
+  }
 }
 
 /**
@@ -6296,7 +6387,7 @@ export function skills(argv: string[]): number {
 }
 
 const USAGE =
-  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|standing|record|mode|consent|staff|skills|watch|reconcile|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|cleanup|version>\n';
+  'usage: construct <outcome|ask|work|notes|review|show|compose|plan|source|propose|standing|record|mode|consent|staff|skills|watch|reconcile|waive|revoke|verdict|corpus|log|inbox|decide|lessons|serve|doctor|backup|cleanup|version>\n';
 
 /**
  * Async because `work` dispatches to a host, and `outcome --host=…` may
@@ -6389,6 +6480,8 @@ async function run(argv: string[]): Promise<number> {
       return revoke(argv.slice(1));
     case 'doctor':
       return doctor();
+    case 'backup':
+      return backup(argv.slice(1));
     case 'cleanup':
       return cleanup(argv.slice(1));
     case 'version':
