@@ -110,10 +110,12 @@ try {
     fail('quiet-is-required-for-clean-stdout-in-every-format', `stdout did not start clean: ${ok.stdout.slice(0, 120)}`);
   }
 
-  if (parsed && !Array.isArray(JSON.parse(`[${ok.stdout.trim().replace(/\n/g, ',')}]`).length) && lastText.includes('pong')) {
-    pass('output-format-json-is-one-object-not-ndjson', 'single object, reply text found at messages[-1].content[].text');
-  } else if (parsed && lastText.includes('pong')) {
-    pass('output-format-json-is-one-object-not-ndjson', 'single object, reply text found at messages[-1].content[].text');
+  // `parsed` already proves the "one object, not NDJSON" half: JSON.parse on the
+  // WHOLE stdout string only succeeds if stdout is a single JSON value. Genuine
+  // NDJSON (one object per line) would fail this same parse with a syntax error,
+  // which is caught above and leaves `parsed` null.
+  if (parsed && lastText.includes('pong')) {
+    pass('output-format-json-is-one-object-not-ndjson', 'stdout parsed whole as a single JSON value; reply text found at messages[-1].content[].text');
   } else {
     fail('output-format-json-is-one-object-not-ndjson', `reply text: ${JSON.stringify(lastText)}`);
   }

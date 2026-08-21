@@ -82,7 +82,10 @@ function section(domain) {
   const declared = concernChallenges(domain.domain);
 
   const lines = [];
-  const seat = SEATS[domain.domain];
+  // Asked with hasOwn rather than by lookup: a concern named `constructor` or
+  // `toString` would otherwise find a prototype member, read as declared, and
+  // skip the guard below.
+  const seat = Object.hasOwn(SEATS, domain.domain) ? SEATS[domain.domain] : undefined;
   if (seat === undefined) {
     throw new Error(
       `generate-org-map: '${domain.domain}' is in the catalog with no seat declared. ` +
@@ -140,7 +143,9 @@ function section(domain) {
 }
 
 const withLens = DOMAINS.filter((d) => lensForDomain(d.domain)).length;
-const seated = DOMAINS.filter((d) => SEATS[d.domain] !== undefined && SEATS[d.domain] !== NO_SEAT).length;
+const seated = DOMAINS.filter(
+  (d) => Object.hasOwn(SEATS, d.domain) && SEATS[d.domain] !== NO_SEAT,
+).length;
 
 const page = `# The org map: which seat each concern answers for
 
