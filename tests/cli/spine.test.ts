@@ -16,7 +16,7 @@ import { createOpenCodeAdapter } from '../../src/hosts/opencode/adapter.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
 import { readRunDispatch } from '../../src/kernel/store/dispatch.ts';
-import { claimTask, completeTask, listTasks } from '../../src/kernel/store/tasks.ts';
+import { claimTask, completeTask, getTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
 import { catalogHighWater } from '../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../src/kernel/implication/domains.ts';
@@ -544,6 +544,56 @@ test('work says which deliverables need a licensed human, and what is wrong with
   assert.ok(at >= 0, 'product-scoping should have been worked');
   const notes = lines.slice(at + 1).filter((line) => line.startsWith('      '));
   assert.deepEqual(notes, [], 'a domain needing no licensed review must not claim one');
+});
+
+test('the work summary renders issue markers as reader sentences, and the stored record keeps them raw', async () => {
+  // The gap this closes: the merged issue list under "issues across roles"
+  // printed a role's numbered issues verbatim, markers and all, while every
+  // other reader surface (the composed document) hands a reader prose. The
+  // stored deliverable must still carry the record-form markers — only the
+  // print here changes.
+  const markedIssues: HostAdapter = {
+    ...standInHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const role = (request as { role: string }).role;
+      const text =
+        role === 'privacy'
+          ? 'ISSUES\n' +
+            '1. the retention policy is not written down [unverified]\n' +
+            '2. nobody is named to own key rotation [unowned]\n'
+          : `${role} reporting`;
+      return { id: role, status: 'ok', output: { text, usage: { cost: 0.01 } }, error: null };
+    },
+  };
+
+  // Read the store while the sequence's own data dir is still current — it is
+  // restored to whatever it was before as soon as runAll returns.
+  let storedText = '';
+  const { code, out } = await runAll([
+    ['outcome', 'launch a paid beta to EU users next month'],
+    () => work([], markedIssues),
+    async () => {
+      const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      try {
+        const row = store.db.prepare("SELECT id FROM tasks WHERE role = 'privacy' LIMIT 1").get() as { id: string };
+        const task = getTask(store, row.id);
+        storedText = (task?.result as { text?: string } | null)?.text ?? '';
+      } finally {
+        store.close();
+      }
+      return 0;
+    },
+  ]);
+
+  assert.equal(code, 0);
+  assert.match(out, /issues across roles/);
+  assert.ok(!out.includes('[unverified]'), 'the printed summary must not carry the raw marker');
+  assert.ok(!out.includes('[unowned]'), 'the printed summary must not carry the raw marker');
+  assert.match(out, /this one still needs checking against a source/, 'the marker prints as the reader sentence it renders to');
+  assert.match(out, /nobody is named for this yet/);
+
+  assert.match(storedText, /\[unverified\]/, 'the stored record is untouched — rendering happens at print time only');
+  assert.match(storedText, /\[unowned\]/);
 });
 
 test('roles that disagree put one framed decision in front of the user', async () => {
