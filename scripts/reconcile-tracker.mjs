@@ -8,6 +8,14 @@
  * ones that leave the tracker asserting things the repo stopped agreeing with.
  * So the ritual runs here instead of being remembered.
  *
+ * Two witnesses, not one. The commit-side reconcile compares the tracker's
+ * current export against what landed on main. It cannot see a close the tracker
+ * database itself lost — the bead reads open, no commit contradicts it, and the
+ * whole regression prints as agreement. So the export's own version history is
+ * swept too, and a record it once held that the export no longer holds is
+ * reported. Both are read from one branch's view, so the report opens by saying
+ * where that branch stands and which beads already have commits it cannot see.
+ *
  * Every judgement lives in src/kernel/tracker/session-drift.ts, which is pure
  * and tested against fixtures rather than against whatever this repo happens to
  * look like today, and the evidence gathering lives in
@@ -26,8 +34,18 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { reconcileSession, describeConflict } from '../src/kernel/tracker/session-drift.ts';
-import { gatherRepoEvidence, isFailure } from '../src/hosts/repo/evidence.ts';
+import {
+  reconcileSession,
+  describeConflict,
+  describeDivergence,
+  lostRecords,
+} from '../src/kernel/tracker/session-drift.ts';
+import {
+  gatherRepoEvidence,
+  gatherDivergence,
+  isFailure,
+  recordedHistory,
+} from '../src/hosts/repo/evidence.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN_BRANCH = 'main';
@@ -49,9 +67,27 @@ const { issues, evidence } = gathered;
 const reconciledAt = new Date().toISOString();
 const report = reconcileSession(issues, evidence, reconciledAt);
 
+// The second witness. The reconcile above can only ever compare the tracker's
+// current export against the repo's commits, so a close the tracker database
+// lost reads there as agreement: the bead says open, no one closed it, nothing
+// disagrees. The export's own version history remembers otherwise.
+const lost = lostRecords(issues, recordedHistory(ROOT) ?? undefined);
+
+// Every finding above is made from one branch's view. Sessions working main and
+// a direction branch in parallel implemented the same beads twice because the
+// branch session could not see the commits that already carried them, so where
+// the checkout stands is said before anything else is judged from it.
+const divergence = describeDivergence(
+  gatherDivergence({ root: ROOT, mainBranch: MAIN_BRANCH }) ?? undefined,
+);
+
+const allClean = report.clean && lost.clean && !divergence.diverged;
+
 if (json) {
-  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
-} else if (!(quiet && report.clean)) {
+  process.stdout.write(
+    `${JSON.stringify({ ...report, lost, divergence, clean: allClean }, null, 2)}\n`,
+  );
+} else if (!(quiet && allClean)) {
   const titles = new Map(issues.map((i) => [i.id, i.title ?? '']));
   process.stdout.write(
     `\nreconcile-tracker: ${report.counts.total} beads against ${MAIN_BRANCH}` +
@@ -59,6 +95,10 @@ if (json) {
       ` ${report.counts.adjudicated} adjudicated,` +
       ` ${report.contradictions.length} contradiction(s)\n`,
   );
+  if (divergence.diverged) {
+    process.stdout.write('\n  this checkout is not where the work is:\n');
+    for (const line of divergence.lines) process.stdout.write(`    ${line}\n`);
+  }
   for (const result of report.drifted) {
     process.stdout.write(`\n  ${result.external_id}  ${titles.get(result.external_id) ?? ''}\n`);
     for (const c of result.conflicts) {
@@ -77,8 +117,42 @@ if (json) {
         `${report.adjudicated.map((r) => r.external_id).join(', ')}\n`,
     );
   }
-  if (report.clean) process.stdout.write('  the tracker and the repo agree.\n');
-  else {
+  if (!lost.clean) {
+    process.stdout.write(
+      `\n  the export's own history disagrees with the tracker` +
+        ` (${lost.commitsScanned} revision(s) read${lost.truncated ? ', capped — older revisions went unread' : ''}):\n`,
+    );
+    for (const id of lost.lostCloses) {
+      process.stdout.write(
+        `    ${id}  ${titles.get(id) ?? ''}\n` +
+          '      recorded closed in an earlier revision of the export, open now — a close the\n' +
+          '      tracker database lost. Reclose it, or write a dated REOPENED note saying why not.\n',
+      );
+    }
+    for (const id of lost.missingRecords) {
+      process.stdout.write(
+        `    ${id}  (no record)\n` +
+          '      filed in an earlier revision of the export and absent from it now — a bead the\n' +
+          '      tracker database lost. Refile it from that revision.\n',
+      );
+    }
+    // The same known-benign warning the commit-side findings carry, for the same
+    // reason: this sweep reads every local ref, so a checkout whose export is
+    // simply older than another branch's shows that branch's later work as lost.
+    process.stdout.write(
+      '\n    Read before fixing. This sweep reads every local ref, so a checkout sitting\n' +
+        '    behind another branch reports that branch\'s later filings and closes as lost.\n' +
+        '    Check where this checkout stands before refiling anything.\n',
+    );
+  }
+  if (lost.reopened.length > 0) {
+    process.stdout.write(
+      `\n  ${lost.reopened.length} reopened (a dated note on the bead says so): ${lost.reopened.join(', ')}\n`,
+    );
+  }
+
+  if (allClean) process.stdout.write('  the tracker and the repo agree.\n');
+  if (!report.clean) {
     // Both directions are read before they are fixed, and both have a known
     // benign cause. Saying so here is what keeps this output trusted: a checker
     // that presented these as errors would be wrong often enough to be ignored.
@@ -92,4 +166,4 @@ if (json) {
   process.stdout.write('\n');
 }
 
-process.exit(strict && !report.clean ? 1 : 0);
+process.exit(strict && !allClean ? 1 : 0);
