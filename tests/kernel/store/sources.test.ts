@@ -18,10 +18,14 @@ import {
   addSource,
   decideProposal,
   decisionOf,
+  docsLocatorContainerName,
+  docsLocatorProblem,
+  docsReadNamesLocatorContainer,
   engagementMode,
   getSource,
   latestSourceReads,
   markApplied,
+  parseDocsLocator,
   pendingProposals,
   proposeWrite,
   recordSourceRead,
@@ -319,4 +323,98 @@ test('an unknown emphasis or a cap that lists nothing is refused, not stored', (
     assert.throws(() => setSourceShape(store, 'src-1', { emphasis: 'prose', cap: 0 }, AT), /positive/);
     assert.equal(sourceShape(store, 'src-1'), null);
   });
+});
+
+test('a docs locator that names its provider and container is declared like any other source', () => {
+  withStore((store) => {
+    addSource(store, {
+      id: 'src-docs',
+      workspace: 'acme',
+      kind: 'docs',
+      locator: 'confluence:space:ENG',
+      addedAt: AT,
+    });
+    assert.equal(getSource(store, 'src-docs')?.locator, 'confluence:space:ENG');
+
+    addSource(store, {
+      id: 'src-drive',
+      workspace: 'acme',
+      kind: 'docs',
+      locator: 'google-docs:folder:1AbC-drive-id',
+      addedAt: AT,
+    });
+    addSource(store, {
+      id: 'src-notion',
+      workspace: 'acme',
+      kind: 'docs',
+      locator: 'notion:workspace:Product/Specs',
+      addedAt: AT,
+    });
+    assert.equal(sourcesFor(store, 'acme').length, 3);
+  });
+});
+
+test('a docs locator missing its provider, container, or id is refused in plain language, not stored', () => {
+  withStore((store) => {
+    const declareDocs = (locator: string): void =>
+      addSource(store, { id: 'src-bad', workspace: 'acme', kind: 'docs', locator, addedAt: AT });
+
+    // A blank locator is caught by the same generic check every kind shares
+    // (exercised elsewhere); what is specific to docs starts at "wiki".
+    assert.throws(() => declareDocs('wiki'), /names no provider/);
+    assert.throws(() => declareDocs('confluence:ENG'), /names no container/);
+    assert.throws(() => declareDocs('confluence::ENG'), /leaves it empty/);
+    assert.throws(() => declareDocs('confluence:space:'), /leaves the id empty/);
+    assert.throws(
+      () => declareDocs('sharepoint:site:ENG'),
+      /not a docs provider Construct knows \(google-docs, confluence, notion\)/,
+    );
+    assert.equal(sourcesFor(store, 'acme').length, 0);
+  });
+});
+
+test('docsLocatorProblem names an empty locator directly, the one shape addSource never lets reach it', () => {
+  assert.match(docsLocatorProblem('') ?? '', /names nothing to read/);
+  assert.equal(parseDocsLocator(''), null);
+});
+
+test('parseDocsLocator and docsLocatorProblem agree: one succeeds exactly where the other has nothing to report', () => {
+  assert.deepEqual(parseDocsLocator('confluence:space:ENG'), {
+    provider: 'confluence',
+    container: 'space',
+    id: 'ENG',
+  });
+  assert.equal(docsLocatorProblem('confluence:space:ENG'), null);
+
+  assert.equal(parseDocsLocator('not-a-docs-locator'), null);
+  assert.match(docsLocatorProblem('not-a-docs-locator') ?? '', /names no provider/);
+
+  assert.equal(docsLocatorContainerName({ provider: 'confluence', container: 'space', id: 'ENG' }), 'space ENG');
+  assert.equal(
+    docsLocatorContainerName({ provider: 'notion', container: 'workspace', id: 'Product/Specs' }),
+    'workspace Product',
+  );
+});
+
+test('a read row is auditable against its locator: the descriptor must name the same container', () => {
+  // The house example this convention exists for: "14 of 14 pages in space
+  // X" is checkable only if X is the container the locator actually declared.
+  assert.equal(
+    docsReadNamesLocatorContainer('confluence:space:ENG', '14 of 14 pages in space ENG'),
+    true,
+  );
+  // Case is not the audit: a reader writing "Space ENG" still named the same container.
+  assert.equal(
+    docsReadNamesLocatorContainer('confluence:space:ENG', '14 of 14 pages in Space ENG'),
+    true,
+  );
+  // A descriptor naming a different container fails the check rather than
+  // passing on the strength of the source id alone.
+  assert.equal(
+    docsReadNamesLocatorContainer('confluence:space:ENG', '14 of 14 pages in space OTHER'),
+    false,
+  );
+  // A locator that never parsed names no container, so nothing can check
+  // against it — this reads as unauditable, not as a pass by default.
+  assert.equal(docsReadNamesLocatorContainer('wiki', '14 of 14 pages in space ENG'), false);
 });

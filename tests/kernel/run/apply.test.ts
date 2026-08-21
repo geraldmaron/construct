@@ -268,7 +268,7 @@ test('a non-tracker source in seat mode records no mirror', async () => {
   await withStore(async (store) => {
     seed(store);
     setEngagementMode(store, 'acme', 'seat', AT);
-    addSource(store, { id: 'src-2', workspace: 'acme', kind: 'docs', locator: 'wiki', addedAt: AT });
+    addSource(store, { id: 'src-2', workspace: 'acme', kind: 'docs', locator: 'confluence:space:WIKI', addedAt: AT });
     proposeWrite(store, {
       id: 'p-2',
       workspace: 'acme',

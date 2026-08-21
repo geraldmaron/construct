@@ -70,6 +70,139 @@ export interface SourceRead {
   readonly recordedAt: string;
 }
 
+/**
+ * The docs source kind's locator convention.
+ *
+ * `jira` and `github` are already provider-specific kinds, so their locators
+ * need only name a project or a repository. `docs` is not: it is the one
+ * kind that stands for three unrelated providers — Google Docs, Confluence,
+ * Notion — each read through whatever host tool holds the credential
+ * (commitment 1: no connector). A bare locator like a wiki's name cannot say
+ * which provider it even belongs to, which is the gap this convention closes:
+ *
+ *   <provider>:<container>:<id>
+ *
+ *   provider   one of DOCS_PROVIDERS.
+ *   container  the provider's own noun for what groups pages — "space" for
+ *              Confluence, "folder" or "drive" for Google Docs, "workspace"
+ *              for Notion. Any non-empty word; not a fixed vendor vocabulary,
+ *              because a provider is free to name its own grouping.
+ *   id         the key, slug, id, or name of one container of that kind —
+ *              "ENG", a Drive folder id, "Product". May itself carry a
+ *              "/subpath" to scope narrower than the whole container.
+ *
+ * Examples: "confluence:space:ENG", "google-docs:folder:1AbC-drive-id",
+ * "notion:workspace:Product/Specs".
+ *
+ * The reason to require this rather than accept any string: a read row's
+ * `detail` ("14 of 14 pages") is evidence only if its `descriptor` names the
+ * container the declared source actually points at ("pages in space ENG"),
+ * the same way a jira read's "issues in PROJ" is checked against a source
+ * declared for PROJ. `docsLocatorContainerName` and
+ * `docsReadNamesLocatorContainer` below make that check something code runs
+ * rather than something a reader has to take on faith.
+ */
+export const DOCS_PROVIDERS = ['google-docs', 'confluence', 'notion'] as const;
+
+export type DocsProvider = (typeof DOCS_PROVIDERS)[number];
+
+export interface DocsLocator {
+  readonly provider: DocsProvider;
+  readonly container: string;
+  readonly id: string;
+}
+
+type DocsLocatorResult =
+  | { readonly ok: true; readonly value: DocsLocator }
+  | { readonly ok: false; readonly reason: string };
+
+/**
+ * Parse and validate in one pass so the two exported entry points —
+ * `parseDocsLocator` and `docsLocatorProblem` — can never disagree about
+ * what counts as well-formed; they read as two views of the same result
+ * rather than two implementations that could drift apart.
+ */
+function readDocsLocator(locator: string): DocsLocatorResult {
+  const trimmed = locator.trim();
+  if (trimmed === '') {
+    return { ok: false, reason: 'a docs locator names nothing to read' };
+  }
+  const firstColon = trimmed.indexOf(':');
+  if (firstColon < 0) {
+    return {
+      ok: false,
+      reason:
+        `a docs locator names its provider and container as "<provider>:<container>:<id>" ` +
+        `(for example confluence:space:ENG) — "${trimmed}" names no provider`,
+    };
+  }
+  const provider = trimmed.slice(0, firstColon).trim();
+  const afterProvider = trimmed.slice(firstColon + 1);
+  const secondColon = afterProvider.indexOf(':');
+  if (secondColon < 0) {
+    return {
+      ok: false,
+      reason:
+        `a docs locator names its container after the provider, as "<provider>:<container>:<id>" ` +
+        `(for example confluence:space:ENG) — "${trimmed}" names no container`,
+    };
+  }
+  if (!(DOCS_PROVIDERS as readonly string[]).includes(provider)) {
+    return {
+      ok: false,
+      reason: `"${provider}" is not a docs provider Construct knows (${DOCS_PROVIDERS.join(', ')}) — got "${trimmed}"`,
+    };
+  }
+  const container = afterProvider.slice(0, secondColon).trim();
+  const id = afterProvider.slice(secondColon + 1).trim();
+  if (container === '') {
+    return {
+      ok: false,
+      reason:
+        `a docs locator names what groups pages inside ${provider} (its "container" — space, ` +
+        `folder, workspace) — "${trimmed}" leaves it empty`,
+    };
+  }
+  if (id === '') {
+    return {
+      ok: false,
+      reason: `a docs locator names which ${container} to read — "${trimmed}" leaves the id empty`,
+    };
+  }
+  return { ok: true, value: { provider: provider as DocsProvider, container, id } };
+}
+
+/** A docs locator's parts, or null when it does not follow the convention. */
+export function parseDocsLocator(locator: string): DocsLocator | null {
+  const result = readDocsLocator(locator);
+  return result.ok ? result.value : null;
+}
+
+/** Why a docs locator is malformed, in plain language — or null when it is fine. */
+export function docsLocatorProblem(locator: string): string | null {
+  const result = readDocsLocator(locator);
+  return result.ok ? null : result.reason;
+}
+
+/** The container phrase a docs read's descriptor should name, e.g. "space ENG". */
+export function docsLocatorContainerName(locator: DocsLocator): string {
+  return `${locator.container} ${locator.id.split('/')[0]}`;
+}
+
+/**
+ * Whether a read row's descriptor names the same container this locator
+ * declares — the check that makes "14 of 14 pages in space ENG" auditable
+ * against a source declared "confluence:space:ENG" instead of taken on the
+ * read's own say-so. A locator that does not parse names no container to
+ * check against, so it never matches: an unauditable locator cannot be used
+ * to audit anything read against it.
+ */
+export function docsReadNamesLocatorContainer(locator: string, descriptor: string): boolean {
+  const parsed = parseDocsLocator(locator);
+  if (!parsed) return false;
+  return descriptor.toLowerCase().includes(docsLocatorContainerName(parsed).toLowerCase());
+}
+
 export interface WriteProposal {
   readonly id: string;
   readonly workspace: string;
@@ -166,6 +299,12 @@ export function addSource(
   }
   if (source.locator.trim() === '') {
     throw new Error(`addSource: ${source.id} has no locator`);
+  }
+  if (source.kind === 'docs') {
+    const problem = docsLocatorProblem(source.locator);
+    if (problem) {
+      throw new Error(`addSource: ${source.id} has a malformed docs locator — ${problem}`);
+    }
   }
   store.db
     .prepare(
