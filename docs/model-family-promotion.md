@@ -58,7 +58,9 @@ artifact here is dated and per-model, and why no result is ever generalized to
 - `qwen3.5:4b` (local) — namer below floor even with the corrective retry;
   densifier clean. Not a promotion candidate.
 - `gpt-oss:20b` (local) — contract clean on every trial; the namer floor on
-  this hardware sits between 4b and 20b. Harness run not yet attempted.
+  this hardware sits between 4b and 20b. Harness run recorded 2026-08-05
+  (`fixtures/org-harness/runs/2026-08-05-gpt-oss-20b.score.json`): shape held,
+  depth checks missed.
 - `nvidia/nemotron-3-super-120b-a12b:free` (OpenRouter) — contract clean on
   every trial; harness **FAIL** on the composed dispatch shape. The first
   score charged it with two fabricated citations; that was the scorer's
