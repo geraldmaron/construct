@@ -21,6 +21,8 @@
  * itself.
  */
 
+import { escapeForPrompt } from './sourcereads.ts';
+
 /** One document set a run read, in the words the store recorded. */
 export interface Material {
   /** The declared source it came from. */
@@ -181,13 +183,21 @@ export const ROLE_OWNERSHIP_BOUND = [
  * A source that could not be read is listed saying so rather than omitted. Its
  * silence would otherwise read as coverage, and a role that believes it saw
  * everything writes with a confidence the run did not earn.
+ *
+ * Every field on `Material` and every ground root renders through
+ * `escapeForPrompt`: a descriptor is a document path from a directory
+ * someone else may control the contents of, and a raw control character in
+ * one could otherwise forge a line of its own in a block built by joining
+ * one entry per line.
  */
 export function groundedMaterialProtocol(
   material: readonly Material[],
   groundRoots: readonly string[] = [],
 ): string {
   const lines = material.map(
-    (m) => `- ${m.descriptor} (${m.source}) [${m.coverage}]: ${m.detail}`,
+    (m) =>
+      `- ${escapeForPrompt(m.descriptor)} (${escapeForPrompt(m.source)}) [${m.coverage}]: ` +
+      escapeForPrompt(m.detail),
   );
   const short = material.filter((m) => m.coverage !== 'complete');
   const gap =
@@ -204,7 +214,7 @@ export function groundedMaterialProtocol(
     groundRoots.length > 0
       ? '\n\nThe list above is the survey, not the boundary. You may read and ' +
         'cite any document under these declared roots, by its full path:\n' +
-        groundRoots.map((root) => `- ${root}`).join('\n') +
+        groundRoots.map((root) => `- ${escapeForPrompt(root)}`).join('\n') +
         '\nNothing outside these roots is evidence, and a path you did not ' +
         `actually read is not a citation.\n\n${GROUND_EXHAUSTION_RULE}`
       : '';

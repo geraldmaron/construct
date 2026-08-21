@@ -22,6 +22,42 @@ import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
 /**
+ * A control character inside a path — a raw newline above all — can forge a
+ * new line wherever paths are joined one per line into a prompt. Every
+ * printable Unicode codepoint is left alone; only the C0 and C1 control
+ * codes (Unicode's own "Cc" category) count, which is exactly the range that
+ * can split a line or smuggle a terminal control sequence.
+ */
+const UNSAFE_PATH_CHARS = /\p{Cc}/u;
+/** Same class, `g`-flagged for a replace pass rather than a single test. */
+const UNSAFE_PATH_CHARS_G = /\p{Cc}/gu;
+
+export function hasUnsafePathText(value: string): boolean {
+  return UNSAFE_PATH_CHARS.test(value);
+}
+
+/**
+ * Render survey-derived text — a locator, a descriptor, a detail message, a
+ * document path — for a prompt built by joining strings one per line. A
+ * control character can reach this point no matter which layer let it
+ * through, so every place a declared source or a surveyed document enters a
+ * prompt renders through here rather than interpolating the raw string. The
+ * escaped form is guaranteed free of bytes that could pass as a line break or
+ * a terminal control sequence, at the cost of no longer being the literal
+ * text underneath — the same trade the walk itself makes when it refuses to
+ * list a document under an unsafe name.
+ */
+export function escapeForPrompt(value: string): string {
+  if (!UNSAFE_PATH_CHARS.test(value)) return value;
+  return value.replace(UNSAFE_PATH_CHARS_G, (ch) => {
+    if (ch === '\n') return '\\n';
+    if (ch === '\r') return '\\r';
+    if (ch === '\t') return '\\t';
+    return `\\x${(ch.codePointAt(0) ?? 0).toString(16).padStart(2, '0')}`;
+  });
+}
+
+/**
  * What became of a binary document the survey tried to put into words. A
  * document nothing can extract is a real answer and stays on the record with
  * the ladder's own reason: the failure mode this replaces is a directory of
@@ -86,6 +122,15 @@ export type SourceSurvey =
        * see the shape of.
        */
       readonly unlistedCode?: number;
+      /**
+       * Entries the walk found but withheld because their name carried a
+       * control character — a raw newline above all. Counted, never listed by
+       * name: an escaped rendering would still not be the literal name a host
+       * needs to open the entry by, so showing one at all would offer a path
+       * that reads as citable and is not. Absent or zero means the walk saw
+       * nothing it had to refuse.
+       */
+      readonly unsafeNames?: number;
     }
   | {
       readonly source: string;
@@ -172,6 +217,22 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
         (survey.unlistedCode
           ? ` — ${String(survey.unlistedCode)} of them source files, which you may still open by path`
           : ''),
+      recordedAt: at,
+    });
+  }
+  if (survey.unsafeNames) {
+    // Refused, not silent: a role that never sees this row would read the
+    // survey as complete when the walk actually withheld something from it.
+    reads.push({
+      run,
+      source: survey.source,
+      descriptor: survey.locator,
+      coverage: 'partial',
+      detail:
+        `${String(survey.unsafeNames)} ${survey.unsafeNames === 1 ? 'entry' : 'entries'} in this source ` +
+        `${survey.unsafeNames === 1 ? 'has' : 'have'} a name carrying a control character or newline; ` +
+        'refused rather than listed, because no rendering of it is both safe ' +
+        'to show and still the literal name a host could open it by',
       recordedAt: at,
     });
   }
