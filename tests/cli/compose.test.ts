@@ -643,6 +643,71 @@ test('an ask naming an RFC comes back with alternatives and no cost or sequence'
   assert.doesNotMatch(out, /## Requirements/);
 });
 
+function onepagerHost(): HostAdapter {
+  return {
+    ...workHost(),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      if (role === 'composer') {
+        const cited = /--- ([a-z-]+) ---/.exec(task)?.[1] ?? 'strategy-alignment';
+        return {
+          id: role,
+          status: 'ok',
+          output: {
+            text: JSON.stringify({
+              claims: [
+                { section: 'the-ask', text: 'approve moving the cache to a write-through model', from: cited },
+                { section: 'whose-call', text: 'this is the platform lead’s call, needed by Friday', from: cited },
+                { section: 'what-it-costs', text: 'one engineer for two weeks, pulled off the export tool', from: cited },
+              ],
+              uncovered: [],
+            }),
+          },
+          error: null,
+        };
+      }
+      if (role === 'composition-support') {
+        return {
+          id: role,
+          status: 'ok',
+          output: { text: JSON.stringify({ unsupported: [], detail: '' }) },
+          error: null,
+        };
+      }
+      return workHost().invoke(request);
+    },
+  };
+}
+
+/**
+ * The sixth shape reaches the reader through --shape exactly like every
+ * shape before it, with no wording in the outcome that would route there on
+ * its own — proving the catalog entry is real and wired to --shape without
+ * relying on the keyword chooser this task does not own (see
+ * ONEPAGER_SIGNALS' own comment in kernel/run/shapes.ts).
+ */
+test('--shape=onepager is accepted and renders only its own sections', async () => {
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the caching layer for me'],
+    () => work([], workHost()),
+    async () =>
+      ((composed = await compose([`--run=${latestRun()}`, '--shape=onepager'], onepagerHost())), composed),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.match(out, /Shaped as a onepager/);
+  assert.match(out, /## The ask/);
+  assert.match(out, /approve moving the cache to a write-through model/);
+  assert.match(out, /## Whose call/);
+  assert.match(out, /platform lead.s call, needed by Friday/);
+  assert.match(out, /## What it costs/);
+  assert.match(out, /one engineer for two weeks/);
+  // Sections belonging to review or decision must not leak into a onepager.
+  assert.doesNotMatch(out, /## The choice/);
+  assert.doesNotMatch(out, /## The answer/);
+  assert.doesNotMatch(out, /## Where things stand/);
+});
+
 test('one deliverable composes nothing, and points at reading it instead', async () => {
   let composed = 0;
   const { err } = await run([
