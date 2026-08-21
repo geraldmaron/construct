@@ -5,8 +5,8 @@
  * agent mode, OpenCode, JetBrains): that is the entire point. Adapters
  * (src/hosts/opencode, src/hosts/claude) remain what they are — execution
  * transports — and this is presence: the user's own host can record outcomes,
- * read the work log and inbox, and relay the user's decisions, without leaving
- * the surface they already work in.
+ * read the work log and inbox, answer what the staff asked them, and relay the
+ * user's decisions, without leaving the surface they already work in.
  *
  * Thin is a constraint, not a mood. Every tool here calls a kernel or store
  * function the CLI already calls; there is no logic on this surface that the
@@ -31,6 +31,15 @@
  *     round. The rule above is not that writes are forbidden and reads are
  *     fine; it is that a host model must not be able to spend the user's money
  *     by being helpful, and these would let it.
+ *   - No `ask` in the CLI's sense — a question put to the staff. That verb
+ *     dispatches: one concern reads the declared sources and answers, and the
+ *     run pays for the call like every other. The other half of the same word
+ *     is here, and points the other way: the ask protocol, where a role that
+ *     lacks a user-held fact puts the question in the inbox and the user
+ *     answers it. `asks` and `answer` are that relay and nothing more — the
+ *     question was written by work already done, the answer is the user's to
+ *     give, and no role runs on either side of it. `construct work` remains
+ *     the only thing that spends on the run an answer lands in.
  *   - No erasure. `construct record erase` destroys a subject and every value
  *     its fields ever held, deliberately and irreversibly, because a person
  *     asked to be forgotten. This host can enable chat channels reachable from
@@ -54,7 +63,8 @@
  * here is untrusted input exactly as CLI input is.
  */
 
-import { openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
+import { getDecision, openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
+import { answeredAsksFor, isAsk, openAsksFor } from '../../kernel/run/asks.ts';
 import { countTasksByState, listTasks } from '../../kernel/store/tasks.ts';
 import { readWorkLog } from '../../kernel/store/worklog.ts';
 import { storeNamingCache } from '../../kernel/store/namings.ts';
@@ -79,9 +89,10 @@ export interface ProjectionCore {
 }
 
 /**
- * The whole tool surface: reads, two appends (an outcome, a note), and two
- * relays of the user's own judgment (a decision, a verdict). Nothing here
- * advances completion, and the test suite asserts that by name.
+ * The whole tool surface: reads, two appends (an outcome, a note), and three
+ * relays of the user's own words (a decision, a verdict, an answer to what a
+ * role asked). Nothing here advances completion, and the test suite asserts
+ * that by name.
  */
 export const PROJECTION_TOOLS = [
   {
@@ -162,7 +173,9 @@ export const PROJECTION_TOOLS = [
     description:
       'The open decisions — the calls that are genuinely the user\'s to make, ' +
       'each with the disagreeing positions cited. Show these to the user; they ' +
-      'are not yours to resolve.',
+      'are not yours to resolve. A role\'s question to the user sits in this ' +
+      'list too; `asks` is the same items read as questions, each with the ' +
+      'default the work already proceeded on.',
     inputSchema: { type: 'object', properties: {} },
   },
   {
@@ -170,7 +183,9 @@ export const PROJECTION_TOOLS = [
     description:
       'Record the user\'s resolution of an inbox decision. Only relay a call ' +
       'the user explicitly made in their own words — an inbox decision exists ' +
-      'precisely because it is not a model\'s to make.',
+      'precisely because it is not a model\'s to make. A role\'s question to ' +
+      'the user is a fact supplied rather than a call between positions: ' +
+      '`answer` is the tool for those.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -199,6 +214,42 @@ export const PROJECTION_TOOLS = [
         missed: { type: 'array', items: { type: 'string' }, description: 'Domains that should have surfaced and did not.' },
       },
       required: ['run'],
+    },
+  },
+  {
+    name: 'asks',
+    description:
+      'The questions the staff needs the user to answer, each with the ' +
+      'reversible default the work already proceeded on. A role asks when one ' +
+      'fact only the user holds would change what it produced; it never ' +
+      'withholds the deliverable waiting for a reply, so an unanswered ask is ' +
+      'a qualified result rather than a stalled one — say that when you show ' +
+      'them, or the user reads a question mark as a blockage. Reading starts ' +
+      'nothing and costs nothing: no role runs because someone looked at what ' +
+      'was asked. Scope to a run to also see that run\'s answers already on ' +
+      'record.',
+    inputSchema: {
+      type: 'object',
+      properties: { run: { type: 'string', description: 'A run id, to scope the read.' } },
+    },
+  },
+  {
+    name: 'answer',
+    description:
+      'Record the user\'s answer to one of those questions, in the user\'s own ' +
+      'words. Relay only what the user actually said: the role asked because ' +
+      'the fact is theirs to supply, and a plausible answer invented here is ' +
+      'read back as settled by every later dispatch of the run. Recording the ' +
+      'answer runs nothing — it is on record for the next dispatch, and ' +
+      '`construct work` is what dispatches. For a call between disagreeing ' +
+      'positions use `decide` instead; this tool takes ask ids only.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The ask id, from the asks tool.' },
+        answer: { type: 'string', description: "The user's answer, in the user's words." },
+      },
+      required: ['id', 'answer'],
     },
   },
   {
@@ -442,6 +493,39 @@ async function callTool(
         return toolResult(id, runStatus(core, run));
       case 'inbox':
         return toolResult(id, { decisions: openDecisions(core.store) });
+      case 'asks':
+        return toolResult(id, {
+          open: openAsksFor(core.store, run),
+          // What is already settled is a per-run fact, so an unscoped read can
+          // only carry the open questions; naming a run is what adds the
+          // answers, and the tool description says so rather than returning an
+          // empty list that would read as "nothing was ever answered".
+          ...(run ? { answered: answeredAsksFor(core.store, run) } : {}),
+        });
+      case 'answer': {
+        const askId = typeof input.id === 'string' ? input.id.trim() : '';
+        if (!askId) throw new RangeError('answer requires a non-empty string "id"');
+        const given = typeof input.answer === 'string' ? input.answer.trim() : '';
+        if (!given) throw new RangeError('answer requires a non-empty string "answer"');
+        // A conflict decision routed through here would be a judgment recorded
+        // as a supplied fact, and the two are not interchangeable: one is the
+        // user choosing between cited positions, the other is the user telling
+        // the staff something only they know.
+        if (!isAsk(askId)) {
+          throw new RangeError(
+            `"${askId}" is not a role's ask — record a call between disagreeing positions with decide`,
+          );
+        }
+        const asked = getDecision(core.store, askId);
+        if (!asked) throw new RangeError(`no ask "${askId}"`);
+        resolveDecision(core.store, askId, given, core.clock());
+        return toolResult(id, {
+          answered: askId,
+          run: asked.run,
+          question: asked.question,
+          answer: given,
+        });
+      }
       case 'decide': {
         if (typeof input.id !== 'string' || !input.id) {
           throw new RangeError('decide requires a string "id"');
