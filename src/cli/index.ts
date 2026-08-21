@@ -3696,6 +3696,12 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
         process.stdout.write(
           `  ${source.role}: ${String(verdict.unsupported.length)} of ${String(mine.length)} claims not supported — ${verdict.detail}\n`,
         );
+      } else if (verdict.detail.length > 0) {
+        // A clean verdict still carries something to say when the check ran
+        // same-family: the detail field is where createHostSupportChecker
+        // puts the correlated-error caveat, and a check nobody printed a
+        // qualification for reads as a stronger verdict than it earned.
+        process.stdout.write(`  ${source.role}: all claims supported — ${verdict.detail}\n`);
       }
     }
 
