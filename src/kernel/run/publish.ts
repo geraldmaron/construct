@@ -32,6 +32,20 @@
 
 import type { ComposedClaim } from './compose.ts';
 
+/**
+ * The stored deliverable as text. A string is the text itself; an object with
+ * a `text` field was a role wrapping its prose; anything else is shown as
+ * formatted JSON rather than hidden. This is the record form — markers intact
+ * — because compose sources, challenges, and the work log all read those
+ * markers. A reader surface runs it through renderClaim.
+ */
+export function deliverableBody(deliverable: unknown): string {
+  if (typeof deliverable === 'string') return deliverable;
+  const text = (deliverable as { text?: unknown } | null)?.text;
+  if (typeof text === 'string') return text;
+  return JSON.stringify(deliverable, null, 2);
+}
+
 /** What a rendered claim carries beyond its text. */
 export interface RenderedClaim {
   readonly text: string;
