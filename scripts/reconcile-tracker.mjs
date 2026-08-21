@@ -38,6 +38,7 @@ import {
   reconcileSession,
   describeConflict,
   describeDivergence,
+  describeLostRecord,
   lostRecords,
 } from '../src/kernel/tracker/session-drift.ts';
 import {
@@ -123,21 +124,10 @@ if (json) {
         ` (${lost.commitsScanned} revision(s) read${lost.truncated ? ', capped — older revisions went unread' : ''}):\n`,
     );
     for (const id of lost.lostCloses) {
-      process.stdout.write(
-        `    ${id}  ${titles.get(id) ?? ''}\n` +
-          '      recorded closed in an earlier revision of the export, open now — a close the\n' +
-          '      tracker database lost. Reclose it, or write a dated note settling it — REOPENED if\n' +
-          "      it was deliberate, or DRIFT ADJUDICATED (lost-close) if it wasn't lost at all.\n",
-      );
+      process.stdout.write(`    ${id}  ${titles.get(id) ?? ''}\n      ${describeLostRecord('lost-close')}\n`);
     }
     for (const id of lost.missingRecords) {
-      process.stdout.write(
-        `    ${id}  (no record)\n` +
-          '      filed in an earlier revision of the export and absent from it now — a bead the\n' +
-          '      tracker database lost. Refile it from that revision, or, if this checkout is just\n' +
-          '      behind another ref, write a dated DRIFT ADJUDICATED (missing-filing) note naming\n' +
-          '      this id — on any current bead, since this one has none of its own.\n',
-      );
+      process.stdout.write(`    ${id}  (no record)\n      ${describeLostRecord('missing-filing')}\n`);
     }
     // The same known-benign warning the commit-side findings carry, for the same
     // reason: this sweep reads every local ref, so a checkout whose export is

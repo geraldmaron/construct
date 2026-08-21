@@ -526,3 +526,25 @@ export function describeConflict(field: string, domain: unknown, tracker: unknow
   }
   return `${field}: repo says ${JSON.stringify(domain)}, tracker says ${JSON.stringify(tracker)}`;
 }
+
+/**
+ * Name a lost-record finding in the terms a person can act on, the same way
+ * `describeConflict` names a reconcile conflict. One place, so
+ * reconcile-tracker.mjs and the standing watch describe the same finding in
+ * the same words rather than each keeping its own copy to drift apart.
+ */
+export function describeLostRecord(direction: 'lost-close' | 'missing-filing'): string {
+  if (direction === 'lost-close') {
+    return (
+      'recorded closed in an earlier revision of the export, open now — a close the ' +
+      "tracker database lost. Reclose it, or write a dated note settling it — REOPENED " +
+      "if it was deliberate, or DRIFT ADJUDICATED (lost-close) if it wasn't lost at all."
+    );
+  }
+  return (
+    'filed in an earlier revision of the export and absent from it now — a bead the ' +
+    'tracker database lost. Refile it from that revision, or, if this checkout is just ' +
+    'behind another ref, write a dated DRIFT ADJUDICATED (missing-filing) note naming ' +
+    'this id — on any current bead, since this one has none of its own.'
+  );
+}
