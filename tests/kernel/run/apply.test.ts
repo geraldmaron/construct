@@ -239,7 +239,11 @@ test('in seat mode a tracker-bound change is mirrored before the host is asked',
     assert.equal(mirror.external_id, 'p-1');
     assert.equal(mirror.workspace, 'acme');
     assert.equal(mirror.work, 'run-1');
-    assert.equal(mirror.state, 'projected');
+    // The row was written before the crossing and moves to in-sync only on the
+    // host's report that it landed — the same evidence the applied verdict is
+    // written from, so the two records cannot disagree.
+    assert.equal(mirror.state, 'in_sync');
+    assert.equal(mirror.reconciledAt, LATER);
     assert.equal(mirror.fields.title, 'move PROJ-14 target date to Q4');
     assert.match(String(mirror.fields.description), /move PROJ-14 target date to Q4/);
     assert.match(String(mirror.fields.description), /note:n-1#L3/);
@@ -294,7 +298,10 @@ test('a host that declines leaves the mirror row: it records what was proposed, 
     );
     assert.equal(result.outcome, 'unappliable');
     assert.equal(result.outcome === 'unappliable' ? result.projected : '', 'jira:p-1');
-    assert.ok(getProjection(store, 'jira:p-1'), 'the record precedes the crossing, so it survives a refusal');
+    const mirror = getProjection(store, 'jira:p-1');
+    assert.ok(mirror, 'the record precedes the crossing, so it survives a refusal');
+    assert.equal(mirror.state, 'projected', 'a decline is not a landing');
+    assert.equal(mirror.reconciledAt, null);
     assert.equal(decisionOf(store, 'p-1')?.verdict, 'approved', 'the proposal state is untouched');
   });
 });

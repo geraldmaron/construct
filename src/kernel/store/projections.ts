@@ -9,9 +9,19 @@
  * an existing row — only `fields`, `state`, and the reconcile timestamp move.
  * Rewriting the audit copy on re-import would quietly destroy the evidence it
  * exists to preserve.
+ *
+ * Two ways in, and the difference between them is who is asserting. An import
+ * from the tracker writes the whole snapshot (`putProjection`): the tracker is
+ * the authority on its own row and the snapshot is what it said. A crossing
+ * from Construct writes through `projectDomainFields`, which carries only what
+ * the domain side may assert. Without that split the wholesale upsert would
+ * make the authority rule unenforceable at exactly the moment it matters — a
+ * domain assertion replaces `fields` outright, so a status or an assignee an
+ * import had recorded would vanish on the next outward write.
  */
 
 import type { Store } from './open.ts';
+import { AUTHORITY, isDomainOwned } from '../tracker/authority.ts';
 import type { Authority } from '../tracker/authority.ts';
 import type { Projection, ProjectionState } from '../tracker/projection.ts';
 
@@ -78,6 +88,48 @@ export function putProjection(store: Store, projection: Projection): void {
       projection.importedAt,
       projection.reconciledAt,
     );
+}
+
+/**
+ * Write what the domain side asserts about one issue, under the authority map.
+ *
+ * A domain-owned field is projected. A tracker-owned field is not: it is
+ * dropped from the assertion rather than written, so a value the tracker
+ * recorded stays exactly as it was and a value the tracker never recorded is
+ * never invented here. That is the reconciliation rule — a tracker-owned field
+ * is never overwritten by the domain — held at the one place a domain
+ * assertion becomes a row, instead of trusted to every caller that builds one.
+ *
+ * The audit copy is untouched by the filter. `raw_record` preserves the
+ * assertion verbatim, including any tracker-owned field it carried, because
+ * what Construct proposed is exactly the thing an auditor later needs to read;
+ * what is filtered is `fields`, the snapshot reconciliation diffs against.
+ */
+export function projectDomainFields(store: Store, projection: Projection): void {
+  const existing = getProjection(store, projection.id);
+  const fields: Record<string, unknown> = { ...(existing?.fields ?? {}) };
+  const authority: Record<string, Authority> = { ...(existing?.field_authority ?? {}) };
+  for (const [field, value] of Object.entries(projection.fields ?? {})) {
+    if (!isDomainOwned(field)) continue;
+    fields[field] = value;
+    authority[field] = AUTHORITY.DOMAIN;
+  }
+  putProjection(store, { ...projection, fields, field_authority: authority });
+}
+
+/**
+ * Record that a crossing landed: as of `at`, the fields the domain asserted are
+ * what the tracker holds. No field moves — the change was already projected
+ * before it crossed, and this says only that the world received it.
+ *
+ * Returns whether a row was there to mark, so a caller never reports a mirror
+ * it did not have.
+ */
+export function markProjectionSynced(store: Store, id: string, at: string): boolean {
+  const result = store.db
+    .prepare("UPDATE projections SET state = 'in_sync', reconciled_at = ? WHERE id = ?")
+    .run(at, id);
+  return Number(result.changes) > 0;
 }
 
 export function getProjection(store: Store, id: string): Projection | null {

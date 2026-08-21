@@ -161,6 +161,8 @@ export {
   countProjections,
   getProjection,
   listProjections,
+  markProjectionSynced,
+  projectDomainFields,
   putProjection,
 } from './store/projections.ts';
 export { appendWorkLog, readWorkLog } from './store/worklog.ts';

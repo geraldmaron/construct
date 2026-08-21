@@ -33,8 +33,13 @@
  *   - In seat mode, a change bound for the team's tracker is mirrored before
  *     it crosses: a projection row carrying only the fields the domain may
  *     assert, written before the host is asked, so a write landing in someone
- *     else's tracker can never outrun its record here. Team mode and a
- *     workspace with no tracker source record nothing and behave as before.
+ *     else's tracker can never outrun its record here. The store enforces the
+ *     "only what the domain may assert" half, so a second attempt against a
+ *     mirror an import already filled cannot take a tracker-owned field over.
+ *     The row moves to in-sync only on a host's report that the change landed,
+ *     which is the same evidence the applied decision is written from. Team
+ *     mode and a workspace with no tracker source record nothing and behave as
+ *     before.
  */
 
 import type { Store } from '../store/open.ts';
@@ -47,7 +52,7 @@ import {
   writeConsentAllowsLowRisk,
 } from '../store/sources.ts';
 import type { WriteProposal } from '../store/sources.ts';
-import { putProjection } from '../store/projections.ts';
+import { markProjectionSynced, projectDomainFields } from '../store/projections.ts';
 import { buildProjection, projectionId } from '../tracker/projection.ts';
 import { isTrackerSourceKind, proposalIssue } from '../tracker/crossing.ts';
 
@@ -124,22 +129,25 @@ export async function applyProposal(
   // mirror rather than minting a second. Team mode, a non-tracker source, and
   // a source nobody declared record nothing and behave exactly as before.
   const source = getSource(store, record.source);
-  const mirrored =
+  const tracker =
     source !== null &&
     isTrackerSourceKind(source.kind) &&
-    engagementMode(store, record.workspace) === 'seat';
-  if (mirrored) {
-    putProjection(
+    engagementMode(store, record.workspace) === 'seat'
+      ? source.kind
+      : null;
+  const mirror = tracker === null ? null : projectionId(record.id, tracker);
+  if (tracker !== null) {
+    projectDomainFields(
       store,
       buildProjection(proposalIssue(record), {
-        tracker: source.kind,
+        tracker,
         workspace: record.workspace,
         workId: record.run,
         importedAt: at,
       }),
     );
   }
-  const projected = mirrored ? { projected: projectionId(record.id, source.kind) } : {};
+  const projected = mirror !== null ? { projected: mirror } : {};
 
   let report: ApplyReport;
   try {
@@ -166,5 +174,9 @@ export async function applyProposal(
   }
 
   markApplied(store, proposal, report.detail.trim() || 'the host reported it applied', at);
+  // Only now: the mirror said what was proposed, and the host has said it
+  // landed. Marking the row in-sync any earlier would be the same lie the
+  // applied decision is guarded against, told in a second place.
+  if (mirror !== null) markProjectionSynced(store, mirror, at);
   return { outcome: 'applied', detail: report.detail.trim(), ...projected };
 }
