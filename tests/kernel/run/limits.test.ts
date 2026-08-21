@@ -175,7 +175,14 @@ test('every issue owes an owner or an explicit unowned marker', () => {
     postconditions: [],
   };
   const assignment = assignmentFor(brief);
+  // Security's template asks for issues, so the issue rule is the one spoken.
   assert.match(assignment, /then who takes that step/);
-  assert.match(assignment, /names an owner for its step/);
+  // And the owner rule is owed by every form, not only that one: a step with
+  // nobody attached is a step nobody takes, whatever the deliverable is called.
+  assert.match(assignment, /Every step you recommend names an owner/);
   assert.match(assignment, /\[unowned\]/);
+  for (const role of ['product-scoping', 'strategy-alignment', 'program-sequencing']) {
+    assert.match(assignmentFor({ ...brief, role }), /Every step you recommend names an owner/);
+    assert.match(assignmentFor({ ...brief, role }), /\[unowned\]/);
+  }
 });

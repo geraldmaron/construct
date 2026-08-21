@@ -72,7 +72,7 @@ import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
 import { standardsFor } from '../plan/standards.ts';
-import { constructIdentity } from '../voice/voice.ts';
+import { constructIdentity, contentShapeProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
@@ -230,11 +230,17 @@ const MATERIAL_PROTOCOL = [
 ].join(' ');
 
 /**
- * The deliverable is a work product, not a restated gap. Issue-spotting has a
- * shape — numbered issues, each with the step that resolves it — and the
- * playbook template's slots make the rest of the shape checkable. Missing
- * information becomes a labeled assumption the work proceeds on; it is never
- * a reason to withhold the deliverable.
+ * The deliverable is a work product, not a restated gap. The playbook
+ * template's slots make its coverage checkable, and the template's declared
+ * form says what shape the content takes. Missing information becomes a
+ * labeled assumption the work proceeds on; it is never a reason to withhold
+ * the deliverable.
+ *
+ * The form used to be fixed here at "numbered issues", which is right for an
+ * issue-spotting review and wrong for everything else the catalog produces: a
+ * PRD, a strategy review, and a sequencing plan were each told to number their
+ * issues by a directive that had never read their template. The template
+ * declares the form now, and the words for it live with the voice.
  */
 function workProductDirective(role: string): string {
   const template = playbookFor(role).template;
@@ -245,22 +251,7 @@ function workProductDirective(role: string): string {
     `Deliver a ${template.deliverable} the user can act on. Structure it under ` +
     'exactly these headed sections:\n' +
     `${slots}\n\n` +
-    'Rules for the work product:\n' +
-    '- Number every issue. Each issue states the problem in one sentence, then ' +
-    'the concrete step that resolves it, then who takes that step.\n' +
-    // A resolving step with nobody attached is a step nobody takes. Naming a
-    // role, a team, or a named person all count; what does not count is
-    // leaving it out, so the honest answer when the material does not say gets
-    // its own marker rather than silence.
-    '- Every issue names an owner for its step — a role, a team, or a person. ' +
-    'If the material does not say who owns it, write [unowned] and say who ' +
-    'would have to decide.\n' +
-    '- Missing information is never an issue. If something cannot be determined ' +
-    'from the outcome, state the assumption you proceed on, label it [assumed], ' +
-    'and deliver the work that assumption allows.\n' +
-    '- Do not assert anything you cannot support.\n' +
-    '- Keep it as short as it can be while the reader can still follow how you ' +
-    'got there.\n\n'
+    `${contentShapeProtocol(template.form)}\n\n`
   );
 }
 
