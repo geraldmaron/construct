@@ -14,18 +14,24 @@
  * The forbidden half is the point of this module, not a footnote. Every field
  * the tracker owns under kernel/tracker/authority.ts has an action on these
  * servers that would set it — `transitionJiraIssue` moves a status,
- * `update_issue` takes `state`, `labels`, and `assignees` — and a model
- * carrying out "move PROJ-14 to Q4" reaches for one of them the moment the edit
- * looks incomplete without it. The rule is that a tracker-owned field is never
- * overwritten by the domain; on this side of the seam that rule has to be said
- * in the vendor's own words, naming the action, or it has not been said at all.
- * Both field lists are read off the authority map rather than kept here, so a
- * field that changes sides changes in one place.
+ * `issue_write` takes `state`, `labels`, and `assignees` alongside the fields
+ * this change may set — and a model carrying out "move PROJ-14 to Q4" reaches
+ * for one of them the moment the edit looks incomplete without it. The rule is
+ * that a tracker-owned field is never overwritten by the domain; on this side
+ * of the seam that rule has to be said in the vendor's own words, naming the
+ * action, or it has not been said at all. Both field lists are read off the
+ * authority map rather than kept here, so a field that changes sides changes
+ * in one place.
  *
  * Nothing here opens a connection or ships a vendor client. A recipe is words a
  * host reads; whether the server is actually present is the host's own answer,
  * and a host without it says so plainly and the change stays with the person
  * who approved it.
+ *
+ * Every tool name below is a checked expectation, not just published prose:
+ * hosts/tracker-pin.ts pairs each one with either a dated live-verified record
+ * or an explicit unverified tag, and `npm run probe:tracker` re-checks them
+ * against a real server on demand.
  */
 
 import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
@@ -113,18 +119,25 @@ const GITHUB: TrackerRecipe = Object.freeze({
   locatorIs: 'owner/repository',
   item: 'issue',
   read: {
-    tool: 'get_issue',
-    does: 'read the issue as it stands now, before changing any part of it',
+    tool: 'issue_read',
+    does: 'read the issue as it stands now, before changing any part of it — call it with method "get"',
   },
-  create: { tool: 'create_issue', does: 'open a new issue on that repository' },
-  update: { tool: 'update_issue', does: 'edit an issue that already exists' },
+  create: {
+    tool: 'issue_write',
+    does: 'file a new issue in that project — call it with method "create"',
+  },
+  update: {
+    tool: 'issue_write',
+    does: 'edit the fields of an issue that already exists — call it with method "update"',
+  },
   comment: {
     tool: 'add_issue_comment',
     does: 'add a comment, when the approved change is a remark rather than a field edit',
   },
   forbidden: [
     {
-      action: 'update_issue with state, state_reason, labels, assignees, or milestone among the fields set',
+      action:
+        'issue_write with method "update" and state, state_reason, labels, assignees, or milestone among the fields set',
       because:
         'closing, reopening, labelling, and assigning are the repository\'s to decide — the same call that ' +
         'carries the approved words would take all five over',

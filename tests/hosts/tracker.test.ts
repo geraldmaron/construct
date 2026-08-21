@@ -89,11 +89,11 @@ test('a github change names GitHub\'s server and the action on it that carries t
   const prompt = githubPrompt();
   assert.match(prompt, /GitHub's official MCP server/);
   assert.match(prompt, /owner\/repository is acme\/platform/);
-  assert.match(prompt, /get_issue — read the issue as it stands now/);
-  assert.match(prompt, /update_issue — edit an issue that already exists/);
-  assert.match(prompt, /create_issue — open a new issue/);
+  assert.match(prompt, /issue_read — read the issue as it stands now.*method "get"/);
+  assert.match(prompt, /issue_write — edit the fields of an issue that already exists.*method "update"/);
+  assert.match(prompt, /issue_write — file a new issue in that project.*method "create"/);
   assert.match(prompt, /add_issue_comment/);
-  assert.match(prompt, /Never update_issue with state, state_reason, labels, assignees, or milestone/);
+  assert.match(prompt, /Never issue_write with method "update" and state, state_reason, labels, assignees, or milestone/);
 });
 
 test('every field the tracker owns is named as one this change may not move, in the vendor\'s word for it', () => {
