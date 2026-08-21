@@ -174,6 +174,7 @@ template, and say so.
 - `attack-surface` — what the outcome exposes and to whom
 - `mitigations` — what reduces each exposure, tied to the surface it reduces
 - `threat-paths` — each path from who can reach it to what they gain, feeding the attack-surface slot, with the check that stops it or the gap where none does
+- `security-obligation` — the security obligation this work must meet: the gate the declared repository runs, named by the script that runs it, or the standard this method descends from where it declares none — with how a reader would check the work against it
 
 **What it must answer before anyone relies on it.**
 
@@ -232,6 +233,7 @@ template, and say so.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `flow-dead-ends` — each point where the user can get stuck, with what the interface says there and what it should offer instead
+- `accessibility-obligation` — the accessibility obligation this work must meet: the gate the declared repository runs, named by the script that runs it, or the standard this method descends from where it declares none — with how a reader would check the work against it
 
 **What it must answer before anyone relies on it.**
 
@@ -385,6 +387,7 @@ template, and say so.
 - `ownership` — who answers when it breaks and what access they need to fix it
 - `rollback` — how to undo it, including past any irreversible step, or the plain statement that there is none
 - `operability-gaps` — each failure path with its detection signal and its owner, or the gap named where one of the three is missing
+- `performance-obligation` — the performance obligation this work must meet: the gate the declared repository runs, named by the script that runs it, or the standard this method descends from where it declares none — with how a reader would check the work against it
 
 **What it must answer before anyone relies on it.**
 
@@ -415,6 +418,7 @@ template, and say so.
 - `the-path` — the shortest route from where the user starts to what they came to do, step by step
 - `unhandled-states` — the empty, error, partial, and permission-denied states this creates, and what each one says
 - `flow-dead-ends` — each point where the user can get stuck, with what the interface says there and what it should offer instead
+- `accessibility-obligation` — the accessibility obligation this work must meet: the gate the declared repository runs, named by the script that runs it, or the standard this method descends from where it declares none — with how a reader would check the work against it
 
 **What it must answer before anyone relies on it.**
 

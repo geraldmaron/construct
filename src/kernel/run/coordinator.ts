@@ -72,6 +72,8 @@ import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
 import { standardsFor } from '../plan/standards.ts';
+import { gateObligation } from '../plan/gates.ts';
+import type { GroundGates, RepoManifest } from '../plan/gates.ts';
 import { constructIdentity, contentShapeProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
 
@@ -133,6 +135,16 @@ export interface CoordinatorOptions {
    * Off is for a caller that wants the first attempt exactly as it arrived.
    */
   readonly repair?: boolean;
+  /**
+   * What a declared ground root says it checks about itself, read by the
+   * caller because the kernel reads no filesystem — the same reason the clock
+   * is injected. Called once per root of the run being dispatched, and never
+   * on a path the workspace did not declare as ground.
+   *
+   * Absent means no gate is discovered and every lens obligation names its
+   * standard instead, which is the honest fallback rather than a silence.
+   */
+  readonly manifests?: (root: string) => RepoManifest | null;
 }
 
 export interface RunReport {
@@ -263,8 +275,18 @@ function workProductDirective(role: string): string {
  * is a claim in a data file, not a boundary on the work. The lens is data
  * (plan/lenses.ts) so what a role knows is committed and testable rather than
  * living in whoever last edited a prompt.
+ *
+ * The lens's obligation is spoken here too, because it is the same kind of
+ * fact: what this work has to satisfy before anyone relies on it. Where the
+ * declared ground already runs a check for the concern, the obligation names
+ * that script; where it does not, it names the standard. It is never silent.
+ *
+ * `statesObligation` is false for a dispatch that owes an answer rather than a
+ * work product. An answer has no section for an obligation and no work for a
+ * gate to run against, and telling it to fill one would name a heading its
+ * template does not have.
  */
-function lensDirective(role: string): string {
+function lensDirective(role: string, ground: GroundGates, statesObligation: boolean): string {
   const lens = lensForDomain(role);
   if (!lens) return '';
   const questions = lens.questions.map((q) => `- ${q}`).join('\n');
@@ -292,6 +314,10 @@ function lensDirective(role: string): string {
           .join('\n') +
         '\n'
       : '';
+  // What the declared repository already checks for this lens's concern, or
+  // the standard where it checks nothing. Empty for a lens that states no
+  // gate concern at all.
+  const obligation = statesObligation ? gateObligation(lens.lens, ground) : '';
   return (
     `Your posture: ${lens.posture}\n\n` +
     `${ROLE_OWNERSHIP_BOUND}\n\n` +
@@ -304,6 +330,7 @@ function lensDirective(role: string): string {
     ceiling +
     labeling +
     jurisdictions +
+    (obligation === '' ? '' : `\n${obligation}`) +
     '\n'
   );
 }
@@ -337,6 +364,12 @@ export function assignmentFor(
     readonly material?: readonly Material[];
     /** Local roots the role may read beyond the listed documents. */
     readonly groundRoots?: readonly string[];
+    /**
+     * What those roots declare they check about themselves, as a host read
+     * them. Absent means nothing was read, and every obligation falls back to
+     * its standard — the honest state, not a broken one.
+     */
+    readonly manifests?: readonly RepoManifest[];
     /** Requirements the user already answered for this run. */
     readonly answers?: readonly AnsweredAsk[];
     /**
@@ -458,7 +491,11 @@ export function assignmentFor(
     engagement +
     seat +
     remembered +
-    lensDirective(brief.role) +
+    lensDirective(
+      brief.role,
+      { roots: options.groundRoots ?? [], manifests: options.manifests ?? [] },
+      !asking,
+    ) +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
     '\n\n' +
@@ -739,6 +776,18 @@ export async function workRun(
     // a role could be licensed one set of roots and graded on another.
     const material = materialFor(store, task.run);
     const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
+    // What those roots declare they already check. Read through the injected
+    // reader so the kernel stays off the filesystem, and only over roots the
+    // workspace declared — a manifest sitting beside this process says nothing
+    // about the user's work.
+    const readManifest = options.manifests;
+    const manifests: RepoManifest[] = [];
+    if (readManifest) {
+      for (const root of groundRoots) {
+        const manifest = readManifest(root);
+        if (manifest) manifests.push(manifest);
+      }
+    }
 
     // The workspace's admitted memory, resolved through the run's own plan so
     // the dispatch and the record agree on which workspace was consulted. A
@@ -902,6 +951,7 @@ export async function workRun(
             // the no-material rule instead.
             material,
             groundRoots,
+            manifests,
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),
             mode: plan?.mode,
