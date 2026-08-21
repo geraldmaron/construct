@@ -116,6 +116,73 @@ export function findScaffoldingCitations(text: string): MisplacedCitation[] {
 }
 
 /**
+ * A directory-shaped path naming the harness-fixture corpus: fixtures/org-harness,
+ * fixtures/org-harness-broad, or a future org-harness-<name> sibling following
+ * the same convention — both real directories exist today, and the optional
+ * `-suffix` deliberately extends to the next one so this does not need
+ * updating when a third harness organization is added. Matched as a path
+ * segment: the "org-harness" name must be immediately followed by a hyphenated
+ * suffix, a directory boundary, or the end of the string, so an unrelated
+ * directory that merely contains "harness" elsewhere in its path, or that
+ * continues with a non-word character like "org-harness2", is not caught.
+ * Shared between the citation check and the ground-root check below so the
+ * two boundaries cannot drift apart.
+ */
+const HARNESS_CORPUS_NAME = String.raw`fixtures[/\\]org-harness(?:-[\w-]+)?`;
+
+/**
+ * A citation whose body names the harness-fixture corpus location.
+ *
+ * Observed on a real run: a strategy-alignment claim cited
+ * `fixtures/org-harness-broad/corpus/policies/agreements.md` and an 18F
+ * `Strategy.md` as though they were Construct's own strategy and policy.
+ * Both files sit inside the checkout, so a path-prefix check against the
+ * repo root would have allowed them. The harness organizations exist so
+ * routing and composition can be measured against invented content; they are
+ * not a source of strategy, policy, or product fact for any other run —
+ * citing one as the run's own ground is the same invented-provenance defect
+ * findScaffoldingCitations exists for, one shape further out. Scoped to
+ * `[cite:...]` only, not `[research:...]` or `[unverified]`: the failure is
+ * representing the corpus as the requester's own material, and only `cite:`
+ * makes that claim.
+ */
+const HARNESS_CITATION = new RegExp(String.raw`\[cite:[^\]]*\b${HARNESS_CORPUS_NAME}[/\\][^\]]*\]`, 'i');
+
+/**
+ * Citations that name the harness-fixture corpus as their source. Scans the
+ * text alone — whether this counts as a defect also depends on whether the
+ * run's own declared ground roots name that corpus (a harness sweep, which
+ * is legitimate), and this function has no access to that; see
+ * `namesHarnessCorpus` and its call site in the claims-cited structural
+ * check for the conditional part of the rule.
+ */
+export function findHarnessCorpusCitations(text: string): MisplacedCitation[] {
+  const findings: MisplacedCitation[] = [];
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? '';
+    if (HARNESS_CITATION.test(line)) {
+      findings.push({ line: i + 1, text: line.trim() });
+    }
+  }
+  return findings;
+}
+
+const HARNESS_ROOT = new RegExp(String.raw`(?:^|[/\\])${HARNESS_CORPUS_NAME}(?:[/\\]|$)`, 'i');
+
+/**
+ * Whether a declared ground root itself names the harness-fixture corpus —
+ * the one case a harness citation is legitimate. A run whose own source list
+ * points at fixtures/org-harness* is doing a harness sweep, the measured
+ * work that fixture tree exists for, and citing it is the discipline, not
+ * the defect — the same reasoning findSourceFileCitations's `allowedRoots`
+ * already applies to a cited code path under a declared root.
+ */
+export function namesHarnessCorpus(path: string): boolean {
+  return HARNESS_ROOT.test(path);
+}
+
+/**
  * Citations that point at code rather than at a source for the claim.
  *
  * Reported separately from untagged claims because the two failures need
