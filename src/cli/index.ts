@@ -5271,6 +5271,23 @@ function proposeDoc(flags: Record<string, string>): number {
       ? (sides.at as { text: string }).text
       : '';
 
+  // The shape refusals are pure, so they run before the store is opened: a
+  // change refused for saying too little is refused identically on a machine
+  // whose store cannot open at all.
+  const shape = docEditProposal({
+    kind: kind as DocEditKind,
+    source: 'unresolved',
+    locator: 'unresolved',
+    document: (flags.document ?? '').trim(),
+    anchor,
+    proposed: (sides.now as { text: string }).text,
+    citation: (flags.because ?? '').trim(),
+  });
+  if (shape.refused !== undefined) {
+    process.stderr.write(`propose: nothing was filed — ${shape.refused}\n`);
+    return 1;
+  }
+
   return withStore((store) => {
     const asked = (flags.run ?? '').trim();
     const run = asked === '' || asked === 'true' ? '' : asked;
