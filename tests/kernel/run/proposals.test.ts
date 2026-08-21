@@ -3,10 +3,11 @@
  * proposals.
  *
  * The properties held here are the ones that make the reading safe to act on:
- * only numbered issues and what-follows items are read, every proposal carries
- * a citation that resolves to the line it came from, the tier follows the
- * action rather than the confidence, and a finding whose words ask for nothing
- * becomes a comment rather than an edit somebody guessed at.
+ * only numbered issues and each composition shape's own follow-up section are
+ * read, every proposal carries a citation that resolves to the line it came
+ * from, the tier follows the action rather than the confidence, and a finding
+ * whose words ask for nothing becomes a comment rather than an edit somebody
+ * guessed at.
  */
 
 import { test } from 'node:test';
@@ -156,4 +157,160 @@ test('a deliverable with no numbered issues and no what-follows section proposes
   const { proposals, refused } = proposalsFrom({ deliverable: prose, source: 'src-1', locator: 'PROJ' });
   assert.equal(proposals.length, 0);
   assert.equal(refused.length, 0);
+});
+
+/**
+ * Every composition shape besides review names its follow-up section
+ * differently (kernel/run/shapes.ts), and each one is read here in the words
+ * that shape actually uses — not only review's "what follows".
+ */
+test('a decision-shaped deliverable is read from what-happens-first', () => {
+  const decision = {
+    task: 't-decision',
+    role: 'analyst',
+    text: [
+      '## The choice',
+      '',
+      'Commit to the managed queue over the self-hosted one.',
+      '',
+      '## What happens first',
+      '',
+      '- Migrate the staging environment before touching production traffic.',
+      '- Freeze the legacy queue schema until the migration finishes.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(decision);
+  assert.deepEqual(findings.map((f) => f.kind), ['what-follows', 'what-follows']);
+  assert.ok(findings.some((f) => f.text === 'Migrate the staging environment before touching production traffic.'));
+});
+
+test('a decision document reads what-happens-first and not its other sections', () => {
+  const decision = {
+    task: 't-decision-2',
+    role: 'analyst',
+    text: [
+      '## What was on the table',
+      '',
+      '- The self-hosted queue, dismissed for its operational cost.',
+      '',
+      '## What happens first',
+      '',
+      '- Migrate the staging environment before touching production traffic.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(decision);
+  assert.deepEqual(findings.map((f) => f.text), ['Migrate the staging environment before touching production traffic.']);
+});
+
+test('a spec-shaped deliverable is read from requirements', () => {
+  const spec = {
+    task: 't-spec',
+    role: 'analyst',
+    text: [
+      '## Requirements',
+      '',
+      '1. The export must complete within five minutes for a 10k-row account.',
+      '2. Retry a failed export once before surfacing an error to the user.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(spec);
+  assert.deepEqual(findings.map((f) => f.kind), ['what-follows', 'what-follows']);
+});
+
+/**
+ * "requirements" is an ordinary word a heading could carry without being the
+ * spec shape's own section — the exact-match guard this module now uses over
+ * the old substring check, proven against the case that would fool it.
+ */
+test('a heading merely containing the word "requirements" is not read as follow-up', () => {
+  const notSpec = {
+    task: 't-not-spec',
+    role: 'analyst',
+    text: [
+      '## Non-functional requirements',
+      '',
+      '- The service should stay available during a single zone outage.',
+      '',
+    ].join('\n'),
+  };
+  const { proposals, refused } = proposalsFrom({ deliverable: notSpec, source: 'src-1', locator: 'PROJ' });
+  assert.equal(proposals.length, 0);
+  assert.equal(refused.length, 0);
+});
+
+test('an rfc-shaped deliverable is read from tradeoffs', () => {
+  const rfc = {
+    task: 't-rfc',
+    role: 'analyst',
+    text: [
+      '## Tradeoffs',
+      '',
+      '- Adopting the managed queue raises the monthly bill by roughly 15 percent.',
+      '- Change the on-call runbook once the managed queue replaces the self-hosted one.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(rfc);
+  assert.deepEqual(findings.map((f) => f.kind), ['what-follows', 'what-follows']);
+});
+
+test('an adr-shaped deliverable is read from consequences', () => {
+  const adr = {
+    task: 't-adr',
+    role: 'analyst',
+    text: [
+      '## Consequences',
+      '',
+      '- Update the deployment runbook to reference the new queue endpoint.',
+      '- Retire the self-hosted queue cluster within one quarter of cutover.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(adr);
+  assert.deepEqual(findings.map((f) => f.kind), ['what-follows', 'what-follows']);
+});
+
+/**
+ * Onepager is deliberately absent from the mapping (see proposals.ts's module
+ * doc): its reader approves or rejects one call rather than carrying out a
+ * next step, so none of its sections read as follow-up material.
+ */
+test('a onepager-shaped deliverable has no follow-up section, so its bullets are not read', () => {
+  const onepager = {
+    task: 't-onepager',
+    role: 'analyst',
+    text: [
+      '## What changes',
+      '',
+      '- The export button appears on every account page once this ships.',
+      '- Support stops fielding manual export requests within a month.',
+      '',
+    ].join('\n'),
+  };
+  const { proposals, refused } = proposalsFrom({ deliverable: onepager, source: 'src-1', locator: 'PROJ' });
+  assert.equal(proposals.length, 0);
+  assert.equal(refused.length, 0);
+});
+
+/**
+ * A composed document rendered with `--record` writes section headings as raw
+ * slugs ("what-happens-first") rather than sentence case ("What happens
+ * first"); both forms normalize the same way, so both are read the same way.
+ */
+test('a raw section slug heading matches the same as its rendered sentence-case form', () => {
+  const decision = {
+    task: 't-decision-slug',
+    role: 'analyst',
+    text: [
+      '## what-happens-first',
+      '',
+      '- Migrate the staging environment before touching production traffic.',
+      '',
+    ].join('\n'),
+  };
+  const findings = findingsIn(decision);
+  assert.deepEqual(findings.map((f) => f.kind), ['what-follows']);
 });
