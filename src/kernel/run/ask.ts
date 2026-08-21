@@ -24,7 +24,7 @@
 
 import type { Implication } from '../implication/map.ts';
 import type { InferredBy } from '../implication/naming.ts';
-import { riskTierFor } from '../lessons/admission.ts';
+import { riskTierFor, modelFloorForDomain } from '../lessons/admission.ts';
 import type { Brief } from '../brief/schema.ts';
 import type { DeliverableTemplate } from '../plan/schema.ts';
 
@@ -147,6 +147,12 @@ export interface AskBriefInput {
  * dispatch as an ask: present means the deliverable is an answer, and the
  * assignment builder speaks the answer directive and drops the protocols that
  * only mean something with a second role present.
+ *
+ * `modelFloor` is derived the same way an outcome brief's is, by
+ * modelFloorForDomain (lessons/admission.ts): a question's shape does not
+ * change what its domain needs. A question routed to a domain riskTierFor
+ * rates high already carries the highRiskNotice stakes below, so it declares
+ * the same frontier floor an outcome brief for that domain would.
  */
 export function askBriefFor(input: AskBriefInput): Brief {
   return {
@@ -159,6 +165,7 @@ export function askBriefFor(input: AskBriefInput): Brief {
     ],
     capabilities: [],
     postconditions: [],
+    modelFloor: modelFloorForDomain(input.implication.domain),
     challenges: [...ASK_CHALLENGES],
     ...(input.implication.signals.length > 0
       ? {

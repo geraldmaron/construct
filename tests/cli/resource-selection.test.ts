@@ -130,10 +130,15 @@ test('the choice, the cost, and everything passed over are on the work log', asy
   const recorded = selections(capture);
   assert.equal(recorded.length, 1, 'one entry for the run this invocation worked');
   const detail = recorded[0].detail;
-  assert.equal(detail.rung, 'clears');
+  // OUTCOME implicates commerce-tax and privacy, both licensed-review domains,
+  // so their briefs declare a "frontier" floor; codex is still the cheapest
+  // present resource but never says what tier it runs, so the run degrades
+  // rather than clearing.
+  assert.equal(detail.rung, 'degraded');
   assert.equal(detail.host, 'codex');
   assert.equal(detail.costClass, 'subscription');
-  assert.equal(detail.floor, 'any');
+  assert.equal(detail.floor, 'frontier');
+  assert.match(detail.degradation as string, /nothing present clears the "frontier" floor/);
   const rejected = detail.rejected as { host: string; why: string }[];
   assert.deepEqual(rejected.map((r) => r.host).sort(), ['claude', 'cursor', 'opencode']);
   for (const entry of rejected) assert.ok(entry.why.length > 0);
