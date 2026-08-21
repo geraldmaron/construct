@@ -201,6 +201,7 @@ import { createCodexAdapter } from '../hosts/codex/adapter.ts';
 import { createCursorAdapter } from '../hosts/cursor/adapter.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
 import { architectureNoteFor } from '../hosts/architecture.ts';
+import { dispatchShapeNoteFor } from '../hosts/dispatchshape.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveRole } from './roleserve.ts';
@@ -2679,6 +2680,18 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
           `  ⚑ architecture note (${architectureNote.observedOn}, ${architectureNote.measuredOn}): ` +
             `${architectureNote.observation}.\n` +
             `    Evidence: ${architectureNote.evidence}\n`,
+        );
+      }
+
+      // Same discipline again, one fact narrower still: not whether the model
+      // finishes or which architecture it favours, but whether its
+      // deliverables actually land in the template they were given.
+      const dispatchShapeNote = dispatchShapeNoteFor(host.model ?? model);
+      if (dispatchShapeNote) {
+        process.stdout.write(
+          `  ⚑ dispatch-shape note (${dispatchShapeNote.observedOn}, ${dispatchShapeNote.measuredOn}): ` +
+            `${dispatchShapeNote.observation}.\n` +
+            `    Evidence: ${dispatchShapeNote.evidence}\n`,
         );
       }
     }
