@@ -25,7 +25,12 @@
 import { mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, join, extname } from 'node:path';
-import { UTF8_TEXT_EXTS, TRANSCRIPT_EXTS, EXTRACTABLE_DOCUMENT_EXTS } from '../kernel/extract/formats.ts';
+import {
+  UTF8_TEXT_EXTS,
+  TRANSCRIPT_EXTS,
+  EXTRACTABLE_DOCUMENT_EXTS,
+  DIAGRAM_EXTS,
+} from '../kernel/extract/formats.ts';
 import type { Source, SurveyEmphasis } from '../kernel/store/sources.ts';
 import type { SourceSurvey, SurveyedDocument, DocumentExtraction } from '../kernel/run/sourcereads.ts';
 import { readSource, probeDocling, type DoclingProbe } from './extract.ts';
@@ -81,10 +86,17 @@ const READABLE_EXTS: ReadonlySet<string> = new Set([...UTF8_TEXT_EXTS, ...TRANSC
  * and a role told the ground is empty writes with a confidence the walk never
  * earned. Whether the host can actually read one is the host's affair; the
  * survey's job is that the document exists on the record either way.
+ *
+ * DIAGRAM_EXTS is folded in even though the ladder plans zero rungs for it —
+ * a format with no rung still needs to be seen to be refused. Leaving a
+ * diagram out of this set would make it invisible to the walk entirely, which
+ * is the silent-skip failure the extraction pass exists to close, not a
+ * milder version of it.
  */
-const BINARY_EXTS: ReadonlySet<string> = new Set(
-  [...EXTRACTABLE_DOCUMENT_EXTS].filter((ext) => !READABLE_EXTS.has(ext)),
-);
+const BINARY_EXTS: ReadonlySet<string> = new Set([
+  ...[...EXTRACTABLE_DOCUMENT_EXTS].filter((ext) => !READABLE_EXTS.has(ext)),
+  ...DIAGRAM_EXTS,
+]);
 
 function isRemoteGitLocator(locator: string): boolean {
   return /^(https?|git|ssh):\/\//.test(locator) || /^[\w.-]+@[\w.-]+:/.test(locator);
