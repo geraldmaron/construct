@@ -176,6 +176,48 @@ test('a mention of a proposal in passing does not hijack a plain review', () => 
   assert.equal(shapeForOutcome('Review the auth flow; propose a fix if you find one').name, 'review');
 });
 
+test('an ask naming the ADR gets the adr shape', () => {
+  for (const outcome of [
+    'Write an ADR for the caching layer redesign',
+    'Draft an ADR for the export tool',
+    'An ADR for the auth migration',
+    'Write an architecture decision record for the notification pipeline',
+  ]) {
+    assert.equal(shapeForOutcome(outcome).name, 'adr', outcome);
+  }
+});
+
+test('the adr shape has exactly the five specified sections, in order', () => {
+  const adr = shapeForOutcome('Write an ADR for the caching layer').sections.map((s) => s.name);
+  assert.deepEqual(adr, ['context', 'decision', 'status', 'consequences', 'alternatives-considered']);
+});
+
+/**
+ * "the ADR is out of date" talks about an existing record, not a document to
+ * write — the same asymmetry that keeps "spec" and "proposal" mentioned in
+ * passing from hijacking a plain review.
+ */
+test('a mention of the ADR in passing does not hijack a plain review', () => {
+  assert.equal(shapeForOutcome('Review the auth flow; the ADR is out of date, note that').name, 'review');
+});
+
+/**
+ * ADR is checked before spec and decision, the same rank RFC holds and for
+ * the same reason: the document type named is what a reader would notice
+ * missing, over a judgment word or a neighbouring document type appearing in
+ * the same breath.
+ */
+test('naming the ADR outranks both a decision word and a neighbouring document type', () => {
+  assert.equal(
+    shapeForOutcome('Write an ADR deciding which of two approaches the export tool should take').name,
+    'adr',
+  );
+  assert.equal(
+    shapeForOutcome("An ADR for the export tool's requirements").name,
+    'adr',
+  );
+});
+
 test('a requirement is asked to carry a criterion or its explicit absence, never silence', () => {
   const requirements = shapeByName('spec')?.sections.find((s) => s.name === 'requirements');
   assert.ok(requirements, 'the spec shape still names a requirements section');
