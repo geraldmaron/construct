@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — 2026-08-21
+## 3.0.0-alpha.12 — 2026-08-21
 
 The reconciliation session's second half: the red-team epic closed the same day it was filed, the write-proposal path became actionable end to end, and the delivery backlog was trued against the staff-member vision — every open bead now carries a current disposition, every stakeholder call sits labeled in one queue, and the calls that could be settled under Gerald's standing session authorization were settled on the record.
 
