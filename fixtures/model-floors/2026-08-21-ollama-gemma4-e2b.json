@@ -1,0 +1,48 @@
+{
+  "model": "ollama/gemma4:e2b",
+  "probedAt": "2026-08-21T15:57:39.446Z",
+  "trials": 2,
+  "note": "clean = first reply parsed; repaired = one corrective retry parsed; fell-through = both replies malformed (the stated fallback fires); unmeasured = the host or transport failed, which is not evidence about the model. Dated and per-model: free-tier catalogs churn, so this result must not be generalized to a tier or a family.",
+  "seams": {
+    "namer": {
+      "trials": 2,
+      "clean": 2,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 0
+    },
+    "densifier": {
+      "trials": 2,
+      "clean": 2,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 0
+    }
+  },
+  "runs": [
+    {
+      "seam": "namer",
+      "trial": 0,
+      "ms": 26535,
+      "outcome": "clean"
+    },
+    {
+      "seam": "namer",
+      "trial": 1,
+      "ms": 31313,
+      "outcome": "clean"
+    },
+    {
+      "seam": "densifier",
+      "trial": 0,
+      "ms": 22075,
+      "outcome": "clean"
+    },
+    {
+      "seam": "densifier",
+      "trial": 1,
+      "ms": 19985,
+      "outcome": "clean"
+    }
+  ]
+}
