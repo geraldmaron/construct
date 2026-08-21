@@ -50,10 +50,10 @@ export const ASK_CHALLENGES: readonly string[] = ['claims-cited'];
  */
 export const ANSWER_TEMPLATE: DeliverableTemplate = {
   deliverable: 'answer',
-  // An answer is prose. It is the one template here that was never at risk of
-  // the numbered-issue directive, because an ask is dispatched with the answer
-  // directive below instead — and it declares its form anyway, so that every
-  // template in the system says what shape it wants rather than most of them.
+  // An answer is prose. This template is never dispatched through the work
+  // product directive — an ask gets the answer directive below instead — and it
+  // declares its form anyway, so that every template in the system says what
+  // shape it wants rather than most of them.
   form: 'prose',
   slots: [
     { name: 'answer', expects: 'the answer to the question, stated first, in plain language', required: true },
