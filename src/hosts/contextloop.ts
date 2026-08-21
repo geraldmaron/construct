@@ -42,6 +42,7 @@ import type {
 import type { ProposalApplier } from '../kernel/run/apply.ts';
 import type { DriftReviewer } from '../kernel/context/review.ts';
 import { REVIEWER_ROLE } from '../kernel/context/review.ts';
+import { GROUND_IS_MATERIAL_RULE } from '../kernel/run/grounding.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 
 /** The roles these passes run as. Not catalog domains — they run around them. */
@@ -145,6 +146,8 @@ export function producerPrompt(input: Parameters<ContextProducer>[0]): string {
     '  that is neither of the two you cite. Leave it out where the sentence is',
     '  yours rather than a document\'s.',
     '',
+    GROUND_IS_MATERIAL_RULE,
+    '',
     SETTLED_VS_PARKED_RULE,
     '',
     'Empty lists are valid. Do not reach.',
@@ -230,6 +233,8 @@ export function reviewerPrompt(input: Parameters<DriftReviewer>[0]): string {
     'that you opened nothing costs you nothing and is the answer that gets the',
     'reads fixed, while a review whose reading cannot be accounted for is thrown',
     'out whatever it found.',
+    '',
+    GROUND_IS_MATERIAL_RULE,
     '',
     'An empty list of findings is a valid answer, and a better one than a reach —',
     'alongside an account of what you opened to reach it.',
