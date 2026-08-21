@@ -33,7 +33,7 @@ import {
 import { skillPackSkew } from '../kernel/skills/projection.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
-import { presenceLines, surveyHosts } from '../hosts/presence.ts';
+import { censusLines, surveyResources } from '../hosts/census.ts';
 import { now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
 import { readSkillFolders } from './skills.ts';
@@ -96,7 +96,12 @@ export function doctor(cwd: string = process.cwd()): number {
   // Hosts are reported, never gated: a missing host is information, because
   // serve-only use is legitimate. Before this, a user without a host met the
   // absence as mid-run errors instead of one line here.
-  for (const line of presenceLines(surveyHosts())) {
+  //
+  // The same census a hostless `construct work` selects from, so what doctor
+  // shows and what dispatch chooses cannot be two different readings of one
+  // machine. The cost column is the part worth reading twice: it says what a
+  // run there would spend, and says so plainly when nobody measured it.
+  for (const line of censusLines(surveyResources())) {
     checks.push({ name: 'host', ok: true, detail: line });
   }
 

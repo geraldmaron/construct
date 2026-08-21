@@ -23,12 +23,22 @@ import { groundReach, unreachableGroundMessage } from '../kernel/run/reachabilit
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { loadOrCreateSecret } from '../kernel/capabilities/secretfile.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
+import {
+  chooseResource,
+  explainSelection,
+  HOST_SELECTION_ACTION,
+  needFor,
+  selectionDetail,
+} from '../kernel/hosts/selection.ts';
+import type { Selection, WorkNeed } from '../kernel/hosts/selection.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { architectureNoteFor } from '../hosts/architecture.ts';
 import { dispatchShapeNoteFor } from '../hosts/dispatchshape.ts';
 import { dispatchFloorFor } from '../hosts/floors.ts';
+import { surveyResources } from '../hosts/census.ts';
+import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
-import { adapterForHost, now, secretFile, withStoreAsync } from './runtime.ts';
+import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
 import { timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
 import { failureLine, money, writeTotalFailureRecourse } from './present.ts';
@@ -102,9 +112,11 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     return value;
   };
 
+  // Validated against the one list the adapter switch reads, so a host added
+  // there is dispatchable here without a second edit that can be forgotten.
   const host = args.host ?? 'opencode';
-  if (host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
-    throw new Error(`Invalid --host=${host}; expected opencode|claude|codex|cursor`);
+  if (!(HOST_NAMES as readonly string[]).includes(host)) {
+    throw new Error(`Invalid --host=${host}; expected ${HOST_NAMES.join('|')}`);
   }
 
   const leaseMinutes = number('lease-minutes', 15);
@@ -138,11 +150,40 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
 }
 
 /**
+ * Whether this invocation gets to choose its own host. A named host is the
+ * answer, a host recorded at the moment the run was filed is the answer, and a
+ * binary path names a host implicitly because a path to one host's executable
+ * means nothing to another. Selection is for what is left: the user said
+ * nothing about where this should run.
+ */
+function selectionIsOurs(input: {
+  readonly hostExplicit: boolean;
+  readonly recordedHost: string | null;
+  readonly binary: string | undefined;
+  readonly overridden: boolean;
+}): boolean {
+  if (input.overridden) return false;
+  if (input.hostExplicit) return false;
+  if (input.recordedHost !== null) return false;
+  if (input.binary !== undefined) return false;
+  return true;
+}
+
+/**
  * Dispatch the queued tasks to a host. `hostOverride` exists so the CLI's own
  * wiring can be tested without a binary present; production callers never pass
- * it, exactly as with cleanup's spawn override.
+ * it, exactly as with cleanup's spawn override. `probe` is the same seam one
+ * level down: it puts the resource census in front of a scripted machine
+ * rather than this one. An override on its own means the adapter is settled
+ * and there is nothing to choose; an override with a probe means the choice is
+ * what is under test and the override is only what carries out the dispatch
+ * afterwards.
  */
-export async function work(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+export async function work(
+  argv: string[],
+  hostOverride?: HostAdapter,
+  probe?: ProbeExec,
+): Promise<number> {
   let args: WorkArgs;
   try {
     args = parseWorkArgs(argv);
@@ -179,9 +220,6 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
         });
       }
     }
-
-    const host =
-      hostOverride ?? adapterForHost(hostName, { binary, model, dir, timeoutMs: args.timeoutMs });
 
     const waiting = countTasksByState(store, args.run).pending ?? 0;
     if (waiting === 0) {
@@ -241,21 +279,64 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
       return 0;
     }
 
-    // The producer half of grounding, run before any dispatch: what each run's
-    // declared sources actually hold is surveyed and recorded, so materialFor
-    // answers the coordinator from evidence rather than from silence. Once per
-    // run — the record is evidence, not a cache — and a run whose plan
-    // declared no sources is left exactly as it was.
-    const pendingRuns = new Set(
-      listTasks(store, args.run)
-        .filter((t) => t.state === 'pending')
-        .map((t) => t.run),
-    );
+    const pending = listTasks(store, args.run).filter((t) => t.state === 'pending');
+    const pendingRuns = new Set(pending.map((t) => t.run));
+
+    // Choosing where this runs, when the user did not. The census is probed
+    // only on this path and only past the nothing-to-do guard above, so a
+    // command with nothing to dispatch never spawns a host binary to find out
+    // what it could have dispatched to.
+    let selected = hostName;
+    if (
+      selectionIsOurs({
+        hostExplicit: args.hostExplicit,
+        recordedHost: recorded?.host ?? null,
+        binary,
+        overridden: hostOverride !== undefined && probe === undefined,
+      })
+    ) {
+      const need: WorkNeed = needFor(pending.map((t) => t.brief));
+      const selection: Selection = chooseResource(surveyResources(probe, model), need);
+      const stream = selection.rung === 'refused' ? process.stderr : process.stdout;
+      const prefix = selection.rung === 'refused' ? 'work: ' : '';
+      for (const [index, line] of explainSelection(selection, need).entries()) {
+        stream.write(`${index === 0 ? prefix : ''}${escapeForTerminal(line)}\n`);
+      }
+      // Recorded against every run this invocation is about to work, so
+      // reading one run's log shows what carried it and what did not, the same
+      // way the licensed ladder records which rung answered each read and write.
+      for (const runId of pendingRuns) {
+        appendWorkLog(store, {
+          run: runId,
+          task: null,
+          role: 'construct',
+          action: HOST_SELECTION_ACTION,
+          detail: selectionDetail(selection, need),
+          at: now(),
+        });
+      }
+      if (selection.host === null) {
+        process.stderr.write(
+          `  Name one yourself to dispatch anyway: construct work --host=<${HOST_NAMES.join('|')}>\n`,
+        );
+        return 1;
+      }
+      selected = selection.host;
+    }
+
+    const host =
+      hostOverride ?? adapterForHost(selected, { binary, model, dir, timeoutMs: args.timeoutMs });
+
     // Where the roles will actually run: the host's --dir when given, and
     // otherwise wherever this process was invoked, which is what every adapter
     // inherits when nothing is passed.
     const dispatchDirectory = resolve(args.dir ?? process.cwd());
 
+    // The producer half of grounding, run before any dispatch: what each run's
+    // declared sources actually hold is surveyed and recorded, so materialFor
+    // answers the coordinator from evidence rather than from silence. Once per
+    // run, because the record is evidence rather than a cache, and a run whose
+    // plan declared no sources is left exactly as it was.
     for (const runId of pendingRuns) {
       const pass = groundRun(store, runId, now(), surveyor(store));
       if (!pass || pass.skipped) continue;
