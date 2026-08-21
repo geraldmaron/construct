@@ -17,6 +17,7 @@
  */
 
 import type { EngagementMode } from '../store/sources.ts';
+import type { ContentForm } from '../voice/voice.ts';
 
 /** Where a plan element's justification points. */
 export type Citation =
@@ -44,10 +45,22 @@ export interface Slot {
   readonly required: boolean;
 }
 
-/** The deliverable a role's playbook produces, with the slots that make sufficiency checkable. */
+/**
+ * The deliverable a role's playbook produces, with the slots that make
+ * sufficiency checkable and the form its content takes.
+ *
+ * Form is declared here because the template is what knows it. Until it was,
+ * one dispatch directive demanded numbered issues of every deliverable in the
+ * system — of a PRD, of a strategy review, of a sequencing plan — talking over
+ * the very template it was built beside. The slots say what a deliverable must
+ * carry; the form says what shape the carrying takes, and the words for each
+ * form live with the voice (kernel/voice/voice.ts) because that is the one
+ * place a dispatch is told how to write.
+ */
 export interface DeliverableTemplate {
   readonly deliverable: string;
   readonly slots: readonly Slot[];
+  readonly form: ContentForm;
 }
 
 /**

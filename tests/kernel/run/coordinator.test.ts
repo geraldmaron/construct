@@ -400,6 +400,38 @@ test('the assignment states the role and its concern, and nothing it cannot supp
   assert.ok(!unknown.includes('Your concern:'));
 });
 
+/**
+ * The dispatch speaks the shape the role's own template asked for. It used to
+ * speak one shape for all of them — "number every issue" — which is what an
+ * issue-spotting review hands back and is not what a PRD, a strategy review,
+ * or a sequencing plan hands back. The template knew; nothing asked it.
+ */
+test('the work product directive speaks the template\'s form, not one form for everything', () => {
+  const privacy = assignmentFor(brief('privacy'));
+  assert.match(privacy, /Number every issue/, 'an issue-spotting review still spots issues');
+
+  const prd = assignmentFor(brief('product-scoping'));
+  assert.match(prd, /Deliver a product requirements document/);
+  assert.match(prd, /Number every requirement/);
+  assert.doesNotMatch(prd, /Number every issue/, 'a PRD was never a list of issues');
+
+  const sequencing = assignmentFor(brief('program-sequencing'));
+  assert.match(sequencing, /Number the steps in the order they happen/);
+  assert.doesNotMatch(sequencing, /Number every issue/);
+
+  const strategy = assignmentFor(brief('strategy-alignment'));
+  assert.match(strategy, /Write it as prose under the sections above/);
+  assert.doesNotMatch(strategy, /Number every issue/);
+
+  // What every form owes, whatever its shape: an owner for a step, a labeled
+  // assumption rather than a stall, nothing asserted that cannot be supported.
+  for (const text of [privacy, prd, sequencing, strategy]) {
+    assert.match(text, /Every step you recommend names an owner/);
+    assert.match(text, /label it \[assumed\]/);
+    assert.match(text, /Do not assert anything you cannot support/);
+  }
+});
+
 test('an equipped role is shown its lens: posture, questions, escalation, labels', () => {
   const text = assignmentFor(brief('compliance'));
   assert.match(text, /Your posture: Controls and evidence over intent/);

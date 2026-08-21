@@ -1,6 +1,13 @@
 /**
  * kernel/plan/playbooks.ts — role playbooks: the staged process a role
- * follows and the deliverable template, with required slots, its work must fill.
+ * follows and the deliverable template, with required slots and a declared
+ * form, its work must fill.
+ *
+ * Form is the shape the content takes, and it is declared per template because
+ * the template is what knows it: an issue-spotting review hands back numbered
+ * issues with owners, a PRD hands back requirements with criteria, a
+ * sequencing plan hands back an order. Before it was declared, one directive
+ * demanded numbered issues of all of them.
  *
  * This is not a second role registry. The domain catalog
  * (implication/domains.ts) stays the one list of who exists; a playbook is
@@ -47,6 +54,7 @@ const CORE_SLOTS: readonly Slot[] = [
 const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   privacy: {
     deliverable: 'privacy review',
+    form: 'issues',
     slots: [
       ...CORE_SLOTS,
       slot('data-inventory', 'what personal data the outcome touches, or "none" explicitly'),
@@ -55,6 +63,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   },
   contracts: {
     deliverable: 'agreement review',
+    form: 'issues',
     slots: [
       ...CORE_SLOTS,
       slot('parties-and-terms', 'who is bound and to what, as read from the source'),
@@ -63,6 +72,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   },
   security: {
     deliverable: 'security assessment',
+    form: 'issues',
     slots: [
       ...CORE_SLOTS,
       slot('attack-surface', 'what the outcome exposes and to whom'),
@@ -71,6 +81,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   },
   'program-sequencing': {
     deliverable: 'sequencing plan',
+    form: 'sequence',
     slots: [
       ...CORE_SLOTS,
       slot('order', 'the sequence and why each item precedes the next'),
@@ -85,6 +96,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // never a reason to withhold the document.
   'product-scoping': {
     deliverable: 'product requirements document',
+    form: 'requirements',
     slots: [
       ...CORE_SLOTS,
       slot('users-and-problem', 'who this serves and the problem it solves for them, cited to the material or [unverified]'),
@@ -98,6 +110,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // because a bet whose cost is unstated reads as free, and nothing is.
   'strategy-alignment': {
     deliverable: 'strategy review',
+    form: 'prose',
     slots: [
       ...CORE_SLOTS,
       slot('the-bet', 'what this commits to and what it assumes about the future, in one paragraph'),
@@ -109,6 +122,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // so the irreversible parts are read before the pleasant ones.
   'system-design': {
     deliverable: 'design review',
+    form: 'prose',
     slots: [
       ...CORE_SLOTS,
       slot('boundaries', 'which boundaries move and who owns each side after the change'),
@@ -119,6 +133,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // Written for the person who gets paged, not the person who ships.
   operations: {
     deliverable: 'operability review',
+    form: 'prose',
     slots: [
       ...CORE_SLOTS,
       slot('failure-paths', 'how this breaks, each with how anyone would find out'),
@@ -128,6 +143,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   },
   'user-experience': {
     deliverable: 'experience review',
+    form: 'prose',
     slots: [
       ...CORE_SLOTS,
       slot('the-path', 'the shortest route from where the user starts to what they came to do, step by step'),
@@ -139,6 +155,7 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // demands it be said rather than left as silence.
   measurement: {
     deliverable: 'measurement plan',
+    form: 'prose',
     slots: [
       ...CORE_SLOTS,
       slot('baseline', 'what the number reads today, or that no baseline exists and what that costs'),
@@ -147,8 +164,15 @@ const TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   },
 };
 
+/**
+ * The template a domain with no bespoke one gets. Its form is prose because
+ * that is the shape which assumes least about content nobody has described
+ * yet: a memo that turns out to be a list can be a list, and a list imposed on
+ * a memo cannot be undone by the reader.
+ */
 const DEFAULT_TEMPLATE: DeliverableTemplate = {
   deliverable: 'review memo',
+  form: 'prose',
   slots: CORE_SLOTS,
 };
 
@@ -224,6 +248,7 @@ const ELICITATION_TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // naming what a different answer would move.
   'interview-guide': {
     deliverable: 'interview guide',
+    form: 'questions',
     slots: [
       slot(
         'audience',
@@ -244,6 +269,7 @@ const ELICITATION_TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // in the document that starts the work, not decided by whoever is tired.
   'research-plan': {
     deliverable: 'research plan',
+    form: 'questions',
     slots: [
       slot(
         'questions',
@@ -264,6 +290,7 @@ const ELICITATION_TEMPLATES: Readonly<Record<string, DeliverableTemplate>> = {
   // falsifier is a belief; a falsifier nobody can afford to test is a shrug.
   hypotheses: {
     deliverable: 'hypotheses',
+    form: 'prose',
     slots: [
       slot(
         'statement',

@@ -1,9 +1,13 @@
 /**
  * kernel/run/synthesis.ts — merge the run's role deliverables into one issue
- * list. Deliverables carry numbered issues (the coordinator's work product
- * directive demands them), so synthesis is extraction plus a merge of
- * near-duplicates across roles, keeping every role's attribution on the
- * merged issue.
+ * list. A deliverable whose template asks for issues carries numbered ones, so
+ * synthesis is extraction plus a merge of near-duplicates across roles, keeping
+ * every role's attribution on the merged issue.
+ *
+ * Not every deliverable is an issue list, and this reads the ones that are. A
+ * PRD's requirements and a sequencing plan's steps are not issues and are not
+ * reported here as though they were: extraction finding nothing in them is the
+ * correct answer, not a miss.
  *
  * The merge is lexical and says so: token overlap, no model, no judgment
  * about which phrasing was better — the first role to raise an issue keeps

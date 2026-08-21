@@ -11,8 +11,10 @@ import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { openDecisions } from '../../../src/kernel/store/decisions.ts';
 import { batchAskHuman, nextRung, slotGaps, slotSection } from '../../../src/kernel/plan/ladder.ts';
-import { playbookFor } from '../../../src/kernel/plan/playbooks.ts';
+import { allElicitationTemplates, allPlaybooks, playbookFor } from '../../../src/kernel/plan/playbooks.ts';
 import { ACCEPTANCE_CRITERION_CLAUSE } from '../../../src/kernel/run/shapes.ts';
+import { ANSWER_TEMPLATE } from '../../../src/kernel/run/ask.ts';
+import { CONTENT_FORMS } from '../../../src/kernel/voice/voice.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -26,6 +28,34 @@ test('an empty or whitespace required slot is a gap; optional slots never are', 
   const names = gaps.map((g) => g.slot.name);
   assert.deepEqual(names, ['evidence', 'risks', 'attack-surface', 'mitigations', 'threat-paths']);
   assert.ok(!names.includes('open-questions'));
+});
+
+/**
+ * A template says two things about the deliverable: what it must carry (its
+ * slots) and what shape the carrying takes (its form). The second was missing,
+ * and while it was missing one dispatch directive supplied the same answer for
+ * every template in the catalog — numbered issues, for a PRD as readily as for
+ * a privacy review.
+ */
+test('every template declares a form, and it is one the voice knows how to speak', () => {
+  const known = new Set<string>(CONTENT_FORMS);
+  const templates = [
+    ...allPlaybooks().map((p) => p.template),
+    ...allElicitationTemplates(),
+    ANSWER_TEMPLATE,
+  ];
+  for (const template of templates) {
+    assert.ok(known.has(template.form), `${template.deliverable} declares an unknown form`);
+  }
+  // The forms are not decoration: the deliverables that actually differ in
+  // shape declare different ones.
+  assert.equal(playbookFor('privacy').template.form, 'issues');
+  assert.equal(playbookFor('product-scoping').template.form, 'requirements');
+  assert.equal(playbookFor('program-sequencing').template.form, 'sequence');
+  assert.equal(playbookFor('strategy-alignment').template.form, 'prose');
+  // An unknown domain gets the default memo, which assumes least about content
+  // nobody has described.
+  assert.equal(playbookFor('no-such-domain').template.form, 'prose');
 });
 
 test('a fully filled template has no gaps', () => {
