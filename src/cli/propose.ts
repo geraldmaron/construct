@@ -4,8 +4,17 @@
  * The deliverables ended at the reader: a document with numbered issues is a
  * list of changes somebody now retypes into whatever tracker the work lives
  * in, and the retyping is where the citation is lost. Extraction is
- * mechanical, costs no model call, and is re-runnable. Nothing here writes
- * outward and nothing here can: a proposal is a row to be decided on.
+ * mechanical, costs no model call, and is re-runnable. Filing a proposal
+ * never writes outward by itself: a proposal is a row to be decided on.
+ *
+ * `triage` is the one subcommand where a row's fate can be settled the
+ * moment it is filed rather than left for a person to open later: its dedupe
+ * findings are low risk by construction (kernel/run/triage.ts), so where a
+ * workspace already holds standing write consent and a host is given, they
+ * are carried out immediately — through the same applyProposal seam
+ * decide.ts uses for a human's own approvals, never a second path. A create
+ * or update proposal is never carried out from here: applyProposal itself
+ * refuses one without a person's decision, standing consent or no.
  */
 
 import { readFileSync } from 'node:fs';
@@ -34,10 +43,16 @@ import {
 import type { Deliverable, WriteAction, WriteActionProposer } from '../kernel/run/proposals.ts';
 import { createHostActionProposer } from '../hosts/writeaction.ts';
 import { auditProposals, evaluateGates, renderAuditDeliverable } from '../kernel/run/repoaudit.ts';
+import { triageProposals } from '../kernel/run/triage.ts';
+import type { TrackerIssue } from '../kernel/run/triage.ts';
+import { applyProposal } from '../kernel/run/apply.ts';
+import type { ProposalApplier } from '../kernel/run/apply.ts';
 import { latestDraft } from '../kernel/run/promotion.ts';
 import { deliverableBody } from '../kernel/run/publish.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { gatherRepoFacts } from '../hosts/repo/audit.ts';
+import { createHostApplier } from '../hosts/contextloop.ts';
+import { hasCapability } from '../kernel/hosts/interface.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { adapterForHost, now, withStore, withStoreAsync } from './runtime.ts';
 import { parseFlags, parseHostFlags, splitFlags, workspaceFlag } from './flags.ts';
@@ -54,6 +69,10 @@ const PROPOSE_USAGE =
   '         [--now=<words that stand there>|--now-file=<path>]\n' +
   '         [--run=<id>] [--workspace=<name>] [--dry-run]\n' +
   '         (a flag value is one line; words spanning more than one go in a file)\n' +
+  '       construct propose triage --source=<source-id> --live=<file of that tracker\'s current issues>\n' +
+  '         [--workspace=<name>] [--dry-run] [--host=<opencode|claude>]\n' +
+  '         (labels and comments carry out under standing consent when a host is given; ' +
+  'creates and updates always wait for a person)\n' +
   '       construct propose list [--workspace=<name>]\n';
 
 /**
@@ -311,6 +330,171 @@ function proposeDoc(flags: Record<string, string>): number {
 }
 
 /**
+ * One tracker's current issues, read from a file the caller supplies — the
+ * same reason cli/reconcile.ts's --live works this way: Construct holds no
+ * tracker connectors, so it never fetches a live issue on its own.
+ */
+function readTrackerIssues(file: string): readonly TrackerIssue[] | string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    return `cannot read tracker issues from ${file}: ${(error as Error).message}`;
+  }
+  if (!Array.isArray(parsed)) return `${file} must hold a JSON array of tracker issues`;
+  const issues: TrackerIssue[] = [];
+  for (let index = 0; index < parsed.length; index += 1) {
+    const entry = parsed[index] as { id?: unknown; title?: unknown } | null;
+    if (typeof entry?.id !== 'string' || entry.id.trim() === '') {
+      return `${file}: entry ${String(index)} names no string "id"`;
+    }
+    if (typeof entry.title !== 'string' || entry.title.trim() === '') {
+      return `${file}: entry ${String(index)} (${entry.id}) names no string "title"`;
+    }
+    issues.push({ id: entry.id, title: entry.title });
+  }
+  return issues;
+}
+
+/**
+ * Dedupe a tracker source's current issues into write proposals, and — when
+ * a host is given — carry the low-risk ones straight out under the
+ * workspace's standing consent. A create or update proposal is never
+ * attempted here: applyProposal refuses one before it reaches the host
+ * unless a person already approved it, so a high-risk row from this pass
+ * stays queued exactly as a high-risk row from any other proposer does.
+ */
+async function proposeTriage(flags: Record<string, string>, hostOverride?: HostAdapter): Promise<number> {
+  const liveFile = (flags.live ?? '').trim();
+  if (liveFile === '' || liveFile === 'true') {
+    process.stderr.write(`propose: triage reads a tracker's current issues from a file.\n${PROPOSE_USAGE}`);
+    return 2;
+  }
+  const issues = readTrackerIssues(liveFile);
+  if (typeof issues === 'string') {
+    process.stderr.write(`propose: ${issues}\n`);
+    return 1;
+  }
+
+  let hostFlags: HostFlags;
+  try {
+    hostFlags = parseHostFlags(flags);
+  } catch (error) {
+    process.stderr.write(`propose: ${(error as Error).message}\n${PROPOSE_USAGE}`);
+    return 2;
+  }
+
+  return withStoreAsync(async (store) => {
+    const workspace = workspaceFlag(flags);
+    const target = targetSource(store, workspace, (flags.source ?? '').trim());
+    if (typeof target === 'number') return target;
+
+    const { proposals, matches } = triageProposals({ source: target.id, locator: target.locator, issues });
+    process.stdout.write(
+      `${String(matches.length)} likely duplicate(s) among ${String(issues.length)} issue(s) read from ` +
+        `${target.kind} ${target.locator}:\n`,
+    );
+    if (matches.length === 0) {
+      process.stdout.write('nothing to propose.\n');
+      return 0;
+    }
+
+    let applier: ProposalApplier | undefined;
+    if (flags['dry-run'] === undefined && (hostOverride !== undefined || hostFlags.host !== undefined)) {
+      const adapter =
+        hostOverride ??
+        adapterForHost(hostFlags.host, {
+          binary: hostFlags.binary,
+          model: hostFlags.model,
+          dir: hostFlags.dir,
+          timeoutMs: hostFlags.timeoutMs,
+        });
+      // Asked before a model call is spent, matching decide.ts's own apply
+      // path: a read-only dispatch posture cannot carry a change out however
+      // it is asked, so triage still files proposals but never attempts one.
+      if (!hasCapability(adapter, 'outward-write')) {
+        process.stderr.write(
+          `propose: host "${adapter.name}" dispatches read-only, so it cannot carry a change out; ` +
+            'proposals below will still be filed, none will be applied.\n',
+        );
+      } else {
+        try {
+          await adapter.init();
+        } catch (error) {
+          process.stderr.write(
+            `propose: host "${adapter.name}" is not available — ${escapeForTerminal((error as Error).message)}\n`,
+          );
+          return 1;
+        }
+        applier = createHostApplier(adapter, (id) => {
+          const declared = getSource(store, id);
+          return { kind: declared?.kind ?? '', locator: declared?.locator ?? 'an undeclared source' };
+        });
+      }
+    }
+
+    const at = now();
+    let filed = 0;
+    let already = 0;
+    const risks = { low: 0, high: 0 };
+    let applied = 0;
+    let queued = 0;
+    for (const proposal of proposals) {
+      process.stdout.write(
+        `  ${proposal.id}  [${proposal.risk}, ${proposal.action}]  ${escapeForTerminal(proposal.change)}\n` +
+          `      because: ${escapeForTerminal(proposal.justification)}\n`,
+      );
+      if (flags['dry-run'] !== undefined) continue;
+      if (getProposal(store, proposal.id) === null) {
+        proposeWrite(store, {
+          id: proposal.id,
+          workspace,
+          run: null,
+          source: proposal.source,
+          change: proposal.change,
+          justification: proposal.justification,
+          risk: proposal.risk,
+          proposedAt: at,
+        });
+        filed += 1;
+        risks[proposal.risk] += 1;
+      } else {
+        already += 1;
+      }
+      if (applier !== undefined) {
+        const outcome = await applyProposal(store, applier, proposal.id, at);
+        if (outcome.outcome === 'applied') {
+          applied += 1;
+          process.stdout.write(`      applied under standing consent: ${escapeForTerminal(outcome.detail)}\n`);
+        } else {
+          queued += 1;
+          process.stdout.write(`      queued (${outcome.outcome}): ${escapeForTerminal(outcome.reason)}\n`);
+        }
+      }
+    }
+
+    if (flags['dry-run'] !== undefined) {
+      process.stdout.write('\nnothing was filed: --dry-run shows what triage would propose.\n');
+      return 0;
+    }
+    process.stdout.write(
+      `\nfiled ${String(filed)} proposal(s) against ${target.kind} ${target.locator}` +
+        ` (${String(risks.low)} low, ${String(risks.high)} high)` +
+        (already > 0 ? `, ${String(already)} already proposed` : '') +
+        (applier !== undefined
+          ? `; ${String(applied)} applied under standing consent, ${String(queued)} left queued for a decision`
+          : '') +
+        '.\n' +
+        (applier === undefined
+          ? '  no host carried anything out — construct decide --apply=<id> --host=<opencode|claude>\n'
+          : '') +
+        `  construct propose list --workspace=${workspace}\n`,
+    );
+    return 0;
+  });
+}
+
+/**
  * Turn the findings in a run's finished deliverables into write proposals, and
  * show the ones already waiting.
  *
@@ -350,6 +534,8 @@ export async function propose(argv: string[], hostOverride?: HostAdapter): Promi
   }
 
   if (words[0] === 'doc') return proposeDoc(flags);
+
+  if (words[0] === 'triage') return proposeTriage(flags, hostOverride);
 
   if (words.length > 0) {
     process.stderr.write(`propose: unknown subcommand "${words[0]}"\n${PROPOSE_USAGE}`);
