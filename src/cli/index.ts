@@ -4428,7 +4428,7 @@ export function propose(argv: string[]): number {
       .map((task) => ({
         task: task.id,
         role: task.role,
-        text: renderDeliverable(latestDraft(store, task.id)?.deliverable ?? task.result),
+        text: deliverableBody(latestDraft(store, task.id)?.deliverable ?? task.result),
       }))
       .filter((deliverable) => deliverable.text.trim() !== '');
 
