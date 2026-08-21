@@ -120,13 +120,15 @@ export function projectSkillsPack(input: SkillsProjectionInput): readonly Genera
  * survives a folder being copied to a machine that knows nothing about it.
  */
 export function isGeneratedSkill(skillText: string): boolean {
-  return frontmatter(skillText).some((line) => /^\s+generator:\s*construct\s*$/.test(line));
+  return skillFrontmatterLines(skillText).some((line) =>
+    /^\s+generator:\s*construct\s*$/.test(line),
+  );
 }
 
 /** The stamped source version, when the file is one of ours and carries one. */
 export function generatedSkillVersion(skillText: string): string | null {
   if (!isGeneratedSkill(skillText)) return null;
-  for (const line of frontmatter(skillText)) {
+  for (const line of skillFrontmatterLines(skillText)) {
     const match = /^\s+version:\s*(.+?)\s*$/.exec(line);
     if (match) return unquote(match[1]);
   }
@@ -203,7 +205,7 @@ export function skillPackSkew(
 }
 
 /** The frontmatter lines of a file, empty when it has no closed frontmatter block. */
-function frontmatter(text: string): readonly string[] {
+export function skillFrontmatterLines(text: string): readonly string[] {
   const lines = text.split('\n');
   if (lines[0]?.trim() !== '---') return [];
   const close = lines.findIndex((line, i) => i > 0 && line.trim() === '---');
@@ -227,7 +229,7 @@ function yamlScalar(value: string): string {
 const WORD_BREAK = /\s+/;
 
 /** Wrap to the body width, with a hanging indent for continuation lines. */
-function wrap(text: string, indent = '', hanging = indent): string {
+export function wrap(text: string, indent = '', hanging = indent): string {
   const words = text.trim().split(WORD_BREAK);
   const lines: string[] = [];
   let current = indent;

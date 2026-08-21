@@ -6,8 +6,9 @@
 
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
-import { resolvePaths } from '../kernel/paths.ts';
+import { resolvePaths, resolveSkillsDir } from '../kernel/paths.ts';
 import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
@@ -193,8 +194,20 @@ import {
   projectSkillsPack,
   skillPackSkew,
   SKILL_FILENAME,
+  wrap as wrapSkillText,
   type SkillFolder,
 } from '../kernel/skills/projection.ts';
+import {
+  foreignFolders,
+  planSkillRemoval,
+  sameSkillBytes,
+  selectSkills,
+  skillDescription,
+  skillStatuses,
+  skillVersion,
+  type InstalledFolder,
+  type SkillSource,
+} from '../kernel/skills/library.ts';
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { planFor, recordPlan } from '../kernel/store/plans.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
@@ -5192,7 +5205,17 @@ export function staff(argv: string[]): number {
   return 2;
 }
 
-const SKILLS_USAGE = 'usage: construct skills [--out=<dir>] [--uninstall]\n';
+const SKILLS_USAGE =
+  'usage: construct skills list\n' +
+  '       construct skills install <name>... [--dir=<dir>]\n' +
+  '       construct skills install --all [--dir=<dir>]\n' +
+  '       construct skills installed [--dir=<dir>]\n' +
+  '       construct skills uninstall <name> [--dir=<dir>]\n' +
+  '       construct skills [--out=<dir>] [--uninstall]\n' +
+  '  The first five carry the portable method skills this checkout ships, into\n' +
+  '  a host skills directory (--dir, default ~/.claude/skills).\n' +
+  '  The last writes or removes the generated role pack (--out, default\n' +
+  '  ./.claude/skills) — output regenerated from the role catalog, not a copy.\n';
 
 /**
  * The first symbolic link sitting at `root` or on the path from it down to
@@ -5233,6 +5256,257 @@ function symlinkGuardRoot(out: string): string {
   return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel) ? cwd : out;
 }
 
+/** The subcommands that carry the shipped method skills, as opposed to the pack. */
+const SKILL_LIBRARY_SUBCOMMANDS = ['list', 'install', 'installed', 'uninstall'];
+
+/**
+ * Where this checkout keeps the portable method skills, resolved from this
+ * module rather than from the working directory, so it is the same directory
+ * wherever the command is run from. A published package does not carry these
+ * files, and there the directory is simply absent — which is a fact the
+ * command reports rather than works around.
+ */
+function sourceSkillsDir(): string {
+  return fileURLToPath(new URL('../../skills/', import.meta.url));
+}
+
+const SKILLS_ABSENT =
+  'skills: this install carries no skill files — the published package excludes them.\n' +
+  '  Run this from a git checkout, or install them from git:\n' +
+  '    npx skills add geraldmaron/construct\n';
+
+/** Every shipped skill, in name order, read whole so a copy of it is a copy of the bytes. */
+function readSkillSources(dir: string): readonly SkillSource[] {
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, SKILL_FILENAME)))
+    .map((entry) => {
+      const bytes = readFileSync(join(dir, entry.name, SKILL_FILENAME));
+      return {
+        name: entry.name,
+        description: skillDescription(bytes),
+        version: skillVersion(bytes),
+        bytes,
+      };
+    })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
+/** One folder at the install target: the file an install writes, and anything else. */
+function readInstalledFolder(dir: string, name: string): InstalledFolder {
+  const entries = readdirSync(join(dir, name));
+  const skillFile = join(dir, name, SKILL_FILENAME);
+  return {
+    name,
+    // A dangling link or a directory wearing the name is not the file an
+    // install writes, and reporting it as one would be the lie this command
+    // exists to avoid.
+    skill: existsSync(skillFile) && statSync(skillFile).isFile() ? readFileSync(skillFile) : null,
+    extras: entries.filter((entry) => entry !== SKILL_FILENAME).sort(),
+  };
+}
+
+/**
+ * What the install target holds. Reading only — a target that does not exist
+ * reads as empty and stays that way, because looking is not installing.
+ */
+function readInstalledFolders(dir: string): readonly InstalledFolder[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => readInstalledFolder(dir, entry.name));
+}
+
+function padded(values: readonly string[]): (value: string) => string {
+  const width = values.reduce((widest, value) => Math.max(widest, value.length), 0);
+  return (value: string) => value.padEnd(width);
+}
+
+/**
+ * The shipped method skills, carried into a host's skills directory as exact
+ * copies. Nothing records what was installed: the target directory is the
+ * record, and comparing its bytes against this checkout's is what answers
+ * whether a copy is current. So the report can be wrong only if the disk is,
+ * and a skill copied in by hand is seen exactly like one this command wrote.
+ */
+function skillLibrary(sub: string, argv: string[]): number {
+  const { flags, rest } = parseFlags(argv);
+  const permitted = sub === 'install' ? ['dir', 'all'] : sub === 'list' ? [] : ['dir'];
+  const unknown = Object.keys(flags).filter((flag) => !permitted.includes(flag));
+  if (unknown.length > 0 || flags.dir === 'true' || (flags.all ?? 'true') !== 'true') {
+    process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+
+  const sourceDir = sourceSkillsDir();
+  if (!existsSync(sourceDir)) {
+    process.stderr.write(SKILLS_ABSENT);
+    return 1;
+  }
+  const sources = readSkillSources(sourceDir);
+
+  if (sub === 'list') {
+    if (rest.length > 0) {
+      process.stderr.write(SKILLS_USAGE);
+      return 2;
+    }
+    // The whole description, wrapped rather than cut: it is what decides
+    // whether a host reaches for the skill, so a shortened one would be a
+    // different skill's description.
+    for (const source of sources) {
+      process.stdout.write(
+        `  ${source.name} ${source.version ?? '-'}\n${wrapSkillText(source.description, '    ')}\n`,
+      );
+    }
+    process.stdout.write(
+      `skills: ${String(sources.length)} shipped by this checkout\n` +
+        '  Install one with: construct skills install <name>\n',
+    );
+    return 0;
+  }
+
+  const dir = resolve(flags.dir ?? resolveSkillsDir());
+
+  if (sub === 'installed') {
+    if (rest.length > 0) {
+      process.stderr.write(SKILLS_USAGE);
+      return 2;
+    }
+    const folders = readInstalledFolders(dir);
+    const statuses = skillStatuses(sources, folders);
+    const name = padded(statuses.map((status) => status.name));
+    for (const status of statuses) {
+      process.stdout.write(
+        `  ${status.state.padEnd(9)} ${name(status.name)}  ${status.version ?? '-'}  — ${status.why}\n`,
+      );
+    }
+    const counted = (state: string): number =>
+      statuses.filter((status) => status.state === state).length;
+    const others = foreignFolders(sources, folders);
+    process.stdout.write(
+      `skills: ${String(counted('current'))} current, ${String(counted('diverged'))} diverged, ` +
+        `${String(counted('absent'))} not installed in ${dir}` +
+        `${existsSync(dir) ? '' : ' (which does not exist)'}\n` +
+        (others.length > 0
+          ? `  ${String(others.length)} other skill folder(s) there, none of them this checkout's\n`
+          : ''),
+    );
+    return 0;
+  }
+
+  if (sub === 'install') return skillInstall(sources, dir, rest, flags.all === 'true');
+  return skillUninstall(sources, dir, rest);
+}
+
+function skillInstall(
+  sources: readonly SkillSource[],
+  dir: string,
+  named: readonly string[],
+  all: boolean,
+): number {
+  // Either every skill or the ones named, never both and never neither: an
+  // install that guessed at its own subject would write files nobody asked for.
+  if (all === named.length > 0) {
+    process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+  const { selected, unknown } = all
+    ? { selected: sources, unknown: [] as readonly string[] }
+    : selectSkills(sources, named);
+  if (unknown.length > 0) {
+    process.stderr.write(
+      `skills: no skill named ${unknown.map((name) => `"${name}"`).join(', ')} in this checkout\n` +
+        '  construct skills list names what there is.\n',
+    );
+    return 2;
+  }
+
+  // Every target is checked before anything is created, so a refusal never
+  // leaves a partial install behind.
+  for (const source of selected) {
+    const planted = symlinkToward(symlinkGuardRoot(dir), join(dir, source.name, SKILL_FILENAME));
+    if (planted) {
+      process.stderr.write(
+        `skills: ${planted} is a symbolic link — writing through it would land outside ${dir}.\n` +
+          '  Remove the link, or point --dir at the real directory.\n',
+      );
+      return 1;
+    }
+  }
+
+  let written = 0;
+  for (const source of selected) {
+    const target = join(dir, source.name, SKILL_FILENAME);
+    const existing = existsSync(target) ? readFileSync(target) : null;
+    if (existing !== null && sameSkillBytes(existing, source.bytes)) {
+      process.stdout.write(`  current   ${source.name} — already byte-identical, left alone\n`);
+      continue;
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, source.bytes);
+    written += 1;
+    process.stdout.write(
+      `  ${existing === null ? 'installed' : 'replaced '} ${source.name} ${source.version ?? '-'}\n`,
+    );
+  }
+  process.stdout.write(
+    `skills: ${String(written)} of ${String(selected.length)} written to ${dir}, copied byte for byte\n` +
+      '  See them with: construct skills installed\n',
+  );
+  return 0;
+}
+
+function skillUninstall(
+  sources: readonly SkillSource[],
+  dir: string,
+  named: readonly string[],
+): number {
+  if (named.length !== 1) {
+    process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+  const name = named[0];
+  const source = sources.find((candidate) => candidate.name === name);
+  if (!source) {
+    process.stderr.write(
+      `skills: no skill named "${name}" in this checkout — nothing was removed\n` +
+        '  construct skills installed names what is there.\n',
+    );
+    return 2;
+  }
+  // Removal reaches through the directory exactly as writing does, so it
+  // refuses a symbolic link the same way: a removal redirected by a link would
+  // delete a folder somewhere the user never named.
+  const planted = symlinkToward(symlinkGuardRoot(dir), join(dir, name));
+  if (planted) {
+    process.stderr.write(
+      `skills: ${planted} is a symbolic link — removing through it would reach outside ${dir}.\n` +
+        '  Remove the link, or point --dir at the real directory.\n',
+    );
+    return 1;
+  }
+  const folder = join(dir, name);
+  const plan = planSkillRemoval(
+    source,
+    existsSync(folder) && statSync(folder).isDirectory()
+      ? readInstalledFolder(dir, name)
+      : undefined,
+  );
+  if (plan.outcome === 'absent') {
+    process.stdout.write(`skills: nothing to remove — ${name} is not installed in ${dir}\n`);
+    return 0;
+  }
+  if (plan.outcome === 'keep') {
+    process.stderr.write(
+      `skills: kept ${name} — ${plan.why}\n` +
+        `  Nothing was removed. Delete ${folder} by hand if that is what you meant.\n`,
+    );
+    return 1;
+  }
+  rmSync(folder, { recursive: true, force: true });
+  process.stdout.write(`skills: removed ${name} from ${dir}\n  ${plan.why}\n`);
+  return 0;
+}
+
 /**
  * Write the Agent Skills pack, or remove one. The pack is output, not state:
  * every decision about what belongs in it, and which folders removal may
@@ -5240,10 +5514,16 @@ function symlinkGuardRoot(out: string): string {
  * version, does the reading and writing, and says what happened.
  */
 export function skills(argv: string[]): number {
-  const { flags } = parseFlags(argv);
+  // Two things share this verb: the shipped method skills, carried by the
+  // subcommands, and the role pack, generated by the flag form. The first word
+  // decides which, and the flag form takes no words at all — so a mistyped
+  // subcommand is refused rather than silently writing a pack.
+  if (SKILL_LIBRARY_SUBCOMMANDS.includes(argv[0])) return skillLibrary(argv[0], argv.slice(1));
+
+  const { flags, rest } = parseFlags(argv);
   const known = new Set(['out', 'uninstall']);
   const unknown = Object.keys(flags).filter((f) => !known.has(f));
-  if (unknown.length > 0 || flags.out === 'true') {
+  if (unknown.length > 0 || rest.length > 0 || flags.out === 'true') {
     process.stderr.write(SKILLS_USAGE);
     return 2;
   }
