@@ -27,6 +27,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { main } from '../../src/cli/index.ts';
+import { readReachableSkills } from '../../src/cli/skills.ts';
+import { SHIPPED_SKILLS } from '../../src/kernel/skills/library.ts';
 
 interface Capture {
   readonly code: number;
@@ -433,5 +435,39 @@ test('the subcommands are named in the usage line, beside the pack the verb also
     assert.equal(existsSync(join(result.root, '.claude')), false);
   } finally {
     rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('what a dispatch can reach is read from the directory it was given, never from home', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-reach-'));
+  try {
+    mkdirSync(join(dir, 'written-voice'));
+    writeFileSync(
+      join(dir, 'written-voice', 'SKILL.md'),
+      '---\nname: written-voice\ndescription: the copy this machine would load\n---\n\nbody\n',
+    );
+    // A folder nobody ships is left alone: the reader names what this project
+    // ships, and describes each by the file that is actually there.
+    mkdirSync(join(dir, 'somebody-elses-skill'));
+    writeFileSync(join(dir, 'somebody-elses-skill', 'SKILL.md'), '---\nname: x\n---\n');
+
+    const reachable = readReachableSkills(dir);
+    assert.equal(reachable.installDir, dir);
+    assert.deepEqual(
+      reachable.offers.map((offer) => offer.name),
+      [...SHIPPED_SKILLS].sort(),
+      'every shipped skill is reachable from a checkout',
+    );
+    const installed = reachable.offers.filter((offer) => offer.reach === 'installed');
+    assert.deepEqual(
+      installed.map((offer) => [offer.name, offer.description]),
+      [['written-voice', 'the copy this machine would load']],
+      'the installed copy answers, described by its own text',
+    );
+    assert.ok(
+      reachable.offers.every((offer) => offer.locator.startsWith(dir) || offer.reach === 'checkout'),
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

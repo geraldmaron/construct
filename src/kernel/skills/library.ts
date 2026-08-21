@@ -27,6 +27,26 @@ import { SKILL_FILENAME, skillFrontmatterLines } from './projection.ts';
 
 export { SKILL_FILENAME };
 
+/**
+ * The names this project ships a method skill under, in name order. It is a
+ * list of names rather than a list of files because the published package
+ * carries no skill files at all: a consumer who installed the skills from git
+ * still has them on disk, and without this list nothing in an installed spine
+ * could tell which folders in a skills directory it was entitled to name.
+ *
+ * Kept equal to the `skills/` directory listing by the skill-spec lint, so a
+ * skill added or removed there cannot silently disagree with this.
+ */
+export const SHIPPED_SKILLS: readonly string[] = Object.freeze([
+  'adversarial-review',
+  'context-mapping',
+  'decision-framing',
+  'intake',
+  'investigative-research',
+  'requirements-structuring',
+  'written-voice',
+]);
+
 /** One skill this checkout ships: its folder name, its frontmatter, its exact bytes. */
 export interface SkillSource {
   /** The folder name under the source directory, which is also the skill's name. */

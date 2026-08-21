@@ -24,6 +24,7 @@ import { loadOrCreateSecret } from '../kernel/capabilities/secretfile.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
+import { readReachableSkills } from './skills.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, now, secretFile, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
@@ -242,6 +243,9 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       // obligation can name the repository's own gate instead of only the
       // standard behind it.
       manifests: readRepoManifest,
+      // What method the machine can offer a role beyond its lens: the skills
+      // library, read where it actually sits rather than assumed present.
+      skills: readReachableSkills,
     });
 
     const task = report.settled.map((id) => getTask(store, id)).find((t) => t !== null);
