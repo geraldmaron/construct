@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findUntaggedClaims, findScaffoldingCitations } from '../../src/kernel/verify/claims.ts';
+import {
+  findUntaggedClaims,
+  findScaffoldingCitations,
+  findHarnessCorpusCitations,
+  namesHarnessCorpus,
+} from '../../src/kernel/verify/claims.ts';
 
 test('flags a dollar figure with no citation or unverified tag', () => {
   const findings = findUntaggedClaims('Revenue grew to $4.2M last quarter.');
@@ -106,4 +111,58 @@ test('legitimate citations and prose mentions of the catalog are not refused', (
     'Their product catalog lists 40 SKUs. [cite: catalog-2026.pdf]',
   ].join('\n');
   assert.equal(findScaffoldingCitations(fine).length, 0);
+});
+
+// The Aug 13 shape-scaling RFC's own observed failure: strategy-alignment
+// cited fixtures/org-harness-broad/corpus/policies/agreements.md and an 18F
+// Strategy.md as if they were Construct's. Both files sit inside the
+// checkout, so a path-prefix check against the repo root would allow them —
+// the fixture organizations exist so routing and composition can be
+// measured, and are not a source of strategy, policy, or product fact for
+// any other run.
+
+test('a citation naming fixtures/org-harness-broad/corpus/... is flagged', () => {
+  const line =
+    'State and local agreements follow the standard template ' +
+    '[cite:fixtures/org-harness-broad/corpus/policies/agreements.md].';
+  const findings = findHarnessCorpusCitations(line);
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].line, 1);
+});
+
+test('a citation naming fixtures/org-harness/... (the non-broad sibling) is flagged too', () => {
+  const line = 'Our roadmap follows the same shape [cite:fixtures/org-harness/corpus/strategy.md].';
+  assert.equal(findHarnessCorpusCitations(line).length, 1);
+});
+
+test('a normal citation to a real declared source is not flagged', () => {
+  const fine = [
+    'Revenue grew to $4.2M last quarter [cite:q3-report.pdf].',
+    'The rate is set in the signed agreement [cite:agreement.pdf, section 4].',
+    'See docs/strategy.md for the roadmap [cite:docs/strategy.md].',
+  ].join('\n');
+  assert.equal(findHarnessCorpusCitations(fine).length, 0);
+});
+
+test('a [research:...] or [unverified] marker naming the same path is unaffected', () => {
+  // This check is about representing the fixture corpus as the requester's
+  // OWN material — only [cite:...] makes that claim. [research:...] already
+  // says the source sits outside the run's ground, and [unverified] sources
+  // nothing at all.
+  const line = [
+    '[research:fixtures/org-harness-broad/corpus/policies/agreements.md]',
+    'The retention period is unstated [unverified] (see fixtures/org-harness-broad/corpus/strategy.md).',
+  ].join('\n');
+  assert.equal(findHarnessCorpusCitations(line).length, 0);
+});
+
+test('namesHarnessCorpus recognizes both fixture directories as ground roots', () => {
+  assert.equal(namesHarnessCorpus('fixtures/org-harness-broad'), true);
+  assert.equal(namesHarnessCorpus('fixtures/org-harness'), true);
+  assert.equal(namesHarnessCorpus('/abs/path/fixtures/org-harness-broad'), true);
+});
+
+test('namesHarnessCorpus does not fire on an unrelated declared root', () => {
+  assert.equal(namesHarnessCorpus('/ground/repo'), false);
+  assert.equal(namesHarnessCorpus('fixtures/org-other'), false);
 });
