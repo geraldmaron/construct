@@ -3,12 +3,17 @@
  * scripts/probe-goose-conformance.mjs — check the pinned expectations in
  * src/hosts/goose/pin.ts against a live `goose` binary.
  *
- * Defaults to a local Ollama model so re-verification costs nothing. `goose`
- * takes provider and model as two separate flags; --model here still takes a
- * single "provider/model" string for consistency with the other probes in
- * this repo and is split before being passed on.
+ * Defaults to goose's own claude-code provider, which shells out to the
+ * already-authenticated local `claude` CLI: development model calls come from
+ * Gerald's Claude Code or Cursor subscriptions, never a local server
+ * (CLAUDE.md). `goose` takes provider and model as two separate flags;
+ * --model here still takes a single "provider/model" string for consistency
+ * with the other probes in this repo and is split before being passed on.
+ * Ollama stays reachable for a caller who names it explicitly — it is not
+ * chosen for you.
  *
- *   node scripts/probe-goose-conformance.mjs [--binary /path/to/goose] [--model ollama/qwen3.5:4b]
+ *   node scripts/probe-goose-conformance.mjs [--binary /path/to/goose]
+ *   node scripts/probe-goose-conformance.mjs --model ollama/qwen3.5:4b   # explicit opt-in, local
  */
 
 import { spawn } from 'node:child_process';
@@ -24,9 +29,9 @@ const flag = (name, fallback) => {
 };
 
 const binary = flag('binary', 'goose');
-const modelArg = flag('model', 'ollama/qwen3.5:4b');
+const modelArg = flag('model', 'claude-code/claude-sonnet-5');
 const slash = modelArg.indexOf('/');
-const provider = slash >= 0 ? modelArg.slice(0, slash) : 'ollama';
+const provider = slash >= 0 ? modelArg.slice(0, slash) : 'claude-code';
 const model = slash >= 0 ? modelArg.slice(slash + 1) : modelArg;
 
 const checked = new Set();

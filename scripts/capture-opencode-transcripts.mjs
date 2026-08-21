@@ -8,14 +8,19 @@
  * re-runnable rather than one-shot: point it at a new OpenCode version and diff
  * the fixtures to see exactly what moved.
  *
- * Defaults to local Ollama models. That is deliberate — these fixtures should
- * cost nothing to regenerate, or they will stop being regenerated.
+ * OpenCode has no subscription-backed path this script could default to: its
+ * stored GitHub Copilot and OpenCode Go credentials expose zero invocable
+ * model IDs, confirmed by a direct failing call (docs/host-trial-cursor.md).
+ * Development model calls otherwise come from Gerald's Claude Code or Cursor
+ * subscriptions, never a local server (CLAUDE.md); with neither reachable
+ * through OpenCode, this refuses without --model and --tool-model rather than
+ * picking either for you — including a local one, which used to be silently
+ * free to regenerate and is now a caller's explicit, disclosed choice.
  *
- *   node scripts/capture-opencode-transcripts.mjs
- *   node scripts/capture-opencode-transcripts.mjs --model ollama/qwen3.5:4b
+ *   node scripts/capture-opencode-transcripts.mjs --model ollama/qwen3.5:4b --tool-model ollama/gpt-oss:20b
  *
- * Requires a running OpenCode and, for the default models, a running Ollama.
- * The captured files are committed; tests never run this.
+ * Requires a running OpenCode and, for a local model, a running Ollama. The
+ * captured files are committed; tests never run this.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -30,8 +35,18 @@ function flag(name, fallback) {
 }
 
 const binary = flag('binary', 'opencode');
-const model = flag('model', 'ollama/qwen3.5:4b');
-const toolModel = flag('tool-model', 'ollama/gpt-oss:20b');
+const model = flag('model', undefined);
+const toolModel = flag('tool-model', undefined);
+if (!model || !toolModel) {
+  process.stderr.write(
+    'OpenCode has no subscription-backed path: its stored GitHub Copilot and\n' +
+      'OpenCode Go credentials expose zero invocable model IDs, so nothing here\n' +
+      'can choose one for you. Pass both --model <provider>/<model> and\n' +
+      '--tool-model <provider>/<model> — for example --model ollama/qwen3.5:4b\n' +
+      '--tool-model ollama/gpt-oss:20b to capture fixtures against local models on purpose.\n',
+  );
+  process.exit(2);
+}
 const outDir = new URL('../tests/hosts/opencode/fixtures/', import.meta.url);
 
 mkdirSync(outDir, { recursive: true });

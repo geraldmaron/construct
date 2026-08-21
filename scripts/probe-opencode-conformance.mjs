@@ -8,17 +8,22 @@
  * is why this is a script and not a test: the hermetic suite must not depend on
  * an external binary, a model, or a network.
  *
+ * OpenCode has no subscription-backed path this probe could default to: its
+ * stored GitHub Copilot and OpenCode Go credentials expose zero invocable
+ * model IDs, confirmed by a direct failing call (docs/host-trial-cursor.md).
+ * Development model calls otherwise come from Gerald's Claude Code or Cursor
+ * subscriptions, never a local server (CLAUDE.md); with neither reachable
+ * through OpenCode, this probe refuses without --model and --tool-model
+ * rather than picking either for you.
+ *
  * Run it after any OpenCode upgrade, and before trusting a run on a drifted
  * version:
  *
- *   node scripts/probe-opencode-conformance.mjs
- *   node scripts/probe-opencode-conformance.mjs --model ollama/qwen3.5:4b
+ *   node scripts/probe-opencode-conformance.mjs --model ollama/qwen3.5:4b --tool-model ollama/gpt-oss:20b
  *
  * Exit codes: 0 all expectations hold. 1 at least one broke — read the failure,
  * re-verify, then update the pin. 2 the probe could not run at all (no binary,
  * no model), which is unknown, not pass.
- *
- * Defaults to a local Ollama model so that re-probing costs nothing.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -39,8 +44,18 @@ const flag = (name, fallback) => {
 };
 
 const binary = flag('binary', 'opencode');
-const model = flag('model', 'ollama/qwen3.5:4b');
-const toolModel = flag('tool-model', 'ollama/gpt-oss:20b');
+const model = flag('model', undefined);
+const toolModel = flag('tool-model', undefined);
+if (!model || !toolModel) {
+  process.stderr.write(
+    'OpenCode has no subscription-backed path: its stored GitHub Copilot and\n' +
+      'OpenCode Go credentials expose zero invocable model IDs, so nothing here\n' +
+      'can choose one for you. Pass both --model <provider>/<model> and\n' +
+      '--tool-model <provider>/<model> — for example --model ollama/qwen3.5:4b\n' +
+      '--tool-model ollama/gpt-oss:20b to probe against local models on purpose.\n',
+  );
+  process.exit(2);
+}
 
 const results = [];
 const expectation = (id) => CONFORMANCE_EXPECTATIONS.find((e) => e.id === id);

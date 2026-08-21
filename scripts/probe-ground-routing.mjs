@@ -186,6 +186,13 @@ const OPENROUTER = 'https://openrouter.ai/api/v1/chat/completions';
 const OLLAMA = (process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434').replace(/\/$/, '');
 const CALL_TIMEOUT_MS = 15 * 60 * 1000;
 
+// Neither transport below is one of Gerald's subscriptions, and neither is
+// chosen for a caller who says nothing: `completion` only runs once
+// `namerSpec` (below) has named a transport explicitly through
+// --namer=<transport>/<model>, and omitting --namer entirely skips the namer
+// arm rather than reaching either of these. Pass ollama/<model> only as a
+// deliberate local comparison arm, the same way an explicit --namer-host
+// ollama on measure-decisions.mjs is a caller's own choice, not a default.
 function completion(transport, model) {
   if (transport === 'ollama') {
     return async (prompt) => {

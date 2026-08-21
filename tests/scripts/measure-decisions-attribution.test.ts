@@ -186,3 +186,32 @@ test('recording an arm on the claude host without a pinned model is refused befo
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('omitting --namer-host reaches the claude refusal, not a silent ollama default', async () => {
+  // CLAUDE.md's sourcing rule: development model calls come from Claude Code
+  // or Cursor, never a local server, unless a caller names one explicitly.
+  // Before that rule, an omitted --namer-host fell back to 'ollama' here, so
+  // this exact invocation would have dialled localhost:11434 instead of
+  // hitting this refusal. No stub is wired up for ollama in this test — if
+  // the default ever regresses back to a local host, this either hangs on a
+  // real network call or fails with an ollama connection error, not with the
+  // claude-host message asserted below.
+  const dir = mkdtempSync(join(tmpdir(), 'construct-attribution-'));
+  try {
+    const recordTo = join(dir, 'arm.json');
+    const result = await execFileAsync(
+      process.execPath,
+      [SCRIPT, '--namer', '--section', '10', '--namer-record', recordTo],
+      { maxBuffer: 32 * 1024 * 1024 },
+    ).then(
+      (ok) => ({ code: 0, stdout: ok.stdout }),
+      (err: { code?: number; stdout?: string }) => ({ code: err.code ?? 1, stdout: err.stdout ?? '' }),
+    );
+
+    assert.equal(result.code, 1, 'a refusal exits non-zero');
+    assert.match(result.stdout, /NOT RUN: --namer-record on the claude host needs --namer-model/);
+    assert.ok(!existsSync(recordTo), 'nothing is written');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
