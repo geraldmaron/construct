@@ -85,7 +85,15 @@
  * triggers are dropped and recreated rather than created-if-absent, because a
  * stale trigger in an existing store would refuse the erasure it was rewritten
  * to allow — the one case where leaving an old definition in place is not
- * harmless.
+ * harmless. Schema version 16 adds `source_watches` and `source_watch_firings`:
+ * a watch pointed at a declared source rather than at Construct's own
+ * tracker-repo agreement. A declaration is a setting like `standing_outcomes` —
+ * cadence, an optional host, retired rather than deleted — but what a firing
+ * here carries is not a filed run, it is the structural snapshot the sweep
+ * actually saw. Append-only for the same reason `standing_runs` is: the next
+ * sweep's comparison depends on exactly what the prior one recorded, and a
+ * snapshot that could be overwritten would let a later cleanup quietly
+ * redefine what "changed since last time" means.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
@@ -110,7 +118,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 15;
+export const SCHEMA_VERSION = 16;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -612,6 +620,37 @@ BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its 
 CREATE TRIGGER IF NOT EXISTS standing_runs_no_delete
 BEFORE DELETE ON standing_runs
 BEGIN SELECT RAISE(ABORT, 'standing_runs is append-only: every firing keeps its lineage'); END;
+
+CREATE TABLE IF NOT EXISTS source_watches (
+  id            TEXT PRIMARY KEY,
+  workspace     TEXT NOT NULL,
+  source        TEXT NOT NULL REFERENCES sources (id),
+  host          TEXT,
+  every_minutes INTEGER NOT NULL CHECK (every_minutes > 0),
+  declared_at   TEXT NOT NULL,
+  retired_at    TEXT
+) STRICT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS source_watches_active_per_source
+  ON source_watches (source) WHERE retired_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS source_watch_firings (
+  seq      INTEGER PRIMARY KEY AUTOINCREMENT,
+  watch    TEXT NOT NULL,
+  run      TEXT NOT NULL,
+  fired_at TEXT NOT NULL,
+  snapshot TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS source_watch_firings_watch ON source_watch_firings (watch, seq);
+
+CREATE TRIGGER IF NOT EXISTS source_watch_firings_no_update
+BEFORE UPDATE ON source_watch_firings
+BEGIN SELECT RAISE(ABORT, 'source_watch_firings is append-only: every firing keeps its lineage'); END;
+
+CREATE TRIGGER IF NOT EXISTS source_watch_firings_no_delete
+BEFORE DELETE ON source_watch_firings
+BEGIN SELECT RAISE(ABORT, 'source_watch_firings is append-only: every firing keeps its lineage'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
