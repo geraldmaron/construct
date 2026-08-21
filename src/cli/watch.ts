@@ -20,7 +20,12 @@ import {
   recordSourceWatchFiring,
   retireSourceWatch,
 } from '../kernel/store/source-watches.ts';
-import { constructFindings, CONSTRUCT_GROUND } from '../kernel/watch/construct-ground.ts';
+import {
+  constructFindings,
+  divergenceFindings,
+  lostRecordFindings,
+  CONSTRUCT_GROUND,
+} from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import {
@@ -29,9 +34,9 @@ import {
   sourceWatchFindings,
 } from '../kernel/watch/source-ground.ts';
 import type { SourceSnapshot } from '../kernel/watch/source-ground.ts';
-import { reconcileSession } from '../kernel/tracker/session-drift.ts';
+import { describeDivergence, lostRecords, reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { surveySource } from '../hosts/sources.ts';
-import { gatherRepoEvidence, isFailure } from '../hosts/repo/evidence.ts';
+import { gatherDivergence, gatherRepoEvidence, isFailure, recordedHistory } from '../hosts/repo/evidence.ts';
 import { HOST_NAMES, now, withStore } from './runtime.ts';
 import { splitFlags } from './flags.ts';
 import { parseCadence, renderCadence } from './cadence.ts';
@@ -280,7 +285,18 @@ export function watch(argv: string[]): number {
 
   const at = now();
   const report = reconcileSession(gathered.issues, gathered.evidence, at);
-  const findings = constructFindings(report);
+  // Two more witnesses beyond the tracker-vs-commits reconcile above, read the
+  // same way scripts/reconcile-tracker.mjs reads them, so the standing watch
+  // and the script never disagree about what they found: a close or filing
+  // the export's own history remembers and the export no longer does, and
+  // beads with commits on main that this checkout cannot see at all.
+  const lost = lostRecords(gathered.issues, recordedHistory(root, undefined, at) ?? undefined);
+  const divergence = describeDivergence(gatherDivergence({ root }) ?? undefined);
+  const findings = [
+    ...constructFindings(report),
+    ...lostRecordFindings(lost),
+    ...divergenceFindings(divergence),
+  ];
   const target: Watch = { id: 'construct', ground: CONSTRUCT_GROUND };
 
   return withStore((store) => {
