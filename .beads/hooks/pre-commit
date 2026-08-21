@@ -5,6 +5,14 @@
 _construct_root="$(git rev-parse --show-toplevel)"
 node "$_construct_root/scripts/hooks/secret-scan.mjs" || exit 1
 node "$_construct_root/scripts/hooks/repo-gate.mjs" || true
+# Whether the author staged the tracker export is only knowable here, before
+# the beads section stages it unconditionally. The answer is left where the
+# keeper section at the end of this file can read it.
+_construct_git_dir="$(git rev-parse --git-dir)"
+rm -f "$_construct_git_dir/construct-tracker-staged"
+if git diff --cached --name-only -- .beads/issues.jsonl | grep -q .; then
+  : > "$_construct_git_dir/construct-tracker-staged"
+fi
 # --- END CONSTRUCT GATE ---
 
 # --- BEGIN BEADS INTEGRATION v1.0.3 ---
@@ -30,3 +38,18 @@ if command -v bd >/dev/null 2>&1; then
   if [ $_bd_exit -ne 0 ]; then exit $_bd_exit; fi
 fi
 # --- END BEADS INTEGRATION v1.0.3 ---
+# --- BEGIN CONSTRUCT TRACKER KEEPER ---
+# Managed by scripts/install-git-hooks.sh — re-running the installer replaces
+# this section and touches nothing else in the file.
+#
+# Last on purpose. The section above re-exports the whole tracker database and
+# stages it, which attaches every bead any session touched to a commit that was
+# about something else. The export is worth having and the staging is not, so
+# the file comes back out of the index here. An author who staged it themselves
+# meant it, and keeps it, with the fresher export the section above just wrote.
+_construct_git_dir="$(git rev-parse --git-dir)"
+if [ ! -e "$_construct_git_dir/construct-tracker-staged" ]; then
+  git restore --staged -- .beads/issues.jsonl 2>/dev/null || true
+fi
+rm -f "$_construct_git_dir/construct-tracker-staged"
+# --- END CONSTRUCT TRACKER KEEPER ---
