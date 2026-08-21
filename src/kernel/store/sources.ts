@@ -20,6 +20,12 @@
  * recorded decision that this module refuses without authority — never a side
  * effect of proposing.
  *
+ * A change to a document is the same kind of write and takes the same gate. It
+ * carries more than a ticket comment does — which document, precisely, and the
+ * words on each side of the change — so those parts sit in a row beside the
+ * proposal, written in the same transaction, because a proposed document change
+ * whose words went missing is not something anyone can decide about.
+ *
  * Engagement mode is the one setting here: `team` means Construct is the
  * whole team and tracks work its own way; `seat` means it fills one role on a
  * human team and works inside their tracker and conventions. Settings, unlike
@@ -27,6 +33,7 @@
  */
 
 import type { Store } from './open.ts';
+import { transact } from './open.ts';
 
 export const SOURCE_KINDS = ['directory', 'git', 'github', 'jira', 'docs'] as const;
 
@@ -73,6 +80,47 @@ export interface WriteProposal {
   readonly justification: string;
   readonly risk: 'low' | 'high';
   readonly proposedAt: string;
+}
+
+/**
+ * The three shapes an outward change to a document takes.
+ *
+ * `redline` replaces words that are already there. `insertion` adds words
+ * without displacing any. `authored` writes a document that does not yet
+ * exist. They are distinguished because a person deciding needs to know which
+ * one they are looking at before they read a line of it: struck words are gone
+ * from the document afterwards, added words are not, and a new document is a
+ * page nobody has ever read.
+ */
+export const DOC_EDIT_KINDS = ['redline', 'insertion', 'authored'] as const;
+
+export type DocEditKind = (typeof DOC_EDIT_KINDS)[number];
+
+/**
+ * One proposed change to a document, in its parts.
+ *
+ * The proposal it belongs to holds the same change as the text a person
+ * approves and a host is handed; this is that text taken apart, so a surface
+ * showing the change reads fields instead of parsing prose back out of it.
+ */
+export interface DocEdit {
+  readonly proposal: string;
+  readonly kind: DocEditKind;
+  /** Which document, precisely: its path or identifier inside the source. */
+  readonly document: string;
+  /**
+   * Redline: the exact words being replaced. Insertion: where the new words
+   * go, in words a reader of the document could follow. Authored: empty,
+   * because a document that does not exist yet displaces nothing.
+   */
+  readonly anchor: string;
+  /**
+   * The words that would stand there: the replacement, the addition, or the
+   * new document's body. Empty only for a redline that strikes words and puts
+   * nothing in their place.
+   */
+  readonly proposed: string;
+  readonly recordedAt: string;
 }
 
 export type ProposalVerdict = 'approved' | 'rejected' | 'applied';
@@ -312,6 +360,92 @@ export function proposeWrite(store: Store, proposal: WriteProposal): void {
       proposal.risk,
       proposal.proposedAt,
     );
+}
+
+/**
+ * Propose a change to a document: the row a decision is made about, and the
+ * parts of the change beside it, written together so neither can exist without
+ * the other.
+ *
+ * The refusals here are about what a person could act on. A change naming no
+ * document names no target. A redline that does not say which words it
+ * replaces is a claim that something should differ, not a change anyone can
+ * carry out. An insertion that does not say where it goes leaves the placement
+ * to whoever applies it, which is the guessing this whole surface exists to
+ * remove. And an authored document that quotes words it displaces is a redline
+ * filed under the wrong kind, so it is refused rather than silently recorded
+ * as the one that destroys nothing.
+ */
+export function proposeDocEdit(
+  store: Store,
+  proposal: WriteProposal,
+  edit: Omit<DocEdit, 'proposal'>,
+): void {
+  if (!(DOC_EDIT_KINDS as readonly string[]).includes(edit.kind)) {
+    throw new Error(
+      `proposeDocEdit: unknown kind "${edit.kind}" (kinds: ${DOC_EDIT_KINDS.join(', ')})`,
+    );
+  }
+  if (edit.document.trim() === '') {
+    throw new Error(`proposeDocEdit: ${proposal.id} names no document`);
+  }
+  if (edit.kind === 'redline' && edit.anchor.trim() === '') {
+    throw new Error(
+      `proposeDocEdit: ${proposal.id} is a redline that does not say which words it replaces`,
+    );
+  }
+  if (edit.kind === 'insertion' && edit.anchor.trim() === '') {
+    throw new Error(`proposeDocEdit: ${proposal.id} is an insertion that does not say where it goes`);
+  }
+  if (edit.kind === 'authored' && edit.anchor.trim() !== '') {
+    throw new Error(
+      `proposeDocEdit: ${proposal.id} authors a document and also quotes words it replaces; ` +
+        'a change that replaces words is a redline',
+    );
+  }
+  if (edit.kind !== 'redline' && edit.proposed.trim() === '') {
+    throw new Error(
+      `proposeDocEdit: ${proposal.id} proposes no words to ` +
+        (edit.kind === 'authored' ? 'write' : 'add'),
+    );
+  }
+  transact(store, () => {
+    proposeWrite(store, proposal);
+    store.db
+      .prepare(
+        `INSERT INTO doc_edits (proposal, kind, document, anchor, proposed, recorded_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(proposal.id, edit.kind, edit.document, edit.anchor, edit.proposed, edit.recordedAt);
+  });
+}
+
+/** The parts of a proposed document change, or null when the proposal is not one. */
+export function docEditFor(store: Store, proposal: string): DocEdit | null {
+  const row = store.db
+    .prepare(
+      `SELECT proposal, kind, document, anchor, proposed, recorded_at
+       FROM doc_edits WHERE proposal = ?`,
+    )
+    .get(proposal) as
+    | {
+        proposal: string;
+        kind: string;
+        document: string;
+        anchor: string;
+        proposed: string;
+        recorded_at: string;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    proposal: row.proposal,
+    kind: row.kind as DocEditKind,
+    document: row.document,
+    anchor: row.anchor,
+    proposed: row.proposed,
+    recordedAt: row.recorded_at,
+  };
 }
 
 export function getProposal(store: Store, id: string): WriteProposal | null {

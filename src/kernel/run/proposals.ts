@@ -38,7 +38,19 @@
  * nothing and can be re-run. Ids are derived from the deliverable and the line,
  * so a second extraction of the same document proposes the same ids and the
  * store's own uniqueness is what keeps the queue from doubling.
+ *
+ * A change to a document is the same kind of proposal, composed rather than
+ * read: its words are stated, not found in a deliverable, because no sentence
+ * of a report is a redline. The four rules above hold unchanged — nothing is
+ * written outward, the citation is carried, the tier follows the action, and
+ * the smallest true statement of the change is the one recorded. What it adds
+ * is the target: which document, and the words on each side of the change,
+ * assembled into the change text a person approves so that approving needs no
+ * second document open beside the queue.
  */
+
+import { createHash } from 'node:crypto';
+import type { DocEditKind } from '../store/sources.ts';
 
 /** What a proposal would do to the source it names. */
 export const WRITE_ACTIONS = ['comment', 'label', 'create', 'update'] as const;
@@ -75,6 +87,17 @@ export interface Deliverable {
 }
 
 const CITATION_PATTERN = /^deliverable:(.+)#L(\d+)$/;
+
+/**
+ * Whether this citation claims a line of a deliverable, and therefore has to
+ * resolve to one before anything is filed on it. A citation of any other shape
+ * — a note line, a source, a person — is grounding a reader checks themselves,
+ * and refusing it here would only push people into writing the one shape this
+ * module can check whether or not it is true.
+ */
+export function claimsDeliverable(citation: string): boolean {
+  return CITATION_PATTERN.test(citation.trim());
+}
 
 /**
  * The line a citation names, or null when it names none. Kept beside the
@@ -329,4 +352,185 @@ export function proposalsFrom(input: ExtractionInput): Extraction {
   }
 
   return { proposals, refused };
+}
+
+/**
+ * What a change to a document does to the source holding it: putting words
+ * into a document that already exists is an update to what it says, and
+ * writing a new one is a create.
+ *
+ * Both are high, and that is the answer rather than an oversight. A redline
+ * cannot be undone by anyone reading the result — the words it struck are not
+ * on the page to be put back. A new document destroys nothing, but a documents
+ * source is exactly what this system reads back as organizational context, so
+ * a workspace's standing yes to the low-risk class would let a run publish
+ * prose into a documents system and a later run cite it as ground. Neither is
+ * the annotation class, so neither rides standing consent.
+ */
+export function actionOfDocEdit(kind: DocEditKind): WriteAction {
+  return kind === 'authored' ? 'create' : 'update';
+}
+
+export interface DocEditRequest {
+  readonly kind: DocEditKind;
+  /** The declared source the document lives in. */
+  readonly source: string;
+  /** How that source reads to the person deciding — its locator. */
+  readonly locator: string;
+  /** Which document, precisely: its path or identifier inside the source. */
+  readonly document: string;
+  /**
+   * Redline: the exact words being replaced. Insertion: where the new words
+   * go. Authored: empty.
+   */
+  readonly anchor: string;
+  /** The words that would stand there, or the new document's body. */
+  readonly proposed: string;
+  /** What grounds the change: a finding citation, a note line, a source. */
+  readonly citation: string;
+}
+
+export interface ProposedDocEdit {
+  readonly id: string;
+  readonly source: string;
+  readonly change: string;
+  readonly justification: string;
+  readonly risk: 'low' | 'high';
+  readonly action: WriteAction;
+  readonly kind: DocEditKind;
+  readonly document: string;
+  readonly anchor: string;
+  readonly proposed: string;
+}
+
+export type DocEditOutcome =
+  | { readonly proposal: ProposedDocEdit; readonly refused?: undefined }
+  | { readonly proposal?: undefined; readonly refused: string };
+
+/**
+ * The document part of an id, kept readable so the queue names what a row is
+ * about before anyone opens it.
+ */
+function documentSlug(document: string): string {
+  const slug = document
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 40)
+    .replace(/^-+|-+$/g, '');
+  return slug === '' ? 'document' : slug;
+}
+
+/**
+ * A proposed document change's id, derived from what it would change rather
+ * than from when it was filed. Proposing the same change to the same document
+ * twice therefore reaches the row already waiting instead of putting a second
+ * copy of it in somebody's queue — the same property extraction gets from
+ * deriving ids off the deliverable and the line.
+ */
+export function docEditId(request: DocEditRequest): string {
+  const document = request.document.trim();
+  // Separated by a character no document path, anchor or body can hold, so two
+  // different changes cannot join into one string and come out sharing an id.
+  const digest = createHash('sha256')
+    .update(
+      [request.source, request.kind, document, request.anchor, request.proposed].join('\u0000'),
+    )
+    .digest('hex')
+    .slice(0, 12);
+  return `wp-doc-${documentSlug(document)}-${digest}`;
+}
+
+/** The marker that separates the halves of a change from the words around them. */
+const SIDE = '---';
+
+/**
+ * How the change reads in the queue: what it does, which document, and the
+ * words on each side of it, one under the other. Long enough to approve from
+ * and assembled rather than paraphrased, for the reason every other change
+ * text here is — the person deciding must be reading the words that will be
+ * written, not a second account of them that nobody checked.
+ */
+function docChangeText(request: DocEditRequest): string {
+  switch (request.kind) {
+    case 'redline':
+      return [
+        `redline ${request.document} in ${request.locator}`,
+        `${SIDE} was`,
+        request.anchor,
+        `${SIDE} now`,
+        request.proposed.trim() === ''
+          ? '(struck: these words go, and nothing stands in their place)'
+          : request.proposed,
+      ].join('\n');
+    case 'insertion':
+      return [
+        `insert into ${request.document} in ${request.locator}`,
+        `${SIDE} at`,
+        request.anchor,
+        `${SIDE} add`,
+        request.proposed,
+      ].join('\n');
+    case 'authored':
+    default:
+      return [
+        `author ${request.document} into ${request.locator}`,
+        `${SIDE} new document`,
+        request.proposed,
+      ].join('\n');
+  }
+}
+
+/**
+ * One stated change to a document as a proposal, or the reason it is not one.
+ *
+ * Refused rather than trimmed into something fileable: a change missing the
+ * words it replaces, or the place it goes, or what grounds it, is a change
+ * somebody would have to guess at, and a guess carried out in a documents
+ * system is exactly the write nobody could take back.
+ */
+export function docEditProposal(request: DocEditRequest): DocEditOutcome {
+  if (request.document.trim() === '') {
+    return { refused: 'it names no document, so there is nothing precise to change' };
+  }
+  if (request.citation.trim() === '') {
+    return { refused: "it cites nothing; a change to someone else's document says what grounds it" };
+  }
+  if (request.kind === 'redline' && request.anchor.trim() === '') {
+    return {
+      refused:
+        'a redline says which words it replaces; without them nobody can see what the document ' +
+        'stops saying',
+    };
+  }
+  if (request.kind === 'insertion' && request.anchor.trim() === '') {
+    return { refused: 'an insertion says where it goes, or the placement is left to whoever applies it' };
+  }
+  if (request.kind === 'authored' && request.anchor.trim() !== '') {
+    return {
+      refused: 'a new document replaces no words; a change that quotes what it replaces is a redline',
+    };
+  }
+  if (request.kind !== 'redline' && request.proposed.trim() === '') {
+    return {
+      refused:
+        request.kind === 'authored'
+          ? 'it authors a document with no body'
+          : 'an insertion that adds no words changes nothing',
+    };
+  }
+  const action = actionOfDocEdit(request.kind);
+  return {
+    proposal: {
+      id: docEditId(request),
+      source: request.source,
+      change: docChangeText(request),
+      justification: request.citation.trim(),
+      risk: riskOfAction(action),
+      action,
+      kind: request.kind,
+      document: request.document.trim(),
+      anchor: request.anchor,
+      proposed: request.proposed,
+    },
+  };
 }
