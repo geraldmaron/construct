@@ -123,7 +123,7 @@ That line is the full gate; nothing is "done" without it. Pieces:
 
 - `npm test` — `node --test` over `tests/` (no framework dependency).
 - `npm run smoke` — `scripts/smoke-packaged-install.sh`: pack, install into a scratch project, run the spine as a consumer would.
-- `npm run probe:opencode -- --binary /opt/homebrew/bin/opencode --model <model>` — host conformance against the pinned OpenCode version. The model comes from the sourcing rule below, not from a local server.
+- `npm run probe:opencode -- --binary /opt/homebrew/bin/opencode --model <model> --tool-model <model>` — host conformance against the pinned OpenCode version. OpenCode reaches no subscription-backed model (the sourcing rule below), so both flags are required; the probe refuses rather than choosing one for you.
 - `scripts/hooks/repo-gate.mjs` runs the same checks at commit time and never blocks; treat its output as CI arriving early.
 
 ## Architecture Overview

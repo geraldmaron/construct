@@ -3,17 +3,23 @@
  * scripts/probe-pi-conformance.mjs — check the pinned expectations in
  * src/hosts/pi/pin.ts against a live `pi` binary.
  *
- * Defaults to a local Ollama model so re-verification costs nothing. `pi`
- * takes provider and model as two separate flags; --model here still takes a
- * single "provider/model" string for consistency with the other probes in
- * this repo and is split before being passed on. Ollama only becomes
- * reachable once a `models.json` custom-provider entry names it (see
+ * pi has no subscription-backed path this probe could default to: its Claude
+ * Pro/Max login is interactive-only, with no non-interactive equivalent, and
+ * it registers no MCP client at all (docs/host-trial-pi.md). Development
+ * model calls otherwise come from Gerald's Claude Code or Cursor
+ * subscriptions, never a local server (CLAUDE.md); with neither reachable
+ * through pi, this probe refuses without --model rather than picking one for
+ * you. `pi` takes provider and model as two separate flags; --model here
+ * still takes a single "provider/model" string for consistency with the
+ * other probes in this repo and is split before being passed on. Ollama only
+ * becomes reachable once a `models.json` custom-provider entry names it (see
  * src/hosts/pi/pin.ts) — this probe assumes that hand-authoring has already
  * happened on the measuring machine for the checks that need a real model
  * call; the negative case (a fresh config directory with none of that done)
  * is checked separately and does not depend on it.
  *
- *   node scripts/probe-pi-conformance.mjs [--binary /path/to/pi] [--model ollama/qwen3.5:4b]
+ *   node scripts/probe-pi-conformance.mjs --model ollama/qwen3.5:4b   # explicit opt-in, once hand-configured above
+ *   node scripts/probe-pi-conformance.mjs [--binary /path/to/pi] --model <provider>/<model>
  */
 
 import { spawn } from 'node:child_process';
@@ -29,10 +35,25 @@ const flag = (name, fallback) => {
 };
 
 const binary = flag('binary', 'pi');
-const modelArg = flag('model', 'ollama/qwen3.5:4b');
+const modelArg = flag('model', undefined);
+if (!modelArg) {
+  console.error(
+    'pi has no subscription-backed path: its Claude Pro/Max login is\n' +
+      'interactive-only and it registers no MCP client at all, so nothing here\n' +
+      'can choose a model for you. Pass --model <provider>/<model> naming a\n' +
+      "provider already hand-configured in pi's own models.json (see\n" +
+      'src/hosts/pi/pin.ts) — for example --model ollama/qwen3.5:4b to probe\n' +
+      'against a local model on purpose.',
+  );
+  process.exit(2);
+}
 const slash = modelArg.indexOf('/');
-const provider = slash >= 0 ? modelArg.slice(0, slash) : 'ollama';
-const model = slash >= 0 ? modelArg.slice(slash + 1) : modelArg;
+if (slash === -1) {
+  console.error(`--model must be <provider>/<model>, e.g. ollama/qwen3.5:4b (got "${modelArg}")`);
+  process.exit(2);
+}
+const provider = modelArg.slice(0, slash);
+const model = modelArg.slice(slash + 1);
 
 const checked = new Set();
 let failed = 0;
@@ -173,18 +194,26 @@ const freshConfigDir = mkdtempSync(join(tmpdir(), 'pi-probe-freshconf-'));
 try {
   const freshEnv = { ...process.env, PI_CODING_AGENT_DIR: freshConfigDir };
   const listed = await run(binary, ['--list-models'], { env: freshEnv });
-  const bareOllama = await run(binary, ['--print', '--provider', 'ollama', '--model', model, '--no-session', 'Reply: pong'], { env: freshEnv });
+  // Any provider name proves this claim on a fresh config dir, since none is
+  // configured yet — the string below is deliberately not "ollama" or any
+  // other real provider, so this reads as the negative-path probe it is
+  // rather than as a sourcing default.
+  const bareUnconfigured = await run(
+    binary,
+    ['--print', '--provider', 'construct-probe-unconfigured-provider', '--model', model, '--no-session', 'Reply: pong'],
+    { env: freshEnv },
+  );
   const reportsEmpty = listed.code === 0 && /no models available/i.test(listed.stdout);
-  const bareProviderFails = bareOllama.code !== 0 && /unknown provider/i.test(bareOllama.stderr);
+  const bareProviderFails = bareUnconfigured.code !== 0 && /unknown provider/i.test(bareUnconfigured.stderr);
   if (reportsEmpty && bareProviderFails) {
     pass(
       'zero-providers-are-configured-out-of-the-box',
-      `fresh config dir: --list-models reports none, and a bare --provider ollama fails client-side ("${bareOllama.stderr.trim()}")`,
+      `fresh config dir: --list-models reports none, and an unconfigured --provider fails client-side ("${bareUnconfigured.stderr.trim()}")`,
     );
   } else {
     fail(
       'zero-providers-are-configured-out-of-the-box',
-      `--list-models exit ${listed.code} ${JSON.stringify(listed.stdout.slice(0, 120))}; bare ollama exit ${bareOllama.code} ${JSON.stringify(bareOllama.stderr.slice(0, 120))}`,
+      `--list-models exit ${listed.code} ${JSON.stringify(listed.stdout.slice(0, 120))}; bare unconfigured-provider exit ${bareUnconfigured.code} ${JSON.stringify(bareUnconfigured.stderr.slice(0, 120))}`,
     );
   }
 } finally {

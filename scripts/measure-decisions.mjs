@@ -802,16 +802,19 @@ if (heading(8, 'Run coordination inputs')) {
 }
 
 // ---------------------------------------------------------------------------
-// §10 requires a live local generative model and is skipped without --namer:
-// like §5.5, the rest of this script must stay runnable offline. This is the
+// §10 requires a live generative model and is skipped without --namer: like
+// §5.5, the rest of this script must stay runnable offline. This is the
 // measured half of the inversion experiment — model-primary naming vs keywords-first —
 // run against the SHIPPED seam (src/hosts/namer.ts's prompt and parser), so it
 // measures the code an inversion would actually run, not a stand-in.
-if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs keywords-first (live, local)')) {
+if (process.argv.includes('--namer') && heading(10, 'Model-primary naming vs keywords-first (live)')) {
   const { namerPrompt, parseNamings, createHostNamer } = await import('../src/hosts/namer.ts');
   const { domainsByName } = await import('../src/kernel/implication/domains.ts');
   const hostFlag = process.argv.indexOf('--namer-host');
-  const NAMER_HOST = hostFlag !== -1 ? process.argv[hostFlag + 1] : 'ollama';
+  // Claude Code is where development model calls come from (CLAUDE.md's
+  // sourcing rule); ollama stays reachable, but only for a caller who names it
+  // explicitly with --namer-host ollama, never because nobody said.
+  const NAMER_HOST = hostFlag !== -1 ? process.argv[hostFlag + 1] : 'claude';
   const modelFlag = process.argv.indexOf('--namer-model');
   const MODEL =
     modelFlag !== -1 ? process.argv[modelFlag + 1] : NAMER_HOST === 'ollama' ? 'qwen3.5:4b' : undefined;
