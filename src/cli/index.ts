@@ -2290,7 +2290,7 @@ export async function work(argv: string[], hostOverride?: HostAdapter): Promise<
     if (merged.length > 0) {
       process.stdout.write(`\nissues across roles (${String(merged.length)}, merged lexically):\n`);
       for (const [index, issue] of merged.entries()) {
-        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${issue.text}\n`);
+        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${renderClaim(issue.text)}\n`);
       }
     }
 
