@@ -1,0 +1,53 @@
+{
+  "model": "ollama/gemma3:4b",
+  "probedAt": "2026-08-21T15:48:39.133Z",
+  "trials": 2,
+  "note": "clean = first reply parsed; repaired = one corrective retry parsed; fell-through = both replies malformed (the stated fallback fires); unmeasured = the host or transport failed, which is not evidence about the model. Dated and per-model: free-tier catalogs churn, so this result must not be generalized to a tier or a family.",
+  "diagnosis": "Confirmed by direct request against the same Ollama server (registry.ollama.ai/library/gemma3:4b): the model's chat template rejects any request carrying a `tools` parameter with HTTP 400 \"does not support tools\", even when every tool is disabled in the calling config (opencode still sends the field). This holds even after registering the model in the host config with tool_call:false. This is a documented, known limitation of this Ollama build's gemma3 template, not a namer/densifier contract failure and not a transport fault — recorded unmeasured because the contract could not be exercised at all through this host, superseded for the gemma family by ollama/gemma4:e2b (fixtures/model-floors/2026-08-21-ollama-gemma4-e2b.json), whose Ollama template does support tools.",
+  "seams": {
+    "namer": {
+      "trials": 2,
+      "clean": 0,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 2
+    },
+    "densifier": {
+      "trials": 2,
+      "clean": 0,
+      "repaired": 0,
+      "fellThrough": 0,
+      "unmeasured": 2
+    }
+  },
+  "runs": [
+    {
+      "seam": "namer",
+      "trial": 0,
+      "ms": 1440,
+      "outcome": "unmeasured",
+      "reason": "host \"opencode\" returned status error"
+    },
+    {
+      "seam": "namer",
+      "trial": 1,
+      "ms": 1364,
+      "outcome": "unmeasured",
+      "reason": "host \"opencode\" returned status error"
+    },
+    {
+      "seam": "densifier",
+      "trial": 0,
+      "ms": 1433,
+      "outcome": "unmeasured",
+      "reason": "host \"opencode\" returned status error"
+    },
+    {
+      "seam": "densifier",
+      "trial": 1,
+      "ms": 1385,
+      "outcome": "unmeasured",
+      "reason": "host \"opencode\" returned status error"
+    }
+  ]
+}
