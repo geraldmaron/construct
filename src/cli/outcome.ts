@@ -28,7 +28,7 @@ import type { DensifiedReply } from '../hosts/densifier.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
-import { timeoutFlag, workspaceFlag } from './flags.ts';
+import { parseHostFlags, workspaceFlag } from './flags.ts';
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
@@ -83,22 +83,13 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     words.push(arg);
   }
 
-  const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
-  }
-
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
   // only mean something when a model is going to be consulted, so supplying one
-  // without --host is a usage error rather than a silent no-op.
-  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
-  if (host === undefined && hostFlags.length > 0) {
-    throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
-    );
-  }
-
-  const timeoutMs = timeoutFlag(flags);
+  // without --host is a usage error rather than a silent no-op. Both that rule
+  // and the list of nameable hosts come from the one parser every model-calling
+  // surface reads, so a host the adapters gained is nameable here without a
+  // second edit that can be forgotten.
+  const { host, model, binary, dir, timeoutMs } = parseHostFlags(flags);
 
   const domains =
     flags.domains === undefined
@@ -122,9 +113,9 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
   return {
     text: words.join(' ').trim(),
     host,
-    model: flags.model,
-    binary: flags.binary,
-    dir: flags.dir,
+    model,
+    binary,
+    dir,
     domains,
     workspace: workspaceFlag(flags),
     ...(timeoutMs === undefined ? {} : { timeoutMs }),

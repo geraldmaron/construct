@@ -28,7 +28,7 @@ import { readReachableSkills } from './skills.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, now, secretFile, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
-import { parseFlags, timeoutFlag, workspaceFlag } from './flags.ts';
+import { parseFlags, parseHostFlags, workspaceFlag } from './flags.ts';
 import { failureLine, money } from './present.ts';
 import { surveyor } from './survey.ts';
 import { planRun } from './outcome.ts';
@@ -56,20 +56,10 @@ export interface AskArgs {
 export function parseAskArgs(argv: string[]): AskArgs {
   const { flags, rest } = parseFlags(argv);
 
-  const host = flags.host;
-  if (host !== undefined && host !== 'opencode' && host !== 'claude' && host !== 'codex' && host !== 'cursor') {
-    throw new Error(`unknown host "${host}" (expected opencode, claude, codex, or cursor)`);
-  }
-  // Same rule as `outcome`: a flag that only means something with a host, given
-  // without one, is a usage error rather than a silent no-op.
-  const hostFlags = ['model', 'binary', 'dir', 'timeout'].filter((f) => flags[f] !== undefined);
-  if (host === undefined && hostFlags.length > 0) {
-    throw new Error(
-      `--${hostFlags[0]} only applies when a host is named; add --host=<opencode|claude|codex|cursor>, or drop the flag`,
-    );
-  }
-
-  const timeoutMs = timeoutFlag(flags);
+  // Same rule as `outcome`, from the same parser: a flag that only means
+  // something with a host, given without one, is a usage error rather than a
+  // silent no-op, and the hosts it will accept are the ones the adapters have.
+  const { host, model, binary, dir, timeoutMs } = parseHostFlags(flags);
 
   const ceiling = flags.ceiling === undefined ? DEFAULT_SPEND_CEILING : Number(flags.ceiling);
   if (!Number.isFinite(ceiling) || ceiling < 0) {
@@ -79,9 +69,9 @@ export function parseAskArgs(argv: string[]): AskArgs {
   return {
     question: rest.join(' ').trim(),
     host,
-    model: flags.model,
-    binary: flags.binary,
-    dir: flags.dir,
+    model,
+    binary,
+    dir,
     workspace: workspaceFlag(flags),
     ceiling,
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
