@@ -15,6 +15,7 @@ import type { Store } from '../kernel/store/open.ts';
 import { sourceShape } from '../kernel/store/sources.ts';
 import type { Source } from '../kernel/store/sources.ts';
 import type { SourceSurvey } from '../kernel/run/sourcereads.ts';
+import type { SourceSurveyor } from '../kernel/run/groundpass.ts';
 import type { ProducerSource } from '../kernel/context/produce.ts';
 import type { DocumentWords } from '../kernel/context/observations.ts';
 import { documentWords, surveySource } from '../hosts/sources.ts';
@@ -48,6 +49,11 @@ export function surveyDeclared(store: Store, sources: readonly Source[]): Source
       ...(shape ? { emphasis: shape.emphasis, cap: shape.cap } : {}),
     });
   });
+}
+
+/** This CLI's own walk of a workspace's declared sources, handed to the kernel pass. */
+export function surveyor(store: Store): SourceSurveyor {
+  return (sources) => surveyDeclared(store, sources);
 }
 
 /**
