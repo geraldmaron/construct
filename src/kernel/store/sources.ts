@@ -332,6 +332,42 @@ export function sourceReadsFor(store: Store, run: string): SourceRead[] {
   }));
 }
 
+/**
+ * One source's most recently recorded reads, from whichever run last touched
+ * it — a prior review's own pass, or a dispatched run's grounding. Empty when
+ * nothing has read this source yet: the append-only record is the only place
+ * "read before" can be told from "read for the first time", so a caller
+ * comparing against a baseline reads this rather than keeping one of its own.
+ */
+export function latestSourceReads(store: Store, source: string): SourceRead[] {
+  const rows = store.db
+    .prepare(
+      `SELECT run, source, descriptor, coverage, detail, recorded_at
+       FROM source_reads WHERE source = ? ORDER BY seq DESC`,
+    )
+    .all(source) as unknown as Array<{
+    run: string;
+    source: string;
+    descriptor: string;
+    coverage: string;
+    detail: string;
+    recorded_at: string;
+  }>;
+  if (rows.length === 0) return [];
+  const latestRun = rows[0]!.run;
+  return rows
+    .filter((r) => r.run === latestRun)
+    .reverse()
+    .map((r) => ({
+      run: r.run,
+      source: r.source,
+      descriptor: r.descriptor,
+      coverage: r.coverage as ReadCoverage,
+      detail: r.detail,
+      recordedAt: r.recorded_at,
+    }));
+}
+
 /** Propose an outward write. Proposing grants nothing; it creates the thing a decision can be about. */
 export function proposeWrite(store: Store, proposal: WriteProposal): void {
   if (proposal.change.trim() === '') {

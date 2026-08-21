@@ -17,7 +17,7 @@
  * coverage decision testable without a filesystem.
  */
 
-import { getSource, recordSourceRead, sourceReadsFor } from '../store/sources.ts';
+import { getSource, latestSourceReads, recordSourceRead, sourceReadsFor } from '../store/sources.ts';
 import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
@@ -252,6 +252,74 @@ export function readsFromSurvey(run: string, survey: SourceSurvey, at: string): 
 }
 
 /**
+ * Whether one read row is the read of an actual document, rather than the
+ * source-level summary a survey adds for what it did not list one by one — a
+ * capped remainder, withheld unsafe names, an unreachable locator, an empty
+ * listing. That summary row's descriptor is always the source's own locator,
+ * because no walk ever lists a document there, so that is what tells the two
+ * apart without a field of its own.
+ */
+function isDocumentRead(read: Pick<SourceRead, 'descriptor'>, locator: string): boolean {
+  return read.descriptor !== locator;
+}
+
+/** Complete beats partial beats unreachable — the order a coverage regression is measured against. */
+const COVERAGE_RANK: Record<SourceRead['coverage'], number> = { complete: 2, partial: 1, unreachable: 0 };
+
+/** What changed for one source between its last recorded reads and this pass's, over the document list alone. */
+export interface SourceReadDelta {
+  readonly added: readonly string[];
+  readonly removed: readonly string[];
+  /**
+   * Present in both batches, but read worse this time than last — extraction
+   * that used to hold now refuses, most often. The reverse direction (reads
+   * better than it used to) is not named: a gap closing is not the gap this
+   * exists to warn about.
+   */
+  readonly newlyUnreadable: readonly string[];
+  /** True when neither the list nor any document's coverage moved. */
+  readonly unchanged: boolean;
+}
+
+/**
+ * Diff two batches of one source's read rows over the document list alone:
+ * added, removed, and downgraded-in-place. Never over content — no read row
+ * carries a document's bytes or a hash of them, so a path present in both
+ * batches at the same coverage is left alone either way. It may hold
+ * different words than it did last time; nothing here claims to know, and
+ * nothing downstream should either.
+ */
+export function compareSourceReads(
+  locator: string,
+  baseline: readonly SourceRead[],
+  current: readonly SourceRead[],
+): SourceReadDelta {
+  const before = new Map(
+    baseline.filter((r) => isDocumentRead(r, locator)).map((r) => [r.descriptor, r.coverage] as const),
+  );
+  const after = new Map(
+    current.filter((r) => isDocumentRead(r, locator)).map((r) => [r.descriptor, r.coverage] as const),
+  );
+
+  const added = [...after.keys()].filter((d) => !before.has(d)).sort();
+  const removed = [...before.keys()].filter((d) => !after.has(d)).sort();
+  const newlyUnreadable = [...after.keys()]
+    .filter((d) => {
+      const prior = before.get(d);
+      const now = after.get(d);
+      return prior !== undefined && now !== undefined && now !== prior && COVERAGE_RANK[now] < COVERAGE_RANK[prior];
+    })
+    .sort();
+
+  return {
+    added,
+    removed,
+    newlyUnreadable,
+    unchanged: added.length === 0 && removed.length === 0 && newlyUnreadable.length === 0,
+  };
+}
+
+/**
  * The local roots a run's roles are licensed to read beyond the listed
  * documents. Derived from the read record, never from the declarations alone:
  * a source whose every read row is unreachable licenses nothing, because a
@@ -302,4 +370,45 @@ export function recordRunSourceReads(
     }
   }
   return { recorded, skipped: false };
+}
+
+/** One source's comparison against its own read history: whether it had any, and what changed if so. */
+export interface SourceReadComparison {
+  readonly source: string;
+  /** False when this pass is the first recorded read of this source. */
+  readonly hasBaseline: boolean;
+  /** When the prior batch was recorded, so a message can say since when. Null with no baseline. */
+  readonly baselineAt: string | null;
+  readonly delta: SourceReadDelta;
+}
+
+/**
+ * Compare this pass's reads against each source's own last recorded pass,
+ * then record this pass so the next one has it to compare against in turn.
+ * Comparison happens first, before any of this pass's rows are written —
+ * fetching every baseline before recording anything is what keeps a source
+ * from ever being compared against itself. There is no baseline kept apart
+ * from the record; the append-only rows already on file are the only place
+ * one lives.
+ */
+export function compareAndRecordSourceReads(
+  store: Store,
+  run: string,
+  surveys: readonly SourceSurvey[],
+  at: string,
+): SourceReadComparison[] {
+  const comparisons = surveys.map((survey) => {
+    const declared = getSource(store, survey.source);
+    const locator = declared?.locator ?? survey.locator;
+    const baseline = latestSourceReads(store, survey.source);
+    const current = readsFromSurvey(run, survey, at);
+    return {
+      source: survey.source,
+      hasBaseline: baseline.length > 0,
+      baselineAt: baseline[0]?.recordedAt ?? null,
+      delta: compareSourceReads(locator, baseline, current),
+    };
+  });
+  recordRunSourceReads(store, run, surveys, at);
+  return comparisons;
 }
