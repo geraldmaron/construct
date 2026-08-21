@@ -69,13 +69,12 @@ source classes and the unverified marks preserved:
 ## What construct actually holds (the map, evidence-tagged)
 
 - Seven validated method skills in the standard format, each with recorded
-  runs and a use ledger at ten gate-changed outcomes in ten rows — [seen:
-  ran, this program's own ledger and runs]. Stated caveat, per adversarial
-  review: n=10, scored by the program's own sessions against pre-registered
-  criteria, with honest-no rows required by the instrument but none yet
-  recorded at the time of writing; the pre-registered refutation thresholds
-  exist precisely because a small self-scored sample proves little on its
-  own.
+  runs; the use ledger's current count and per-row evidence live in
+  `docs/skill-use-ledger.md` — [seen: ran, this program's own ledger and
+  runs]. Stated caveat, per adversarial review: scored by the program's own
+  sessions against pre-registered criteria, with honest-no rows recorded
+  where they occur; the pre-registered refutation thresholds exist precisely
+  because a small self-scored sample proves little on its own.
 - A kernel doing coverage, obligation, and provenance with an append-only
   work log, projecting over MCP as presence-not-execution — [seen: read/ran,
   this repo].

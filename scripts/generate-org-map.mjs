@@ -160,7 +160,8 @@ template, and say so.
 
 ## The seats
 
-${DOMAINS.map(section).join('\n')}## The seat that is deliberately empty
+${DOMAINS.map(section).join('\n')}
+## The seat that is deliberately empty
 
 There is no engineer concern. Your host is the engineer: Construct dispatches
 into it, and rebuilding what a coding agent already does would be the homebrew

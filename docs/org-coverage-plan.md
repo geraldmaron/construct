@@ -35,7 +35,7 @@ to the table's `role`.)*
 
 The target tree:
 
-| Seat in a human org | Concern (domain) | State today | Plan |
+| Seat in a human org | Concern (domain) | State | Plan |
 |---|---|---|---|
 | Product Manager | product-scoping | routed + product lens | shipped |
 | TPM / Program Manager | program-sequencing | routed + program lens | shipped |
@@ -112,14 +112,17 @@ The consequence for this plan:
 - The five wave-B pack items are reopened or held open, and every one of them
   now depends on replacement plants that only their own lens has a reason to
   find. That corpus work is the real gate, not the pack code, which shipped.
+  *(Resolved by the second amendment below: `construct-pmn` stops blocking the
+  five wave-B closes once the plant-hit gate is withdrawn.)*
 - Keyword narrowing is refused as the repair. Terms proxy for stating a
   mechanism, so tightening them after seeing which lenses collided is editing a
   key to fit results, and it moves the coincidence rather than removing it.
-- A candidate repair on the product side is under measurement: the lens prompt
-  currently bounds output only with an advisory line, and runs produce far more
-  claims than a real deliverable would. Whether making ownership binding
-  improves isolation without suppressing the lens's own findings is being
-  measured on both prompt shapes, same corpus, same family.
+- A candidate repair on the product side was under measurement: whether making
+  the lens prompt's ownership language binding, instead of the advisory line it
+  shipped with, improves isolation without suppressing the lens's own findings.
+  *(Mooted by the second amendment below: the isolation criterion this
+  measurement served is withdrawn, not repaired, so the question stopped
+  mattering rather than resolving.)*
 - Wave D cannot close the epic while the epic's exit criterion is known to
   measure the wrong thing. *(Resolved by the second amendment below: the
   criterion is withdrawn and replaced, so wave D is reachable again.)*
@@ -187,10 +190,11 @@ ratification). Adjacent existing bugs stay in their own lanes:
 construct-4t8, n9d, j99, 8yi, z34, jnf.
 
 **Gate — Phase 5 stakeholder acceptance.** Gerald reads and accepts or
-rejects the packets (docs/stakeholder-acceptance-phase-5.md Case 1 is
-waiting; construct-9xq is the Phase 4 packet). No wave-B bead dispatches
-before acceptance is recorded. If Gerald wants breadth to start sooner,
-that is a dated STRATEGY amendment only he can make.
+rejects the packets (`docs/stakeholder-acceptance-phase-5.md`; construct-9xq
+is the Phase 4 packet). *(Case 1 was accepted 2026-08-10, clearing this gate
+for wave B — see the amendment above.)* No wave-B bead dispatches before
+acceptance is recorded. If Gerald wants breadth to start sooner, that is a
+dated STRATEGY amendment only he can make.
 
 **Wave B — the missing concerns.** *(Amended 2026-08-10, second amendment above:
 the corpus bead construct-pmn no longer gates these. Planting findings for the

@@ -19,7 +19,7 @@ a stranger could audit without the conversation that produced it.
 
 Three, with different stakes:
 
-1. **The operator (today: Gerald).** States outcomes, decides at the inbox,
+1. **The operator (Gerald).** States outcomes, decides at the inbox,
    accepts or rejects deliverables. What changes: less restating, less
    re-explaining method to every session, and a record he can trust without
    re-deriving it.
@@ -89,10 +89,10 @@ Each an observation, thresholds labeled for what they are:
   claimed as science; a month at zero is the recorded stall signal (chosen
   line, chosen by the operator in the platform strategy's pre-mortem).
 - **Refutation status:** per skill, rows toward its ten-use test with
-  gate-changed count. The instrument's honesty check: honest-no rows
-  exist (one recorded to date).
+  gate-changed count. The instrument's honesty check: honest-no rows exist
+  and are recorded, not suppressed (`docs/skill-use-ledger.md`).
 - **Cross-tier floor:** every shipped skill holds a recorded Sonnet-class
-  run with its record intact — currently seven of seven.
+  run with its record intact: seven of seven.
 - **Doctor completeness:** `construct doctor` reports presence, version
   against pin, and auth state for all four hosts, and fails loudly rather
   than guessing.
@@ -145,8 +145,9 @@ Each an observation, thresholds labeled for what they are:
 - **No role packs.** Deliverable skills stay flat; roles are README views
   and kernel routing (recorded, epic catalog v3).
 - **No live-sync of installed skills.** Copies are byte-identical and
-  point-in-time; auto-sync contradicts the byte-identical constraint
-  (from the projection spec's non-goals).
+  point-in-time; auto-sync contradicts the byte-identical constraint (from
+  the projection spec's non-goals,
+  `skill-runs/2026-08-21-requirements-structuring-run-1.md`).
 
 ## Acceptance criteria
 
@@ -177,9 +178,10 @@ Each an observation, thresholds labeled for what they are:
 
 - **Critical path:** outcomes 1, 3, 4 (route, record, collapse) and the
   ledger instrument (outcome 6). The platform is these or it is a demo.
-- **Now:** the skills projection subcommand (spec drafted, two reserved
-  decisions open); the provenance-surface documentation pass (the
-  strategy's hedge, if accepted).
+- **Now:** the provenance-surface documentation pass (the strategy's hedge,
+  if accepted). The skills projection subcommand listed here previously has
+  shipped: `construct skills list|install|installed|uninstall`, resolved per
+  Open questions below.
 - **Next:** the flat deliverable-skill layer, demand-pulled; research
   synthesis when its trigger fires.
 - **Later:** second tuned family (per-skill, when a promotion decision
@@ -209,13 +211,13 @@ Each an observation, thresholds labeled for what they are:
 
 ## Open questions
 
-Two, both reserved by the decider, both blocking only the projection
-subcommand's build (not this PRD):
-
-1. Manifest file or disk inference for installed-skill state? Answered by:
-   Gerald. Blocks: the projection command's `installed` implementation.
-2. Install-all support? Answered by: Gerald. Blocks: the same command's
-   surface.
+The verification record below (`Questions earned`) reports 2 open questions
+as of this PRD's authoring, both reserved by the decider. Both have since
+been answered and shipped: installed-skill state is disk-inferred, no
+manifest (`construct skills installed` reads the target directory directly),
+and install takes both explicit names and an `--all` flag (`construct skills
+install --all [--dir=<dir>]`). Default host directory is `~/.claude/skills`,
+override with `--dir`.
 
 ---
 

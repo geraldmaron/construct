@@ -38,7 +38,8 @@ image: `Figure N — …`. Never center the caption or the image block.
 
 ## Construct product implication
 
-`composerPrompt` / `formGuidanceForShape` must forbid ASCII arrow chains and
-centered text-as-diagram. Mermaid in compose is fine for screen; session PDFs
-need a real rendered figure (Typst drawing or sketch image), not the mermaid
-source dumped as monospace.
+`formGuidanceForShape` (`src/hosts/compose.ts`) forbids ASCII arrow chains and
+centered text-as-diagram, requiring a real mermaid diagram or a short numbered
+paragraph in their place. Mermaid in compose is fine for screen. Session PDFs
+still need a real rendered figure (a drawn or sketch image) rather than the
+mermaid source dumped as monospace: that rendering path does not exist yet.
