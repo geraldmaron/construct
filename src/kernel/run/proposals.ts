@@ -39,6 +39,16 @@
  * so a second extraction of the same document proposes the same ids and the
  * store's own uniqueness is what keeps the queue from doubling.
  *
+ * Which action a row becomes is not always the mechanical read, though: a
+ * caller may name one row's action outright, or — once a host is already
+ * being paid for elsewhere in the run — have a model propose it instead of
+ * reading the verb. Neither costs this function anything, because it never
+ * makes either call itself; it only ever reads a decision that was made
+ * before it ran, the same way `modelActions` arrives pre-computed rather than
+ * awaited here. What it adds is `actionSource` on every row, so a reader of
+ * the queue is told which of the three decided rather than being shown a
+ * model's guess wearing the keyword path's silence.
+ *
  * A change to a document is the same kind of proposal, composed rather than
  * read: its words are stated, not found in a deliverable, because no sentence
  * of a report is a redline. The four rules above hold unchanged — nothing is
@@ -56,6 +66,17 @@ import type { DocEditKind } from '../store/sources.ts';
 export const WRITE_ACTIONS = ['comment', 'label', 'create', 'update'] as const;
 
 export type WriteAction = (typeof WRITE_ACTIONS)[number];
+
+/**
+ * Which of the three paths decided a row's action: a caller named it
+ * outright, a model proposed it, or nobody did either and the keyword read
+ * of the finding's own verb stands. Carried on every proposal so a reader
+ * never mistakes a guess for the mechanical default, or the default for a
+ * decision somebody actually made.
+ */
+export const WRITE_ACTION_SOURCES = ['override', 'model', 'keyword'] as const;
+
+export type WriteActionSource = (typeof WRITE_ACTION_SOURCES)[number];
 
 /**
  * The tier for an action. Commenting and labelling annotate; a reader of the
@@ -258,6 +279,8 @@ export interface ExtractedProposal {
   readonly justification: string;
   readonly risk: 'low' | 'high';
   readonly action: WriteAction;
+  /** Which of override, model, or keyword decided `action`. */
+  readonly actionSource: WriteActionSource;
   readonly finding: Finding;
   readonly role: string;
 }
@@ -277,6 +300,20 @@ export interface ExtractionInput {
    * it the way the person deciding knows it.
    */
   readonly locator: string;
+  /**
+   * Row ids (see `proposalRowId`) mapped to the action a caller is naming
+   * outright. Wins over everything else for that row, and the row is never
+   * handed to a model — see `proposeActionsWithModel`, which reads this same
+   * map to know which findings it must not spend a call on.
+   */
+  readonly actionOverrides?: ReadonlyMap<string, WriteAction>;
+  /**
+   * Row ids mapped to the action a model already proposed for them, computed
+   * ahead of time by `proposeActionsWithModel`. Read, not called: this keeps
+   * extraction itself model-free even though a row's action may now trace to
+   * one.
+   */
+  readonly modelActions?: ReadonlyMap<string, WriteAction>;
 }
 
 export interface Extraction {
@@ -302,6 +339,15 @@ function changeText(action: WriteAction, locator: string, finding: Finding): str
     default:
       return `update in ${locator}: ${finding.text}`;
   }
+}
+
+/**
+ * The id a finding's row would carry, computed the same way whether it is
+ * about to be built into a proposal (below) or only looked up in an
+ * override/model map (`proposeActionsWithModel`) before one exists yet.
+ */
+function proposalRowId(deliverable: Deliverable, finding: Finding): string {
+  return `wp-${deliverable.task}-L${String(finding.line)}`;
 }
 
 /**
@@ -338,20 +384,61 @@ export function proposalsFrom(input: ExtractionInput): Extraction {
       continue;
     }
     seen.add(key);
-    const action = actionFor(finding.text);
+    const id = proposalRowId(input.deliverable, finding);
+    const overridden = input.actionOverrides?.get(id);
+    const proposedByModel = overridden === undefined ? input.modelActions?.get(id) : undefined;
+    const action = overridden ?? proposedByModel ?? actionFor(finding.text);
+    const actionSource: WriteActionSource =
+      overridden !== undefined ? 'override' : proposedByModel !== undefined ? 'model' : 'keyword';
     proposals.push({
-      id: `wp-${input.deliverable.task}-L${String(finding.line)}`,
+      id,
       source: input.source,
       change: changeText(action, input.locator, finding),
       justification: `${finding.citation} (${input.deliverable.role}, ${finding.kind}): "${finding.text}"`,
       risk: riskOfAction(action),
       action,
+      actionSource,
       finding,
       role: input.deliverable.role,
     });
   }
 
   return { proposals, refused };
+}
+
+/**
+ * A model asked what one finding's action should be, answering with one of
+ * `WRITE_ACTIONS` or null when it could not decide. Host-ignorant, the same
+ * shape as every other model seam the kernel injects rather than constructs —
+ * an implementation backed by a real host lives outside the kernel.
+ */
+export type WriteActionProposer = (finding: Finding) => Promise<WriteAction | null>;
+
+/**
+ * Ask a model to propose an action for every finding in a deliverable that no
+ * caller has already named an action for, keyed the way `proposalsFrom` reads
+ * them back.
+ *
+ * A row named in `overrides` is never asked: the same "an explicit choice
+ * never costs a call" rule `--shape` gets against the composition chooser. A
+ * finding the model declines to answer (null) is simply left out of the
+ * result, which reads to `proposalsFrom` as "nobody decided this one" and
+ * falls it through to the keyword read — the fail-open shape every host
+ * consultation in this codebase already uses.
+ */
+export async function proposeActionsWithModel(
+  deliverable: Deliverable,
+  proposer: WriteActionProposer,
+  overrides?: ReadonlyMap<string, WriteAction>,
+): Promise<ReadonlyMap<string, WriteAction>> {
+  const proposed = new Map<string, WriteAction>();
+  for (const finding of findingsIn(deliverable)) {
+    const id = proposalRowId(deliverable, finding);
+    if (overrides?.has(id)) continue;
+    const action = await proposer(finding);
+    if (action !== null) proposed.set(id, action);
+  }
+  return proposed;
 }
 
 /**
