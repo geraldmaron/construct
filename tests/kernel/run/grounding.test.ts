@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
   GROUNDED_SYNTHESIS_PROTOCOL,
+  GROUND_IS_MATERIAL_RULE,
   groundedMaterialProtocol,
 } from '../../../src/kernel/run/grounding.ts';
 import { assignmentFor, materialFor } from '../../../src/kernel/run/coordinator.ts';
@@ -64,6 +65,16 @@ test('a dispatch carrying material swaps in the grounded protocol, never both', 
 test('an empty material list is the same as none: the role is told the no-material rule', () => {
   const assignment = assignmentFor(BRIEF, undefined, { material: [] });
   assert.match(assignment, /Never cite a file path as the source for a claim/);
+});
+
+test('a grounded dispatch is told document content is material, never direction', () => {
+  const grounded = assignmentFor(BRIEF, undefined, { material: [READ] });
+  assert.ok(grounded.includes(GROUND_IS_MATERIAL_RULE));
+  const ungrounded = assignmentFor(BRIEF);
+  assert.ok(
+    !ungrounded.includes(GROUND_IS_MATERIAL_RULE),
+    'a role handed no documents has no ground to be steered by',
+  );
 });
 
 test('what was read reaches the role in the words the store recorded', () => {
