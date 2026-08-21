@@ -214,7 +214,7 @@ export function toObservations(
 ): Observation[] {
   const observations: Observation[] = [];
   for (const item of Array.isArray(value) ? value : []) {
-    const o = item as { claim?: unknown; citations?: unknown } | null;
+    const o = item as { claim?: unknown; citations?: unknown; wording?: unknown } | null;
     const claim = asString(o?.claim);
     if (!claim) {
       discarded.push('an observation with no claim was dropped');
@@ -222,17 +222,24 @@ export function toObservations(
     }
     const citations: DriftCitation[] = [];
     for (const c of Array.isArray(o?.citations) ? o.citations : []) {
-      const cite = c as { source?: unknown; document?: unknown; quote?: unknown } | null;
-      const source = asString(cite?.source);
-      const document = asString(cite?.document);
-      // A missing quotation is carried as a missing quotation, not defaulted to
-      // an empty one: the screen tells the reader which citations pointed at a
-      // document without pointing at anything in it, and it can only do that if
-      // the difference survives parsing.
-      const quote = asString(cite?.quote);
-      if (source && document) citations.push({ source, document, ...(quote ? { quote } : {}) });
+      const citation = toCitation(c);
+      if (citation) citations.push(citation);
     }
-    observations.push({ role, claim, citations });
+    observations.push({ role, claim, citations, wording: toCitation(o?.wording) });
   }
   return observations;
+}
+
+/** One {source, document} pair, or null where either half is missing. */
+function toCitation(value: unknown): DriftCitation | null {
+  const cite = value as { source?: unknown; document?: unknown; quote?: unknown } | null;
+  const source = asString(cite?.source);
+  const document = asString(cite?.document);
+  if (!source || !document) return null;
+  // A missing quotation is carried as a missing quotation, not defaulted to
+  // an empty one: the screen tells the reader which citations pointed at a
+  // document without pointing at anything in it, and it can only do that if
+  // the difference survives parsing.
+  const quote = asString(cite?.quote);
+  return { source, document, ...(quote ? { quote } : {}) };
 }
