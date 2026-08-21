@@ -226,7 +226,7 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       process.stdout.write(
         '\nno sources declared for this workspace, so the answer rests on what the ' +
           'model knows rather than on your material.\n' +
-          '  construct source add <path> --kind=<kind>\n',
+          '  construct source add --kind=<kind> --locator=<where>\n',
       );
     }
 
