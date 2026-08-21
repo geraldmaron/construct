@@ -35,7 +35,6 @@ const STANDING_USAGE =
   '--concurrency=… --lease-minutes=… --timeout=…]\n' +
   '         (schedule `construct standing --due` with cron or launchd; nothing here waits or wakes)\n';
 
-
 /**
  * Fire what has come due: file a fresh, ordinary run per elapsed standing
  * outcome, then work exactly those runs through the normal work path. The
