@@ -3,7 +3,7 @@
 Run conditions: Sonnet-tier reviewing agent, skill file outside the
 repository as its only method reference, repository forbidden, no web. The
 artifact under review was real and about to be handed to the decider: the
-draft agentic-platform strategy (docs/agentic-platform-strategy.md).
+draft agentic-platform strategy (docs/internal/agentic-platform-strategy.md).
 Reviewer and author share a model family; the review's own self-review
 gate discloses this and names the shared blind spots it implies. The
 deliverable below is verbatim as produced; nothing was edited.

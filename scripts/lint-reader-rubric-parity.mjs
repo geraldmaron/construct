@@ -3,7 +3,7 @@
  * lint-reader-rubric-parity.mjs — the acceptance rubric and the code that
  * enforces it, held to each other.
  *
- * docs/persona-acceptance-rubrics.md is the source: what a reader in each role
+ * docs/internal/persona-acceptance-rubrics.md is the source: what a reader in each role
  * requires before they would call a deliverable adequate, committed before any
  * judging so it could not be tuned to pass what it grades. src/kernel/challenge/
  * personas.ts is the enforcement. Two drifts are possible between them and both
@@ -25,7 +25,7 @@
 
 import { readFileSync } from 'node:fs';
 
-const RUBRIC = 'docs/persona-acceptance-rubrics.md';
+const RUBRIC = 'docs/internal/persona-acceptance-rubrics.md';
 const TABLE = 'src/kernel/challenge/readers.ts';
 
 /** Sections written as `## Something (concern)`, and the lines under them. */

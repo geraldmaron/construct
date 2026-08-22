@@ -2,7 +2,7 @@
 
 Dated 2026-08-21. What happened attaching Construct's MCP projection to
 `cursor-agent`'s non-interactive `-p` mode, against the same real subject
-`docs/host-trial-codex.md` used. Like that trial, this is a presence
+`docs/internal/host-trial-codex.md` used. Like that trial, this is a presence
 measurement, not a dispatch one: presence held completely (attach,
 connection, full and correct tool-schema discovery). Dispatch (a tool call
 actually reaching Construct) was blocked, cleanly, before it left the host.
@@ -32,7 +32,7 @@ cannot, from this machine, tonight; see the last section.
   names `gpt-5.1` ("GPT-5.1 Medium") as the configured default; that is
   inference from local config, not something either run's own JSON confirms.
 - **Subject.** The identical BlackStory reauthentication question
-  `docs/host-trial-codex.md` and `docs/host-trial-goose.md` used, so all
+  `docs/internal/host-trial-codex.md` and `docs/internal/host-trial-goose.md` used, so all
   three hosts' handling of the same real input sits side by side.
 - **Safety posture.** `cursor-agent -p`'s own help text warns it "has access
   to all tools, including write and shell" by default. This trial ran from
@@ -98,15 +98,15 @@ carrying its own invented confidence score, explicitly labeled "conceptual
 for the kernel's admission gate to check), so the gate was never actually
 tested by it, but it is exactly the failure mode that gate exists for,
 arriving unprompted, and it is a sharper version of the same thing than
-codex's model showed on the identical prompt (`docs/host-trial-codex.md`):
+codex's model showed on the identical prompt (`docs/internal/host-trial-codex.md`):
 where codex's model recognized it had nothing grounded to offer and
 declined, cursor's model filled the gap with invention. One run, one model,
 recorded as an observation about this specific call, not a measurement of
 either model in general.
 
 **No bead filed for either finding.** Both read the same way the pi and
-goose trials' non-Construct findings already read (`docs/host-trial-pi.md`,
-`docs/host-trial-goose.md`): a real, host-owned behavior with nothing in
+goose trials' non-Construct findings already read (`docs/internal/host-trial-pi.md`,
+`docs/internal/host-trial-goose.md`): a real, host-owned behavior with nothing in
 this repository to change. Construct's server is not part of the rejection,
 cursor refuses before the call is ever sent, and normal, interactive Cursor
 use (a person in the IDE, who sees and answers the approval prompt

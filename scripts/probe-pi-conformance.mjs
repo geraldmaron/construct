@@ -5,7 +5,7 @@
  *
  * pi has no subscription-backed path this probe could default to: its Claude
  * Pro/Max login is interactive-only, with no non-interactive equivalent, and
- * it registers no MCP client at all (docs/host-trial-pi.md). Development
+ * it registers no MCP client at all (docs/internal/host-trial-pi.md). Development
  * model calls otherwise come from Gerald's Claude Code or Cursor
  * subscriptions, never a local server (CLAUDE.md); with neither reachable
  * through pi, this probe refuses without --model rather than picking one for
