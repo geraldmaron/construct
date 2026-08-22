@@ -43,7 +43,7 @@ trial diagnosed rather than assumed.
   and resolve to codex's internal default instead. Neither is confirmed by
   any run's own output, so both are stated as inference, not measurement.
 - **Subject.** The same real, current BlackStory question construct-chno.4's
-  goose trial used (`docs/host-trial-goose.md`): "Decide whether canonical
+  goose trial used (`docs/internal/host-trial-goose.md`): "Decide whether canonical
   merges and bulk edits should enforce recent reauthentication
   (`assertRecentReauth`) the same way publish, retract, rights, policy, and
   role changes already do, given the cookie-session path has no `auth_time`
@@ -64,7 +64,7 @@ list." That is the correct read of the tool's own description, arrived at
 without ever seeing the description's warning play out: a small, real data
 point that a frontier model reasons about the admission gate correctly even
 under a degraded transport. Contrast this with the same scenario later under
-Cursor (`docs/host-trial-cursor.md`), whose model filled the identical gap
+Cursor (`docs/internal/host-trial-cursor.md`), whose model filled the identical gap
 with five fabricated, non-catalog domain names instead.
 
 Directly against the transport, independent of any host: `echo
@@ -114,7 +114,7 @@ that the call had silently succeeded despite the reported cancellation. This
 is a real, live, multi-session store, and both entries turned out to belong
 to construct-chno.4's own goose trial running at the same time on the
 identical real BlackStory sentence, not to anything this session did:
-`docs/host-trial-goose.md` cites its claude-code run as
+`docs/internal/host-trial-goose.md` cites its claude-code run as
 `run-20260821214915287`, matching the first entry exactly, and its second,
 close-behind entry matches that same packet's own description of
 reproducing its cache finding directly against the server right after
@@ -137,8 +137,8 @@ host lying about what happened.
   completed. Only presence (attach, discovery, argument-shaping) was
   measured; the projection's actual behavior under codex (what
   `record_outcome`, `catalog`, or any other tool returns when a call gets
-  through) was not exercised at all here. Compare `docs/host-trial-goose.md`
-  and `docs/host-trial-nanobot.md`, where a call did land.
+  through) was not exercised at all here. Compare `docs/internal/host-trial-goose.md`
+  and `docs/internal/host-trial-nanobot.md`, where a call did land.
 - **Whether `codex mcp add` (persisted registration) resolves the
   cancellation.** The `sequential-thinking` control makes this plausible: it
   is the one structural difference this trial found between a server that

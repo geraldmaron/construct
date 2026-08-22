@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * lint-connector-gate.mjs — the structural half of the connector use/build
- * gate (docs/connector-seam-design.md, "The forbidden-import rule").
+ * gate (docs/internal/connector-seam-design.md, "The forbidden-import rule").
  * `src/connectors/` is the canonical home for adapter-tier API connectors
  * (Jira, GitHub, and whatever follows); nothing lives there yet, so this
  * gate is wired ahead of the first connector rather than after — the same

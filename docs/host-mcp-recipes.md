@@ -4,7 +4,7 @@ Recipes for pointing a host — Claude Code, OpenCode, Cursor, or any other
 MCP-capable client — at the official, vendor-run MCP servers for Jira and
 Confluence (Atlassian Rovo MCP), GitHub, Linear, and Google Workspace.
 Nothing in this file is connector code: commitment 1 and
-`docs/connector-seam-design.md` license host-MCP-first as the read/write
+`docs/internal/connector-seam-design.md` license host-MCP-first as the read/write
 path, and these four servers are exactly that path. What follows is
 configuration, not implementation.
 
@@ -12,7 +12,7 @@ configuration, not implementation.
 Jira and GitHub. They are the ladder's second rung, not this one, and
 nothing outside `src/connectors/` and its tests imports them. Which rung
 answered a given read or write is recorded on the work log either way. See
-`docs/connector-seam-design.md` for the gate they were built behind.)
+`docs/internal/connector-seam-design.md` for the gate they were built behind.)
 
 **How the claims below are marked.** Every version, endpoint, install
 command, date, and tool count was checked against the vendor's own material
@@ -385,4 +385,4 @@ way to record Linear provenance. That is a gap for a future kind, not
 something this recipe or `sources.ts` closes.
 
 This section names wiring that already exists. It adds nothing and licenses
-nothing that `docs/connector-seam-design.md` does not already license.
+nothing that `docs/internal/connector-seam-design.md` does not already license.

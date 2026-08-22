@@ -31,8 +31,7 @@
   },
   "files": [
     "bin",
-    "dist",
-    "schemas"
+    "dist"
   ],
   "exports": {
     ".": "./dist/kernel/index.js",
