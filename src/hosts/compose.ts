@@ -24,6 +24,7 @@ import type { CompositionShape } from '../kernel/run/shapes.ts';
 import { toClosingReply } from '../kernel/run/closing.ts';
 import { chooseChallengeFamily } from '../kernel/challenge/familyroute.ts';
 import { constructIdentity } from '../kernel/voice/voice.ts';
+import type { VoiceOverride } from '../kernel/voice/voice.ts';
 import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
 import { extractJson } from './contextloop.ts';
 import { familyOf } from './family.ts';
@@ -42,6 +43,23 @@ import { familyOf } from './family.ts';
 const VOICE_INSIDE_THE_JSON =
   'The reply itself is JSON. The voice above is how the prose inside it is written — every ' +
   'sentence in it is read by a person — and it is not a licence to write anything outside the JSON.';
+
+/**
+ * The voice the run was worked in, when the user overrode Construct's own.
+ *
+ * Every prompt in this file that writes prose a person reads takes it, and they
+ * take it rather than reaching for it because which run this is composing is
+ * the caller's question. A run whose deliverables came back in the user's voice
+ * and whose composed document came back in the house voice is one piece of work
+ * in two registers, and the composed half — the one the user actually reads —
+ * is the half they did not ask for.
+ *
+ * Absent is the house voice, which is what constructIdentity already does with
+ * no override: the case that needs no flag and no record.
+ */
+interface VoicedPrompt {
+  readonly voice?: VoiceOverride;
+}
 
 export const COMPOSER_ROLE = 'composer';
 export const SUPPORT_ROLE = 'composition-support';
@@ -188,7 +206,7 @@ export function createHostShapeChooser(
   };
 }
 
-export function composerPrompt(input: {
+export function composerPrompt(input: VoicedPrompt & {
   readonly outcome: string;
   readonly sources: readonly SourceDeliverable[];
   /**
@@ -201,9 +219,9 @@ export function composerPrompt(input: {
 }): string {
   return [
     // The composer writes the document a person reads, so it writes in the one
-    // voice. Nothing framed this pass in particular: arranging every concern is
-    // Construct's own job, not any one concern's.
-    constructIdentity(),
+    // voice the run was worked in. Nothing framed this pass in particular:
+    // arranging every concern is Construct's own job, not any one concern's.
+    constructIdentity({ voice: input.voice }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -387,12 +405,12 @@ export const POSITION_ROLE = 'construct-position';
  * nobody was asked it — each specialist was asked about its own concern and each
  * was right to answer only that. So: no new facts, and a judgment is required.
  */
-export function positionPrompt(input: {
+export function positionPrompt(input: VoicedPrompt & {
   readonly outcome: string;
   readonly sources: readonly SourceDeliverable[];
 }): string {
   return [
-    constructIdentity(),
+    constructIdentity({ voice: input.voice }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -462,7 +480,9 @@ export function positionPrompt(input: {
 
 export function createHostPositioner(
   host: HostAdapter,
-): (input: { outcome: string; sources: readonly SourceDeliverable[] }) => Promise<unknown> {
+): (
+  input: VoicedPrompt & { outcome: string; sources: readonly SourceDeliverable[] },
+) => Promise<unknown> {
   return async (input) => {
     const text = await invokeRetrying(host, { role: POSITION_ROLE, task: positionPrompt(input) });
     return extractJson(text);
@@ -487,14 +507,14 @@ export function createHostPositioner(
  * take a second attempt that lost ground stands behind the instruction anyway,
  * because an instruction is not a mechanism.
  */
-export function positionRepairPrompt(input: {
+export function positionRepairPrompt(input: VoicedPrompt & {
   readonly outcome: string;
   readonly sources: readonly SourceDeliverable[];
   readonly position: ConstructPosition;
   readonly objections: readonly SharedObjection[];
 }): string {
   return [
-    constructIdentity(),
+    constructIdentity({ voice: input.voice }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -545,7 +565,7 @@ export function positionRepairPrompt(input: {
 
 export function createHostPositionRepairer(
   host: HostAdapter,
-): (input: {
+): (input: VoicedPrompt & {
   outcome: string;
   sources: readonly SourceDeliverable[];
   position: ConstructPosition;
@@ -662,16 +682,17 @@ export const CLOSING_ROLE_SUFFIX = '-closing';
  * prompt says so in as many words, because a closing round that cannot come
  * back empty is not a check, it is a generator.
  */
-export function closingPrompt(input: {
+export function closingPrompt(input: VoicedPrompt & {
   readonly outcome: string;
   readonly source: SourceDeliverable;
   readonly gaps: readonly string[];
   readonly groundRoots: readonly string[];
 }): string {
   return [
-    // Framed by the role that delivered the work, written in the one voice: an
-    // answer that closes a gap lands in the document a person reads.
-    constructIdentity({ framedBy: input.source.role }),
+    // Framed by the role that delivered the work, written in the one voice the
+    // run was worked in: an answer that closes a gap lands in the document a
+    // person reads, beside claims drawn from deliverables written in that voice.
+    constructIdentity({ framedBy: input.source.role, voice: input.voice }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -721,11 +742,16 @@ export function closingPrompt(input: {
 }
 
 /** Build a gap closer backed by a host adapter; caller owns init(). */
-export function createHostGapCloser(host: HostAdapter, outcome: string, groundRoots: readonly string[]): GapCloser {
+export function createHostGapCloser(
+  host: HostAdapter,
+  outcome: string,
+  groundRoots: readonly string[],
+  voice?: VoiceOverride,
+): GapCloser {
   return async (source, gaps) => {
     const text = await invokeRetrying(host, {
       role: `${source.role}${CLOSING_ROLE_SUFFIX}`,
-      task: closingPrompt({ outcome, source, gaps, groundRoots }),
+      task: closingPrompt({ outcome, source, gaps, groundRoots, voice }),
     });
     return toClosingReply(extractJson(text), source.role, gaps);
   };
@@ -745,7 +771,7 @@ function textOf(host: HostAdapter, result: { status: string; output: unknown }):
 /** Build a composer backed by a host adapter; caller owns init(). */
 export function createHostComposer(
   host: HostAdapter,
-): (input: {
+): (input: VoicedPrompt & {
   outcome: string;
   sources: readonly SourceDeliverable[];
   shape: CompositionShape;

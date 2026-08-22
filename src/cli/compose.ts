@@ -48,6 +48,7 @@ import {
   renderHeading,
 } from '../kernel/run/publish.ts';
 import { groundRootsFor } from '../kernel/run/sourcereads.ts';
+import { voiceOverrideFor } from '../kernel/run/voicerecord.ts';
 import { attributionLine } from '../kernel/voice/voice.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
@@ -183,6 +184,21 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
       return 1;
     }
 
+    // The voice this run was worked in, recovered from the run's own record
+    // rather than retyped. `work --voice` shaped every deliverable below and
+    // wrote what it was told down; composing used to bind the house voice
+    // regardless, so a user who asked for one voice got their deliverables in
+    // it and the document built out of them in another. Said out loud for the
+    // same reason `work` says it: a document that will not sound like Construct
+    // is a thing the user should see themselves having chosen.
+    const voice = voiceOverrideFor(store, run) ?? undefined;
+    if (voice) {
+      process.stdout.write(
+        `voice: this run was worked under an override (${escapeForTerminal(voice.source)}), and ` +
+          `the document is written in it — ${escapeForTerminal(voice.instruction)}\n`,
+      );
+    }
+
     // A host exists and is already being paid for, so which document shape
     // this ask wants is asked rather than guessed. Only the keyword-matched
     // failure path — the host call itself failing, or naming something that
@@ -217,7 +233,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
     let screened;
     try {
-      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape });
+      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape, voice });
       screened = screenComposition(
         toComposition(reply),
         sources,
@@ -240,7 +256,9 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // must never be able to cost the work it is a judgment about.
     let position: ScreenedPosition | null = null;
     try {
-      const read = toPosition(await createHostPositioner(host)({ outcome: plan.outcome, sources }));
+      const read = toPosition(
+        await createHostPositioner(host)({ outcome: plan.outcome, sources, voice }),
+      );
       position = read === null ? null : screenPosition(read, sources.map((s) => s.role));
     } catch (error) {
       process.stdout.write(
@@ -330,6 +348,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
             sources,
             position: before.position,
             objections: collapseObjections(objections),
+            voice,
           }),
         );
         if (second !== null) {
@@ -557,7 +576,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     if (screened.uncovered.length > 0 && flags['no-close'] === undefined) {
       const groundRoots = groundRootsFor(store, run);
       closing = await closeGaps({
-        close: createHostGapCloser(host, plan.outcome, groundRoots),
+        close: createHostGapCloser(host, plan.outcome, groundRoots, voice),
         groundRoots,
         sources,
         briefs,
