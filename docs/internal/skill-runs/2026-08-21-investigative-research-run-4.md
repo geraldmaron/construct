@@ -3,7 +3,7 @@
 Run conditions: Sonnet-tier producing agent, skill file outside the
 repository as its only method reference, repository forbidden, web access
 on. The task was real and immediately consumed: the evidence base for the
-agentic-platform strategy document (docs/agentic-platform-strategy.md),
+agentic-platform strategy document (docs/internal/agentic-platform-strategy.md),
 which cites this run's findings by number. The deliverable below is
 verbatim as produced; nothing was edited.
 

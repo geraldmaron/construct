@@ -50,4 +50,4 @@ Each skill is self-contained: no other file in this repository, and no checkout 
 
 ## Status
 
-Early and actively developed. All seven ship only after a recorded real-work run, not on completed drafting alone; each carries at least one. The use ledger names the falsification test this claim is held to and records, run by run, whether a gate changed the outcome: `docs/skill-use-ledger.md`, with full records under `docs/skill-runs/`.
+Early and actively developed. All seven ship only after a recorded real-work run, not on completed drafting alone; each carries at least one. The use ledger names the falsification test this claim is held to and records, run by run, whether a gate changed the outcome: `docs/internal/skill-use-ledger.md`, with full records under `docs/internal/skill-runs/`.

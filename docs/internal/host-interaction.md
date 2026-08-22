@@ -52,7 +52,7 @@ a packaged alpha that has not caught up.
 
 ## nanobot — presence dogfood
 
-Trial record: `docs/host-trial-nanobot.md`. Instance lives at
+Trial record: `docs/internal/host-trial-nanobot.md`. Instance lives at
 `~/.nanobot-blackstory/` so it does not collide with a personal default.
 
 **Interact:**

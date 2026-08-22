@@ -32,8 +32,8 @@ Entities
 - skills/AUTHORING.md — the authoring standard: five portability rules every skill must follow — [seen: was-told, requester]
 - lint script — enforces the mechanically-checkable subset of AUTHORING.md's rules, runs on every commit — [seen: was-told, requester]
 - beads (issue tracker) — holds one bead per skill, each with acceptance criteria and a falsification test, plus an epic holding the catalog definition and hypotheses — [seen: was-told, requester]
-- docs/skill-use-ledger.md — one row per real skill invocation, records whether a gate changed the outcome; the program's validity claim rests on it; carries pre-registered per-skill refutation thresholds — [seen: was-told, requester]
-- docs/skill-runs/ — verbatim deliverables from each validation run; cites and is cited by the ledger — [seen: was-told, requester]
+- docs/internal/skill-use-ledger.md — one row per real skill invocation, records whether a gate changed the outcome; the program's validity claim rests on it; carries pre-registered per-skill refutation thresholds — [seen: was-told, requester]
+- docs/internal/skill-runs/ — verbatim deliverables from each validation run; cites and is cited by the ledger — [seen: was-told, requester]
 - distribution: copy-paste — the floor distribution method, a single file — [seen: was-told, requester]
 - distribution: git-based installer (npx skills add) — second distribution path — [seen: was-told, requester]
 - npm tarball — the CLI/kernel package's published artifact; skills deliberately do NOT ship in it (decided and recorded) — [seen: was-told, requester]
@@ -47,8 +47,8 @@ Relationships   (typed; one per line; no untyped arrows)
 - lint script blocks commit — until the mechanically-checkable AUTHORING.md rules pass — [seen: was-told, requester]
 - each skill depends-on its bead — bead carries the acceptance criteria and falsification test the skill must satisfy; a skill without a matching bead has no defined pass condition — [seen: was-told, requester]
 - epic (in beads) owns catalog definition and hypotheses — individual skill beads sit under it — [seen: was-told, requester]
-- docs/skill-use-ledger.md depends-on docs/skill-runs/ — run records cite the ledger and vice versa; each ledger row should trace to a run artifact — [seen: was-told, requester]
-- program validity claim depends-on docs/skill-use-ledger.md — requester states the whole program's validity claim rests on the ledger; if the ledger is wrong or unmaintained, the program's evidentiary basis fails — [seen: was-told, requester]
+- docs/internal/skill-use-ledger.md depends-on docs/internal/skill-runs/ — run records cite the ledger and vice versa; each ledger row should trace to a run artifact — [seen: was-told, requester]
+- program validity claim depends-on docs/internal/skill-use-ledger.md — requester states the whole program's validity claim rests on the ledger; if the ledger is wrong or unmaintained, the program's evidentiary basis fails — [seen: was-told, requester]
 - validation gates block skill close — "full repo test gate before any close" — a skill (including #8) cannot be marked closed until all five gate stages pass — [seen: was-told, requester]
 - construct repo (npm package) depends-on skills/ NOT being present — skills are stated to be severable and must work with no repo present; the npm tarball exclusion is the corresponding relationship (package build must not pull skills/ in) — [seen: was-told, requester]
 - kernel feeds skills (optional) — when present, adds provenance and lessons to a skill's operation; when absent, skill behavior is stated identical — [seen: was-told, requester]
@@ -57,8 +57,8 @@ Relationships   (typed; one per line; no untyped arrows)
 Obligations     (what a part owes, and to whom)
 - every skill owes a bead with acceptance criteria + falsification test to the tracker — source: requester's description of item (3) — [seen: was-told, requester]
 - every skill owes a portability compliance (5 rules) to skills/AUTHORING.md — source: requester's description of item (2) — [seen: was-told, requester]
-- every real invocation of a skill owes a ledger row to docs/skill-use-ledger.md — source: requester's description of item (4), "one row per real skill invocation" — [seen: was-told, requester]
-- every validation run owes a verbatim deliverable to docs/skill-runs/, cross-cited with its ledger row — source: requester's description of item (5) — [seen: was-told, requester]
+- every real invocation of a skill owes a ledger row to docs/internal/skill-use-ledger.md — source: requester's description of item (4), "one row per real skill invocation" — [seen: was-told, requester]
+- every validation run owes a verbatim deliverable to docs/internal/skill-runs/, cross-cited with its ledger row — source: requester's description of item (5) — [seen: was-told, requester]
 - every skill owes passage through all five validation gates to the program, before close — source: requester's description of item (8) — [seen: was-told, requester]
 - the npm package owes exclusion of skills/ from its published tarball to the "decided and recorded" distribution decision — source: requester's description of item (6) — [seen: was-told, requester]
 
@@ -72,7 +72,7 @@ Unknowns        (first-class entries, each classified)
 - The exact text of skills/AUTHORING.md's five portability rules — not-yet-looked (a fresh session with repo access should read this file directly before drafting anything; this mapper had no repo access)
 - Which subset of the five rules the lint script mechanically enforces vs. leaves to review — looked-and-unclear (requester distinguished "mechanically checkable subset" from the full rule set but did not enumerate either)
 - The shape of a bead's acceptance criteria / falsification test template, and whether skill #8 needs a new bead created before or after drafting — not-yet-looked (bd usage is documented generically in the project's own CLAUDE.md, but the skill-specific bead template is not described by the requester)
-- Exact schema/columns of docs/skill-use-ledger.md and its per-skill pre-registered refutation thresholds — not-yet-looked (file exists per requester but its structure is not described)
+- Exact schema/columns of docs/internal/skill-use-ledger.md and its per-skill pre-registered refutation thresholds — not-yet-looked (file exists per requester but its structure is not described)
 - What counts as a "real" invocation vs. a test invocation for ledger purposes — looked-and-unclear (requester says "real skill invocation" but the boundary against test/dry-run use is not stated)
 - Exact content/order/pass criteria of the five validation gates (spec lint, reference validator, trigger test, naked-file test, full repo gate) — looked-and-unclear (named and ordered by requester; internal mechanics, thresholds, and tooling not described)
 - The lessons loop mechanism — unknowable-from-here (requester explicitly states they have not told the mapper this)

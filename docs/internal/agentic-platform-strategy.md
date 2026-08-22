@@ -70,7 +70,7 @@ source classes and the unverified marks preserved:
 
 - Seven validated method skills in the standard format, each with recorded
   runs; the use ledger's current count and per-row evidence live in
-  `docs/skill-use-ledger.md` — [seen: ran, this program's own ledger and
+  `docs/internal/skill-use-ledger.md` — [seen: ran, this program's own ledger and
   runs]. Stated caveat, per adversarial review: scored by the program's own
   sessions against pre-registered criteria, with honest-no rows recorded
   where they occur; the pre-registered refutation thresholds exist precisely
