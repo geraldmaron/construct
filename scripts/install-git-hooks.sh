@@ -11,18 +11,27 @@
 # unconditionally, so on any machine that had run `bd init` the hook it reported
 # installing was never executed. Asking git where hooks live is the fix.
 #
-# Idempotent: it replaces its own marked sections and leaves the rest of the file
+# Idempotent: it replaces its own marked section and leaves the rest of the file
 # — including the section beads manages — alone.
 #
-# Two sections, and the order is the point. The gate runs first so a secret
-# never reaches a commit. The keeper runs LAST, after the beads section, because
-# what it undoes is something that section does: beads re-exports the whole
-# tracker database and stages it, so a commit that named two files by hand ends
-# up carrying every bead any session touched. The export is worth keeping and
-# the staging is not, so the keeper takes the file back out of the index unless
-# the author put it there. Nothing depends on the staging: beads rewrites the
-# file on every tracker write, which is what keeps the reconcile reading current
-# state.
+# One section, installed first, and what it leaves behind is an EXIT trap. The
+# gate itself runs first so a secret never reaches a commit. The keeper it arms
+# undoes something the beads section further down does: beads re-exports the
+# whole tracker database and stages it, so a commit that named two files by hand
+# ends up carrying every bead any session touched. The export is worth keeping
+# and the staging is not, so the keeper takes the file back out of the index
+# unless the author put it there. Nothing depends on the staging: beads rewrites
+# the file on every tracker write, which is what keeps the reconcile reading
+# current state.
+#
+# The keeper is a trap and not a section at the end of the file, which is the
+# part that was learned rather than designed. The beads section exits the hook
+# itself whenever its own run fails, and a keeper written as trailing lines is
+# simply not reached on that path — so a failed tracker hook left the staged
+# export sitting in the index, where the NEXT commit's gate read it as the
+# author's own staging and kept it. The failure mode the keeper exists to
+# prevent was reachable through the keeper's own absence. A trap runs on every
+# exit, including that one.
 set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -37,6 +46,9 @@ hook="$hooks_dir/pre-commit"
 
 begin="# --- BEGIN CONSTRUCT GATE ---"
 end="# --- END CONSTRUCT GATE ---"
+# The keeper used to be its own trailing section. It is a trap inside the gate
+# now, and these markers are kept only so that stripping still finds and removes
+# the old section from a hook installed before the change.
 keeper_begin="# --- BEGIN CONSTRUCT TRACKER KEEPER ---"
 keeper_end="# --- END CONSTRUCT TRACKER KEEPER ---"
 
@@ -50,37 +62,34 @@ read -r -d '' block <<'BLOCK' || true
 _construct_root="$(git rev-parse --show-toplevel)"
 node "$_construct_root/scripts/hooks/secret-scan.mjs" || exit 1
 node "$_construct_root/scripts/hooks/repo-gate.mjs" || true
-# Whether the author staged the tracker export is only knowable here, before
-# the beads section stages it unconditionally. The answer is left where the
-# keeper section at the end of this file can read it.
-_construct_git_dir="$(git rev-parse --git-dir)"
-rm -f "$_construct_git_dir/construct-tracker-staged"
+# Whether the author staged the tracker export is only knowable here, before the
+# beads section below stages it unconditionally. It is read back by the keeper,
+# which runs in this same shell, so the answer never has to survive on disk.
+_construct_tracker_staged=no
 if git diff --cached --name-only -- .beads/issues.jsonl | grep -q .; then
-  : > "$_construct_git_dir/construct-tracker-staged"
+  _construct_tracker_staged=yes
 fi
-# --- END CONSTRUCT GATE ---
-BLOCK
-
-# The keeper undoes what the beads section stages, so it has to run after it.
-# Everything this script manages is stripped out of the existing file first and
-# put back in a known order, which is what makes re-running it idempotent no
-# matter how many times it has run before.
-read -r -d '' keeper_block <<'BLOCK' || true
-# --- BEGIN CONSTRUCT TRACKER KEEPER ---
-# Managed by scripts/install-git-hooks.sh — re-running the installer replaces
-# this section and touches nothing else in the file.
+# The keeper undoes what the beads section stages: that section re-exports the
+# whole tracker database and stages it, which would attach every bead any
+# session touched to a commit that was about something else. An author who
+# staged the export themselves meant it, and keeps it, with the fresher export
+# beads just wrote.
 #
-# Last on purpose. The section above re-exports the whole tracker database and
-# stages it, which attaches every bead any session touched to a commit that was
-# about something else. The export is worth having and the staging is not, so
-# the file comes back out of the index here. An author who staged it themselves
-# meant it, and keeps it, with the fresher export the section above just wrote.
-_construct_git_dir="$(git rev-parse --git-dir)"
-if [ ! -e "$_construct_git_dir/construct-tracker-staged" ]; then
-  git restore --staged -- .beads/issues.jsonl 2>/dev/null || true
-fi
-rm -f "$_construct_git_dir/construct-tracker-staged"
-# --- END CONSTRUCT TRACKER KEEPER ---
+# It is a trap and not a block at the end of this file because the beads section
+# exits the hook on its own failures. Trailing lines are not reached on that
+# path, and the staged export then sits in the index until the next commit,
+# whose gate reads it as the author's own staging and keeps it — the exact
+# misattribution this prevents, arriving through this code not running. A trap
+# runs on every exit.
+_construct_keep_tracker() {
+  _construct_status=$?
+  if [ "$_construct_tracker_staged" = no ]; then
+    git restore --staged -- .beads/issues.jsonl 2>/dev/null || true
+  fi
+  exit $_construct_status
+}
+trap _construct_keep_tracker EXIT
+# --- END CONSTRUCT GATE ---
 BLOCK
 
 existing=""
@@ -108,7 +117,6 @@ esac
   printf '%s\n' "$shebang"
   printf '%s\n' "$block"
   printf '%s\n' "$body"
-  printf '%s\n' "$keeper_block"
 } > "$hook"
 chmod +x "$hook"
 
