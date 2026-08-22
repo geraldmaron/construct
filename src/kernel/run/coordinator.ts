@@ -78,6 +78,7 @@ import { gateObligation } from '../plan/gates.ts';
 import type { GroundGates, RepoManifest } from '../plan/gates.ts';
 import { constructIdentity, contentShapeProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
+import { VOICE_OVERRIDE_ACTION } from './voicerecord.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -915,13 +916,15 @@ export async function workRun(
 
     // An deliverable that does not sound like Construct must be traceable to the
     // user who asked for that, at the dispatch it shaped. Voice is bound
-    // before the work, so this is the only place the record can be made.
+    // before the work, so this is the only place the record can be made — and
+    // it is the record composing reads back, so the document a run produces is
+    // written in the voice its deliverables were.
     if (options.voice) {
       appendWorkLog(store, {
         run: task.run,
         task: task.id,
         role: task.role,
-        action: 'voice-overridden',
+        action: VOICE_OVERRIDE_ACTION,
         detail: { instruction: options.voice.instruction, source: options.voice.source },
         at: options.clock(),
       });
