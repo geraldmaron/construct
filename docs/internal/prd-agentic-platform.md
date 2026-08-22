@@ -90,7 +90,7 @@ Each an observation, thresholds labeled for what they are:
   line, chosen by the operator in the platform strategy's pre-mortem).
 - **Refutation status:** per skill, rows toward its ten-use test with
   gate-changed count. The instrument's honesty check: honest-no rows exist
-  and are recorded, not suppressed (`docs/skill-use-ledger.md`).
+  and are recorded, not suppressed (`docs/internal/skill-use-ledger.md`).
 - **Cross-tier floor:** every shipped skill holds a recorded Sonnet-class
   run with its record intact: seven of seven.
 - **Doctor completeness:** `construct doctor` reports presence, version
@@ -120,7 +120,7 @@ Each an observation, thresholds labeled for what they are:
 
 - `[assumed]` The platform strategy's proposed direction (method-first,
   provenance hedge) will be accepted. Settled by: the decider's verdict on
-  `docs/agentic-platform-strategy.md`. If rejected, this PRD's outcome 6
+  `docs/internal/agentic-platform-strategy.md`. If rejected, this PRD's outcome 6
   survives but the provenance emphasis in outcome 4's roadmap weight moves.
 - `[assumed]` The Agent Skills format remains readable across the major
   hosts at least in its current form. Settled by: the format's governance
@@ -164,7 +164,7 @@ Each an observation, thresholds labeled for what they are:
 5. `construct doctor` on a machine missing a host reports that host as
    absent with its remediation, exit code nonzero only for broken state,
    and never modifies anything.
-6. For any closed skill bead, `docs/skill-use-ledger.md` holds at least
+6. For any closed skill bead, `docs/internal/skill-use-ledger.md` holds at least
    one row naming its recorded run file, and that file exists and carries
    the verbatim deliverable.
 7. The skills lint rejects, with named reasons: a seventh frontmatter

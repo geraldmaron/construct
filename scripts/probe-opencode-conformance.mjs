@@ -10,7 +10,7 @@
  *
  * OpenCode has no subscription-backed path this probe could default to: its
  * stored GitHub Copilot and OpenCode Go credentials expose zero invocable
- * model IDs, confirmed by a direct failing call (docs/host-trial-cursor.md).
+ * model IDs, confirmed by a direct failing call (docs/internal/host-trial-cursor.md).
  * Development model calls otherwise come from Gerald's Claude Code or Cursor
  * subscriptions, never a local server (CLAUDE.md); with neither reachable
  * through OpenCode, this probe refuses without --model and --tool-model

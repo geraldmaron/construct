@@ -3,7 +3,7 @@
  * score-shape-chooser.mjs — re-derive the shape-chooser miss rate from the
  * recorded run.
  *
- * `docs/2026-08-21-shape-chooser-miss-rate.md` quotes a headline the project
+ * `docs/internal/2026-08-21-shape-chooser-miss-rate.md` quotes a headline the project
  * repeats beside its routing miss rate: on wording nobody tuned the matcher
  * against, the keyword shape chooser misses 0.625 (25/40). The per-ask answers
  * behind that figure are committed in `fixtures/shape-chooser/keywords.json`,
@@ -120,7 +120,7 @@ if (failures.length > 0) {
   for (const failure of failures) process.stderr.write(`  ${failure}\n`);
   process.stderr.write(
     '\nEither the fixture changed, or the figure quoted in ' +
-      'docs/2026-08-21-shape-chooser-miss-rate.md is wrong. Both are decisions, not typos.\n',
+      'docs/internal/2026-08-21-shape-chooser-miss-rate.md is wrong. Both are decisions, not typos.\n',
   );
   process.exit(1);
 }

@@ -54,7 +54,7 @@ rewritten, as new probes and harness runs land.
   dispatch shape (X1, R2 missed; distractors clean). Stays best-effort.
   Separately, a **throughput** floor observed 2026-08-10: over 40 surveyed
   documents, all four grounded dispatches hit the ten-minute invocation limit
-  having produced nothing (`docs/stakeholder-acceptance-phase-5.md`, Case 0).
+  having produced nothing (`docs/internal/stakeholder-acceptance-phase-5.md`, Case 0).
   Contract-clean is not the same as finishes: the second fact is the one a
   user meets first, so it is surfaced before the dispatch by
   `src/hosts/floors.ts` rather than left to be rediscovered per run.

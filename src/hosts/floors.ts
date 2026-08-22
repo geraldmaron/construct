@@ -49,7 +49,7 @@ export const DISPATCH_FLOORS: readonly DispatchFloor[] = Object.freeze([
     observation:
       'a 35b-class local model surveyed 40 documents, then every one of four grounded dispatches ' +
       'hit the ten-minute host timeout having produced nothing — ten minutes per role, spent',
-    evidence: 'docs/stakeholder-acceptance-phase-5.md, Case 0',
+    evidence: 'docs/internal/stakeholder-acceptance-phase-5.md, Case 0',
   },
 ]);
 

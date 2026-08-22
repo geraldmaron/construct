@@ -172,7 +172,7 @@ a measured figure rather than asserted as completeness.
 
 Waves A-D are closed in the tracker, including construct-gzk (the plan's
 stated epic close). The table above is the current state, not a forecast.
-Case 1 of `docs/stakeholder-acceptance-phase-5.md` was accepted 2026-08-10.
+Case 1 of `docs/internal/stakeholder-acceptance-phase-5.md` was accepted 2026-08-10.
 Cases 0 and 2-6 are recorded and still unchecked: that is Gerald's move, and
 it is the only thing keeping construct-yx7 open. Do not restart pack work
 from the wave names below; they are the record of the order the work ran,
@@ -190,7 +190,7 @@ ratification). Adjacent existing bugs stay in their own lanes:
 construct-4t8, n9d, j99, 8yi, z34, jnf.
 
 **Gate — Phase 5 stakeholder acceptance.** Gerald reads and accepts or
-rejects the packets (`docs/stakeholder-acceptance-phase-5.md`; construct-9xq
+rejects the packets (`docs/internal/stakeholder-acceptance-phase-5.md`; construct-9xq
 is the Phase 4 packet). *(Case 1 was accepted 2026-08-10, clearing this gate
 for wave B — see the amendment above.)* No wave-B bead dispatches before
 acceptance is recorded. If Gerald wants breadth to start sooner, that is a

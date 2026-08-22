@@ -1246,7 +1246,7 @@ test('a dispatch meets the recorded throughput floor before it spends ten minute
     // A caution with no next move is a slower failure, so both ways out are named.
     assert.match(out, /--timeout=<minutes>/);
     assert.match(out, /construct outcome --workspace=<name>/);
-    assert.match(out, /docs\/stakeholder-acceptance-phase-5\.md/);
+    assert.match(out, /docs\/internal\/stakeholder-acceptance-phase-5\.md/);
   } finally {
     rmSync(ground, { recursive: true, force: true });
   }

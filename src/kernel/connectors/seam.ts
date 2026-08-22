@@ -5,7 +5,7 @@
  * from the outside in, the same way a host adapter implements
  * `ProposalApplier` without the kernel ever importing a host.
  *
- * See docs/connector-seam-design.md for the design decision this seam
+ * See docs/internal/connector-seam-design.md for the design decision this seam
  * exists to carry out — the adversarial pass, the alternative it was
  * weighed against, and the reasoning behind the two properties this module
  * is small enough to be:
