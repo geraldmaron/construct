@@ -67,7 +67,7 @@ claude mcp add construct construct serve
 
 
 Chat dogfood without an IDE: nanobot WebUI with Construct attached over MCP
-(`docs/internal/host-trial-nanobot.md`, `docs/host-interaction.md`). OpenCode stays the
+(`docs/internal/host-trial-nanobot.md`, `docs/internal/host-interaction.md`). OpenCode stays the
 first-party *execution* host; MCP presence reaches Claude Code, Codex, Cursor,
 and peers. Do not stand up a Construct-only chat UI — commitment 1. Xirp is a
 future projection target, not a substitute (`RESEARCH-DECISIONS.md` §16).

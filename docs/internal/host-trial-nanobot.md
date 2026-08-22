@@ -148,7 +148,7 @@ to a keyword list — that tunes the instrument to the one case anybody looked a
 ## Interaction surface (2026-08-14)
 
 How to talk to this instance, and the host strategy recommendation that
-generalizes it, live in `docs/host-interaction.md`. Short form:
+generalizes it, live in `docs/internal/host-interaction.md`. Short form:
 
 ```bash
 nanobot webui -c ~/.nanobot-blackstory/config.json -y

@@ -16,6 +16,23 @@ beside the guides, because a person installing a tool has no reason to read a
 dated probe transcript or an acceptance packet addressed to one stakeholder, and
 a directory that mixes the two makes them work out which is which.
 
+## What keeps the two apart
+
+A gate, not a habit. `scripts/lint-docs-index.mjs` holds `docs/` to the list in
+`docs/README.md`: a file added there fails the build until someone either lists
+it — which is the moment they decide it is documentation — or moves it here.
+Nothing needs listing on this side; a record is what a file is when nobody
+claimed it was a guide.
+
+It was nearly a content heuristic instead. Matching a dated opening, a
+date-stamped filename, a status block or a tracker id was measured against the
+two directories as they actually stood: it caught 13 of 16 records, missed
+three, and flagged one file that had been filed as documentation — correctly, as
+it turned out, and that file is now `host-interaction.md` on this side. Missing
+three is survivable. Flagging a real guide is not, because a check people learn
+to argue with is a check people learn to ignore. So the marks survive only as a
+hint printed beside the question, never as the answer.
+
 ## What is in here
 
 - **Probe and trial records** — `host-trial-*.md`, `injected-ground-review.md`.
