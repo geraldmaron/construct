@@ -37,9 +37,16 @@ export interface Expectation {
 }
 
 /**
- * Every behavior the probe checks. Measured on the pinned version, against a
- * local Ollama backend (`qwen3.5:4b`, zero-cost, so re-verification costs
- * nothing), 2026-08-21.
+ * Every behavior the probe checks. The full set was measured on the pinned
+ * version against a local Ollama backend (`qwen3.5:4b`, zero-cost, so
+ * re-verification costs nothing), 2026-08-21. The same date, the probe's
+ * subscription-backed default (claude-code, per CLAUDE.md's sourcing rule —
+ * `claude-code/claude-sonnet-5`, goose 1.46.0) was also run against all eight:
+ * six held unchanged, and two — `a-failed-model-call-exits-0-and-reads-as-success`
+ * and `no-session-skips-the-shared-session-store-but-not-the-request-log` —
+ * diverge by provider. Those two claims state both providers' measured
+ * behavior explicitly; the other six are not restated per-provider because
+ * both runs agreed.
  */
 export const EXPECTATIONS: readonly Expectation[] = [
   {
@@ -83,18 +90,29 @@ export const EXPECTATIONS: readonly Expectation[] = [
   {
     name: 'a-failed-model-call-exits-0-and-reads-as-success',
     claim:
-      'A request the backend cannot serve (measured: an unrecognised model name against Ollama, a 404) is caught and turned ' +
-      'into an ordinary `role:"assistant"` text message reading "Ran into this error: …". The process exits 0, ' +
-      '`metadata.status` still reads "completed", and token counts read 0. Nothing in the exit code or the JSON\'s structure ' +
-      'distinguishes this from a real answer; only the assistant text does, and only by prose pattern-matching.',
+      'Whether an unrecognised `--model` value produces a visible error depends on provider. Against ollama (measured ' +
+      '2026-08-21: an unrecognised model tag, a 404), the request is caught and turned into an ordinary ' +
+      '`role:"assistant"` text message reading "Ran into this error: …" — the process exits 0, `metadata.status` still ' +
+      'reads "completed", and token counts read 0; nothing in the exit code or the JSON\'s structure distinguishes this ' +
+      'from a real answer, only the assistant text does, and only by prose pattern-matching. Against claude-code ' +
+      '(measured 2026-08-21, goose 1.46.0, requesting the deliberately-bogus model name ' +
+      '`construct-probe-nonexistent-model`): goose does NOT reproduce that error text at all. The shelled-out `claude` ' +
+      'CLI does not validate `--model` the way ollama\'s tag lookup does, so goose replies as if the call succeeded — ' +
+      'exit 0, `metadata.status` "completed", ordinary assistant text, nonzero token counts. A caller cannot use this ' +
+      'behavior to detect a bad `--model` value under claude-code; the error-text pattern-match only fires under ollama.',
   },
   {
     name: 'no-session-skips-the-shared-session-store-but-not-the-request-log',
     claim:
       'Each `goose run` writes a row (session id, working directory) into a single shared ' +
-      '`~/.local/share/goose/sessions/sessions.db` unless `--no-session` is passed, which suppresses that write. It does NOT ' +
-      'suppress the separate, always-on request log at `~/.local/state/goose/logs/llm_request.*.jsonl`, which records full ' +
-      'request/response payloads regardless of `--no-session` or `--quiet`.',
+      '`~/.local/share/goose/sessions/sessions.db` unless `--no-session` is passed, which suppresses that write, on every ' +
+      'provider measured. Whether `--no-session` also leaves the separate, always-on request log at ' +
+      '`~/.local/state/goose/logs/llm_request.*.jsonl` untouched depends on provider. Against ollama (measured ' +
+      '2026-08-21): that log stays active regardless of `--no-session` or `--quiet`, recording full request/response ' +
+      'payloads — its mtime advances on every call. Against claude-code (measured 2026-08-21, goose 1.46.0): the log\'s ' +
+      'mtime did NOT advance across any call in the run; the shelled-out `claude` CLI execution does not write to ' +
+      'goose\'s own request log the way its native HTTP-backed providers do. A caller cannot use this log\'s freshness as ' +
+      'a signal of request activity under claude-code.',
   },
 ];
 

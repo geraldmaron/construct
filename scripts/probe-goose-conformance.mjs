@@ -12,6 +12,13 @@
  * Ollama stays reachable for a caller who names it explicitly — it is not
  * chosen for you.
  *
+ * Two checks are provider-dependent, per the divergent behavior recorded in
+ * pin.ts: `a-failed-model-call-exits-0-and-reads-as-success` and
+ * `no-session-skips-the-shared-session-store-but-not-the-request-log` assert
+ * different things for `provider === 'ollama'` vs `provider === 'claude-code'`
+ * and SKIP (not fail) for any other provider, since no measurement backs a
+ * claim there.
+ *
  *   node scripts/probe-goose-conformance.mjs [--binary /path/to/goose]
  *   node scripts/probe-goose-conformance.mjs --model ollama/qwen3.5:4b   # explicit opt-in, local
  */
@@ -46,6 +53,12 @@ function fail(name, detail) {
   checked.add(name);
   failed += 1;
   console.log(`  FAIL  ${name} — ${detail}`);
+}
+
+/** Mark an expectation as intentionally not checked for this run (does not count as a failure). */
+function skip(name, detail) {
+  checked.add(name);
+  console.log(`  SKIP  ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
 function run(cmd, cmdArgs, cwd) {
@@ -143,7 +156,9 @@ try {
     fail('explicit-provider-and-model-flags-override-a-configured-default', `metadata.inference: ${JSON.stringify(inference)}`);
   }
 
-  // a-failed-model-call-exits-0-and-reads-as-success
+  // a-failed-model-call-exits-0-and-reads-as-success — provider-dependent (see pin.ts):
+  // ollama surfaces the failure as assistant-text error prose; claude-code does not
+  // validate --model at all and replies as if the call succeeded.
   const bogus = await run(
     binary,
     ['run', '--no-session', '--provider', provider, '--model', 'construct-probe-nonexistent-model', '--output-format', 'json', '--quiet', '-t', 'Reply: pong'],
@@ -156,21 +171,59 @@ try {
     // left null
   }
   const bogusText = bogusParsed?.messages?.at(-1)?.content?.find((c) => c.type === 'text')?.text ?? '';
-  if (bogus.code === 0 && bogusParsed?.metadata?.status === 'completed' && /error/i.test(bogusText)) {
-    pass('a-failed-model-call-exits-0-and-reads-as-success', `exit 0, status "completed", text: ${JSON.stringify(bogusText.slice(0, 80))}`);
+  if (provider === 'ollama') {
+    if (bogus.code === 0 && bogusParsed?.metadata?.status === 'completed' && /error/i.test(bogusText)) {
+      pass('a-failed-model-call-exits-0-and-reads-as-success', `[ollama] exit 0, status "completed", text: ${JSON.stringify(bogusText.slice(0, 80))}`);
+    } else {
+      fail('a-failed-model-call-exits-0-and-reads-as-success', `[ollama] exit ${bogus.code}; status ${bogusParsed?.metadata?.status}; text ${JSON.stringify(bogusText.slice(0, 120))}`);
+    }
+  } else if (provider === 'claude-code') {
+    if (bogus.code === 0 && bogusParsed?.metadata?.status === 'completed' && !/error/i.test(bogusText) && bogusText.length > 0) {
+      pass(
+        'a-failed-model-call-exits-0-and-reads-as-success',
+        `[claude-code] exit 0, status "completed", bogus --model not validated — replied normally: ${JSON.stringify(bogusText.slice(0, 80))}`,
+      );
+    } else {
+      fail('a-failed-model-call-exits-0-and-reads-as-success', `[claude-code] exit ${bogus.code}; status ${bogusParsed?.metadata?.status}; text ${JSON.stringify(bogusText.slice(0, 120))}`);
+    }
   } else {
-    fail('a-failed-model-call-exits-0-and-reads-as-success', `exit ${bogus.code}; status ${bogusParsed?.metadata?.status}; text ${JSON.stringify(bogusText.slice(0, 120))}`);
+    skip(
+      'a-failed-model-call-exits-0-and-reads-as-success',
+      `behavior on an unrecognised --model is measured only for ollama and claude-code (see pin.ts); provider "${provider}" is neither`,
+    );
   }
 
-  // no-session-skips-the-shared-session-store-but-not-the-request-log
+  // no-session-skips-the-shared-session-store-but-not-the-request-log — provider-dependent
+  // (see pin.ts): ollama keeps writing the request log under --no-session; claude-code's
+  // shelled-out execution does not appear to write it at all.
   const logAfter = requestLogFreshness();
-  if (logAfter !== null && (logBefore === null || logAfter > logBefore)) {
-    pass(
-      'no-session-skips-the-shared-session-store-but-not-the-request-log',
-      'the request log advanced under --no-session; the sessions.db half is a recorded one-time observation, not re-probed here',
-    );
+  if (provider === 'ollama') {
+    if (logAfter !== null && (logBefore === null || logAfter > logBefore)) {
+      pass(
+        'no-session-skips-the-shared-session-store-but-not-the-request-log',
+        '[ollama] the request log advanced under --no-session; the sessions.db half is a recorded one-time observation, not re-probed here',
+      );
+    } else {
+      fail('no-session-skips-the-shared-session-store-but-not-the-request-log', `[ollama] request log freshness before=${logBefore} after=${logAfter}`);
+    }
+  } else if (provider === 'claude-code') {
+    if (logAfter === logBefore) {
+      pass(
+        'no-session-skips-the-shared-session-store-but-not-the-request-log',
+        `[claude-code] request log mtime unchanged across the run (before=${logBefore} after=${logAfter}) — claude-code does not ` +
+          'appear to write this log; the sessions.db half is a recorded one-time observation, not re-probed here',
+      );
+    } else {
+      fail(
+        'no-session-skips-the-shared-session-store-but-not-the-request-log',
+        `[claude-code] expected the log to stay untouched but its freshness changed: before=${logBefore} after=${logAfter}`,
+      );
+    }
   } else {
-    fail('no-session-skips-the-shared-session-store-but-not-the-request-log', `request log freshness before=${logBefore} after=${logAfter}`);
+    skip(
+      'no-session-skips-the-shared-session-store-but-not-the-request-log',
+      `request-log behavior is measured only for ollama and claude-code (see pin.ts); provider "${provider}" is neither`,
+    );
   }
 } finally {
   rmSync(dir, { recursive: true, force: true });
