@@ -37,6 +37,8 @@
 import { challengeById, runStructuralChallenges } from '../challenge/catalog.ts';
 import type { Brief } from '../brief/schema.ts';
 import type { SourceDeliverable } from './compose.ts';
+import { escapeForTerminal } from '../render/terminal.ts';
+import type { Report } from '../render/report.ts';
 
 /** One gap a role says its material settles, and what it says the material says. */
 export interface ClosedGap {
@@ -282,4 +284,53 @@ function setDefault<T>(map: Map<string, T[]>, key: string): T[] {
   const list: T[] = [];
   map.set(key, list);
   return list;
+}
+
+/**
+ * Put the composition's gaps back to the roles, once.
+ *
+ * Fail-soft by construction: a role whose closing call fails leaves its gaps
+ * standing, which is exactly the state the document was in before this round
+ * existed. A closing round is work the run can do on top of an answer it
+ * already has, so it must never be able to cost the answer.
+ */
+export async function closeGaps(input: {
+  readonly close: GapCloser;
+  readonly groundRoots: readonly string[];
+  readonly sources: readonly SourceDeliverable[];
+  readonly briefs: ReadonlyMap<string, Brief>;
+  readonly gaps: readonly string[];
+  readonly report: Report;
+}): Promise<ClosingRound> {
+  const replies: ClosingReply[] = [];
+  input.report.say(
+    `\nclosing round: ${String(input.gaps.length)} unanswered question(s) back to ` +
+      `${String(input.sources.length)} role(s) — one call each\n`,
+  );
+  for (const source of input.sources) {
+    try {
+      const reply = await input.close(source, input.gaps);
+      // A role whose brief cannot be read is asked and then not admitted: the
+      // checks it owed are the ones its answer must pass, and running a
+      // different set against it would be a weaker gate wearing the same name.
+      const brief = input.briefs.get(source.role);
+      replies.push(
+        brief === undefined
+          ? {
+              closed: [],
+              unclosed: reply.unclosed,
+              refused: reply.closed.map((answer) => ({
+                gap: answer.gap,
+                reason: `${source.role}'s brief could not be read, so its answer could not be held to the checks it owed`,
+              })),
+            }
+          : screenClosedAnswers(reply, brief, input.groundRoots),
+      );
+    } catch (error) {
+      input.report.say(
+        `  ${source.role} could not be asked (${escapeForTerminal((error as Error).message)}); its gaps stand\n`,
+      );
+    }
+  }
+  return foldClosingRound(input.gaps, replies);
 }

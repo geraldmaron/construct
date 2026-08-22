@@ -441,12 +441,14 @@ test('an equipped role is shown its lens: posture, questions, escalation, labels
   assert.match(text, /Your posture: Controls and evidence over intent/);
   assert.match(text, /which identity acts/, 'the question set travels with the dispatch');
   assert.match(text, /Escalate rather than push past your remit/);
-  assert.match(text, /dogfood-only/);
+  assert.match(text, /not an audit opinion/);
 
-  // A legal-lens domain declares the jurisdiction boundary out loud.
+  // A legal-lens domain carries its honest label, and no licensed-acceptance
+  // gate: the label says what the work is, not whose sign-off it waits on.
   const contracts = assignmentFor(brief('contracts'));
-  assert.match(contracts, /template-for-review/);
-  assert.match(contracts, /No jurisdiction is covered/);
+  assert.match(contracts, /not legal advice/);
+  assert.doesNotMatch(contracts, /No jurisdiction is covered/);
+  assert.doesNotMatch(contracts, /dogfood-only/);
 
   // The security lens carries a stated ceiling, and the ceiling reaches the
   // dispatch — a defensive-only limit the role never sees is not a limit.
@@ -454,9 +456,67 @@ test('an equipped role is shown its lens: posture, questions, escalation, labels
   assert.match(security, /Your posture: Assume the interesting failure is deliberate/);
   assert.match(security, /Defensive review only/);
 
-  // A domain no lens equips gets no invented posture. Every catalog domain
-  // carries a lens now, so the case is exercised by a domain outside it.
-  assert.ok(!assignmentFor(brief('no-such-domain')).includes('Posture:'));
+  // A domain no lens equips gets no invented posture — but it does get an
+  // explicit statement of the absence, not the silence this used to be.
+  // Every catalog domain carries a lens now, so the case is exercised by a
+  // domain outside it.
+  const lensless = assignmentFor(brief('no-such-domain'));
+  assert.ok(!lensless.includes('Your posture:'), 'no lens means no invented posture');
+  assert.match(lensless, /No lens equips this concern/);
+});
+
+test('a lensless domain is told what a lens would have supplied, and told to say so itself', () => {
+  const text = assignmentFor(brief('astrology'));
+  assert.match(text, /No lens equips this concern/);
+  assert.match(text, /no established question set, no extra/);
+  assert.match(text, /escalation ladder/);
+  // Not a vague caveat: the same three concrete things every lens actually
+  // carries (questions, slots, escalation) are named as what is missing.
+  assert.match(text, /method section your template names below/);
+  // No quality claim either way, stated positively rather than by banning
+  // words: "worse" appears only inside the negation, never asserted plain.
+  assert.match(text, /not worse for being that/);
+  assert.doesNotMatch(text, /is worse\b|\binferior\b|\bunfortunately\b/i);
+
+  // The method slot this directive points at is real: the role's own
+  // template lists it among the headed sections the deliverable must fill.
+  assert.match(text, /- method: that no lens equips this concern/);
+});
+
+test('an ask from a lensless domain hears the absence but not an instruction for a section it does not have', () => {
+  // Asks are prose with no template and no sections (kernel/run/ask.ts), so
+  // telling one to head a "method" section would name a heading that does
+  // not exist for it. It still hears that no lens governs it.
+  const question: Brief = { ...brief('astrology'), question: 'what does this concern make of the outcome?' };
+  const text = assignmentFor(question);
+  assert.match(text, /No lens equips this concern/);
+  assert.doesNotMatch(text, /method section your template names below/);
+});
+
+test('a dispatch under no lens records the absence in the work log, and only for the lensless task', async () => {
+  await withStoreAsync(async (store) => {
+    seed(store, ['astrology', 'security']);
+    const host = fakeHost();
+    await workRun(store, host, { owner: 'w', clock: frozen(AT), spendCeiling: 100 });
+
+    const log = readWorkLog(store, 'run-1');
+    const absent = log.filter((e) => e.action === 'lens-absent');
+    assert.equal(absent.length, 1, 'exactly the lensless task records the absence');
+    assert.equal(absent[0]?.task, 't-astrology');
+    assert.equal(absent[0]?.role, 'astrology');
+    const detail = absent[0]?.detail as { domain?: string; note?: string };
+    assert.equal(detail.domain, 'astrology');
+    assert.match(detail.note ?? '', /question set/);
+    assert.match(detail.note ?? '', /escalation ladder/);
+
+    // The base fact travels on every role-dispatched entry, not only the
+    // notable one — the same shape as modelFamily/modelTuned above it.
+    const dispatched = log.filter((e) => e.action === 'role-dispatched');
+    const lensOf = (role: string) =>
+      (dispatched.find((e) => e.role === role)?.detail as { lens?: string | null }).lens;
+    assert.equal(lensOf('astrology'), null);
+    assert.equal(lensOf('security'), 'security');
+  });
 });
 
 test('issue-spotting templates number issues; a PRD is a document, not a list of issues', () => {
@@ -693,7 +753,7 @@ test('the work log records what was flagged and what needs a licensed human', as
     const escalation = entries.find((e) => e.action === 'licensed-review-required');
     assert.equal(escalation?.role, 'privacy');
     assert.equal((escalation?.detail as { profession: string }).profession, 'attorney');
-    assert.match((escalation?.detail as { why: string }).why, /issue-spotting, not advice/);
+    assert.match((escalation?.detail as { why: string }).why, /research and issue-spotting, not advice/);
 
     assert.ok(
       !entries.some((e) => e.role === 'product-scoping' && e.action === 'licensed-review-required'),

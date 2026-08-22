@@ -17,7 +17,10 @@ shipped form.
 format defines. A vendor extension travels nowhere and is refused at upload by
 stricter hosts. `allowed-tools` is deliberately absent from our skills: the
 field grants and cannot restrict, so omitting it is the guardrail posture.
-See the exemplar's frontmatter. *(Machine-checked.)*
+`name` equals the skill's own directory: lowercase letters, digits, and
+hyphens only, 64 characters or fewer. `description` is capped at 1024
+characters, the format's own limit, not a house choice. See the exemplar's
+frontmatter. *(Machine-checked.)*
 
 **2. No host tool names, no vendor features.** Never "use WebSearch," "spawn a
 subagent," "create an artifact" — the host that has those is one host among
@@ -88,10 +91,10 @@ stacked ceremony burying content.
 
 ## Severability tripwires
 
-Machine-checked, and worth knowing while writing: no tracker ids, no paths
-into this repository, no absolute paths, no references to any person or
-machine. Method that originated in this repo's source is rewritten into the
-skill in plain language, never pointed at.
+Machine-checked: no tracker ids, no paths into this repository, no absolute
+paths. Not machine-checked, and worth knowing while writing anyway: no
+references to any person or machine. Method that originated in this repo's
+source is rewritten into the skill in plain language, never pointed at.
 
 ## Before it ships
 

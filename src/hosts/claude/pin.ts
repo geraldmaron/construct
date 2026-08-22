@@ -16,7 +16,13 @@
 
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 
-export const PINNED_VERSION = '2.1.216 (Claude Code)';
+/**
+ * Advanced on a full paid probe rather than on a version bump: all eleven
+ * expectations below were re-run against this build on 2026-08-21, including
+ * the two behind spend flags. The binary auto-updates, so this string goes
+ * stale on its own schedule; it moves again only when a probe says it may.
+ */
+export const PINNED_VERSION = '2.1.239 (Claude Code)';
 
 export interface Expectation {
   readonly name: string;

@@ -185,7 +185,7 @@ What changed is the production side. A role is now told that where something
 needs an owner and the material names none, it proposes who should own it and
 why that role; and that where nothing in the material supports even that, the
 owner is whoever asked for the work, because saying so is more use to a reader
-than an empty line (`kernel/run/grounding.ts`, ANSWER_THE_ASK). A proposal is
+than an empty line (`src/kernel/run/grounding.ts`, ANSWER_THE_ASK). A proposal is
 marked as a proposal, so nothing is invented and nothing is passed off as
 found — the marker's original purpose is kept and the line becomes satisfiable
 rather than being lowered to meet what was already written.

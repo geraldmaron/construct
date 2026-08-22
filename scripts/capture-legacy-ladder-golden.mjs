@@ -41,9 +41,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { legacyCheckout } from './lib/legacy-checkout.mjs';
 
-const LEGACY =
-  process.env.CONSTRUCT_LEGACY ?? join(process.env.HOME ?? '', 'Developer/Projects/construct-legacy');
+const LEGACY = legacyCheckout();
 
 const { extractViaExtractionLadder } = await import(
   `${LEGACY}/lib/document-extract/extraction-ladder.mjs`

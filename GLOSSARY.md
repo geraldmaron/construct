@@ -9,7 +9,7 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 | playbook | trunk | The shared operational method every role draws on. |
 | brief | contract | A declaration of what a task needs: inputs, tool capabilities, postconditions. |
 | dispatcher | router | Resolves a brief's requirements against available tools and roles. |
-| host | harness | The agent runtime a role actually executes on (OpenCode, Claude Agent SDK, Claude Code). |
+| host | harness | The agent runtime a role actually executes on. Four adapters ship: OpenCode, Claude Code, the Codex CLI, and the Cursor CLI. Only OpenCode and Claude Code carry `outward-write`; Codex and Cursor dispatch read-only. |
 | deliverable | artifact | The finished, traceable output of a run. |
 | work log | accountability ledger | The append-only record of what was done, by whom, under what role. |
 | decision inbox | — | The short list of calls that are genuinely the user's to make. |
@@ -17,6 +17,9 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 | projection | — | The spine made present inside a user's agent host through one protocol surface (MCP). Presence only: adapters execute work, the projection exposes the loop, and neither can advance completion state. |
 | namer | — | Whatever names the domains an outcome implicates when consulted — a host model behind the kernel's namer seam. Its output passes the same admission gate as every other inference; it proposes, never certifies. |
 | skill | — | A portable, self-contained unit of method an agent host loads on demand, carrying its verification gates in its own body and stating its enforcement tier plainly. Severable by definition: the kernel is never required for a skill to work. |
+| resource census | — | What this machine actually has to dispatch through: every host, whether it was found, its capabilities, the tier of the model it would run, and what a run there costs. One survey feeds both `construct doctor` and the choice `construct work` makes when no host was named. |
+| cost class | — | What a call on a resource costs, ordered cheapest first: `local` (served here, free to re-run), `subscription` (a login already pays for it), `metered` (billed per call), `unknown` (never measured). Unknown is ordered last, not in the middle: silence about spend is not evidence of cheapness. |
+| skill reach | — | Where a dispatched role can get at a shipped skill: `installed`, a copy in the machine's agent skills directory, which is what a host loads and therefore the copy whose text governs; or `checkout`, a copy only this repository holds, reached by reading the file. A run names every reachable skill with the skill's own description, and says plainly when none is reachable. |
 
 *(Footnote, 2026-08-20 — the word "persona" carries three senses on the record, and only one is retired.)* Retired: the v2 synonym for `role` in the table above — the premise that a persona differentiates what a model finds was tested and withdrawn (RESEARCH-DECISIONS.md §15), and the word never names a role on any surface. Alive, different sense: the professional **reader** whose acceptance a deliverable must earn — `docs/persona-acceptance-rubrics.md` uses it this way, the filename is load-bearing for `scripts/lint-reader-rubric-parity.mjs`, and inside `src/` that concept is written `reader`. Alive, different sense again: external brand framing — "Construct is the face of the skills" (the 2026-08-20 decision) may describe that face as a persona to an outside audience, which claims nothing about capability. A fourth appearance, `personal data` in the privacy domain, is not the word.
 

@@ -64,9 +64,11 @@ the routing verdict (`construct verdict --run run-20260810161440172
 **Why it was accepted, on the merits.** The deliverable's load-bearing
 claims were re-checked against the tree before acceptance rather than
 taken from this packet's own summary: the 40-document cap it cites is
-`DOCUMENT_CAP` in `src/hosts/sources.ts`; the watch it calls hardcoded is
-hardcoded, at `src/cli/index.ts` where the `Watch` object is built with
-`id: 'construct'` regardless of `--root`; the product-scoping signal list
+`DOCUMENT_CAP` in `src/hosts/sources.ts`; the watch it calls hardcoded was
+hardcoded, with the `Watch` object built at `id: 'construct'` regardless of
+`--root` (that code now lives in `src/cli/watch.ts`, and `--root` since became
+the selector for which checkout to inspect, so the finding is fixed rather than
+standing); the product-scoping signal list
 genuinely contains no word for repository or codebase, which is the
 routing gap the deliverable says it is; and the CHANGELOG sentence it
 quotes was true of the branch when the run happened and has since been

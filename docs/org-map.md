@@ -38,6 +38,12 @@ and its interval are in the README and in full in `RESEARCH-DECISIONS.md` §10.
 ladder, and extra required sections. The rest route and carry the default
 template, and say so.
 
+Carrying a lens and answering for a seat are different things, and the counts
+differ. 15 of 17 concerns answer for a job title a human team would
+recognize. The other 2 are marked **no seat owns this**, and that is a finding
+rather than a gap in this page: the questions they carry are the ones that fall
+between job descriptions, which is exactly why nobody is assigned to ask them.
+
 ## The seats
 
 ### Counsel — `privacy`
@@ -51,7 +57,7 @@ template, and say so.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `data-inventory` — what personal data the outcome touches, or "none" explicitly
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
 
 **What it must answer before anyone relies on it.**
@@ -62,12 +68,12 @@ template, and say so.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 
@@ -111,7 +117,7 @@ template, and say so.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `parties-and-terms` — who is bound and to what, as read from the source
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
 
 **What it must answer before anyone relies on it.**
@@ -122,12 +128,12 @@ template, and say so.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 
@@ -142,7 +148,7 @@ template, and say so.
 - `risks` — what could make the finding wrong, or "none identified" said explicitly
 - `open-questions` *(optional)* — what remains unknown, each with the assumed default the draft proceeds on
 - `provenance-and-authorship` — where records the organization relies on come from, and whether their origin can be proven or only assumed
-- `licensed-review` — the recommendation to a licensed professional this draft does not replace
+- `licensed-review` — the findings, if any, that genuinely require licensed counsel, each with why and in which jurisdiction, or "none" said explicitly
 
 **What it must answer before anyone relies on it.**
 
@@ -152,12 +158,12 @@ template, and say so.
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
-**Its posture.** Issue-spot, draft, escalate — never advise: name the exposure, cite what creates it, and route what needs a licensed human to a licensed human.
+**Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
 
 **What it surfaces to you rather than deciding itself.**
 
-- Anything that reads as advice rather than an issue spotted: stop and relabel as template-for-review.
-- A finding outside the declared jurisdictions: flag it as outside coverage; do not analyze past the flag.
+- Work that is practice rather than research (representing anyone, executing a filing, signing an opinion): route it to licensed counsel with a concrete referral naming the jurisdiction and the question. The research and drafting stay yours.
+- A question the governing texts leave genuinely unsettled, where real money or liability turns on the answer: say so plainly and recommend counsel rather than resolving it by picking a side.
 
 **Before you rely on it.** Issue-spotting only: it needs review by a licensed attorney. Nothing this concern produces is advice.
 
@@ -464,7 +470,7 @@ template, and say so.
 
 - An unobservable failure mode in shipping work: surface the measurement gap as its own finding, not a footnote.
 
-### unmapped seat — `evidence-provenance`
+### no seat owns this — `evidence-provenance`
 
 **The concern.** Where a claim comes from, what kind of source that is, and whether a reader can check it.
 
@@ -493,7 +499,7 @@ template, and say so.
 
 **Its stated limit, which is the invariant and not a gap.** this lens judges whether a claim is traceable and correctly typed, never whether it is true — a claim citing the right record and misreading it passes here and is still wrong
 
-### unmapped seat — `coverage-gaps`
+### no seat owns this — `coverage-gaps`
 
 **The concern.** What is missing from the record, and whether its absence is a finding or a bias.
 
@@ -547,6 +553,7 @@ template, and say so.
 
 - An unsubstantiated claim already published: put it in the decision inbox naming who can substantiate it or pull it — silence leaves it running.
 - A claim in regulated territory: route to licensed review; substantiation discipline is not a legal opinion.
+
 ## The seat that is deliberately empty
 
 There is no engineer concern. Your host is the engineer: Construct dispatches

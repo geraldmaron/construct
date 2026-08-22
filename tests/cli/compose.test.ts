@@ -15,10 +15,17 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { compose, main, work } from '../../src/cli/index.ts';
+import { HOUSE_VOICE } from '../../src/kernel/voice/voice.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 interface Capture {
   readonly code: number;
@@ -706,6 +713,92 @@ test('--shape=onepager is accepted and renders only its own sections', async () 
   assert.doesNotMatch(out, /## The choice/);
   assert.doesNotMatch(out, /## The answer/);
   assert.doesNotMatch(out, /## Where things stand/);
+});
+
+/**
+ * Every prompt a compose put to the host, kept by the role it was sent as.
+ * What voice a document is written in is decided in the prompt, before any text
+ * comes back, so a stand-in's fixed reply cannot show it and the prompt is the
+ * only place the property is observable.
+ */
+function recordingHost(inner: HostAdapter, seen: Map<string, string[]>): HostAdapter {
+  return {
+    ...inner,
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const { role, task } = request as { role: string; task: string };
+      seen.set(role, [...(seen.get(role) ?? []), task]);
+      return inner.invoke(request);
+    },
+  };
+}
+
+/** The prompt sent as this role, or '' where the role was never dispatched. */
+function promptFor(seen: Map<string, string[]>, role: string): string {
+  return seen.get(role)?.[0] ?? '';
+}
+
+function carriesHouseVoice(prompt: string): boolean {
+  return HOUSE_VOICE.every((rule) => prompt.includes(rule.rule));
+}
+
+const LIMERICK = 'Write every line of it as a limerick.';
+
+/**
+ * The defect this pins: `construct work --voice` shaped every deliverable and
+ * wrote the instruction down, and composing bound the house voice anyway — so a
+ * user got deliverables in the voice they asked for and a document in the voice
+ * they did not. The override is a fact of the run, recovered from the run's own
+ * record, and compose is never told it a second time here.
+ */
+test('a run worked under a voice override composes under it, without the user retyping it', async () => {
+  const seen = new Map<string, string[]>();
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([`--voice=${LIMERICK}`], workHost()),
+    async () => (
+      (composed = await compose([`--run=${latestRun()}`], recordingHost(composeHost(), seen))),
+      composed
+    ),
+  ]);
+  assert.equal(composed, 0, err);
+
+  // The document a person reads is arranged by the composer and judged by the
+  // position pass; both write prose and both are bound to the run's voice.
+  for (const role of ['composer', 'construct-position']) {
+    const prompt = promptFor(seen, role);
+    assert.match(prompt, /Write every line of it as a limerick\./, `${role} was told the voice`);
+    assert.equal(carriesHouseVoice(prompt), false, `${role} was not also told the house rules`);
+  }
+
+  // The closing round writes into the document too — a second dispatch, in the
+  // same voice as the claims it lands beside.
+  const closing = promptFor(seen, 'strategy-alignment-closing') || promptFor(seen, 'product-scoping-closing');
+  assert.match(closing, /Write every line of it as a limerick\./);
+  assert.equal(carriesHouseVoice(closing), false);
+
+  // Said out loud, the way `work` says it: a document that will not sound like
+  // Construct is a thing the user should see themselves having chosen.
+  assert.match(out, /voice: this run was worked under an override \(cli --voice\)/);
+  assert.match(out, /Write every line of it as a limerick\./);
+});
+
+/** The house voice is the case that needs no flag and no record, and keeps it. */
+test('a run nobody overrode still composes in Construct\'s own voice', async () => {
+  const seen = new Map<string, string[]>();
+  let composed = 0;
+  const { out, err } = await run([
+    ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
+    () => work([], workHost()),
+    async () => (
+      (composed = await compose([`--run=${latestRun()}`], recordingHost(composeHost(), seen))),
+      composed
+    ),
+  ]);
+  assert.equal(composed, 0, err);
+  assert.equal(carriesHouseVoice(promptFor(seen, 'composer')), true);
+  assert.doesNotMatch(promptFor(seen, 'composer'), /limerick/);
+  assert.doesNotMatch(out, /worked under an override/);
 });
 
 test('one deliverable composes nothing, and points at reading it instead', async () => {

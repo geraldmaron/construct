@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 import { buildPlan, vetCitations } from '../../../src/kernel/plan/planner.ts';
 import type { PlanInput } from '../../../src/kernel/plan/planner.ts';
 import type { Source } from '../../../src/kernel/store/sources.ts';
+import { lensForDomain } from '../../../src/kernel/plan/lenses.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -97,6 +98,21 @@ test('steps cite the catalog domain and every declared source', () => {
     { kind: 'source', source: 'src-1' },
   ]);
   assert.deepEqual(plan.sourcesDeclared, ['src-1']);
+});
+
+test('a step routed to a domain no lens equips carries a deliverable that says so', () => {
+  // Every domain in the shipped catalog carries a lens today (see
+  // tests/kernel/plan/playbooks.test.ts), so this names a domain outside it —
+  // the shape a workspace's own domain catalog would route through, per
+  // implication/domains.ts's own docstring on why the catalog is
+  // caller-replaceable.
+  assert.equal(lensForDomain('inventory-forecasting'), undefined);
+  const plan = buildPlan(
+    input({ implicated: [{ domain: 'inventory-forecasting', concern: 'c', score: 10, signals: ['stock'] }] }),
+  );
+  const method = plan.steps[0]?.deliverable.slots.find((s) => s.name === 'method');
+  assert.ok(method, 'the plan step a lensless domain routes to must carry the method slot');
+  assert.equal(method.required, true);
 });
 
 test('a citation of an undeclared source or unknown domain is discarded and said aloud', () => {

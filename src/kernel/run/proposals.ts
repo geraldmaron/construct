@@ -39,6 +39,36 @@
  * so a second extraction of the same document proposes the same ids and the
  * store's own uniqueness is what keeps the queue from doubling.
  *
+ * Numbered issues are read from anywhere in the document; the section
+ * carrying what follows from them is read from one fixed place, and that
+ * place is not the same heading in every composition shape (kernel/run/
+ * shapes.ts). Review names its own section "what follows"; every other shape
+ * asks the identical question in the words that fit what the shape is for,
+ * and reading only review's word would leave every other shape's follow-up
+ * material unread. The mapping, checked against each shape's actual sections
+ * rather than assumed (FOLLOW_UP_SECTION_BY_SHAPE, below):
+ *
+ *   review    what-follows          the section already named for exactly this
+ *   decision  what-happens-first    the order committed to once the choice is made
+ *   spec      requirements          each one already reads as an instruction
+ *   rfc       tradeoffs             what a reader has to weigh before agreeing
+ *   adr       consequences          its own wording is "what follows from the decision"
+ *
+ * Onepager has no entry. shapes.ts leaves what-happens-first out of that shape
+ * on the grounds that its reader approves or rejects one call rather than
+ * carrying one out, so there is no section in it for this module to read as
+ * follow-up either.
+ *
+ * Which action a row becomes is not always the mechanical read, though: a
+ * caller may name one row's action outright, or — once a host is already
+ * being paid for elsewhere in the run — have a model propose it instead of
+ * reading the verb. Neither costs this function anything, because it never
+ * makes either call itself; it only ever reads a decision that was made
+ * before it ran, the same way `modelActions` arrives pre-computed rather than
+ * awaited here. What it adds is `actionSource` on every row, so a reader of
+ * the queue is told which of the three decided rather than being shown a
+ * model's guess wearing the keyword path's silence.
+ *
  * A change to a document is the same kind of proposal, composed rather than
  * read: its words are stated, not found in a deliverable, because no sentence
  * of a report is a redline. The four rules above hold unchanged — nothing is
@@ -51,11 +81,23 @@
 
 import { createHash } from 'node:crypto';
 import type { DocEditKind } from '../store/sources.ts';
+import { COMPOSITION_SHAPES } from './shapes.ts';
 
 /** What a proposal would do to the source it names. */
 export const WRITE_ACTIONS = ['comment', 'label', 'create', 'update'] as const;
 
 export type WriteAction = (typeof WRITE_ACTIONS)[number];
+
+/**
+ * Which of the three paths decided a row's action: a caller named it
+ * outright, a model proposed it, or nobody did either and the keyword read
+ * of the finding's own verb stands. Carried on every proposal so a reader
+ * never mistakes a guess for the mechanical default, or the default for a
+ * decision somebody actually made.
+ */
+export const WRITE_ACTION_SOURCES = ['override', 'model', 'keyword'] as const;
+
+export type WriteActionSource = (typeof WRITE_ACTION_SOURCES)[number];
 
 /**
  * The tier for an action. Commenting and labelling annotate; a reader of the
@@ -122,6 +164,44 @@ function normalizeHeading(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/**
+ * Shape name to its follow-up section name. See the module doc above for why
+ * each shape maps to the section it does, and why onepager maps to none.
+ */
+const FOLLOW_UP_SECTION_BY_SHAPE: Readonly<Record<string, string>> = {
+  review: 'what-follows',
+  decision: 'what-happens-first',
+  spec: 'requirements',
+  rfc: 'tradeoffs',
+  adr: 'consequences',
+};
+
+/**
+ * FOLLOW_UP_SECTION_BY_SHAPE's sections, normalized once for exact heading
+ * matching and checked against shapes.ts's own catalog rather than trusted as
+ * a copy of it: a section renamed or dropped there should break extraction
+ * loudly, not keep matching a heading that no longer exists.
+ *
+ * Matched exactly rather than as a substring, unlike the old single-phrase
+ * check this replaces: "what follows" was distinctive enough that a loose
+ * match cost little, but "requirements" and "tradeoffs" are ordinary words a
+ * heading like "Non-functional requirements" could carry without being this
+ * section, and a widened set of things to match for is exactly where a loose
+ * match starts costing something.
+ */
+const FOLLOW_UP_HEADINGS: ReadonlySet<string> = new Set(
+  Object.entries(FOLLOW_UP_SECTION_BY_SHAPE).map(([shapeName, sectionName]) => {
+    const shape = COMPOSITION_SHAPES.find((candidate) => candidate.name === shapeName);
+    const section = shape?.sections.find((candidate) => candidate.name === sectionName);
+    if (!section) {
+      throw new Error(
+        `the ${shapeName} shape no longer has a "${sectionName}" section: the follow-up mapping has nothing to read`,
+      );
+    }
+    return normalizeHeading(sectionName);
+  }),
+);
+
 const NUMBERED = /^\s{0,3}(\d{1,3})[.)]\s+(.*\S)\s*$/;
 const BULLET = /^\s{0,3}[-*+]\s+(.*\S)\s*$/;
 const HEADING = /^\s{0,3}#{1,6}\s+(.*\S)\s*$/;
@@ -145,19 +225,22 @@ function stripFurniture(text: string): string {
 const SHORTEST_FINDING = 20;
 
 /**
- * Every numbered issue and what-follows item in one deliverable, in document
+ * Every numbered issue and follow-up item in one deliverable, in document
  * order.
  *
- * A numbered line inside a what-follows section is a what-follows item and is
- * read once, not twice: the section it sits in says what it is, and counting
- * it both ways would put the same sentence in the queue under two ids.
- * Fenced blocks are skipped whole — a numbered line inside a code sample is
- * sample text, and proposing a change out of it would propose the sample.
+ * "Follow-up" means whichever section FOLLOW_UP_SECTION_BY_SHAPE names for
+ * the shape this deliverable happens to be written in — review's what-follows,
+ * or the section another shape asks the identical question under (see the
+ * module doc above). A numbered line inside that section is a follow-up item
+ * and is read once, not twice: the section it sits in says what it is, and
+ * counting it both ways would put the same sentence in the queue under two
+ * ids. Fenced blocks are skipped whole — a numbered line inside a code sample
+ * is sample text, and proposing a change out of it would propose the sample.
  */
 export function findingsIn(deliverable: Deliverable): Finding[] {
   const findings: Finding[] = [];
   const lines = deliverable.text.split('\n');
-  let inWhatFollows = false;
+  let inFollowUpSection = false;
   let fenced = false;
 
   lines.forEach((raw, index) => {
@@ -169,7 +252,7 @@ export function findingsIn(deliverable: Deliverable): Finding[] {
 
     const heading = HEADING.exec(raw);
     if (heading) {
-      inWhatFollows = normalizeHeading(heading[1]).includes('what follows');
+      inFollowUpSection = FOLLOW_UP_HEADINGS.has(normalizeHeading(heading[1]));
       return;
     }
 
@@ -177,16 +260,16 @@ export function findingsIn(deliverable: Deliverable): Finding[] {
     const bullet = BULLET.exec(raw);
     const body = numbered ? numbered[2] : bullet ? bullet[1] : null;
     if (body === null) return;
-    // A bullet outside a what-follows section is ordinary prose furniture —
+    // A bullet outside a follow-up section is ordinary prose furniture —
     // evidence, a list of documents read, a caveat — and reading every bullet
     // in a document as a proposed change would file the document.
-    if (bullet && !inWhatFollows) return;
+    if (bullet && !inFollowUpSection) return;
 
     const text = stripFurniture(body);
     if (text.length < SHORTEST_FINDING) return;
     const line = index + 1;
     findings.push({
-      kind: inWhatFollows ? 'what-follows' : 'numbered-issue',
+      kind: inFollowUpSection ? 'what-follows' : 'numbered-issue',
       text,
       line,
       citation: `deliverable:${deliverable.task}#L${String(line)}`,
@@ -258,6 +341,8 @@ export interface ExtractedProposal {
   readonly justification: string;
   readonly risk: 'low' | 'high';
   readonly action: WriteAction;
+  /** Which of override, model, or keyword decided `action`. */
+  readonly actionSource: WriteActionSource;
   readonly finding: Finding;
   readonly role: string;
 }
@@ -277,6 +362,20 @@ export interface ExtractionInput {
    * it the way the person deciding knows it.
    */
   readonly locator: string;
+  /**
+   * Row ids (see `proposalRowId`) mapped to the action a caller is naming
+   * outright. Wins over everything else for that row, and the row is never
+   * handed to a model — see `proposeActionsWithModel`, which reads this same
+   * map to know which findings it must not spend a call on.
+   */
+  readonly actionOverrides?: ReadonlyMap<string, WriteAction>;
+  /**
+   * Row ids mapped to the action a model already proposed for them, computed
+   * ahead of time by `proposeActionsWithModel`. Read, not called: this keeps
+   * extraction itself model-free even though a row's action may now trace to
+   * one.
+   */
+  readonly modelActions?: ReadonlyMap<string, WriteAction>;
 }
 
 export interface Extraction {
@@ -302,6 +401,15 @@ function changeText(action: WriteAction, locator: string, finding: Finding): str
     default:
       return `update in ${locator}: ${finding.text}`;
   }
+}
+
+/**
+ * The id a finding's row would carry, computed the same way whether it is
+ * about to be built into a proposal (below) or only looked up in an
+ * override/model map (`proposeActionsWithModel`) before one exists yet.
+ */
+function proposalRowId(deliverable: Deliverable, finding: Finding): string {
+  return `wp-${deliverable.task}-L${String(finding.line)}`;
 }
 
 /**
@@ -338,20 +446,61 @@ export function proposalsFrom(input: ExtractionInput): Extraction {
       continue;
     }
     seen.add(key);
-    const action = actionFor(finding.text);
+    const id = proposalRowId(input.deliverable, finding);
+    const overridden = input.actionOverrides?.get(id);
+    const proposedByModel = overridden === undefined ? input.modelActions?.get(id) : undefined;
+    const action = overridden ?? proposedByModel ?? actionFor(finding.text);
+    const actionSource: WriteActionSource =
+      overridden !== undefined ? 'override' : proposedByModel !== undefined ? 'model' : 'keyword';
     proposals.push({
-      id: `wp-${input.deliverable.task}-L${String(finding.line)}`,
+      id,
       source: input.source,
       change: changeText(action, input.locator, finding),
       justification: `${finding.citation} (${input.deliverable.role}, ${finding.kind}): "${finding.text}"`,
       risk: riskOfAction(action),
       action,
+      actionSource,
       finding,
       role: input.deliverable.role,
     });
   }
 
   return { proposals, refused };
+}
+
+/**
+ * A model asked what one finding's action should be, answering with one of
+ * `WRITE_ACTIONS` or null when it could not decide. Host-ignorant, the same
+ * shape as every other model seam the kernel injects rather than constructs —
+ * an implementation backed by a real host lives outside the kernel.
+ */
+export type WriteActionProposer = (finding: Finding) => Promise<WriteAction | null>;
+
+/**
+ * Ask a model to propose an action for every finding in a deliverable that no
+ * caller has already named an action for, keyed the way `proposalsFrom` reads
+ * them back.
+ *
+ * A row named in `overrides` is never asked: the same "an explicit choice
+ * never costs a call" rule `--shape` gets against the composition chooser. A
+ * finding the model declines to answer (null) is simply left out of the
+ * result, which reads to `proposalsFrom` as "nobody decided this one" and
+ * falls it through to the keyword read — the fail-open shape every host
+ * consultation in this codebase already uses.
+ */
+export async function proposeActionsWithModel(
+  deliverable: Deliverable,
+  proposer: WriteActionProposer,
+  overrides?: ReadonlyMap<string, WriteAction>,
+): Promise<ReadonlyMap<string, WriteAction>> {
+  const proposed = new Map<string, WriteAction>();
+  for (const finding of findingsIn(deliverable)) {
+    const id = proposalRowId(deliverable, finding);
+    if (overrides?.has(id)) continue;
+    const action = await proposer(finding);
+    if (action !== null) proposed.set(id, action);
+  }
+  return proposed;
 }
 
 /**

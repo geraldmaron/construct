@@ -28,7 +28,7 @@ import { transact } from '../store/open.ts';
 import type { Store } from '../store/open.ts';
 import { SPINE_CHALLENGES } from '../challenge/catalog.ts';
 import { rubricChallengeId, structuralRubricFor } from '../challenge/readers.ts';
-import { riskTierFor } from '../lessons/admission.ts';
+import { riskTierFor, modelFloorForDomain } from '../lessons/admission.ts';
 import type { Brief } from '../brief/schema.ts';
 import { askBriefFor, primaryImplication } from './ask.ts';
 
@@ -149,7 +149,11 @@ function challengesFor(domain: string, runHighTier: boolean): readonly string[] 
  * (commitment 10). `capabilities` is empty because an issue-spotting pass over
  * the outcome text needs nothing beyond the host's base; `postconditions` is
  * empty because the role's registered defaults apply, which is not the same as
- * unverified.
+ * unverified. `modelFloor` is never left empty: modelFloorForDomain
+ * (lessons/admission.ts) reads the same licensed-review fact riskTierFor
+ * already derives for this domain, so the floor a real dispatch checks is the
+ * one this function actually declares, not the 'any' every floor check saw
+ * while nothing here set the field.
  */
 function briefFor(
   input: StartRunInput,
@@ -166,6 +170,7 @@ function briefFor(
     ],
     capabilities: [],
     postconditions: [],
+    modelFloor: modelFloorForDomain(implication.domain),
     // Declared here rather than left empty, because an empty list reads as
     // "nothing is pending" when it means "nobody required anything" — and a
     // deliverable that asserts statutes it did not source promoted straight

@@ -1,6 +1,6 @@
 # How to talk to Construct (host surface)
 
-Dated 2026-08-14. Answers the question: do we need a Construct-only UI, or
+Filed 2026-08-14. The standing answer to: do we need a Construct-only UI, or
 do we harness hosts we already have?
 
 ## The short answer
@@ -23,29 +23,32 @@ organizational distillation layer. That layer rides hosts; it is not a host.
 | MCP projection | Presence inside any MCP host; no completion writes | `construct serve` |
 | OpenCode | First-party execution adapter | `--host=opencode` |
 | Claude / Codex / Cursor | Additional execution adapters | `--host=claude\|codex\|cursor` |
+| Writing outward | Carrying an approved change out; codex and cursor dispatch read-only and are refused | `decide --apply --host=opencode\|claude` |
 | nanobot (HKUDS) | Chat / WebUI presence for BlackStory dogfood | MCP attached; see below |
 
-## PATH and the spine (verified 2026-08-14)
+## PATH and the spine
 
 `construct lessons` is a spine command. Both global installs on this machine
-are linked to this checkout at `3.0.0-alpha.11` (fnm Node and Homebrew Node),
-so typing `construct` reaches the same binary hosts use:
+(fnm Node and Homebrew Node) are linked to this checkout, so typing
+`construct` reaches the same binary hosts use. `construct version` against the
+checkout and `construct version` on PATH should print the same string; when
+they don't, PATH is the stale one.
 
 ```bash
-construct version          # 3.0.0-alpha.11
-construct lessons list --workspace=<name>
-construct lessons approve <id> --approver=<you>
+construct version
+construct lessons --workspace=<name>
+construct lessons --admit=<lesson-id> --by=<you>
 ```
 
-Verified end-to-end on PATH against a sterile store: `decide` holds a
-run-derived lesson → `lessons list` shows it → missing id exits 1 → approve
-without `--approver=` exits 2 → `lessons approve --approver=` admits →
-`--held` is empty and `--admitted` lists it. Hosts never replace this surface;
-approve writes into future prompts and stays on the CLI.
+Listing takes no subcommand. A bare `construct lessons` prints the workspace's
+lessons in two groups, held and admitted, and a lesson with no verdict at all
+lists as held. Admitting takes both flags: `--admit=` without `--by=` exits 2,
+and an unknown lesson id exits 1. Hosts never replace this surface. Admission
+writes into future prompts and stays on the CLI.
 
-If PATH lags again after a release: `npm install -g .` from this checkout
-(under each Node that owns a `construct` on PATH). Prefer that over pointing
-hosts at a packaged alpha that has not caught up.
+If PATH lags after a release: `npm install -g .` from this checkout (under
+each Node that owns a `construct` on PATH). Prefer that over pointing hosts at
+a packaged alpha that has not caught up.
 
 ## nanobot — presence dogfood
 
@@ -96,16 +99,17 @@ to* Construct are broader:
 
 1. **Wherever you already work** — attach MCP (`claude mcp add construct
    construct serve`, Cursor MCP, Codex MCP, OpenCode tools). Cursor's
-   predecessor registered `lib/mcp/server.mjs` from a global install — that
-   path is not the rewrite and does not exist. `~/.cursor/mcp.json` now
-   launches `node <checkout>/bin/construct.mjs serve`. Verified live in this
-   session: `catalog` returns `3.0.0-alpha.11` with seventeen domains; `inbox`
-   and `work_log` read the real store; `work` / `compose` are absent on
-   purpose. Reload Cursor MCP if discovery still shows the old error.
+   predecessor registered `lib/mcp/server.mjs` from a global install; that
+   path is not the rewrite and does not exist. `~/.cursor/mcp.json` launches
+   `node <checkout>/bin/construct.mjs serve` under the key `construct-mcp`.
+   The projection answers `catalog` with the version serving it and the
+   seventeen domains that version carries; `inbox` and `work_log` read the
+   real store; `work` and `compose` are absent on purpose. Reload Cursor MCP
+   if discovery still shows the old error.
 2. **nanobot WebUI** — lightweight chat shell for outcome/inbox dogfood without
    opening an IDE.
 3. **CLI** — still the spine; hosts never replace `decide`, `compose`,
-   `lessons approve`, or erasure.
+   `lessons --admit`, or erasure.
 
 ## Xirp and peers — projection targets, not substitutes
 
@@ -130,20 +134,21 @@ projection over inventing a fifth shell.
 
 Only if every of these is true at once:
 
-1. No MCP-capable host reaches the operator (not true today).
+1. No MCP-capable host reaches the operator. Four are wired, so this is not
+   the situation.
 2. The missing surface is something hosts cannot project (inbox batching UX,
    packet review) *and* cannot be a thin local viewer over the existing store.
-3. Gerald accepts the commitment-1 exception in STRATEGY with a dated amendment.
+3. Gerald accepts the commitment-1 exception, and STRATEGY states it.
 
 Until then: **suck it up means harness hosts, not build a chat product.** If a
 thin local *viewer* for composed PDFs / packets is needed later, that is a
 document browser, not an agent UI — file it separately and keep it read-only.
 
-## Recommendation (this session)
+## Recommendation
 
 1. Keep OpenCode as execution pin.
 2. Use nanobot WebUI + MCP for BlackStory / chat dogfood (checkout launcher).
 3. Treat Xirp as a Phase 4/5 host candidate, not a roadmap pivot.
 4. Do not fund a Construct-only chat UI.
-5. Use `construct lessons list|approve` on PATH for held run-derived lessons —
-   never inside a host.
+5. Use `construct lessons` and `construct lessons --admit=` on PATH for held
+   run-derived lessons, never inside a host.

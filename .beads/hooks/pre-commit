@@ -5,6 +5,33 @@
 _construct_root="$(git rev-parse --show-toplevel)"
 node "$_construct_root/scripts/hooks/secret-scan.mjs" || exit 1
 node "$_construct_root/scripts/hooks/repo-gate.mjs" || true
+# Whether the author staged the tracker export is only knowable here, before the
+# beads section below stages it unconditionally. It is read back by the keeper,
+# which runs in this same shell, so the answer never has to survive on disk.
+_construct_tracker_staged=no
+if git diff --cached --name-only -- .beads/issues.jsonl | grep -q .; then
+  _construct_tracker_staged=yes
+fi
+# The keeper undoes what the beads section stages: that section re-exports the
+# whole tracker database and stages it, which would attach every bead any
+# session touched to a commit that was about something else. An author who
+# staged the export themselves meant it, and keeps it, with the fresher export
+# beads just wrote.
+#
+# It is a trap and not a block at the end of this file because the beads section
+# exits the hook on its own failures. Trailing lines are not reached on that
+# path, and the staged export then sits in the index until the next commit,
+# whose gate reads it as the author's own staging and keeps it — the exact
+# misattribution this prevents, arriving through this code not running. A trap
+# runs on every exit.
+_construct_keep_tracker() {
+  _construct_status=$?
+  if [ "$_construct_tracker_staged" = no ]; then
+    git restore --staged -- .beads/issues.jsonl 2>/dev/null || true
+  fi
+  exit $_construct_status
+}
+trap _construct_keep_tracker EXIT
 # --- END CONSTRUCT GATE ---
 
 # --- BEGIN BEADS INTEGRATION v1.0.3 ---
