@@ -1,5 +1,76 @@
 # Changelog
 
+## 3.0.0-alpha.13 — 2026-08-22
+
+The release that makes the version number mean something again, plus the last of
+the delivery backlog.
+
+`3.0.0-alpha.12` was published to npm at 2026-08-21T06:09Z and then kept being
+worked: sixty-nine commits touched `src/` under the same version string, so the
+tarball on the registry and the code this repository called alpha.12 were
+different things and nothing said so. Everything below the alpha.12 heading that
+landed after that timestamp ships here for the first time.
+
+- **A document is written in the voice its deliverables were** (construct-5on7).
+  `construct work --voice` shaped every deliverable and wrote the instruction to
+  the append-only work log, and composing bound the house voice regardless — so a
+  user got their voice in the parts and Construct's in the whole. `compose` reads
+  the override back from the run's own record. A per-command `compose --voice`
+  was rejected for the reason the recorded host and model are already not
+  retyped: a value the user has to re-state to keep is one the system can
+  silently lose, and losing this one is invisible, because the document reads
+  perfectly well in the wrong voice. Two sub-decisions are pinned by tests — a
+  run worked twice takes the later instruction, ordered by the log's own sequence
+  rather than caller-supplied timestamps, so a skewed clock cannot decide which
+  voice a document is written in; and an instruction that did not survive leaves
+  the house voice standing rather than binding an empty one.
+- **A pin claim measured under one provider does not hold for another that skips
+  validation** (construct-smgc). The goose pin's eight expectations were measured
+  against a local Ollama backend; running the probe against its subscription-backed
+  default found six unchanged and two provider-dependent. An unrecognised
+  `--model` produces goose's catchable error text under ollama and nothing at all
+  under claude-code, whose shelled-out CLI does not validate the flag, so the
+  error-text pattern-match is not a way to detect a bad model everywhere.
+  `--no-session` leaves ollama's request log advancing and claude-code's
+  untouched, so that log's freshness is not a signal of request activity
+  everywhere. Both claims now state each provider's measured behavior with its
+  date, and the probe skips a provider nobody has measured rather than failing it.
+- **A keeper that only runs when everything succeeded is not a keeper**
+  (construct-8naa). The pre-commit tracker keeper was trailing lines, on the
+  reasoning that it must run after the beads section it undoes — but that section
+  exits the hook itself on its own failures, having already re-exported and staged
+  the tracker. The commit aborted and the staging survived, and the next commit's
+  gate read it as the author's own staging and kept it: the exact misattribution
+  the keeper exists to prevent, arriving through the keeper not running. It is an
+  EXIT trap now, armed ahead of the beads section, and the staged-by-the-author
+  answer moved from a file under `.git` into the hook's own shell.
+- **`docs/` is documentation and `docs/internal/` is the record.** Eighteen
+  development records — dated probe transcripts, acceptance packets, judging
+  rubrics, design decisions, measurement runs — moved out of the directory a user
+  reads. None were deleted: they are the evidence commitment 15 demands, and
+  deleting them would leave the claims they support standing on nothing. A
+  content heuristic was measured as the gate and rejected on its numbers (13 of 16
+  records caught, three missed, one false positive on a real guide); the gate is
+  instead that `docs/` is a closed set, held to the index in `docs/README.md` in
+  both directions, so a new file fails the build until someone decides which it
+  is. The heuristic survives as a hint printed beside the failure.
+- **The tracker export's instability was upstream and already fixed**
+  (construct-acm8). Eight consecutive exports were byte-identical; the cause of
+  the original observation is in bd's own source, where both export paths range a
+  Go map for memory keys — deliberately randomized per process, exactly the
+  symptom — and sort before writing. Nothing in this repository writes those
+  bytes, so no local patch belonged here and no upstream report was filed for a
+  defect already closed.
+- **Committed output that records nothing a reader can check is gone.**
+  Seventy-six raw model transcripts from the retired depth experiment, cited by no
+  script, test, document or tracker note; a checksum sidecar naming a database the
+  probe did not keep; and a dated audit whose findings live in the code and the
+  pins that probe them. What is derived from the transcripts stays, because
+  removing evidence a published figure rests on is a different act from removing
+  weight. `package.json` also stopped naming a `schemas` directory that does not
+  exist, so the `files` allowlist no longer describes a package nobody could
+  produce.
+
 ## 3.0.0-alpha.12 — 2026-08-21
 
 The reconciliation session's second half: the red-team epic closed the same day it was filed, the write-proposal path became actionable end to end, and the delivery backlog was trued against the staff-member vision — every open bead now carries a current disposition, every stakeholder call sits labeled in one queue, and the calls that could be settled under Gerald's standing session authorization were settled on the record.
