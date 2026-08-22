@@ -20,9 +20,9 @@
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { legacyCheckout } from './lib/legacy-checkout.mjs';
 
-const LEGACY =
-  process.env.CONSTRUCT_LEGACY ?? join(process.env.HOME ?? '', 'Developer/Projects/construct-legacy');
+const LEGACY = legacyCheckout();
 
 const { suggestSkills } = await import(`${LEGACY}/lib/skills/router.mjs`);
 

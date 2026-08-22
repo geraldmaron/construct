@@ -8,7 +8,10 @@
  * real surface: a matching live read reports in_sync, a disagreeing one
  * reports drifted and lands a decision in the inbox, a second run over the
  * same disagreement raises nothing new, and omitting --live falls back to
- * reporting what the store already recorded rather than guessing.
+ * reporting what the store already recorded rather than guessing. `--absorb`
+ * gets its own coverage: a tracker-owned change is reported, but not
+ * persisted, until `--absorb` is passed explicitly; a domain-owned conflict
+ * never resolves no matter how many times `--absorb` runs.
  */
 
 import { test } from 'node:test';
@@ -19,9 +22,10 @@ import { join } from 'node:path';
 import { inbox, reconcile } from '../../src/cli/index.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
-import { putProjection } from '../../src/kernel/store/projections.ts';
+import { getProjection, putProjection } from '../../src/kernel/store/projections.ts';
 import { buildProjection } from '../../src/kernel/tracker/projection.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
+import { readWorkLog } from '../../src/kernel/store/worklog.ts';
 
 const AT = '2026-08-21T00:00:00.000Z';
 
@@ -223,4 +227,109 @@ test('--tracker filters projections to that one tracker', async () => {
   assert.equal(code, 0);
   assert.match(out, /1 projected proposal\(s\)/);
   assert.doesNotMatch(out, /g-1/);
+});
+
+test('a tracker-owned change is reported every run until --absorb persists it into the mirror', async () => {
+  const { code, out } = await run(async (root) => {
+    const store = openStore(storePath(resolvePaths()));
+    putProjection(store, buildProjection(ISSUE, { tracker: 'jira', importedAt: AT }));
+    store.close();
+
+    const liveFile = join(root, 'live.json');
+    writeFileSync(liveFile, JSON.stringify([{ ...ISSUE, status: 'closed' }]));
+
+    // Without --absorb, the same tracker-owned change is reported every run —
+    // the stored mirror never advances on its own.
+    reconcile(['--tracker=jira', `--live=${liveFile}`]);
+    reconcile(['--tracker=jira', `--live=${liveFile}`]);
+
+    const beforeCheck = openStore(storePath(resolvePaths()));
+    const beforeAbsorb = getProjection(beforeCheck, 'jira:p-1');
+    beforeCheck.close();
+    assert.equal(beforeAbsorb?.state, 'projected', 'a bare run never writes the stored mirror');
+    assert.equal(beforeAbsorb?.fields.status, 'open');
+
+    reconcile(['--tracker=jira', `--live=${liveFile}`, '--absorb']);
+    const after = reconcile(['--tracker=jira', `--live=${liveFile}`]);
+
+    const check = openStore(storePath(resolvePaths()));
+    const stored = getProjection(check, 'jira:p-1');
+    check.close();
+    assert.equal(stored?.state, 'in_sync', 'the absorb adopted the tracker-owned change');
+    assert.equal(stored?.fields.status, 'closed');
+
+    return after;
+  });
+  assert.equal(code, 0);
+  // Reported as reconciling on every bare run and by --absorb's own pass over
+  // the same diff (it reports what it found), and only in_sync afterward.
+  assert.match(out, /reconciling\s+p-1/);
+  assert.match(out, /in_sync\s+p-1/);
+});
+
+test('--absorb never resolves a domain-owned conflict; it stays drifted with an open decision', async () => {
+  const { code, out } = await run(async (root) => {
+    const store = openStore(storePath(resolvePaths()));
+    putProjection(store, buildProjection(ISSUE, { tracker: 'jira', importedAt: AT }));
+    store.close();
+
+    const liveFile = join(root, 'live.json');
+    writeFileSync(liveFile, JSON.stringify([{ ...ISSUE, title: 'Renamed directly in Jira' }]));
+    const first = reconcile(['--tracker=jira', `--live=${liveFile}`, '--absorb']);
+    // A second --absorb over the same unresolved conflict must not change
+    // its answer either — there is still nothing here to auto-resolve it with.
+    const second = reconcile(['--tracker=jira', `--live=${liveFile}`, '--absorb']);
+    inbox();
+
+    const check = openStore(storePath(resolvePaths()));
+    const stored = getProjection(check, 'jira:p-1');
+    const decisions = openDecisions(check);
+    check.close();
+
+    assert.equal(first, 0);
+    assert.equal(stored?.state, 'drifted', '--absorb must not resolve a domain-owned conflict');
+    assert.equal(stored?.fields.title, ISSUE.title, 'the stored domain value must be untouched');
+    assert.equal(decisions.length, 1, 'the conflict is still open, never auto-resolved');
+
+    return second;
+  });
+  assert.equal(code, 0);
+  assert.match(out, /drifted\s+p-1\s+\(title\)/);
+  assert.match(out, /decision inbox \(1\)/);
+});
+
+test('--absorb is an explicit invocation recorded on the work log; a bare reconcile never logs one', async () => {
+  const { code } = await run(async (root) => {
+    const store = openStore(storePath(resolvePaths()));
+    putProjection(store, buildProjection(ISSUE, { tracker: 'jira', importedAt: AT }));
+    store.close();
+
+    const liveFile = join(root, 'live.json');
+    writeFileSync(liveFile, JSON.stringify([{ ...ISSUE, status: 'closed' }]));
+
+    reconcile(['--tracker=jira', `--live=${liveFile}`]);
+    const afterBare = openStore(storePath(resolvePaths()));
+    const bareEntries = readWorkLog(afterBare, 'reconcile:jira').filter(
+      (entry) => entry.action === 'reconcile-absorbed',
+    );
+    afterBare.close();
+    assert.equal(bareEntries.length, 0, 'a bare reconcile call must never absorb silently');
+
+    const absorbed = reconcile(['--tracker=jira', `--live=${liveFile}`, '--absorb']);
+    const afterAbsorb = openStore(storePath(resolvePaths()));
+    const absorbEntries = readWorkLog(afterAbsorb, 'reconcile:jira').filter(
+      (entry) => entry.action === 'reconcile-absorbed',
+    );
+    afterAbsorb.close();
+    assert.equal(absorbEntries.length, 1);
+    assert.deepEqual(absorbEntries[0].detail, {
+      tracker: 'jira',
+      absorbed: ['p-1'],
+      drifted: 0,
+      missing: 0,
+    });
+
+    return absorbed;
+  });
+  assert.equal(code, 0);
 });

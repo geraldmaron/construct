@@ -334,6 +334,98 @@ test('no history gathered is no finding', () => {
 });
 
 /**
+ * Branch lag reads exactly like a real loss to this sweep: a checkout sitting
+ * behind another ref sees that ref's later closes and filings as absent. The
+ * four conflict directions above already have a way to quiet a benign
+ * disagreement with a dated note; these two lost-record directions need the
+ * same escape hatch, or branch-lag noise can only ever be silenced by
+ * refiling something that was never actually lost.
+ */
+
+test('a dated note on the bead settles its own lost-close finding', () => {
+  const note = '2026-08-21 DRIFT ADJUDICATED (lost-close): this checkout was behind main, not a real loss.';
+  const report = lostRecords([bead('construct-a', 'open', { notes: note })], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.adjudicated, ['construct-a']);
+  assert.equal(report.clean, true);
+});
+
+test('a verdict on a different direction does not settle a lost close', () => {
+  // Naming the direction is what ties a verdict to the disagreement it was
+  // about — the same rule the four conflict directions already follow.
+  const note = '2026-08-21 DRIFT ADJUDICATED (closed-without-commit): an unrelated verdict on this bead.';
+  const report = lostRecords([bead('construct-a', 'open', { notes: note })], history(['construct-a']));
+  assert.deepEqual(report.lostCloses, ['construct-a']);
+  assert.deepEqual(report.adjudicated, []);
+  assert.equal(report.clean, false);
+});
+
+test('a dated note on any current bead settles a missing filing when it names the id', () => {
+  // No bead is left to carry construct-b's own notes, so the documented
+  // equivalent is a marker on some other bead that spells the id out.
+  const note = '2026-08-21 DRIFT ADJUDICATED (missing-filing): construct-b filed only on an abandoned branch, never merged.';
+  const report = lostRecords(
+    [bead('construct-a', 'open', { notes: note })],
+    history([], ['construct-b']),
+  );
+  assert.deepEqual(report.missingRecords, []);
+  assert.deepEqual(report.adjudicated, ['construct-b']);
+  assert.equal(report.clean, true);
+});
+
+test('a missing-filing note settles only the id it names', () => {
+  const note = '2026-08-21 DRIFT ADJUDICATED (missing-filing): construct-c was branch lag.';
+  const report = lostRecords(
+    [bead('construct-a', 'open', { notes: note })],
+    history([], ['construct-b']),
+  );
+  assert.deepEqual(report.missingRecords, ['construct-b']);
+  assert.deepEqual(report.adjudicated, []);
+});
+
+test('a missing-filing note about a longer id does not settle a shorter one it merely contains', () => {
+  // construct-a1 and construct-a1.2 are different beads, and "construct-a1" is
+  // literally a prefix of "construct-a1.2". A plain substring test would let a
+  // note naming the child silently also claim the parent's finding.
+  const note = '2026-08-21 DRIFT ADJUDICATED (missing-filing): construct-a1.2 was branch lag.';
+  const report = lostRecords(
+    [bead('construct-z', 'open', { notes: note })],
+    history([], ['construct-a1']),
+  );
+  assert.deepEqual(report.missingRecords, ['construct-a1']);
+});
+
+test('a bare marker settles neither lost-record direction', () => {
+  // The bare form is the pre-direction convention, and it was only ever
+  // written for closed-without-commit — it must not silently reach further.
+  const bare = '2026-08-21 DRIFT ADJUDICATED: no direction named.';
+  const closeReport = lostRecords([bead('construct-a', 'open', { notes: bare })], history(['construct-a']));
+  assert.deepEqual(closeReport.lostCloses, ['construct-a']);
+
+  const missingReport = lostRecords(
+    [bead('construct-a', 'open', { notes: `${bare} construct-b` })],
+    history([], ['construct-b']),
+  );
+  assert.deepEqual(missingReport.missingRecords, ['construct-b']);
+});
+
+test('a lost close and a missing filing are each adjudicated independently in one sweep', () => {
+  const closeNote = '2026-08-21 DRIFT ADJUDICATED (lost-close): branch lag.';
+  const missingNote = '2026-08-21 DRIFT ADJUDICATED (missing-filing): construct-c was branch lag.';
+  const report = lostRecords(
+    [
+      bead('construct-a', 'open', { notes: closeNote }),
+      bead('construct-b', 'open', { notes: missingNote }),
+    ],
+    history(['construct-a'], ['construct-a', 'construct-c']),
+  );
+  assert.deepEqual(report.lostCloses, []);
+  assert.deepEqual(report.missingRecords, []);
+  assert.deepEqual(report.adjudicated.slice().sort(), ['construct-a', 'construct-c']);
+  assert.equal(report.clean, true);
+});
+
+/**
  * Four beads were implemented twice because sessions worked main and a
  * direction branch in parallel and the branch session judged the earlier work
  * lost. What it needed was not a smarter search: it was being told, before it

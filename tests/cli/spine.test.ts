@@ -22,6 +22,13 @@ import { catalogHighWater } from '../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../src/kernel/implication/domains.ts';
 import { planFor } from '../../src/kernel/store/plans.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
+import { sterileHome } from '../harness/sterile.ts';
+
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 /** Fixed points for the staged-crash test below; the CLI's own clock is real. */
 const SETTLED_AT = '2026-08-03T00:00:00.000Z';
@@ -257,6 +264,16 @@ test('parseWorkArgs distinguishes a typed --host from the default', async () => 
   const { parseWorkArgs } = await import('../../src/cli/index.ts');
   assert.equal(parseWorkArgs([]).hostExplicit, false, 'the default must be overridable by the record');
   assert.equal(parseWorkArgs(['--host=opencode']).hostExplicit, true, 'a typed choice must win');
+});
+
+test('work reads a run id in either flag form, as every verb that takes one does', () => {
+  assert.equal(parseWorkArgs(['--run=run-1']).run, 'run-1');
+  assert.equal(parseWorkArgs(['--run', 'run-1']).run, 'run-1', 'the spaced form log and verdict accept');
+  // Unscoped is a real state, not a missing one: work with no run named works
+  // whatever is pending. A parser that read a bare `--run` as the id would
+  // scope the dispatch to a task that does not exist.
+  assert.equal(parseWorkArgs([]).run, undefined);
+  assert.equal(parseWorkArgs(['--run']).run, undefined);
 });
 
 const DENSIFIED = JSON.stringify({

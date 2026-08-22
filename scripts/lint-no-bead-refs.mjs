@@ -8,11 +8,12 @@
  * documents (STRATEGY, CHANGELOG, RESEARCH-DECISIONS) are the drift record
  * and keep their dated lineage; this lint covers code: src, tests, scripts.
  *
- * Excluded by name: the two scripts whose subject IS the tracker
- * (reconcile-tracker, repo-gate) — they handle bead ids as data — and the
- * labeling kit, whose ids are study identifiers and, in one case, a
- * deterministic shuffle seed whose bytes decide which outcomes were drawn:
- * rewording it would silently re-randomize a finished study.
+ * Excluded by name: the scripts whose subject IS the tracker
+ * (reconcile-tracker, repo-gate, lint-doc-bead-refs and its test), which
+ * handle bead ids as data, and the labeling kit, whose ids are study
+ * identifiers and, in one case, a deterministic shuffle seed whose bytes
+ * decide which outcomes were drawn: rewording it would silently
+ * re-randomize a finished study.
  * `construct-mcp` and `construct-role` are excluded by name (functional
  * identifiers, not lineage); `construct-cli-…` and similar never match: a
  * bead id is three or four alphanumerics, optionally dotted, with nothing
@@ -38,7 +39,10 @@ const files = execSync("git ls-files 'src/' 'tests/' 'scripts/' 'skills/'", { en
   .filter((f) => EXTENSIONS.some((ext) => f.endsWith(ext)))
   .filter(
     (f) =>
-      !f.includes('reconcile-tracker') && !f.includes('repo-gate') && !f.includes('labeling-kit'),
+      !f.includes('reconcile-tracker') &&
+      !f.includes('repo-gate') &&
+      !f.includes('labeling-kit') &&
+      !f.includes('lint-doc-bead-refs'),
   );
 
 let violations = 0;

@@ -23,8 +23,8 @@
  * than to reopen work or to delete a close.
  */
 
-import { describeConflict } from '../tracker/session-drift.ts';
-import type { SessionDriftReport } from '../tracker/session-drift.ts';
+import { describeConflict, describeLostRecord } from '../tracker/session-drift.ts';
+import type { SessionDriftReport, LostRecordReport, DivergenceReport } from '../tracker/session-drift.ts';
 import type { Finding } from './watch.ts';
 
 /** Ground worth naming, so the watch's outcome text reads like an outcome. */
@@ -164,4 +164,110 @@ export function constructFindings(report: SessionDriftReport): Finding[] {
   }
 
   return findings;
+}
+
+/**
+ * Turn the lost-record sweep into watch findings: a close or a filing the
+ * export's own history says existed and the current export does not.
+ *
+ * Only `lostCloses` and `missingRecords` become findings. `reopened` and
+ * `adjudicated` are already accounted for by a dated note on the bead —
+ * `lostRecords` itself keeps them out of its own working list for that
+ * reason, and reporting them again here would raise a finding for a
+ * disagreement someone already settled. One finding per id, the same
+ * granularity `constructFindings` uses per drifted bead, so a fresh sweep
+ * over an unchanged loss stays quiet rather than raising it twice.
+ */
+export function lostRecordFindings(lost: LostRecordReport): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const id of lost.lostCloses) {
+    findings.push({
+      key: `lost-close:${id}`,
+      trigger: `the export's own history disagrees with the tracker about ${id}`,
+      question: 'Was this close lost by the tracker database, or was the bead deliberately reopened?',
+      branches: [
+        {
+          role: 'as-recorded',
+          stance:
+            'Leaving it open: a later session sees unfinished work and may redo what an earlier revision of the export already recorded closed.',
+          citation: describeLostRecord('lost-close'),
+        },
+        {
+          role: 'reversible-default',
+          stance:
+            'Reclose it, or write a dated note settling it: REOPENED if it was deliberate, DRIFT ADJUDICATED (lost-close) if the close was never really lost. Reversible: reclosing costs one command, while leaving it open risks the work being redone.',
+          citation: null,
+        },
+      ],
+      wouldHaveCaught: 'program-sequencing',
+    });
+  }
+
+  for (const id of lost.missingRecords) {
+    findings.push({
+      key: `missing-filing:${id}`,
+      trigger: `the export's own history disagrees with the tracker about ${id}`,
+      question: 'Was this filing lost by the tracker database, or is this checkout just behind another ref?',
+      branches: [
+        {
+          role: 'as-recorded',
+          stance:
+            'Leaving it unfiled: the bead an earlier revision of the export recorded disappears from the board entirely, and nothing tracks that work.',
+          citation: describeLostRecord('missing-filing'),
+        },
+        {
+          role: 'reversible-default',
+          stance: `Refile it from that revision, or write a dated DRIFT ADJUDICATED (missing-filing) note naming ${id} if this checkout is just behind another ref. Reversible: refiling costs one command, while leaving it missing loses the record.`,
+          citation: null,
+        },
+      ],
+      wouldHaveCaught: 'program-sequencing',
+    });
+  }
+
+  return findings;
+}
+
+/**
+ * Turn the checkout's divergence from main into a watch finding.
+ *
+ * One finding for the whole checkout, not one per bead: "read main before
+ * continuing" is one situation a person resolves once, and splitting it
+ * would put the same read in the inbox once per bead main already carries.
+ *
+ * Raised only when a bead is actually at stake. `describeDivergence` also
+ * reports plain branch lag with no bead involved — a checkout that simply
+ * has not pulled recently, which its own doc comment treats as routine, not
+ * a finding — and names which part is load-bearing: which beads the commits
+ * this checkout cannot see already name. Keyed on that same set, so a fresh
+ * sweep over the same gap stays quiet and a bead newly landing only-on-main
+ * is new information that gets raised again.
+ */
+export function divergenceFindings(report: DivergenceReport): Finding[] {
+  if (report.beadsOnlyOnMain.length === 0) return [];
+
+  const evidence = report.lines.join(' ');
+  return [
+    {
+      key: `divergence:${[...report.beadsOnlyOnMain].sort().join('+')}`,
+      trigger: 'this checkout is not where the work is',
+      question: 'Beads already have commits on main that this checkout cannot see — has that work already landed?',
+      branches: [
+        {
+          role: 'as-recorded',
+          stance:
+            'Continuing here without reading those commits: a session that cannot see them judges the work in them missing and does it a second time.',
+          citation: evidence,
+        },
+        {
+          role: 'reversible-default',
+          stance:
+            'Read those commits before doing anything else. Reversible: reading costs nothing, while redoing landed work costs a session.',
+          citation: evidence,
+        },
+      ],
+      wouldHaveCaught: 'program-sequencing',
+    },
+  ];
 }

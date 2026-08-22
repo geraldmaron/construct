@@ -71,9 +71,12 @@ export const EXPECTATIONS: readonly Expectation[] = [
   {
     name: 'envelope-never-names-the-model',
     claim:
-      'The result envelope does not name the model that served it, so ' +
-      'modelRan is honestly empty unless the request named one — in which ' +
-      'case unknown-model-fails-hard makes the request itself the evidence.',
+      'Under `--output-format json` — what the adapter uses — the result envelope does not name the model that served it, ' +
+      'so modelRan is honestly empty unless the request named one — in which case unknown-model-fails-hard makes the ' +
+      'request itself the evidence. NOT true of every format: measured on the pinned version, `--output-format ' +
+      'stream-json`\'s `system`/`init` event carries a `model` field naming the resolved model directly — "Auto" with no ' +
+      '`--model` given, a concrete resolved name like "GPT-5.1 Medium" when one is. The adapter does not use stream-json ' +
+      'today; if dispatch ever adopts it, re-read this expectation before trusting an empty modelRan.',
   },
   {
     name: 'catalog-is-multi-vendor',

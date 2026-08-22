@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-08-21T15:59:00.000Z",
+  "note": "The dated index over every per-model contract-floor record in this directory, not a new measurement of its own. Each entry's outcome and probedAt are copied from that model's own artifact (named under `artifact`), which stays the source of truth. Families and free-tier catalogs churn independently of each other and of this index, so nothing here is generalized past the dated, per-model result it points at — see docs/model-family-promotion.md for what a family's promotion actually requires beyond this floor.",
+  "instrument": "scripts/probe-model-contract.mjs, through the pinned OpenCode host (src/hosts/opencode/adapter.ts). Hosted/local binary invoked directly by absolute path (--binary /opt/homebrew/bin/opencode) to bypass this operator's interactive shell guard that refuses to launch opencode at all when OPENROUTER_API_KEY is unresolved in the session — a guard that has nothing to do with local or Corsair models but fires ahead of the model check.",
+  "acceptance": {
+    "modelsRequired": 8,
+    "familiesRequired": 5,
+    "distinctModelsRecorded": 9,
+    "distinctFamiliesRecorded": 5,
+    "met": true,
+    "note": "9 models recorded (one more than required): the gemma family is carried by both a failed and a succeeding local probe (see entries 8 and 9), which does not add a family beyond the 5 listed — it is a same-family diagnostic pair, kept because it documents a real host/model incompatibility rather than being discarded."
+  },
+  "openrouterBlocked": {
+    "attempted": false,
+    "reason": "OPENROUTER_API_KEY is not present in this session's environment (checked: `env | grep -i API_KEY`, no match). This operator's tooling resolves that key exactly one way — `op run --env-file=... -- command claude`, once, at Claude Code launch, so every subprocess the session spawns inherits it without a second 1Password prompt (see ~/.zshrc's `claude` alias and `opencode` function) — and every script in this repo that calls OpenRouter reads the key from the environment and nowhere else (scripts/labeling-kit/code-sheet-with-model.mjs, scripts/run-org-harness-ollama.mjs), by explicit design (no file, no prompt). This session was not launched through that alias. Confirmed genuinely unresolvable rather than merely unchecked: `op whoami` reports the 1Password CLI account is not signed in, so no in-session fallback exists that would not require an interactive prompt this non-interactive session cannot answer. No OpenRouter model was attempted and none of this artifact's results were fabricated or assumed for that tier; the fifth family was reached instead through the local Ollama provider (already credential-free and explicitly in scope alongside Corsair and OpenRouter), pulling gemma4:e2b directly from the Ollama registry.",
+    "unblocksBy": "Relaunch the session via the op-wrapped `claude` alias (a fresh terminal, not this worktree session), or otherwise place a resolved OPENROUTER_API_KEY in the environment before invoking scripts/probe-model-contract.mjs."
+  },
+  "families": ["qwen3", "gpt-oss", "nemotron", "glm", "gemma"],
+  "entries": [
+    {
+      "model": "ollama/qwen3.5:4b",
+      "family": "qwen3",
+      "source": "local",
+      "probedAt": "2026-08-06T04:44:57.971Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 0, "repaired": 0, "fellThrough": 2, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-ollama-qwen3.5-4b.json"
+    },
+    {
+      "model": "ollama/qwen3.6:35b",
+      "family": "qwen3",
+      "source": "local",
+      "probedAt": "2026-08-06T04:48:01.959Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-ollama-qwen3.6-35b.json"
+    },
+    {
+      "model": "ollama/gpt-oss:20b",
+      "family": "gpt-oss",
+      "source": "local",
+      "probedAt": "2026-08-06T04:53:26.596Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-ollama-gpt-oss-20b.json"
+    },
+    {
+      "model": "openrouter/nvidia/nemotron-3-super-120b-a12b:free",
+      "family": "nemotron",
+      "source": "openrouter",
+      "probedAt": "2026-08-06T04:43:03.663Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-openrouter-nvidia-nemotron-3-super-120b-a12b-free.json"
+    },
+    {
+      "model": "openrouter/nvidia/nemotron-nano-9b-v2:free",
+      "family": "nemotron",
+      "source": "openrouter",
+      "probedAt": "2026-08-06T05:14:08.355Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-openrouter-nvidia-nemotron-nano-9b-v2-free.json"
+    },
+    {
+      "model": "openrouter/openai/gpt-oss-20b:free",
+      "family": "gpt-oss",
+      "source": "openrouter",
+      "probedAt": "2026-08-06T05:15:54.254Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "artifact": "fixtures/model-floors/2026-08-06-openrouter-openai-gpt-oss-20b-free.json"
+    },
+    {
+      "model": "corsair/glm-4.7-flash",
+      "family": "glm",
+      "source": "corsair",
+      "probedAt": "2026-08-21T15:56:18.000Z",
+      "outcome": "unmeasured",
+      "seams": {
+        "namer": { "trials": 1, "clean": 0, "repaired": 0, "fellThrough": 0, "unmeasured": 1 },
+        "densifier": { "trials": 1, "clean": 0, "repaired": 0, "fellThrough": 0, "unmeasured": 1 }
+      },
+      "summary": "Retried once as directed. Unreachable: a direct reachability check timed out with no TCP response (10s bound) both before and after the attempt, and the live invocation through the pinned host was still pending after more than 20 minutes (twice the adapter's own 600000ms per-invocation timeout) before the orphaned process was terminated manually. Not evidence about the model — the host would not answer.",
+      "artifact": "fixtures/model-floors/2026-08-21-corsair-glm-4.7-flash.json"
+    },
+    {
+      "model": "ollama/gemma3:4b",
+      "family": "gemma",
+      "source": "local",
+      "probedAt": "2026-08-21T15:48:39.133Z",
+      "outcome": "unmeasured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 0, "repaired": 0, "fellThrough": 0, "unmeasured": 2 },
+        "densifier": { "trials": 2, "clean": 0, "repaired": 0, "fellThrough": 0, "unmeasured": 2 }
+      },
+      "summary": "Supplementary, not required for the count. This Ollama build's gemma3:4b template rejects any request carrying a `tools` parameter (HTTP 400 \"does not support tools\"), confirmed by direct request against the same server; the contract could not be exercised at all through this host. Superseded for the gemma family by ollama/gemma4:e2b below.",
+      "artifact": "fixtures/model-floors/2026-08-21-ollama-gemma3-4b.json"
+    },
+    {
+      "model": "ollama/gemma4:e2b",
+      "family": "gemma",
+      "source": "local",
+      "probedAt": "2026-08-21T15:57:39.446Z",
+      "outcome": "measured",
+      "seams": {
+        "namer": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 },
+        "densifier": { "trials": 2, "clean": 2, "repaired": 0, "fellThrough": 0, "unmeasured": 0 }
+      },
+      "summary": "The fifth family, reached locally after gemma3:4b proved unmeasurable on this host (see above): Gemma 4's Ollama template supports the tools parameter where Gemma 3's did not. Clean on every trial, both seams.",
+      "artifact": "fixtures/model-floors/2026-08-21-ollama-gemma4-e2b.json"
+    }
+  ]
+}

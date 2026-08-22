@@ -105,10 +105,10 @@ export const LENS_STANDARDS: readonly LensStandards[] = Object.freeze([
     lens: 'legal',
     refs: [],
     ungrounded:
-      'Legal doctrine is jurisdictional, and this lens declares no covered ' +
-      'jurisdiction until a licensed attorney accepts its corpus; citing a ' +
-      'body of law before then would imply coverage the lens disclaims. The ' +
-      'jurisdiction record on the lens is the standards statement.',
+      'Legal doctrine is jurisdictional, so no standing body of law is named ' +
+      'here: which law governs is a question each piece of work answers from ' +
+      'the primary source it locates and cites, and a standing reference ' +
+      'would imply one jurisdiction answers for all of them.',
   },
   {
     lens: 'commerce',

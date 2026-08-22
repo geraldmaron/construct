@@ -89,6 +89,48 @@ test('limits are per task: one degraded dispatch does not qualify its neighbour'
   });
 });
 
+test('a dispatch run under no lens reaches the reader as a stated limit, reusing the dispatch\'s own words', () => {
+  withStore((store) => {
+    const note =
+      'no lens equips this concern: no question set, no extra deliverable ' +
+      'obligations, and no escalation ladder are declared for it. This ' +
+      'dispatch works from the shared default playbook; its approach is ' +
+      'improvised against that playbook, not drawn from an established ' +
+      'method, and any claim from its deliverable carries that qualification.';
+    appendWorkLog(store, {
+      run: 'run-1',
+      task: 'run-1:astrology',
+      role: 'astrology',
+      action: 'lens-absent',
+      detail: { domain: 'astrology', note },
+      at: AT,
+    });
+    const limits = limitsFor(store, 'run-1', 'run-1:astrology');
+    assert.equal(limits.length, 1);
+    // Reused verbatim, not rebuilt — the dispatch's own sentence is the one
+    // the reader sees, so the two cannot drift into saying this differently.
+    assert.equal(limits[0].label, note);
+    assert.match(limits[0].label, /question set/);
+    assert.match(limits[0].label, /escalation ladder/);
+  });
+});
+
+test('a lens-absent entry with no note still yields a limit rather than a blank line', () => {
+  withStore((store) => {
+    appendWorkLog(store, {
+      run: 'run-1',
+      task: 'run-1:astrology',
+      role: 'astrology',
+      action: 'lens-absent',
+      detail: { domain: 'astrology' },
+      at: AT,
+    });
+    const limits = limitsFor(store, 'run-1', 'run-1:astrology');
+    assert.equal(limits.length, 1);
+    assert.match(limits[0].label, /no lens equips this concern/);
+  });
+});
+
 test('a deliverable with nothing recorded against it carries no invented limit', () => {
   withStore((store) => {
     appendWorkLog(store, {

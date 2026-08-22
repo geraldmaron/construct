@@ -236,3 +236,39 @@ test('a pack that matches the installed version everywhere has no skew', () => {
   );
   assert.deepEqual(skillPackSkew([{ directory: 'a', skill: stamped }], '3.1.4'), []);
 });
+
+test("a lens's ceiling reaches its description whole, refusal included", () => {
+  // A ceiling states what the lens will not do, and that refusal is routinely
+  // its second sentence. The description is the only text a host model reads
+  // before deciding to invoke a skill, so a ceiling that arrives truncated
+  // means the catalog holds a prohibition the selection surface never shows.
+  // The security lens is the case that matters: it says it reviews
+  // defensively, then says it does not write exploits or help evade
+  // detection, and only the first half used to survive.
+  const pack = projectSkillsPack(input);
+  const withCeiling = LENSES.filter((lens) => lens.ceiling);
+  assert.ok(withCeiling.length > 0, 'no lens declares a ceiling');
+
+  for (const lens of withCeiling) {
+    const ceiling = lens.ceiling;
+    if (ceiling === undefined) continue;
+    const file = pack.find((f) => f.directory === skillDirectoryName(lens.lens));
+    assert.ok(file, `no generated file for ${lens.lens}`);
+    // Frontmatter folds long descriptions across lines, so compare on the
+    // unfolded text rather than on the file's own line breaks.
+    const unfolded = file.content.replace(/\s+/g, ' ');
+    assert.ok(
+      unfolded.includes(ceiling.replace(/\s+/g, ' ')),
+      `${lens.lens}: its ceiling does not survive into the description`,
+    );
+  }
+});
+
+test('the security lens never advertises itself without its refusal', () => {
+  const pack = projectSkillsPack(input);
+  const file = pack.find((f) => f.directory === skillDirectoryName('security'));
+  assert.ok(file);
+  const unfolded = file.content.replace(/\s+/g, ' ');
+  assert.match(unfolded, /does not write exploits/);
+  assert.match(unfolded, /help evade detection/);
+});

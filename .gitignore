@@ -21,3 +21,8 @@ scripts/labeling-kit/returned/*.json
 .claude/worktrees/
 # Session Typst/PDF dogfood lives next to the checkout, not in the product tree.
 tmp/
+
+# Scratch probe output: a checksum sidecar a backup probe writes beside a
+# database it does not keep. It named a file that no longer exists the moment
+# the probe ended, so committing one records nothing a reader can check.
+__probe__/

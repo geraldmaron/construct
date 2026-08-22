@@ -122,10 +122,13 @@ export function deliverableConcerns(deliverable: unknown): Concern[] {
  * record so it can be printed next to the text it qualifies.
  *
  * The defect this closes: the dispatch already records that a model family is
- * unvalidated, or that the run fell below the capability floor its brief
- * declared, and both facts lived only in the work log. A deliverable read on
- * its own — which is how a deliverable is read — carried no trace of either,
- * and a lens-less role had nothing else to carry one. So the qualification was
+ * unvalidated, that the run fell below the capability floor its brief
+ * declared, or that no lens equips the role's domain, and all three facts
+ * lived only in the work log. A deliverable read on its own — which is how a
+ * deliverable is read — carried no trace of any of them, and a lens-less role
+ * had nothing else to carry one: a lens with a `labeling` line gets it spoken
+ * into the dispatch, but a role with no lens at all had no equivalent, and no
+ * record that it was lens-less in the first place. So the qualification was
  * true, recorded, and invisible to exactly the reader it exists for.
  *
  * Read off the log rather than re-derived from the host, for the reason
@@ -160,6 +163,13 @@ export function limitsFor(store: Store, run: string, task: string): DeliverableL
     if (entry.action === 'model-floor-degraded') {
       const why = typeof detail?.why === 'string' ? detail.why : 'the declared floor was not met';
       limits.push({ label: `below the declared capability floor: ${why}`, evidence: detail });
+    }
+    // Reuses the dispatch's own note verbatim rather than rebuilding the
+    // sentence here, so the two places this fact can be read — the work log
+    // and the reader's screen — cannot drift into saying it differently.
+    if (entry.action === 'lens-absent') {
+      const note = typeof detail?.note === 'string' ? detail.note : 'no lens equips this concern';
+      limits.push({ label: note, evidence: detail });
     }
   }
   return limits;

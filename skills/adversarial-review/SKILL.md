@@ -2,12 +2,12 @@
 name: adversarial-review
 description: A finished deliverable or decision is challenged before anyone
   commits to it - by a reviewer whose job is to break it, not improve it.
-  Mandatory challenge set - strongest failure mode with concrete inputs,
+  Six mandatory challenges - strongest failure mode with concrete inputs,
   best alternative not chosen, load-bearing-claims audit, assumption
-  inversion, who-bears-the-cost check - closing in exactly one of four
-  verdicts - accepted, accepted with controls, needs validation, or
-  rejected. Use before committing to a load-bearing artifact - an
-  architecture or data
+  inversion, who-bears-the-cost, five-minute hostile expert - closing in
+  exactly one of four verdicts - accepted, accepted with controls, needs
+  validation, or rejected. Use before committing to a load-bearing
+  artifact - an architecture or data
   design, a security or access boundary, a vendor or dependency choice, a
   migration or irreversible change, a spec about to be built, a public
   factual claim, a decision record about to be executed. Not for drafts

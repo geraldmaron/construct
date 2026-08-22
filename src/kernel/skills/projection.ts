@@ -251,12 +251,6 @@ export function wrap(text: string, indent = '', hanging = indent): string {
   return lines.join('\n');
 }
 
-/** The first sentence, or the whole thing when it never ends one. */
-function firstSentence(text: string): string {
-  const match = /^[\s\S]*?[.!?](?=\s|$)/.exec(text.trim());
-  return (match ? match[0] : text.trim()).trim();
-}
-
 /** "a", "a and b", "a, b, and c" — the list as a reader would write it. */
 function listOf(items: readonly string[]): string {
   if (items.length === 0) return '';
@@ -277,8 +271,20 @@ function descriptionFor(lens: RoleLens): string {
       ? `Use when the outcome touches ${listOf(lens.domains)}.`
       : 'Use only for the cross-reference named here; no domain routes to this lens on its own.',
   );
-  if (lens.ceiling) parts.push(`Limit: ${firstSentence(lens.ceiling)}`);
+  // The whole ceiling, never its first sentence. A ceiling states what the
+  // lens will not do, and that refusal is routinely the second sentence: the
+  // security lens says it reviews defensively, then says it does not write
+  // exploits or help evade detection. Truncating dropped the refusal from the
+  // one surface a host model reads before deciding to invoke the skill, so the
+  // catalog held a prohibition the selection surface never showed. Length is
+  // not the constraint that justified it: the longest ceiling-bearing
+  // description is well inside the cap even untruncated.
+  if (lens.ceiling) parts.push(`Limit: ${lens.ceiling}`);
   if (lens.labeling) parts.push(`Every deliverable is labeled ${lens.labeling}.`);
+  // Drops whole parts from the tail if the cap is ever reached. The labeling
+  // clause goes first under that rule, which is the wrong order for a licensed
+  // review disclaimer; it does not fire today and is recorded rather than
+  // guessed at.
   let kept = parts;
   while (kept.length > 1 && kept.join(' ').length > MAX_DESCRIPTION) kept = kept.slice(0, -1);
   const text = kept.join(' ');

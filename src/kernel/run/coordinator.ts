@@ -71,11 +71,14 @@ import { buildRoleEnv } from './roleenv.ts';
 import { NO_WRITE_SURFACE_NOTE, WRITE_SURFACE_PROTOCOL } from './rolewrite.ts';
 import { playbookFor } from '../plan/playbooks.ts';
 import { lensForDomain } from '../plan/lenses.ts';
+import { skillsDirective, skillsOffered } from '../skills/reach.ts';
+import type { SkillsReachable } from '../skills/reach.ts';
 import { standardsFor } from '../plan/standards.ts';
 import { gateObligation } from '../plan/gates.ts';
 import type { GroundGates, RepoManifest } from '../plan/gates.ts';
 import { constructIdentity, contentShapeProtocol } from '../voice/voice.ts';
 import type { VoiceOverride } from '../voice/voice.ts';
+import { VOICE_OVERRIDE_ACTION } from './voicerecord.ts';
 
 export const DEFAULT_CONCURRENCY = 2;
 
@@ -103,8 +106,10 @@ export interface CoordinatorOptions {
   /** Injected; the kernel never reads the clock. */
   readonly clock: () => string;
   /**
-   * Total spend allowed across every run in this store, in the host's own cost
-   * units. Reaching it halts dispatch; it does not kill work already in flight.
+   * Total spend allowed for this invocation, in the host's own cost units,
+   * measured over what this call dispatches rather than over the store's
+   * lifetime. Reaching it halts dispatch; it does not kill work already in
+   * flight. A host that reports no cost cannot be bound by it.
    */
   readonly spendCeiling: number;
   readonly concurrency?: number;
@@ -145,6 +150,17 @@ export interface CoordinatorOptions {
    * standard instead, which is the honest fallback rather than a silence.
    */
   readonly manifests?: (root: string) => RepoManifest | null;
+  /**
+   * What the portable method library on this machine can offer a role, read by
+   * the caller for the same reason manifests are: the surface that owns paths
+   * does the looking. Called once per invocation, not once per dispatch, since
+   * every role in one run reaches the same two directories.
+   *
+   * Absent means nobody looked, and the assignment says nothing about method
+   * skills at all. That is different from looking and finding none, which is
+   * said plainly, and the difference is why this is not defaulted here.
+   */
+  readonly skills?: () => SkillsReachable;
 }
 
 export interface RunReport {
@@ -165,7 +181,7 @@ export interface RunReport {
   readonly recovered: number;
   /** Deliverables carrying a host-reported defect. See run/accountability.ts. */
   readonly flagged: number;
-  /** Deliverables routed to a licensed professional before anyone relies on them. */
+  /** Deliverables in domains naming a licensed profession, so the referral duty stays visible. */
   readonly escalated: number;
   /**
    * Dispatches that ran below the brief's declared model capability floor
@@ -268,6 +284,41 @@ function workProductDirective(role: string): string {
 }
 
 /**
+ * What a role is told when no lens equips its domain — spoken plainly instead
+ * of the silence this used to be. Silence is not a smaller instruction here,
+ * it is the missing one: a role handed nothing has no way to tell "no lens"
+ * from "a lens with nothing extra to add", and neither does the reader of
+ * what it writes — improvisation reads exactly like a governed method unless
+ * something says otherwise.
+ *
+ * `statesObligation` is false for an ask (see lensDirective below): an ask
+ * answers in prose with no template and no section for the method slot to
+ * land in, so it hears the absence but not the instruction to write a
+ * section about it. It still reaches the reader either way — an ask's
+ * limits are shown the same way a work product's are, through
+ * run/accountability.ts's limitsFor, which is recorded independently of
+ * what either of these two paragraphs asks the role to say.
+ */
+function noLensDirective(statesObligation: boolean): string {
+  const absence =
+    'No lens equips this concern: no established question set, no extra ' +
+    'deliverable obligations, and no escalation ladder are declared for it. ' +
+    'Work it from your own domain knowledge and the material at hand. That ' +
+    'is improvisation against the shared default playbook, not a smaller ' +
+    'version of a named method, and it is not worse for being that; the ' +
+    'reader decides. Do not write as though a lens shaped this work.\n\n';
+  const section = statesObligation
+    ? 'Say this plainly in the method section your template names below: ' +
+      'that this concern has no owning lens, and specifically what a lens ' +
+      'would otherwise have supplied (its question set, its extra ' +
+      'deliverable obligations, its escalation ladder). State it once, ' +
+      'without apology and without claiming the improvised approach is ' +
+      'equivalent to a named method.\n\n'
+    : '';
+  return absence + section;
+}
+
+/**
  * The role's lens, spoken before the work: posture, the question set the role
  * works through, when to escalate, the stated depth limit, and any standing
  * label or jurisdiction boundary. Depth a role was never shown is depth it
@@ -288,7 +339,7 @@ function workProductDirective(role: string): string {
  */
 function lensDirective(role: string, ground: GroundGates, statesObligation: boolean): string {
   const lens = lensForDomain(role);
-  if (!lens) return '';
+  if (!lens) return noLensDirective(statesObligation);
   const questions = lens.questions.map((q) => `- ${q}`).join('\n');
   const escalation = lens.escalation.map((e) => `- ${e}`).join('\n');
   const labeling = lens.labeling
@@ -364,6 +415,14 @@ export function assignmentFor(
     readonly material?: readonly Material[];
     /** Local roots the role may read beyond the listed documents. */
     readonly groundRoots?: readonly string[];
+    /**
+     * What the portable method library on this machine can offer this role.
+     * Absent means nobody looked and nothing is said about method skills;
+     * present with no offers means the machine was read and holds none, which
+     * is said plainly so a deliverable cannot cite a method that was never
+     * there.
+     */
+    readonly skills?: SkillsReachable;
     /**
      * What those roots declare they check about themselves, as a host read
      * them. Absent means nothing was read, and every obligation falls back to
@@ -496,6 +555,7 @@ export function assignmentFor(
       { roots: options.groundRoots ?? [], manifests: options.manifests ?? [] },
       !asking,
     ) +
+    (options.skills ? skillsDirective(options.skills) : '') +
     (asking ? answerDirective() : workProductDirective(brief.role)) +
     material +
     '\n\n' +
@@ -768,6 +828,13 @@ export async function workRun(
   // in-flight work settles, not instead of it.
   let fatal: unknown = null;
 
+  // What the portable method library on this machine can offer the roles this
+  // invocation dispatches, read once. Every role in one run reaches the same
+  // two directories, so asking again per dispatch buys the same answer at a
+  // cost per role. Null means nobody looked, which the assignment and the
+  // record both distinguish from looking and finding nothing.
+  const reachable = options.skills?.() ?? null;
+
   async function dispatch(task: LeasedTask): Promise<void> {
     const brief = task.brief as Brief;
 
@@ -820,6 +887,12 @@ export async function workRun(
     // is absent cannot answer "what ran this?" for the runs that went well —
     // which are exactly the runs a later claim quotes.
     const tuning = host.modelTuning?.(model ?? undefined) ?? null;
+    // What method governs this dispatch, resolved once and recorded here on
+    // every dispatch — not only when it is absent — for the same reason model
+    // family is recorded on every dispatch and not only when untuned: "what
+    // ran this?" and "under what method?" both need an answer on the runs
+    // that went well, which are exactly the runs a later claim quotes.
+    const lens = lensForDomain(task.role);
     appendWorkLog(store, {
       run: task.run,
       task: task.id,
@@ -832,6 +905,7 @@ export async function workRun(
         modelTier,
         modelFamily: tuning?.family ?? null,
         modelTuned: tuning?.tuned ?? null,
+        lens: lens?.lens ?? null,
         // What the role was told about why it is here. Recorded because a
         // deliverable that opens from a concern can only be read against the
         // evidence the role actually received, not the evidence it might have.
@@ -842,13 +916,15 @@ export async function workRun(
 
     // An deliverable that does not sound like Construct must be traceable to the
     // user who asked for that, at the dispatch it shaped. Voice is bound
-    // before the work, so this is the only place the record can be made.
+    // before the work, so this is the only place the record can be made — and
+    // it is the record composing reads back, so the document a run produces is
+    // written in the voice its deliverables were.
     if (options.voice) {
       appendWorkLog(store, {
         run: task.run,
         task: task.id,
         role: task.role,
-        action: 'voice-overridden',
+        action: VOICE_OVERRIDE_ACTION,
         detail: { instruction: options.voice.instruction, source: options.voice.source },
         at: options.clock(),
       });
@@ -899,6 +975,50 @@ export async function workRun(
             'family; output shape and citation habits are unmeasured for it, and ' +
             'any claim about this run carries that qualification',
         },
+        at: options.clock(),
+      });
+    }
+
+    // The method half of commitment 15, run at the same seam as the model
+    // floor and tuning checks above: a fact about this dispatch that changes
+    // what a reader may conclude from its deliverable, recorded whether or
+    // not anyone reads the deliverable's own method section. A concern no
+    // lens equips gets no question set, no extra deliverable obligations, and
+    // no escalation ladder — the dispatch works from the shared default
+    // playbook instead, and that is improvisation, not a quieter method.
+    // run/accountability.ts's limitsFor reads this action back so the fact
+    // reaches the reader beside the deliverable, the same as the two checks
+    // above.
+    if (!lens) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'lens-absent',
+        detail: {
+          domain: task.role,
+          note:
+            'no lens equips this concern: no question set, no extra deliverable ' +
+            'obligations, and no escalation ladder are declared for it. This ' +
+            'dispatch works from the shared default playbook; its approach is ' +
+            'improvised against that playbook, not drawn from an established ' +
+            'method, and any claim from its deliverable carries that qualification.',
+        },
+        at: options.clock(),
+      });
+    }
+
+    // What method the role could actually reach, written whether or not it
+    // reaches for any of it. A deliverable naming a skill is checkable against
+    // this line, and one produced on a machine holding none cannot read as
+    // though the library had been at hand.
+    if (reachable) {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'skills-offered',
+        detail: skillsOffered(reachable),
         at: options.clock(),
       });
     }
@@ -955,6 +1075,7 @@ export async function workRun(
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),
             mode: plan?.mode,
+            ...(reachable ? { skills: reachable } : {}),
           }),
         },
         { invocationId: task.id, roleEnv },
@@ -1292,7 +1413,10 @@ export async function workRun(
             action: 'licensed-review-required',
             detail: {
               profession: review,
-              why: `${task.role} output is issue-spotting, not advice — review by a licensed ${review} is required before anyone relies on it`,
+              why:
+                `${task.role} output is research and issue-spotting, not advice; ` +
+                `work that is practice (representation, filings, sign-off where ` +
+                `real liability turns on an unsettled question) belongs to a licensed ${review}`,
             },
             at: settledAt,
           });

@@ -15,8 +15,28 @@ A number that appears here and cannot be printed by that script is a number nobo
 and should be deleted rather than defended. Same discipline as `probe-*-conformance.mjs`,
 applied to statistics instead of to a host.
 
+**That script measures against the catalog as it stands when it runs, and the catalog has
+grown, so §§1, 3, 4 and 5 no longer reprint the figures written in them.** Those sections were
+measured against roughly ten domains. Seventeen ship now: five concerns landed 2026-08-10 and
+two more 2026-08-13, after the corpora were labeled. The consequence is one-directional and
+mechanical. A domain nobody could label can still fire, so every over-shaped statistic reads
+higher today and every silence-shaped one lower, while **miss is untouched** because it only
+asks whether an old label was found. Re-running now prints pooled over 0.363 where §1 records
+0.252, 377 catalog keywords where §3 records 207, and `unspent` escalation reach 0.564 where §5
+records 0.691; every miss figure in those sections still reprints exactly.
+
+The recorded figures stay as recorded. They are what the instrument said on the catalog it was
+pointed at, which is the only thing any measurement is. What is corrected here is the Status
+line below claiming they track the live catalog: they do not, and a reader re-running the
+script would otherwise read the difference as a defect rather than as a catalog that moved.
+§§10 and 18 are unaffected, because they froze their per-outcome answers into
+`fixtures/namer-arms/` and are re-derived by `npm run check:figures` against those fixtures
+rather than against a catalog that can drift underneath them. That is the pattern the earlier
+sections predate, and the one to follow when they are next re-measured.
+
 **Status of this document.** Sections 1, 2, 3, 4, 5, 6, 9, and 10 are measured against the real
-corpora and the live catalog — §6's measurement is a negative result (no ground truth exists to
+corpora, and against the catalog as it stood when each was run rather than the live one (see the
+paragraph above) — §6's measurement is a negative result (no ground truth exists to
 calibrate the intake ramp against), stated as such rather than worked around. Sections 7 and 8
 identify the right formalism and state what would have to be collected to apply it; their
 conclusions are explicitly marked as pending data, not presented as results. §10 is measured
@@ -576,7 +596,7 @@ is not:
   the share of outcomes that trigger a namer call.
 - **REACH** — the share of that corpus's missed labels that sit behind a silent outcome, i.e. that
   escalate-on-silence hands to a namer at all. Reaching a miss is not recovering it: nothing here
-  measures whether a namer, given the shortlist, names it correctly — that bound is §5.6's
+  measures whether a namer, given the shortlist, names it correctly — that bound is this section's
   oracle-namer-floor / credulous-namer-ceiling sweep, and it requires the live embedder. Every
   reach figure below is a REACH count, never a recovery count.
 
@@ -1703,6 +1723,15 @@ Five arms, one corpus set, one tier, every arm paired against the same recorded
 baseline. Miss is pooled out-of-family (fresh + unspent), the axis the §10 gate
 is stated in; over is the `unspent` rate.
 
+**The `over` column is not §10's false-implicate rate, and the two must not be
+quoted against each other.** §10's headline over-rate is 0.374 (40/107); the
+baseline row below reads 0.376 on the same shipped prompt. They differ because
+they count different things, not because either moved: this column is the
+unspent-arm rate, scoped to this ablation so the five arms are paired against
+one another. The `miss` column *is* §10's axis, which is why 0.280 appears in
+both and why the two columns invite exactly the collision this note exists to
+stop. Cite 0.374 when stating what the shipped router does.
+
 | arm | prompt | miss | over | paired vs shipped |
 |---|---|---|---|---|
 | shipped — one-line concerns | 1,224 ch | **0.280** | 0.376 | baseline |
@@ -1894,7 +1923,9 @@ the path that actually ran and actually missed. Under this project's own standar
 an improvement claim needs more than one run and more than one model family, so
 the implementation carries that obligation rather than inheriting this table as
 its evidence. The probe is committed as `scripts/probe-ground-routing.mjs` so the
-follow-up measures with an instrument that already exists.
+follow-up measures with an instrument that already exists. *(That obligation was
+discharged 2026-08-21; §23 carries the namer figures, and they do not read the
+way this section's table would lead a reader to expect.)*
 
 **One correction to the record.** The bead that raised this stated that the
 keyword map, run as a control, "names NOTHING at all" on this text. Re-run today
@@ -2074,3 +2105,295 @@ skills; vercel-labs skills CLI (GitHub, read 2026-08-20). Vendor and security
 reporting on skill supply-chain attacks (2025–2026, read 2026-08-20).
 Gerald's statement of intent and endorsement, in-session chat, 2026-08-20.
 Full research trail: the vision-direction session of 2026-08-20.
+
+## 23. The same ground, measured on the model namer (2026-08-21)
+
+§20 decided a direction and named its own limit in the same breath: its table is
+one outcome, one project and the deterministic keyword router only, and it "says
+nothing about the model namer, which is the path that actually ran and actually
+missed." This is that obligation discharged. Nothing here changes routing and no
+improvement is claimed. What changes is that the namer now has figures of its
+own, and they neither reproduce §20's table nor refute its direction.
+
+**The instrument.** `scripts/probe-ground-routing.mjs`, extended rather than
+replaced. `--namer=<transport>/<model>` runs the shipped seam — `namerPrompt`
+and `parseNamings` from `hosts/namer.ts`, the one corrective retry in
+`jsonrepair.ts`, `mapImplicationsNamed`'s catalog admission — over a bare
+transport, the same direct-fetch pattern `measure-decisions.mjs` already uses
+for its own live namer section. Only the bytes are local to the probe;
+everything that decides what a naming means is code the product runs. The two
+arms frame the same admitted lines differently and say so: the keyword arm
+concatenates, byte-identical to the run already on the record, and the namer arm
+labels the lines as the project's own documents, because a namer told that a
+boundaries table is the user's own wording is being asked a question no
+implementation would ask it. Compare conditions within an arm; across arms, only
+the direction is comparable.
+
+**What was asked.** Five outcomes over two grounds. G1 is §20's outcome
+verbatim; the other four were written for this measurement from each ground's
+own documents, chosen on whether the ground carries a binding at all — which is
+what makes an item valid — and never on how any model answered. The keyword arm,
+which costs nothing to re-run:
+
+| | ground | project term | expected | keywords: alone → line → ±4 |
+|---|---|---|---|---|
+| G1 | BlackStory (355 docs) | `living_status` | privacy | 1, missed → 4, reached → 12, reached |
+| G2 | BlackStory | `claim_versions` | evidence-provenance | 1, missed → 3, reached → 7, reached |
+| G3 | BlackStory | `kill_switches` | security | 2, missed → 13, reached → 17, reached |
+| G4 | BlackStory | `publicPrecisionRules` | privacy | 1, missed → 1, missed → 1, missed |
+| G5 | `fixtures/org-harness/corpus` (22 docs) | `rollingSync` | program-sequencing | 0, missed → 10, reached → 13, reached |
+
+G2's binding is the project's own sentence — "Claim versions are append-only (no
+UPDATE/DELETE grants)" — and G4's term appears in no prose document at all: it
+is a key in a JSON policy file, so the survey admits nothing for it. G4 is
+therefore the null control, and it earns its place twice over below.
+
+**The panel.** Six families were asked and five answered: gpt-oss (`gpt-oss:20b`)
+and qwen (`qwen3.6:35b`) locally on Ollama; nemotron
+(`nemotron-3-super-120b-a12b`), liquid (`lfm-2.5-2.6b`) and dots
+(`dots-3-note-preview`) on OpenRouter's free tier. Named rather than skipped:
+gemma answered 3 of its 13 rows and was refused on the rest by its upstream
+shared pool (HTTP 429 through the probe's bounded backoff), and its smaller
+sibling answered none; glm and poolside were refused before a single outcome
+ran; cohere returned a one-word reachability check in 2.8s and then nothing
+inside the probe's fifteen-minute call limit, twice. `qwen3.5:4b` was excluded on
+evidence rather than taste — its namer contract fell through on both trials the
+same day (`fixtures/model-floors/2026-08-21-ollama-qwen3.5-4b.json`). Every
+family here is untuned by this repo's own matrix, so all of them ran best-effort,
+and the model behind the run §20 recorded is written down nowhere in this
+repository, so it cannot be placed on this panel at all.
+
+That leaves **26 measured cells**: five outcomes, five to six families, one run
+per cell at temperature 0.
+
+**Finding 1 — the keyword router's blindness is not the namer's.** The keyword
+router reaches the expected concern from the outcome alone in 0 of 5 outcomes.
+The namer reaches it in 15 of 26 cells, and on two of the five outcomes — G3 and
+G5 — every measured family reaches it from the outcome's own words with no
+ground at all. §20's framing — the concern is in the catalog and the outcome's
+words cannot reach it — describes the router, and describes the namer only
+sometimes.
+
+**Finding 2 — where the namer *did* miss, the line rescued it, every time.** On
+G1, §20's own outcome, two of the five measured families named privacy from the
+outcome alone and three did not. All three reached it once the line was
+admitted, so five of five reach privacy at line scope. That is §20's premise
+reproduced on the path §20 could not test — on one outcome, at n=5.
+
+**Finding 3 — and it cost a concern elsewhere.** On G2 the line took privacy's
+place badly: two families that named evidence-provenance from the outcome alone
+stopped naming it once the append-only line was admitted. Across all 26 cells:
+3 reached only with the line, 2 lost by admitting it, 13 reached either way, 8
+reached in neither. Net +1 on 26 draws. Under §21's asymmetry — recall is not
+this project's currency to spend — a change that loses a concern on 2 of 26 is
+not adoptable as a replacement, whatever its average.
+
+**Finding 4 — keeping both consultations is the shape the numbers actually
+favour.** Read as a union rather than a substitution, the same 26 cells reach
+18, against 15 for the outcome alone and 16 for the line alone, for a mean of
+3.65 domains named against 2.88 and 2.58. Every cell either arm reached is
+reached, and nothing is lost by construction. This is a re-reading of data
+already paid for, not a measured implementation, and it doubles the model calls;
+it is recorded as the shape a proposal should be measured in, not as a proposal.
+
+**Finding 5 — the width curve does not replicate.** The keyword arm's monotonic
+cost is why §20 chose the line. The namer has no such curve. Of the two families
+run at every width on G1: nemotron went 5, 2, 6, 5, 2 domains across alone,
+line, ±1, ±2, ±4, holding privacy throughout; gpt-oss went 6, 6, 0, 4, 3, naming
+*nothing at all* at ±1 and losing privacy at ±4. Nothing here argues for a wider
+window, and the constraint against widening it stands unchallenged — but the
+reason is now "no evidence for it and a family that degrades under it," not
+"monotonic precision loss."
+
+**Finding 6 — the mechanism is inert exactly where the failure mode lives, and
+that is not a defect of the mechanism.** G4 states a privacy question in the
+project's own vocabulary; no family named privacy at any condition and neither
+did the router. The ground could not help because the project never wrote the
+binding down in prose. This is the clearest thing the panel says about the
+rejected alternative: a workspace-declared glossary would have been the only
+thing that could reach G4, and §20 rejected it for reasons this section does not
+disturb. The honest statement is that both mechanisms fail here, for different
+reasons.
+
+**Finding 7 — the effects are close to the noise.** G4's two rows are
+byte-identical input, so their gap is this panel's noise floor: three of six
+families returned a *different domain set* on the same prompt, median absolute
+difference one domain. Over the 20 pairs where the ground does admit lines, the
+median absolute difference is two domains. An effect twice the noise, measured
+once per cell, is a direction, not a magnitude. No confidence interval is quoted
+because none computed at this n would mean anything.
+
+**What this does not license.** Five outcomes, two grounds, five to six
+families, one run per cell, one day, one free-tier's weather. Four of the five
+outcomes were authored for this measurement by an Anthropic model reading each
+ground, which is a selection this session made and cannot audit itself; only G1
+is verbatim from a recorded run, and it is also the outcome carrying the
+strongest result, which is exactly the coincidence a reader should discount for.
+The namer prompt asks for a reason grounded in the outcome's own words, so the
+whys do not quote admitted lines and their silence is not evidence the lines were
+ignored. Nothing here is a claim about production behavior: the probe frames the
+ground as labeled evidence, and no shipped code path does that yet.
+
+**What is decided.** Nothing is adopted and nothing is reversed. §20's direction
+survives — line scope, ground rather than declared glossary — and §20's *table*
+stops being usable as the business case for it, because the router's clean
+monotone story does not describe the namer at all. An implementation proposal
+after this section must say which arm it improves, must not spend recall to buy
+precision (§21), and inherits these figures rather than §20's.
+
+**Recorded by:** `fixtures/ground-routing/2026-08-21-namer-panel.json`, produced
+by the probe above, 2026-08-21. Deterministic arm re-run the same day and
+identical to §20's table but for one document added to the ground since.
+
+## 24. Five concern lines, redrafted against their lenses and not adopted (2026-08-21)
+
+Five domains carried concern lines that described less than their lens obliges.
+The catalog's concern line is the only thing the model namer reads about a
+domain (`namerPrompt` in `hosts/namer.ts` renders the catalog as
+`- <domain>: <concern>` and nothing else), so a line that omits half its lens's
+question set is the router's whole knowledge of that half. The proposal was to
+swap all five lines at once. This is the measurement, and it says keep the lines
+that are there.
+
+### Why a fresh baseline had to be paid for
+
+`fixtures/namer-arms/shipped.json` was recorded 2026-08-11 against a 15-domain
+catalog. `evidence-provenance` and `coverage-gaps` were added 2026-08-13, and
+the serving build moved. Both halves of that gap matter: it is not the same
+prompt and not the same model. Scored against the current corpora it reads miss
+0.280, and a same-day re-recording of the *unchanged* lines reads **0.194**. The
+older arm is not a wrong figure, it is a figure about a different router, and
+using it as the baseline would have credited the redraft with 0.086 of miss it
+did not buy. §10 and §18 keep quoting it because they are stated on it.
+
+### The change, and what it cost in prompt length
+
+§18 measured miss degrading monotonically with catalog-block length (0.280 at
+1,224 characters to 0.548 at 12,883, p < 0.0001 at the two large arms), so a
+redraft has to be a swap rather than an addition. The current 17-domain block is
+**1,433 characters**; the redrafted block is **1,491**, +58 or +4.05%. That is
+one twenty-sixth of §18's smallest measured step (+105%, which moved miss 0.032
+at p = 0.61), so length is not an explanation for anything below. It is stated
+because an unstated drift is how a block reaches 12,883 characters.
+
+| domain | line measured against the current one |
+|---|---|
+| marketing-claims | what you publish or promote, what others say of you, and whether it holds |
+| privacy | records about people: what you keep, who sees them, where they go |
+| compliance | rules you must follow, and the proof that you follow them |
+| commerce-tax | money owed or paid: pricing, billing, tax, refunds, failed payments |
+| product-scoping | what is in, what is out, and where reality disagrees |
+
+### The arms
+
+Both recorded the same day, same corpora, same admission gate, both verified
+single-tier `claude-sonnet-5`, both refused-on-failure clean (0 of 126). Pool is
+the out-of-family corpora `fresh` + `unspent`: 82 outcomes, 93 (outcome,
+expected label) pairs.
+
+**Two frames are reported because 7 of the 17 domains carry no gold anywhere in
+this pool.** A domain the labelers never marked can only ever contribute a false
+implicate, so the overall over-rate charges the router for naming concerns the
+corpus holds no opinion about. In-frame restricts the named set to the 10
+domains that do carry gold. Miss is identical in both frames by construction,
+since every expected label is in-frame.
+
+| arm | block | miss | over overall | over in-frame |
+|---|---|---|---|---|
+| current lines (`shipped-17-domain.json`) | 1,433 ch | 0.194 (18/93) [0.126, 0.285] | 0.537 (87/162) [0.460, 0.612] | 0.370 (44/119) [0.288, 0.459] |
+| five redrafted lines (`five-concern-lines.json`) | 1,491 ch | 0.183 (17/93) [0.117, 0.273] | 0.483 (71/147) [0.404, 0.563] | 0.339 (39/115) [0.259, 0.430] |
+| zero-model keyword map (A0, both arms) | n/a | 0.634 (59/93) [0.533, 0.725] | 0.507 (35/69) [0.392, 0.622] | 0.414 (24/58) [0.296, 0.542] |
+
+All intervals Wilson 95%, per §1. Paired on the miss axis: **5 lost, 6
+recovered, McNemar exact p = 1.0000**, on 11 discordant pairs of 93.
+
+### The reading, and it is not the aggregate
+
+The aggregate looks like a mild win on both axes. It is not one, and the reason
+is visible per domain rather than in the totals.
+
+| domain | edited | gold | miss before | miss after | lost | recovered |
+|---|---|---|---|---|---|---|
+| marketing-claims | yes | 14 | 0.429 | **0.643** | 3 | 0 |
+| privacy | yes | 7 | 0.143 | 0.000 | 0 | 1 |
+| compliance | yes | 12 | 0.083 | 0.000 | 0 | 1 |
+| commerce-tax | yes | 15 | 0.133 | 0.133 | 1 | 1 |
+| product-scoping | yes | 5 | 0.800 | 0.800 | 0 | 0 |
+| contracts | no | 12 | 0.167 | 0.000 | 0 | 2 |
+| employment | no | 17 | 0.118 | 0.059 | 0 | 1 |
+| program-sequencing | no | 4 | 0.000 | 0.250 | 1 | 0 |
+| accessibility, security | no | 7 | 0.000 | 0.000 | 0 | 0 |
+
+**The net gain sits entirely on domains the change did not touch.** Split the 11
+discordant pairs by whether the domain's line was edited: the five edited
+domains net **−1** (4 lost, 3 recovered, p = 1.0000), and the untouched domains
+net **+2** (1 lost, 3 recovered, p = 0.6250). Three concern lines that are
+byte-identical across the two arms disagree on four label-pairs, which is this
+instrument's noise floor stated in its own units, and it is as large as the
+effect on the lines that changed.
+
+**The intended recoveries are real and named**, which is why this is a rejection
+on evidence rather than a null result. Each of the three lands on exactly the
+case its redraft was written for: `compliance` on "which volunteers haven't had
+their background check renewed" (a rule you are subject to, not a regulator you
+are dealing with), `privacy` on "a bad review claiming we lost a student's
+paperwork" (records, which the line never said), `commerce-tax` on "which of our
+six towns are behind on paying the small family fee" (money owed rather than
+money taken). The redraft's diagnosis was right about what those lines omitted.
+
+**They were paid for on marketing-claims, and the bill is larger.** That line
+was the first target and lost three pairs while recovering none, moving 0.429 to
+0.643. One of the three is "a flyer we can hand out at the middle schools
+announcing fall sign-ups", which the redraft was written to catch and which the
+*unchanged* line already caught on this build. Widening a line to name more of
+what its lens covers is not free: "what you publish or promote, what others say
+of you" is three things where "what you say publicly" was one, and the namer
+named the domain less often, not more.
+
+**And the worst line is untouched by the result.** `product-scoping` at 0.800
+miss on 5 gold labels moved neither way, 0 lost and 0 recovered. The one domain
+whose defect is not marginal is the one the redraft bought nothing on.
+
+### Verdict: keep the current lines
+
+Not adopted. Under §21's asymmetry, recall is not this project's currency to
+spend, and the only directional per-domain movement in the table is a recall
+loss on the domain the change was written for. Everything favourable is either
+inside p = 1.0000 or sitting on lines the change did not make. This is §18's
+finding arriving from a different direction: the model's own reading of a short
+line is doing more work than the extra clauses do, and adding clauses is not
+reliably additive even at 58 characters.
+
+What is **not** claimed: that the redrafted lines are worse. 11 discordant pairs
+of 93 cannot establish that either, and three genuine recoveries are on the
+record above. What is claimed is narrower and sufficient: on this corpus, at this
+tier, the swap does not earn its adoption, and a change that cannot be shown to
+help does not get to move the router.
+
+What this leaves open is `product-scoping` and `marketing-claims`, the two
+domains carrying real miss (0.800 and 0.429) that neither the current lines nor
+this redraft address. A corpus of 5 and 14 gold labels cannot adjudicate a line
+change on either; §18's `construct-9933` already holds the corpus-power
+precondition, and this section is the second measurement to run into it.
+
+### Evidence provenance
+
+Both arms recorded 2026-08-21 through the shipped seam
+(`createHostNamer(createClaudeAdapter(...))`), host `claude`, model pinned
+`claude-sonnet-5` and verified single-tier in `modelsRan`, 126 consultations
+each, 0 failures, 10 and 8 corrective retries, mean latency 8,860 ms and
+8,242 ms. Catalog 17 domains. Pool 82 outcomes / 93 label-pairs over
+`fresh-outcomes.json` + `unspent-outcomes.json`; the sealed corpus is absent, as
+everywhere. Prompt fingerprints `aafa18d6937b` (current lines) and
+`4806f14b059a` (redraft). Metered spend **$34.69** across the two recorded arms
+($17.54 + $17.15), plus **$17.06** on a first candidate run the harness refused
+to record because 1 of 126 consultations returned malformed JSON after its
+corrective retry; that refusal is the rule from §18 working, and the refused run
+reproduced the same gate-axis figures (miss 0.183, 5 lost / 6 recovered), which
+is stated as a coincidence of two runs rather than as a second measurement.
+Where a corpus's labels and the namer share a model family, observed agreement
+is an upper bound on independent agreement (the construct-adf caveat travels
+with these numbers). Re-derivable by `node scripts/score-namer-arms.mjs
+--expect`, which runs under `npm run lint`.
+
+Recorded for `construct-xn5g`.

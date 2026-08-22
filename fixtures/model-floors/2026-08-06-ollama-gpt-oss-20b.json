@@ -44,5 +44,19 @@
       "ms": 6596,
       "outcome": "clean"
     }
+  ],
+  "findings": [
+    {
+      "observedOn": "2026-08-21",
+      "finding": "slot-heading-non-compliance",
+      "observation": "Across four real `ask` dispatches read back through `construct show`, this model never produced any domain template's required headed sections (security: finding/attack-surface/mitigations/threat-paths; product: finding/risks/users-and-problem/in-scope/out-of-scope/success-measures/commitment-conflicts; contracts: issues). It substituted one generic shape every time instead — answer/evidence/limits/open-questions/claims-cited, often closed with an ASK/ASSUMING pair — regardless of which template it was given. Distinct from the namer/densifier JSON-seam contract measured above: those two seams held clean on every trial while the deliverable's own template slots were never produced, so this is a separate, additional capability-floor fact rather than a restatement of the seam result.",
+      "evidence": "fixtures/persona-acceptance/2026-08-21-panel-gptoss.md, cross-cutting finding 1"
+    },
+    {
+      "observedOn": "2026-08-21",
+      "finding": "citation-tag-format-non-conformance",
+      "observation": "All four deliverables in the same panel substantively separated engagement-grounded claims from unverified ones, but always as a `(engagement)` tag plus a plain-prose caveat, never the bracket syntax `[cite:engagement]` / `[unverified]` that the run's own material protocol requests. Judged honest on substance — no citation named the domain catalog, a lens, the playbook, the work log, or the keyword map as authority — but formally non-conformant: the automated tier-1 citation check does not recognize `(engagement)` as a valid tag, so a session relying on that check alone to validate this model's output would be misled by it.",
+      "evidence": "fixtures/persona-acceptance/2026-08-21-panel-gptoss.md, cross-cutting finding 3"
+    }
   ]
 }

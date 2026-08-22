@@ -2,14 +2,17 @@
 
 Filed 2026-08-20 against epic construct-dr48, adversarially reviewed before
 commit per house discipline (strongest failure mode, best alternative,
-verdict). This is a design decision and its seam interfaces. No connector
-implementation ships here — Jira, GitHub, and every other vendor-specific
-adapter are separate, later work, gated by what this document licenses.
+verdict). This is the design decision and the seam interfaces it licensed.
+Jira and GitHub connectors have since been built at `src/connectors/jira/`
+and `src/connectors/github/` against exactly this shape (construct-dr48.2,
+.3); this page stays the record of why the shape is what it is, not a
+description of what the connectors do. Any further vendor-specific adapter is
+licensed the same way: gated by real need, built to this seam.
 
 ## What licenses this
 
-STRATEGY.md commitment 1, amended 2026-08-16 (construct-1zx1), recovered
-2026-08-20 (construct-hmjn):
+STRATEGY.md commitment 1 and risk 4, amended 2026-08-16 (construct-1zx1),
+recovered 2026-08-20 (construct-hmjn), in substance:
 
 > Defined API connectors are licensed behind a hard use/build gate, as an
 > amendment to this commitment's tool-broker reading: a connector may be
@@ -73,10 +76,10 @@ review closed — an ungated write surface a role can drive on its own — now
 against a vendor's live system instead of Construct's own store. It cannot
 produce `SourceSurvey`-shaped coverage provenance, because the kernel never
 sees the read at all; it only sees whatever the model chose to report. And
-on the one host actually pinned today, it does not even buy the isolation
-it promises: `OPENCODE_CONFIG`'s merge behavior means a "standalone" server
-is exactly as exposed to the host's other tools as an adapter-tier call
-would be.
+on OpenCode, whose pin is what records this exact behavior, it does not even
+buy the isolation it promises: `OPENCODE_CONFIG`'s merge behavior means a
+"standalone" server is exactly as exposed to the host's other tools as an
+adapter-tier call would be.
 
 **Verdict: the recommended shape is accepted, with a control.** The ladder
 is ordered by *authority* — who is licensed to act — not by *fidelity* —
@@ -106,8 +109,14 @@ Named as an allow-list, so it also blocks a future connector from quietly
 becoming a dependency:
 
 - `src/kernel/**` may not import `src/connectors/**`.
-- `src/connectors/**` may import only `src/kernel/**` and Node builtins —
-  never a host adapter, never another connector.
+- `src/connectors/**` may import only `src/kernel/**`, its own connector's
+  own modules, and Node builtins — never a host adapter, never another
+  connector. The own-modules clause is what "another connector" always
+  meant, made explicit when the first connector was built: a vendor's pin,
+  its wire, and the module that reads them are one connector, and a rule
+  forbidding them each other would force every connector into a single file
+  while the adapter tier beside it stays multi-file. A sibling vendor
+  directory is still another connector and still forbidden.
 - `src/hosts/**` may not import `src/connectors/**` — a host and a
   connector are separate answers to "how does work reach the outside
   world," and a host reaching for a connector would be the tool-broker
@@ -122,7 +131,13 @@ user who has explicitly opted into a connector — commitment 1's line "why
 Construct's own build never uses product connectors" is a claim about the
 build, not about every command the CLI could ever expose.
 
-`construct-dr48.5` (lint enforcing this rule) and the connector
-implementations themselves (`construct-dr48.2`, `.3`) are later, separate
-work, gated on real need per the use/build gate above — this document
-licenses the seam, not a Jira integration nobody has asked for yet.
+The lint enforcing this rule is `scripts/lint-connector-gate.mjs`
+(`construct-dr48.5`), landed ahead of the first connector as designed. The
+Jira and GitHub connectors themselves (`construct-dr48.2`, `.3`) are built on
+this seam, each gated on real need per the use/build gate above. The GitHub
+connector's pin has since been traced against a real, disposable scratch
+repository, with one expectation still unprobed (`repo-lookup-404s-honestly`,
+named in `src/connectors/github/connector.ts`); the Jira connector is built
+and pinned but has not yet made a live call against a real or scratch Jira
+project. Any further vendor adapter waits on the same gate, not on this
+document alone.

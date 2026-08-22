@@ -6,6 +6,7 @@ import {
   findHarnessCorpusCitations,
   namesHarnessCorpus,
   findPlantedOrgCitations,
+  findUngroundedRankings,
 } from '../../src/kernel/verify/claims.ts';
 
 test('flags a dollar figure with no citation or unverified tag', () => {
@@ -177,4 +178,56 @@ test('the org-harness corpus is not evidence unless the run was licensed to it',
     findPlantedOrgCitations(line, ['/repo/fixtures/org-harness-broad']).length,
     0,
   );
+});
+
+test('flags a priority tier with no citation or assumed label', () => {
+  const findings = findUngroundedRankings('1. Fix the checkout crash — P0');
+  assert.equal(findings.length, 1);
+});
+
+test('accepts a priority tier cited to data ground', () => {
+  const findings = findUngroundedRankings(
+    '1. Fix the checkout crash — P0 [cite:sentry-error-rate-2026-08.csv]',
+  );
+  assert.equal(findings.length, 0);
+});
+
+test('accepts a priority tier carrying an explicit assumed label', () => {
+  const findings = findUngroundedRankings(
+    '2. Add dark mode — P2 [assumed: no usage data exists yet for this request]',
+  );
+  assert.equal(findings.length, 0);
+});
+
+test('an [unverified] tag does not discharge a ranking — a rank is a judgment, not a fact to leave unchecked', () => {
+  const findings = findUngroundedRankings('3. Rebuild the settings page — P1 [unverified]');
+  assert.equal(findings.length, 1);
+});
+
+test('flags the numbered and named forms of a ranking claim', () => {
+  for (const line of [
+    'Ship the export flow next: priority 1.',
+    'Priority: 2 — reduce onboarding drop-off.',
+    '#1 priority is the checkout redesign.',
+    'This is the 3rd priority behind the other two items.',
+    'The API migration is the top priority for this quarter.',
+    'Ranked #1: reduce onboarding drop-off.',
+    'Rank 2 goes to the search relevance fix.',
+  ]) {
+    assert.equal(findUngroundedRankings(line).length, 1, `should flag: ${line}`);
+  }
+});
+
+test('ignores prose that discusses priority without stating a ranking', () => {
+  const findings = findUngroundedRankings(
+    'The team discussed priorities on Tuesday and agreed to prioritize the roadmap next sprint.',
+  );
+  assert.equal(findings.length, 0);
+});
+
+test('a research citation grounds a ranking the same way a cite does', () => {
+  const findings = findUngroundedRankings(
+    'Priority #1 is the checkout redesign [research:public-funnel-benchmarks-2026].',
+  );
+  assert.equal(findings.length, 0);
 });

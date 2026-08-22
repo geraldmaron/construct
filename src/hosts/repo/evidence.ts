@@ -32,8 +32,18 @@ const EXPORT_PATH = '.beads/issues.jsonl';
  * finds what an unbounded one would at a fraction of the cost. The bound is
  * reported whenever it truncates, because a sweep that quietly stopped looking
  * would be indistinguishable from one that found nothing.
+ *
+ * Measured in days, not commits. This file is rewritten on every close, claim,
+ * and filing, by however many sessions are working at once, so a commit count
+ * measures fleet activity, not elapsed time: the former 200-commit cap read
+ * back only ten days of this repo's own history on an ordinary week, and would
+ * read back fewer the busier the fleet gets — shrinking the window exactly
+ * when more parallel sessions also make a rollback more likely. Measured this
+ * way, the walk still costs a fraction of an unbounded one (a 30-day window is
+ * under a second on this repo's own history) and gives the same coverage
+ * whether the fleet was quiet or busy during it.
  */
-export const HISTORY_COMMIT_CAP = 200;
+export const HISTORY_DAYS_CAP = 30;
 
 /** Blobs are read a chunk at a time so a long history never materialises whole. */
 const BLOB_CHUNK = 20;
@@ -142,23 +152,40 @@ function readBlobs(root: string, specs: readonly string[]): string[] {
  *
  * Local refs only. A sweep that fetched would answer a different question on a
  * machine that happens to be online.
+ *
+ * `now` is supplied, never read, the same way the rest of this codebase keeps
+ * a clock read out of anything meant to be tested deterministically: a caller
+ * that wants "as of right now" passes its own clock in.
  */
-export function recordedHistory(root: string, cap: number = HISTORY_COMMIT_CAP): RecordedHistory | null {
-  const log = git(root, [
+export function recordedHistory(
+  root: string,
+  days: number = HISTORY_DAYS_CAP,
+  now: string = new Date().toISOString(),
+): RecordedHistory | null {
+  const cutoffMs = Date.parse(now) - days * 24 * 60 * 60 * 1000;
+  const since = new Date(cutoffMs).toISOString();
+  const log = git(root, ['log', '--all', `--since=${since}`, '--format=%H', '--', EXPORT_PATH]);
+  if (log === null) return null;
+  const scanned = log
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+
+  // `--since` and `--before` each include a commit sitting exactly on the
+  // boundary, so checking `--before=since` would see the newest scanned
+  // commit again and call it older history the walk missed. Shifting the
+  // probe one second earlier asks the question this is actually meant to
+  // answer: does anything strictly outside the scanned window exist.
+  const olderProbe = git(root, [
     'log',
     '--all',
-    `--max-count=${String(cap + 1)}`,
+    `--before=${new Date(cutoffMs - 1000).toISOString()}`,
+    '-1',
     '--format=%H',
     '--',
     EXPORT_PATH,
   ]);
-  if (log === null) return null;
-  const shas = log
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
-  const truncated = shas.length > cap;
-  const scanned = shas.slice(0, cap);
+  const truncated = (olderProbe ?? '').trim() !== '';
 
   const everFiled = new Set<string>();
   const everClosed = new Set<string>();

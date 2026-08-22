@@ -25,12 +25,18 @@ import { ask, main, parseAskArgs } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
+import { sterileHome } from '../harness/sterile.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
 import { openDecisions } from '../../src/kernel/store/decisions.ts';
 import { planFor } from '../../src/kernel/store/plans.ts';
 import { assignmentFor } from '../../src/kernel/run/coordinator.ts';
 import { askBriefFor, primaryImplication } from '../../src/kernel/run/ask.ts';
 import type { Brief } from '../../src/kernel/brief/schema.ts';
+
+// A dispatch reads the machine's agent skills directory to find out what
+// method it can offer a role, so home is moved for this file: what the suite
+// observes must not depend on what is installed for whoever runs it.
+sterileHome();
 
 interface Capture {
   readonly code: number;
