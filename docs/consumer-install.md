@@ -47,7 +47,7 @@ npm install -g .
 
 Convenient for typing `construct outcome …` directly, but it's a second
 copy of the binary that can go stale after the checkout moves —
-`docs/host-interaction.md` records a real instance of PATH lagging behind a
+`docs/internal/host-interaction.md` records a real instance of PATH lagging behind a
 release on this machine. Re-run `npm install -g .` after any change you
 need reflected, or prefer direct invocation and skip the problem entirely.
 

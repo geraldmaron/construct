@@ -22,7 +22,7 @@ cannot, from this machine, tonight; see the last section.
 - **Attach mechanism.** Unlike codex, nothing needed adding: `construct-mcp`
   is already a real, persisted entry in `~/.cursor/mcp.json`, launching
   `node <checkout>/bin/construct.mjs serve`, verified byte for byte to
-  match the entry `docs/host-interaction.md` already documents. Neither
+  match the entry `docs/internal/host-interaction.md` already documents. Neither
   `~/.cursor/mcp.json` nor `~/.cursor/cli-config.json` (Cursor's separate
   runtime-state file, read for diagnosis below) changed mtime across this
   entire trial; nothing here wrote to either.
