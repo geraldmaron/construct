@@ -1,5 +1,31 @@
 # Changelog
 
+## 3.0.0-alpha.15 — 2026-08-24
+
+- **The skills ship inside the package that claims to carry them**
+  (construct-g69g). `files` was `bin`, `dist`, written at the Phase 0 bootstrap
+  before any skill existed, so a registry install delivered the whole skills CLI
+  and none of the skills: `construct skills list` answered that this install
+  carries no skill files, and `--host` had nothing to plant. The tarball now
+  carries `skills/`, and the claim is held by the consumer path rather than by
+  the files field: `scripts/smoke-packaged-install.sh` packs, installs into a
+  scratch project, lists the skills, plants one, and fails unless the planted
+  file is byte-identical to the one this repository ships. That check earns its
+  place because the path from the built `dist/` back to `skills/` resolves
+  relative to the module, so the checkout and the package could disagree
+  silently, and only a packaged install can tell them apart.
+
+  This overrules the recommendation of the 2026-08-20 decision-framing run,
+  which argued for staying git-only and whose verdict was `proposed`. The
+  decision was the decider's to make and the record is left standing, including
+  the objection it recorded against itself: every npm consumer has already
+  chosen to trust the tooling, and was getting nothing unless they separately
+  learned a second command existed. The cost the record named is real and is
+  accepted rather than argued away: a package carries the skills as of its
+  release while git carries them as of now, which is why `skills installed`
+  reports a planted skill as current or diverged, and why the pointer to
+  `npx skills add geraldmaron/construct` stays in both READMEs.
+
 ## 3.0.0-alpha.14 — 2026-08-24
 
 Host reach for the portable skills, and one more host written down honestly.
