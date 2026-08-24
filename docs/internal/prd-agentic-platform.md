@@ -216,7 +216,8 @@ earned`) are answered: installed-skill state is disk-inferred, no manifest
 (`construct skills installed` reads the target directory directly), and
 install takes both explicit names and an `--all` flag (`construct skills
 install --all [--dir=<dir>]`). Default host directory is `~/.claude/skills`,
-override with `--dir`.
+override with `--dir`, or name a documented host directory with
+`--host=<claude|bob|opencode|cursor|codex>`.
 
 ---
 

@@ -21,7 +21,7 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveSkillsDir } from '../kernel/paths.ts';
+import { resolveHostSkillsDir, resolveSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import {
   planSkillsUninstall,
   projectSkillsPack,
@@ -63,13 +63,14 @@ export function readSkillFolders(dir: string): readonly SkillFolder[] {
 
 const SKILLS_USAGE =
   'usage: construct skills list\n' +
-  '       construct skills install <name>... [--dir=<dir>]\n' +
-  '       construct skills install --all [--dir=<dir>]\n' +
-  '       construct skills installed [--dir=<dir>]\n' +
-  '       construct skills uninstall <name> [--dir=<dir>]\n' +
+  '       construct skills install <name>... [--dir=<dir>|--host=<host>]\n' +
+  '       construct skills install --all [--dir=<dir>|--host=<host>]\n' +
+  '       construct skills installed [--dir=<dir>|--host=<host>]\n' +
+  '       construct skills uninstall <name> [--dir=<dir>|--host=<host>]\n' +
   '       construct skills [--out=<dir>] [--uninstall]\n' +
   '  The first five carry the portable method skills this checkout ships, into\n' +
-  '  a host skills directory (--dir, default ~/.claude/skills).\n' +
+  `  a host skills directory (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>\n` +
+  '  for a documented host directory — --dir and --host are mutually exclusive).\n' +
   '  The last writes or removes the generated role pack (--out, default\n' +
   '  ./.claude/skills) — output regenerated from the role catalog, not a copy.\n';
 
@@ -210,10 +211,30 @@ function padded(values: readonly string[]): (value: string) => string {
  */
 function skillLibrary(sub: string, argv: string[]): number {
   const { flags, rest } = parseFlags(argv);
-  const permitted = sub === 'install' ? ['dir', 'all'] : sub === 'list' ? [] : ['dir'];
+  const permitted =
+    sub === 'install' ? ['dir', 'host', 'all'] : sub === 'list' ? [] : ['dir', 'host'];
   const unknown = Object.keys(flags).filter((flag) => !permitted.includes(flag));
-  if (unknown.length > 0 || flags.dir === 'true' || (flags.all ?? 'true') !== 'true') {
+  if (
+    unknown.length > 0 ||
+    flags.dir === 'true' ||
+    flags.host === 'true' ||
+    (flags.all ?? 'true') !== 'true'
+  ) {
     process.stderr.write(SKILLS_USAGE);
+    return 2;
+  }
+  if (flags.dir !== undefined && flags.host !== undefined) {
+    process.stderr.write(
+      'skills: --dir and --host name the same thing two ways — pass only one.\n' +
+        `  (got --dir=${flags.dir} and --host=${flags.host})\n`,
+    );
+    return 2;
+  }
+  if (flags.host !== undefined && !(SKILLS_HOST_NAMES as readonly string[]).includes(flags.host)) {
+    process.stderr.write(
+      `skills: no known host named "${flags.host}" (expected ${SKILLS_HOST_NAMES.join(', ')})\n` +
+        '  Name a directory of your own with --dir instead.\n',
+    );
     return 2;
   }
 
@@ -244,7 +265,11 @@ function skillLibrary(sub: string, argv: string[]): number {
     return 0;
   }
 
-  const dir = resolve(flags.dir ?? resolveSkillsDir());
+  const dir = resolve(
+    flags.host !== undefined
+      ? resolveHostSkillsDir(flags.host as SkillsHostName)
+      : (flags.dir ?? resolveSkillsDir()),
+  );
 
   if (sub === 'installed') {
     if (rest.length > 0) {
