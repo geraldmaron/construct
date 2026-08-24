@@ -29,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 import { main } from '../../src/cli/index.ts';
 import { readReachableSkills } from '../../src/cli/skills.ts';
 import { SHIPPED_SKILLS } from '../../src/kernel/skills/library.ts';
+import { resolveHostSkillsDir, SKILLS_HOST_NAMES } from '../../src/kernel/paths.ts';
 
 interface Capture {
   readonly code: number;
@@ -470,4 +471,90 @@ test('what a dispatch can reach is read from the directory it was given, never f
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('--host installs into each host\'s own documented directory', async () => {
+  const name = shipped()[0];
+  for (const host of SKILLS_HOST_NAMES) {
+    const result = await run((root) => [['skills', 'install', name, `--host=${host}`]]);
+    try {
+      assert.equal(result.code, 0, `install --host=${host} succeeded`);
+      const expected = resolveHostSkillsDir(host, {
+        HOME: join(result.root, 'home'),
+      });
+      assert.equal(
+        checksum(join(expected, name, 'SKILL.md')),
+        checksum(join(SOURCE_DIR, name, 'SKILL.md')),
+        `${host} received a byte-identical copy at its documented directory`,
+      );
+    } finally {
+      rmSync(result.root, { recursive: true, force: true });
+    }
+  }
+});
+
+test('--host=claude lands in the same place the default does', async () => {
+  const name = shipped()[0];
+  const result = await run(() => [['skills', 'install', name, '--host=claude']]);
+  try {
+    assert.equal(result.code, 0);
+    assert.equal(
+      checksum(join(personalDir(result.root), name, 'SKILL.md')),
+      checksum(join(SOURCE_DIR, name, 'SKILL.md')),
+    );
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('--host and --dir together are refused, naming both flags', async () => {
+  const name = shipped()[0];
+  const result = await run((root) => [
+    ['skills', 'install', name, `--dir=${join(root, 'host')}`, '--host=cursor'],
+  ]);
+  try {
+    assert.equal(result.code, 2);
+    assert.match(result.err, /--dir and --host/);
+    assert.match(result.err, /--dir=/);
+    assert.match(result.err, /--host=cursor/);
+    assert.equal(existsSync(join(result.root, 'host')), false);
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('an unknown --host is refused and names the hosts that are known', async () => {
+  const name = shipped()[0];
+  const result = await run(() => [['skills', 'install', name, '--host=nonesuch']]);
+  try {
+    assert.equal(result.code, 2);
+    assert.match(result.err, /no known host named "nonesuch"/);
+    for (const host of SKILLS_HOST_NAMES) assert.match(result.err, new RegExp(host));
+    assert.match(result.err, /--dir instead/);
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('--host works the same way on installed and uninstall', async () => {
+  const name = shipped()[0];
+  const result = await run((root) => [
+    ['skills', 'install', name, '--host=opencode'],
+    ['skills', 'installed', '--host=opencode'],
+    ['skills', 'uninstall', name, '--host=opencode'],
+  ]);
+  try {
+    assert.equal(result.code, 0);
+    assert.match(result.out, new RegExp(`current\\s+${name}`));
+    assert.match(result.out, new RegExp(`removed ${name} from `));
+    const dir = resolveHostSkillsDir('opencode', { HOME: join(result.root, 'home') });
+    assert.equal(existsSync(join(dir, name)), false);
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('codex resolves to the shared .agents directory, not one of its own', () => {
+  const home = join('/nowhere', 'home');
+  assert.equal(resolveHostSkillsDir('codex', { HOME: home }), join(home, '.agents', 'skills'));
 });
