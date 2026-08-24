@@ -1,5 +1,46 @@
 # Changelog
 
+## 3.0.0-alpha.14 — 2026-08-24
+
+Host reach for the portable skills, and one more host written down honestly.
+
+- **A host is reached by its name, not by remembering where it keeps skills**
+  (construct-nmjm). `construct skills install|installed|uninstall` took only
+  `--dir`, defaulting to Claude Code's directory, so every other host was
+  reachable only by a user who had memorized its path. `--host` now names them:
+  `claude`, `bob`, `opencode`, `cursor`, `codex`. The table lives in
+  `kernel/paths.ts`, the one module allowed to read home, and each entry carries
+  the vendor page it came from and the date that page was read. Two of those
+  paths were not what secondhand sources said: Codex reads `~/.agents/skills`
+  rather than a directory of its own (https://learn.chatgpt.com/docs/build-skills,
+  read 2026-08-24), and that same `.agents/skills` is a shared convention Cursor
+  and OpenCode also document reading, so one install there reaches three hosts.
+  `--dir` and `--host` together are refused naming both flags, because a silent
+  winner between two directories is how a skill lands somewhere nobody looks.
+- **An expectation nobody has run against a binary says so in its type**
+  (construct-0uaa). IBM Bob is pinned as a probe target (`src/hosts/bob/pin.ts`,
+  `npm run probe:bob`), the way goose and pi are. It differs from them in the one
+  way that matters: no `bob` binary was reachable to probe (`command -v bob`
+  failed 2026-08-24), so `PINNED_VERSION` is null and `Expectation` is a
+  discriminated union where a documented claim must carry its source URL and read
+  date and cannot be read as a measured one. All seven expectations are
+  documented, from IBM's own pages. The probe refuses with exit 2 and says a
+  refusal is an unknown result rather than a pass. `bob --version`'s output shape
+  is recorded as an open question instead of a guess. Probe target only: Bob is
+  metered, and development model calls come from the Claude Code and Cursor
+  subscriptions.
+- **Seven descriptions a host lists before it loads any of them fit the one
+  published budget** (construct-mdf1). A host offers every skill it can see by
+  description before a single one loads, and Codex publishes a budget for that
+  list: 2% of the context window, or 8000 characters when the window is unknown,
+  after which it shortens descriptions and then drops skills, silently. The
+  shipped set measures 6081 of those 8000 characters, and `lint-skill-spec.mjs`
+  now fails past the budget rather than discovering it on someone else's machine.
+  It went into that script rather than a new one, which already checked the
+  per-field rules. What it does not prove travels with it in the script's own
+  output: every check here reads host documentation, so a skill that passes is
+  documented to load, not observed to.
+
 ## 3.0.0-alpha.13 — 2026-08-22
 
 The release that makes the version number mean something again, plus the last of
