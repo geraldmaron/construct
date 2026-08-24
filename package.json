@@ -54,6 +54,7 @@
     "probe:cursor": "node scripts/probe-cursor-conformance.mjs",
     "probe:goose": "node scripts/probe-goose-conformance.mjs",
     "probe:pi": "node scripts/probe-pi-conformance.mjs",
+    "probe:bob": "node scripts/probe-bob-conformance.mjs",
     "probe:tracker": "node scripts/probe-tracker-conformance.mjs",
     "probe:claude:mcp": "node scripts/probe-claude-conformance.mjs --spend-mcp",
     "check:figures": "node scripts/score-namer-arms.mjs --expect && node scripts/score-namer-ablation.mjs --expect && node scripts/score-shape-chooser.mjs --expect && node scripts/score-plant-discrimination.mjs --expect",
