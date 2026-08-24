@@ -7,7 +7,16 @@
  * at upload by stricter implementations. The name equals its directory and
  * uses the format's character set, so any client that resolves skills by
  * path can install it. The description fits the format's 1024-character cap,
- * because the description is what triggers the skill at all. The whole file
+ * because the description is what triggers the skill at all. The shipped
+ * descriptions are also summed and held under a host's list budget: a host
+ * offers every skill it can see by description before any of them load, and
+ * the one published budget for that list is Codex's, at 2% of the context
+ * window or 8000 characters when the window is unknown, with descriptions
+ * shortened and then skills dropped once it is exceeded. That failure is
+ * silent on the host side, which is what makes it worth catching here.
+ * Passing proves the case that number comes from; a host that publishes no
+ * budget stays unmeasured, and only a recorded load upgrades any of this
+ * from documented to observed. The whole file
  * stays under 500 lines so it loads whole, without a progressive-disclosure
  * tier it does not have.
  *
@@ -49,6 +58,14 @@ const SRC_PATH = /(?:^|[\s`>("'])(?:src|tests|scripts|fixtures)\//;
 const ABSOLUTE_PATH = /(?:^|[\s`>("'])\/(?:home|Users|tmp|etc|var|opt)\//;
 const MAX_LINES = 500;
 const MAX_DESCRIPTION = 1024;
+/**
+ * The budget a host spends listing every skill's description before any skill
+ * loads. Codex publishes 2% of the context window, or this many characters
+ * when the window is unknown (https://learn.chatgpt.com/docs/build-skills,
+ * read 2026-08-24). No other host documents one, so this is the only figure
+ * there is to hold the shipped set against.
+ */
+const MAX_DESCRIPTION_BUDGET = 8000;
 
 const files = execSync("git ls-files --cached --others --exclude-standard 'skills/*/SKILL.md'", {
   encoding: 'utf8',
@@ -57,6 +74,7 @@ const files = execSync("git ls-files --cached --others --exclude-standard 'skill
   .filter(Boolean);
 
 let violations = 0;
+let descriptionBudgetUsed = 0;
 const fail = (file, why) => {
   violations += 1;
   console.error(`skill spec: ${file}: ${why}`);
@@ -111,6 +129,7 @@ for (const file of files) {
       description += ` ${front[i].trim()}`;
     }
     description = description.trim();
+    descriptionBudgetUsed += description.length;
     if (!description) fail(file, 'description is empty');
     else if (description.length > MAX_DESCRIPTION) {
       fail(file, `description is ${description.length} chars — the format caps it at ${MAX_DESCRIPTION}`);
@@ -133,6 +152,15 @@ for (const file of files) {
     if (SRC_PATH.test(line)) fail(file, `line ${at}: repository path — a severable skill cannot point into this repo`);
     if (ABSOLUTE_PATH.test(line)) fail(file, `line ${at}: absolute path — the file must work on a machine that is not this one`);
   });
+}
+
+if (descriptionBudgetUsed > MAX_DESCRIPTION_BUDGET) {
+  violations += 1;
+  console.error(
+    `skill spec: the shipped descriptions total ${descriptionBudgetUsed} chars, over the ` +
+      `${MAX_DESCRIPTION_BUDGET}-char list budget — a host at that budget shortens descriptions, then drops ` +
+      'skills, and says nothing about either',
+  );
 }
 
 const shippedDirs = [...new Set(files.map((file) => basename(dirname(file))))].sort();
@@ -162,5 +190,7 @@ if (violations > 0) {
 console.log(
   files.length === 0
     ? 'lint-skill-spec: clean (no skills yet)'
-    : `lint-skill-spec: clean — ${files.length} skill(s) conform`,
+    : `lint-skill-spec: clean — ${files.length} skill(s) conform, descriptions ${descriptionBudgetUsed}/` +
+      `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Every check here reads host ` +
+      'documentation, so a skill that passes is documented to load, not observed to.',
 );
