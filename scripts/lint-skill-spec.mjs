@@ -27,10 +27,10 @@
  * works — would fail on every machine but this one.
  *
  * The kernel's list of shipped names is checked against the directories
- * themselves. A published package carries no skill files, so an installed
- * spine can only tell which folders in a skills directory are this project's
- * by carrying the names; a list that drifted from the directories would have
- * the spine offering a skill nobody ships or missing one everybody has.
+ * themselves. A skills directory holds other people's skills alongside these,
+ * so the spine tells its own apart by carrying the names; a list that drifted
+ * from the directories would have it offering a skill nobody ships or missing
+ * one everybody has.
  *
  * Last, the shape checks from skills/AUTHORING.md, presence only: a
  * stand-down rule (a skill that always interposes teaches readers to ignore

@@ -24,6 +24,18 @@ correlated-error caveat travels with any same-family judged reading of this
 run). The recommendation's verdict is `proposed`: the decider had not seen
 it when the record was produced.
 
+**Outcome, recorded 2026-08-24.** The decider chose the option this run
+recommended against: `skills/` now ships inside the npm package (`files` carries
+`skills`), and a packaged install plants a byte-identical skill, asserted by
+`scripts/smoke-packaged-install.sh`. The deliverable below is left exactly as
+produced, because what it is evidence for is how the method behaved, not whether
+its recommendation prevailed. Two of its own passages anticipated this: the
+strongest objection, which argued the npm audience is a warm lead getting
+nothing, and "what would change the answer," which named discoverability
+evidence as the reopening condition. Its named control was adopted rather than
+dropped — the pointer to the git installer stays in both READMEs, since the
+package carries the skills as of its release and git carries them as of now.
+
 ---
 
 Decision record and framing — skills/ directory: npm package or git-only

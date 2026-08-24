@@ -64,6 +64,33 @@ npx --no-install construct doctor
 echo "== running construct version =="
 npx --no-install construct version
 
+# The skills ship inside the tarball, so a consumer who never touches git can
+# still install one into a host's skills directory. The path from the built
+# `dist/` back to `skills/` is the thing that breaks silently: it resolves
+# relative to the module, and the checkout and the package lay out differently.
+# So this installs a real skill from the packaged install and compares bytes.
+echo "== the packaged install carries the skills and can plant one =="
+skills_list="$(npx --no-install construct skills list 2>&1)" \
+  || fail "skills list exited non-zero" "$skills_list"
+printf '%s\n' "$skills_list"
+case "$skills_list" in
+  *"carries no skill files"*) fail "the packaged install found no skills" "$skills_list" ;;
+esac
+expect_contains "skills list" "$skills_list" "investigative-research"
+
+host_skills="$scratch/host-skills"
+install_out="$(npx --no-install construct skills install investigative-research --dir="$host_skills" 2>&1)" \
+  || fail "skills install exited non-zero" "$install_out"
+printf '%s\n' "$install_out"
+planted="$host_skills/investigative-research/SKILL.md"
+[ -f "$planted" ] || fail "skills install wrote no SKILL.md" "$install_out"
+cmp -s "$planted" "$repo_root/skills/investigative-research/SKILL.md" \
+  || fail "the planted skill is not byte-identical to the one this repository ships"
+
+installed_out="$(npx --no-install construct skills installed --dir="$host_skills" 2>&1)" \
+  || fail "skills installed exited non-zero" "$installed_out"
+expect_contains "skills installed" "$installed_out" "current"
+
 echo "== running construct cleanup --dry-run from the packaged install =="
 npx --no-install construct cleanup --dry-run
 

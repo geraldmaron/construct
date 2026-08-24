@@ -117,19 +117,22 @@ function symlinkGuardRoot(out: string): string {
 const SKILL_LIBRARY_SUBCOMMANDS = ['list', 'install', 'installed', 'uninstall'];
 
 /**
- * Where this checkout keeps the portable method skills, resolved from this
+ * Where this install keeps the portable method skills, resolved from this
  * module rather than from the working directory, so it is the same directory
- * wherever the command is run from. A published package does not carry these
- * files, and there the directory is simply absent — which is a fact the
- * command reports rather than works around.
+ * wherever the command is run from. One relative path serves both layouts: the
+ * checkout runs this from `src/cli/` and a package runs its build from
+ * `dist/cli/`, and `skills/` sits two levels up from either. An install whose
+ * skill files are missing is a broken one, and the command says so rather than
+ * working around it.
  */
 function sourceSkillsDir(): string {
   return fileURLToPath(new URL('../../skills/', import.meta.url));
 }
 
 const SKILLS_ABSENT =
-  'skills: this install carries no skill files — the published package excludes them.\n' +
-  '  Run this from a git checkout, or install them from git:\n' +
+  'skills: this install carries no skill files, which a complete one always does.\n' +
+  '  Reinstall the package, or run this from a git checkout. The skills are also\n' +
+  '  installable straight from git:\n' +
   '    npx skills add geraldmaron/construct\n';
 
 /** Every shipped skill, in name order, read whole so a copy of it is a copy of the bytes. */

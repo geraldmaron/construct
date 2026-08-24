@@ -29,10 +29,11 @@ export { SKILL_FILENAME };
 
 /**
  * The names this project ships a method skill under, in name order. It is a
- * list of names rather than a list of files because the published package
- * carries no skill files at all: a consumer who installed the skills from git
- * still has them on disk, and without this list nothing in an installed spine
- * could tell which folders in a skills directory it was entitled to name.
+ * list of names rather than a list of files because a skills directory holds
+ * other people's skills too: without this list nothing could tell which folders
+ * in it are this project's to name, describe, or remove. It also answers for an
+ * install whose own skill files are missing, where reading the directory would
+ * report nothing shipped rather than something broken.
  *
  * Kept equal to the `skills/` directory listing by the skill-spec lint, so a
  * skill added or removed there cannot silently disagree with this.

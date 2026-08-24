@@ -68,7 +68,7 @@ export interface SkillsReachable {
   readonly offers: readonly SkillOffer[];
   /** The agent skills directory that was read, whether or not it held anything. */
   readonly installDir: string;
-  /** This checkout's skills directory, or null when the install carries no skill files. */
+  /** The skills directory this install ships, or null when its skill files are missing. */
   readonly sourceDir: string | null;
 }
 
@@ -130,8 +130,8 @@ export function skillsOffered(reachable: SkillsReachable): Record<string, unknow
 
 const NONE_REACHABLE =
   'No portable method skills are reachable from this dispatch: none are ' +
-  "installed in this machine's agent skills directory and this install " +
-  'carries no skill files. Do not name or cite one.\n\n';
+  "installed in this machine's agent skills directory and this install's own " +
+  'skill files are missing. Do not name or cite one.\n\n';
 
 /**
  * What the role is told. Names, descriptions, and locations only: the role
