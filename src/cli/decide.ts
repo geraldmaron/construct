@@ -27,6 +27,7 @@ import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { createHostApplier } from '../hosts/contextloop.ts';
 import { adapterForHost, HOST_NAMES, now, withStore, withStoreAsync } from './runtime.ts';
+import { messageOf } from './errors.ts';
 import { parseHostFlags, splitFlags, workspaceFlag } from './flags.ts';
 import type { HostFlags } from './flags.ts';
 import { writeProposalRow } from './present.ts';
@@ -277,7 +278,7 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
     try {
       resolveDecision(store, id, resolution, at, 'cli:user');
     } catch (error) {
-      process.stderr.write(`decide: ${(error as Error).message}\n`);
+      process.stderr.write(`decide: ${messageOf(error)}\n`);
       return 1;
     }
     process.stdout.write(`decided ${id}: ${resolution}\n`);

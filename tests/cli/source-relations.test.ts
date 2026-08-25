@@ -137,6 +137,8 @@ test('relate refuses a word outside the vocabulary and a source pointed at itsel
     ]);
     assert.match(err, /construct source relate/, 'an unknown word gets the usage, not a row');
     assert.match(err, /does not stand in a relationship to itself/);
+    // The plain sentence reaches the user, not the internal function that raised it.
+    assert.doesNotMatch(err, /declareSourceEdge/);
   } finally {
     rmSync(strategy, { recursive: true, force: true });
     rmSync(repo, { recursive: true, force: true });
