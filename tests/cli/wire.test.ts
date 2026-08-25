@@ -51,9 +51,19 @@ function capture(fn: () => number): Capture {
   return { code, out: out.join(''), err: err.join('') };
 }
 
-test('claude: wire writes .mcp.json with the construct-mcp entry', () => {
+test('bare wire (no --yes) previews the write and touches nothing on disk', () => {
   withRepo((cwd) => {
     const { code, out } = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    assert.equal(code, 0);
+    assert.match(out, /would wire construct-mcp into \.mcp\.json for claude/);
+    assert.match(out, /Pass --yes to write it/);
+    assert.equal(existsSync(join(cwd, '.mcp.json')), false, 'a preview writes nothing');
+  });
+});
+
+test('claude: wire --yes writes .mcp.json with the construct-mcp entry', () => {
+  withRepo((cwd) => {
+    const { code, out } = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
     assert.match(out, /wired construct-mcp into \.mcp\.json for claude/);
 
@@ -72,7 +82,7 @@ test('claude: wire writes .mcp.json with the construct-mcp entry', () => {
 
 test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => {
   withRepo((cwd) => {
-    const { code, out } = capture(() => wire([], cwd, { CURSOR_AGENT: '1' }));
+    const { code, out } = capture(() => wire(['--yes'], cwd, { CURSOR_AGENT: '1' }));
     assert.equal(code, 0);
     assert.match(out, /wired construct-mcp into \.cursor\/mcp\.json for cursor/);
 
@@ -89,11 +99,11 @@ test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => 
 
 test('wiring twice is idempotent: no duplicate entry, second run reports nothing changed', () => {
   withRepo((cwd) => {
-    const first = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    const first = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(first.code, 0);
     const firstBody = readFileSync(join(cwd, '.mcp.json'), 'utf8');
 
-    const second = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    const second = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(second.code, 0);
     assert.match(second.out, /already wired.*nothing to change/);
 
@@ -111,7 +121,7 @@ test('an existing .mcp.json with other servers keeps them; only construct-mcp is
     const existing = { mcpServers: { context7: { command: 'npx', args: ['-y', 'context7'] } } };
     writeFileSync(join(cwd, '.mcp.json'), JSON.stringify(existing, null, 2));
 
-    const { code } = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    const { code } = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
 
     const config = JSON.parse(readFileSync(join(cwd, '.mcp.json'), 'utf8')) as {
@@ -125,7 +135,7 @@ test('an existing .mcp.json with other servers keeps them; only construct-mcp is
 
 test('the written file is 0600, umask-aware, mirroring the mcpconfig discipline', () => {
   withRepo((cwd) => {
-    capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     const mode = statSync(join(cwd, '.mcp.json')).mode & 0o777;
     assert.equal(mode, 0o600);
   });
@@ -184,7 +194,7 @@ test('construct wire is reachable through main() and listed in help', async () =
       return true;
     };
     try {
-      code = await main(['wire']);
+      code = await main(['wire', '--yes']);
     } finally {
       (process.stdout as { write: unknown }).write = realOut;
     }
