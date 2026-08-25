@@ -2541,3 +2541,113 @@ presence-only with dispatch relayed to a wired CLI host, named honestly.
 **Sources.** The archetype instrument (`docs/internal/install-path-archetypes.md`),
 the code sites above, STRATEGY commitments 1 and 14 and Phase 2, and the Bob
 trial packet (construct-fbgw). Recorded for the program epic construct-INSTALL.
+
+## 27. Community review: hold the strategy, change one seam (2026-08-25)
+
+Asked directly: should Construct stick to its current approach, or change it?
+This is the adversarial pass over the whole direction, not one bead, backed by a
+community-review sweep of the 2026 record. The finding is asymmetric: the four
+load-bearing bets are validated by the outside evidence more strongly than when
+they were made, and exactly one narrow architectural seam should change. Holding
+is the evidence-backed answer, not the default one.
+
+**Bet 1 — coverage, obligation, provenance is the durable value, not agent
+execution or orchestration. HOLD, strongly.** The 2026 record puts agent
+pilot-to-production failure near 88%, and every serious post-mortem names the
+same blockers: evaluation gaps, late governance, reliability — not model
+capability. Gartner projects 40%+ of agentic projects cancelled by end of 2027
+on governance and ROI, and separately warns that *uniform* governance (not
+distinguishing an agent's ability to act from the scope it is granted) is itself
+a failure mode. The line that matters most for this project, from agent-testing
+writing: "governance is not a behavioral property of the agent; it is a property
+of the execution environment... testing the boundary between the agent and the
+tools it calls." That boundary — which concerns a piece of work touches, what it
+owes before anyone relies on it, and who said what — is exactly what Construct
+became after the persona retraction (§§14–15). The failures the market is
+drowning in are the ones commitments 13–15 (challenge contracts, verdict-gated
+completion, no-fabrication) and the append-only work log are built to prevent.
+The bet is aimed where the evidence says the value and the failures both are.
+
+**Bet 2 — never build a runtime; ride hosts, be the harness/governance layer.
+HOLD, with the seam refined (see below).** The 2026 stack converged on four
+separated layers (model → runtime → harness → agent) with a named distinction
+between the *runtime* (where an agent executes) and the *harness* (how it thinks
+and acts safely). The consensus is blunt that the core agent loop is ~20 lines
+and "the intelligence lives in the surrounding infrastructure... harness
+engineering." Construct is a harness/governance-layer play by construction, and
+commitment 1's refusal to build a runtime is the 2026-correct call. What the
+install-seamlessness incident (§26) exposed is not this bet but one sentence
+inside it: the projection being strictly presence-only.
+
+**Bet 3 — skills as the portable wedge. HOLD.** Method-packaged-as-skills is a
+working category at scale (the Agent Skills format's broad client adoption;
+methodology skill libraries with six-figure star counts), and the winning shape
+in every case is method *plus enforced verification gates* — which the challenge
+catalog and no-fabrication discipline already are. Unchanged from §22.
+
+**Bet 4 — personal-tool-first, no cross-user claims. HOLD, with the tension
+named.** This is an epistemic-honesty constraint the program imposes on itself,
+not a market bet the community can settle. The community review sharpens one
+tension worth stating: the governance-layer demand in Bet 1 is enterprise-shaped
+and well-funded, and the program forbids itself the enterprise validation that
+would let it claim that market. The resolution is unchanged and still right: the
+*skills* are the portable surface that travels without that validation, and the
+kernel's governance value is proven on its author's own work until a real
+organization adopts the loop on its own initiative (§22's reversal condition).
+Holding here is a choice about honesty, and the evidence does not move it.
+
+**The one change: the projection may carry host-pull execution (§26 part 2,
+now decided on evidence rather than flagged).** The seam question was whether the
+presence-only projection should be able to execute inside the host the user is
+already in. The protocol research settles the *mechanism* and with it the safety:
+
+- **MCP sampling — the obvious server-push mechanism — is deprecated as of the
+  2026-07-28 spec (SEP-2577):** "new implementations SHOULD NOT adopt it,"
+  migrate to direct provider integration, twelve-month removal clock. Building
+  the inversion on sampling is building on a dying feature. Rejected.
+- The same spec constrains server-to-client requests to occur "only while
+  actively processing a client request." The protocol itself mandates that the
+  **host initiates**. So the correct shape is host-pull, not server-push: the
+  host's own agent loop (already running, already holding the user's model and
+  subscription) calls a projection tool to claim a ready task, executes it on its
+  own capacity, and submits the result as a draft through the existing
+  token-scoped role-write seam (`cli/roleserve.ts`).
+- ACP (Zed's Agent Client Protocol, broad 2026 editor adoption) is the inverse
+  relationship — editor drives agent, and it composes *with* MCP by handing the
+  agent MCP endpoints. Under ACP, Construct is still the MCP server the agent
+  uses: presence again, not a competitor. It does not change this decision; it
+  confirms the direction of travel.
+
+Why this is a real change to STRATEGY and why it is safe. The "No dispatch"
+absolute existed to stop a host model spending the user's money on a paid
+Construct-side run as a side effect of being helpful. Host-pull spends the
+host's *own already-present* capacity on work the user's session was asked to do
+— the spend concern does not apply, and it is more faithful to "use the session
+the user is in" than spawning OpenCode ever was. **Commitment 14 is preserved and
+is the load-bearing safety property:** the host submits a *draft* through the
+token-scoped seam and can never advance `draft → challenged → final`; verdicts
+gate promotion exactly as for a spawned host. No new runtime (commitment 1
+holds), no new protocol, no sampling — ordinary MCP tool calls the host already
+makes. The change is therefore: the projection is no longer *strictly*
+presence-only; it may carry a claim-task / submit-draft surface, and everything
+the "thin" and "no dispatch" rules protected still holds because completion stays
+kernel-owned and no paid Construct-side run is started.
+
+**Reversal condition (carried from §26, now the live gate).** The
+implementation (construct-7jgy.2) must prove in code that a host driving
+execution through this surface cannot forge completion state — draft submission
+through the token seam, promotion only on recorded verdicts, a test that the host
+cannot advance the ladder. If a prototype shows the inversion inevitably hands
+the host a way to mark its own work final, part 2 is withdrawn and projection-only
+hosts stay presence-only with dispatch relayed to a wired CLI host, named
+honestly. The STRATEGY edit below authorizes the direction; the bead proves it.
+
+**Sources** (read 2026-08-25): MCP specification 2026-07-28 release candidate and
+the Sampling deprecation (SEP-2577), modelcontextprotocol.io; Agent Client
+Protocol overview and 2026 editor adoption (morphllm.com, danilchenko.dev); the
+2026 agent-stack / harness-vs-runtime writing (LangChain, Credal, Salesforce,
+codingwithroby); the agent-pilot-failure and governance record (Databricks State
+of AI Agents 2026, Gartner 2026-05-26, ClarityArc, waxell.ai); enterprise
+provenance/audit-trail writing (miniOrange, Saviynt, Atlan). This section is the
+research the STRATEGY edit below rests on, per Gerald's standing approval of a
+strategy change backed by research.
