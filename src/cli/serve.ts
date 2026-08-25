@@ -7,12 +7,12 @@
  * and a misconfiguration has to read as one plain line rather than as a stack.
  */
 
-import { openStore, storePath } from '../kernel/store/open.ts';
-import { resolvePaths } from '../kernel/paths.ts';
+import { openStore } from '../kernel/store/open.ts';
 import { loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
 import { serveRole } from './roleserve.ts';
+import { resolveStoreLocation } from './local-state.ts';
 import { now, packageVersion, secretFile, withStoreAsync } from './runtime.ts';
 
 /**
@@ -39,7 +39,7 @@ export async function roleServe(): Promise<number> {
     );
     return 1;
   }
-  const store = openStore(storePath(resolvePaths()));
+  const store = openStore(resolveStoreLocation(process.cwd(), process.env).path);
   try {
     await serveRole(
       {
