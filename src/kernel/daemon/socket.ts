@@ -16,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { chmodSync, mkdirSync, rmSync, statSync } from 'node:fs';
+import { chmodSync, closeSync, mkdirSync, openSync, rmSync, statSync } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import type { Server } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -108,6 +108,57 @@ function listen(server: Server, socketPath: string): Promise<null | NodeJS.Errno
   });
 }
 
+/** Where the turn to bind is held, next to the socket the turn is about. */
+function bindTurnPath(socketPath: string): string {
+  return `${socketPath}.binding`;
+}
+
+/**
+ * A turn abandoned by a process that died mid-bind. The whole turn is a probe,
+ * an unlink, and a listen — microseconds — so anything holding it this long is
+ * not holding it any more.
+ */
+const BIND_TURN_ABANDONED_MS = 10_000;
+
+/** How long a start waits for someone else's turn before taking it as abandoned. */
+const BIND_TURN_POLL_MS = 50;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Take the turn to bind, or report that someone else has it.
+ *
+ * Exclusive create is the whole mechanism: the filesystem decides who gets the
+ * turn, so two starts racing for it cannot both win.
+ */
+function takeBindTurn(socketPath: string): boolean {
+  const path = bindTurnPath(socketPath);
+  try {
+    closeSync(openSync(path, 'wx', 0o600));
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+  }
+  try {
+    if (Date.now() - statSync(path).mtimeMs < BIND_TURN_ABANDONED_MS) return false;
+  } catch {
+    // It went while we were looking at it, which means the turn is free.
+  }
+  rmSync(path, { force: true });
+  try {
+    closeSync(openSync(path, 'wx', 0o600));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function releaseBindTurn(socketPath: string): void {
+  rmSync(bindTurnPath(socketPath), { force: true });
+}
+
 /**
  * Bind the socket, or report that a live daemon already owns it.
  *
@@ -117,30 +168,46 @@ function listen(server: Server, socketPath: string): Promise<null | NodeJS.Errno
  * dead one refuses. So the refusal — and only the refusal — earns an unlink and
  * a second bind. Deleting on the strength of the file's existence alone is how
  * a running daemon gets evicted by the next start.
+ *
+ * Probing and then unlinking are two acts, and between them the answer can
+ * change: two starts that both find the socket dead would both unlink and both
+ * bind, leaving two daemons against one store and only one of them reachable.
+ * So exactly one start at a time may hold the turn to bind, and holding it is
+ * an exclusive file create the filesystem arbitrates. Whoever loses the turn
+ * waits and looks again, by which time the winner is either listening — and is
+ * found live, the correct answer — or gone.
  */
-export async function bindDaemonSocket(socketPath: string): Promise<BindOutcome> {
-  const server = createServer();
-  const first = await listen(server, socketPath);
-  if (first === null) {
+export async function bindDaemonSocket(socketPath: string, waitMs = 5000): Promise<BindOutcome> {
+  const deadline = Date.now() + waitMs;
+  for (;;) {
+    if (takeBindTurn(socketPath)) break;
+    if (Date.now() >= deadline) {
+      throw new Error(`another start is binding ${socketPath} and did not finish`);
+    }
+    await sleep(BIND_TURN_POLL_MS);
+  }
+  try {
+    const server = createServer();
+    const first = await listen(server, socketPath);
+    if (first === null) {
+      chmodSync(socketPath, 0o600);
+      return { kind: 'bound', server };
+    }
+    server.close();
+    if (first.code !== 'EADDRINUSE') throw first;
+    if (await daemonIsLive(socketPath)) return { kind: 'live' };
+    rmSync(socketPath, { force: true });
+    const rebound = createServer();
+    const second = await listen(rebound, socketPath);
+    if (second !== null) {
+      rebound.close();
+      throw second;
+    }
     chmodSync(socketPath, 0o600);
-    return { kind: 'bound', server };
+    return { kind: 'bound', server: rebound };
+  } finally {
+    releaseBindTurn(socketPath);
   }
-  if (first.code !== 'EADDRINUSE') {
-    server.close();
-    throw first;
-  }
-  if (await daemonIsLive(socketPath)) {
-    server.close();
-    return { kind: 'live' };
-  }
-  rmSync(socketPath, { force: true });
-  const second = await listen(server, socketPath);
-  if (second !== null) {
-    server.close();
-    throw second;
-  }
-  chmodSync(socketPath, 0o600);
-  return { kind: 'bound', server };
 }
 
 /** Whether the socket file is on disk at all, live or stale. */
