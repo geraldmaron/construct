@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { surveySource } from '../../src/hosts/sources.ts';
@@ -151,6 +151,11 @@ test('a binary document the ladder can read is extracted into the survey', () =>
       readFileSync(calendar.extraction.path, 'utf8').length,
       'the recorded character count is what actually landed',
     );
+
+    // Extracted text is a client document's readable contents, written only for
+    // this user: the file is owner-only and the directory it sits in is too.
+    assert.equal(statSync(calendar.extraction.path).mode & 0o777, 0o600, 'the extraction file is owner-only');
+    assert.equal(statSync(cacheRoot).mode & 0o777, 0o700, 'the extraction directory is owner-only');
   });
 });
 
