@@ -49,6 +49,7 @@ import {
   getProposal,
   getSource,
   markApplied,
+  sourceDeclaration,
   writeConsentAllowsLowRisk,
 } from '../store/sources.ts';
 import type { WriteProposal } from '../store/sources.ts';
@@ -98,16 +99,23 @@ export async function applyProposal(
   // The two authorities the store accepts when it writes the applied row,
   // asked here so nothing is handed to a host that could not be recorded
   // afterwards. Standing consent is a workspace's blanket yes to the low-risk
-  // class; a high-risk change is never inside it, so an unapproved one stops
-  // at this line rather than reaching someone else's system.
-  const standing = record.risk === 'low' && writeConsentAllowsLowRisk(store, record.workspace);
+  // class; a high-risk change is never inside it, and neither is a source its
+  // owner declared sensitive — that judgment predates knowing the target, so a
+  // sensitive target takes a decision made about this proposal by a person.
+  // Every refusal here fires before the host is asked, because a gate that
+  // throws after the write leaves the world changed and the ledger ignorant.
+  const sensitive = sourceDeclaration(store, record.source)?.sensitive === true;
+  const standing =
+    record.risk === 'low' && !sensitive && writeConsentAllowsLowRisk(store, record.workspace);
   if (!prior && !standing) {
     return {
       outcome: 'refused',
       reason:
         record.risk === 'high'
           ? 'nobody has approved it, and a high-risk change is never carried out on standing consent'
-          : 'nobody has decided it yet — an undecided proposal is not one to carry out',
+          : sensitive
+            ? 'its source is declared sensitive, which standing consent does not cover — it waits for a human decision'
+            : 'nobody has decided it yet — an undecided proposal is not one to carry out',
     };
   }
   if (prior?.verdict === 'rejected') {

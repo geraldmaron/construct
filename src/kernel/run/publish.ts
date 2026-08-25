@@ -58,6 +58,18 @@ export interface RenderedClaim {
 }
 
 /**
+ * What the workspace declared the source of a cited document to be, in the
+ * words a reader gets — or null for a document from a source nobody described.
+ *
+ * A citation names where a claim came from and says nothing about how far that
+ * place can carry it. The tier its owner declared is the missing half, so a
+ * reader can see that a memo rests on an aspirational plan rather than on the
+ * record. Supplied by the surface doing the printing, because the tier lives
+ * in the store and this module holds no store.
+ */
+export type CitedAuthority = (path: string) => string | null;
+
+/**
  * Markers rendered as clauses, longest pattern first so `[cite:...]` is not
  * eaten by a looser rule.
  *
@@ -66,12 +78,20 @@ export interface RenderedClaim {
  * something weaker than it meant would be the softening this module exists to
  * refuse, wearing the costume of a house style.
  */
-const RENDERINGS: readonly { readonly pattern: RegExp; readonly render: (m: RegExpMatchArray) => string }[] = [
+const RENDERINGS: readonly {
+  readonly pattern: RegExp;
+  readonly render: (m: RegExpMatchArray, authority: CitedAuthority | undefined) => string;
+}[] = [
   {
     // A citation is a source, and a reader wants it the way a colleague gives
-    // one: named, in passing, not wrapped in a machine bracket.
+    // one: named, in passing, not wrapped in a machine bracket — with the
+    // standing its owner declared, where one was declared.
     pattern: /\[cite:\s*([^\]]+)\]/gi,
-    render: (m) => `(${basename(m[1].trim())})`,
+    render: (m, authority) => {
+      const path = m[1].trim();
+      const tier = authority?.(path) ?? null;
+      return tier === null ? `(${basename(path)})` : `(${basename(path)} — ${tier})`;
+    },
   },
   {
     pattern: /\[research:\s*([^\]]+)\]/gi,
@@ -137,18 +157,18 @@ function lowerFirst(text: string): string {
  * twice is rendering it once. That matters because a surface that renders and
  * then re-renders on a redraw would otherwise accumulate clauses.
  */
-export function renderClaim(text: string): string {
+export function renderClaim(text: string, authority?: CitedAuthority): string {
   // Two clauses colliding at a sentence end read worse than either alone.
-  return substituted(text).replace(/\s+—\s+—\s+/g, ' — ').replace(/\s{2,}/g, ' ').trim();
+  return substituted(text, authority).replace(/\s+—\s+—\s+/g, ' — ').replace(/\s{2,}/g, ' ').trim();
 }
 
 /** Every marker in one string, rendered; whitespace left exactly as it was. */
-function substituted(text: string): string {
+function substituted(text: string, authority: CitedAuthority | undefined): string {
   let rendered = text;
   for (const { pattern, render } of RENDERINGS) {
     rendered = rendered.replace(pattern, (...args) => {
       const match = args.slice(0, -2) as unknown as RegExpMatchArray;
-      return render(match);
+      return render(match, authority);
     });
   }
   return rendered;
@@ -168,7 +188,7 @@ function substituted(text: string): string {
  * somebody quoting the notation, or a config that happens to use brackets —
  * and rendering it would edit the thing the author was showing.
  */
-export function renderDocument(text: string): string {
+export function renderDocument(text: string, authority?: CitedAuthority): string {
   const lines: string[] = [];
   let inFence = false;
   for (const line of text.split('\n')) {
@@ -183,7 +203,11 @@ export function renderDocument(text: string): string {
     }
     const indent = /^\s*/.exec(line)?.[0] ?? '';
     lines.push(
-      indent + substituted(line.slice(indent.length)).replace(/\s+—\s+—\s+/g, ' — ').replace(/ {2,}/g, ' ').trimEnd(),
+      indent +
+        substituted(line.slice(indent.length), authority)
+          .replace(/\s+—\s+—\s+/g, ' — ')
+          .replace(/ {2,}/g, ' ')
+          .trimEnd(),
     );
   }
   return lines.join('\n');

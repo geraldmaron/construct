@@ -35,7 +35,9 @@ import {
   setWriteConsent,
   sourceReadsFor,
   sourcesFor,
+  setSourceDeclaration,
   setSourceShape,
+  sourceDeclaration,
   sourceShape,
   writeConsentAllowsLowRisk,
 } from '../../../src/kernel/store/sources.ts';
@@ -297,6 +299,93 @@ test('pending lists only undecided proposals, and proposal rows are immutable', 
   });
 });
 
+test('a source nobody described reads null, so nothing downstream is handed a tier the user never stated', () => {
+  withStore((store) => {
+    declare(store);
+    assert.equal(sourceDeclaration(store, 'src-1'), null);
+  });
+});
+
+test('what a user says a source is survives the round trip, and restating it moves it', () => {
+  withStore((store) => {
+    declare(store);
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'aspirational', relevance: 'the 2027 wish list', sensitive: false },
+      AT,
+    );
+    assert.deepEqual(sourceDeclaration(store, 'src-1'), {
+      authority: 'aspirational',
+      relevance: 'the 2027 wish list',
+      sensitive: false,
+    });
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'source-of-truth', relevance: 'the signed plan', sensitive: true },
+      LATER,
+    );
+    assert.deepEqual(sourceDeclaration(store, 'src-1'), {
+      authority: 'source-of-truth',
+      relevance: 'the signed plan',
+      sensitive: true,
+    });
+  });
+});
+
+test('a tier nobody defined and a description of a source that does not exist are refused, not stored', () => {
+  withStore((store) => {
+    declare(store);
+    assert.throws(
+      () =>
+        setSourceDeclaration(
+          store,
+          'src-1',
+          { authority: 'mostly-true' as never, relevance: '', sensitive: false },
+          AT,
+        ),
+      /unknown authority/,
+    );
+    assert.throws(
+      () =>
+        setSourceDeclaration(
+          store,
+          'ghost',
+          { authority: 'working', relevance: '', sensitive: false },
+          AT,
+        ),
+      /no source ghost/,
+    );
+    assert.equal(sourceDeclaration(store, 'src-1'), null);
+  });
+});
+
+/**
+ * Standing consent is a judgment about a class of change made before anyone
+ * knew where it would land. A source its owner called sensitive is outside it,
+ * and the proof that this is the declaration doing the work rather than the
+ * risk class is that the same low-risk proposal applies once a person decides
+ * it.
+ */
+test('standing consent does not reach a source the user declared sensitive', () => {
+  withStore((store) => {
+    declare(store);
+    setWriteConsent(store, 'acme', true, AT);
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the customer tracker', sensitive: true },
+      AT,
+    );
+    propose(store, 'p-low', 'low');
+    assert.throws(() => markApplied(store, 'p-low', 'auto', LATER), /declared sensitive/);
+    decideProposal(store, 'p-low', 'approved', 'read it and it is fine', LATER);
+    markApplied(store, 'p-low', 'done', LATER);
+    assert.equal(decisionOf(store, 'p-low')?.basis, 'human-approval');
+  });
+});
+
 test('a source with no declared shape reads null, so the survey keeps its old default', () => {
   withStore((store) => {
     declare(store);
@@ -452,4 +541,22 @@ test('a read row is auditable against its locator: the descriptor must name the 
   // A locator that never parsed names no container, so nothing can check
   // against it — this reads as unauditable, not as a pass by default.
   assert.equal(docsReadNamesLocatorContainer('wiki', '14 of 14 pages in space ENG'), false);
+});
+
+test('a retired source is done being described', () => {
+  withStore((store) => {
+    declare(store);
+    retireSource(store, 'src-1', LATER);
+    assert.throws(
+      () =>
+        setSourceDeclaration(
+          store,
+          'src-1',
+          { authority: 'working', relevance: 'too late', sensitive: false },
+          LATER,
+        ),
+      /was retired at/,
+    );
+    assert.equal(sourceDeclaration(store, 'src-1'), null);
+  });
 });

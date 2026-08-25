@@ -20,6 +20,7 @@ import { CAPABILITY_DENIED_ACTION } from '../kernel/run/rolewrite.ts';
 import { latestDraft, promotionOf } from '../kernel/run/promotion.ts';
 import { licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import { deliverableBody, renderAttribution, renderDocument } from '../kernel/run/publish.ts';
+import { citedAuthorityFor } from '../kernel/run/sourcereads.ts';
 import { playbookFor } from '../kernel/plan/playbooks.ts';
 import { unheadedSlots } from '../kernel/plan/ladder.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
@@ -116,6 +117,9 @@ export function show(argv: string[]): number {
       process.stdout.write(`no tasks for ${run}. Record an outcome first: construct outcome "<what you want>"\n`);
       return 0;
     }
+    // What the workspace said the ground is, so a citation carries its
+    // standing: a claim resting on an aspirational document reads as one.
+    const authority = citedAuthorityFor(store, run);
     for (const task of tasks) {
       const draft = latestDraft(store, task.id);
       const promotion = promotionOf(store, task.id);
@@ -147,7 +151,7 @@ export function show(argv: string[]): number {
       }
       if (!draft) process.stdout.write('  (from the role\'s reply; no draft was submitted)\n');
       const text = deliverableBody(deliverable);
-      const body = escapeForTerminal(asRecord ? text : renderDocument(text))
+      const body = escapeForTerminal(asRecord ? text : renderDocument(text, authority))
         .split('\n')
         .map((line) => `  ${line}`)
         .join('\n');

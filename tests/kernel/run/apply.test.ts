@@ -23,6 +23,7 @@ import {
   decisionOf,
   proposeWrite,
   setEngagementMode,
+  setSourceDeclaration,
   setWriteConsent,
 } from '../../../src/kernel/store/sources.ts';
 import { countProjections, getProjection } from '../../../src/kernel/store/projections.ts';
@@ -190,6 +191,53 @@ test('standing consent hands a low-risk change over, and a high-risk one stops b
     );
     assert.equal(asked, false, 'the high-risk change never reached the host');
     assert.equal(decisionOf(store, 'p-high'), null, 'and left no decision behind');
+  });
+});
+
+/**
+ * The mirror of the test above, and the reason sensitivity is a declaration
+ * rather than a note: standing consent is a workspace's yes to a class of
+ * change, given before anyone knew which source it would land in. A source its
+ * owner called sensitive is outside that yes, and the refusal happens here —
+ * before the host is asked — because a gate that fires after the write leaves
+ * someone else's system changed and this ledger ignorant of it.
+ */
+test('standing consent does not carry a low-risk change into a source declared sensitive', async () => {
+  await withStore(async (store) => {
+    seed(store);
+    setWriteConsent(store, 'acme', true, AT);
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the customer tracker', sensitive: true },
+      AT,
+    );
+
+    let asked = false;
+    const result = await applyProposal(
+      store,
+      async () => {
+        asked = true;
+        return { applied: true, detail: 'moved it' };
+      },
+      'p-1',
+      LATER,
+    );
+
+    assert.equal(result.outcome, 'refused');
+    assert.match(
+      result.outcome === 'refused' ? result.reason : '',
+      /declared sensitive, which standing consent does not cover/,
+    );
+    assert.equal(asked, false, 'the change never reached the host');
+    assert.equal(decisionOf(store, 'p-1'), null, 'and left no decision behind');
+
+    // The declaration is doing the work, not the risk class: the same
+    // proposal applies once a person decides this one.
+    decideProposal(store, 'p-1', 'approved', 'read it, and it is fine to send', LATER);
+    const decided = await applyProposal(store, applier({ applied: true, detail: 'moved it' }), 'p-1', LATER);
+    assert.equal(decided.outcome, 'applied');
+    assert.equal(decisionOf(store, 'p-1')?.basis, 'human-approval');
   });
 });
 

@@ -17,6 +17,7 @@ import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coor
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import { latestDraft } from '../kernel/run/promotion.ts';
 import { renderClaim } from '../kernel/run/publish.ts';
+import { citedAuthorityFor } from '../kernel/run/sourcereads.ts';
 import { groundingSummary, groundRun } from '../kernel/run/groundpass.ts';
 import { groundRootsFor } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
@@ -517,9 +518,11 @@ export async function work(
       .filter((d): d is { role: string; text: string } => d !== null);
     const merged = synthesizeIssues(settledDeliverables);
     if (merged.length > 0) {
+      const settledRun = report.settled.map((id) => getTask(store, id)).find((t) => t !== null)?.run;
+      const authority = settledRun ? citedAuthorityFor(store, settledRun) : undefined;
       process.stdout.write(`\nissues across roles (${String(merged.length)}, merged lexically):\n`);
       for (const [index, issue] of merged.entries()) {
-        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${escapeForTerminal(renderClaim(issue.text))}\n`);
+        process.stdout.write(`  ${String(index + 1)}. [${issue.roles.join(', ')}] ${escapeForTerminal(renderClaim(issue.text, authority))}\n`);
       }
     }
 

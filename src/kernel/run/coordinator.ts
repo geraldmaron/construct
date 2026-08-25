@@ -36,13 +36,13 @@ import {
   totalSpend,
 } from '../store/tasks.ts';
 import type { LeasedTask } from '../store/tasks.ts';
-import { sourceReadsFor } from '../store/sources.ts';
+import { getSource, sourceDeclaration, sourceReadsFor } from '../store/sources.ts';
 import { planFor } from '../store/plans.ts';
 import { unheadedSlots } from '../plan/ladder.ts';
 import { operationalLessonsFor } from '../lessons/admission.ts';
 import { groundRootsFor } from './sourcereads.ts';
 import { ANSWER_THE_ASK, ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
-import type { Material } from './grounding.ts';
+import type { DeclaredSource, Material } from './grounding.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
@@ -399,6 +399,31 @@ export function materialFor(store: Store, run: string): Material[] {
   }));
 }
 
+/**
+ * What the user said the sources behind this run are, once each and in the
+ * order they were read. Only sources the run actually read appear: a
+ * declaration about ground no dispatch touched describes nothing the role is
+ * holding. A source nobody described is absent rather than defaulted, because
+ * a tier this system picked would read to the role exactly like one the user
+ * stated.
+ */
+export function declaredSourcesFor(store: Store, run: string): DeclaredSource[] {
+  const seen = new Set<string>();
+  const declared: DeclaredSource[] = [];
+  for (const read of sourceReadsFor(store, run)) {
+    if (seen.has(read.source)) continue;
+    seen.add(read.source);
+    const declaration = sourceDeclaration(store, read.source);
+    if (!declaration) continue;
+    declared.push({
+      source: read.source,
+      locator: getSource(store, read.source)?.locator ?? read.source,
+      ...declaration,
+    });
+  }
+  return declared;
+}
+
 export function assignmentFor(
   brief: Brief,
   catalog: readonly Domain[] = DOMAINS,
@@ -415,6 +440,11 @@ export function assignmentFor(
     readonly material?: readonly Material[];
     /** Local roots the role may read beyond the listed documents. */
     readonly groundRoots?: readonly string[];
+    /**
+     * What the user declared those sources to be. Absent means nobody has
+     * said, and the role is told nothing rather than told a default.
+     */
+    readonly declarations?: readonly DeclaredSource[];
     /**
      * What the portable method library on this machine can offer this role.
      * Absent means nobody looked and nothing is said about method skills;
@@ -492,7 +522,7 @@ export function assignmentFor(
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   const material =
     options.material && options.material.length > 0
-      ? groundedMaterialProtocol(options.material, options.groundRoots ?? [])
+      ? groundedMaterialProtocol(options.material, options.groundRoots ?? [], options.declarations ?? [])
       : MATERIAL_PROTOCOL;
   // The acquisition ladder's second rung, defined where the role can read it.
   // Spoken on every dispatch rather than only when a gap appears, because the
@@ -843,6 +873,9 @@ export async function workRun(
     // a role could be licensed one set of roots and graded on another.
     const material = materialFor(store, task.run);
     const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
+    // What the user says that ground is. Read here beside the material so the
+    // declaration and the documents it describes reach the role together.
+    const declarations = material.length > 0 ? declaredSourcesFor(store, task.run) : [];
     // What those roots declare they already check. Read through the injected
     // reader so the kernel stays off the filesystem, and only over roots the
     // workspace declared — a manifest sitting beside this process says nothing
@@ -910,6 +943,16 @@ export async function workRun(
         // deliverable that opens from a concern can only be read against the
         // evidence the role actually received, not the evidence it might have.
         engagement: brief.engagement ?? null,
+        // What the role was told its ground is, in the tiers that were standing
+        // when it was told. A declaration can be restated afterwards, and the
+        // reader surfaces show what a source is now; this is where what it was
+        // at dispatch stays readable, so neither question has to be answered
+        // from the other's evidence.
+        declared: declarations.map((d) => ({
+          source: d.source,
+          authority: d.authority,
+          sensitive: d.sensitive,
+        })),
       },
       at: options.clock(),
     });
@@ -1071,6 +1114,7 @@ export async function workRun(
             // the no-material rule instead.
             material,
             groundRoots,
+            declarations,
             manifests,
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),

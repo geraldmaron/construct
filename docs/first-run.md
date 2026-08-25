@@ -184,6 +184,32 @@ understanding what it does. Say which you meant:
 construct source add --kind=git --locator=/path/to/repo --emphasis=code --cap=200
 ```
 
+A locator says where context lives and nothing about how far to trust it, so a
+wish list and the agreement everything is measured against arrive at a role as
+the same kind of thing. Say what a source is, in your own words:
+
+```bash
+construct source describe --id=<source-id> --authority=aspirational --relevance="the 2027 wish list, not the plan we funded"
+construct source add --kind=directory --locator=./contracts --authority=source-of-truth --sensitive
+```
+
+The tiers are `source-of-truth` (what it says is the record), `working` (in
+progress, true about where things stand), `aspirational` (what somebody wants
+to be true) and `archive` (kept for history). Whatever you say travels: roles
+are told it before they read, and a citation into a described source carries
+its tier where a reader sees it, so a memo resting on an aspirational plan
+reads as one. `--sensitive` adds that what the source holds does not travel —
+and standing consent for low-risk outward writes stops covering it, so a change
+against that source waits for you. Nothing writes a description except this
+command; a tier you did not type does not exist.
+
+The label beside a citation is the source's description as it stands now, not
+as it stood when the deliverable was written. Re-describe a source and every
+deliverable citing it reads differently the next time you open it, which is the
+point: demote a plan to aspirational and the work resting on it should stop
+looking settled. What the roles were actually told at dispatch is kept in the
+work log (`construct log --run=<id>`), so the history is still there.
+
 Once ground is declared, you can ask what disagrees inside it without waiting
 for a run to notice:
 
