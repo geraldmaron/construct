@@ -37,6 +37,7 @@ import { DOCUMENT_CAP } from '../hosts/sources.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
+import { jsonFlag, writeJson } from './json.ts';
 
 const SOURCE_USAGE =
   'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> ' +
@@ -45,7 +46,7 @@ const SOURCE_USAGE =
   '       construct source describe --id=<source-id> ' +
   '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] ' +
   '[--sensitive] [--not-sensitive]\n' +
-  '       construct source list [--workspace=<name>] [--all]\n' +
+  '       construct source list [--workspace=<name>] [--all] [--json]\n' +
   '       construct source retire --id=<source-id>\n' +
   '       construct source relate --from=<source-id> --to=<source-id> ' +
   `--as=<${SOURCE_RELATIONS.join('|')}> [--note=<one line>] [--workspace=<name>]\n` +
@@ -248,6 +249,19 @@ export function source(argv: string[]): number {
   if (sub === 'list') {
     return withStore((store) => {
       const rows = sourcesFor(store, workspace, { includeRetired: flags.all === 'true' });
+      if (jsonFlag(argv)) {
+        // Each source row with the shape and declaration recorded against it
+        // — the same three records the human listing reads, merged the same
+        // way, but as data rather than one formatted line per source.
+        writeJson(
+          rows.map((row) => ({
+            ...row,
+            shape: sourceShape(store, row.id),
+            declaration: sourceDeclaration(store, row.id),
+          })),
+        );
+        return 0;
+      }
       if (rows.length === 0) {
         process.stdout.write(`no sources declared for workspace ${workspace}\n`);
         return 0;

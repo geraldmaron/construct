@@ -27,6 +27,7 @@ import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { withStore } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
 import { runFlag } from './flags.ts';
+import { jsonFlag, writeJson } from './json.ts';
 
 /**
  * How an entry's inference was reached, when that is not the free default
@@ -106,13 +107,40 @@ export function reasonClause(action: string, detail: unknown): string {
 export function show(argv: string[]): number {
   const run = runFlag(argv);
   const asRecord = argv.includes('--record');
+  const asJson = jsonFlag(argv);
   if (!run) {
-    process.stderr.write('usage: construct show --run <id> [--record]\n');
+    process.stderr.write('usage: construct show --run <id> [--record] [--json]\n');
     return 2;
   }
 
   return withStore((store) => {
     const tasks = listTasks(store, run);
+    if (asJson) {
+      // The stored record, not the reader's rendering: each task as it is
+      // held, its draft's raw deliverable, and the external reads beside it —
+      // the same facts `show`'s prose is built from, not that prose itself.
+      writeJson({
+        run,
+        tasks: tasks.map((task) => {
+          const draft = latestDraft(store, task.id);
+          const promotion = promotionOf(store, task.id);
+          const deliverable = draft?.deliverable ?? task.result;
+          return {
+            id: task.id,
+            role: task.role,
+            state: task.state,
+            deliverableKind: playbookFor(task.role).template.deliverable,
+            promotion: promotion?.state ?? null,
+            licensedReview: licensedReviewFor(task.role),
+            limits: limitsFor(store, task.run, task.id).map((l) => l.label),
+            hasDraft: draft !== null,
+            deliverable: deliverable === null || deliverable === undefined ? null : deliverableBody(deliverable),
+          };
+        }),
+        externalReads: externalReadsFor(store, run),
+      });
+      return 0;
+    }
     if (tasks.length === 0) {
       process.stdout.write(`no tasks for ${run}. Record an outcome first: construct outcome "<what you want>"\n`);
       return 0;
@@ -190,6 +218,12 @@ export function log(argv: string[]): number {
 
   return withStore((store) => {
     const entries = readWorkLog(store, run);
+    if (jsonFlag(argv)) {
+      // The append-only stream itself plus the task rows the footer below is
+      // derived from — the record the footer's prose reads, not the prose.
+      writeJson({ run: run ?? null, entries, tasks: listTasks(store, run) });
+      return 0;
+    }
     if (entries.length === 0) {
       process.stdout.write(run ? `no work log entries for ${run}\n` : 'work log is empty\n');
       return 0;
@@ -314,13 +348,17 @@ function writeRunState(store: Store, run?: string): void {
   }
 }
 
-export function inbox(): number {
+export function inbox(argv: string[] = []): number {
   return withStore((store) => {
     const open = openDecisions(store);
     // Waiting outward changes are calls on the user exactly as decisions are,
     // and an inbox that says "nothing needs you" while proposals wait is
     // wrong. A pointer, not a second rendering: the queue has one listing.
     const waiting = pendingProposalCount(store);
+    if (jsonFlag(argv)) {
+      writeJson({ openDecisions: open, pendingProposals: waiting });
+      return 0;
+    }
     const waitingLine =
       waiting > 0
         ? `${String(waiting)} outward change${waiting === 1 ? '' : 's'} waiting — see: construct decide --pending\n`

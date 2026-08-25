@@ -18,9 +18,10 @@ import {
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
+import { jsonFlag, writeJson } from './json.ts';
 
 const LESSONS_USAGE =
-  'usage: construct lessons [--workspace=<name>]\n' +
+  'usage: construct lessons [--workspace=<name>] [--json]\n' +
   '       construct lessons --admit=<lesson-id> --by=<approver> [--detail="<why>"] [--workspace=<name>]\n';
 
 /**
@@ -81,6 +82,13 @@ export function lessons(argv: string[]): number {
 
   return withStore((store) => {
     const recorded = lessonsFor(store, workspace);
+    if (jsonFlag(argv)) {
+      // Every recorded lesson with the admission verdict standing against it
+      // — the same pairing the held/admitted listing below reads, as the
+      // stored records rather than the two printed sections.
+      writeJson(recorded.map((lesson) => ({ lesson, verdict: admissionOf(store, lesson.id) })));
+      return 0;
+    }
     if (recorded.length === 0) {
       process.stdout.write(`lessons: none recorded for workspace "${workspace}".\n`);
       return 0;
