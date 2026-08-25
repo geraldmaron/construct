@@ -1,5 +1,57 @@
 # Changelog
 
+## 3.0.0-alpha.17 — 2026-08-25
+
+The host you are already in runs the work, the machine keeps less than you
+feared, and a repo can carry its own Construct posture — plus the security
+sweep that had to land before any of it could be trusted.
+
+- **The session you are in is the one that runs the work.** Construct now
+  detects the agent host it was invoked from (Claude Code, Cursor, and their
+  markers) and defaults dispatch and every relayed command to that host instead
+  of to OpenCode. A host it cannot spawn (Bob, goose, nanobot) is named
+  projection-only rather than silently swapped. `construct wire` writes the
+  ambient host's MCP config for you, so `construct serve` is reachable without a
+  hand-edit. The incident that prompted this — an agent inside a Bob session
+  told to run work on a host the user was not in — no longer happens.
+- **Host-pull execution (flagged prototype, off by default).** Where a host
+  cannot be spawned, it may claim a ready task and run it on its own capacity,
+  submitting a draft through the token-scoped role seam. Completion stays
+  kernel-owned: the host produces a draft and can never advance it to final;
+  promotion still turns only on recorded verdicts. The bearer never leaves the
+  server. This is the one STRATEGY change this cycle (commitment 1, Phase 2;
+  RESEARCH-DECISIONS §§26–27), made because the community record backed holding
+  the rest of the strategy and changing exactly this seam.
+- **A repo can declare its Construct posture, and it is inert until you trust
+  it.** `.construct/settings.json` carries preferences (host, locale, ground
+  hints — never consent), resolved through a git-config-style ladder with the
+  source of each value printed. A committed file does nothing until ratified per
+  content hash via `construct trust`, with controls drawn from the 2025–2026
+  config-trust attacks: the hash is over raw bytes, the gate runs before any
+  effect, symlinks are refused, discovery never crosses a repo boundary, and
+  consent keys have no file parser at all. Opt-in `state: local` roots the store
+  inside the repo — refused unless the path is both git-ignored and untracked.
+- **Deliverables localize; the record never does.** Prose renders for a locale
+  (default American English); the work log, store rows, and timestamps stay
+  byte-identical whatever locale a run rendered in.
+- **Read verbs speak JSON, and the CLI grew completions.** `--json` on `log`,
+  `inbox`, `show`, `source list`, `lessons`, and `plan` emits the stored record;
+  exit codes are a documented contract; `construct completions` generates
+  zsh/bash completion from the verb table itself.
+- **Security sweep (fifteen findings, audited and remediated).** The store and
+  its backups are created owner-only, not world-readable; erasure reclaims the
+  bytes, not only the rows; a decision the outward-write ladder trusts now
+  carries whose hand made it, so a model-relayed approval cannot pass for a
+  human's, and consent no longer fails open on an undeclared source or a
+  model-chosen action; the prompt and terminal escapes cover the whole
+  invisible-character class (bidi, zero-width, Unicode tag characters), including
+  the lesson-poisoning challenger prompt; host stderr and connector errors are
+  stripped of credential shapes before they are stored; the pre-commit scanner
+  knows the connector's own token shape and `.gitignore` refuses dotenv files;
+  extracted document text is written owner-only and cleaned up; the Jira site is
+  validated before the credential is sent to it; and the publish workflow pins
+  its actions to commit SHAs while holding least-privilege tokens.
+
 ## 3.0.0-alpha.16 — 2026-08-25
 
 What a source is, how two of them stand to each other, and how sure a finding
