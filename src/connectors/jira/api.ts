@@ -18,6 +18,7 @@
  */
 
 import { API_BASE_PATH } from './pin.ts';
+import { redact } from '../../kernel/render/redact.ts';
 
 export const JIRA_SITE_ENV = 'CONSTRUCT_JIRA_SITE';
 export const JIRA_EMAIL_ENV = 'CONSTRUCT_JIRA_EMAIL';
@@ -46,15 +47,43 @@ export function readJiraCredentials(
   return { site: siteOrigin(site), email, token };
 }
 
+/** The one host suffix a Jira Cloud site can have. Nothing else is a Jira site. */
+const JIRA_CLOUD_SUFFIX = '.atlassian.net';
+
+/** Whether a host is a Jira Cloud site — a subdomain of atlassian.net, never the bare apex. */
+function isJiraCloudHost(host: string): boolean {
+  return host.length > JIRA_CLOUD_SUFFIX.length && host.endsWith(JIRA_CLOUD_SUFFIX);
+}
+
 /**
- * A site named with or without a scheme, as an https origin with no
- * trailing slash. https is forced rather than honored: the credential rides
- * in a header on every request, and a site written as `http://` would put
+ * A site named with or without a scheme, as an https origin — host only, no
+ * path, no trailing slash. https is forced rather than honored: the credential
+ * rides in a header on every request, and a site written as `http://` would put
  * it on the wire in the clear.
+ *
+ * The host is validated, not merely reformatted. Stripping a leading scheme and
+ * pasting `https://` in front leaves the rest untouched, so a value like
+ * `evil.com/@acme.atlassian.net` becomes an origin whose host is `evil.com` —
+ * an attacker's server, receiving the Authorization header on every call. So
+ * the string is parsed and the resolved host checked against the one suffix a
+ * Jira Cloud site can carry; anything else is refused by name rather than
+ * silently addressed.
  */
 export function siteOrigin(site: string): string {
   const bare = site.trim().replace(/^[a-zA-Z][\w+.-]*:\/\//, '').replace(/\/+$/, '');
-  return `https://${bare}`;
+  let host: string;
+  try {
+    host = new URL(`https://${bare}`).hostname;
+  } catch {
+    throw new Error(`${JIRA_SITE_ENV} is not a readable site: ${site}`);
+  }
+  if (!isJiraCloudHost(host)) {
+    throw new Error(
+      `${JIRA_SITE_ENV} must be a Jira Cloud site ending in ${JIRA_CLOUD_SUFFIX} — refusing ${host}, ` +
+        'which would send the credential to a host that is not Jira.',
+    );
+  }
+  return `https://${host}`;
 }
 
 export function authorizationHeader(credentials: JiraCredentials): string {
@@ -128,7 +157,10 @@ export function createTransport(
 export function failureText(result: JiraResult): string {
   const body = result.body;
   if (typeof body === 'string' && body.trim() !== '') {
-    return `Jira answered ${String(result.status)}: ${body.trim().slice(0, 300)}`;
+    // A non-JSON body is whatever a remote returned — a proxy's error page can
+    // echo a request header, so credential shapes are stripped before the
+    // sliced text reaches the record a person reads.
+    return `Jira answered ${String(result.status)}: ${redact(body.trim().slice(0, 300))}`;
   }
   const record = (body ?? {}) as { errorMessages?: unknown; errors?: unknown };
   const messages = Array.isArray(record.errorMessages)

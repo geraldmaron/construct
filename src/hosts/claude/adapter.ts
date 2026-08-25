@@ -39,6 +39,7 @@ import { tuningOf } from '../tuning.ts';
 import type { ModelTier } from '../../kernel/brief/tiers.ts';
 import { mcpArgsFor, writeMcpConfig } from './mcpconfig.ts';
 import { frameHostTask } from '../../kernel/voice/voice.ts';
+import { redact } from '../../kernel/render/redact.ts';
 import type { RoleServeLaunch } from './mcpconfig.ts';
 
 export const HOST_NAME = 'claude';
@@ -138,7 +139,10 @@ function defaultSpawn(command: string, args: readonly string[], options: { cwd?:
   });
   const done = new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     child.on('error', reject);
-    child.on('close', (code) => resolve({ code, stdout, stderr }));
+    // A child is spawned with the ambient environment, so a verbose auth
+    // failure can print a provider key on stderr. Strip credential shapes here,
+    // once, before the stream reaches any record or screen downstream.
+    child.on('close', (code) => resolve({ code, stdout, stderr: redact(stderr) }));
   });
   return { done, kill: () => void child.kill('SIGTERM') };
 }
