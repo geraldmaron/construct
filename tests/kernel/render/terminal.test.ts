@@ -23,6 +23,16 @@ const OSC_8BIT = String.fromCodePoint(0x9d);
 const BEL = String.fromCodePoint(0x07);
 const BACKSPACE = String.fromCodePoint(0x08);
 const DEL = String.fromCodePoint(0x7f);
+/** A right-to-left override and a right-to-left isolate: the Trojan-Source reorderers. */
+const RLO = String.fromCodePoint(0x202e);
+const RLI = String.fromCodePoint(0x2067);
+/** Zero-width characters that carry no glyph: a space, a joiner, and the byte-order mark. */
+const ZWSP = String.fromCodePoint(0x200b);
+const ZWJ = String.fromCodePoint(0x200d);
+const BOM = String.fromCodePoint(0xfeff);
+/** Two Unicode tag characters: the vehicle a modern invisible injection rides in on. */
+const TAG_BEGIN = String.fromCodePoint(0xe0001);
+const TAG_LATIN_A = String.fromCodePoint(0xe0061);
 
 test('text with nothing a terminal reads as a command comes back unchanged', () => {
   assert.equal(escapeForTerminal('the pilot ships in Q4'), 'the pilot ships in Q4');
@@ -69,4 +79,25 @@ test('the whole control range is covered, C1 and delete included', () => {
     const out = escapeForTerminal(character);
     assert.ok(!out.includes(character), `codepoint ${code.toString(16)} reached the output as itself`);
   }
+});
+
+test('a bidirectional override cannot reorder a printed line — it comes out visible', () => {
+  const reordered = escapeForTerminal(`refused${RLO}supported`);
+  assert.ok(!reordered.includes(RLO), 'the override reached the screen and could reorder what follows');
+  assert.equal(reordered, 'refused\\x202esupported');
+  assert.equal(escapeForTerminal(`a${RLI}b`), 'a\\x2067b');
+});
+
+test('a zero-width character cannot hide between glyphs — it comes out visible', () => {
+  assert.equal(escapeForTerminal(`re${ZWSP}fused`), 're\\x200bfused');
+  assert.equal(escapeForTerminal(`re${ZWJ}fused`), 're\\x200dfused');
+  // The byte-order mark is the zero-width character most likely to ride in unnoticed.
+  assert.equal(escapeForTerminal(`${BOM}refused`), '\\xfeffrefused');
+});
+
+test('a Unicode tag character cannot smuggle an invisible instruction — it comes out visible', () => {
+  const smuggled = escapeForTerminal(`ok${TAG_BEGIN}${TAG_LATIN_A}`);
+  assert.ok(!smuggled.includes(TAG_BEGIN), 'the tag character reached the screen invisibly');
+  assert.ok(!smuggled.includes(TAG_LATIN_A));
+  assert.equal(smuggled, 'ok\\xe0001\\xe0061');
 });

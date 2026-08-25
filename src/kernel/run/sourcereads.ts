@@ -29,15 +29,20 @@ import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
 /**
- * A control character inside a path — a raw newline above all — can forge a
- * new line wherever paths are joined one per line into a prompt. Every
- * printable Unicode codepoint is left alone; only the C0 and C1 control
- * codes (Unicode's own "Cc" category) count, which is exactly the range that
- * can split a line or smuggle a terminal control sequence.
+ * A control or format character inside a path can forge structure wherever
+ * paths are joined one per line into a prompt. A raw newline forges a line
+ * outright; an invisible format character does its work without a glyph of its
+ * own — a bidirectional override reorders the text that follows it, a
+ * zero-width joiner or word joiner hides between characters, and a Unicode tag
+ * character carries a whole instruction no reader can see. Every visible
+ * printable codepoint is left alone; the two glyphless categories count —
+ * Unicode's C0/C1 control codes ("Cc") and its format characters ("Cf") —
+ * because together they are the range that can split a line, reorder it, or
+ * hide inside it.
  */
-const UNSAFE_PATH_CHARS = /\p{Cc}/u;
+const UNSAFE_PATH_CHARS = /[\p{Cc}\p{Cf}]/u;
 /** Same class, `g`-flagged for a replace pass rather than a single test. */
-const UNSAFE_PATH_CHARS_G = /\p{Cc}/gu;
+const UNSAFE_PATH_CHARS_G = /[\p{Cc}\p{Cf}]/gu;
 
 export function hasUnsafePathText(value: string): boolean {
   return UNSAFE_PATH_CHARS.test(value);
@@ -46,13 +51,14 @@ export function hasUnsafePathText(value: string): boolean {
 /**
  * Render survey-derived text — a locator, a descriptor, a detail message, a
  * document path — for a prompt built by joining strings one per line. A
- * control character can reach this point no matter which layer let it
- * through, so every place a declared source or a surveyed document enters a
+ * control or format character can reach this point no matter which layer let
+ * it through, so every place a declared source or a surveyed document enters a
  * prompt renders through here rather than interpolating the raw string. The
- * escaped form is guaranteed free of bytes that could pass as a line break or
- * a terminal control sequence, at the cost of no longer being the literal
- * text underneath — the same trade the walk itself makes when it refuses to
- * list a document under an unsafe name.
+ * escaped form is guaranteed free of bytes that could pass as a line break, a
+ * terminal control sequence, or an invisible character that reorders or hides
+ * what follows, at the cost of no longer being the literal text underneath —
+ * the same trade the walk itself makes when it refuses to list a document
+ * under an unsafe name.
  */
 export function escapeForPrompt(value: string): string {
   if (!UNSAFE_PATH_CHARS.test(value)) return value;
