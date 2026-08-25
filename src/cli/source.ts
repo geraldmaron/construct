@@ -4,30 +4,104 @@
 
 import {
   addSource,
+  authorityLabel,
   docsLocatorProblem,
   retireSource,
+  setSourceDeclaration,
   setSourceShape,
+  SOURCE_AUTHORITIES,
   SOURCE_KINDS,
+  sourceDeclaration,
   sourceShape,
   sourcesFor,
   SURVEY_EMPHASES,
 } from '../kernel/store/sources.ts';
-import type { SourceKind, SurveyEmphasis } from '../kernel/store/sources.ts';
+import type {
+  SourceAuthority,
+  SourceDeclaration,
+  SourceKind,
+  SurveyEmphasis,
+} from '../kernel/store/sources.ts';
 import { DOCUMENT_CAP } from '../hosts/sources.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
 
 const SOURCE_USAGE =
   'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> ' +
-  '[--workspace=<name>] [--emphasis=<prose|code|all>] [--cap=<documents>]\n' +
+  '[--workspace=<name>] [--emphasis=<prose|code|all>] [--cap=<documents>] ' +
+  '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] [--sensitive]\n' +
+  '       construct source describe --id=<source-id> ' +
+  '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] ' +
+  '[--sensitive] [--not-sensitive]\n' +
   '       construct source list [--workspace=<name>] [--all]\n' +
   '       construct source retire --id=<source-id>\n';
 
 /**
- * Declare, list, and retire the sources a workspace works from. Declaring
- * builds no connector and reads nothing: it names where organizational
- * context lives so a run can be held to what it actually read from there
- * (the provenance rows), and so an outward write can name its target.
+ * What a user said about a source, printed the same way wherever it is shown.
+ * One writer, because a declaration shown two ways is the second copy this
+ * surface exists to avoid.
+ */
+function declarationLine(declaration: SourceDeclaration): string {
+  return (
+    `[${authorityLabel(declaration.authority)}` +
+    (declaration.sensitive ? ', sensitive' : '') +
+    ']' +
+    (declaration.relevance === '' ? '' : `  ${declaration.relevance}`)
+  );
+}
+
+/**
+ * The declaration flags, read once for both the surface that declares a source
+ * and the surface that describes one already declared.
+ *
+ * A flag nobody passed leaves what is already recorded alone: `--relevance`
+ * alone restates why a source is here without silently re-tiering it. Only an
+ * authority — this source's own, or a new one on this command — can produce a
+ * declaration at all, because a relevance line with no standing beside it says
+ * nothing about how far a role may carry the source.
+ */
+function readDeclarationFlags(
+  flags: Record<string, string | undefined>,
+  existing: SourceDeclaration | null,
+): { readonly declaration: SourceDeclaration | null } | { readonly problem: string } {
+  const authority = flags.authority;
+  if (authority !== undefined && !(SOURCE_AUTHORITIES as readonly string[]).includes(authority)) {
+    return {
+      problem: `unknown authority "${authority}" (tiers: ${SOURCE_AUTHORITIES.join(', ')})`,
+    };
+  }
+  if (flags.sensitive === 'true' && flags['not-sensitive'] === 'true') {
+    return { problem: 'a source is either sensitive or it is not; --sensitive and --not-sensitive contradict' };
+  }
+  const relevance = flags.relevance;
+  const sensitive =
+    flags.sensitive === 'true' ? true : flags['not-sensitive'] === 'true' ? false : existing?.sensitive ?? false;
+  const stated = authority !== undefined || relevance !== undefined || flags.sensitive === 'true' || flags['not-sensitive'] === 'true';
+  if (!stated) return { declaration: null };
+  const tier = (authority as SourceAuthority | undefined) ?? existing?.authority;
+  if (tier === undefined) {
+    return {
+      problem:
+        'say what this source is before saying why it matters: ' +
+        `--authority=<${SOURCE_AUTHORITIES.join('|')}>`,
+    };
+  }
+  return {
+    declaration: { authority: tier, relevance: relevance ?? existing?.relevance ?? '', sensitive },
+  };
+}
+
+/**
+ * Declare, list, describe, and retire the sources a workspace works from.
+ * Declaring builds no connector and reads nothing: it names where
+ * organizational context lives so a run can be held to what it actually read
+ * from there (the provenance rows), and so an outward write can name its
+ * target.
+ *
+ * Describing is the user saying what a source is — whether it holds the record
+ * or an aspiration, why it is here, whether it is sensitive. It is stated
+ * here or not at all: nothing else in this system writes a declaration, so
+ * every tier a reader sees is one a person typed.
  */
 export function source(argv: string[]): number {
   const sub = argv[0];
@@ -67,6 +141,14 @@ export function source(argv: string[]): number {
       process.stderr.write(`source: --cap must be a positive whole number, got "${flags.cap ?? ''}"\n`);
       return 2;
     }
+    // What the source is, said with it. Optional here and stated later by
+    // `describe`, so a user who does not know yet declares where the context
+    // lives and says what it is worth when they do.
+    const stated = readDeclarationFlags(flags, null);
+    if ('problem' in stated) {
+      process.stderr.write(`source: ${stated.problem}\n${SOURCE_USAGE}`);
+      return 2;
+    }
     return withStore((store) => {
       const at = now();
       const id = `src-${at.replace(/[-:.TZ]/g, '')}`;
@@ -82,16 +164,47 @@ export function source(argv: string[]): number {
         }
         throw error;
       }
+      let line = `declared ${id}: ${kind} ${locator} (workspace ${workspace})`;
       if (emphasis !== undefined || cap !== undefined) {
         const shape = { emphasis: (emphasis ?? 'prose') as SurveyEmphasis, cap: cap ?? DOCUMENT_CAP };
         setSourceShape(store, id, shape, at);
-        process.stdout.write(
-          `declared ${id}: ${kind} ${locator} (workspace ${workspace}), ` +
-            `surveyed ${shape.emphasis}-first, up to ${String(shape.cap)} documents\n`,
-        );
-        return 0;
+        line += `, surveyed ${shape.emphasis}-first, up to ${String(shape.cap)} documents`;
       }
-      process.stdout.write(`declared ${id}: ${kind} ${locator} (workspace ${workspace})\n`);
+      if (stated.declaration) {
+        setSourceDeclaration(store, id, stated.declaration, at);
+        line += `, ${declarationLine(stated.declaration)}`;
+      }
+      process.stdout.write(`${line}\n`);
+      return 0;
+    });
+  }
+
+  if (sub === 'describe') {
+    const id = flags.id ?? '';
+    if (id.trim() === '') {
+      process.stderr.write(SOURCE_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const existing = sourceDeclaration(store, id);
+      const stated = readDeclarationFlags(flags, existing);
+      if ('problem' in stated) {
+        process.stderr.write(`source: ${stated.problem}\n${SOURCE_USAGE}`);
+        return 2;
+      }
+      if (!stated.declaration) {
+        process.stderr.write(
+          `source: describe says what a source is, and this command says nothing about ${id}\n${SOURCE_USAGE}`,
+        );
+        return 2;
+      }
+      try {
+        setSourceDeclaration(store, id, stated.declaration, now());
+      } catch (error) {
+        process.stderr.write(`source: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+      }
+      process.stdout.write(`described ${id}: ${declarationLine(stated.declaration)}\n`);
       return 0;
     });
   }
@@ -105,9 +218,11 @@ export function source(argv: string[]): number {
       }
       for (const row of rows) {
         const shape = sourceShape(store, row.id);
+        const declaration = sourceDeclaration(store, row.id);
         process.stdout.write(
           `${row.id}  ${row.kind}  ${row.locator}` +
             (shape ? `  [${shape.emphasis}-first, cap ${String(shape.cap)}]` : '') +
+            (declaration ? `  ${declarationLine(declaration)}` : '') +
             (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
             '\n',
         );

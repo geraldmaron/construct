@@ -15,9 +15,15 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
-import { addSource, latestSourceReads, sourceReadsFor } from '../../../src/kernel/store/sources.ts';
+import {
+  addSource,
+  latestSourceReads,
+  setSourceDeclaration,
+  sourceReadsFor,
+} from '../../../src/kernel/store/sources.ts';
 import type { SourceRead } from '../../../src/kernel/store/sources.ts';
 import {
+  citedAuthorityFor,
   compareAndRecordSourceReads,
   compareSourceReads,
   escapeForPrompt,
@@ -449,5 +455,26 @@ test('compareAndRecordSourceReads: each pass is recorded so a third pass compare
     // pass, never the first one on record.
     const [comparison] = compareAndRecordSourceReads(store, 'review-3', [grown], AT);
     assert.equal(comparison?.delta.unchanged, true);
+  });
+});
+
+test('a descriptor two declared sources both read, under two tiers, shows no tier at all', () => {
+  withStore((store) => {
+    addSource(store, { id: 'src-1', workspace: 'acme', kind: 'directory', locator: '/ground/docs', addedAt: AT });
+    addSource(store, { id: 'src-2', workspace: 'acme', kind: 'git', locator: '/ground/docs', addedAt: AT });
+    setSourceDeclaration(store, 'src-1', { authority: 'source-of-truth', relevance: 'the record', sensitive: false }, AT);
+    setSourceDeclaration(store, 'src-2', { authority: 'aspirational', relevance: 'the wish list', sensitive: false }, AT);
+    recordRunSourceReads(
+      store,
+      'run-1',
+      [
+        LISTED,
+        { ...LISTED, source: 'src-2', documents: [{ path: '/ground/docs/plan.md', bytes: 120 }], total: 1 },
+      ],
+      AT,
+    );
+    const authority = citedAuthorityFor(store, 'run-1');
+    assert.equal(authority('/ground/docs/plan.md'), null, 'a disagreement asserts neither tier');
+    assert.equal(authority('/ground/docs/spec.md'), 'source of truth', 'an undisputed descriptor keeps its tier');
   });
 });

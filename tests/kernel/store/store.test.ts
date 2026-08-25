@@ -35,6 +35,8 @@ import {
   resolveDecision,
 } from '../../../src/kernel/store/decisions.ts';
 import { buildProjection } from '../../../src/kernel/tracker/projection.ts';
+import { setSourceDeclaration, sourceDeclaration } from '../../../src/kernel/store/sources.ts';
+import { DatabaseSync } from 'node:sqlite';
 
 const AT = '2026-08-03T00:00:00.000Z';
 
@@ -117,6 +119,97 @@ test('a store recorded older than the build advances to what it now carries', ()
       .get('schema_version') as { value: string };
     assert.equal(Number(still.value), SCHEMA_VERSION);
     third.close();
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/**
+ * The declarations table is additive, which is a claim about a store that
+ * already exists rather than about the statement that creates it. So the
+ * fixture is a store built without it — the sources table, its retire-only and
+ * no-delete triggers, one row — opened by this build, which must add the new
+ * table beside them and leave every one of them exactly as it was.
+ */
+test('a store written before sources carried declarations keeps its rows and its triggers', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    mkdirSync(join(fixture.root, 'data'), { recursive: true });
+    const before = new DatabaseSync(path);
+    before.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
+      CREATE TABLE sources (
+        id         TEXT PRIMARY KEY,
+        workspace  TEXT NOT NULL,
+        kind       TEXT NOT NULL CHECK (kind IN ('directory', 'git', 'github', 'jira', 'docs')),
+        locator    TEXT NOT NULL,
+        added_at   TEXT NOT NULL,
+        retired_at TEXT
+      ) STRICT;
+      CREATE UNIQUE INDEX sources_active
+        ON sources (workspace, kind, locator) WHERE retired_at IS NULL;
+      CREATE TRIGGER sources_retire_only
+      BEFORE UPDATE ON sources
+      WHEN NEW.id != OLD.id OR NEW.workspace != OLD.workspace OR NEW.kind != OLD.kind
+        OR NEW.locator != OLD.locator OR NEW.added_at != OLD.added_at
+        OR OLD.retired_at IS NOT NULL OR NEW.retired_at IS NULL
+      BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
+      CREATE TRIGGER sources_no_delete
+      BEFORE DELETE ON sources
+      BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+    `);
+    before.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '17');
+    before
+      .prepare('INSERT INTO sources (id, workspace, kind, locator, added_at) VALUES (?, ?, ?, ?, ?)')
+      .run('src-old', 'acme', 'jira', 'PROJ', AT);
+    before.close();
+
+    const store = openStore(path);
+    try {
+      const row = store.db.prepare('SELECT * FROM sources WHERE id = ?').get('src-old') as {
+        workspace: string;
+        locator: string;
+        added_at: string;
+        retired_at: string | null;
+      };
+      assert.equal(row.workspace, 'acme');
+      assert.equal(row.locator, 'PROJ');
+      assert.equal(row.added_at, AT);
+      assert.equal(row.retired_at, null);
+
+      assert.throws(
+        () => store.db.prepare("UPDATE sources SET locator = 'OTHER' WHERE id = ?").run('src-old'),
+        /retired, never edited/,
+        'the retire-only trigger is untouched',
+      );
+      assert.throws(
+        () => store.db.prepare('DELETE FROM sources WHERE id = ?').run('src-old'),
+        /retired, never deleted/,
+      );
+
+      // Additive: the new table is there, empty, and the pre-existing row can
+      // be described through it without the source row moving.
+      const described = store.db
+        .prepare('SELECT COUNT(*) AS n FROM source_declarations')
+        .get() as { n: number };
+      assert.equal(described.n, 0);
+      setSourceDeclaration(
+        store,
+        'src-old',
+        { authority: 'archive', relevance: 'last year', sensitive: false },
+        AT,
+      );
+      assert.equal(sourceDeclaration(store, 'src-old')?.authority, 'archive');
+      const after = store.db.prepare('SELECT * FROM sources WHERE id = ?').get('src-old') as {
+        locator: string;
+        retired_at: string | null;
+      };
+      assert.equal(after.locator, 'PROJ');
+      assert.equal(after.retired_at, null);
+    } finally {
+      store.close();
+    }
   } finally {
     fixture.cleanup();
   }

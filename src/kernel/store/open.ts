@@ -107,6 +107,16 @@
  * snapshot that could be overwritten would let a later cleanup quietly
  * redefine what "changed since last time" means.
  *
+ * Schema version 18 adds `source_declarations`: what a user says a declared
+ * source *is* — the standing of what it holds (the record, work in progress,
+ * something wished for, something kept for history), why it matters here in
+ * their own one line, and whether what it holds is sensitive. A locator says
+ * where context lives and nothing about how far to trust it, so without this a
+ * wish list and the record entered a dispatch as the same kind of thing. Its
+ * own table for the reason `source_shapes` is its own: this schema is created,
+ * never altered. An upsert, because a declaration is a statement its author may
+ * restate; nothing writes one except at a user's word.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -130,7 +140,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 17;
+export const SCHEMA_VERSION = 18;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -495,6 +505,14 @@ CREATE TABLE IF NOT EXISTS source_shapes (
   source     TEXT PRIMARY KEY REFERENCES sources (id),
   emphasis   TEXT NOT NULL CHECK (emphasis IN ('prose', 'code', 'all')),
   cap        INTEGER NOT NULL CHECK (cap > 0),
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS source_declarations (
+  source      TEXT PRIMARY KEY REFERENCES sources (id),
+  authority   TEXT NOT NULL CHECK (authority IN ('source-of-truth', 'working', 'aspirational', 'archive')),
+  relevance   TEXT NOT NULL,
+  sensitive   INTEGER NOT NULL CHECK (sensitive IN (0, 1)),
   recorded_at TEXT NOT NULL
 ) STRICT;
 

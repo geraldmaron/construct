@@ -19,9 +19,9 @@ import {
   GROUND_IS_MATERIAL_RULE,
   groundedMaterialProtocol,
 } from '../../../src/kernel/run/grounding.ts';
-import { assignmentFor, materialFor } from '../../../src/kernel/run/coordinator.ts';
+import { assignmentFor, declaredSourcesFor, materialFor } from '../../../src/kernel/run/coordinator.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
-import { addSource, recordSourceRead } from '../../../src/kernel/store/sources.ts';
+import { addSource, recordSourceRead, setSourceDeclaration } from '../../../src/kernel/store/sources.ts';
 import { sterile } from '../../harness/sterile.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 import type { Material } from '../../../src/kernel/run/grounding.ts';
@@ -132,6 +132,79 @@ test('the dispatch path asks the store what the run read rather than a caller', 
       },
     ]);
     assert.match(assignmentFor(BRIEF, undefined, { material }), /Not all of it was read/);
+  } finally {
+    store.close();
+    fixture.cleanup();
+  }
+});
+
+test('what the user said a source is reaches the dispatch in their own words', () => {
+  const block = groundedMaterialProtocol([READ], [], [
+    {
+      source: 'src-1',
+      locator: 'PROJ',
+      authority: 'aspirational',
+      relevance: 'the 2027 wish list, not the plan we funded',
+      sensitive: false,
+    },
+  ]);
+  assert.match(block, /- PROJ \(src-1\) — aspirational: what somebody wants to be true/);
+  assert.match(block, /The user says why it is here: "the 2027 wish list, not the plan we funded"/);
+});
+
+test('a sensitive source carries what that obliges, and an undescribed one is told to nobody', () => {
+  const sensitive = groundedMaterialProtocol([READ], [], [
+    {
+      source: 'src-1',
+      locator: 'PROJ',
+      authority: 'source-of-truth',
+      relevance: '',
+      sensitive: true,
+    },
+  ]);
+  assert.match(sensitive, /- PROJ \(src-1\) — source of truth:/);
+  assert.match(sensitive, /Sensitive: quote only what a finding needs/);
+  assert.ok(!sensitive.includes('The user says why it is here'), 'an empty relevance line is absent, not blank');
+
+  const undescribed = groundedMaterialProtocol([READ]);
+  assert.ok(
+    !undescribed.includes('in the words of the person who declared them'),
+    'a source nobody described gets no tier invented for it',
+  );
+});
+
+test('the declaration travels the whole dispatch path, from the store to the assignment', () => {
+  const fixture = sterile();
+  const store = openStore(join(fixture.root, 'data', 'construct.db'));
+  try {
+    addSource(store, {
+      id: 'src-1',
+      workspace: 'acme',
+      kind: 'jira',
+      locator: 'PROJ',
+      addedAt: '2026-08-10T00:00:00.000Z',
+    });
+    recordSourceRead(store, {
+      run: 'run-1',
+      source: 'src-1',
+      descriptor: 'tickets in PROJ',
+      coverage: 'complete',
+      detail: '14 of 14 tickets',
+      recordedAt: '2026-08-10T00:01:00.000Z',
+    });
+    assert.deepEqual(declaredSourcesFor(store, 'run-1'), [], 'nothing is declared until a user says so');
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'aspirational', relevance: 'the 2027 wish list', sensitive: false },
+      '2026-08-10T00:02:00.000Z',
+    );
+    const assignment = assignmentFor(BRIEF, undefined, {
+      material: materialFor(store, 'run-1'),
+      declarations: declaredSourcesFor(store, 'run-1'),
+    });
+    assert.match(assignment, /- PROJ \(src-1\) — aspirational:/);
+    assert.match(assignment, /the 2027 wish list/);
   } finally {
     store.close();
     fixture.cleanup();

@@ -21,6 +21,8 @@
  * itself.
  */
 
+import { authorityLabel } from '../store/sources.ts';
+import type { SourceAuthority } from '../store/sources.ts';
 import { escapeForPrompt } from './sourcereads.ts';
 
 /** One document set a run read, in the words the store recorded. */
@@ -32,6 +34,65 @@ export interface Material {
   readonly coverage: 'complete' | 'partial' | 'unreachable';
   /** The honest quantity: "14 of 14 tickets", "connector returned 401". */
   readonly detail: string;
+}
+
+/**
+ * What a user said one of the sources behind this dispatch is: the same
+ * declaration the store holds, carried to the role that reads it.
+ *
+ * The words are the user's, not a summary of them. A role told a document is
+ * aspirational reads it as a wish; the same document with the label stripped
+ * reads as the record, and no amount of care further down recovers the
+ * difference.
+ */
+export interface DeclaredSource {
+  readonly source: string;
+  readonly locator: string;
+  readonly authority: SourceAuthority;
+  /** Why the user says this source matters here. Their line, possibly empty. */
+  readonly relevance: string;
+  readonly sensitive: boolean;
+}
+
+/** What each tier obliges a role to do about it, spoken where the tier is spoken. */
+const AUTHORITY_RULES: Readonly<Record<SourceAuthority, string>> = {
+  'source-of-truth': 'what it says is the record; where another source disagrees with it, say so and follow this one',
+  working: 'in progress and still moving; cite it for where things stand, never as settled',
+  aspirational: 'what somebody wants to be true, which is not evidence that it is; a finding that needs it to be true is a proposal, and say so',
+  archive: 'kept for history; it describes how things were and may have been superseded since',
+};
+
+/**
+ * The declarations block: what the workspace says these sources are.
+ *
+ * Per source rather than per document, because the declaration is about the
+ * source and repeating it against forty paths would bury it. Every field
+ * renders through `escapeForPrompt` for the same reason the material lines do:
+ * a locator and a user's own sentence both reach this block as text somebody
+ * else wrote.
+ */
+export function declaredSourcesBlock(declarations: readonly DeclaredSource[]): string {
+  if (declarations.length === 0) return '';
+  const lines = declarations.map((d) => {
+    const relevance = d.relevance.trim() === '' ? '' : ` The user says why it is here: "${escapeForPrompt(d.relevance.trim())}"`;
+    const sensitive = d.sensitive
+      ? ' Sensitive: quote only what a finding needs, leave personal and confidential detail out of your words, and carry none of it into anything addressed outside this workspace.'
+      : '';
+    return (
+      `- ${escapeForPrompt(d.locator)} (${escapeForPrompt(d.source)}) — ` +
+      `${authorityLabel(d.authority)}: ${AUTHORITY_RULES[d.authority]}.${relevance}${sensitive}`
+    );
+  });
+  return (
+    'What these sources are, in the words of the person who declared them. ' +
+    'This is their statement about their own material, not a judgment anything ' +
+    'here made, and it governs how far each source can carry a finding:\n' +
+    `${lines.join('\n')}\n` +
+    'Where a finding rests on a source, its standing travels with the finding: ' +
+    'name the tier in the sentence when it changes what the reader should do ' +
+    'with it. A source nobody described is undescribed — treat it on its ' +
+    'contents, and do not assume it is the record.'
+  );
 }
 
 /**
@@ -213,6 +274,7 @@ export const ROLE_OWNERSHIP_BOUND = [
 export function groundedMaterialProtocol(
   material: readonly Material[],
   groundRoots: readonly string[] = [],
+  declarations: readonly DeclaredSource[] = [],
 ): string {
   const lines = material.map(
     (m) =>
@@ -238,11 +300,12 @@ export function groundedMaterialProtocol(
         '\nNothing outside these roots is evidence, and a path you did not ' +
         `actually read is not a citation.\n\n${GROUND_EXHAUSTION_RULE}`
       : '';
+  const declared = declaredSourcesBlock(declarations);
   return (
     'Your material for this task is these documents, and nothing else around ' +
     'you. Files that happen to sit near you are not evidence for it.\n' +
-    `${lines.join('\n')}${gap}${license}\n\n${GROUND_IS_MATERIAL_RULE}\n\n` +
-    GROUNDED_SYNTHESIS_PROTOCOL
+    `${lines.join('\n')}${gap}${declared === '' ? '' : `\n\n${declared}`}${license}\n\n` +
+    `${GROUND_IS_MATERIAL_RULE}\n\n${GROUNDED_SYNTHESIS_PROTOCOL}`
   );
 }
 

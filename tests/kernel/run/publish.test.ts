@@ -53,6 +53,30 @@ test('a citation reads the way a colleague gives one', () => {
   assert.match(rendered, /\(research\/audit\.md\)/);
 });
 
+/**
+ * A citation says where a claim came from and nothing about how far that place
+ * carries it. A reader shown "(roadmap.md)" cannot tell the funded plan from a
+ * wish list; shown the tier its owner declared, they can.
+ */
+test('a citation into a described source carries the standing its owner declared', () => {
+  const tiers = (path: string) => (path === 'docs/plans/roadmap.md' ? 'aspirational' : null);
+
+  const declared = renderClaim('Two regions ship in Q3 [cite:docs/plans/roadmap.md].', tiers);
+  assert.match(declared, /\(plans\/roadmap\.md — aspirational\)/);
+
+  const undescribed = renderClaim('The key rotates monthly [cite:docs/ops/bar.md].', tiers);
+  assert.match(undescribed, /\(ops\/bar\.md\)/, 'a source nobody described gets no tier invented for it');
+});
+
+test('a whole deliverable citing an aspirational source shows that label where it cites it', () => {
+  const rendered = renderDocument(
+    '## finding\n\n- Two regions ship in Q3 [cite:docs/plans/roadmap.md].\n',
+    (path) => (path === 'docs/plans/roadmap.md' ? 'aspirational' : null),
+  );
+
+  assert.match(rendered, /- Two regions ship in Q3 \(plans\/roadmap\.md — aspirational\)\./);
+});
+
 test('an assumption is rendered as one, not as a field', () => {
   const rendered = renderClaim('The switches moved [assumed: Firestore is no longer the read path].');
 

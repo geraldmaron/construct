@@ -17,7 +17,14 @@
  * coverage decision testable without a filesystem.
  */
 
-import { getSource, latestSourceReads, recordSourceRead, sourceReadsFor } from '../store/sources.ts';
+import {
+  authorityLabel,
+  getSource,
+  latestSourceReads,
+  recordSourceRead,
+  sourceDeclaration,
+  sourceReadsFor,
+} from '../store/sources.ts';
 import type { SourceRead } from '../store/sources.ts';
 import type { Store } from '../store/open.ts';
 
@@ -339,6 +346,45 @@ export function groundRootsFor(store: Store, run: string): string[] {
     }
   }
   return roots.sort();
+}
+
+/**
+ * The declared standing of each document this run read, keyed by the path a
+ * deliverable cites it as. Built from the read record, so a citation and its
+ * tier are answered by the same rows: a path this run never read has no tier
+ * here, which is the honest answer rather than a guess from a nearby source.
+ *
+ * A path from an undescribed source answers null, and a surface printing it
+ * prints the citation alone — nothing here invents a standing nobody declared.
+ *
+ * The tier is read now, not as it stood when the deliverable was written, and
+ * that is the decision rather than an oversight. A reader is deciding what to
+ * do today, so what they need beside a citation is what that source is today:
+ * a plan since demoted to aspirational makes every claim resting on it weaker
+ * now, and a rendering that kept the old label would go on vouching for it.
+ * A retired source keeps its declaration here for the same reason — it still
+ * says what the document was. Nothing is lost by reading current state,
+ * because the declaration the dispatch was actually given is already on the
+ * work log, where history belongs.
+ */
+export function citedAuthorityFor(store: Store, run: string): (path: string) => string | null {
+  // A descriptor two sources both read, under two different declarations,
+  // answers null: asserting either tier would put the wrong standing beside a
+  // citation, and no tier at all is the honest rendering of a disagreement.
+  const tiers = new Map<string, string | null>();
+  const bySource = new Map<string, string | null>();
+  for (const read of sourceReadsFor(store, run)) {
+    if (!bySource.has(read.source)) {
+      const declaration = sourceDeclaration(store, read.source);
+      bySource.set(read.source, declaration ? authorityLabel(declaration.authority) : null);
+    }
+    const tier = bySource.get(read.source) ?? null;
+    if (tier === null) continue;
+    const held = tiers.get(read.descriptor);
+    if (held === undefined) tiers.set(read.descriptor, tier);
+    else if (held !== tier) tiers.set(read.descriptor, null);
+  }
+  return (path) => tiers.get(path) ?? null;
 }
 
 export interface RecordedReads {

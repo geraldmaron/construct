@@ -456,6 +456,102 @@ export function sourceShape(store: Store, source: string): SourceShape | null {
   return row ? { emphasis: row.emphasis as SurveyEmphasis, cap: Number(row.cap) } : null;
 }
 
+/**
+ * How far a source's contents may be trusted, as the user states it.
+ *
+ * A locator says where context lives and nothing about what it is worth. The
+ * same directory can hold the agreement everything else is measured against
+ * and a wish list somebody wrote in a planning week, and a dispatch handed both
+ * reads them as one kind of thing. These four are the distinctions a reader
+ * makes anyway:
+ *
+ *   source-of-truth  what it says is the record; a disagreement resolves here.
+ *   working          in progress, changing, true about where things stand.
+ *   aspirational     what someone wants to be true. Never evidence that it is.
+ *   archive          kept for history; describes how things were.
+ */
+export const SOURCE_AUTHORITIES = ['source-of-truth', 'working', 'aspirational', 'archive'] as const;
+
+export type SourceAuthority = (typeof SOURCE_AUTHORITIES)[number];
+
+/**
+ * What a user says one of their sources is: its standing, why it is here in
+ * their own words, and whether what it holds is sensitive.
+ *
+ * Every field is a statement its author made. Nothing infers one, and nothing
+ * writes one except at a user's word — a tier this system chose for somebody
+ * would be Construct's opinion wearing the user's authority, which is exactly
+ * what a reader trusting the label would have no way to see.
+ */
+export interface SourceDeclaration {
+  readonly authority: SourceAuthority;
+  /** Why this source matters here, in the user's own words. May be empty. */
+  readonly relevance: string;
+  /**
+   * What it holds does not travel: quoted only as far as a finding needs, and
+   * never carried into anything addressed outside the workspace. Standing
+   * consent for low-risk outward writes does not reach a sensitive source.
+   */
+  readonly sensitive: boolean;
+}
+
+/** An authority tier in the words a reader gets, wherever one is printed or spoken. */
+export function authorityLabel(authority: SourceAuthority): string {
+  return authority === 'source-of-truth' ? 'source of truth' : authority;
+}
+
+/**
+ * Record what a user says a source is. A statement its author may restate, so
+ * an upsert — and one row, so no surface can show a declaration that another
+ * surface has already moved past.
+ */
+export function setSourceDeclaration(
+  store: Store,
+  source: string,
+  declaration: SourceDeclaration,
+  at: string,
+): void {
+  if (!(SOURCE_AUTHORITIES as readonly string[]).includes(declaration.authority)) {
+    throw new Error(
+      `setSourceDeclaration: unknown authority "${declaration.authority}" ` +
+        `(tiers: ${SOURCE_AUTHORITIES.join(', ')})`,
+    );
+  }
+  const row = getSource(store, source);
+  if (!row) {
+    throw new Error(`setSourceDeclaration: no source ${source}`);
+  }
+  if (row.retiredAt !== null) {
+    throw new Error(
+      `setSourceDeclaration: source ${source} was retired at ${row.retiredAt} — ` +
+        'a retired source is done being described',
+    );
+  }
+  store.db
+    .prepare(
+      `INSERT INTO source_declarations (source, authority, relevance, sensitive, recorded_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (source) DO UPDATE SET authority = excluded.authority,
+         relevance = excluded.relevance, sensitive = excluded.sensitive,
+         recorded_at = excluded.recorded_at`,
+    )
+    .run(source, declaration.authority, declaration.relevance.trim(), declaration.sensitive ? 1 : 0, at);
+}
+
+/** What the user says this source is, or null when nobody has said. */
+export function sourceDeclaration(store: Store, source: string): SourceDeclaration | null {
+  const row = store.db
+    .prepare('SELECT authority, relevance, sensitive FROM source_declarations WHERE source = ?')
+    .get(source) as { authority: string; relevance: string; sensitive: number } | undefined;
+  return row
+    ? {
+        authority: row.authority as SourceAuthority,
+        relevance: row.relevance,
+        sensitive: row.sensitive === 1,
+      }
+    : null;
+}
+
 /** Record how this workspace engages. A setting, so an upsert. */
 export function setEngagementMode(
   store: Store,
@@ -773,6 +869,11 @@ export function decideProposal(
  * newest decision is a human approval, or the proposal is low-risk and the
  * workspace holds standing consent. High-risk never applies on consent alone —
  * that is the catastrophe class the hard gate owns.
+ *
+ * Standing consent is a judgment about a class of change, made before anyone
+ * knew which source it would land in. A source its owner declared sensitive is
+ * outside that judgment: it takes a decision made about this proposal, by a
+ * person, with the target in front of them.
  */
 export function markApplied(store: Store, proposal: string, reason: string, decidedAt: string): void {
   const record = getProposal(store, proposal);
@@ -784,15 +885,20 @@ export function markApplied(store: Store, proposal: string, reason: string, deci
   if (prior?.verdict === 'rejected') {
     throw new Error(`markApplied: ${proposal} was rejected; a rejection is not overridden by applying anyway`);
   }
+  const sensitive = sourceDeclaration(store, record.source)?.sensitive === true;
   let basis: ProposalDecision['basis'];
   if (prior?.verdict === 'approved') {
     basis = 'human-approval';
-  } else if (record.risk === 'low' && writeConsentAllowsLowRisk(store, record.workspace)) {
+  } else if (record.risk === 'low' && !sensitive && writeConsentAllowsLowRisk(store, record.workspace)) {
     basis = 'standing-consent';
   } else {
     throw new Error(
       `markApplied: ${proposal} has no authority to apply — it needs a human approval` +
-        (record.risk === 'low' ? ' or standing workspace consent' : ' (high-risk never applies on standing consent)'),
+        (sensitive
+          ? ' (its source is declared sensitive, which standing consent does not cover)'
+          : record.risk === 'low'
+            ? ' or standing workspace consent'
+            : ' (high-risk never applies on standing consent)'),
     );
   }
   store.db

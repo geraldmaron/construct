@@ -19,6 +19,7 @@ import { workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor, limitsFor } from '../kernel/run/accountability.ts';
 import { latestDraft } from '../kernel/run/promotion.ts';
 import { deliverableBody, renderClaim } from '../kernel/run/publish.ts';
+import { citedAuthorityFor } from '../kernel/run/sourcereads.ts';
 import { groundingSummary, groundRun } from '../kernel/run/groundpass.ts';
 import { loadOrCreateSecret } from '../kernel/capabilities/secretfile.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
@@ -247,7 +248,9 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
     }
 
     const draft = latestDraft(store, task.id)?.deliverable ?? task.result;
-    const answer = escapeForTerminal(renderClaim(deliverableBody(draft)));
+    const answer = escapeForTerminal(
+      renderClaim(deliverableBody(draft), citedAuthorityFor(store, started.runId)),
+    );
     process.stdout.write(`\n${answer.trimEnd()}\n`);
 
     const cost = task.spendReported ? `$${money(task.spend)}` : 'cost not reported';
