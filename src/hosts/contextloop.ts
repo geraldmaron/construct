@@ -176,11 +176,15 @@ export function challengerPrompt(delta: ProducedDelta, citedLine: string): strin
     'refute it, not to review it: find the strongest reason it should not be',
     'remembered, or concede that you cannot.',
     '',
-    `Proposed lesson (${delta.kind}, about ${delta.domain}):`,
-    delta.body,
+    `Proposed lesson (${delta.kind}, about ${escapeForPrompt(delta.domain)}):`,
+    escapeForPrompt(delta.body),
     '',
-    'The note line it cites as its evidence:',
-    citedLine,
+    // The cited line is lifted verbatim from a dropped note — attacker-authored
+    // ground. Escaped so it cannot forge a line, and prefixed the way the
+    // producer numbers the note, so a line that pastes a closing JSON frame
+    // reads as one numbered line of the note rather than the end of this prompt.
+    'The note line it cites as its evidence, prefixed as it stands in the note:',
+    numbered(escapeForPrompt(citedLine)),
     '',
     'Refute it if: the cited line does not actually support it; it generalizes',
     'one remark into a standing fact; it restates the line without teaching',
