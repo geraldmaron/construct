@@ -38,12 +38,12 @@ import { plan } from './plan.ts';
 import { audit, propose } from './propose.ts';
 import { consent, mode, settings, trust } from './settings.ts';
 import { standing } from './standing.ts';
-import { schedule } from './schedule.ts';
+import { resolveScheduleContext, schedule } from './schedule.ts';
 import { staff } from './staff.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
 import { init } from './init.ts';
-import { daemon } from './daemon.ts';
+import { daemon, daemonLiveHere } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
 
 /**
@@ -369,7 +369,7 @@ async function run(argv: string[]): Promise<number> {
     case 'standing':
       return standing(argv.slice(1));
     case 'schedule':
-      return schedule(argv.slice(1));
+      return schedule(argv.slice(1), resolveScheduleContext(), await daemonLiveHere());
     case 'mode':
       return mode(argv.slice(1));
     case 'consent':

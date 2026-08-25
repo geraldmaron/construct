@@ -24,9 +24,9 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { resolveScheduleDir } from '../kernel/paths.ts';
+import { resolvePaths, resolveScheduleDir } from '../kernel/paths.ts';
 import {
   ScheduleCadenceError,
   alwaysOnPlan,
@@ -67,6 +67,8 @@ export interface ScheduleContext {
   readonly nodePath: string;
   readonly cliPath: string;
   readonly uid: number;
+  /** Where a supervised daemon's own log lands; the state directory decides it. */
+  readonly logPath: string;
 }
 
 /** Why a schedule cannot be installed here, in words a reader can act on. */
@@ -127,7 +129,13 @@ export function resolveScheduleContext(
       return { problem: `${path} contains a character a scheduler entry cannot carry` };
     }
   }
-  return { platform, dir, nodePath, cliPath, uid };
+  // Named here rather than imported from the resident's own module, the same
+  // way cleanup names the daemon's leftovers: this file writes a supervisor
+  // entry that points at a file, and reaching into the module that raises the
+  // loop to learn a filename would put the one spawn path in this verb's
+  // import graph for nothing.
+  const logPath = join(resolvePaths(env).stateDir, 'daemon.log');
+  return { platform, dir, nodePath, cliPath, uid, logPath };
 }
 
 /** `--at=HH:MM`, or null when the caller named none. */
@@ -192,8 +200,30 @@ function installedAlwaysOnUnits(context: Pick<ScheduleContext, 'platform' | 'dir
   return alwaysOnUnitPaths(context.platform, context.dir).filter((path) => existsSync(path));
 }
 
-function scheduleInstall(flags: Record<string, string>, context: ScheduleContext): number {
+/**
+ * A calendar firing and a running on-demand daemon both sweep the same due
+ * work, so both can file the same standing outcome. The store admits exactly
+ * one of them — a firing is recorded in the same transaction that reads what
+ * is due — so this is a warning about wasted work rather than a refusal about
+ * lost work, and the calendar entry installs either way: the daemon is a
+ * process the user can stop whenever they like, and refusing to write a
+ * schedule because of it would tie a durable choice to a transient one. A dry
+ * run says it too: what a dry run is for is seeing what installing would mean.
+ */
+function warnDaemonLive(): void {
+  process.stderr.write(
+    'schedule: a daemon is running on this machine and already sweeps what comes due — ' +
+      'a calendar firing on top of it does the same work twice; stop it with: construct daemon stop\n',
+  );
+}
+
+function scheduleInstall(
+  flags: Record<string, string>,
+  context: ScheduleContext,
+  daemonLive: boolean,
+): number {
   if (flags['always-on'] !== undefined) return scheduleInstallAlwaysOn(flags, context);
+  if (daemonLive) warnDaemonLive();
   if (flags.every === undefined) {
     process.stderr.write(SCHEDULE_USAGE);
     return 2;
@@ -276,6 +306,7 @@ function scheduleInstallAlwaysOn(flags: Record<string, string>, context: Schedul
     nodePath: context.nodePath,
     cliPath: context.cliPath,
     uid: context.uid,
+    logPath: context.logPath,
   });
 
   if (flags['dry-run'] !== undefined) {
@@ -345,6 +376,7 @@ function scheduleUninstall(flags: Record<string, string>, context: ScheduleConte
         nodePath: context.nodePath,
         cliPath: context.cliPath,
         uid: context.uid,
+    logPath: context.logPath,
       }),
     );
   }
@@ -430,6 +462,12 @@ function scheduleStatus(context: ScheduleContext): number {
 export function schedule(
   argv: string[],
   context: ScheduleContext | ScheduleRefusal = resolveScheduleContext(),
+  /**
+   * Whether an on-demand daemon is live here. A fact the caller establishes,
+   * because deciding it means connecting to a socket and everything below is
+   * a function of what it was given.
+   */
+  daemonLive = false,
 ): number {
   const { flags, words } = splitFlags(argv);
   const sub = words[0];
@@ -447,7 +485,7 @@ export function schedule(
     return sub === 'status' || sub === undefined ? 0 : 1;
   }
 
-  if (sub === 'install') return scheduleInstall(flags, context);
+  if (sub === 'install') return scheduleInstall(flags, context, daemonLive);
   if (sub === 'uninstall') return scheduleUninstall(flags, context);
   return scheduleStatus(context);
 }

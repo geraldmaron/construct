@@ -26,7 +26,11 @@ interface Capture {
   readonly err: string;
 }
 
-function capture(argv: string[], context?: ScheduleContext | ScheduleRefusal): Capture {
+function capture(
+  argv: string[],
+  context?: ScheduleContext | ScheduleRefusal,
+  daemonLive = false,
+): Capture {
   const out: string[] = [];
   const err: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
@@ -40,7 +44,7 @@ function capture(argv: string[], context?: ScheduleContext | ScheduleRefusal): C
     return true;
   };
   try {
-    const code = schedule(argv, context);
+    const code = schedule(argv, context, daemonLive);
     return { code, out: out.join(''), err: err.join('') };
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
@@ -55,6 +59,7 @@ function context(platform: 'darwin' | 'linux', dir: string): ScheduleContext {
     nodePath: '/opt/node/bin/node',
     cliPath: '/opt/construct/bin/construct.mjs',
     uid: 501,
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
   };
 }
 
@@ -269,6 +274,7 @@ test('installing the calendar tier refuses when the always-on daemon is already 
     nodePath: '/opt/node/bin/node',
     cliPath: '/opt/construct/bin/construct.mjs',
     uid: 1000,
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
   });
   writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
 
@@ -291,6 +297,7 @@ test('status reports the always-on daemon distinctly from a calendar cadence', (
     nodePath: '/opt/node/bin/node',
     cliPath: '/opt/construct/bin/construct.mjs',
     uid: 501,
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
   });
   writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
 
@@ -313,6 +320,7 @@ test('uninstall removes an installed always-on daemon and reports its own unload
     nodePath: '/opt/node/bin/node',
     cliPath: '/opt/construct/bin/construct.mjs',
     uid: 1000,
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
   });
   writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
 
@@ -379,4 +387,21 @@ test('the always-on flag passes the CLI unknown-flag gate, not only the injected
     { env: { PATH: process.env.PATH ?? '', HOME: home }, cwd: process.cwd() },
   );
   assert.match(stdout, /always-on daemon/);
+});
+
+test('installing a calendar schedule while a daemon is live warns about the double work, and installs anyway', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'LaunchAgents');
+
+  const warned = capture(['install', '--every=6h', '--dry-run'], context('darwin', dir), true);
+  assert.strictEqual(warned.code, 0, 'a running daemon is a warning, not a refusal');
+  assert.match(warned.err, /a daemon is running on this machine/);
+  assert.match(warned.err, /construct daemon stop/);
+  assert.match(warned.out, /com\.construct\.schedule\.plist/, 'and the plan is still what it would install');
+
+  const quiet = capture(['install', '--every=6h', '--dry-run'], context('darwin', dir), false);
+  assert.strictEqual(quiet.err, '', 'with nothing resident there is nothing to say');
 });
