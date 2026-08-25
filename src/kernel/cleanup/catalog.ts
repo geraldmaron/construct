@@ -62,6 +62,15 @@ export interface CleanupTarget {
   readonly withImages?: boolean;
   readonly platform?: NodeJS.Platform;
   readonly spawn?: SpawnFn;
+  /**
+   * Whether a daemon is live on this machine's socket right now, decided by
+   * the caller before the catalog is built — connecting to a socket is I/O
+   * this synchronous catalog cannot do itself. Defaults to false, the safe
+   * assumption for every existing caller (doctor's litter scan, and every
+   * test) that never seeds a live daemon: absent a live daemon, its residue
+   * is ordinary residue.
+   */
+  readonly daemonLive?: boolean;
 }
 
 // Verified 2026-08-03 against construct-legacy's lib/mcp-catalog.json: the
@@ -143,6 +152,17 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
   const spawn = target.spawn ?? defaultSpawn;
   const pgContainerName = postgresContainerName(home);
   const launchAgentPlist = path.join(home, 'Library', 'LaunchAgents', `${PRESSURE_GUARD_LABEL}.plist`);
+  const daemonLive = target.daemonLive ?? false;
+  // Named here rather than imported from the resident's own module: this
+  // catalog is naming the daemon's leftovers in prose, the same way it names
+  // a Docker container or a LaunchAgent plist it did not create, never
+  // reaching into the module that actually raises the loop. The three names
+  // are stable filenames the resident writes under the state directory it
+  // already shares with every other machine-scope item here.
+  const socketPath = path.join(paths.stateDir, 'daemon.sock');
+  const logPath = path.join(paths.stateDir, 'daemon.log');
+  const rotatedLogPath = `${logPath}.1`;
+  const pidPath = path.join(paths.stateDir, 'daemon.pid');
 
   const dotConstruct = path.join(cwd, '.construct');
   const launcherDir = path.join(dotConstruct, 'launcher');
@@ -250,12 +270,70 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       risk: 'auto',
       label: `${rel(home, paths.stateDir)} (workspace, vector index, daemon/log state)`,
       detect: () => existsAny(paths.stateDir),
+      // A live daemon binds its socket inside this same directory. Wholesale
+      // removal here would delete a live socket out from under it — the exact
+      // thing the daemon-specific entries below refuse to do — so a live
+      // daemon keeps the whole directory, the same as the successor's store.
       describe: () =>
-        successorOwns(paths.stateDir)
-          ? `KEPT: ${rel(home, paths.stateDir)} belongs to the Construct that is running, not to the predecessor.`
-          : `Removes ${rel(home, paths.stateDir)}. Regenerated on next use.`,
-      remove: () => removeUnlessSuccessorOwns(paths.stateDir),
-      keeps: () => successorOwns(paths.stateDir),
+        daemonLive
+          ? `KEPT: a live daemon is serving from ${rel(home, paths.stateDir)} — stop it first with \`construct daemon stop\`.`
+          : successorOwns(paths.stateDir)
+            ? `KEPT: ${rel(home, paths.stateDir)} belongs to the Construct that is running, not to the predecessor.`
+            : `Removes ${rel(home, paths.stateDir)}. Regenerated on next use.`,
+      remove: () =>
+        daemonLive
+          ? 'kept — a live daemon owns this directory; stop it first with `construct daemon stop`'
+          : removeUnlessSuccessorOwns(paths.stateDir),
+      keeps: () => daemonLive || successorOwns(paths.stateDir),
+    },
+    {
+      id: 'machine-daemon-socket',
+      scope: 'machine',
+      risk: 'auto',
+      label: `${rel(home, socketPath)} (stale daemon socket)`,
+      // Only a stale socket is ever offered: a live daemon's identity IS its
+      // socket, so detecting one here and offering it for removal would be
+      // offering to sever a daemon that is actually running. `daemonLive` is
+      // decided by the caller with a real connect attempt before the catalog
+      // is built, the same probe doctor uses.
+      detect: () => existsAny(socketPath) && !daemonLive,
+      describe: () =>
+        `Removes the daemon's socket file at ${rel(home, socketPath)}. Nothing answers on it — ` +
+        'the socket outlived the process that bound it. A live daemon\'s socket is never offered here.',
+      remove: () => (removePath(socketPath) ? 'removed (stale socket reaped)' : 'nothing to remove'),
+    },
+    {
+      id: 'machine-daemon-log',
+      scope: 'machine',
+      risk: 'auto',
+      label: `${rel(home, logPath)} (+ .1, daemon log)`,
+      // Excluded while live for the same reason as the socket: the current
+      // log file is open and being written by the running daemon, and
+      // unlinking an open file out from under it is confusing residue-cleanup
+      // behavior even though the write itself would keep succeeding.
+      detect: () => !daemonLive && (existsAny(logPath) || existsAny(rotatedLogPath)),
+      describe: () => 'Removes the daemon\'s own log file(s). Regenerated the next time a daemon runs.',
+      remove: () => {
+        const removed: string[] = [];
+        if (removePath(logPath)) removed.push(rel(home, logPath));
+        if (removePath(rotatedLogPath)) removed.push(rel(home, rotatedLogPath));
+        return removed.length > 0 ? `removed ${removed.join(', ')}` : 'nothing to remove';
+      },
+    },
+    {
+      id: 'machine-daemon-pid',
+      scope: 'machine',
+      risk: 'auto',
+      label: `${rel(home, pidPath)} (advisory daemon pid file)`,
+      // Advisory only — daemon.sock is the lock, this file is read by nobody
+      // but a person running `ps`. Excluded while live so the file a person
+      // is currently cross-referencing against `ps` does not disappear from
+      // under a running daemon.
+      detect: () => !daemonLive && existsAny(pidPath),
+      describe: () =>
+        'Removes the advisory pid file naming which process a daemon start believed it spawned. ' +
+        'Purely informational — the socket, not this file, is the lock.',
+      remove: () => (removePath(pidPath) ? 'removed' : 'nothing to remove'),
     },
     {
       id: 'machine-data',

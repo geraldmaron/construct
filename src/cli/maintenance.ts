@@ -15,6 +15,7 @@ import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
 import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
+import { probeDaemon } from './daemon.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
@@ -59,7 +60,7 @@ function humanizeAge(ms: number): string {
   return `${String(Math.max(1, Math.floor(ms / (60 * 1000))))}m`;
 }
 
-export function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = process.env): number {
+export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = process.env): Promise<number> {
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
   checks.push({
@@ -164,6 +165,34 @@ export function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = pro
   // this check asks the platform nothing — it reads the file and says what
   // cadence that file states.
   checks.push({ name: 'schedule', ok: true, detail: scheduleReport(process.platform, env) });
+
+  // Whether the opt-in resident is up, and if not, whether that absence is the
+  // designed state or a stale socket somebody left behind. All three states
+  // are reported, never gated: "not running" is what a healthy install looks
+  // like by default, and a stale socket is residue for `construct cleanup` to
+  // reap, not a broken install for doctor to fail on.
+  const daemonProbe = await probeDaemon(paths);
+  if (daemonProbe.state === 'absent') {
+    checks.push({
+      name: 'daemon',
+      ok: true,
+      detail: 'not running (designed state) — start one with: construct daemon start',
+    });
+  } else if (daemonProbe.state === 'stale') {
+    checks.push({
+      name: 'daemon',
+      ok: true,
+      detail:
+        `STALE SOCKET at ${daemonProbe.socketPath} — nothing answers on it — ` +
+        'recover with: construct daemon start (or run construct cleanup to reap it)',
+    });
+  } else {
+    checks.push({
+      name: 'daemon',
+      ok: true,
+      detail: `running (version ${daemonProbe.reply.version}), serving ${daemonProbe.reply.storePath}`,
+    });
+  }
 
   // Predecessor markers in the project tree: reported like host presence,
   // not gated — finding one says nothing about whether this install is
@@ -280,15 +309,24 @@ export function parseCleanupArgs(argv: string[]): CleanupArgs {
 // `spawnOverride` exists only so tests can fake out docker/launchctl instead
 // of depending on the real machine's ambient state; production callers never
 // pass it.
-export function cleanup(argv: string[], spawnOverride?: SpawnFn): number {
+//
+// Async because knowing whether a daemon is live means connecting to its
+// socket, and the catalog itself stays synchronous — every other item's
+// detect()/remove() is a plain filesystem or spawnSync check, and forcing
+// all of them through a Promise to accommodate this one connect would be a
+// much larger, riskier change than deciding liveness once, up front, and
+// handing the catalog the answer.
+export async function cleanup(argv: string[], spawnOverride?: SpawnFn): Promise<number> {
   const args = parseCleanupArgs(argv);
   const paths = resolvePaths(process.env, args.home);
+  const daemonLive = (await probeDaemon(paths)).state === 'live';
   const catalog = buildCleanupCatalog({
     cwd: args.cwd,
     home: args.home,
     paths,
     withImages: args.withImages,
     spawn: spawnOverride,
+    daemonLive,
   });
   const detected = detectedItems(catalog, args);
 

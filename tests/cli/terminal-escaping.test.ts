@@ -254,7 +254,7 @@ test('a drift flag cannot erase the line Construct printed above it', async () =
   }
 });
 
-test("doctor's detail column prints what it found, and cannot be written by it", () => {
+test("doctor's detail column prints what it found, and cannot be written by it", async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-escape-doctor-'));
   // A directory whose own name carries an escape sequence: doctor reports the
   // paths it resolved, and a path is not text Construct wrote.
@@ -273,7 +273,7 @@ test("doctor's detail column prints what it found, and cannot be written by it",
     const chunks: string[] = [];
     (process.stdout as { write: unknown }).write = (chunk: string) => (chunks.push(String(chunk)), true);
     try {
-      doctor(root);
+      await doctor(root);
     } finally {
       (process.stdout as { write: unknown }).write = realOut;
     }
