@@ -38,6 +38,7 @@ import { audit, propose } from './propose.ts';
 import { consent, mode, settings } from './settings.ts';
 import { standing } from './standing.ts';
 import { staff } from './staff.ts';
+import { wire } from './wire.ts';
 
 /**
  * The surface, re-exported. Tests and any other in-process caller reach a
@@ -75,6 +76,7 @@ export { audit, propose } from './propose.ts';
 export { consent, mode, settings } from './settings.ts';
 export { standing } from './standing.ts';
 export { staff } from './staff.ts';
+export { wire } from './wire.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.
@@ -88,7 +90,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
   'settings', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
-  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'doctor', 'backup',
+  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'doctor', 'backup',
   'cleanup', 'version', 'help',
 ]);
 
@@ -189,6 +191,8 @@ async function run(argv: string[]): Promise<number> {
       return lessons(argv.slice(1));
     case 'serve':
       return serve();
+    case 'wire':
+      return wire(argv.slice(1));
     case 'role-serve':
       return roleServe();
     case 'revoke':
