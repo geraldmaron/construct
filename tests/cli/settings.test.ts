@@ -337,9 +337,15 @@ test('construct settings prints every value with the layer it came from', async 
   }
   const text = out.join('');
   assert.equal(code, 0);
-  assert.match(text, /host\s+claude\s+\(global file\)/);
-  assert.match(text, /locale\s+en-US\s+\(built-in default\)/);
-  assert.match(text, /groundHints\s+\(none\)\s+\(built-in default\)/);
+  // File-backed rows are labeled `file, <layer>`, so the store the value lives
+  // in and the layer within it are both legible.
+  assert.match(text, /host\s+claude\s+\(file, global file\)/);
+  assert.match(text, /locale\s+en-US\s+\(file, built-in default\)/);
+  assert.match(text, /groundHints\s+\(none\)\s+\(file, built-in default\)/);
+  // The store-backed settings appear in the same view, labeled `store, workspace
+  // <name>` — the built-in defaults with nothing set.
+  assert.match(text, /mode\s+team\s+\(store, workspace default\)/);
+  assert.match(text, /consent\s+off\s+\(store, workspace default\)/);
 });
 
 test('a malformed project file is a real error even when it would not be admitted', () => {
@@ -350,5 +356,135 @@ test('a malformed project file is a real error even when it would not be admitte
     assert.throws(() => resolveSettings(inputs(b)), SettingsError);
   } finally {
     b.cleanup();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// construct settings set — one place to persist a change, whichever store a
+// setting lives in. A file-backed key writes the global file (no ratification);
+// a store-backed key writes the store the mode/consent verbs read.
+// ---------------------------------------------------------------------------
+
+interface CliResult {
+  readonly code: number;
+  readonly out: string;
+  readonly err: string;
+}
+
+/** Run the CLI with every XDG root redirected into a scratch tmpdir, from a
+ * scratch working directory under no repository — sterile by construction. */
+async function runIn(cwd: string, xdg: string, argv: string[]): Promise<CliResult> {
+  const savedCwd = process.cwd();
+  const savedEnv: Record<string, string | undefined> = {};
+  for (const key of ['XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_DATA_HOME', 'XDG_CACHE_HOME', 'CONSTRUCT_HOST', 'HOME']) {
+    savedEnv[key] = process.env[key];
+  }
+  process.env.XDG_CONFIG_HOME = join(xdg, 'config');
+  process.env.XDG_STATE_HOME = join(xdg, 'state');
+  process.env.XDG_DATA_HOME = join(xdg, 'data');
+  process.env.XDG_CACHE_HOME = join(xdg, 'cache');
+  process.env.HOME = xdg;
+  delete process.env.CONSTRUCT_HOST;
+  const out: string[] = [];
+  const err: string[] = [];
+  const realOut = process.stdout.write.bind(process.stdout);
+  const realErr = process.stderr.write.bind(process.stderr);
+  (process.stdout as { write: unknown }).write = (c: string) => (out.push(String(c)), true);
+  (process.stderr as { write: unknown }).write = (c: string) => (err.push(String(c)), true);
+  process.chdir(cwd);
+  let code: number;
+  try {
+    code = await main(argv);
+  } finally {
+    process.chdir(savedCwd);
+    (process.stdout as { write: unknown }).write = realOut;
+    (process.stderr as { write: unknown }).write = realErr;
+    for (const [key, value] of Object.entries(savedEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+  return { code, out: out.join(''), err: err.join('') };
+}
+
+test('settings set writes a file-backed key to the global file and it round-trips into the view', async () => {
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-settings-set-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'construct-settings-cwd-'));
+  try {
+    const set = await runIn(cwd, xdg, ['settings', 'set', 'host', 'claude']);
+    assert.equal(set.code, 0);
+    assert.match(set.out, /host = claude/);
+    assert.match(set.out, /global settings file/);
+    assert.match(set.out, /needs no ratification/);
+
+    // The value it wrote is now the effective host, sourced from the global file.
+    const shown = await runIn(cwd, xdg, ['settings']);
+    assert.match(shown.out, /host\s+claude\s+\(file, global file\)/);
+  } finally {
+    rmSync(xdg, { recursive: true, force: true });
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('settings set writes a store-backed key, and the mode/consent verbs read the same value', async () => {
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-settings-set-store-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'construct-settings-cwd-'));
+  try {
+    assert.equal((await runIn(cwd, xdg, ['settings', 'set', 'mode', 'seat'])).code, 0);
+    assert.equal((await runIn(cwd, xdg, ['settings', 'set', 'consent', 'on'])).code, 0);
+
+    // The unified view shows the store-backed values it just set.
+    const shown = await runIn(cwd, xdg, ['settings']);
+    assert.match(shown.out, /mode\s+seat\s+\(store, workspace default\)/);
+    assert.match(shown.out, /consent\s+on\s+\(store, workspace default\)/);
+
+    // The verbs that own those settings read the same rows — set is an alias
+    // into their machinery, not a second store.
+    assert.match((await runIn(cwd, xdg, ['mode'])).out, /seat/);
+    assert.match((await runIn(cwd, xdg, ['consent'])).out, /standing consent on/);
+  } finally {
+    rmSync(xdg, { recursive: true, force: true });
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('settings set validates a file value the same way a file would, refusing a host that is a path', async () => {
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-settings-set-bad-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'construct-settings-cwd-'));
+  try {
+    const bad = await runIn(cwd, xdg, ['settings', 'set', 'host', './evil.sh']);
+    assert.equal(bad.code, 2);
+    assert.match(bad.err, /not a path/);
+  } finally {
+    rmSync(xdg, { recursive: true, force: true });
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('settings set refuses a project scope, pointing at where trust is granted', async () => {
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-settings-set-scope-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'construct-settings-cwd-'));
+  try {
+    const refused = await runIn(cwd, xdg, ['settings', 'set', 'host', 'claude', '--scope=project']);
+    assert.equal(refused.code, 2);
+    assert.match(refused.err, /only --scope=global is supported/);
+    assert.match(refused.err, /construct trust --ratify/);
+  } finally {
+    rmSync(xdg, { recursive: true, force: true });
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('settings set on an unknown key names the file and store settings it could be', async () => {
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-settings-set-unknown-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'construct-settings-cwd-'));
+  try {
+    const unknown = await runIn(cwd, xdg, ['settings', 'set', 'notAKey', 'x']);
+    assert.equal(unknown.code, 2);
+    assert.match(unknown.err, /not a setting/);
+    assert.match(unknown.err, /mode, consent/);
+  } finally {
+    rmSync(xdg, { recursive: true, force: true });
+    rmSync(cwd, { recursive: true, force: true });
   }
 });

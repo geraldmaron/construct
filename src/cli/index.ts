@@ -154,7 +154,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
   consent: { gloss: 'show or set standing consent for low-risk changes', flags: ['workspace', 'set'] },
-  settings: { gloss: 'show every file-backed preference and its source', flags: [] },
+  settings: { gloss: 'show every setting and where it lives, or set one', flags: ['scope', 'workspace'] },
   trust: { gloss: 'trust or withdraw a project settings file', flags: ['ratify', 'revoke'] },
   staff: { gloss: 'list the staff, or the staff a run drew', flags: ['file', 'run'] },
   skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
