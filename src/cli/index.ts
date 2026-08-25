@@ -155,7 +155,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
   standing: { gloss: 'set and fire standing outcomes on a schedule', flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace'] },
-  schedule: { gloss: 'install the platform timer that fires what is due', flags: ['every', 'at', 'dry-run'] },
+  schedule: { gloss: 'install the platform timer that fires what is due', flags: ['every', 'at', 'always-on', 'dry-run'] },
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
   consent: { gloss: 'show or set standing consent for low-risk changes', flags: ['workspace', 'set'] },
