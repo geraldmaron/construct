@@ -61,8 +61,10 @@ const DAEMON_USAGE =
   'usage: construct daemon start [--idle-exit=<seconds>] [--every=<seconds>]\n' +
   '       construct daemon status\n' +
   '       construct daemon stop\n' +
-  '       construct daemon run [--foreground] [--idle-exit=<seconds>] [--every=<seconds>]\n' +
-  '         (residency is opt-in; nothing raises this but these verbs)\n';
+  '       construct daemon run [--foreground] [--idle-exit=<seconds>|never] [--every=<seconds>]\n' +
+  '         (residency is opt-in; nothing raises this but these verbs.\n' +
+  '          --idle-exit=never is for a platform supervisor to run; a detached\n' +
+  '          start always keeps its idle clock)\n';
 
 /** How long a start waits for the daemon it spawned to answer on the socket. */
 const START_TIMEOUT_MS = 10_000;
@@ -82,6 +84,62 @@ function positiveSeconds(raw: string | undefined, fallback: number, floor: numbe
   const value = Number(raw);
   if (!Number.isFinite(value) || value <= 0) return null;
   return Math.max(value, floor);
+}
+
+/** What `--idle-exit=never` spells on the wire between the unit and the loop. */
+export const IDLE_EXIT_NEVER = 'never';
+
+/**
+ * The quiet period, or the word that turns the clock off. Null is a refusal,
+ * and the caller decides whether `never` is one: an entry a supervisor owns
+ * may name it, a detached start may not, because the idle clock is the only
+ * thing that reaps a start nobody is accountable for.
+ */
+function idleExitSeconds(
+  raw: string | undefined,
+  fallback: number,
+  floor: number,
+  allowNever: boolean,
+): number | null | 'refused' {
+  if (raw === IDLE_EXIT_NEVER) return allowNever ? null : 'refused';
+  const value = positiveSeconds(raw, fallback, floor);
+  return value === null ? 'refused' : value;
+}
+
+/**
+ * What a detached daemon is given to run with. An allowlist, not the parent's
+ * environment: this process may hold credentials a person exported for one
+ * command, and a resident that inherits them holds them for as long as it
+ * lives. What survives is what the child genuinely needs — where to find
+ * binaries, whose home and state directories to resolve, which store the
+ * project asked for, and the heap cap — and every other name, secret or not,
+ * is left behind.
+ */
+export function daemonChildEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const carried = [
+    'PATH',
+    'HOME',
+    'TMPDIR',
+    'LANG',
+    'LC_ALL',
+    // kernel/paths.ts reads exactly these to place the state, data, config and
+    // cache directories; without them a detached daemon resolves a different
+    // store than the person who started it.
+    'XDG_CONFIG_HOME',
+    'XDG_STATE_HOME',
+    'XDG_DATA_HOME',
+    'XDG_CACHE_HOME',
+    // Whether this project keeps its store in the repository rather than in
+    // the home directory: the one setting that moves the store itself.
+    'CONSTRUCT_STATE',
+  ];
+  const child: NodeJS.ProcessEnv = {};
+  for (const key of carried) {
+    const value = env[key];
+    if (value !== undefined) child[key] = value;
+  }
+  child.NODE_OPTIONS = `${env.NODE_OPTIONS ?? ''} --max-old-space-size=256`.trim();
+  return child;
 }
 
 /**
@@ -123,18 +181,32 @@ async function talk(
         }
       }
     });
+    // Nothing listening is the designed state, not a failure to report — and
+    // neither is a daemon that went while this exchange was in flight. An
+    // install that replaced the binary leaves an older daemon that reads this
+    // build's hello, retires, and takes the connection with it; what the
+    // client wants said about that is that nothing is running, because
+    // nothing is.
+    const gone = new Set(['ENOENT', 'ECONNREFUSED', 'EPIPE', 'ECONNRESET']);
     socket.on('error', (error: NodeJS.ErrnoException) => {
       if (settled) return;
       settled = true;
-      // Nothing listening is the designed state, not a failure to report.
-      if (error.code === 'ENOENT' || error.code === 'ECONNREFUSED') resolve(null);
+      if (error.code !== undefined && gone.has(error.code)) resolve(null);
       else reject(error);
     });
     socket.on('close', () => {
       if (settled) return;
       settled = true;
-      if (hello === null || reply === null) {
+      // A daemon that greeted and then went is a daemon that read our hello,
+      // found itself older than this build, and retired — which is the design
+      // working. Nothing is running afterwards, and that is the same answer as
+      // nothing having been running at all.
+      if (hello === null) {
         reject(new Error('the daemon hung up before answering'));
+        return;
+      }
+      if (reply === null) {
+        resolve(null);
         return;
       }
       resolve({ hello, reply });
@@ -179,6 +251,87 @@ export async function probeDaemon(paths: Paths): Promise<DaemonProbe> {
   return { state: 'live', hello: answer.hello, reply: answer.reply };
 }
 
+/**
+ * What a start finds when something already owns the socket.
+ *
+ * A bare connect answers "somebody is there" and nothing else, which is the
+ * wrong question on a machine that updates: an install that replaced the
+ * binary leaves an older daemon holding the socket, and only the version
+ * handshake a real request carries can see it. So a start talks rather than
+ * connects, and the three answers it can get are the three different things it
+ * must do.
+ */
+export type RunningDaemon =
+  | { readonly kind: 'none' }
+  | { readonly kind: 'already-running' }
+  | { readonly kind: 'retired'; readonly notice: string }
+  | { readonly kind: 'serving-elsewhere'; readonly notice: string };
+
+/**
+ * What a start says when the daemon it found is serving a different store than
+ * the directory it was typed in resolves. Two stores want two daemons and the
+ * socket only admits one, so this is stated and nothing is raised — a second
+ * daemon would bind nothing, and attaching this repository's work to the other
+ * store's resident would file it where nobody is looking for it.
+ */
+export function storeMismatchNotice(daemonStore: string, thisStore: string): string | null {
+  if (daemonStore === thisStore) return null;
+  return (
+    `daemon: a daemon is running but serves ${daemonStore}; this repository's store is ${thisStore}\n` +
+    '  stop it where it was started (construct daemon stop), or run this repository\'s\n' +
+    '  due work directly with: construct standing --due && construct watch --due\n'
+  );
+}
+
+/** What a client says when the daemon it reached turned out to be an older build. */
+function retiredNotice(daemonVersion: string): string {
+  return (
+    `the daemon on this machine was ${daemonVersion} and this build is ${packageVersion()} — ` +
+    'it retired itself; raising the current one.\n'
+  );
+}
+
+async function inspectRunningDaemon(socketPath: string): Promise<RunningDaemon> {
+  let answer: Awaited<ReturnType<typeof talk>>;
+  try {
+    answer = await talk(socketPath, { cmd: 'status' });
+  } catch {
+    // Something is on the socket that will not hold a conversation. The bind
+    // itself is the arbiter from here: it finds a live owner or clears a dead
+    // one, and neither outcome is decided by guessing at this.
+    return { kind: 'none' };
+  }
+  if (answer === null || !answer.reply.ok || !('version' in answer.reply)) return { kind: 'none' };
+
+  if (compareVersions(packageVersion(), answer.reply.version) > 0) {
+    // The hello this request carried already told it so; it answers this one
+    // request and exits. Waiting for the socket to go is what makes the
+    // respawn below a start rather than a race against a dying daemon.
+    await waitForSocketGone(socketPath, Date.now() + START_TIMEOUT_MS);
+    return { kind: 'retired', notice: retiredNotice(answer.reply.version) };
+  }
+
+  let thisStore: string;
+  try {
+    thisStore = resolveStoreLocation(process.cwd(), process.env).path;
+  } catch {
+    // Where this directory's store would be is unanswerable, so there is no
+    // mismatch to claim; the live daemon is simply already running.
+    return { kind: 'already-running' };
+  }
+  const mismatch = storeMismatchNotice(answer.reply.storePath, thisStore);
+  if (mismatch !== null) return { kind: 'serving-elsewhere', notice: mismatch };
+  return { kind: 'already-running' };
+}
+
+/**
+ * Whether a daemon is live on this machine right now, for a caller that only
+ * needs the fact and cannot do I/O of its own to get it.
+ */
+export async function daemonLiveHere(): Promise<boolean> {
+  return (await probeDaemon(resolvePaths())).state === 'live';
+}
+
 /** Where the daemon's own state lives, computed once per invocation. */
 function places(): { readonly socket: string; readonly log: string; readonly pid: string } {
   const paths = resolvePaths();
@@ -217,6 +370,14 @@ async function waitForSocketGone(socketPath: string, deadline: number): Promise<
  * ceiling is the failure that shows up as a machine, not as a log line.
  */
 async function daemonStart(flags: Record<string, string>): Promise<number> {
+  if (flags['idle-exit'] === IDLE_EXIT_NEVER) {
+    process.stderr.write(
+      'daemon: a detached start keeps its idle clock — nothing else would ever reap it.\n' +
+        '  for a daemon that never exits on its own, install the supervised one:\n' +
+        '    construct schedule install --always-on\n',
+    );
+    return 2;
+  }
   const idle = positiveSeconds(flags['idle-exit'], DEFAULT_IDLE_EXIT_SECONDS, IDLE_EXIT_FLOOR_SECONDS);
   const every = positiveSeconds(flags.every, DEFAULT_SWEEP_INTERVAL_MS / 1000, 1);
   if (idle === null || every === null) {
@@ -226,13 +387,20 @@ async function daemonStart(flags: Record<string, string>): Promise<number> {
 
   ensurePlaces();
   const where = places();
-  if (await daemonIsLive(where.socket)) {
+  const standing = await inspectRunningDaemon(where.socket);
+  if (standing.kind === 'serving-elsewhere') {
+    process.stderr.write(standing.notice);
+    return 1;
+  }
+  if (standing.kind === 'already-running') {
     process.stdout.write(`already running, on ${where.socket}\n  read it with: construct daemon status\n`);
     return 0;
   }
+  if (standing.kind === 'retired') {
+    process.stdout.write(standing.notice);
+  }
 
   const logFd = openSync(where.log, 'a', 0o600);
-  const nodeOptions = `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=256`.trim();
   const child = spawn(
     process.execPath,
     [
@@ -248,7 +416,7 @@ async function daemonStart(flags: Record<string, string>): Promise<number> {
       // The daemon serves the store this working directory resolves, which is
       // the one the person asking for it is working in.
       cwd: process.cwd(),
-      env: { ...process.env, NODE_OPTIONS: nodeOptions },
+      env: daemonChildEnv(process.env),
     },
   );
   child.unref();
@@ -279,10 +447,14 @@ function describeStatus(reply: StatusReply): string {
     reply.standingDue === null || reply.watchDue === null
       ? '  due: unavailable (the store could not be read)\n'
       : `  due: ${String(reply.standingDue)} standing, ${String(reply.watchDue)} watch\n`;
+  const idle =
+    reply.idleExitSeconds === null
+      ? `  uptime: ${String(reply.uptimeSeconds)}s; idle ${String(reply.idleSeconds)}s, and it never exits on idle — a supervisor owns it\n`
+      : `  uptime: ${String(reply.uptimeSeconds)}s; idle ${String(reply.idleSeconds)}s of ` +
+        `${String(reply.idleExitSeconds)}s before it exits itself\n`;
   return (
     `running (version ${reply.version})\n` +
-    `  uptime: ${String(reply.uptimeSeconds)}s; idle ${String(reply.idleSeconds)}s of ` +
-    `${String(reply.idleExitSeconds)}s before it exits itself\n` +
+    idle +
     `  sweeps: ${String(reply.sweeps)}\n` +
     `  store: ${reply.storePath}\n` +
     counts
@@ -377,7 +549,17 @@ function sweepOnce(): SweepOutcome {
           `${String(sweep.raised)} raised`,
       );
     }
-    const { filed, unfinished } = fileDueStanding(store, now);
+    // The filing's own narration is written for a terminal, and the daemon has
+    // none: its stdout is a logfile whose every other line is timestamped.
+    // Captured here and folded into the log's own lines rather than left to
+    // land between them unstamped.
+    const narration: string[] = [];
+    const { filed, unfinished } = fileDueStanding(store, now, (text) => {
+      for (const line of text.split('\n')) {
+        if (line.trim() !== '') narration.push(line.trim());
+      }
+    });
+    lines.push(...narration);
     for (const item of filed) {
       lines.push(
         `standing ${item.standing} came due; filed ${item.run} — nothing spent here, ` +
@@ -415,14 +597,17 @@ function dueCounts(): DaemonCounts {
  */
 async function daemonRun(flags: Record<string, string>): Promise<number> {
   const foreground = flags.foreground !== undefined;
-  const idle = positiveSeconds(
+  const idle = idleExitSeconds(
     flags['idle-exit'],
     DEFAULT_IDLE_EXIT_SECONDS,
     foreground ? 0 : IDLE_EXIT_FLOOR_SECONDS,
+    true,
   );
   const every = positiveSeconds(flags.every, DEFAULT_SWEEP_INTERVAL_MS / 1000, foreground ? 0 : 1);
-  if (idle === null || every === null) {
-    process.stderr.write('daemon: --idle-exit and --every take a positive number of seconds\n');
+  if (idle === 'refused' || every === null) {
+    process.stderr.write(
+      'daemon: --every takes a positive number of seconds, and --idle-exit takes one or the word never\n',
+    );
     return 2;
   }
 
