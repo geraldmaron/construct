@@ -55,6 +55,30 @@ export function resolveSkillsDir(
 }
 
 /**
+ * Where the platform's own scheduler reads a per-user entry from: launchd's
+ * LaunchAgents directory on macOS, systemd's user unit directory on Linux.
+ * Null on a platform with no user-level scheduler this tool writes to.
+ *
+ * Both are conventions those platforms document, cited here rather than
+ * derived, and both are read through this module for the same reason every
+ * other home-rooted path is: a test that redirects HOME redirects this too.
+ * systemd reads its user units under `$XDG_CONFIG_HOME/systemd/user`, so the
+ * variable is honored; launchd names an absolute path under home and has no
+ * equivalent.
+ */
+export function resolveScheduleDir(
+  platform: NodeJS.Platform,
+  env: PathsEnv = process.env,
+  home: string = env.HOME ?? homedir(),
+): string | null {
+  if (platform === 'darwin') return join(home, 'Library', 'LaunchAgents');
+  if (platform === 'linux') {
+    return join(env.XDG_CONFIG_HOME ?? join(home, '.config'), 'systemd', 'user');
+  }
+  return null;
+}
+
+/**
  * The repo-local root for the sqlite store when a ratified project settings
  * file declares `state: local`: inside the repository rather than under home.
  * Takes the repository root as an argument rather than discovering one —
