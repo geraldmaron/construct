@@ -139,7 +139,10 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   },
   propose: {
     gloss: 'propose an outward change from a run',
-    flags: [...HOST_FLAGS, 'run', 'source', 'task', 'workspace', 'dry-run', 'action', 'as', 'because', 'document', 'from', 'kind', 'live', 'note', 'to'],
+    flags: [
+      ...HOST_FLAGS, 'run', 'source', 'task', 'workspace', 'dry-run', 'action', 'as', 'because', 'document', 'from', 'kind', 'live', 'note', 'to',
+      'was', 'was-file', 'at', 'at-file', 'now', 'now-file',
+    ],
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
   standing: { gloss: 'set and fire standing outcomes on a schedule', flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace'] },
@@ -163,7 +166,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   serve: { gloss: 'put the spine inside your host over MCP', flags: [] },
   wire: { gloss: 'wire the MCP entry into your host’s config', flags: [] },
   doctor: { gloss: 'report host presence and store health', flags: [] },
-  backup: { gloss: 'copy the store into a directory outside it', flags: [] },
+  backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
   version: { gloss: 'print the version and tuning stamp', flags: [] },
