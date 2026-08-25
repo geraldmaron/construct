@@ -400,6 +400,50 @@ test('installing what is already there rewrites nothing and says the copy is cur
   }
 });
 
+test('installing over a hand-edited copy is refused without --force, and the edit survives', async () => {
+  const name = shipped()[0];
+  const result = await run((root) => {
+    const dir = join(root, 'host');
+    return [['skills', 'install', name, `--dir=${dir}`]];
+  });
+  try {
+    const dir = join(result.root, 'host');
+    const installed = join(dir, name, 'SKILL.md');
+    writeFileSync(installed, `${readFileSync(installed, 'utf8')}\nhand-edited\n`);
+    const edited = checksum(installed);
+
+    const refused = await run(() => [['skills', 'install', name, `--dir=${dir}`]]);
+    rmSync(refused.root, { recursive: true, force: true });
+    assert.equal(refused.code, 1);
+    assert.match(refused.err, /differs from this checkout's copy/);
+    assert.match(refused.err, /--force/);
+    assert.equal(checksum(installed), edited, 'the edit was not overwritten');
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('--force overwrites a hand-edited copy with a fresh, byte-identical one', async () => {
+  const name = shipped()[0];
+  const result = await run((root) => {
+    const dir = join(root, 'host');
+    return [['skills', 'install', name, `--dir=${dir}`]];
+  });
+  try {
+    const dir = join(result.root, 'host');
+    const installed = join(dir, name, 'SKILL.md');
+    writeFileSync(installed, `${readFileSync(installed, 'utf8')}\nhand-edited\n`);
+
+    const forced = await run(() => [['skills', 'install', name, `--dir=${dir}`, '--force']]);
+    rmSync(forced.root, { recursive: true, force: true });
+    assert.equal(forced.code, 0);
+    assert.match(forced.out, new RegExp(`replaced\\s+${name}`));
+    assert.equal(checksum(installed), checksum(join(SOURCE_DIR, name, 'SKILL.md')));
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
 test('a symlink planted at the install target is refused, never written through', async () => {
   const name = shipped()[0];
   const result = await run((root) => {
