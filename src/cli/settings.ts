@@ -28,17 +28,20 @@ import {
 import type { Ratification } from '../kernel/store/ratifications.ts';
 import { resolvePaths } from '../kernel/paths.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
-import { now, withStore } from './runtime.ts';
+import { now, withHomeStore, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
 import {
   discoverProjectSettings,
   fileValuesToObject,
+  isPreferenceKey,
+  parseFileSettingScalar,
   PREFERENCE_KEYS,
   projectTrustNote,
   renderFileValue,
   resolveSettings,
   resolveSettingValue,
   SettingsError,
+  writeGlobalSetting,
 } from './settings-file.ts';
 import type { FileValues, ProjectDiscovery, ResolveInputs } from './settings-file.ts';
 import type { Store } from '../kernel/store/open.ts';
@@ -169,52 +172,168 @@ export function consent(argv: string[]): number {
   });
 }
 
+/** One line in the unified settings view: a setting, its effective value, and
+ * where that value lives and came from. */
+interface SettingRow {
+  readonly key: string;
+  /** The effective value, already hardened for the terminal (file rows) or a
+   * closed enum (store rows) — printed as-is, never re-escaped. */
+  readonly shown: string;
+  /** The store or file the value lives in, and the layer or scope within it. */
+  readonly scope: string;
+}
+
 /**
- * Print every file-backed preference, its effective value, and the layer that
- * value came from — a built-in default, the global file, an admitted project
- * file, a CONSTRUCT_* environment variable, or a flag. This is the whole point
- * of the ladder: a preference whose winning layer a person has to discover by
- * opening files in turn is a preference nobody can reason about.
+ * Show every setting in one view — the file-backed preferences and the
+ * store-backed ones together — or, with the `set` subcommand, persist a change.
  *
- * Consent-bearing settings are deliberately absent here. They do not resolve
- * from a file, so they have no layer to name; `construct mode` and
- * `construct consent` remain the one place each is read and set.
+ * The two kinds do not share a home. A preference (host, locale, groundHints,
+ * state, workspace) resolves through the file ladder — a built-in default, the
+ * global file, an admitted project file, a CONSTRUCT_* environment variable, or
+ * a flag — and each row says `file, <layer>` so the winning layer is legible
+ * without opening files in turn. A consent-bearing setting (mode, consent) lives
+ * in the store, keyed by workspace, and each row says `store, workspace <name>`.
+ * Naming where each lives is the point: the same view a person reads a value in
+ * is the view they set it from, rather than one command that shows and another
+ * that changes.
+ *
+ * The ratification a project file's trust rests on is read from the home store,
+ * not the operational one: trust is machine-level, so it is correct even when
+ * `state: local` has redirected the operational store into a repository.
  */
 export function settings(argv: string[]): number {
-  const { flags } = parseFlags(argv);
-  // The store is opened first, and opening it resolves `state` through this
-  // same ladder to know where the store lives — so a malformed or
-  // consent-bearing project file refuses at the ladder before the body below
-  // ever runs. Catching SettingsError around the whole command, not only
-  // around the resolve inside it, is what turns that refusal into a one-line
-  // error instead of an uncaught stack trace.
+  const { flags, rest } = parseFlags(argv);
+  if (rest[0] === 'set') return settingsSet(rest.slice(1), flags);
+
+  // The operational store is opened first, and locating it resolves `state`
+  // through this same ladder — so a malformed or consent-bearing project file
+  // refuses there, before the body below runs. Catching SettingsError around
+  // the whole command turns that refusal into a one-line error rather than an
+  // uncaught stack trace.
   try {
-    return withStore((store) => {
-      const inputs: ResolveInputs = {
-        paths: resolvePaths(),
-        cwd: process.cwd(),
-        env: process.env,
-        flags,
-        home: homeDir(),
-        ratified: (repoIdentity, hash) => settingsFileRatified(store, repoIdentity, hash),
-      };
-      const resolved = resolveSettings(inputs);
-      const note = projectTrustNote(inputs);
-      const keyWidth = Math.max(...resolved.map((r) => r.key.length));
-      const valueWidth = Math.max(...resolved.map((r) => r.display.length));
-      for (const setting of resolved) {
-        process.stdout.write(
-          `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
-        );
-      }
-      if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
-      return 0;
-    });
+    return withStore((opStore) =>
+      withHomeStore((homeStore) => {
+        const inputs: ResolveInputs = {
+          paths: resolvePaths(),
+          cwd: process.cwd(),
+          env: process.env,
+          flags,
+          home: homeDir(),
+          ratified: (repoIdentity, hash) => settingsFileRatified(homeStore, repoIdentity, hash),
+        };
+        const resolved = resolveSettings(inputs);
+        const note = projectTrustNote(inputs);
+        // Mode and consent are read for the same workspace their own verbs
+        // default to, so the view is honest about which store row a set would
+        // touch rather than one the ladder inferred from a project binding.
+        const workspace = workspaceFlag(flags);
+        const rows: SettingRow[] = [
+          ...resolved.map((r) => ({ key: r.key, shown: r.display, scope: `file, ${r.source}` })),
+          {
+            key: 'mode',
+            shown: engagementMode(opStore, workspace),
+            scope: `store, workspace ${workspace}`,
+          },
+          {
+            key: 'consent',
+            shown: writeConsentAllowsLowRisk(opStore, workspace) ? 'on' : 'off',
+            scope: `store, workspace ${workspace}`,
+          },
+        ];
+        const keyWidth = Math.max(...rows.map((r) => r.key.length));
+        const valueWidth = Math.max(...rows.map((r) => r.shown.length));
+        for (const row of rows) {
+          process.stdout.write(
+            `${row.key.padEnd(keyWidth)}  ${row.shown.padEnd(valueWidth)}  (${row.scope})\n`,
+          );
+        }
+        if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
+        return 0;
+      }),
+    );
   } catch (error) {
     if (!(error instanceof SettingsError)) throw error;
     process.stderr.write(`construct settings: ${error.message}\n`);
     return 1;
   }
+}
+
+const SETTINGS_SET_USAGE =
+  'usage: construct settings set <key> <value> [--scope=global] [--workspace=<name>]\n' +
+  '  File-backed keys (host, locale, groundHints, state, workspace) are written to\n' +
+  '  the global settings file, which is yours and needs no ratification.\n' +
+  '  Store-backed keys (mode: team|seat, consent: on|off) are written to the store\n' +
+  '  for the named workspace. A project settings file is trusted, not written here:\n' +
+  '  edit .construct/settings.json and run construct trust --ratify.\n';
+
+/**
+ * Persist one setting. A file-backed preference is written to the global file —
+ * the user's own, so no ratification is needed, and the message says so; a
+ * project file stays trusted-not-written, and a `--scope` that asks for one is
+ * refused with where that trust is granted. A store-backed setting (mode,
+ * consent) is written to the store for the named workspace, the same row its own
+ * verb writes, so the two stay aliases into one machinery rather than two ways
+ * to disagree.
+ */
+function settingsSet(argv: string[], flags: Record<string, string>): number {
+  const key = argv[0];
+  if (key === undefined || argv.length < 2) {
+    process.stderr.write(SETTINGS_SET_USAGE);
+    return 2;
+  }
+  const value = argv.slice(1).join(' ');
+
+  if (key === 'mode') {
+    if (!(ENGAGEMENT_MODES as readonly string[]).includes(value)) {
+      process.stderr.write(SETTINGS_SET_USAGE);
+      return 2;
+    }
+    const workspace = workspaceFlag(flags);
+    withStore((store) => setEngagementMode(store, workspace, value as EngagementMode, now()));
+    process.stdout.write(`set mode = ${value} for workspace ${workspace} (store).\n`);
+    return 0;
+  }
+  if (key === 'consent') {
+    if (value !== 'on' && value !== 'off') {
+      process.stderr.write(SETTINGS_SET_USAGE);
+      return 2;
+    }
+    const workspace = workspaceFlag(flags);
+    withStore((store) => setWriteConsent(store, workspace, value === 'on', now()));
+    process.stdout.write(`set consent = ${value} for workspace ${workspace} (store).\n`);
+    return 0;
+  }
+
+  if (isPreferenceKey(key)) {
+    const scope = flags.scope ?? 'global';
+    if (scope !== 'global') {
+      process.stderr.write(
+        'construct settings set: only --scope=global is supported; a project settings file is ' +
+          'trusted, not written — edit .construct/settings.json and run construct trust --ratify.\n',
+      );
+      return 2;
+    }
+    let parsed: unknown;
+    try {
+      parsed = parseFileSettingScalar(key, value);
+    } catch (error) {
+      if (!(error instanceof SettingsError)) throw error;
+      process.stderr.write(`construct settings set: ${error.message}\n`);
+      return 2;
+    }
+    const path = writeGlobalSetting(resolvePaths(), key, parsed);
+    process.stdout.write(
+      `set ${key} = ${renderFileValue(key, parsed)} in the global settings file ` +
+        `(${escapeForTerminal(path)}); the global file is yours and needs no ratification.\n`,
+    );
+    return 0;
+  }
+
+  process.stderr.write(
+    `construct settings set: "${key}" is not a setting ` +
+      `(file: ${PREFERENCE_KEYS.join(', ')}; store: mode, consent)\n`,
+  );
+  return 2;
 }
 
 const TRUST_USAGE =
@@ -269,7 +388,13 @@ export function trust(argv: string[]): number {
   }
 
   const found = discovery;
-  return withStore((store) => {
+  // Trust grants live in the home store, and are read and written there whether
+  // or not `state: local` has redirected the operational store into a
+  // repository — trust is about whether to trust a project, a machine-level
+  // fact, not a repo-local one. Reading it through the operational store would
+  // let a redirected working store report a ratified file as untrusted, and
+  // strand a --revoke against a grant it never held.
+  return withHomeStore((store) => {
     if (flags.revoke !== undefined) {
       const removed = revokeRatification(store, found.repoIdentity, found.hash);
       process.stdout.write(

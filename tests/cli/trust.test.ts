@@ -26,12 +26,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main } from '../../src/cli/index.ts';
@@ -380,7 +382,7 @@ test('construct trust shows the whole untrusted file and its path on a first ask
     const again = await runCli(['trust'], r.cwd, xdg);
     assert.match(again.out, /is trusted/);
     const settings = await runCli(['settings'], r.cwd, xdg);
-    assert.match(settings.out, /host\s+cursor\s+\(project file\)/);
+    assert.match(settings.out, /host\s+cursor\s+\(file, project file\)/);
   } finally {
     r.cleanup();
     rmSync(xdg, { recursive: true, force: true });
@@ -596,6 +598,65 @@ test('source add on a directory path that is not there yet says so instead of re
 // that opens the store, never an uncaught stack trace — opening the store
 // resolves `state` through the same ladder, so the refusal surfaces early.
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Trust grants live in the home store, so `construct trust` reports and revokes
+// correctly even when `state: local` has redirected the operational store into
+// the repository. Reading trust from the redirected store would ask a repo-local
+// store about a grant it never held, and misreport a ratified file as untrusted.
+// ---------------------------------------------------------------------------
+
+function git(cwd: string, args: readonly string[]): void {
+  const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  assert.equal(result.status, 0, `git ${args.join(' ')} failed: ${result.stderr}`);
+}
+
+test('trust status and --revoke are correct even with state: local redirecting the working store', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'construct-trust-localstate-'));
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    // A real git checkout: the state: local refusal asks git whether the store
+    // path is ignored and untracked, so a stubbed .git will not do.
+    const root = join(home, 'repo');
+    const cwd = join(root, 'sub');
+    mkdirSync(cwd, { recursive: true });
+    git(root, ['init', '-q']);
+    // The repo-local store path is covered by the ignore rules, so state: local
+    // is allowed to take effect once the file is trusted.
+    writeFileSync(join(root, '.gitignore'), '.construct/state/\n');
+    mkdirSync(join(root, '.construct'), { recursive: true });
+    writeFileSync(join(root, '.construct', 'settings.json'), '{"state":"local"}');
+
+    // Ratify the file. Nothing is local yet (the file is not trusted until now),
+    // so this grant lands in the home store — the only store trust ever uses.
+    assert.equal((await runCli(['trust', '--ratify'], cwd, xdg)).code, 0);
+
+    // With the file trusted, state: local is active: a store-opening verb now
+    // roots its store inside the repository, not under home.
+    assert.equal((await runCli(['settings'], cwd, xdg)).code, 0);
+    assert.ok(
+      existsSync(join(root, '.construct', 'state', 'construct.db')),
+      'state: local redirected the operational store into the repository',
+    );
+
+    // Trust still reads the home store, so the ratified file reports as trusted
+    // rather than as an untrusted file the redirected store never heard of.
+    const status = await runCli(['trust'], cwd, xdg);
+    assert.equal(status.code, 0);
+    assert.match(status.out, /is trusted/);
+
+    // And a revoke reaches the same home-store grant, so it actually withdraws.
+    const revoked = await runCli(['trust', '--revoke'], cwd, xdg);
+    assert.equal(revoked.code, 0);
+    assert.match(revoked.out, /withdrew trust/);
+
+    const after = await runCli(['trust'], cwd, xdg);
+    assert.match(after.out, /not yet trusted/);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
 
 test('a consent-bearing key in a project file renders a clean one-line error, not a stack trace', async () => {
   const r = repo();
