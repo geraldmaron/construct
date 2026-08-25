@@ -3,8 +3,9 @@
  * cadence.
  *
  * Declaring stores the intention and runs nothing; `--due` files and works
- * what has elapsed. There is deliberately no daemon and no waiting here: cron
- * or launchd owns the clock, and the store only knows what is due.
+ * what has elapsed. Nothing here waits or wakes: the clock belongs to whatever
+ * fires this verb — cron, launchd, or the opt-in resident a person raises with
+ * `construct daemon start` — and the store only knows what is due.
  */
 
 import { planFor } from '../kernel/store/plans.ts';
@@ -20,6 +21,8 @@ import {
 } from '../kernel/store/standing.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
 import { startRun, startRunSelected } from '../kernel/run/outcome.ts';
+import type { StartedRun } from '../kernel/run/outcome.ts';
+import type { Store } from '../kernel/store/open.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { now, withStore } from './runtime.ts';
 import { splitFlags, workspaceFlag } from './flags.ts';
@@ -35,6 +38,71 @@ const STANDING_USAGE =
   '--concurrency=… --lease-minutes=… --timeout=…]\n' +
   '         (schedule `construct standing --due` with cron or launchd; nothing here waits or wakes)\n';
 
+/** One standing outcome re-filed as an ordinary run by this firing. */
+export interface FiledStanding {
+  readonly standing: string;
+  readonly run: string;
+  readonly everyMinutes: number;
+  readonly started: StartedRun;
+}
+
+/** What a firing found: what it re-filed, and what an earlier one left unfinished. */
+export interface DueStandingWork {
+  readonly filed: readonly FiledStanding[];
+  readonly unfinished: readonly { readonly standing: string; readonly run: string }[];
+}
+
+/**
+ * The filing half of a firing: a fresh, ordinary run per elapsed standing
+ * outcome, and the earlier standing-filed runs still carrying unsettled tasks.
+ *
+ * This half touches the store and nothing else — no host, no model, no
+ * credential — which is what lets a caller that must not spend (the resident
+ * daemon) fire the same intentions the CLI does and leave the working to
+ * whoever is allowed to pay for it.
+ */
+export function fileDueStanding(store: Store, at: () => string): DueStandingWork {
+  const due = dueStanding(store, at());
+  const runs: FiledStanding[] = [];
+  for (const item of due) {
+    const firedAt = at();
+    const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
+    // Two firings inside one clock tick must not share a run id.
+    let runId = base;
+    for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
+    const started =
+      item.domains !== null
+        ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
+        : startRun(store, { runId, outcome: item.outcome, at: firedAt });
+    planRun(store, started, null, item.workspace, firedAt);
+    // Recorded after the run exists: a crash between the two re-files on the
+    // next firing, which idempotent runs absorb; the other order could mark
+    // fired an intention that never ran.
+    recordFiring(store, { standing: item.id, run: runId, firedAt });
+    runs.push({ standing: item.id, run: runId, everyMinutes: item.everyMinutes, started });
+  }
+
+  // A firing recorded is not a firing finished. A --due killed mid-flight
+  // leaves pending or leased tasks on a run whose cadence now reads as
+  // spent, so every earlier standing-filed run still carrying unsettled
+  // tasks is picked up here, cadence or no cadence — the recipe's
+  // resumability holds on this surface, not only on a bare `work`. Retired
+  // standings included: their runs were filed and stand on the record.
+  const filedIds = new Set(runs.map((r) => r.run));
+  const unsettled: Array<{ standing: string; run: string }> = [];
+  for (const item of listStanding(store, { includeRetired: true })) {
+    for (const firing of firingsFor(store, item.id)) {
+      if (filedIds.has(firing.run)) continue;
+      if (unsettled.some((u) => u.run === firing.run)) continue;
+      const counts = countTasksByState(store, firing.run);
+      if ((counts.pending ?? 0) > 0 || (counts.leased ?? 0) > 0) {
+        unsettled.push({ standing: item.id, run: firing.run });
+      }
+    }
+  }
+  return { filed: runs, unfinished: unsettled };
+}
+
 /**
  * Fire what has come due: file a fresh, ordinary run per elapsed standing
  * outcome, then work exactly those runs through the normal work path. The
@@ -43,49 +111,12 @@ const STANDING_USAGE =
  * remembered the typing.
  */
 async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<number> {
-  const { filed, unfinished } = withStore((store) => {
-    const due = dueStanding(store, now());
-    const runs: Array<{ standing: string; run: string }> = [];
-    for (const item of due) {
-      const firedAt = now();
-      const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
-      // Two firings inside one clock tick must not share a run id.
-      let runId = base;
-      for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
-      process.stdout.write(`standing ${item.id} came due (every ${renderCadence(item.everyMinutes)}):\n`);
-      const started =
-        item.domains !== null
-          ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
-          : startRun(store, { runId, outcome: item.outcome, at: firedAt });
-      reportRun(started);
-      planRun(store, started, null, item.workspace, firedAt);
-      // Recorded after the run exists: a crash between the two re-files on the
-      // next firing, which idempotent runs absorb; the other order could mark
-      // fired an intention that never ran.
-      recordFiring(store, { standing: item.id, run: runId, firedAt });
-      runs.push({ standing: item.id, run: runId });
-    }
+  const { filed, unfinished } = withStore((store) => fileDueStanding(store, now));
 
-    // A firing recorded is not a firing finished. A --due killed mid-flight
-    // leaves pending or leased tasks on a run whose cadence now reads as
-    // spent, so every earlier standing-filed run still carrying unsettled
-    // tasks is picked up here, cadence or no cadence — the recipe's
-    // resumability holds on this surface, not only on a bare `work`. Retired
-    // standings included: their runs were filed and stand on the record.
-    const filedIds = new Set(runs.map((r) => r.run));
-    const unsettled: Array<{ standing: string; run: string }> = [];
-    for (const item of listStanding(store, { includeRetired: true })) {
-      for (const firing of firingsFor(store, item.id)) {
-        if (filedIds.has(firing.run)) continue;
-        if (unsettled.some((u) => u.run === firing.run)) continue;
-        const counts = countTasksByState(store, firing.run);
-        if ((counts.pending ?? 0) > 0 || (counts.leased ?? 0) > 0) {
-          unsettled.push({ standing: item.id, run: firing.run });
-        }
-      }
-    }
-    return { filed: runs, unfinished: unsettled };
-  });
+  for (const item of filed) {
+    process.stdout.write(`standing ${item.standing} came due (every ${renderCadence(item.everyMinutes)}):\n`);
+    reportRun(item.started);
+  }
 
   if (filed.length === 0 && unfinished.length === 0) {
     process.stdout.write('nothing is due.\n');
@@ -112,9 +143,9 @@ async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<
 /**
  * Standing outcomes: a recurring intention the spine re-files on its own
  * cadence. Declaring stores the intention and runs nothing; `--due` files and
- * works what has elapsed. There is deliberately no daemon and no waiting
- * here — cron or launchd owns the clock, exactly as docs/scheduled-operation.md
- * always had it, and the store only knows what is due.
+ * works what has elapsed. Nothing here waits or wakes — the clock belongs to
+ * whatever fires this verb, exactly as docs/scheduled-operation.md has it, and
+ * the store only knows what is due.
  */
 export async function standing(argv: string[], hostOverride?: HostAdapter): Promise<number> {
   const { flags, words } = splitFlags(argv);

@@ -18,19 +18,25 @@ is nothing to start, crash, or leak between firings, and the platform's own
 calendar form catches up missed firings after sleep instead of dropping them.
 
 **Tier 2, opt-in: an on-demand daemon**, for a watch that needs sub-interval
-latency tier 1 cannot give it. It is being built on a sibling branch and is
-not runnable here. Conceptually: nothing spawns it but an explicit start
-verb, it binds a single instance to a unix socket in the per-user state
-directory rather than trusting a pidfile, and it exits itself after a bounded
-idle period rather than waiting to be told to stop — so a leaked daemon has
-its own backstop.
+latency tier 1 cannot give it. Nothing spawns it but `construct daemon start`;
+it binds a single instance to a unix socket in the per-user state directory
+rather than trusting a pidfile, and it exits itself after a bounded idle
+period rather than waiting to be told to stop — so a leaked daemon has its
+own backstop. `construct daemon status` says whether one is running (not
+running is a normal answer, not a failure) and which store it serves;
+`construct daemon stop` ends it. It fires the same due-work seams the CLI
+fires, and it never dispatches to a host: a standing outcome that comes due
+is filed and left for `construct work`, so the daemon spends nothing and
+holds no credentials.
 
 **Tier 3, opt-in: always-on supervised mode**, for a user who explicitly
 wants a process that outlives every firing. It reuses tier 1's generated
 units in long-running form with resource limits (`Restart=on-failure`,
 memory and task ceilings, no elevated privileges) instead of a oneshot, and
 it is scoped to your login session — a personal tool should stop when you log
-out. It is also being built on a sibling branch and is not runnable here.
+out. Install it with `construct schedule install --always-on`; the two
+schedule tiers refuse to coexist, since a calendar firing plus an always-on
+daemon over the same ground is double work.
 
 Every tier keeps two things true regardless of which one you pick: nothing
 holds a credential in memory between firings (a short-lived child resolves

@@ -226,78 +226,123 @@ function divergenceAcrossRelations(
   return findings;
 }
 
+/** What one due watch's sweep did, for whichever surface is reporting it. */
+export interface SourceWatchSweep {
+  readonly watch: string;
+  readonly everyMinutes: number;
+  readonly ground: string;
+  /** Everything the comparison found, standing findings included. */
+  readonly findings: number;
+  /** Of those, the ones that were not already unresolved in the inbox. */
+  readonly raised: number;
+  readonly firstSweep: boolean;
+  /** Why nothing was swept, or null when it was. */
+  readonly skipped: string | null;
+}
+
 /**
  * Fire what has come due: survey each elapsed watch's source structurally,
  * compare the survey to what the last firing recorded, and raise whatever
  * changed. No host is consulted here regardless of what a declaration names —
  * a watch always compares structurally, never spending on a model; naming a
- * host only records intent for whatever reviews the finding next.
+ * host only records intent for whatever reviews the finding next. That is what
+ * makes this callable from a resident process holding no credentials: the
+ * sweep's whole cost is a filesystem walk and a store write.
  *
  * A firing is recorded whether or not anything changed, exactly as a
  * self-watch sweep always records itself: a watch that stopped running must
  * not be mistaken for a watch with nothing to report.
  */
+export function sweepDueSourceWatches(store: Store, at: () => string): SourceWatchSweep[] {
+  const swept: SourceWatchSweep[] = [];
+  for (const declared of dueSourceWatches(store, at())) {
+    const source = getSource(store, declared.source);
+    if (!source) {
+      // Sources are retired, never deleted, so this names a stale reference
+      // rather than a source that vanished out from under it.
+      swept.push({
+        watch: declared.id,
+        everyMinutes: declared.everyMinutes,
+        ground: declared.source,
+        findings: 0,
+        raised: 0,
+        firstSweep: false,
+        skipped: `names no source ${declared.source}`,
+      });
+      continue;
+    }
+    const firedAt = at();
+    const target: Watch = { id: declared.id, ground: sourceGroundLine(source) };
+    const run = watchRun(target);
+    if (readWorkLog(store, run).length === 0) startWatch(store, target, firedAt);
+
+    const shape = sourceShape(store, source.id);
+    const survey = surveySource(source, shape ? { emphasis: shape.emphasis, cap: shape.cap } : undefined);
+    const current = snapshotFromSurvey(survey);
+    const priorFiring = latestSourceWatchFiring(store, declared.id);
+    const prior = priorFiring ? (priorFiring.snapshot as SourceSnapshot) : null;
+
+    const findings = [
+      ...sourceWatchFindings({ source, prior, current, firedAt }),
+      // What this source moving says about the sources the user declared it
+      // stands in a relationship with. Raised in the same sweep, into the
+      // same inbox, because it is one call about one change.
+      ...(prior === null || priorFiring === null
+        ? []
+        : divergenceAcrossRelations(store, {
+            source,
+            prior,
+            current,
+            since: priorFiring.firedAt,
+            firedAt,
+          })),
+    ];
+    // Raised before recorded: a crash between the two leaves the next sweep
+    // comparing against the same prior state and re-detecting the change,
+    // which a duplicate decision survives; the other order could record a
+    // snapshot whose finding never made it to the inbox.
+    const result = sweepWatch(store, { watch: target, findings, at: firedAt });
+    recordSourceWatchFiring(store, { watch: declared.id, run, firedAt, snapshot: current });
+
+    swept.push({
+      watch: declared.id,
+      everyMinutes: declared.everyMinutes,
+      ground: target.ground,
+      findings: findings.length,
+      raised: result.raised.length,
+      firstSweep: prior === null,
+      skipped: null,
+    });
+  }
+  return swept;
+}
+
 function watchDue(): number {
   return withStore((store) => {
-    const due = dueSourceWatches(store, now());
-    if (due.length === 0) {
+    const swept = sweepDueSourceWatches(store, now);
+    if (swept.length === 0) {
       process.stdout.write('nothing is due.\n');
       return 0;
     }
-    for (const declared of due) {
-      const source = getSource(store, declared.source);
-      if (!source) {
-        // Sources are retired, never deleted, so this names a stale
-        // reference rather than a source that vanished out from under it.
-        process.stderr.write(`watch: ${declared.id} names no source ${declared.source} — skipped\n`);
+    for (const sweep of swept) {
+      if (sweep.skipped !== null) {
+        process.stderr.write(`watch: ${sweep.watch} ${sweep.skipped} — skipped\n`);
         continue;
       }
-      const at = now();
-      const target: Watch = { id: declared.id, ground: sourceGroundLine(source) };
-      const run = watchRun(target);
-      if (readWorkLog(store, run).length === 0) startWatch(store, target, at);
-
-      const shape = sourceShape(store, source.id);
-      const survey = surveySource(source, shape ? { emphasis: shape.emphasis, cap: shape.cap } : undefined);
-      const current = snapshotFromSurvey(survey);
-      const priorFiring = latestSourceWatchFiring(store, declared.id);
-      const prior = priorFiring ? (priorFiring.snapshot as SourceSnapshot) : null;
-
-      const findings = [
-        ...sourceWatchFindings({ source, prior, current, firedAt: at }),
-        // What this source moving says about the sources the user declared it
-        // stands in a relationship with. Raised in the same sweep, into the
-        // same inbox, because it is one call about one change.
-        ...(prior === null || priorFiring === null
-          ? []
-          : divergenceAcrossRelations(store, {
-              source,
-              prior,
-              current,
-              since: priorFiring.firedAt,
-              firedAt: at,
-            })),
-      ];
-      // Raised before recorded: a crash between the two leaves the next sweep
-      // comparing against the same prior state and re-detecting the change,
-      // which a duplicate decision survives; the other order could record a
-      // snapshot whose finding never made it to the inbox.
-      const result = sweepWatch(store, { watch: target, findings, at });
-      recordSourceWatchFiring(store, { watch: declared.id, run, firedAt: at, snapshot: current });
-
       process.stdout.write(
-        `watch ${declared.id} (every ${renderCadence(declared.everyMinutes)}):\n  ground: ${target.ground}\n`,
+        `watch ${sweep.watch} (every ${renderCadence(sweep.everyMinutes)}):\n  ground: ${sweep.ground}\n`,
       );
       process.stdout.write(
-        findings.length === 0
-          ? `  ${prior ? 'no change since the last sweep.' : 'first sweep; recorded a baseline.'}\n`
-          : `  ${String(result.raised.length)} raised as new decision(s).\n`,
+        sweep.findings === 0
+          ? `  ${sweep.firstSweep ? 'first sweep; recorded a baseline.' : 'no change since the last sweep.'}\n`
+          : `  ${String(sweep.raised)} raised as new decision(s).\n`,
       );
     }
     process.stdout.write('\nRead decisions with: construct inbox\n');
     return 0;
   });
 }
+
 
 /**
  * The standing watch, swept once when the bare form runs; `add`/`list`/
