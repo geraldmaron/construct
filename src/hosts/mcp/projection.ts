@@ -64,6 +64,7 @@
  */
 
 import { getDecision, openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
+import type { Decision, Position } from '../../kernel/store/decisions.ts';
 import { answeredAsksFor, isAsk, openAsksFor } from '../../kernel/run/asks.ts';
 import { countTasksByState, listTasks } from '../../kernel/store/tasks.ts';
 import { readWorkLog } from '../../kernel/store/worklog.ts';
@@ -79,6 +80,7 @@ import type { DomainNaming } from '../../kernel/implication/naming.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
+import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import type { JsonRpcRequest, JsonRpcResponse, MessageHandler } from './jsonrpc.ts';
 
 export interface ProjectionCore {
@@ -338,6 +340,54 @@ export const PROJECTION_TOOLS = [
   },
 ] as const;
 
+/**
+ * Escape a decision's question and position content for safe transmission to
+ * the model. Matches the escaping the terminal render path applies when
+ * displaying the same content, preventing control characters in attacker-
+ * authored ground from being misinterpreted.
+ */
+function escapeDecision(decision: Decision): Decision {
+  return {
+    ...decision,
+    question: escapeForTerminal(decision.question),
+    positions: decision.positions.map((pos) => escapePosition(pos)),
+  };
+}
+
+/**
+ * Escape a position's stance and citation content for safe transmission.
+ */
+function escapePosition(position: Position): Position {
+  return {
+    ...position,
+    stance: escapeForTerminal(position.stance),
+    citation: position.citation ? escapeForTerminal(position.citation) : null,
+  };
+}
+
+/**
+ * Escape an open ask's question and default for safe transmission to the model.
+ * OpenAsk is derived from decisions but needs explicit escaping of its fields.
+ */
+function escapeOpenAsk(ask: ReturnType<typeof openAsksFor>[number]): ReturnType<typeof openAsksFor>[number] {
+  return {
+    ...ask,
+    question: escapeForTerminal(ask.question),
+    standingDefault: ask.standingDefault ? escapeForTerminal(ask.standingDefault) : null,
+  };
+}
+
+/**
+ * Escape an answered ask's question and answer for safe transmission to the model.
+ */
+function escapeAnsweredAsk(ask: ReturnType<typeof answeredAsksFor>[number]): ReturnType<typeof answeredAsksFor>[number] {
+  return {
+    ...ask,
+    question: escapeForTerminal(ask.question),
+    answer: escapeForTerminal(ask.answer),
+  };
+}
+
 function toolResult(id: unknown, payload: unknown, isError = false): JsonRpcResponse {
   return response(id, {
     content: [{ type: 'text', text: JSON.stringify(payload) }],
@@ -533,15 +583,15 @@ async function callTool(
       case 'run_status':
         return toolResult(id, runStatus(core, run));
       case 'inbox':
-        return toolResult(id, { decisions: openDecisions(core.store) });
+        return toolResult(id, { decisions: openDecisions(core.store).map(escapeDecision) });
       case 'asks':
         return toolResult(id, {
-          open: openAsksFor(core.store, run),
+          open: openAsksFor(core.store, run).map(escapeOpenAsk),
           // What is already settled is a per-run fact, so an unscoped read can
           // only carry the open questions; naming a run is what adds the
           // answers, and the tool description says so rather than returning an
           // empty list that would read as "nothing was ever answered".
-          ...(run ? { answered: answeredAsksFor(core.store, run) } : {}),
+          ...(run ? { answered: answeredAsksFor(core.store, run).map(escapeAnsweredAsk) } : {}),
         });
       case 'answer': {
         const askId = typeof input.id === 'string' ? input.id.trim() : '';
@@ -563,8 +613,8 @@ async function callTool(
         return toolResult(id, {
           answered: askId,
           run: asked.run,
-          question: asked.question,
-          answer: given,
+          question: escapeForTerminal(asked.question),
+          answer: escapeForTerminal(given),
         });
       }
       case 'decide': {
@@ -574,7 +624,7 @@ async function callTool(
         const resolution = typeof input.resolution === 'string' ? input.resolution.trim() : '';
         if (!resolution) throw new RangeError('decide requires a non-empty string "resolution"');
         resolveDecision(core.store, input.id, resolution, core.clock());
-        return toolResult(id, { decided: input.id, resolution });
+        return toolResult(id, { decided: input.id, resolution: escapeForTerminal(resolution) });
       }
       case 'verdict': {
         if (run === undefined) throw new RangeError('verdict requires a string "run"');
