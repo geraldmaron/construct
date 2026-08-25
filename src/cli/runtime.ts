@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolvePaths } from '../kernel/paths.ts';
-import { openStore } from '../kernel/store/open.ts';
+import { openStore, storePath } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import { recordCatalogSighting } from '../kernel/store/catalog.ts';
@@ -73,6 +73,25 @@ function leaveCatalogMark(store: Store): void {
     domains: DOMAINS.length,
     at: now(),
   });
+}
+
+/**
+ * The home store specifically, opened and closed around one command, whether or
+ * not `state: local` has redirected the operational store into a repository.
+ * Settings ratification — the record of which project settings files a person
+ * has trusted — lives here and only here: trust is about whether to trust a
+ * project, which is a machine-level fact rather than a repo-local one, so it is
+ * read and written in the same store no matter where the operational store
+ * currently points. Reading it through {@link withStore} would ask a repo-local
+ * store about a grant it never held, and report a trusted file as untrusted.
+ */
+export function withHomeStore<T>(fn: (store: Store) => T): T {
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    return fn(store);
+  } finally {
+    store.close();
+  }
 }
 
 /**
