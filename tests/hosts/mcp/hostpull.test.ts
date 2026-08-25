@@ -27,7 +27,7 @@ import type { Store } from '../../../src/kernel/store/open.ts';
 import { enqueueTask, getTask } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { loadOrCreateSecret } from '../../../src/kernel/capabilities/secretfile.ts';
-import { authorizeRoleToken } from '../../../src/kernel/capabilities/tokens.ts';
+import { authorizeRoleToken, issueRoleToken } from '../../../src/kernel/capabilities/tokens.ts';
 import {
   DRAFT_ACTION,
   VERDICT_ACTION,
@@ -36,11 +36,12 @@ import {
 } from '../../../src/kernel/run/promotion.ts';
 import {
   HOST_PULL_TOOLS,
-  handleMessage,
+  createHostPullHandler,
   hostPullEnabled,
   HOST_PULL_FLAG_ENV,
 } from '../../../src/hosts/mcp/hostpull.ts';
 import type { HostPullCore } from '../../../src/hosts/mcp/hostpull.ts';
+import type { JsonRpcRequest, JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
 import { PROJECTION_TOOLS } from '../../../src/hosts/mcp/projection.ts';
 
 const BIN = fileURLToPath(new URL('../../../bin/construct.mjs', import.meta.url));
@@ -49,6 +50,7 @@ const AT = '2026-08-25T00:00:00.000Z';
 interface Fixture {
   readonly store: Store;
   readonly core: HostPullCore;
+  readonly handle: (message: JsonRpcRequest) => JsonRpcResponse | null;
   cleanup(): void;
 }
 
@@ -77,7 +79,8 @@ function fixture(brief?: unknown): Fixture {
     at: AT,
   });
   const core: HostPullCore = { store, secret, clock: () => AT, serverVersion: 'test', leaseMs: 15 * 60 * 1000 };
-  return { store, core, cleanup: () => { store.close(); s.cleanup(); } };
+  const handle = createHostPullHandler(core);
+  return { store, core, handle, cleanup: () => { store.close(); s.cleanup(); } };
 }
 
 let nextId = 0;
@@ -86,7 +89,7 @@ function call(name: string, args: Record<string, unknown> = {}) {
   return { jsonrpc: '2.0', id: nextId, method: 'tools/call', params: { name, arguments: args } } as const;
 }
 
-function body(reply: ReturnType<typeof handleMessage>): { data: Record<string, unknown>; isError: boolean } {
+function body(reply: JsonRpcResponse | null): { data: Record<string, unknown>; isError: boolean } {
   assert.ok(reply, 'expected a reply');
   const result = reply.result as { content: Array<{ text: string }>; isError?: boolean };
   return { data: JSON.parse(result.content[0].text) as Record<string, unknown>, isError: result.isError === true };
@@ -99,7 +102,7 @@ test('the tool surface is exactly claim_task and submit_work — nothing advance
   try {
     // Any completion or verdict verb is refused by name, not merely absent.
     for (const forbidden of ['record_verdict', 'verdict', 'promote', 'waive', 'decide', 'work']) {
-      const reply = handleMessage(f.core, call(forbidden));
+      const reply = f.handle(call(forbidden));
       assert.equal(reply?.error?.code, -32602, `${forbidden} must be refused`);
       assert.match(reply.error.message, /unknown tool/);
     }
@@ -108,52 +111,58 @@ test('the tool surface is exactly claim_task and submit_work — nothing advance
   }
 });
 
-test('claim_task hands the host the brief and a task-scoped token, and leases the task', () => {
+test('claim_task hands the host the brief, leases the task, and hands back NO bearer', () => {
   const f = fixture();
   try {
-    const { data } = body(handleMessage(f.core, call('claim_task')));
+    const { data } = body(f.handle(call('claim_task')));
     assert.equal(data.claimed, true);
     assert.equal(data.task, 'task-1');
     assert.equal(data.run, 'run-x');
     assert.equal(data.role, 'privacy');
     assert.ok(data.brief && typeof data.brief === 'object', 'the brief is handed back');
-    assert.equal(typeof data.token, 'string');
-    assert.ok((data.token as string).length > 0, 'a token is minted');
     assert.equal(typeof data.expiresAt, 'string');
 
-    // The token is genuinely scoped to this task, and grants exactly the two
-    // writes — the same grant set a spawned role holds.
-    const authed = authorizeRoleToken(data.token, f.core.secret, {
-      grant: 'submit-draft',
-      run: 'run-x',
-      task: 'task-1',
-      now: AT,
-    });
-    assert.equal(authed.ok, true, 'the minted token authorizes a draft for this task');
+    // The bearer never leaves the server. No result field carries it — not
+    // "token", not "secret", not anything holding the minted string.
+    assert.ok(!('token' in data), 'claim_task returns no token field');
+    assert.ok(!('secret' in data), 'claim_task returns no secret field');
+    const secret = f.core.secret;
+    assert.ok(!JSON.stringify(data).includes(secret), 'the signing secret never appears in the reply');
+    // A token minted for this claim would verify against the store's secret; the
+    // reply contains no such string, so nothing a host could replay crosses back.
+    for (const value of Object.values(data)) {
+      if (typeof value !== 'string') continue;
+      const parts = value.split('.');
+      const looksLikeToken =
+        parts.length === 3 &&
+        parts[0] === 'cx1' &&
+        authorizeRoleToken(value, secret, { grant: 'submit-draft', run: 'run-x', task: 'task-1', now: AT }).ok;
+      assert.ok(!looksLikeToken, 'no field of the reply is a usable capability token');
+    }
 
     // The task is now leased, not still pending, and the mint is on the record.
     assert.equal(getTask(f.store, 'task-1')?.state, 'leased');
     const log = readWorkLog(f.store, 'run-x');
     assert.ok(log.some((e) => e.action === 'host-pull-claimed'), 'the claim is logged');
-    // The bearer is never in the log — a token is a secret and a log is not a vault.
-    assert.ok(!JSON.stringify(log).includes(data.token as string), 'the token itself is never logged');
+    // The bearer is never in the log either — a token is a secret and a log is
+    // not a vault.
+    assert.ok(!JSON.stringify(log).includes(secret), 'the signing secret is never logged');
 
     // Nothing ready after the only task is claimed.
-    const { data: empty } = body(handleMessage(f.core, call('claim_task')));
+    const { data: empty } = body(f.handle(call('claim_task')));
     assert.equal(empty.claimed, false);
   } finally {
     f.cleanup();
   }
 });
 
-test('submit_work lands a draft through the rolewrite seam, attributed to the role', () => {
+test('submit_work lands a draft through the rolewrite seam by task id alone, attributed to the role', () => {
   const f = fixture();
   try {
-    const { data: claimed } = body(handleMessage(f.core, call('claim_task')));
-    const reply = body(handleMessage(f.core, call('submit_work', {
-      run: claimed.run,
-      task: claimed.task,
-      token: claimed.token,
+    body(f.handle(call('claim_task')));
+    // No token argument — the host names only the task it claimed.
+    const reply = body(f.handle(call('submit_work', {
+      task: 'task-1',
       deliverable: 'the privacy review, in full',
     })));
     assert.equal(reply.isError, false);
@@ -162,30 +171,42 @@ test('submit_work lands a draft through the rolewrite seam, attributed to the ro
     const drafts = readWorkLog(f.store, 'run-x').filter((e) => e.action === DRAFT_ACTION);
     assert.equal(drafts.length, 1, 'exactly one draft landed');
     assert.equal(drafts[0].role, 'privacy', 'attributed to the role, not the caller');
+
+    // A submission for a task this connection never claimed has no held token
+    // and is refused before any write is attempted.
+    const unclaimed = f.handle(call('submit_work', { task: 'task-2', deliverable: 'x' }));
+    assert.equal(unclaimed?.error?.code, -32602, 'no claim, no submission');
+    assert.match(unclaimed.error.message, /no claim held/);
   } finally {
     f.cleanup();
   }
 });
 
 /**
- * THE PROOF (§27 reversal condition). A host holding a claim token can put a
- * draft on the record and can never advance it to final. Promotion turns only on
- * a verdict a dispatcher records; the host reaches no such path, and its token
- * cannot be widened into one.
+ * THE PROOF (§27 reversal condition). A host driving execution through this
+ * surface can put a draft on the record and can never advance it to final.
+ * Promotion turns only on a verdict a dispatcher records; the host reaches no
+ * such path, and the token held for its claim cannot be widened into one.
  */
-test('THE PROOF: a host and its claim token cannot advance completion', () => {
+test('THE PROOF: a host driving this surface cannot advance completion', () => {
   const f = fixture();
   try {
-    const { data: claimed } = body(handleMessage(f.core, call('claim_task')));
-    const token = claimed.token as string;
+    body(f.handle(call('claim_task')));
 
-    // 1. The host submits a draft. State is draft — the challenge is outstanding.
-    handleMessage(f.core, call('submit_work', { run: 'run-x', task: 'task-1', token, deliverable: 'draft one' }));
+    // 1. The host submits a draft, naming only the task. State is draft — the
+    //    challenge is outstanding.
+    f.handle(call('submit_work', { task: 'task-1', deliverable: 'draft one' }));
     assert.equal(promotionOf(f.store, 'task-1')?.state, 'draft', 'submitting a draft does not promote');
 
-    // 2. The token literally cannot express a verdict: record-verdict is not a
-    //    grant it carries, and there is no argument to add one.
-    const asVerdict = authorizeRoleToken(token, f.core.secret, {
+    // 2. The token this claim mints — the one the server holds, which the host
+    //    never sees — literally cannot express a verdict: record-verdict is not a
+    //    grant it carries, and there is no argument to add one. Minted here from
+    //    the same inputs the server used, to interrogate the grant set directly.
+    const claimToken = issueRoleToken(
+      { run: 'run-x', task: 'task-1', role: 'privacy', expiresAt: AT, nonce: '1' },
+      f.core.secret,
+    );
+    const asVerdict = authorizeRoleToken(claimToken, f.core.secret, {
       grant: 'record-verdict',
       run: 'run-x',
       task: 'task-1',
@@ -197,7 +218,7 @@ test('THE PROOF: a host and its claim token cannot advance completion', () => {
     // 3. The host cannot forge a verdict through the note path either. submit_work
     //    fixes the action name, and rolewrite namespaces every role-chosen action,
     //    so nothing the host writes lands as an unprefixed VERDICT_ACTION.
-    handleMessage(f.core, call('submit_work', { run: 'run-x', task: 'task-1', token, note: 'trying to look final' }));
+    f.handle(call('submit_work', { task: 'task-1', note: 'trying to look final' }));
     const forged = readWorkLog(f.store, 'run-x').filter((e) => e.action === VERDICT_ACTION);
     assert.equal(forged.length, 0, 'no verdict entry exists — the host cannot write one');
     assert.equal(promotionOf(f.store, 'task-1')?.state, 'draft', 'still a draft after the note');
