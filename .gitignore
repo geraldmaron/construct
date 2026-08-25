@@ -26,3 +26,9 @@ tmp/
 # database it does not keep. It named a file that no longer exists the moment
 # the probe ended, so committing one records nothing a reader can check.
 __probe__/
+
+# Dotenv files hold live credentials and never belong in git; the example
+# template of variable names does.
+.env
+.env.*
+!.env.example
