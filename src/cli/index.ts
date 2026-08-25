@@ -182,7 +182,7 @@ async function run(argv: string[]): Promise<number> {
     case 'skills':
       return skills(argv.slice(1));
     case 'inbox':
-      return inbox();
+      return inbox(argv.slice(1));
     case 'decide':
       return decide(argv.slice(1));
     case 'lessons':

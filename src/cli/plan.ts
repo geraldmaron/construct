@@ -6,8 +6,9 @@
 import { planFor } from '../kernel/store/plans.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { withStore } from './runtime.ts';
+import { jsonFlag, writeJson } from './json.ts';
 
-const PLAN_USAGE = 'usage: construct plan <run-id>\n';
+const PLAN_USAGE = 'usage: construct plan <run-id> [--json]\n';
 
 /**
  * Render a run's recorded plan: the understanding it worked from, its risk
@@ -26,6 +27,12 @@ export function plan(argv: string[]): number {
     if (!found) {
       process.stderr.write(`plan: no plan recorded for ${runId}\n`);
       return 1;
+    }
+    if (jsonFlag(argv)) {
+      // The plan record itself: write-once at outcome time, so what is
+      // stored already is exactly what the prose below narrates.
+      writeJson(found);
+      return 0;
     }
     process.stdout.write(`plan ${found.id} (run ${found.run}, ${found.plannedAt})\n`);
     process.stdout.write(`  outcome: ${found.outcome}\n`);
