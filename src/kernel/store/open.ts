@@ -147,6 +147,19 @@
  * integer because a calibration curve is drawn over integers; the band is a
  * rendering, and re-deriving it costs nothing.
  *
+ * Schema version 21 adds `decision_provenance` and `proposal_decision_provenance`,
+ * both additive: who a resolution came through, kept beside the resolution it
+ * belongs to. A decision recorded by a person at the CLI and one a model wrote
+ * through an MCP tool were byte-identical rows, so a change carried out on a
+ * human's approval and one carried out on a model's forgery of that approval
+ * were the same evidence to everything that read them. These are their own
+ * tables rather than columns on `decisions` and `proposal_decisions` for the
+ * reason `source_shapes` is its own: this schema is created, never altered, and
+ * a column added to an existing table would silently not exist in a store that
+ * already has one. The provenance is keyed to the row it qualifies — a decision
+ * id, a proposal-decision seq — and written in the same call that writes that
+ * row, so a resolution can never exist without the record of whose it was.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -170,7 +183,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 21;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -324,6 +337,12 @@ CREATE TABLE IF NOT EXISTS decisions (
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS decisions_open ON decisions (state, raised_at);
+
+CREATE TABLE IF NOT EXISTS decision_provenance (
+  decision    TEXT PRIMARY KEY REFERENCES decisions (id),
+  resolved_by TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS tasks (
   id             TEXT PRIMARY KEY,
@@ -640,6 +659,11 @@ BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_delete
 BEFORE DELETE ON proposal_decisions
 BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS proposal_decision_provenance (
+  decision    INTEGER PRIMARY KEY REFERENCES proposal_decisions (seq),
+  resolved_by TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS proposed_source_edges (
   proposal    TEXT PRIMARY KEY REFERENCES write_proposals (id),

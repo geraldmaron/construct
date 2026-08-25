@@ -48,6 +48,7 @@ import {
   engagementMode,
   getProposal,
   getSource,
+  HUMAN_DECISION,
   markApplied,
   sourceDeclaration,
   writeConsentAllowsLowRisk,
@@ -96,6 +97,17 @@ export async function applyProposal(
   if (!record) return { outcome: 'refused', reason: `no proposal ${proposal}` };
 
   const prior = decisionOf(store, proposal);
+  // An approval is the human authority this ladder waits for only when its
+  // provenance says a person recorded it. A model that wrote a byte-identical
+  // `approved` row through an MCP surface has forged exactly that, so such an
+  // approval is refused before a host is asked — the store's markApplied holds
+  // the same line, this one gives the reason a person reads.
+  if (prior?.verdict === 'approved' && prior.resolvedBy !== HUMAN_DECISION) {
+    return {
+      outcome: 'refused',
+      reason: `its approval was recorded by ${prior.resolvedBy ?? 'an unrecorded hand'}, not a person — an outward write is carried out only on a human decision`,
+    };
+  }
   // The two authorities the store accepts when it writes the applied row,
   // asked here so nothing is handed to a host that could not be recorded
   // afterwards. Standing consent is a workspace's blanket yes to the low-risk

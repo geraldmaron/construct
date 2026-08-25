@@ -363,3 +363,35 @@ test('a proposal that is refused before the host records no mirror', async () =>
     assert.equal(countProjections(store), 0, 'nothing undecided reaches the mirror');
   });
 });
+
+test('an approval recorded through an MCP surface does not satisfy the apply gate', async () => {
+  await withStore(async (store) => {
+    seed(store);
+    // A model wrote a byte-identical `approved` row, stamped with its own
+    // provenance. The queue and the record look exactly like a person's yes.
+    decideProposal(store, 'p-1', 'approved', 'looks fine to me', AT, 'mcp:acme-agent');
+    const result = await applyProposal(
+      store,
+      applier({ applied: true, detail: 'moved it' }),
+      'p-1',
+      LATER,
+    );
+    assert.equal(result.outcome, 'refused', 'a forged approval is not carried out');
+    assert.match(result.outcome === 'refused' ? result.reason : '', /mcp:acme-agent|not a person/);
+    assert.notEqual(decisionOf(store, 'p-1')?.verdict, 'applied', 'nothing was recorded applied');
+  });
+});
+
+test('the same proposal, approved at the CLI, does satisfy the apply gate', async () => {
+  await withStore(async (store) => {
+    seed(store);
+    decideProposal(store, 'p-1', 'approved', 'yes, move it', AT);
+    const result = await applyProposal(
+      store,
+      applier({ applied: true, detail: 'moved it' }),
+      'p-1',
+      LATER,
+    );
+    assert.equal(result.outcome, 'applied', 'a human approval is honored');
+  });
+});

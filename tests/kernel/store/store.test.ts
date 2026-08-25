@@ -530,13 +530,14 @@ test('the inbox holds open decisions and resolution comes from outside', () => {
     assert.equal(inbox[0].positions.length, 2, 'both sides survive with their citations');
     assert.equal(inbox[0].resolution, null, 'nothing auto-arbitrates');
 
-    resolveDecision(store, 'd1', 'wait for the DPA', '2026-08-04T00:00:00.000Z');
+    resolveDecision(store, 'd1', 'wait for the DPA', '2026-08-04T00:00:00.000Z', 'cli:user');
     assert.equal(openDecisions(store, 'r').length, 0);
     const resolved = getDecision(store, 'd1');
     assert.equal(resolved?.state, 'resolved');
     assert.equal(resolved?.resolution, 'wait for the DPA');
+    assert.equal(resolved?.resolvedBy, 'cli:user', 'the resolver provenance is recorded');
 
-    assert.throws(() => resolveDecision(store, 'd1', 'again', AT), /no open decision/);
+    assert.throws(() => resolveDecision(store, 'd1', 'again', AT, 'cli:user'), /no open decision/);
   });
 });
 

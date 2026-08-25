@@ -310,7 +310,18 @@ export interface ProposalDecision {
   readonly basis: 'human-approval' | 'standing-consent';
   readonly reason: string;
   readonly decidedAt: string;
+  /**
+   * Whose hand recorded this decision — `cli:user` for a person at the command
+   * line. Null on a store that predates provenance. An approval carried out as
+   * authority for an outward write is honored only when this says a person made
+   * it: a model that wrote a byte-identical approval row must not be able to
+   * pass itself off as the human the outward-write ladder waits for.
+   */
+  readonly resolvedBy: string | null;
 }
+
+/** The provenance of a human-recorded decision. The only value the apply gate reads as a person. */
+export const HUMAN_DECISION = 'cli:user';
 
 interface SourceRow {
   readonly id: string;
@@ -801,11 +812,20 @@ export function getProposal(store: Store, id: string): WriteProposal | null {
 export function decisionOf(store: Store, proposal: string): ProposalDecision | null {
   const row = store.db
     .prepare(
-      `SELECT proposal, verdict, basis, reason, decided_at
-       FROM proposal_decisions WHERE proposal = ? ORDER BY seq DESC LIMIT 1`,
+      `SELECT d.proposal, d.verdict, d.basis, d.reason, d.decided_at, v.resolved_by
+       FROM proposal_decisions d
+       LEFT JOIN proposal_decision_provenance v ON v.decision = d.seq
+       WHERE d.proposal = ? ORDER BY d.seq DESC LIMIT 1`,
     )
     .get(proposal) as
-    | { proposal: string; verdict: string; basis: string; reason: string; decided_at: string }
+    | {
+        proposal: string;
+        verdict: string;
+        basis: string;
+        reason: string;
+        decided_at: string;
+        resolved_by: string | null;
+      }
     | undefined;
   if (!row) return null;
   return {
@@ -814,6 +834,7 @@ export function decisionOf(store: Store, proposal: string): ProposalDecision | n
     basis: row.basis as ProposalDecision['basis'],
     reason: row.reason,
     decidedAt: row.decided_at,
+    resolvedBy: row.resolved_by,
   };
 }
 
@@ -848,6 +869,7 @@ export function decideProposal(
   verdict: 'approved' | 'rejected',
   reason: string,
   decidedAt: string,
+  resolvedBy: string = HUMAN_DECISION,
 ): void {
   if (!getProposal(store, proposal)) {
     throw new Error(`decideProposal: no proposal ${proposal}`);
@@ -856,12 +878,30 @@ export function decideProposal(
   if (prior?.verdict === 'applied') {
     throw new Error(`decideProposal: ${proposal} was already applied; there is nothing left to decide`);
   }
-  store.db
+  // Two sequential writes rather than a nested transaction: this runs inside a
+  // caller's transaction as often as not (adopting a source relationship is one
+  // such caller), and an inner BEGIN there is an error, not a safeguard. The
+  // provenance follows the row it qualifies, so a decision cannot be read back
+  // without it.
+  const seq = store.db
     .prepare(
       `INSERT INTO proposal_decisions (proposal, verdict, basis, reason, decided_at)
        VALUES (?, ?, 'human-approval', ?, ?)`,
     )
-    .run(proposal, verdict, reason, decidedAt);
+    .run(proposal, verdict, reason, decidedAt).lastInsertRowid;
+  recordDecisionProvenance(store, seq, resolvedBy);
+}
+
+/** The provenance beside a proposal-decision row, written in the same transaction. */
+function recordDecisionProvenance(store: Store, seq: bigint | number, resolvedBy: string): void {
+  if (resolvedBy.trim() === '') {
+    throw new Error('recordDecisionProvenance: a decision needs a non-empty resolver provenance');
+  }
+  store.db
+    .prepare(
+      `INSERT OR REPLACE INTO proposal_decision_provenance (decision, resolved_by) VALUES (?, ?)`,
+    )
+    .run(seq, resolvedBy);
 }
 
 /**
@@ -874,8 +914,19 @@ export function decideProposal(
  * knew which source it would land in. A source its owner declared sensitive is
  * outside that judgment: it takes a decision made about this proposal, by a
  * person, with the target in front of them.
+ *
+ * An approval only counts as human authority when its provenance says a person
+ * recorded it. A model that wrote a byte-identical `approved` row through an
+ * MCP surface has forged the very thing this gate waits for, so an approval
+ * that is not `cli:user` is refused here rather than laundered into an apply.
  */
-export function markApplied(store: Store, proposal: string, reason: string, decidedAt: string): void {
+export function markApplied(
+  store: Store,
+  proposal: string,
+  reason: string,
+  decidedAt: string,
+  resolvedBy: string = HUMAN_DECISION,
+): void {
   const record = getProposal(store, proposal);
   if (!record) throw new Error(`markApplied: no proposal ${proposal}`);
   const prior = decisionOf(store, proposal);
@@ -884,6 +935,12 @@ export function markApplied(store: Store, proposal: string, reason: string, deci
   }
   if (prior?.verdict === 'rejected') {
     throw new Error(`markApplied: ${proposal} was rejected; a rejection is not overridden by applying anyway`);
+  }
+  if (prior?.verdict === 'approved' && prior.resolvedBy !== HUMAN_DECISION) {
+    throw new Error(
+      `markApplied: ${proposal} was approved by ${prior.resolvedBy ?? 'an unrecorded hand'}, not a person; ` +
+        'an outward write is carried out only on a human approval',
+    );
   }
   const sensitive = sourceDeclaration(store, record.source)?.sensitive === true;
   let basis: ProposalDecision['basis'];
@@ -901,12 +958,16 @@ export function markApplied(store: Store, proposal: string, reason: string, deci
             : ' (high-risk never applies on standing consent)'),
     );
   }
-  store.db
+  // Sequential rather than a nested transaction: markApplied runs inside a
+  // caller's transaction (adopting a source relationship is one such caller),
+  // where an inner BEGIN is an error. The provenance follows the applied row.
+  const seq = store.db
     .prepare(
       `INSERT INTO proposal_decisions (proposal, verdict, basis, reason, decided_at)
        VALUES (?, 'applied', ?, ?, ?)`,
     )
-    .run(proposal, basis, reason, decidedAt);
+    .run(proposal, basis, reason, decidedAt).lastInsertRowid;
+  recordDecisionProvenance(store, seq, resolvedBy);
 }
 
 /** Proposals in a workspace with no decision yet, oldest first: the human's queue. */
