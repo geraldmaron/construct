@@ -21,6 +21,12 @@
  * file already exists there, so a project's own other MCP servers survive
  * untouched, the same restraint kernel/cleanup/catalog.ts's un-merge already
  * assumes on the way out.
+ *
+ * Bare `construct wire` never writes: it detects the host and previews the
+ * entry and the file it would land in, the same preview/apply split
+ * `construct cleanup` uses for its own writes. Only `--yes` commits it — a
+ * bare invocation someone runs to see what would happen must not be the
+ * thing that edits their project config.
  */
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -91,10 +97,11 @@ function writeConfig(path: string, config: Record<string, unknown>): void {
 }
 
 export function wire(
-  _argv: string[] = [],
+  argv: string[] = [],
   cwd: string = process.cwd(),
   env: NodeJS.ProcessEnv = process.env,
 ): number {
+  const confirmed = argv.includes('--yes') || argv.includes('-y');
   const ambient = detectAmbientHost(env);
   if (ambient === null) {
     return refuse(
@@ -127,6 +134,15 @@ export function wire(
     return 0;
   }
 
+  const commandLine = `${String((entry as { command: string }).command)} ${(entry as { args: readonly string[] }).args.join(' ')}`;
+  if (!confirmed) {
+    process.stdout.write(
+      `construct wire: would wire ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n` +
+        'Nothing was written. Pass --yes to write it.\n',
+    );
+    return 0;
+  }
+
   const config: Record<string, unknown> = {
     ...existing,
     mcpServers: { ...mcpServers, [target.serverName]: entry },
@@ -134,8 +150,7 @@ export function wire(
   writeConfig(path, config);
 
   process.stdout.write(
-    `wired ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ` +
-      `${String((entry as { command: string }).command)} ${(entry as { args: readonly string[] }).args.join(' ')}\n`,
+    `wired ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n`,
   );
   return 0;
 }
