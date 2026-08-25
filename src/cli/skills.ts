@@ -1,12 +1,20 @@
 /**
- * cli/skills.ts — two things share this verb, and the first word decides which.
+ * cli/skills.ts — two disjoint skill families share this verb, and the first
+ * word decides which is meant.
  *
- * The subcommands carry the portable method skills this checkout ships into a
- * host's skills directory, as exact copies. The flag form writes or removes the
- * generated role pack, which is output rather than state: every decision about
- * what belongs in it, and which folders a removal may touch, is the kernel
- * projection's; this file supplies the version, does the reading and writing,
- * and says what happened.
+ * `list`/`install`/`installed`/`uninstall` carry the PORTABLE METHOD SKILLS
+ * this checkout ships (adversarial-review, context-mapping, ...) into a
+ * host's skills directory, as exact copies. `pack` writes or removes the
+ * generated LENS SKILLS (construct-analyst, construct-architect, ...), which
+ * are output rather than state: every decision about what belongs in the
+ * pack, and which folders a removal may touch, is the kernel projection's;
+ * this file supplies the version, does the reading and writing, and says
+ * what happened.
+ *
+ * Every subcommand above is explicit by name. A bare `construct skills`, or
+ * one with an unrecognized first word, writes nothing at all — it prints
+ * usage instead, the same way a mistyped subcommand would. Only `pack`
+ * writes or removes the generated files; naming it is the confirmation.
  */
 
 import {
@@ -73,14 +81,19 @@ const SKILLS_USAGE =
   '       construct skills install --all [--dir=<dir>|--host=<host>] [--force]\n' +
   '       construct skills installed [--dir=<dir>|--host=<host>]\n' +
   '       construct skills uninstall <name> [--dir=<dir>|--host=<host>]\n' +
-  '       construct skills [--out=<dir>] [--uninstall]\n' +
-  '  The first five carry the portable method skills this checkout ships, into\n' +
-  `  a host skills directory (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>\n` +
-  '  for a documented host directory — --dir and --host are mutually exclusive).\n' +
-  '  install refuses a target that differs from this checkout\'s copy — edited\n' +
-  '  by hand, or installed from another version — unless --force is given.\n' +
-  '  The last writes or removes the generated role pack (--out, default\n' +
-  '  ./.claude/skills) — output regenerated from the role catalog, not a copy.\n';
+  '       construct skills pack [--out=<dir>] [--uninstall]\n' +
+  '  Two disjoint skill families share this verb:\n' +
+  '  - PORTABLE METHOD SKILLS (list/install/installed/uninstall): the ones this\n' +
+  `    checkout ships, carried as exact copies into a host skills directory\n` +
+  `    (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>\n` +
+  '    for a documented host directory — --dir and --host are mutually exclusive).\n' +
+  '    install refuses a target that differs from this checkout\'s copy — edited\n' +
+  '    by hand, or installed from another version — unless --force is given.\n' +
+  '  - LENS SKILLS (pack): writes or removes the generated role pack (--out,\n' +
+  '    default ./.claude/skills) — output regenerated from the role catalog,\n' +
+  '    not a copy. Nothing writes without naming this subcommand.\n' +
+  '  A bare `construct skills`, with no subcommand, changes nothing — it only\n' +
+  '  ever prints this usage.\n';
 
 /**
  * The first symbolic link sitting at `root` or on the path from it down to
@@ -121,8 +134,11 @@ function symlinkGuardRoot(out: string): string {
   return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel) ? cwd : out;
 }
 
-/** The subcommands that carry the shipped method skills, as opposed to the pack. */
+/** The subcommands that carry the portable method skills, as opposed to the lens pack. */
 const SKILL_LIBRARY_SUBCOMMANDS = ['list', 'install', 'installed', 'uninstall'];
+
+/** The one subcommand that writes or removes the generated lens skills. */
+const PACK_SUBCOMMAND = 'pack';
 
 /**
  * Where this install keeps the portable method skills, resolved from this
@@ -266,6 +282,7 @@ function skillLibrary(sub: string, argv: string[]): number {
     // The whole description, wrapped rather than cut: it is what decides
     // whether a host reaches for the skill, so a shortened one would be a
     // different skill's description.
+    process.stdout.write('portable method skills (this checkout ships these):\n');
     for (const source of sources) {
       process.stdout.write(
         `  ${source.name} ${source.version ?? '-'}\n${wrapSkillText(source.description, '    ')}\n`,
@@ -292,6 +309,7 @@ function skillLibrary(sub: string, argv: string[]): number {
     const folders = readInstalledFolders(dir);
     const statuses = skillStatuses(sources, folders);
     const name = padded(statuses.map((status) => status.name));
+    process.stdout.write(`portable method skills installed in ${dir}:\n`);
     for (const status of statuses) {
       process.stdout.write(
         `  ${status.state.padEnd(9)} ${name(status.name)}  ${status.version ?? '-'}  — ${status.why}\n`,
@@ -471,18 +489,16 @@ function skillUninstall(
 }
 
 /**
- * Write the Agent Skills pack, or remove one. The pack is output, not state:
- * every decision about what belongs in it, and which folders removal may
- * touch, is made by the kernel projection; this command only supplies the
- * version, does the reading and writing, and says what happened.
+ * Write the generated lens skills pack, or remove one. The pack is output,
+ * not state: every decision about what belongs in it, and which folders
+ * removal may touch, is made by the kernel projection; this command only
+ * supplies the version, does the reading and writing, and says what happened.
+ *
+ * Reached only through the explicit `pack` subcommand — naming it is the
+ * confirmation that a write is wanted, the same way `install`/`uninstall`
+ * name themselves for the portable method skills.
  */
-export function skills(argv: string[]): number {
-  // Two things share this verb: the shipped method skills, carried by the
-  // subcommands, and the role pack, generated by the flag form. The first word
-  // decides which, and the flag form takes no words at all — so a mistyped
-  // subcommand is refused rather than silently writing a pack.
-  if (SKILL_LIBRARY_SUBCOMMANDS.includes(argv[0])) return skillLibrary(argv[0], argv.slice(1));
-
+function skillPack(argv: string[]): number {
   const { flags, rest } = parseFlags(argv);
   const known = new Set(['out', 'uninstall']);
   const unknown = Object.keys(flags).filter((f) => !known.has(f));
@@ -550,8 +566,22 @@ export function skills(argv: string[]): number {
     process.stdout.write(`  wrote ${file.path}\n`);
   }
   process.stdout.write(
-    `skills: ${String(files.length)} skill(s) written to ${out}, stamped ${packageVersion()}\n` +
-      '  Remove them with: construct skills --uninstall\n',
+    `skills: ${String(files.length)} lens skill(s) written to ${out}, stamped ${packageVersion()}\n` +
+      '  Remove them with: construct skills pack --uninstall\n',
   );
   return 0;
+}
+
+/**
+ * The two disjoint skill families this verb carries: the portable method
+ * skills through their named subcommands, and the generated lens skills
+ * through `pack`. Naming a subcommand is what authorizes a write — a bare
+ * `construct skills`, or a word this command does not recognize, changes
+ * nothing and only prints usage.
+ */
+export function skills(argv: string[]): number {
+  if (SKILL_LIBRARY_SUBCOMMANDS.includes(argv[0])) return skillLibrary(argv[0], argv.slice(1));
+  if (argv[0] === PACK_SUBCOMMAND) return skillPack(argv.slice(1));
+  process.stderr.write(SKILLS_USAGE);
+  return 2;
 }
