@@ -16,7 +16,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
-import { extractImportSpecifiers, resolveRelativeImport, isUnderTree, violationsIn, connectorRootOf } from '../../scripts/lint-connector-gate.mjs';
+import { extractImportSpecifiers, resolveRelativeImport, isUnderTree, violationsIn, connectorRootOf, computedDynamicImports } from '../../scripts/lint-connector-gate.mjs';
 
 type ImportSpec = { specifier: string; line: number };
 type Violation = { relPath: string; line: number; specifier: string };
@@ -121,6 +121,42 @@ test('violationsIn on a connector file allows kernel, its own modules, and built
   );
 });
 
+test('computedDynamicImports finds a call built from concatenation, a variable, or a substituted template — never a plain literal', () => {
+  const text = [
+    "await import(base + name);",
+    "await import(pathVar);",
+    "await import(`./${name}`);",
+    "await import('./literal.ts');",
+    "await import(`./no-substitution.ts`);",
+  ].join('\n');
+  const lines = computedDynamicImports(text).map((v: { line: number }) => v.line);
+  assert.deepEqual(lines, [1, 2, 3]);
+});
+
+test('computedDynamicImports ignores a call mentioned only in a comment or a string', () => {
+  const text = [
+    "// import(base + name) is what this used to look like",
+    "/* also see import(pathVar) above */",
+    "const msg = 'a computed import() argument was found';",
+  ].join('\n');
+  assert.deepEqual(computedDynamicImports(text), []);
+});
+
+test('violationsIn reports a computed dynamic import in either role, as its own kind', () => {
+  const importer = violationsIn('src/kernel/run/apply.ts', "await import(pathVar);\n", 'importer');
+  assert.equal(importer.length, 1);
+  assert.equal(importer[0].kind, 'computed');
+  assert.equal(importer[0].line, 1);
+
+  const connector = violationsIn(
+    'src/connectors/jira/client.ts',
+    "await import(pathVar);\n",
+    'connector',
+  );
+  assert.equal(connector.length, 1);
+  assert.equal(connector[0].kind, 'computed');
+});
+
 test('connectorRootOf names the one connector a file belongs to, and nothing for a top-level file', () => {
   assert.equal(connectorRootOf('src/connectors/jira/client.ts'), 'src/connectors/jira');
   assert.equal(connectorRootOf('src/connectors/jira/wire/http.ts'), 'src/connectors/jira');
@@ -209,6 +245,18 @@ test('a connector importing a host adapter, or another connector, fails the lint
     // never be reported — only the host-adapter line is a violation.
     assert.doesNotMatch(stderr, /kernel\/connectors\/seam\.ts/);
     assert.doesNotMatch(stderr, /node:crypto/);
+  } finally {
+    cleanupFixtures();
+  }
+});
+
+test('a computed dynamic import in a governed tree fails the lint even with no connector specifier in sight', async () => {
+  write(FIXTURES.scripts, "const base = './somewhere';\nawait import(base + '/x.mjs');\n");
+  try {
+    const { code, stderr } = await runLint();
+    assert.equal(code, 1);
+    assert.match(stderr, /__connector-gate-lint-fixture__\.mjs:2/);
+    assert.match(stderr, /computed dynamic-import argument/);
   } finally {
     cleanupFixtures();
   }
