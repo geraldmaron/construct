@@ -2471,3 +2471,73 @@ reads the finding. A band never becomes a score, a priority, or an input to
 which role gets dispatched.
 
 Recorded for `construct-98ac`.
+
+## 26. The host you are in should be the host that runs the work (2026-08-25)
+
+The triggering incident: an agent inside an IBM Bob session installed Construct,
+was asked to use it, and relayed `construct work --host=opencode` — a host the
+user was not in. The stated standard: *"If I tell an agent to install construct
+and point it at the repository, that should be it. It should work after that
+within that session."* The archetype walk (`docs/internal/install-path-archetypes.md`)
+found the proximate cause is one missing capability and one design collision.
+
+**What is true in the code.** `src/cli/work.ts:130` is `const host = args.host ??
+'opencode'` — the default executor is hardcoded, and nothing reads the ambient
+session. `hostEnvironment` (src/hosts/environment.ts) only shapes the env passed
+*to* a spawned host; there is no detection of the host Construct runs *inside*.
+And the in-host projection (`src/hosts/mcp/projection.ts`) is presence-only by
+deliberate design — "No dispatch. `construct work` spends money on a host
+adapter" — so a host like Bob, which drives Construct through MCP tool calls, can
+record an outcome and read the log but can never execute the work. You can be
+present in Bob; you cannot execute in Bob.
+
+**Decision (session, under decide-by-default), in two parts.**
+
+1. **Host self-detection replaces the hardcoded default — decided, session
+   work.** Construct detects the ambient host from environment signals (the
+   markers hosts already set: `CLAUDECODE`, `CURSOR_*`, `TERM_PROGRAM`, Bob's own
+   markers) and, for a host that has a wired CLI adapter, defaults dispatch and
+   every relayed next-step command to that host rather than to `opencode`.
+   `opencode` becomes the last-resort default when no ambient host is detected
+   and none is configured, never the thing a user in another session is silently
+   sent to. This changes no STRATEGY commitment — commitment 1 already makes the
+   host a swappable adapter, and this is choosing the right one by default
+   instead of a fixed one. It is the incident's direct fix and the epic's P1.
+
+2. **Execution through the ambient host when that host has no spawnable CLI (Bob,
+   goose, nanobot) — direction chosen, the seam change flagged for Gerald.**
+   Construct cannot spawn Bob, so seamless execution inside Bob requires the
+   inversion the adapter interface already leaves room for ("an in-process
+   handler, a coding-agent CLI, an ACP-speaking agent"): the ambient host's own
+   agent loop executes a dispatched task through a projection tool and returns
+   the deliverable, rather than Construct spawning an executor. This is
+   host-driven execution, and it is genuinely new. Two constraints are
+   non-negotiable and carry into the epic: **completion state stays kernel-owned
+   (commitment 14)** — the host executes the *work* but never advances
+   `draft→challenged→final`; verdicts still gate promotion, exactly as they do
+   for a spawned host; and **the decide/answer provenance hole (construct-hleq)
+   must close first**, because host-driven execution multiplies the surface where
+   a model-relayed action must be distinguishable from a human one. The part of
+   this that edits the presence/execution seam STRATEGY, Phase 2 describes ("the
+   projection stays thin … no logic the CLI spine does not already have") is
+   **Gerald's to ratify** — a session researches it, prototypes it behind a flag,
+   and records the options, but does not rewrite that STRATEGY sentence.
+
+**Best alternative weighed and not taken.** Leave dispatch as-is and only improve
+the *messaging* — have relayed commands name the ambient host in prose without
+Construct actually executing there. Rejected: it narrows the gap for the
+terminal-first dev (C) but does nothing for the operator (A) or the
+agent-session resident (B), who do not want a shell command at all; it treats
+the symptom (the wrong host name in a relayed string) and not the cause (no
+execution path through the session the user is in).
+
+**What would reverse it.** If host-driven execution cannot satisfy commitment 14
+without the host being able to forge completion state — i.e. if a prototype shows
+the inversion inevitably hands the host a way to mark its own work final — then
+part 2 is withdrawn and the honest state is recorded: seamless in-session
+execution is not reachable for projection-only hosts, and those hosts stay
+presence-only with dispatch relayed to a wired CLI host, named honestly.
+
+**Sources.** The archetype instrument (`docs/internal/install-path-archetypes.md`),
+the code sites above, STRATEGY commitments 1 and 14 and Phase 2, and the Bob
+trial packet (construct-fbgw). Recorded for the program epic construct-INSTALL.
