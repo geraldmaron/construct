@@ -21,12 +21,20 @@ import type { ProbeExec } from '../../src/hosts/presence.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
-import { sterileHome } from '../harness/sterile.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 // A dispatch reads the machine's agent skills directory to find out what
 // method it can offer a role, so home is moved for this file: what the suite
 // observes must not depend on what is installed for whoever runs it.
 sterileHome();
+
+// This file exercises the census-based selection that runs precisely when
+// nothing else — a typed --host, a recorded dispatch surface, an ambient
+// host with a wired adapter — already answered the question. Whoever runs
+// this suite is itself very likely an ambient host (an agent session running
+// its own tests), so ambient markers are cleared for the file: these cases
+// are about the census, not about what invoked the test runner.
+sterileAmbientEnv();
 
 const OUTCOME = 'launch a paid beta to EU users next month';
 
