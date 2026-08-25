@@ -47,7 +47,7 @@
  * only says what a valid value looks like.
  */
 
-import { closeSync, constants, lstatSync, openSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { closeSync, constants, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import type { Paths } from '../kernel/paths.ts';
@@ -411,6 +411,49 @@ export function fileValuesToObject(values: FileValues): Record<string, unknown> 
 /** The global settings file: one per machine, beside every other Construct state. */
 export function globalSettingsPath(paths: Paths): string {
   return join(paths.configDir, 'settings.json');
+}
+
+/** Whether a key names a file-backed preference — the whole of what a file, or
+ * `construct settings set`, may write. */
+export function isPreferenceKey(key: string): boolean {
+  return SPEC_BY_KEY.has(key);
+}
+
+/**
+ * Validate a scalar value (as typed at the CLI) for one file-backed preference,
+ * returning its parsed form. This is the same validation the ladder applies to
+ * an environment variable or a flag, reused so `construct settings set` refuses
+ * exactly what a file would — a host that is a path, a malformed locale — rather
+ * than writing an unusable value the next read would reject. Throws
+ * SettingsError for an unknown key or an unusable value.
+ */
+export function parseFileSettingScalar(key: string, raw: string): unknown {
+  const spec = SPEC_BY_KEY.get(key);
+  if (!spec) {
+    throw new SettingsError(`"${key}" is not a file setting (allowed: ${PREFERENCE_KEYS.join(', ')})`);
+  }
+  return spec.fromScalar(raw);
+}
+
+/**
+ * Write one preference into the global settings file, preserving every other
+ * key already there, and return the path written.
+ *
+ * The global file is the user's own — it lives under their config directory,
+ * never in a checked-out repository — so it needs no ratification, which is the
+ * whole reason `construct settings set` targets it: a project file is
+ * attacker-authored ground, trusted rather than written. The value is stored in
+ * the parsed, validated form the caller supplies, so it round-trips through the
+ * same closed schema on the next read.
+ */
+export function writeGlobalSetting(paths: Paths, key: string, value: unknown): string {
+  const path = globalSettingsPath(paths);
+  const existing = readSettingsFile(path);
+  const object = existing ? fileValuesToObject(existing) : {};
+  object[key] = value;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(object, null, 2)}\n`, { mode: 0o600 });
+  return path;
 }
 
 const PROJECT_SETTINGS_DIR = '.construct';
