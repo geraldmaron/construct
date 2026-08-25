@@ -476,3 +476,149 @@ test('construct trust reports a refused file on stderr with a nonzero code', { s
     rmSync(xdg, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------
+// The workspace binding — a ratified project file scopes a repo's sources and
+// outcomes to a named workspace, so client work does not pool in the shared
+// `default` every repository under one HOME would otherwise share.
+// ---------------------------------------------------------------------------
+
+test('a ratified project file binds the workspace, so a repo’s sources land there not in the shared default', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    r.writeFile('{"workspace":"acme"}');
+    assert.equal((await runCli(['trust', '--ratify'], r.cwd, xdg)).code, 0);
+
+    // With no --workspace typed, the add lands in the bound workspace, and the
+    // shared-default warning does not fire because a binding scopes it.
+    const added = await runCli(['source', 'add', '--kind=github', '--locator=acme/app'], r.cwd, xdg);
+    assert.equal(added.code, 0);
+    assert.match(added.out, /workspace acme/);
+    assert.doesNotMatch(added.err, /shared 'default' workspace/);
+
+    // list, also with no --workspace, reads the same bound workspace.
+    const listed = await runCli(['source', 'list'], r.cwd, xdg);
+    assert.match(listed.out, /acme\/app/);
+
+    // The shared default is a different, empty workspace — the source did not leak into it.
+    const inDefault = await runCli(['source', 'list', '--workspace=default'], r.cwd, xdg);
+    assert.match(inDefault.out, /no sources declared for workspace default/);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+test('source add in the shared default with nothing binding it warns before it lands', async () => {
+  const r = repo(); // no .construct/settings.json, so nothing binds a workspace
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    const added = await runCli(['source', 'add', '--kind=github', '--locator=x/y'], r.cwd, xdg);
+    assert.equal(added.code, 0);
+    assert.match(added.err, /shared 'default' workspace, visible to every repo/);
+    assert.match(added.err, /--workspace=<name> or bind one in \.construct\/settings\.json/);
+    assert.match(added.out, /workspace default/);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+test('outcome in the shared default with nothing binding it warns before it records', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    const recorded = await runCli(['outcome', 'tidy the documentation'], r.cwd, xdg);
+    assert.equal(recorded.code, 0);
+    assert.match(recorded.err, /shared 'default' workspace, visible to every repo/);
+    assert.match(recorded.out, /^run /m);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+test('outcome under a ratified binding plans on that workspace and does not warn', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    r.writeFile('{"workspace":"acme"}');
+    assert.equal((await runCli(['trust', '--ratify'], r.cwd, xdg)).code, 0);
+    const recorded = await runCli(['outcome', 'tidy the documentation'], r.cwd, xdg);
+    assert.equal(recorded.code, 0);
+    assert.doesNotMatch(recorded.err, /shared 'default' workspace/);
+    assert.match(recorded.out, /workspace "acme"/);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+test('an explicit --workspace=default is a choice, so it does not warn', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    const added = await runCli(
+      ['source', 'add', '--kind=github', '--locator=x/y', '--workspace=default'],
+      r.cwd,
+      xdg,
+    );
+    assert.equal(added.code, 0);
+    assert.doesNotMatch(added.err, /shared 'default' workspace/);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+test('source add on a directory path that is not there yet says so instead of returning silently', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    const added = await runCli(
+      ['source', 'add', '--kind=directory', '--locator=/no/such/path/here', '--workspace=acme'],
+      r.cwd,
+      xdg,
+    );
+    assert.equal(added.code, 0);
+    assert.match(added.out, /declared/);
+    assert.match(added.err, /\/no\/such\/path\/here is not there yet/);
+    assert.match(added.err, /checked when it is read/);
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// A consent key in a project file is a clean one-line error at every command
+// that opens the store, never an uncaught stack trace — opening the store
+// resolves `state` through the same ladder, so the refusal surfaces early.
+// ---------------------------------------------------------------------------
+
+test('a consent-bearing key in a project file renders a clean one-line error, not a stack trace', async () => {
+  const r = repo();
+  const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
+  try {
+    // Open the store once with no project file so it exists — the crash only
+    // arises once the store is present, because that is when locating it
+    // resolves `state` through the ladder and meets the refused key.
+    assert.equal((await runCli(['settings'], r.cwd, xdg)).code, 0);
+    r.writeFile('{"consent":"on"}');
+
+    for (const argv of [['settings'], ['trust'], ['trust', '--ratify']]) {
+      const result = await runCli(argv, r.cwd, xdg);
+      assert.equal(result.code, 1, `${argv.join(' ')} exits nonzero`);
+      assert.match(result.err, /consent/, `${argv.join(' ')} names the offending key`);
+      assert.match(result.err, /construct consent/, `${argv.join(' ')} points at where consent lives`);
+      // No stack trace reaches the user: no source-file frames, no error class name.
+      assert.doesNotMatch(result.err, /settings-file\.ts/, `${argv.join(' ')} shows no file frame`);
+      assert.doesNotMatch(result.err, /\n\s+at /, `${argv.join(' ')} shows no stack frame`);
+      assert.doesNotMatch(result.err, /SettingsError/, `${argv.join(' ')} shows no error class`);
+    }
+  } finally {
+    r.cleanup();
+    rmSync(xdg, { recursive: true, force: true });
+  }
+});

@@ -37,13 +37,67 @@ import {
   projectTrustNote,
   renderFileValue,
   resolveSettings,
+  resolveSettingValue,
   SettingsError,
 } from './settings-file.ts';
 import type { FileValues, ProjectDiscovery, ResolveInputs } from './settings-file.ts';
+import type { Store } from '../kernel/store/open.ts';
 
 /** The user's home, the discovery floor when a working directory sits under no repository. */
 function homeDir(): string {
   return process.env.HOME ?? homedir();
+}
+
+/** The workspace a command should act in, and whether it fell to the shared default with nothing binding it. */
+export interface EffectiveWorkspace {
+  readonly workspace: string;
+  /**
+   * True only when the value is the shared `default` and nothing set it — no
+   * `--workspace`, no CONSTRUCT_WORKSPACE, no ratified project binding. This is
+   * the exposed case: a repository whose sources and outcomes pool in the one
+   * workspace every other repository under this HOME also reads.
+   */
+  readonly unboundDefault: boolean;
+}
+
+/**
+ * The one sentence a command prints when it is about to write into the shared
+ * `default` workspace with nothing scoping it there. Named so `source add` and
+ * `outcome` say the same thing about the same exposure.
+ */
+export const SHARED_DEFAULT_WORKSPACE_NOTICE =
+  "this lands in the shared 'default' workspace, visible to every repo on this machine; " +
+  'scope it with --workspace=<name> or bind one in .construct/settings.json';
+
+/**
+ * Which workspace a command runs in, resolved through the same ladder
+ * `construct settings` prints: an explicit `--workspace` wins, then
+ * CONSTRUCT_WORKSPACE, then a ratified project file's binding, then the shared
+ * `default`. A malformed or untrusted-shaped project file cannot decide it —
+ * that is surfaced by `construct settings` and `construct trust`, not by
+ * failing the command that only wanted to know where to file its work — so a
+ * parse refusal falls back to the shared default, flagged as unbound.
+ */
+export function effectiveWorkspace(store: Store, flagValue: string | undefined): EffectiveWorkspace {
+  const trimmed = flagValue?.trim();
+  const inputs: ResolveInputs = {
+    paths: resolvePaths(),
+    cwd: process.cwd(),
+    env: process.env,
+    flags: trimmed ? { workspace: trimmed } : {},
+    home: homeDir(),
+    ratified: (repoIdentity, hash) => settingsFileRatified(store, repoIdentity, hash),
+  };
+  let resolved: { readonly value: unknown; readonly source: string } | null;
+  try {
+    resolved = resolveSettingValue(inputs, 'workspace');
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    return { workspace: 'default', unboundDefault: true };
+  }
+  const workspace = resolved ? String(resolved.value) : 'default';
+  const unboundDefault = workspace === 'default' && (resolved === null || resolved.source === 'built-in default');
+  return { workspace, unboundDefault };
 }
 
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
@@ -128,35 +182,39 @@ export function consent(argv: string[]): number {
  */
 export function settings(argv: string[]): number {
   const { flags } = parseFlags(argv);
-  return withStore((store) => {
-    const inputs: ResolveInputs = {
-      paths: resolvePaths(),
-      cwd: process.cwd(),
-      env: process.env,
-      flags,
-      home: homeDir(),
-      ratified: (repoIdentity, hash) => settingsFileRatified(store, repoIdentity, hash),
-    };
-    let resolved;
-    let note: string | null;
-    try {
-      resolved = resolveSettings(inputs);
-      note = projectTrustNote(inputs);
-    } catch (error) {
-      if (!(error instanceof SettingsError)) throw error;
-      process.stderr.write(`construct settings: ${error.message}\n`);
-      return 1;
-    }
-    const keyWidth = Math.max(...resolved.map((r) => r.key.length));
-    const valueWidth = Math.max(...resolved.map((r) => r.display.length));
-    for (const setting of resolved) {
-      process.stdout.write(
-        `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
-      );
-    }
-    if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
-    return 0;
-  });
+  // The store is opened first, and opening it resolves `state` through this
+  // same ladder to know where the store lives — so a malformed or
+  // consent-bearing project file refuses at the ladder before the body below
+  // ever runs. Catching SettingsError around the whole command, not only
+  // around the resolve inside it, is what turns that refusal into a one-line
+  // error instead of an uncaught stack trace.
+  try {
+    return withStore((store) => {
+      const inputs: ResolveInputs = {
+        paths: resolvePaths(),
+        cwd: process.cwd(),
+        env: process.env,
+        flags,
+        home: homeDir(),
+        ratified: (repoIdentity, hash) => settingsFileRatified(store, repoIdentity, hash),
+      };
+      const resolved = resolveSettings(inputs);
+      const note = projectTrustNote(inputs);
+      const keyWidth = Math.max(...resolved.map((r) => r.key.length));
+      const valueWidth = Math.max(...resolved.map((r) => r.display.length));
+      for (const setting of resolved) {
+        process.stdout.write(
+          `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
+        );
+      }
+      if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
+      return 0;
+    });
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    process.stderr.write(`construct settings: ${error.message}\n`);
+    return 1;
+  }
 }
 
 const TRUST_USAGE =

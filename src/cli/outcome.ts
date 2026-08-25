@@ -30,6 +30,7 @@ import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
+import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
@@ -57,9 +58,14 @@ export interface OutcomeArgs {
    * Which workspace's declared sources and engagement mode the plan is built
    * from. `source add` and `ask` already take it; a run that could not be
    * pointed at the same ground they were is a flag that means something on one
-   * command and nothing on the next.
+   * command and nothing on the next. This is the parsed default; the run
+   * resolves the effective workspace against the settings ladder (an explicit
+   * flag, then a ratified project binding, then the shared default) once it
+   * holds the store.
    */
   readonly workspace: string;
+  /** The raw `--workspace` value, or undefined — what the ladder resolution starts from. */
+  readonly explicitWorkspace?: string;
   /** How long one host invocation may run, in milliseconds. Host default when unset. */
   readonly timeoutMs?: number;
 }
@@ -131,6 +137,7 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
     dir,
     domains,
     workspace: workspaceFlag(flags),
+    ...(flags.workspace === undefined ? {} : { explicitWorkspace: flags.workspace }),
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
 }
@@ -279,6 +286,14 @@ export async function outcome(
     const at = now();
     const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
 
+    // The workspace this run's plan and records belong to, resolved against the
+    // settings ladder now that the store is open: an explicit --workspace, then
+    // a ratified project binding, then the shared default. The warning fires
+    // before the run is recorded, so a run about to pool in the shared default
+    // says so before it is filed rather than after.
+    const { workspace, unboundDefault } = effectiveWorkspace(store, args.explicitWorkspace);
+    if (unboundDefault) process.stderr.write(`outcome: ${SHARED_DEFAULT_WORKSPACE_NOTICE}\n`);
+
     // Named staff: no map, no model, no cost — but the same catalog gate.
     if (args.domains !== undefined) {
       let started: StartedRun;
@@ -294,7 +309,7 @@ export async function outcome(
         return 2;
       }
       reportRun(started, env);
-      planRun(store, started, null, args.workspace, at);
+      planRun(store, started, null, workspace, at);
       return 0;
     }
 
@@ -320,11 +335,11 @@ export async function outcome(
               : '') +
             `  construct outcome --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.text)}\n`,
         );
-        planRun(store, started, null, args.workspace, at);
+        planRun(store, started, null, workspace, at);
         return 0;
       }
       reportRun(started, env);
-      planRun(store, started, null, args.workspace, at);
+      planRun(store, started, null, workspace, at);
       return 0;
     }
 
@@ -421,11 +436,11 @@ export async function outcome(
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
       );
-      planRun(store, started, densified, args.workspace, at);
+      planRun(store, started, densified, workspace, at);
       return 0;
     }
     reportRun(started, env);
-    planRun(store, started, densified, args.workspace, at);
+    planRun(store, started, densified, workspace, at);
     return 0;
   });
 }

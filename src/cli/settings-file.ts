@@ -167,6 +167,38 @@ function validateState(raw: unknown, where: string): StateValue {
   return value as StateValue;
 }
 
+const MAX_WORKSPACE_NAME_LENGTH = 64;
+
+/**
+ * A workspace name a file may bind the repository to: a plain label, never a
+ * path. The path check is the whole point of validating it here — a workspace
+ * that resolved to `../other` or an absolute location would let a checked-out
+ * file steer this repository's records into another workspace's store rows,
+ * the exact cross-client leak the binding exists to close. Letters, digits,
+ * dot, dash, and underscore only, starting on an alphanumeric, so the
+ * traversal names `.` and `..` cannot occur.
+ */
+function validateWorkspace(raw: unknown, where: string): string {
+  if (typeof raw !== 'string') {
+    throw new SettingsError(`${where}: workspace must be a name like "acme", not ${typeof raw}`);
+  }
+  const value = raw.trim();
+  if (value === '') {
+    throw new SettingsError(`${where}: workspace is a name like "acme", not empty`);
+  }
+  if (value.length > MAX_WORKSPACE_NAME_LENGTH) {
+    throw new SettingsError(
+      `${where}: a workspace name runs to ${value.length} characters; keep it under ${MAX_WORKSPACE_NAME_LENGTH}`,
+    );
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value)) {
+    throw new SettingsError(
+      `${where}: workspace names a workspace (letters, digits, dot, dash, underscore), not a path — got "${value}"`,
+    );
+  }
+  return value;
+}
+
 const MAX_GROUND_HINTS = 20;
 const MAX_GROUND_HINT_LENGTH = 200;
 
@@ -250,6 +282,21 @@ export const PREFERENCE_SPECS: readonly PreferenceSpec[] = Object.freeze([
     fallback: 'home',
     fromFile: (raw) => validateState(raw, 'settings file'),
     fromScalar: (raw) => validateState(raw, 'setting'),
+    show: (value) => value as string,
+    harden: (shown) => escapeForTerminal(shown),
+  },
+  {
+    // Which workspace a repository's declared sources, outcomes, and records
+    // belong to. Bound in a ratified project file so that checking a client's
+    // repository out is enough to keep its ground out of the shared `default`
+    // pool every other repository under one HOME would otherwise share. The
+    // value is a name, validated against paths the same way `host` is.
+    key: 'workspace',
+    envVar: 'CONSTRUCT_WORKSPACE',
+    flag: 'workspace',
+    fallback: 'default',
+    fromFile: (raw) => validateWorkspace(raw, 'settings file'),
+    fromScalar: (raw) => validateWorkspace(raw, 'setting'),
     show: (value) => value as string,
     harden: (shown) => escapeForTerminal(shown),
   },
@@ -628,6 +675,61 @@ function fromFileLayer(values: FileValues | null, key: string): Contribution {
 }
 
 /**
+ * The three file layers of the ladder, read once for a resolution. Every
+ * preference is resolved against the same reading, so one key and another
+ * cannot disagree about which project file was in effect or whether it was
+ * trusted.
+ */
+interface LadderContext {
+  readonly inputs: ResolveInputs;
+  readonly globalValues: FileValues | null;
+  readonly projectValues: FileValues | null;
+  readonly projectAdmitted: boolean;
+}
+
+function ladderContext(inputs: ResolveInputs): LadderContext {
+  const globalValues = readSettingsFile(globalSettingsPath(inputs.paths));
+  const discovery = discoverProjectSettings(inputs.cwd, inputs.home);
+  const projectValues = discovery.outcome === 'found' ? discovery.values : null;
+  const projectAdmitted =
+    discovery.outcome === 'found' && inputs.ratified(discovery.repoIdentity, discovery.hash);
+  return { inputs, globalValues, projectValues, projectAdmitted };
+}
+
+/** One preference's winning value and the layer it came from, raw (unhardened). */
+function resolveOne(spec: PreferenceSpec, ctx: LadderContext): { value: unknown; source: SettingLayer } {
+  const { inputs, globalValues, projectValues, projectAdmitted } = ctx;
+  // Highest precedence first: the first layer that carries a value wins.
+  const candidates: Array<{ readonly source: SettingLayer; readonly contribution: Contribution }> = [
+    {
+      source: 'flag',
+      contribution:
+        inputs.flags[spec.flag] !== undefined
+          ? { present: true, value: spec.fromScalar(inputs.flags[spec.flag]) }
+          : ABSENT,
+    },
+    {
+      source: 'environment',
+      contribution:
+        inputs.env[spec.envVar] !== undefined && inputs.env[spec.envVar] !== ''
+          ? { present: true, value: spec.fromScalar(inputs.env[spec.envVar] as string) }
+          : ABSENT,
+    },
+    {
+      source: 'project file',
+      contribution: projectAdmitted ? fromFileLayer(projectValues, spec.key) : ABSENT,
+    },
+    { source: 'global file', contribution: fromFileLayer(globalValues, spec.key) },
+    { source: 'built-in default', contribution: { present: true, value: spec.fallback } },
+  ];
+
+  const won = candidates.find((c) => c.contribution.present);
+  // The built-in default is always present, so a winner is guaranteed.
+  const value = won && won.contribution.present ? won.contribution.value : spec.fallback;
+  return { value, source: won ? won.source : 'built-in default' };
+}
+
+/**
  * Resolve every preference against the full ladder, returning each with the
  * layer that won. The project file is read and validated whether or not it is
  * trusted — a malformed project file is a real error the operator should see,
@@ -637,46 +739,27 @@ function fromFileLayer(values: FileValues | null, key: string): Contribution {
  * on, so an untrusted file has no effect on a resolved setting at all.
  */
 export function resolveSettings(inputs: ResolveInputs): ResolvedSetting[] {
-  const globalValues = readSettingsFile(globalSettingsPath(inputs.paths));
-  const discovery = discoverProjectSettings(inputs.cwd, inputs.home);
-  const projectValues = discovery.outcome === 'found' ? discovery.values : null;
-  const projectAdmitted =
-    discovery.outcome === 'found' && inputs.ratified(discovery.repoIdentity, discovery.hash);
-
+  const ctx = ladderContext(inputs);
   return PREFERENCE_SPECS.map((spec) => {
-    // Highest precedence first: the first layer that carries a value wins.
-    const candidates: Array<{ readonly source: SettingLayer; readonly contribution: Contribution }> = [
-      {
-        source: 'flag',
-        contribution:
-          inputs.flags[spec.flag] !== undefined
-            ? { present: true, value: spec.fromScalar(inputs.flags[spec.flag]) }
-            : ABSENT,
-      },
-      {
-        source: 'environment',
-        contribution:
-          inputs.env[spec.envVar] !== undefined && inputs.env[spec.envVar] !== ''
-            ? { present: true, value: spec.fromScalar(inputs.env[spec.envVar] as string) }
-            : ABSENT,
-      },
-      {
-        source: 'project file',
-        contribution: projectAdmitted ? fromFileLayer(projectValues, spec.key) : ABSENT,
-      },
-      { source: 'global file', contribution: fromFileLayer(globalValues, spec.key) },
-      { source: 'built-in default', contribution: { present: true, value: spec.fallback } },
-    ];
-
-    const won = candidates.find((c) => c.contribution.present);
-    // The built-in default is always present, so a winner is guaranteed.
-    const value = won && won.contribution.present ? won.contribution.value : spec.fallback;
-    return {
-      key: spec.key,
-      display: spec.harden(spec.show(value)),
-      source: won ? won.source : 'built-in default',
-    };
+    const { value, source } = resolveOne(spec, ctx);
+    return { key: spec.key, display: spec.harden(spec.show(value)), source };
   });
+}
+
+/**
+ * One preference's resolved value, raw rather than hardened for the screen, so
+ * a caller that acts on the value — where a run's records land, which store to
+ * open — reads the same name the resolver chose. Null when the key names no
+ * preference. Same ladder and same ratification gate as {@link resolveSettings};
+ * an untrusted project file contributes nothing here either.
+ */
+export function resolveSettingValue(
+  inputs: ResolveInputs,
+  key: string,
+): { readonly value: unknown; readonly source: SettingLayer } | null {
+  const spec = SPEC_BY_KEY.get(key);
+  if (!spec) return null;
+  return resolveOne(spec, ladderContext(inputs));
 }
 
 /**
