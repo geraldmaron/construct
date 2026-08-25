@@ -9,8 +9,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { chmodSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { sterile } from '../../harness/sterile.ts';
 import {
   SCHEMA_VERSION,
@@ -70,6 +70,27 @@ test('storePath derives from injected Paths and openStore creates missing dirs',
     again.close();
   } finally {
     fixture.cleanup();
+  }
+});
+
+test('the store and its directory are private, even under a permissive umask', () => {
+  // A process umask of 0 would otherwise let the store be created world-
+  // readable. The containment is set explicitly, so it holds regardless.
+  const previous = process.umask(0o000);
+  const fixture = sterile();
+  try {
+    const path = storePath(fixture.paths);
+    const store = openStore(path);
+    store.close();
+    assert.equal(statSync(path).mode & 0o077, 0, 'the database file is readable only by its owner');
+    assert.equal(
+      statSync(dirname(path)).mode & 0o077,
+      0,
+      'the directory holding the store, its -wal and -shm is owner-only',
+    );
+  } finally {
+    fixture.cleanup();
+    process.umask(previous);
   }
 });
 
