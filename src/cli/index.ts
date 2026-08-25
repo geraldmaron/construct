@@ -126,7 +126,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   ask: { gloss: 'ask the staff one question and read the answer here', flags: [...HOST_FLAGS, 'workspace', 'ceiling'] },
   work: {
     gloss: 'run a recorded outcome’s queued work',
-    flags: [...HOST_FLAGS, 'run', 'concurrency', 'ceiling', 'lease-minutes', 'allow-distant-ground', 'voice'],
+    flags: [...HOST_FLAGS, 'run', 'all', 'concurrency', 'ceiling', 'lease-minutes', 'allow-distant-ground', 'voice'],
   },
   notes: { gloss: 'drop after-call notes in and reason over each', flags: [...HOST_FLAGS, 'workspace', 'run', 'max-notes'] },
   review: { gloss: 'review the workspace’s open drafts', flags: [...HOST_FLAGS, 'workspace', 'length'] },
@@ -164,7 +164,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP', flags: [] },
-  wire: { gloss: 'wire the MCP entry into your host’s config', flags: [] },
+  wire: { gloss: 'wire the MCP entry into your host’s config', flags: ['yes'] },
   doctor: { gloss: 'report host presence and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
