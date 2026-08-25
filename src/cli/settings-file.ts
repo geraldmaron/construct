@@ -67,7 +67,7 @@ export class SettingsError extends Error {
 }
 
 /**
- * One preference key's whole contract: where it reads from in each layer, how
+ * One preference key's whole definition: where it reads from in each layer, how
  * to validate a value out of a file and out of a scalar (env or flag), how to
  * show it, and how to render it safe for the screen. Values are carried as
  * `unknown` across the shared machinery and narrowed inside each spec, because
