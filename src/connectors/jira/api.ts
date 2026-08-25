@@ -18,6 +18,7 @@
  */
 
 import { API_BASE_PATH } from './pin.ts';
+import { redact } from '../../kernel/render/redact.ts';
 
 export const JIRA_SITE_ENV = 'CONSTRUCT_JIRA_SITE';
 export const JIRA_EMAIL_ENV = 'CONSTRUCT_JIRA_EMAIL';
@@ -128,7 +129,10 @@ export function createTransport(
 export function failureText(result: JiraResult): string {
   const body = result.body;
   if (typeof body === 'string' && body.trim() !== '') {
-    return `Jira answered ${String(result.status)}: ${body.trim().slice(0, 300)}`;
+    // A non-JSON body is whatever a remote returned — a proxy's error page can
+    // echo a request header, so credential shapes are stripped before the
+    // sliced text reaches the record a person reads.
+    return `Jira answered ${String(result.status)}: ${redact(body.trim().slice(0, 300))}`;
   }
   const record = (body ?? {}) as { errorMessages?: unknown; errors?: unknown };
   const messages = Array.isArray(record.errorMessages)
