@@ -10,15 +10,21 @@
  */
 
 import {
+  closeSync,
+  constants,
   existsSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
   rmSync,
   statSync,
   writeFileSync,
+  writeSync,
 } from 'node:fs';
+
+const { O_WRONLY, O_CREAT, O_TRUNC, O_NOFOLLOW } = constants;
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveHostSkillsDir, resolveSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
@@ -63,14 +69,16 @@ export function readSkillFolders(dir: string): readonly SkillFolder[] {
 
 const SKILLS_USAGE =
   'usage: construct skills list\n' +
-  '       construct skills install <name>... [--dir=<dir>|--host=<host>]\n' +
-  '       construct skills install --all [--dir=<dir>|--host=<host>]\n' +
+  '       construct skills install <name>... [--dir=<dir>|--host=<host>] [--force]\n' +
+  '       construct skills install --all [--dir=<dir>|--host=<host>] [--force]\n' +
   '       construct skills installed [--dir=<dir>|--host=<host>]\n' +
   '       construct skills uninstall <name> [--dir=<dir>|--host=<host>]\n' +
   '       construct skills [--out=<dir>] [--uninstall]\n' +
   '  The first five carry the portable method skills this checkout ships, into\n' +
   `  a host skills directory (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>\n` +
   '  for a documented host directory — --dir and --host are mutually exclusive).\n' +
+  '  install refuses a target that differs from this checkout\'s copy — edited\n' +
+  '  by hand, or installed from another version — unless --force is given.\n' +
   '  The last writes or removes the generated role pack (--out, default\n' +
   '  ./.claude/skills) — output regenerated from the role catalog, not a copy.\n';
 
@@ -132,7 +140,8 @@ function sourceSkillsDir(): string {
 const SKILLS_ABSENT =
   'skills: this install carries no skill files, which a complete one always does.\n' +
   '  Reinstall the package, or run this from a git checkout. The skills are also\n' +
-  '  installable straight from git:\n' +
+  "  installable straight from git, via Vercel's third-party `skills` installer\n" +
+  '  (not this project — it resolves at whatever version npx finds latest):\n' +
   '    npx skills add geraldmaron/construct\n';
 
 /** Every shipped skill, in name order, read whole so a copy of it is a copy of the bytes. */
@@ -215,13 +224,14 @@ function padded(values: readonly string[]): (value: string) => string {
 function skillLibrary(sub: string, argv: string[]): number {
   const { flags, rest } = parseFlags(argv);
   const permitted =
-    sub === 'install' ? ['dir', 'host', 'all'] : sub === 'list' ? [] : ['dir', 'host'];
+    sub === 'install' ? ['dir', 'host', 'all', 'force'] : sub === 'list' ? [] : ['dir', 'host'];
   const unknown = Object.keys(flags).filter((flag) => !permitted.includes(flag));
   if (
     unknown.length > 0 ||
     flags.dir === 'true' ||
     flags.host === 'true' ||
-    (flags.all ?? 'true') !== 'true'
+    (flags.all ?? 'true') !== 'true' ||
+    (flags.force ?? 'true') !== 'true'
   ) {
     process.stderr.write(SKILLS_USAGE);
     return 2;
@@ -301,7 +311,9 @@ function skillLibrary(sub: string, argv: string[]): number {
     return 0;
   }
 
-  if (sub === 'install') return skillInstall(sources, dir, rest, flags.all === 'true');
+  if (sub === 'install') {
+    return skillInstall(sources, dir, rest, flags.all === 'true', flags.force === 'true');
+  }
   return skillUninstall(sources, dir, rest);
 }
 
@@ -310,6 +322,7 @@ function skillInstall(
   dir: string,
   named: readonly string[],
   all: boolean,
+  force: boolean,
 ): number {
   // Either every skill or the ones named, never both and never neither: an
   // install that guessed at its own subject would write files nobody asked for.
@@ -341,6 +354,26 @@ function skillInstall(
     }
   }
 
+  // Same pass, before anything is written: a target that differs from this
+  // checkout's copy was either edited by hand or planted by another version,
+  // and an install that overwrote it without being told to would destroy
+  // whichever one it was silently. --force is the only way past this.
+  if (!force) {
+    const diverged: string[] = [];
+    for (const source of selected) {
+      const target = join(dir, source.name, SKILL_FILENAME);
+      const existing = existsSync(target) ? readFileSync(target) : null;
+      if (existing !== null && !sameSkillBytes(existing, source.bytes)) diverged.push(source.name);
+    }
+    if (diverged.length > 0) {
+      process.stderr.write(
+        `skills: ${diverged.join(', ')} at ${dir} ${diverged.length === 1 ? 'differs' : 'differ'} from this checkout's copy — edited there, or installed from another version.\n` +
+          '  Installing would overwrite it. Pass --force to overwrite anyway.\n',
+      );
+      return 1;
+    }
+  }
+
   let written = 0;
   for (const source of selected) {
     const target = join(dir, source.name, SKILL_FILENAME);
@@ -350,7 +383,29 @@ function skillInstall(
       continue;
     }
     mkdirSync(dirname(target), { recursive: true });
-    writeFileSync(target, source.bytes);
+    // Opened with O_NOFOLLOW rather than written through writeFileSync, so a
+    // symlink planted at the target's final path component after the guard
+    // pass above (and after the divergence read just taken) is refused at
+    // the write itself — the guard pass checks the path once, and this is
+    // what keeps the promise made between that check and this write.
+    let fd: number;
+    try {
+      fd = openSync(target, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
+        process.stderr.write(
+          `skills: ${target} is a symbolic link — writing through it would land outside ${dir}.\n` +
+            '  Remove the link, or point --dir at the real directory.\n',
+        );
+        return 1;
+      }
+      throw error;
+    }
+    try {
+      writeSync(fd, source.bytes);
+    } finally {
+      closeSync(fd);
+    }
     written += 1;
     process.stdout.write(
       `  ${existing === null ? 'installed' : 'replaced '} ${source.name} ${source.version ?? '-'}\n`,
