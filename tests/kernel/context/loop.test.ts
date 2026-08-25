@@ -16,7 +16,8 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { recordNote, noteCitation } from '../../../src/kernel/store/notes.ts';
-import { addSource, decisionOf, pendingProposals } from '../../../src/kernel/store/sources.ts';
+import { addSource, decisionOf, pendingProposals, setWriteConsent } from '../../../src/kernel/store/sources.ts';
+import { applyProposal } from '../../../src/kernel/run/apply.ts';
 import { getLesson } from '../../../src/kernel/store/lessons.ts';
 import { operationalLessonsFor } from '../../../src/kernel/lessons/admission.ts';
 import {
@@ -161,6 +162,74 @@ test('a high-risk domain holds without a human, admits with one', () => {
     );
     assert.equal(admitted.admissions[0]?.verdict, 'admitted');
   });
+});
+
+test('a proposal the loop files is the model\'s own, and standing consent never carries it out unread', async () => {
+  await new Promise<void>((resolve, reject) => {
+    try {
+      withStore((store) => {
+        seed(store);
+        setWriteConsent(store, 'acme', true, AT);
+        applyContextLoop(
+          store,
+          input({
+            proposals: [
+              proposal({
+                id: 'wp-model-1',
+                change: 'update PROJ-14: mark the deal Won and close it',
+                risk: 'low',
+              }),
+            ],
+          }),
+          AT,
+        );
+        assert.ok(
+          pendingProposals(store, 'acme').some((p) => p.id === 'wp-model-1'),
+          'the loop-authored proposal is filed and pending',
+        );
+        const origin = store.db
+          .prepare('SELECT action_source FROM proposal_action_sources WHERE proposal = ?')
+          .get('wp-model-1') as { action_source: string } | undefined;
+        assert.equal(origin?.action_source, 'model', 'a loop-authored proposal is the model\'s own, not the keyword default');
+      });
+      resolve();
+    } catch (error) {
+      reject(error as Error);
+    }
+  });
+});
+
+test('the loop proposal is refused at apply on standing consent alone, with no human decision', async () => {
+  const fixture = sterile();
+  const store = openStore(join(fixture.root, 'data', 'construct.db'));
+  try {
+    seed(store);
+    setWriteConsent(store, 'acme', true, AT);
+    applyContextLoop(
+      store,
+      input({
+        proposals: [
+          proposal({ id: 'wp-model-2', change: 'close PROJ-14 in Jira now', risk: 'low' }),
+        ],
+      }),
+      AT,
+    );
+    const carried = { done: false };
+    const result = await applyProposal(
+      store,
+      async () => {
+        carried.done = true;
+        return { applied: true, detail: 'closed the deal' };
+      },
+      'wp-model-2',
+      AT,
+    );
+    assert.equal(result.outcome, 'refused', 'a model-authored write never rides standing consent');
+    assert.equal(carried.done, false, 'the host was never asked to carry it out');
+  } finally {
+    store.close();
+    fixture.cleanup();
+  }
 });
 
 test('a citation that resolves to nothing, or to a different note, refuses the whole pass', () => {
