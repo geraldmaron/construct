@@ -24,6 +24,7 @@ import { notes } from './notes.ts';
 import { review } from './review.ts';
 import { work } from './work.ts';
 import { inbox, log, show } from './show.ts';
+import { status } from './status.ts';
 import { lessons } from './lessons.ts';
 import { decide } from './decide.ts';
 import { corpus, verdict } from './verdict.ts';
@@ -64,6 +65,7 @@ export type { ReviewArgs } from './review.ts';
 export { DEFAULT_SPEND_CEILING, parseWorkArgs, work } from './work.ts';
 export type { WorkArgs } from './work.ts';
 export { inbox, log, reasonClause, show } from './show.ts';
+export { status } from './status.ts';
 export { lessons } from './lessons.ts';
 export { decide } from './decide.ts';
 export { corpus, corpusExport, parseVerdictArgs, verdict } from './verdict.ts';
@@ -96,7 +98,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'doctor', 'backup',
-  'cleanup', 'completions', 'version', 'help',
+  'cleanup', 'completions', 'status', 'version', 'help',
 ]);
 
 /**
@@ -133,6 +135,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   notes: { gloss: 'drop after-call notes in and reason over each', flags: [...HOST_FLAGS, 'workspace', 'run', 'max-notes'] },
   review: { gloss: 'review the workspace’s open drafts', flags: [...HOST_FLAGS, 'workspace', 'length'] },
   show: { gloss: 'show a run’s deliverables as a reader sees them', flags: ['run', 'record', 'json'] },
+  status: { gloss: 'summarize where the workspace stands right now', flags: ['json'] },
   compose: { gloss: 'assemble a run’s work into one deliverable', flags: [...HOST_FLAGS, 'run', 'shape', 'record', 'no-close'] },
   plan: { gloss: 'show the plan a run will work from', flags: ['json'] },
   source: {
@@ -187,7 +190,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
 const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.freeze([
   ['Starting work', ['outcome', 'ask', 'standing', 'watch']],
   ['Running it', ['work', 'notes']],
-  ['Reading back', ['show', 'log', 'plan', 'inbox', 'corpus']],
+  ['Reading back', ['status', 'show', 'log', 'plan', 'inbox', 'corpus']],
   ['Outward changes and decisions', ['propose', 'audit', 'decide', 'waive', 'revoke']],
   ['Ground', ['source', 'review']],
   ['Learning and governance', ['lessons', 'verdict', 'staff']],
@@ -347,6 +350,8 @@ async function run(argv: string[]): Promise<number> {
       return log(argv.slice(1));
     case 'show':
       return show(argv.slice(1));
+    case 'status':
+      return status(argv.slice(1));
     case 'plan':
       return plan(argv.slice(1));
     case 'source':

@@ -5,8 +5,8 @@ returned a fourth. A script driving Construct needs only these three branches.
 
 | Code | Meaning | Examples |
 | ---- | ------- | -------- |
-| `0` | Succeeded, including an honestly empty result. An empty answer is not a failure — `construct log` on a run with no entries, `construct lessons` on a workspace with none recorded, and `construct show --run <id> --json` on a run with no tasks all return `0`. |
-| `1` | The command's grammar was accepted, but the operation itself could not complete. A store could not be opened, an id named on the command line does not exist, a write was refused by a downstream check, a host errored while a command tried to reach it. |
+| `0` | Succeeded, including an honestly empty result. An empty answer is not a failure — `construct log` on a *real* run with no entries yet, `construct lessons` on a workspace with none recorded, and `construct show --run <id> --json` on a *real* run with no tasks yet all return `0`. `construct status` on a workspace with no runs at all also returns `0` — an empty workspace is a valid state, not an error. |
+| `1` | The command's grammar was accepted, but the operation itself could not complete. A store could not be opened, an id named on the command line does not exist, a write was refused by a downstream check, a host errored while a command tried to reach it. A run id `show`, `log`, or `plan` was given that this store never recorded is exactly this case — it is what tells that failure apart from the merely-empty result above, since both would otherwise print the same "nothing here" line. |
 | `2` | The command line itself was wrong before anything was attempted — a required flag or argument is missing, a value is not one of the accepted ones, two flags on the same invocation contradict each other. |
 
 `construct <verb> --json`, wherever a verb offers it, follows the same three
