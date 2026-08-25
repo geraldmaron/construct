@@ -23,9 +23,12 @@
  * full: a model that deliberately emits a colored line loses the color, and that
  * is the point. Construct owns its own formatting and nothing else may write it.
  *
- * THE RULE. Every C0 and C1 control code (Unicode's own `Cc` category, which is
- * exactly the range a terminal reads as command rather than content) is rendered
- * as its visible escape, so the operator reads what the model actually sent.
+ * THE RULE. Every C0 and C1 control code (Unicode's own `Cc` category, the range
+ * a terminal reads as command rather than content) and every format character
+ * (its `Cf` category — bidirectional overrides that reorder the line, zero-width
+ * characters that hide between glyphs, the Unicode tag characters an invisible
+ * injection rides in on) is rendered as its visible escape, so the operator
+ * reads what the model actually sent rather than what it arranged to be seen.
  * Newline and tab survive: printed model prose is laid out with them, and a
  * boundary that ate them would make the escaping cost legibility it does not
  * need to cost. Carriage return does not survive — line-overwriting is the
@@ -45,10 +48,10 @@
  * somebody else's words.
  */
 
-/** The control range, un-flagged so `test` has no lastIndex to carry. */
-const CONTROL = /\p{Cc}/u;
+/** The control and format range, un-flagged so `test` has no lastIndex to carry. */
+const CONTROL = /[\p{Cc}\p{Cf}]/u;
 /** The same range, `g`-flagged for a replace pass. */
-const CONTROL_G = /\p{Cc}/gu;
+const CONTROL_G = /[\p{Cc}\p{Cf}]/gu;
 
 /**
  * Control codes a printed line is laid out with. They pass through because
@@ -59,7 +62,8 @@ const LAYOUT = new Set(['\n', '\t']);
 
 /**
  * Render model-derived text for a terminal. The result carries no byte a
- * terminal reads as a command, at the cost of no longer being the literal text
+ * terminal reads as a command and no invisible character that could reorder or
+ * hide what it shows, at the cost of no longer being the literal text
  * underneath wherever one was there — which is the honest report, because a
  * sequence shown as `\x1b[2K` is what the model sent and the erased line is not.
  */
