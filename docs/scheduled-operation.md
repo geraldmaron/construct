@@ -31,9 +31,14 @@ holds no credentials.
 
 **Tier 3, opt-in: always-on supervised mode**, for a user who explicitly
 wants a process that outlives every firing. It reuses tier 1's generated
-units in long-running form with resource limits (`Restart=on-failure`,
-memory and task ceilings, no elevated privileges) instead of a oneshot, and
-it is scoped to your login session — a personal tool should stop when you log
+units in long-running form instead of a oneshot, restarted by the platform
+on crash and only on crash. What the platform can bound differs by platform,
+and the unit asks for what its own supervisor offers: on Linux,
+`Restart=on-failure` with memory and task ceilings, `NoNewPrivileges=yes`,
+and address families restricted to unix sockets; on macOS, a background
+process type with low-priority I/O, a nice level, and a restart throttle —
+launchd has no memory ceiling to ask for, which is why the daemon caps its
+own heap in-process. It is scoped to your login session — a personal tool should stop when you log
 out. Install it with `construct schedule install --always-on`; the two
 schedule tiers refuse to coexist, since a calendar firing plus an always-on
 daemon over the same ground is double work.
@@ -176,7 +181,7 @@ to use.
 ## Checking on it
 
 ```bash
-construct schedule status  # what tier-1 entry is installed, and its cadence
+construct schedule status  # which schedule entry is installed: a calendar cadence, or the always-on daemon
 construct standing         # what stands, and when each last fired
 construct watch list       # every declared source watch, and when each last fired
 construct inbox            # what needs a human

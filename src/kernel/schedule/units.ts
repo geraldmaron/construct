@@ -45,8 +45,23 @@ export const ALWAYS_ON_LABEL = 'com.construct.daemon';
 /** The systemd unit stem for the always-on daemon. There is no timer for this tier: the unit itself is the long-running process. */
 export const ALWAYS_ON_UNIT = 'construct-daemon';
 
-/** The line the always-on unit runs: the daemon's own foreground entry, supervised by the platform rather than by Construct. */
-export const ALWAYS_ON_COMMAND: readonly string[] = Object.freeze(['daemon', 'run', '--foreground']);
+/**
+ * The line the always-on unit runs: the daemon's own foreground entry,
+ * supervised by the platform rather than by Construct.
+ *
+ * The idle clock is off, and it has to be. Both supervisors here restart on
+ * crash and only on crash, so a daemon that exited cleanly because the machine
+ * was quiet is a daemon that stays down until the next login — an always-on
+ * tier that turns itself off after the first quiet quarter-hour. The
+ * supervisor is what reaps this process, which is what earns the clock being
+ * off.
+ */
+export const ALWAYS_ON_COMMAND: readonly string[] = Object.freeze([
+  'daemon',
+  'run',
+  '--foreground',
+  '--idle-exit=never',
+]);
 
 /**
  * The line the timer fires, as argument lists. Two commands rather than one:
@@ -110,6 +125,12 @@ export interface AlwaysOnPlanInput {
   readonly nodePath: string;
   readonly cliPath: string;
   readonly uid: number;
+  /**
+   * Where the supervised daemon's own account of itself lands. Passed in
+   * rather than derived, because only the caller may resolve a state
+   * directory. Unread on Linux, where the journal already holds it.
+   */
+  readonly logPath: string;
 }
 
 /** Everything an always-on install writes and runs, and everything an uninstall undoes. Carries no firing: this tier has no cadence to state. */
@@ -226,9 +247,23 @@ function plistText(input: SchedulePlanInput, firing: ScheduleFiring): string {
   );
 }
 
-/** A systemd command word, quoted so a path with spaces survives the parser. */
+/**
+ * A systemd command word, quoted so it reaches the process as itself.
+ *
+ * Double quotes carry spaces, and inside them systemd still reads three things
+ * as instructions rather than as text: a backslash starts an escape, `%` names
+ * a specifier it substitutes, and `$` names a variable it expands. Each is
+ * written in the escape systemd's own parser turns back into the literal
+ * character, so a directory called `50%` or `a$b` runs as the path it is
+ * rather than as whatever the parser made of it.
+ */
 function systemdQuote(word: string): string {
-  return `"${word}"`;
+  const escaped = word
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, '$$$$')
+    .replace(/%/g, '%%');
+  return `"${escaped}"`;
 }
 
 function serviceText(input: SchedulePlanInput): string {
@@ -275,6 +310,12 @@ function timerText(firing: ScheduleFiring): string {
  * service the user explicitly asked for should be there after login the same
  * way any other login-item service is, and every other tier stays false
  * because a oneshot has nothing to start at load time.
+ *
+ * Both streams are pointed at the daemon's log file. The daemon this unit runs
+ * writes its account to stderr, and launchd's default for a job that names no
+ * path is to discard both streams — which would leave the one tier that runs
+ * unattended as the one tier with nothing to read afterwards. Linux needs no
+ * equivalent: systemd captures both into the journal on its own.
  */
 function alwaysOnPlistText(input: AlwaysOnPlanInput): string {
   const args = [input.nodePath, input.cliPath, ...ALWAYS_ON_COMMAND]
@@ -297,6 +338,8 @@ function alwaysOnPlistText(input: AlwaysOnPlanInput): string {
     '    <key>SuccessfulExit</key>\n' +
     '    <false/>\n' +
     '  </dict>\n' +
+    `  <key>StandardOutPath</key>\n  <string>${xmlEscape(input.logPath)}</string>\n` +
+    `  <key>StandardErrorPath</key>\n  <string>${xmlEscape(input.logPath)}</string>\n` +
     '  <key>ThrottleInterval</key>\n  <integer>30</integer>\n' +
     '  <key>ProcessType</key>\n  <string>Background</string>\n' +
     '  <key>LowPriorityBackgroundIO</key>\n  <true/>\n' +
