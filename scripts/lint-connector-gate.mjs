@@ -46,6 +46,23 @@ import { pathToFileURL } from 'node:url';
 const CONNECTORS = 'src/connectors';
 const KERNEL = 'src/kernel';
 
+/**
+ * The only files licensed to build a dynamic import argument instead of
+ * writing it as a string literal — each reviewed by hand and named here
+ * rather than silenced by a comment convention, matching how the sibling
+ * bead-reference lint excludes files it has already checked. Every one of
+ * these builds its argument from a local, already-resolved path (the
+ * checkout's own dist/src selector, or a legacy-checkout directory a helper
+ * resolves), never from anything that could carry a connector specifier.
+ * Widening this list is the one thing a reviewer should look at twice.
+ */
+const COMPUTED_IMPORT_EXEMPT = [
+  'bin/construct.mjs',
+  'scripts/capture-legacy-dispatcher-golden.mjs',
+  'scripts/capture-legacy-ladder-golden.mjs',
+  'scripts/capture-legacy-tracker-golden.mjs',
+];
+
 // ---------------------------------------------------------------------------
 // Pure logic — exported so the self-test can exercise resolution directly,
 // without spawning a subprocess for every case.
@@ -66,6 +83,107 @@ export function extractImportSpecifiers(text) {
   for (const m of text.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)) push(m[1], m.index);
   for (const m of text.matchAll(/\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g)) push(m[1], m.index);
   return found;
+}
+
+/**
+ * `text` with every `//` comment, `/* *\/` comment, and string or template
+ * literal blanked to spaces — newlines inside any of them are kept, so every
+ * remaining character sits at the same line number and the same offset it
+ * started at. What is left is code with every quoted or commented-out
+ * character replaced by a space: the only place the word `import` can still
+ * appear is an actual keyword.
+ *
+ * Without this, a comment that talks about the shape of a dynamic import
+ * call — this file's own docstrings do — or an unrelated string that happens
+ * to contain the same text reads as a real call to the plain substring scan
+ * computedDynamicImports runs beneath it.
+ */
+function blankNonCode(text) {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    const two = text.slice(i, i + 2);
+    if (two === '//') {
+      const end = text.indexOf('\n', i);
+      const stop = end === -1 ? text.length : end;
+      out += ' '.repeat(stop - i);
+      i = stop;
+      continue;
+    }
+    if (two === '/*') {
+      const close = text.indexOf('*/', i + 2);
+      const stop = close === -1 ? text.length : close + 2;
+      // A non-whitespace filler: the caller's own `\s*` after `import(`
+      // must never be able to eat through a blanked span the way it eats
+      // through real whitespace, or the offset math past it breaks.
+      out += text.slice(i, stop).replace(/[^\n]/g, '#');
+      i = stop;
+      continue;
+    }
+    if (text[i] === "'" || text[i] === '"' || text[i] === '`') {
+      const quote = text[i];
+      let j = i + 1;
+      while (j < text.length && text[j] !== quote) j += text[j] === '\\' ? 2 : 1;
+      const stop = Math.min(j + 1, text.length);
+      // A non-whitespace filler: the caller's own `\s*` after `import(`
+      // must never be able to eat through a blanked span the way it eats
+      // through real whitespace, or the offset math past it breaks.
+      out += text.slice(i, stop).replace(/[^\n]/g, '#');
+      i = stop;
+      continue;
+    }
+    out += text[i];
+    i += 1;
+  }
+  return out;
+}
+
+/**
+ * Every dynamic `import(...)` call in `text` whose argument is not a plain
+ * string literal — a call built with concatenation, a variable, or a
+ * template literal carrying a substitution — each with its 1-based line
+ * number.
+ *
+ * extractImportSpecifiers can only see a specifier when it is written as a
+ * literal string; a computed one resolves to nothing this gate can check,
+ * which is the blind spot that let a computed import cross the connector
+ * boundary invisibly. Rather than try to evaluate what a computed specifier
+ * resolves to, every dynamic import call that extractImportSpecifiers' own
+ * literal pattern did not also match is treated as unverifiable and reported
+ * in its own right.
+ *
+ * blankNonCode finds where the real `import(` keywords sit — comments and
+ * unrelated strings never produce one — and the argument itself is then read
+ * back out of the original, unblanked text, since that argument's own quoted
+ * content is exactly what isLiteralArgument needs to see.
+ */
+export function computedDynamicImports(text) {
+  const code = blankNonCode(text);
+  const found = [];
+  for (const m of code.matchAll(/\bimport\s*\(\s*/g)) {
+    if (isLiteralArgument(text.slice(m.index + m[0].length))) continue;
+    found.push({ line: code.slice(0, m.index).split('\n').length });
+  }
+  return found;
+}
+
+/**
+ * Whether `rest` — the text right after `import(`'s opening whitespace —
+ * starts with a single quoted, double quoted, or backtick argument that is
+ * immediately followed by the closing `)`, with nothing else read as code. A
+ * backtick argument only counts when it carries no `${` substitution: a
+ * template literal that interpolates a variable is exactly as computed as
+ * string concatenation is.
+ */
+function isLiteralArgument(rest) {
+  const quote = rest[0];
+  if (quote !== "'" && quote !== '"' && quote !== '`') return false;
+  let j = 1;
+  while (j < rest.length && rest[j] !== quote) j += rest[j] === '\\' ? 2 : 1;
+  if (j >= rest.length) return false;
+  const body = rest.slice(1, j);
+  if (quote === '`' && body.includes('${')) return false;
+  return /^\s*\)/.test(rest.slice(j + 1));
 }
 
 /**
@@ -113,14 +231,25 @@ export function violationsIn(relPath, text, role) {
     const resolved = resolveRelativeImport(relPath, specifier);
     if (role === 'importer') {
       if (resolved !== null && isUnderTree(resolved, CONNECTORS)) {
-        violations.push({ relPath, line, specifier });
+        violations.push({ relPath, line, specifier, kind: 'resolved' });
       }
     } else {
       const allowed =
         (resolved !== null && isUnderTree(resolved, KERNEL)) ||
         (resolved !== null && ownConnector !== null && isUnderTree(resolved, ownConnector)) ||
         (resolved === null && isBuiltin(specifier));
-      if (!allowed) violations.push({ relPath, line, specifier });
+      if (!allowed) violations.push({ relPath, line, specifier, kind: 'resolved' });
+    }
+  }
+  // A computed dynamic-import argument resolves to nothing
+  // extractImportSpecifiers can see, in either role: an importer tree could
+  // reach a connector this way with no string literal ever naming it, and a
+  // connector could reach anything at all the same way. Both fail outright
+  // rather than pass by default because nothing was matched — except the
+  // handful of reviewed call sites named in COMPUTED_IMPORT_EXEMPT.
+  if (!COMPUTED_IMPORT_EXEMPT.includes(relPath)) {
+    for (const { line } of computedDynamicImports(text)) {
+      violations.push({ relPath, line, specifier: null, kind: 'computed' });
     }
   }
   return violations;
@@ -153,34 +282,56 @@ function filesUnder(dir, extension) {
   return out.split('\n').filter((f) => f.endsWith(extension));
 }
 
+/**
+ * The line reported for a computed `import(...)` argument, shared by every
+ * tree: the reason is the same regardless of which side of the boundary the
+ * call sits on — the gate cannot see through it, so it cannot clear it.
+ */
+function computedImportMessage(v, subject) {
+  return (
+    `connector gate: ${v.relPath}:${v.line}: ${subject} a computed dynamic-import argument — ` +
+    'the connector gate can only check a specifier written as a string literal, so what this ' +
+    'call actually loads cannot be verified against it. Use a literal specifier, or move the ' +
+    'call somewhere this gate does not cover.'
+  );
+}
+
 const IMPORTER_TREES = [
   {
     dir: 'src/kernel',
     extension: '.ts',
     describe: (v) =>
-      `connector gate: ${v.relPath}:${v.line}: kernel imports a connector ("${v.specifier}") — ` +
-      'the kernel stays zero-dependency and connector-free; a connector is adapter-tier, never a kernel concern.',
+      v.kind === 'computed'
+        ? computedImportMessage(v, 'kernel calls')
+        : `connector gate: ${v.relPath}:${v.line}: kernel imports a connector ("${v.specifier}") — ` +
+          'the kernel stays zero-dependency and connector-free; a connector is adapter-tier, never a kernel concern.',
   },
   {
     dir: 'src/hosts',
     extension: '.ts',
     describe: (v) =>
-      `connector gate: ${v.relPath}:${v.line}: a host imports a connector ("${v.specifier}") — ` +
-      'a host and a connector are separate answers to reaching the outside world; a host reaching for a connector is the tool-broker Construct has already refused.',
+      v.kind === 'computed'
+        ? computedImportMessage(v, 'a host calls')
+        : `connector gate: ${v.relPath}:${v.line}: a host imports a connector ("${v.specifier}") — ` +
+          'a host and a connector are separate answers to reaching the outside world; a host reaching for a connector is the tool-broker Construct has already refused.',
   },
   {
     dir: 'scripts',
     extension: '.mjs',
     describe: (v) =>
-      `connector gate: ${v.relPath}:${v.line}: Construct's own build tooling imports a connector ("${v.specifier}") — ` +
-      'using Construct is not building Construct.',
+      v.kind === 'computed'
+        ? computedImportMessage(v, "Construct's own build tooling calls")
+        : `connector gate: ${v.relPath}:${v.line}: Construct's own build tooling imports a connector ("${v.specifier}") — ` +
+          'using Construct is not building Construct.',
   },
   {
     dir: 'bin',
     extension: '.mjs',
     describe: (v) =>
-      `connector gate: ${v.relPath}:${v.line}: Construct's own CLI entry point imports a connector ("${v.specifier}") — ` +
-      'using Construct is not building Construct.',
+      v.kind === 'computed'
+        ? computedImportMessage(v, "Construct's own CLI entry point calls")
+        : `connector gate: ${v.relPath}:${v.line}: Construct's own CLI entry point imports a connector ("${v.specifier}") — ` +
+          'using Construct is not building Construct.',
   },
 ];
 
@@ -202,9 +353,11 @@ function main() {
     for (const v of violationsIn(relPath, text, 'connector')) {
       violations += 1;
       console.error(
-        `connector gate: ${v.relPath}:${v.line}: a connector imports outside its licensed set ("${v.specifier}") — ` +
-          'src/connectors/** may import only src/kernel/**, its own connector\'s modules, and Node builtins, ' +
-          'never a host adapter and never another connector.',
+        v.kind === 'computed'
+          ? computedImportMessage(v, 'a connector calls')
+          : `connector gate: ${v.relPath}:${v.line}: a connector imports outside its licensed set ("${v.specifier}") — ` +
+            'src/connectors/** may import only src/kernel/**, its own connector\'s modules, and Node builtins, ' +
+            'never a host adapter and never another connector.',
       );
     }
   }

@@ -43,8 +43,8 @@
 import { createHash } from 'node:crypto';
 import {
   appendFileSync,
-  chmodSync,
   closeSync,
+  constants,
   existsSync,
   mkdirSync,
   openSync,
@@ -154,15 +154,24 @@ export function takeBackup(input: {
     throw new BackupRefusedError(`${file} is already there — refusing to write over an existing copy`);
   }
 
+  // Created here, mode 0o600 from the moment it exists, rather than chmod'd
+  // after VACUUM INTO has already written it: the copy holds everything the
+  // store holds, and a chmod after the fact leaves a window where the file
+  // sits at the process's default mode — world-readable under a permissive
+  // umask — for however long VACUUM INTO takes to run. 'wx' also refuses if
+  // something already claimed the name between the existsSync check above
+  // and this call, closing that race too. An empty file VACUUM INTO can
+  // write into (confirmed against this Node's node:sqlite): the command
+  // fails only when the target already holds database content, not when it
+  // exists but is zero bytes.
+  closeSync(openSync(file, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL, 0o600));
+
   const db = new DatabaseSync(storeFile);
   try {
     db.exec(`VACUUM INTO ${sqlLiteral(file)}`);
   } finally {
     db.close();
   }
-  // The copy holds everything the store holds, so it is readable by exactly
-  // who the store is readable by and nobody else.
-  chmodSync(file, 0o600);
 
   const record: BackupRecord = {
     file,
