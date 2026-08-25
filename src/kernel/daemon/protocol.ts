@@ -27,7 +27,8 @@ export interface StatusReply {
   readonly version: string;
   readonly uptimeSeconds: number;
   readonly idleSeconds: number;
-  readonly idleExitSeconds: number;
+  /** Null when the idle clock is off, which only a supervised daemon asks for. */
+  readonly idleExitSeconds: number | null;
   readonly sweeps: number;
   readonly storePath: string;
   /** Absent when counting would have cost more than the answer is worth. */

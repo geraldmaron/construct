@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createConnection } from 'node:net';
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { ftruncateSync, openSync, closeSync } from 'node:fs';
 import { startDaemon } from '../../../src/kernel/daemon/loop.ts';
 import type { DaemonConfig, DaemonHandle, SweepOutcome } from '../../../src/kernel/daemon/loop.ts';
@@ -153,6 +153,77 @@ test('a daemon nobody talks to exits itself after the quiet period', async () =>
     const reason = await daemon.stopped;
     assert.strictEqual(reason, 'idle', 'the idle clock is the orphan backstop');
     assert.ok(!socketFileExists(b.socket), 'and it takes its socket with it');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a daemon with the idle clock off outlives a quiet period and keeps sweeping', async () => {
+  const b = bench();
+  try {
+    let sweeps = 0;
+    const daemon = await startDaemon(
+      b.config({
+        // A quiet period this short would reap a daemon several times over
+        // before this test finished, if the clock were armed at all.
+        idleExitSeconds: null,
+        sweepIntervalMs: 40,
+        sweep: async () => {
+          sweeps += 1;
+          return QUIET;
+        },
+      }),
+    );
+    assert.ok(daemon);
+    let exited = false;
+    void daemon.stopped.then(() => {
+      exited = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    assert.ok(!exited, 'nothing reaped it: the supervisor owns that');
+    assert.ok(socketFileExists(b.socket), 'and it still owns its socket');
+    const swept = sweeps;
+    assert.ok(swept >= 3, `it kept sweeping through the quiet window (${String(swept)})`);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.ok(sweeps > swept, 'and it is still sweeping');
+    await stopped(daemon);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('two starts racing one stale socket leave exactly one daemon', async () => {
+  const b = bench();
+  try {
+    // What a killed daemon leaves: both starts find the path occupied, both
+    // find nothing answering, and only one of them may unlink and rebind.
+    writeFileSync(b.socket, '');
+    const [first, second] = await Promise.all([
+      startDaemon(b.config()),
+      startDaemon(b.config()),
+    ]);
+    const raised = [first, second].filter((handle) => handle !== null);
+    assert.strictEqual(raised.length, 1, 'one bound, and the loser stood down rather than binding too');
+    assert.ok(socketFileExists(b.socket), 'and the winner owns the socket');
+    await stopped(raised[0]);
+    assert.ok(!socketFileExists(b.socket), 'which it takes with it, leaving nothing behind');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a turn to bind abandoned mid-flight does not lock the socket out forever', async () => {
+  const b = bench();
+  try {
+    // A start that died between taking the turn and binding. The next start
+    // reclaims the turn rather than waiting on a process that is gone.
+    writeFileSync(`${b.socket}.binding`, '');
+    const then = Date.now() / 1000 - 3600;
+    utimesSync(`${b.socket}.binding`, then, then);
+    const daemon = await startDaemon(b.config());
+    assert.ok(daemon, 'the abandoned turn was reclaimed');
+    await stopped(daemon);
+    assert.ok(!socketFileExists(`${b.socket}.binding`), 'and the turn was handed back');
   } finally {
     b.cleanup();
   }
