@@ -111,23 +111,34 @@ export async function applyProposal(
   // The two authorities the store accepts when it writes the applied row,
   // asked here so nothing is handed to a host that could not be recorded
   // afterwards. Standing consent is a workspace's blanket yes to the low-risk
-  // class; a high-risk change is never inside it, and neither is a source its
-  // owner declared sensitive — that judgment predates knowing the target, so a
-  // sensitive target takes a decision made about this proposal by a person.
+  // class, and three things sit outside it, each waiting for a person: a
+  // high-risk change; a source its owner declared sensitive — and, because that
+  // is a stated fact, a source with no declaration at all, whose safety is
+  // unknown rather than assumed; and a change whose action a model chose, which
+  // must not ride the yes a keyword default or an operator override earns.
   // Every refusal here fires before the host is asked, because a gate that
   // throws after the write leaves the world changed and the ledger ignorant.
-  const sensitive = sourceDeclaration(store, record.source)?.sensitive === true;
-  const standing =
-    record.risk === 'low' && !sensitive && writeConsentAllowsLowRisk(store, record.workspace);
+  const declaration = sourceDeclaration(store, record.source);
+  const knownNotSensitive = declaration?.sensitive === false;
+  const modelChosen = record.actionSource === 'model';
+  const consented = writeConsentAllowsLowRisk(store, record.workspace);
+  const standing = record.risk === 'low' && knownNotSensitive && !modelChosen && consented;
   if (!prior && !standing) {
+    // A workspace that never gave standing consent is simply undecided; the
+    // narrower reasons — a missing declaration, a model-chosen action — matter
+    // only where consent is present and is the thing not reaching this change.
     return {
       outcome: 'refused',
       reason:
         record.risk === 'high'
           ? 'nobody has approved it, and a high-risk change is never carried out on standing consent'
-          : sensitive
+          : declaration?.sensitive === true
             ? 'its source is declared sensitive, which standing consent does not cover — it waits for a human decision'
-            : 'nobody has decided it yet — an undecided proposal is not one to carry out',
+            : consented && declaration === null
+              ? 'its source has no declaration, so standing consent cannot know it is safe — it waits for a human decision'
+              : consented && modelChosen
+                ? 'its action was chosen by a model, which standing consent does not cover — it waits for a human decision'
+                : 'nobody has decided it yet — an undecided proposal is not one to carry out',
     };
   }
   if (prior?.verdict === 'rejected') {

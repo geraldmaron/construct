@@ -157,6 +157,14 @@ test('standing consent hands a low-risk change over, and a high-risk one stops b
   await withStore(async (store) => {
     seed(store);
     setWriteConsent(store, 'acme', true, AT);
+    // Standing consent reaches a source only once it is declared not sensitive;
+    // an undeclared source waits for a person.
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the customer tracker', sensitive: false },
+      AT,
+    );
     proposeWrite(store, {
       id: 'p-high',
       workspace: 'acme',
@@ -393,5 +401,64 @@ test('the same proposal, approved at the CLI, does satisfy the apply gate', asyn
       LATER,
     );
     assert.equal(result.outcome, 'applied', 'a human approval is honored');
+  });
+});
+
+test('an undeclared source does not ride standing consent, even at low risk', async () => {
+  await withStore(async (store) => {
+    // seed's src-1 has no declaration: its safety is unknown, not assumed.
+    seed(store);
+    setWriteConsent(store, 'acme', true, AT);
+    let asked = false;
+    const result = await applyProposal(
+      store,
+      async () => {
+        asked = true;
+        return { applied: true, detail: 'moved it' };
+      },
+      'p-1',
+      LATER,
+    );
+    assert.equal(result.outcome, 'refused');
+    assert.match(result.outcome === 'refused' ? result.reason : '', /no declaration/);
+    assert.equal(asked, false, 'the undeclared change never reached the host');
+    assert.equal(decisionOf(store, 'p-1'), null, 'and left no decision behind');
+  });
+});
+
+test('a model-chosen action does not ride standing consent, even at low risk', async () => {
+  await withStore(async (store) => {
+    addSource(store, { id: 'src-1', workspace: 'acme', kind: 'jira', locator: 'PROJ', addedAt: AT });
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the customer tracker', sensitive: false },
+      AT,
+    );
+    setWriteConsent(store, 'acme', true, AT);
+    proposeWrite(store, {
+      id: 'p-model',
+      workspace: 'acme',
+      run: 'run-1',
+      source: 'src-1',
+      change: 'comment on PROJ-14',
+      justification: 'note:n-1#L3',
+      risk: 'low',
+      proposedAt: AT,
+      actionSource: 'model',
+    });
+    let asked = false;
+    const result = await applyProposal(
+      store,
+      async () => {
+        asked = true;
+        return { applied: true, detail: 'commented' };
+      },
+      'p-model',
+      LATER,
+    );
+    assert.equal(result.outcome, 'refused');
+    assert.match(result.outcome === 'refused' ? result.reason : '', /chosen by a model/);
+    assert.equal(asked, false, 'the model-chosen change never reached the host');
   });
 });

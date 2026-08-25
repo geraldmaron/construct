@@ -160,6 +160,17 @@
  * id, a proposal-decision seq — and written in the same call that writes that
  * row, so a resolution can never exist without the record of whose it was.
  *
+ * Schema version 22 adds `proposal_action_sources`, additive: where the write
+ * action on a proposal came from — the mechanical keyword default, an explicit
+ * operator override, or a model's own choice. Standing consent is a workspace's
+ * yes to a class of low-risk change, and a model that picked a low-risk action
+ * turned a high-risk finding into one that rides that yes unread. Recording the
+ * action's origin is what lets the apply gate keep a model-chosen action out of
+ * the standing lane while still honoring the keyword default and an override.
+ * Its own table for the reason `source_shapes` is its own: this schema is
+ * created, never altered. A proposal with no row is read as the keyword default,
+ * which is what a proposal filed before this setting existed in fact was.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -183,7 +194,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 21;
+export const SCHEMA_VERSION = 22;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -640,6 +651,11 @@ BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row')
 CREATE TRIGGER IF NOT EXISTS write_proposals_no_delete
 BEFORE DELETE ON write_proposals
 BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
+
+CREATE TABLE IF NOT EXISTS proposal_action_sources (
+  proposal      TEXT PRIMARY KEY REFERENCES write_proposals (id),
+  action_source TEXT NOT NULL CHECK (action_source IN ('override', 'model', 'keyword'))
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS proposal_decisions (
   seq        INTEGER PRIMARY KEY AUTOINCREMENT,
