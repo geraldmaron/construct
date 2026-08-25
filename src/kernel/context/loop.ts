@@ -208,6 +208,10 @@ export function applyContextLoop(
         justification: proposal.justification,
         risk: proposal.risk,
         proposedAt: appliedAt,
+        // Everything filed here is authored by the model that read the note;
+        // its own choice of change and risk never rides standing consent, so
+        // the origin is recorded as the model's rather than the keyword default.
+        actionSource: 'model',
       });
       filed.push(proposal.id);
     }
