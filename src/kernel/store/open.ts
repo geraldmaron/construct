@@ -190,7 +190,7 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
+import { accessSync, chmodSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
@@ -863,8 +863,17 @@ export function storePath(paths: Paths): string {
 export function openStore(path: string): Store {
   let db: DatabaseSync;
   try {
-    mkdirSync(dirname(path), { recursive: true });
+    const dataDir = dirname(path);
+    mkdirSync(dataDir, { recursive: true });
     db = new DatabaseSync(path);
+    // The store holds a workspace's records, notes, and decisions — private by
+    // default, the same discipline the capability secret at rest is created
+    // under. The directory mode is the real containment: SQLite opens its own
+    // -wal and -shm files beside this one, and chmodding those would race their
+    // creation, so 0700 on the directory is what keeps them from other users.
+    // The database file itself is narrowed to 0600 on top of that.
+    chmodSync(dataDir, 0o700);
+    chmodSync(path, 0o600);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA foreign_keys = ON');
     // Two processes legitimately write this store at once — a coordinator
