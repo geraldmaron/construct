@@ -17,7 +17,9 @@ import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalo
 import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
 import type { CleanupOptions } from '../kernel/cleanup/run.ts';
-import { openStore, storePath, storeWriteProblem } from '../kernel/store/open.ts';
+import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
+import { resolveStoreLocation } from './local-state.ts';
+import type { StoreLocation } from './local-state.ts';
 import {
   backupDisclosure,
   backupLedgerPath,
@@ -75,13 +77,44 @@ export function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = pro
   // Resolving a path proves nothing about being able to use it. Before this
   // check, doctor reported "healthy" against a data dir it could not write,
   // and the user found out from a stack trace on their next command.
-  const store = storePath(paths);
-  const problem = storeWriteProblem(store);
+  //
+  // Where the store actually lives depends on `state`: a ratified project
+  // settings file may root it inside the repository instead of under home.
+  // Resolving that never creates the home store as a side effect of being
+  // asked (see local-state.ts) — the same non-mutating discipline this check
+  // already keeps for the store file itself. A refused activation (the store
+  // path not both ignored and untracked) is reported here as the store
+  // check's own failure rather than a crash, so doctor still finishes and
+  // says exactly why, the same as every other check that can fail.
+  let location: StoreLocation;
+  let localStateRefusal: string | null = null;
+  try {
+    location = resolveStoreLocation(cwd, env);
+  } catch (error) {
+    if (!(error instanceof StoreUnavailableError)) throw error;
+    location = { path: error.path, local: false, repoRoot: null };
+    localStateRefusal = error.reason;
+  }
+  const store = location.path;
+  const problem = localStateRefusal ?? storeWriteProblem(store);
   checks.push({
     name: 'store',
     ok: problem === null,
     detail: problem === null ? store : `${store} — ${problem}`,
   });
+  if (location.local) {
+    checks.push({
+      name: 'local-state',
+      ok: true,
+      detail: `state: local is in effect — the store is rooted at ${store} inside ${location.repoRoot ?? '(unknown)'}`,
+    });
+  } else if (localStateRefusal !== null) {
+    checks.push({
+      name: 'local-state',
+      ok: false,
+      detail: `state: local was requested but refused — ${localStateRefusal}`,
+    });
+  }
 
   // Whether a copy of the store exists anywhere. Reported, never gated: an
   // install with no copy is not broken, it is uninsured, and the append-only
