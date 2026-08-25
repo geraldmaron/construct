@@ -882,6 +882,12 @@ export function openStore(path: string): Store {
     // second writer throws SQLITE_BUSY immediately instead of waiting the few
     // milliseconds the first needs to commit.
     db.exec('PRAGMA busy_timeout = 5000');
+    // An erasure removes a person's records and notes on request, and a logical
+    // delete leaves the bytes on freed pages for anyone who reads the file raw.
+    // secure_delete overwrites the content of a freed page rather than only
+    // unlinking it, so what the erasure ritual reports gone is gone from the
+    // page it sat on — the freelist and VACUUM the ritual runs finish the job.
+    db.exec('PRAGMA secure_delete = ON');
     db.exec(SCHEMA);
   } catch (error) {
     throw new StoreUnavailableError(path, reasonFor(error));
