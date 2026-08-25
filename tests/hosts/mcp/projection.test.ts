@@ -859,3 +859,116 @@ test('nothing the projection can reach is able to spawn a host', () => {
     );
   }
 });
+
+/**
+ * Inbox positions (the text describing pending decisions) reach the projection
+ * without the escaping the terminal path applies, so attacker-authored content
+ * with control characters could be misinterpreted by the in-session agent. The
+ * projection must apply the same escape discipline the terminal render path uses.
+ */
+test('control characters in decision positions and questions are escaped', async () => {
+  const f = fixture();
+  try {
+    // Create a decision with actual control characters (ESC, STX, etc.).
+    const esc = '\x1b'; // ESC character
+    const stx = '\x02'; // STX (Start of Text)
+
+    raiseDecision(f.store, {
+      id: 'dec-control',
+      run: 'run-1',
+      question: `Ship now or wait?${esc}Fake question`,
+      positions: [
+        { role: 'legal', stance: `wait${stx}actually ship`, citation: null },
+        { role: 'program', stance: 'ship now', citation: `note#L5${esc}injected` },
+      ],
+      raisedAt: AT,
+    });
+
+    // The inbox returns escaped positions.
+    const inbox = payload(await f.handle(call('inbox')));
+    const decisions = (inbox.body as { decisions: Array<{ question: string; positions: Array<{ stance: string; citation: string | null }> }> }).decisions;
+    assert.equal(decisions.length, 1);
+    const escaped = decisions[0];
+
+    // Control characters in question and stance must be escaped as \xNN sequences.
+    assert.ok(escaped.question.includes('\\x1b'), 'ESC in question is escaped');
+    assert.equal(escaped.question.includes(esc), false);
+    assert.ok(escaped.positions[0].stance.includes('\\x02'), 'STX in stance is escaped');
+    assert.equal(escaped.positions[0].stance.includes(stx), false);
+    assert.ok(escaped.positions[1].citation?.includes('\\x1b'), 'ESC in citation is escaped');
+
+    // Plain text without control characters survives readable.
+    assert.match(escaped.positions[1].stance, /ship now/);
+    assert.ok(escaped.question.includes('Ship now or wait'));
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The escape applies to asks as well: a role's question and the standing
+ * default both carry untrusted content that could include control characters.
+ */
+test('control characters in asks are escaped', async () => {
+  const f = fixture();
+  try {
+    const esc = '\x1b'; // ESC character
+    raiseDecision(
+      f.store,
+      frameAsk({
+        run: 'run-1',
+        task: 't-test',
+        role: 'privacy',
+        ask: { question: `Which regions?${esc}Injected`, assuming: 'EU only', stakes: null },
+        at: AT,
+      }),
+    );
+
+    const asks = payload(await f.handle(call('asks')));
+    const open = (asks.body as { open: Array<{ question: string; standingDefault: string | null }> }).open;
+    assert.equal(open.length, 1);
+
+    // Control characters are escaped.
+    assert.ok(open[0].question.includes('\\x1b'), 'ESC in question is escaped');
+    assert.equal(open[0].question.includes(esc), false);
+    // Plain content survives.
+    assert.ok(open[0].question.includes('Which regions'));
+    assert.ok(open[0].standingDefault?.includes('EU only'));
+  } finally {
+    f.cleanup();
+  }
+});
+
+/**
+ * The escape applies to user input relayed through decide and answer as well.
+ * A resolution or answer echoed back from the projection should not be able to
+ * carry unescaped control characters.
+ */
+test('user resolutions and answers are escaped on echo', async () => {
+  const f = fixture();
+  try {
+    const stx = '\x02'; // STX (Start of Text)
+    raiseDecision(f.store, {
+      id: 'dec-echo',
+      run: 'run-1',
+      question: 'Ship or wait?',
+      positions: [
+        { role: 'legal', stance: 'wait', citation: null },
+        { role: 'program', stance: 'ship', citation: null },
+      ],
+      raisedAt: AT,
+    });
+
+    const decided = payload(
+      await f.handle(call('decide', { id: 'dec-echo', resolution: `Ship now${stx}Injected` })),
+    );
+    assert.equal(decided.isError, false);
+    // The resolution returned should have control characters escaped.
+    const resolution = (decided.body as { resolution: string }).resolution;
+    assert.ok(resolution.includes('\\x02'), 'STX is escaped');
+    assert.equal(resolution.includes(stx), false);
+    assert.ok(resolution.includes('Ship now'));
+  } finally {
+    f.cleanup();
+  }
+});
