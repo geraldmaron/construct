@@ -149,11 +149,46 @@ export interface Attribution {
   readonly concern?: string;
   /** The user's instruction to sound like something else, when one is in force. */
   readonly voice?: VoiceOverride;
+  /**
+   * The locale rendered prose is written in — spelling, vocabulary, date
+   * rendering, units, currency. Absent means the built-in default, American
+   * English ({@link DEFAULT_LOCALE}), which is why the statement below is
+   * unconditional rather than only appearing on an override: a role told
+   * nothing about locale would otherwise have no way to tell "nobody set one"
+   * from "the caller forgot to pass it through."
+   *
+   * Locale governs the reader surface only. It is prose framing, exactly like
+   * voice, and it travels the same seam for the same reason: bound into the
+   * assignment before the work happens, not policed against finished text
+   * afterward. It never reaches the record — the work log, store rows, and
+   * ISO-8601 timestamps are written once, in one form, and stay that way
+   * regardless of what locale any deliverable was rendered in.
+   */
+  readonly locale?: string;
+}
+
+/** The locale a dispatch writes in when nothing more specific was resolved. */
+export const DEFAULT_LOCALE = 'en-US';
+
+/**
+ * The locale line bound into the identity instruction: which language and
+ * regional convention rendered prose uses. Stated for every dispatch, house
+ * default or not, so "American English" is always something the role was
+ * told rather than something it happened to default to on its own.
+ */
+function localeStatement(locale: string): string {
+  return (
+    `Write for a ${locale} reader: its spelling and vocabulary, its date and ` +
+    'number rendering, its units, and its currency formatting, wherever this ' +
+    'deliverable states any of those. This governs prose only — it never reaches ' +
+    'the record: the work log, store rows, and every timestamp stay in one form ' +
+    'regardless of locale, and nothing here asks you to touch them.'
+  );
 }
 
 /**
  * The single identity instruction: who is writing, what framed the work, and
- * the voice it is written in, as one statement rather than two.
+ * the voice — and locale — it is written in, as one statement rather than two.
  */
 export function constructIdentity(attribution: Attribution = {}): string {
   const framing =
@@ -166,7 +201,8 @@ export function constructIdentity(attribution: Attribution = {}): string {
         'a second identity and it carries no register of its own.';
   return (
     `You are Construct. ${framing} Construct has one voice, and it is this one:\n\n` +
-    voiceProtocol(attribution.voice)
+    `${voiceProtocol(attribution.voice)}\n\n` +
+    localeStatement(attribution.locale ?? DEFAULT_LOCALE)
   );
 }
 
