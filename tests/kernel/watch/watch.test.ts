@@ -79,7 +79,7 @@ test('a resolved finding is not raised again by the next sweep', () => {
   withStore((store) => {
     sweepWatch(store, { watch: WATCH, findings: [FINDING], at: AT });
     const id = openDecisions(store)[0].id;
-    resolveDecision(store, id, 'Predates the trailer convention; leaving it closed.', AT);
+    resolveDecision(store, id, 'Predates the trailer convention; leaving it closed.', AT, 'cli:user');
 
     const after = sweepWatch(store, { watch: WATCH, findings: [FINDING], at: LATER });
     assert.deepEqual(after.raised, [], 'a settled call must not come back');

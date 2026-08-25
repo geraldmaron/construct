@@ -66,6 +66,19 @@ function unlocked<T>(store: Store, body: () => T): T {
   }
 }
 
+/**
+ * Reclaim the space the erased rows sat on so nothing survives in the file that
+ * the ritual reported gone. `secure_delete` (set at open) already zeroed the
+ * freed page content inside the delete; this truncates the write-ahead log so a
+ * copy of the erased rows does not linger there, and VACUUM rewrites the
+ * database without its freelist. Both run after the erasure transaction has
+ * committed, because VACUUM cannot run inside one.
+ */
+function reclaimAfterErasure(store: Store): void {
+  store.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+  store.db.exec('VACUUM');
+}
+
 export interface RecordErasure {
   readonly erased: Erasure;
   /**
@@ -99,7 +112,7 @@ export function eraseRecord(
 
   const naming = notesNaming(store, subject.workspace, subject.name);
 
-  return transact(store, () => {
+  const result = transact(store, () => {
     const removed = unlocked(store, () => {
       const fields = store.db
         .prepare('DELETE FROM record_fields WHERE record = ?')
@@ -118,6 +131,8 @@ export function eraseRecord(
     recordErasure(store, erased);
     return { erased, notesStillNaming: naming };
   });
+  reclaimAfterErasure(store);
+  return result;
 }
 
 /**
@@ -134,12 +149,12 @@ export function eraseNote(store: Store, note: string, reason: string, at: string
     | undefined;
   if (!row) throw new Error(`eraseNote: no note ${note}`);
 
-  return transact(store, () => {
+  const erased = transact(store, () => {
     const removed = unlocked(
       store,
       () => Number(store.db.prepare('DELETE FROM notes WHERE id = ?').run(note).changes),
     );
-    const erased: Erasure = {
+    const record: Erasure = {
       workspace: row.workspace,
       kind: 'note',
       subject: note,
@@ -147,9 +162,11 @@ export function eraseNote(store: Store, note: string, reason: string, at: string
       removed,
       erasedAt: at,
     };
-    recordErasure(store, erased);
-    return erased;
+    recordErasure(store, record);
+    return record;
   });
+  reclaimAfterErasure(store);
+  return erased;
 }
 
 function recordErasure(store: Store, erasure: Erasure): void {

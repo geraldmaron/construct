@@ -90,7 +90,7 @@ test('an open ask reads back with the default that is already carrying the work'
     assert.match(open[0]?.standingDefault ?? '', /EU only/);
     assert.deepEqual(openAsksFor(store, 'run-2'), [], 'scoping to another run finds none');
 
-    resolveDecision(store, 't-privacy:ask', 'EU and UK', AT);
+    resolveDecision(store, 't-privacy:ask', 'EU and UK', AT, 'cli:user');
     assert.deepEqual(openAsksFor(store), [], 'an answered ask is no longer waiting');
   } finally {
     store.close();
@@ -120,7 +120,7 @@ test('answered asks read back with role, question, and the resolution as given',
     );
     assert.deepEqual(answeredAsksFor(store, 'run-1'), [], 'open is not answered');
 
-    resolveDecision(store, 't-privacy:ask', 'EU and UK, US waits for tax review', AT);
+    resolveDecision(store, 't-privacy:ask', 'EU and UK, US waits for tax review', AT, 'cli:user');
     const answered = answeredAsksFor(store, 'run-1');
     assert.equal(answered.length, 1);
     assert.equal(answered[0]?.role, 'privacy');

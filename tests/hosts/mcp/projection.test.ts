@@ -28,7 +28,7 @@ import type { Store } from '../../../src/kernel/store/open.ts';
 import { listTasks } from '../../../src/kernel/store/tasks.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { readFeedback } from '../../../src/kernel/store/feedback.ts';
-import { raiseDecision, openDecisions } from '../../../src/kernel/store/decisions.ts';
+import { raiseDecision, openDecisions, getDecision } from '../../../src/kernel/store/decisions.ts';
 import { answeredAsksFor, frameAsk } from '../../../src/kernel/run/asks.ts';
 import { startRunSelected } from '../../../src/kernel/run/outcome.ts';
 import { readRunDispatch } from '../../../src/kernel/store/dispatch.ts';
@@ -351,6 +351,10 @@ test('decide relays the user call and closes the decision', async () => {
     const decided = payload(await f.handle(call('decide', { id: 'dec-1', resolution: 'Wait for legal.' })));
     assert.equal(decided.isError, false);
     assert.equal(openDecisions(f.store).length, 0);
+    // The resolution carries the model's provenance, distinct from a person's
+    // `cli:user`, so nothing downstream reads a model's call as a human's. This
+    // fixture never sends initialize, so the client is the default placeholder.
+    assert.equal(getDecision(f.store, 'dec-1')?.resolvedBy, 'mcp:unknown-client');
 
     // A second resolution of the same decision is refused as a result the
     // model can read, not a transport error.

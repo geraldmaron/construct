@@ -464,7 +464,7 @@ test('a role that lacks a user-held fact asks once through the inbox, and a late
     assert.equal(suppressed.length, started.tasks.length - 1, 'the rest are on the log');
 
     // The user answers; a later dispatch of the run receives the answer.
-    resolveDecision(store, open[0].id, 'We standardize on Okta.', AT);
+    resolveDecision(store, open[0].id, 'We standardize on Okta.', AT, 'cli:user');
     enqueueTask(store, {
       id: 't-later',
       run: 'run-1',

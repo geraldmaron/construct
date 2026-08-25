@@ -257,6 +257,14 @@ test('applying needs authority: approval applies, bare pending does not', () => 
 test('standing consent applies low risk only; high risk still demands a human', () => {
   withStore((store) => {
     declare(store);
+    // Standing consent needs to know the source is safe, so the source is
+    // declared not sensitive; without a declaration it would wait for a person.
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the tracker', sensitive: false },
+      AT,
+    );
     assert.equal(writeConsentAllowsLowRisk(store, 'acme'), false);
     setWriteConsent(store, 'acme', true, AT);
     propose(store, 'p-low', 'low');
@@ -264,6 +272,48 @@ test('standing consent applies low risk only; high risk still demands a human', 
     markApplied(store, 'p-low', 'auto', LATER);
     assert.equal(decisionOf(store, 'p-low')?.basis, 'standing-consent');
     assert.throws(() => markApplied(store, 'p-high', 'auto', LATER), /high-risk never applies/);
+  });
+});
+
+test('standing consent will not carry a change into a source nobody declared', () => {
+  withStore((store) => {
+    declare(store);
+    setWriteConsent(store, 'acme', true, AT);
+    propose(store, 'p-low', 'low');
+    // No declaration on src-1: its safety is unknown, not assumed, so the
+    // blanket yes does not reach it.
+    assert.throws(() => markApplied(store, 'p-low', 'auto', LATER), /no declaration/);
+  });
+});
+
+test('standing consent will not carry a change whose action a model chose', () => {
+  withStore((store) => {
+    declare(store);
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the tracker', sensitive: false },
+      AT,
+    );
+    setWriteConsent(store, 'acme', true, AT);
+    proposeWrite(store, {
+      id: 'p-model',
+      workspace: 'acme',
+      run: 'run-1',
+      source: 'src-1',
+      change: 'update p-model',
+      justification: 'note line 4',
+      risk: 'low',
+      proposedAt: AT,
+      actionSource: 'model',
+    });
+    assert.throws(() => markApplied(store, 'p-model', 'auto', LATER), /chosen by a model/);
+
+    // The same finding, action left to the mechanical keyword default, does
+    // ride the standing yes.
+    propose(store, 'p-keyword', 'low');
+    markApplied(store, 'p-keyword', 'auto', LATER);
+    assert.equal(decisionOf(store, 'p-keyword')?.basis, 'standing-consent');
   });
 });
 
