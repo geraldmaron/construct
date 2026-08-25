@@ -1,11 +1,16 @@
 # Running Construct on a schedule
 
-Construct has no scheduler of its own, and that is a principle rather than a
-gap: the predecessor's daemon leak is the recorded lesson, so nothing in this
-tool waits, polls, or wakes. What it has is a **standing outcome** — a
-recurring intention recorded in the store — and a CLI verb that fires whatever
-has come due. The clock stays with whatever the machine already trusts:
-`cron`, `launchd`, a CI job.
+Construct has no scheduler of its own, and the designed state is nothing
+running: the predecessor's daemon leak is the recorded lesson, so nothing waits
+or wakes unless you asked for it by name. What Construct has is a **standing
+outcome** — a recurring intention recorded in the store — and a CLI verb that
+fires whatever has come due. The clock stays with whatever the machine already
+trusts: `cron`, `launchd`, a CI job.
+
+Residency is available and opt-in. If you want sub-interval sweeps without a
+crontab, `construct daemon start` raises a resident process that fires the same
+due work; it is described at the end of this page, and nothing raises it but
+that verb.
 
 ## Standing outcomes
 
@@ -106,8 +111,53 @@ construct standing       # what stands, and when each last fired
 construct watch list     # every declared source watch, and when each last fired
 construct inbox          # what needs a human
 construct log | tail     # what happened last
+construct daemon status  # is a resident running, and how long until it exits itself
 construct doctor         # is the machine's install healthy
 ```
+
+## The opt-in resident
+
+A crontab wakes on its own cadence and cannot look sooner. When a watch earns
+faster sweeps than that, one verb raises a resident process:
+
+```bash
+construct daemon start                     # the only thing that raises it
+construct daemon status                    # version, uptime, idle seconds, what is due
+construct daemon stop                      # asks it to stop, and waits until it has
+construct daemon run --foreground          # the same loop, attached, logging to stderr
+```
+
+`start` accepts `--every=<seconds>` (how often it sweeps, default 60, jittered
+by a tenth so a fleet does not sweep in lockstep) and `--idle-exit=<seconds>`
+(the quiet period after which it exits itself, default 900, never below 60).
+`run` is what `start` spawns and what a supervisor unit would exec; with
+`--foreground` it stays attached, logs to stderr, and accepts a short quiet
+period, which is what makes it usable for a look rather than a deployment.
+
+What it does, and what it deliberately does not:
+
+- **It sweeps source watches**, exactly as `construct watch --due` does. That
+  costs a filesystem walk and a store write, and spends nothing on a model.
+- **It re-files standing outcomes that have come due**, exactly as the filing
+  half of `construct standing --due` does — and stops there. Working a filed
+  run dispatches to a host, and a host needs a credential; nothing long-lived
+  here holds one. Each filing is named in the log with the `construct work`
+  line that would finish it, so the spending stays where a person is.
+- **It exits itself when nothing is happening.** Every client connection and
+  every sweep that found due work restarts the quiet period. A daemon nobody
+  is using and nothing is asking of is a daemon that goes away.
+- **It cannot be raised by anything else.** Not `init`, not install, not
+  library code, not another verb. That is the leak this tool inherited, and the
+  single door is checked by a test that reads the whole source tree.
+
+Its identity is a unix socket at `<state dir>/daemon.sock`, keyed to the state
+directory rather than the working directory, so a second checkout or worktree
+finds the daemon that is already there instead of raising a second one. A
+socket left behind by a killed daemon is not a live one: the next `start`
+connects, gets refused, clears it, and binds. Its account of itself is one
+timestamped file at `<state dir>/daemon.log`, rolled aside once when it passes
+5MB. A newer Construct that reaches an older daemon is answered, and then that
+daemon exits itself so the next `start` raises the current build.
 
 ## What not to schedule
 

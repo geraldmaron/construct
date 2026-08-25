@@ -258,6 +258,44 @@ test('a tick that lands on a running sweep is skipped, never queued', async () =
   }
 });
 
+test('a sweep that blocks the event loop is reported, and nothing else happens', async () => {
+  const b = bench();
+  try {
+    let blocked = false;
+    const daemon = await startDaemon(
+      b.config({
+        sweepIntervalMs: 60,
+        sweep: async () => {
+          if (!blocked) {
+            blocked = true;
+            // Synchronous on purpose: this is what a resident must never do,
+            // and the daemon's only job is to say so.
+            const until = Date.now() + 1200;
+            while (Date.now() < until) {
+              /* hold the loop */
+            }
+          }
+          return { foundWork: false, lines: ['swept'] };
+        },
+      }),
+    );
+    assert.ok(daemon);
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    const duringTheRun = [...b.lines];
+    await stopped(daemon);
+    assert.ok(
+      duringTheRun.some((line) => /event loop p99 \d+ms exceeds 1000ms/.test(line)),
+      `the delay is logged: ${duringTheRun.join(' | ')}`,
+    );
+    assert.ok(
+      duringTheRun.filter((line) => line === 'swept').length > 1,
+      'and only logged: the daemon kept sweeping rather than acting on it',
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
 test('an oversized log is rolled aside once at open', () => {
   const fixture = sterile();
   try {
