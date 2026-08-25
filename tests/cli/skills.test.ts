@@ -162,10 +162,12 @@ test('a flag the command does not know is refused rather than guessed at', async
   }
 });
 
-test('the command is listed in the usage line', async () => {
+test('the command is listed in the help surface', async () => {
   const result = await run(() => [['help']]);
   try {
-    assert.match(result.out, /\|skills\|/);
+    // Grouped now, one verb per line with a gloss, rather than a flat
+    // pipe-delimited run of every verb.
+    assert.match(result.out, /\n {2}skills {2,}\S/);
   } finally {
     rmSync(result.root, { recursive: true, force: true });
   }
