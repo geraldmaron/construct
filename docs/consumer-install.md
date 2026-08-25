@@ -16,14 +16,30 @@ exists and already passes its own gate.
 
 Less than you'd expect. Construct's state — the sqlite store, run history,
 work log — resolves under your home directory
-(`~/.local/share/construct`, `~/.local/state/construct`, XDG-overridable),
-never inside the target repo. This build has no project-scoped config file
-it reads or writes. The only thing the target repo gains is one MCP entry
-telling its agent host where to find the `construct` binary.
+(`~/.local/share/construct`, `~/.local/state/construct`, XDG-overridable) by
+default, never inside the target repo unless you deliberately ask for it. The
+thing the target repo always gains is one MCP entry telling its agent host
+where to find the `construct` binary.
 
-(If you find a tracked `construct.config.json` in an older repo, that's a
-v2 artifact — this build has no code path that looks for that filename.
-Its presence or absence says nothing about whether this recipe worked.)
+A repo may also carry one optional file this build does read:
+`.construct/settings.json`, a project-scoped statement of *preferences* — which
+host to reach for, what locale to write in, ground hints, and whether the store
+roots inside the repo (`state: local`) instead of under home. Preferences
+resolve on a git-config-style ladder (a built-in default, then a global
+`settings.json`, then this project file, then a `CONSTRUCT_*` environment
+variable, then a flag), and this project file is **inert until you ratify its
+exact bytes** with `construct trust --ratify`: a settings file someone else
+checked in informs nothing until you trust it, and re-checking is per byte, so
+an edit un-trusts it until you ratify again. It carries preferences only, never
+consent — standing consent for outward writes and the engagement mode stay in
+the store, set by their own commands (`construct consent`, `construct mode`),
+where a file sitting in a checkout cannot turn them on. A repo with no
+`.construct/` directory behaves exactly as the rest of this recipe describes.
+
+(A `construct.config.json` is a different thing: that was the predecessor's
+config filename, and this build has no code path that looks for it. Finding one
+tracked in an older repo says nothing about whether this recipe worked — the
+file this build reads is `.construct/settings.json`, not that one.)
 
 ## Step 1: Point something at the checkout's bin/construct.mjs
 
