@@ -58,8 +58,6 @@ import { reconcileAll } from './reconcile.ts';
 import type { DriftReport } from './reconcile.ts';
 
 /** The propositions this projection reconciles. Both are repo-owned. */
-export const SESSION_FIELDS = ['landed', 'in_flight'] as const;
-
 const SESSION_FIELD_AUTHORITY = Object.freeze({
   landed: AUTHORITY.DOMAIN,
   in_flight: AUTHORITY.DOMAIN,

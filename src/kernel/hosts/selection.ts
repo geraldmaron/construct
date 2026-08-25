@@ -54,14 +54,6 @@ export const COST_CLASSES = ['local', 'subscription', 'metered', 'unknown'] as c
 
 export type CostClass = (typeof COST_CLASSES)[number];
 
-/** What each class claims, in the terms a user reasons about spend in. */
-export const COST_MEANING: Readonly<Record<CostClass, string>> = {
-  local: 'served on this machine, so re-running it costs time and nothing else',
-  subscription: 'already paid for by a login this machine proved, so a run spends capacity rather than money',
-  metered: 'billed per call against an API key',
-  unknown: 'what a call here costs was never measured, so it is ordered last as though it bills',
-};
-
 /** Where a cost class sits on the scale. Lower is cheaper. */
 export function costRank(cost: CostClass): number {
   return COST_CLASSES.indexOf(cost);
