@@ -10,8 +10,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolvePaths } from '../kernel/paths.ts';
-import { openStore, storePath } from '../kernel/store/open.ts';
+import { openStore } from '../kernel/store/open.ts';
 import type { Store } from '../kernel/store/open.ts';
+import { resolveStoreLocation } from './local-state.ts';
 import { recordCatalogSighting } from '../kernel/store/catalog.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
@@ -26,14 +27,8 @@ import { createCursorAdapter } from '../hosts/cursor/adapter.ts';
  * default stays opencode; unknown names are the callers' to refuse (work()
  * validates; outcome/ask/notes accept only what their usage line names).
  */
-/**
- * The hosts this CLI can dispatch through. One list, so the flag validator,
- * the error text, and the adapter switch can never disagree about what is
- * dispatchable.
- */
-export const HOST_NAMES = ['opencode', 'claude', 'codex', 'cursor'] as const;
-
-export type HostName = (typeof HOST_NAMES)[number];
+export { HOST_NAMES } from './host-names.ts';
+export type { HostName } from './host-names.ts';
 
 export function adapterForHost(
   host: string | undefined,
@@ -56,7 +51,7 @@ export function packageVersion(): string {
  * the clock and the run id — the kernel does neither.
  */
 export function withStore<T>(fn: (store: Store) => T): T {
-  const store = openStore(storePath(resolvePaths()));
+  const store = openStore(resolveStoreLocation(process.cwd(), process.env).path);
   try {
     leaveCatalogMark(store);
     return fn(store);
@@ -87,7 +82,7 @@ function leaveCatalogMark(store: Store): void {
  * closed database, and it only shows up under load.
  */
 export async function withStoreAsync<T>(fn: (store: Store) => Promise<T>): Promise<T> {
-  const store = openStore(storePath(resolvePaths()));
+  const store = openStore(resolveStoreLocation(process.cwd(), process.env).path);
   try {
     leaveCatalogMark(store);
     return await fn(store);
