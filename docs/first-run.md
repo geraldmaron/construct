@@ -56,7 +56,7 @@ implicated domains (2):
       signals: contract (score 10)
 
 filed 3 work log entries and queued 2 task(s).
-Run them:  construct work --run run-20260805134446726
+Run them:  construct work --run run-20260805134446726 --host=<detected host>
 Read back: construct log --run run-20260805134446726
 
 plan plan-run-20260805134446726: 2 steps, risk high, no sources declared
@@ -73,10 +73,14 @@ Construct's job is to make them obvious to you. The `signals` line is the
 evidence for each one, so you can disagree with it on sight.
 
 That run happened without a model and without spending anything. If you would
-rather have a model read your sentence instead of the keyword map, name a host:
+rather have a model read your sentence instead of the keyword map, name a host.
+Any of the four works the same way here — pick whichever `construct doctor`
+shows you have (`opencode`, `claude`, `codex`, or `cursor`); the examples below
+use `<your host>` to stand for your choice, because Construct depends on none of
+them in particular:
 
 ```bash
-construct outcome --host=claude "We want to hire a contractor in Poland"
+construct outcome --host=<your host> "We want to hire a contractor in Poland"
 ```
 
 Then each domain cites a stated reason rather than matched keywords, and the
@@ -94,8 +98,17 @@ as something the system inferred.
 ## Run the work
 
 ```bash
-construct work --run=<your-run-id>
+construct work --run=<your-run-id> --host=<detected host>
 ```
+
+The `--host=<detected host>` in the `Run them:` line above is not decoration:
+when you run a command inside an agent host, Construct reads the marker that
+host sets on its own subprocesses and fills in the host you are already in, so
+the follow-up command targets this session rather than sending you to another
+tool. Run from a plain terminal that no host wraps, and that suffix is simply
+absent — you name a host yourself (`--host=<opencode|claude|codex|cursor>`,
+whichever `construct doctor` shows you have). Construct never depends on any one
+of them.
 
 This is the step that costs money. Each implicated role gets its own
 assignment, works the outcome from its own concern, and reports back. The
@@ -124,7 +137,7 @@ Not everything you want from a team is a piece of work. Sometimes you want to
 turn to whoever owns a thing and ask them:
 
 ```bash
-construct ask --host=claude "what does our roadmap say about the billing migration"
+construct ask --host=<your host> "what does our roadmap say about the billing migration"
 ```
 
 This is the same spine — the same catalog choosing who answers, the same
@@ -173,7 +186,7 @@ silent from the inside, arriving as a finished deliverable with nothing behind
 it:
 
 ```bash
-construct work --run=<id> --host=claude --dir=/path/to/your/repo
+construct work --run=<id> --host=<your host> --dir=/path/to/your/repo
 ```
 
 By default the survey ranks prose ahead of code and lists forty documents,
@@ -253,7 +266,7 @@ Once ground is declared, you can ask what disagrees inside it without waiting
 for a run to notice:
 
 ```bash
-construct review --host=claude
+construct review --host=<your host>
 ```
 
 That surveys every declared source, reads the documents for contradictions,
@@ -273,7 +286,7 @@ then be carried out through a host, which records only what that host reported
 succeeding:
 
 ```bash
-construct decide --apply=<proposal-id> --host=claude
+construct decide --apply=<proposal-id> --host=<your host>
 ```
 
 Carrying a change out needs a host that can write, which is `opencode` or
@@ -289,7 +302,7 @@ belongs to that subject:
 
 ```bash
 construct record add --kind=customer --name=Acme
-construct notes ./calls --host=claude
+construct notes ./calls --host=<your host>
 construct record show <record-id>
 ```
 
@@ -365,7 +378,7 @@ deliverables. Each answers its own concern and each is right to decline the
 rest, which leaves the composing to you:
 
 ```bash
-construct compose --run=<id> --host=claude
+construct compose --run=<id> --host=<your host>
 ```
 
 The composer may arrange what the roles established and may not add to it.
@@ -459,15 +472,18 @@ notice its own silence.
 
 ## The other way in: your own agent host
 
-If you already work inside Claude Code, Codex, VS Code agent mode, or OpenCode,
-you do not have to learn this CLI at all. Construct can appear inside the host
-you already use:
+If you already work inside Claude Code, Codex, Cursor, VS Code agent mode, or
+OpenCode, you do not have to learn this CLI at all. Construct can appear inside
+the host you already use. Run from inside a host, `construct wire` detects which
+one and registers the `construct serve` entry for you. A host with its own
+MCP-add helper takes the same entry in a line — Claude Code, for example:
 
 ```bash
 claude mcp add construct construct serve
 ```
 
-Or, for any host that reads a config file:
+Or, for any host that reads a config file, write the entry yourself — the
+`command`/`args` pair is identical for every host:
 
 ```json
 {
