@@ -275,7 +275,7 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
   return withStore((store) => {
     const at = now();
     try {
-      resolveDecision(store, id, resolution, at);
+      resolveDecision(store, id, resolution, at, 'cli:user');
     } catch (error) {
       process.stderr.write(`decide: ${(error as Error).message}\n`);
       return 1;
