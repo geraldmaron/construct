@@ -26,8 +26,9 @@ import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
 import { createHostNamer } from '../hosts/namer.ts';
-import { adapterForHost, now, withStoreAsync } from './runtime.ts';
+import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
+import { detectAmbientHost } from '../hosts/ambient.ts';
 import { parseHostFlags, workspaceFlag } from './flags.ts';
 
 const OUTCOME_USAGE =
@@ -174,7 +175,7 @@ export function planRun(
   }
 }
 
-export function reportRun(started: StartedRun): void {
+export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.env): void {
   process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
   process.stdout.write(`implicated domains (${started.implicated.length}):\n`);
   for (const implication of started.implicated) {
@@ -215,7 +216,14 @@ export function reportRun(started: StartedRun): void {
   process.stdout.write(
     `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
   );
-  process.stdout.write(`Run them:  construct work --run ${started.runId}\n`);
+  // The command named here is the one `construct work` would actually pick
+  // with no --host typed — an ambient host with a wired adapter, when there
+  // is one — so what is relayed and what would run never say two things.
+  const ambient = detectAmbientHost(env);
+  const ambientWired = ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host);
+  process.stdout.write(
+    `Run them:  construct work --run ${started.runId}` + (ambientWired ? ` --host=${ambient.host}` : '') + '\n',
+  );
   process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
 }
 
@@ -232,7 +240,11 @@ export function reportRun(started: StartedRun): void {
  * `hostOverride` exists so the CLI's own wiring is testable without a binary
  * present, exactly as with `work`.
  */
-export async function outcome(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+export async function outcome(
+  argv: string[],
+  hostOverride?: HostAdapter,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<number> {
   let args: OutcomeArgs;
   try {
     args = parseOutcomeArgs(argv);
@@ -263,7 +275,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
         process.stderr.write(`outcome: ${(error as Error).message}\n`);
         return 2;
       }
-      reportRun(started);
+      reportRun(started, env);
       planRun(store, started, null, args.workspace, at);
       return 0;
     }
@@ -276,15 +288,24 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
           'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
         );
         // The signpost that makes the dead end a choice rather than a wall
-        //: the user, not the tool, decides to spend money.
+        //: the user, not the tool, decides to spend money. Named first, when
+        // detected, is the host this process is already running inside — the
+        // command a user in that session would actually want to type — with
+        // the full list still shown as every other way to spend.
+        const ambient = detectAmbientHost(env);
+        const ambientWired = ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host);
         process.stdout.write(
           '\nA host model can be asked instead, at cost:\n' +
+            (ambientWired
+              ? `  construct outcome --host=${ambient.host} ${JSON.stringify(args.text)}  ` +
+                `(this session is running inside ${ambient.host})\n`
+              : '') +
             `  construct outcome --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.text)}\n`,
         );
         planRun(store, started, null, args.workspace, at);
         return 0;
       }
-      reportRun(started);
+      reportRun(started, env);
       planRun(store, started, null, args.workspace, at);
       return 0;
     }
@@ -385,7 +406,7 @@ export async function outcome(argv: string[], hostOverride?: HostAdapter): Promi
       planRun(store, started, densified, args.workspace, at);
       return 0;
     }
-    reportRun(started);
+    reportRun(started, env);
     planRun(store, started, densified, args.workspace, at);
     return 0;
   });
