@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { main } from '../../src/cli/index.ts';
 import type { Paths } from '../../src/kernel/paths.ts';
 import {
-  findProjectSettingsPath,
+  discoverProjectSettings,
   globalSettingsPath,
   projectTrustNote,
   readSettingsFile,
@@ -26,6 +26,7 @@ import type { ResolveInputs } from '../../src/cli/settings-file.ts';
 interface Bench {
   readonly paths: Paths;
   readonly root: string;
+  readonly home: string;
   readonly projectFile: string;
   writeGlobal(value: unknown): void;
   writeProject(value: unknown): void;
@@ -47,10 +48,14 @@ function bench(): Bench {
   const ensureProject = (): void => {
     mkdirSync(projectDir, { recursive: true });
     mkdirSync(projectRoot, { recursive: true });
+    // A git root bounds discovery and gives the file a repository to be scoped
+    // to, the way a real checkout would.
+    mkdirSync(join(root, 'project', '.git'), { recursive: true });
   };
   return {
     paths,
     root: projectRoot,
+    home: root,
     projectFile,
     writeGlobal(value) {
       mkdirSync(paths.configDir, { recursive: true });
@@ -70,13 +75,16 @@ function bench(): Bench {
 
 function inputs(
   b: Bench,
-  over: Partial<Pick<ResolveInputs, 'env' | 'flags' | 'cwd'>> = {},
+  over: Partial<Pick<ResolveInputs, 'env' | 'flags' | 'cwd' | 'home' | 'ratified'>> = {},
 ): ResolveInputs {
   return {
     paths: b.paths,
     cwd: over.cwd ?? b.root,
     env: over.env ?? {},
     flags: over.flags ?? {},
+    home: over.home ?? b.home,
+    // Nothing is trusted unless a test says so, which is the gate's default.
+    ratified: over.ratified ?? (() => false),
   };
 }
 
@@ -110,33 +118,34 @@ test('the global file overrides the built-in default and is named as the source'
   }
 });
 
-test('a project file contributes nothing until the trust seam opts it in', () => {
+test('a project file contributes nothing until it is ratified', () => {
   const b = bench();
   try {
     b.writeGlobal({ host: 'claude' });
     b.writeProject({ host: 'cursor' });
 
-    // Not admitted: the global file still wins, and a note explains why.
+    // Not ratified: the global file still wins, and a note explains why.
     const closed = resolveSettings(inputs(b));
     assert.deepEqual(bySource(closed, 'host'), { display: 'claude', source: 'global file' });
     const note = projectTrustNote(inputs(b));
-    assert.ok(note && note.includes('CONSTRUCT_TRUST_PROJECT_SETTINGS'));
+    assert.ok(note && /not trusted/.test(note) && /construct trust/.test(note));
 
-    // Opted in: the project file overrides the global one.
-    const open = resolveSettings(inputs(b, { env: { CONSTRUCT_TRUST_PROJECT_SETTINGS: 'on' } }));
+    // Ratified: the project file overrides the global one.
+    const open = resolveSettings(inputs(b, { ratified: () => true }));
     assert.deepEqual(bySource(open, 'host'), { display: 'cursor', source: 'project file' });
-    assert.equal(projectTrustNote(inputs(b, { env: { CONSTRUCT_TRUST_PROJECT_SETTINGS: 'on' } })), null);
+    assert.equal(projectTrustNote(inputs(b, { ratified: () => true })), null);
   } finally {
     b.cleanup();
   }
 });
 
-test('an environment variable overrides an admitted project file', () => {
+test('an environment variable overrides a ratified project file', () => {
   const b = bench();
   try {
     b.writeProject({ host: 'cursor' });
-    const env = { CONSTRUCT_TRUST_PROJECT_SETTINGS: 'on', CONSTRUCT_HOST: 'codex' };
-    const resolved = resolveSettings(inputs(b, { env }));
+    const resolved = resolveSettings(
+      inputs(b, { ratified: () => true, env: { CONSTRUCT_HOST: 'codex' } }),
+    );
     assert.deepEqual(bySource(resolved, 'host'), { display: 'codex', source: 'environment' });
   } finally {
     b.cleanup();
@@ -269,13 +278,16 @@ test('ground hints from a scalar split on commas', () => {
   }
 });
 
-test('a project file is discovered by walking up the tree', () => {
+test('a project file is discovered by walking up the tree, bounded by the git root', () => {
   const b = bench();
   try {
     b.writeProject({ host: 'cursor' });
-    const found = findProjectSettingsPath(b.root);
-    assert.ok(found && found.endsWith(join('.construct', 'settings.json')));
-    assert.equal(findProjectSettingsPath(tmpdir()), null);
+    const found = discoverProjectSettings(b.root, b.home);
+    assert.equal(found.outcome, 'found');
+    assert.ok(found.outcome === 'found' && found.path.endsWith(join('.construct', 'settings.json')));
+    // A directory under no repository and outside home discovers nothing: the
+    // walk has no floor, so it never climbs to a stray /tmp/.construct.
+    assert.equal(discoverProjectSettings(tmpdir(), null).outcome, 'absent');
   } finally {
     b.cleanup();
   }
@@ -291,13 +303,24 @@ test('a file that is not there contributes nothing', () => {
 });
 
 test('construct settings prints every value with the layer it came from', async () => {
-  const configHome = mkdtempSync(join(tmpdir(), 'construct-settings-cli-'));
-  const previous = process.env.XDG_CONFIG_HOME;
-  const previousHost = process.env.CONSTRUCT_HOST;
-  process.env.XDG_CONFIG_HOME = configHome;
+  const xdgHome = mkdtempSync(join(tmpdir(), 'construct-settings-cli-'));
+  // settings now opens the store to learn whether a project file is trusted, so
+  // every XDG root is redirected into the tmpdir — the sterile discipline the
+  // rest of the suite keeps, so this never writes into a real ~/.
+  const saved: Record<string, string | undefined> = {};
+  for (const key of ['XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'XDG_DATA_HOME', 'XDG_CACHE_HOME', 'CONSTRUCT_HOST']) {
+    saved[key] = process.env[key];
+  }
+  process.env.XDG_CONFIG_HOME = join(xdgHome, 'config');
+  process.env.XDG_STATE_HOME = join(xdgHome, 'state');
+  process.env.XDG_DATA_HOME = join(xdgHome, 'data');
+  process.env.XDG_CACHE_HOME = join(xdgHome, 'cache');
   delete process.env.CONSTRUCT_HOST;
-  mkdirSync(join(configHome, 'construct'), { recursive: true });
-  writeFileSync(join(configHome, 'construct', 'settings.json'), JSON.stringify({ host: 'claude' }));
+  mkdirSync(join(xdgHome, 'config', 'construct'), { recursive: true });
+  writeFileSync(
+    join(xdgHome, 'config', 'construct', 'settings.json'),
+    JSON.stringify({ host: 'claude' }),
+  );
   const out: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
   (process.stdout as { write: unknown }).write = (c: string) => (out.push(String(c)), true);
@@ -306,10 +329,11 @@ test('construct settings prints every value with the layer it came from', async 
     code = await main(['settings']);
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
-    if (previous === undefined) delete process.env.XDG_CONFIG_HOME;
-    else process.env.XDG_CONFIG_HOME = previous;
-    if (previousHost !== undefined) process.env.CONSTRUCT_HOST = previousHost;
-    rmSync(configHome, { recursive: true, force: true });
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    rmSync(xdgHome, { recursive: true, force: true });
   }
   const text = out.join('');
   assert.equal(code, 0);

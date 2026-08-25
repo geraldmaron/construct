@@ -9,6 +9,8 @@
  * out.
  */
 
+import { homedir } from 'node:os';
+import { resolve } from 'node:path';
 import {
   ENGAGEMENT_MODES,
   engagementMode,
@@ -17,12 +19,32 @@ import {
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
 import type { EngagementMode } from '../kernel/store/sources.ts';
+import {
+  latestRatificationForRepo,
+  ratifySettingsFile,
+  revokeRatification,
+  settingsFileRatified,
+} from '../kernel/store/ratifications.ts';
+import type { Ratification } from '../kernel/store/ratifications.ts';
 import { resolvePaths } from '../kernel/paths.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
-import { projectTrustNote, resolveSettings, SettingsError } from './settings-file.ts';
-import type { ResolveInputs } from './settings-file.ts';
+import {
+  discoverProjectSettings,
+  fileValuesToObject,
+  PREFERENCE_KEYS,
+  projectTrustNote,
+  renderFileValue,
+  resolveSettings,
+  SettingsError,
+} from './settings-file.ts';
+import type { FileValues, ProjectDiscovery, ResolveInputs } from './settings-file.ts';
+
+/** The user's home, the discovery floor when a working directory sits under no repository. */
+function homeDir(): string {
+  return process.env.HOME ?? homedir();
+}
 
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
 
@@ -106,29 +128,186 @@ export function consent(argv: string[]): number {
  */
 export function settings(argv: string[]): number {
   const { flags } = parseFlags(argv);
-  const inputs: ResolveInputs = {
-    paths: resolvePaths(),
-    cwd: process.cwd(),
-    env: process.env,
-    flags,
-  };
-  let resolved;
-  let note: string | null;
+  return withStore((store) => {
+    const inputs: ResolveInputs = {
+      paths: resolvePaths(),
+      cwd: process.cwd(),
+      env: process.env,
+      flags,
+      home: homeDir(),
+      ratified: (repoIdentity, hash) => settingsFileRatified(store, repoIdentity, hash),
+    };
+    let resolved;
+    let note: string | null;
+    try {
+      resolved = resolveSettings(inputs);
+      note = projectTrustNote(inputs);
+    } catch (error) {
+      if (!(error instanceof SettingsError)) throw error;
+      process.stderr.write(`construct settings: ${error.message}\n`);
+      return 1;
+    }
+    const keyWidth = Math.max(...resolved.map((r) => r.key.length));
+    const valueWidth = Math.max(...resolved.map((r) => r.display.length));
+    for (const setting of resolved) {
+      process.stdout.write(
+        `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
+      );
+    }
+    if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
+    return 0;
+  });
+}
+
+const TRUST_USAGE =
+  'usage: construct trust [--ratify|--revoke]\n' +
+  '  Show the project settings file discovered under this repository and whether\n' +
+  '  it is trusted. A checked-out .construct/settings.json is its author\'s, not\n' +
+  '  yours, so it informs nothing until you trust its exact bytes: --ratify does\n' +
+  '  that for this repository, --revoke withdraws it.\n';
+
+/**
+ * Show a project settings file and whether it is trusted, or trust or withdraw
+ * trust in its exact current bytes.
+ *
+ * A file checked out of a repository is attacker-authored ground, so it is inert
+ * until ratified, per repository and per the hash of its bytes. Showing it is
+ * safe because every value is hardened for the terminal on the way out — the
+ * escaping the schema promises holds here too — and a whitespace-only edit is a
+ * different hash, so trust never carries silently across a change.
+ */
+export function trust(argv: string[]): number {
+  const { flags, rest } = parseFlags(argv);
+  const known = new Set(['ratify', 'revoke']);
+  const unknown = Object.keys(flags).filter((flag) => !known.has(flag));
+  if (
+    unknown.length > 0 ||
+    rest.length > 0 ||
+    (flags.ratify !== undefined && flags.revoke !== undefined)
+  ) {
+    process.stderr.write(TRUST_USAGE);
+    return 2;
+  }
+
+  let discovery: ProjectDiscovery;
   try {
-    resolved = resolveSettings(inputs);
-    note = projectTrustNote(inputs);
+    discovery = discoverProjectSettings(process.cwd(), homeDir());
   } catch (error) {
     if (!(error instanceof SettingsError)) throw error;
-    process.stderr.write(`construct settings: ${error.message}\n`);
+    process.stderr.write(`construct trust: ${error.message}\n`);
     return 1;
   }
-  const keyWidth = Math.max(...resolved.map((r) => r.key.length));
-  const valueWidth = Math.max(...resolved.map((r) => r.display.length));
-  for (const setting of resolved) {
+  if (discovery.outcome === 'absent') {
     process.stdout.write(
-      `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
+      'construct trust: no project settings file (.construct/settings.json) under this repository.\n',
+    );
+    return 0;
+  }
+  if (discovery.outcome === 'refused') {
+    process.stderr.write(
+      `construct trust: ${escapeForTerminal(discovery.path)} was refused — ${escapeForTerminal(discovery.reason)}.\n`,
+    );
+    return 1;
+  }
+
+  const found = discovery;
+  return withStore((store) => {
+    if (flags.revoke !== undefined) {
+      const removed = revokeRatification(store, found.repoIdentity, found.hash);
+      process.stdout.write(
+        removed
+          ? `construct trust: withdrew trust for ${escapeForTerminal(found.path)}.\n`
+          : `construct trust: nothing to withdraw — ${escapeForTerminal(found.path)} was not trusted at its current bytes.\n`,
+      );
+      return 0;
+    }
+    if (flags.ratify !== undefined) {
+      const ratification: Ratification = {
+        repoIdentity: found.repoIdentity,
+        contentHash: found.hash,
+        path: found.path,
+        settings: fileValuesToObject(found.values),
+        ratifiedAt: now(),
+      };
+      ratifySettingsFile(store, ratification);
+      process.stdout.write(
+        `construct trust: trusted ${escapeForTerminal(found.path)}.\n` +
+          '  Its values inform runs in this repository until the file\'s bytes change.\n',
+      );
+      return 0;
+    }
+    if (settingsFileRatified(store, found.repoIdentity, found.hash)) {
+      process.stdout.write(
+        `construct trust: ${escapeForTerminal(found.path)} is trusted; its values inform runs.\n`,
+      );
+      return 0;
+    }
+    renderPending(found, latestRatificationForRepo(store, found.repoIdentity));
+    return 0;
+  });
+}
+
+/** Print one settings value per line, each hardened for the terminal. */
+function writeValues(keys: readonly string[], value: (key: string) => string | null): void {
+  for (const key of keys) {
+    const shown = value(key);
+    if (shown !== null) process.stdout.write(`    ${key} = ${shown}\n`);
+  }
+}
+
+/**
+ * Show a not-yet-trusted file. On a first ask, or a file that is different from
+ * the one previously trusted, the whole file is shown and its path named. On a
+ * re-ask for the same path with new bytes, only the keys that changed are shown,
+ * because that is the whole of what a person is being asked to re-approve — and
+ * the message says which case it is, so a changed file is never mistaken for a
+ * different one.
+ */
+function renderPending(
+  found: Extract<ProjectDiscovery, { outcome: 'found' }>,
+  prior: Ratification | null,
+): void {
+  const out = process.stdout;
+  const path = escapeForTerminal(found.path);
+  if (prior !== null && resolve(prior.path) === resolve(found.path)) {
+    out.write(`construct trust: the trusted project settings file has changed.\n  ${path}\n`);
+    const changed = changedKeys(found.values, prior.settings);
+    if (changed.length === 0) {
+      out.write('    (its bytes changed but no value did — a whitespace or ordering edit)\n');
+    } else {
+      writeValues(changed, (key) => valueLine(found.values, prior.settings, key));
+    }
+  } else {
+    if (prior !== null) {
+      out.write(
+        'construct trust: a different project settings file is now in effect, and it is not trusted.\n' +
+          `  now:     ${path}\n  trusted: ${escapeForTerminal(prior.path)}\n`,
+      );
+    } else {
+      out.write(`construct trust: a project settings file is not yet trusted.\n  ${path}\n`);
+    }
+    writeValues(PREFERENCE_KEYS, (key) =>
+      found.values.has(key) ? renderFileValue(key, found.values.get(key)) : null,
     );
   }
-  if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
-  return 0;
+  out.write('  Trust it with: construct trust --ratify\n');
+}
+
+/** The preference keys whose value differs between the file in hand and a prior ratification. */
+function changedKeys(current: FileValues, prior: Readonly<Record<string, unknown>>): string[] {
+  return PREFERENCE_KEYS.filter((key) => {
+    const here = current.has(key) ? JSON.stringify(current.get(key)) : undefined;
+    const there = key in prior ? JSON.stringify(prior[key]) : undefined;
+    return here !== there;
+  });
+}
+
+/** One changed key's current value, hardened — or its removal, when the new file drops it. */
+function valueLine(
+  current: FileValues,
+  prior: Readonly<Record<string, unknown>>,
+  key: string,
+): string {
+  if (current.has(key)) return renderFileValue(key, current.get(key));
+  return key in prior ? '(removed)' : '(none)';
 }
