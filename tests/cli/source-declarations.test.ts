@@ -181,7 +181,7 @@ test('a deliverable citing an aspirational source shows that label where it cite
         ]);
       },
       () => main(['outcome', '--domains=strategy-alignment', 'decide what ships next']),
-      () => work([`--dir=${dir}`], citingHost(document)),
+      () => work(['--all', `--dir=${dir}`], citingHost(document)),
       () => {
         const run = inStore(
           (store) => (store.db.prepare('SELECT run FROM tasks LIMIT 1').get() as { run: string }).run,
@@ -218,7 +218,7 @@ test('re-describing a source changes what show renders for a deliverable already
       () => source(['add', '--kind=directory', `--locator=${dir}`]),
       () => source(['describe', `--id=${sourceId()}`, '--authority=aspirational']),
       () => main(['outcome', '--domains=strategy-alignment', 'decide what ships next']),
-      () => work([`--dir=${dir}`], citingHost(document)),
+      () => work(['--all', `--dir=${dir}`], citingHost(document)),
       () => {
         const before = show(['--run', runId()]);
         // Splits the capture into the two renderings, so each is asserted on

@@ -69,6 +69,13 @@ export interface WorkArgs {
    * its working directory, which Construct cannot see from here.
    */
   readonly allowDistantGround: boolean;
+  /**
+   * Explicit opt-in to dispatch every pending task across every run, when no
+   * single run was named. A fleet dispatch is real spend, so it is never what
+   * an argument-free invocation does on the reader's behalf — this flag is the
+   * only other door into that behavior besides naming the run directly.
+   */
+  readonly all: boolean;
   /** Which host executes: 'opencode' (default) or 'claude'. */
   readonly host: string;
   /**
@@ -119,7 +126,20 @@ export const DEFAULT_SPEND_CEILING = 10;
  * would turn a typo into a silent default (a bare --concurrency would read as
  * zero and dispatch nothing).
  */
-const BOOLEAN_FLAGS = ['allow-distant-ground'] as const;
+const BOOLEAN_FLAGS = ['allow-distant-ground', 'all'] as const;
+
+/**
+ * Printed on a bare `construct work` (or one that names neither a run nor
+ * the fleet opt-in) once there is real work it would otherwise have spent
+ * money dispatching. Every other verb prints usage on a bare invocation;
+ * `work` is the one that would have spent instead, so the usage line here
+ * also states the choice rather than only the syntax.
+ */
+const WORK_USAGE =
+  'usage: construct work --run=<id> [options]\n' +
+  '   or: construct work --all [options]   dispatch every pending task across every run\n' +
+  'construct work with neither --run nor --all does nothing: dispatching every queued\n' +
+  'task is real spend, and it is never the no-argument default.\n';
 
 export function parseWorkArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): WorkArgs {
   const args: Record<string, string> = {};
@@ -175,6 +195,7 @@ export function parseWorkArgs(argv: string[], env: NodeJS.ProcessEnv = process.e
     binary: args.binary,
     dir: args.dir,
     allowDistantGround: args['allow-distant-ground'] === 'true' || args['allow-distant-ground'] === '',
+    all: args.all === 'true' || args.all === '',
     host,
     hostExplicit: args.host !== undefined,
     ambientHost: ambient?.host,
@@ -323,6 +344,18 @@ export async function work(
         );
       }
       return 0;
+    }
+
+    // Real pending work exists and no run was named: this is the fleet
+    // dispatch the bare invocation must never fall into on its own. A typed
+    // --run scopes the spend to one run; --all is the only other door, and it
+    // has to be typed too. Checked here, after the nothing-to-work guard
+    // above and before the census or any host is touched, so a bare
+    // `construct work` against a store with real work queued spends nothing
+    // and calls no host.
+    if (!args.run && !args.all) {
+      process.stderr.write(WORK_USAGE);
+      return 2;
     }
 
     const pending = listTasks(store, args.run).filter((t) => t.state === 'pending');

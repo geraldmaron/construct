@@ -142,7 +142,7 @@ test('a finished run becomes cited, risk-tiered proposals that nothing has acted
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-1']),
     () => {
       const store = openStore(storePath(resolvePaths()));
@@ -183,7 +183,7 @@ test('proposing twice files nothing twice and says which rows already stood', as
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-1']),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-1']),
     () => {
@@ -206,7 +206,7 @@ test('--dry-run shows the rows and files none', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-1', '--dry-run']),
     () => {
       const store = openStore(storePath(resolvePaths()));
@@ -226,7 +226,7 @@ test('a source the workspace never declared is refused, with the ones it did dec
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-nowhere']),
   ]);
   assert.equal(code, 1);
@@ -237,7 +237,7 @@ test('extraction without a named source refuses and lists what a change could be
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`]),
   ]);
   assert.equal(code, 2);
@@ -249,7 +249,7 @@ test('the waiting queue lists what it has, and says nothing has been carried out
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => main(['propose', `--run=${latestRun()}`, '--source=src-1']),
     () => main(['propose', 'list']),
   ]);
@@ -317,7 +317,7 @@ test('--action overrides one row by id, disclosed, and no other row moves', asyn
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => {
       taskId = soleTaskId(latestRun());
       return 0;
@@ -347,7 +347,7 @@ test('--action with no colon, or naming an action nobody defined, is a usage err
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => propose([`--run=${latestRun()}`, '--source=src-1', '--action=nocolonhere']),
   ]);
   assert.equal(code, 2);
@@ -358,7 +358,7 @@ test('--action naming an unknown action is refused the same way', async () => {
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => propose([`--run=${latestRun()}`, '--source=src-1', '--action=wp-x-L8:delete-everything']),
   ]);
   assert.equal(code, 2);
@@ -369,7 +369,7 @@ test('with a host configured, every un-overridden row is model-proposed and disc
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => propose([`--run=${latestRun()}`, '--source=src-1'], actionProposingHost('label')),
   ]);
   assert.equal(code, 0);
@@ -383,7 +383,7 @@ test('a model that cannot classify falls back to the keyword read, and stays sil
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => propose([`--run=${latestRun()}`, '--source=src-1'], failingActionHost()),
   ]);
   assert.equal(code, 0);
@@ -400,7 +400,7 @@ test('an override and a host together: the overridden row never reaches the mode
   const { code, out } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
     declareSource(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => {
       taskId = soleTaskId(latestRun());
       return 0;

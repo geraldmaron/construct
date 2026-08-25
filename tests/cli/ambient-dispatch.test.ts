@@ -122,7 +122,7 @@ async function runAgainst(
   try {
     await main(['outcome', OUTCOME]);
     const code = await work(
-      options.argv ?? [],
+      options.argv ?? ['--all'],
       standInHost(),
       options.probe ?? worldWithEverything,
       env,

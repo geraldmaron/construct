@@ -98,7 +98,7 @@ async function runAgainst(
 
   try {
     await main(['outcome', OUTCOME]);
-    const code = await work(options.argv ?? [], options.override, probe);
+    const code = await work(options.argv ?? ['--all'], options.override, probe);
     const store = openStore(storePath(resolvePaths()));
     try {
       const entries = readWorkLog(store).map((e) => ({ action: e.action, detail: e.detail }));
@@ -171,7 +171,7 @@ test('a machine with no host at all refuses, names what it looked for, and spend
 test('a named host is the answer, and nothing is selected or recorded on its behalf', async () => {
   const capture = await runAgainst(world({ ...CLAUDE_ONLY, ...CODEX_ON_SUBSCRIPTION }), {
     override: standInHost(),
-    argv: ['--host=opencode'],
+    argv: ['--all', '--host=opencode'],
   });
   assert.doesNotMatch(capture.out, /resource: /, 'a typed --host is not second-guessed');
   assert.equal(selections(capture).length, 0);
@@ -181,7 +181,7 @@ test('a named host is the answer, and nothing is selected or recorded on its beh
 test('a binary path names its own host, so the census does not overrule it', async () => {
   const capture = await runAgainst(world({ ...CLAUDE_ONLY, ...CODEX_ON_SUBSCRIPTION }), {
     override: standInHost(),
-    argv: ['--binary=/somewhere/opencode'],
+    argv: ['--all', '--binary=/somewhere/opencode'],
   });
   assert.doesNotMatch(capture.out, /resource: /);
   assert.equal(selections(capture).length, 0);
@@ -190,7 +190,7 @@ test('a binary path names its own host, so the census does not overrule it', asy
 test('a locally served model is chosen over a subscription, because re-running it is free', async () => {
   const capture = await runAgainst(
     world({ 'opencode --version': '1.15.4', ...CODEX_ON_SUBSCRIPTION }),
-    { override: standInHost(), argv: ['--model=ollama/qwen3.5:4b'] },
+    { override: standInHost(), argv: ['--all', '--model=ollama/qwen3.5:4b'] },
   );
   assert.match(capture.out, /resource: opencode \(local cost\)/);
   assert.match(capture.out, /not chosen: codex \(costs more than opencode/);
@@ -208,7 +208,7 @@ test('a run with nothing to dispatch never probes for a host it would not use', 
   const realOut = process.stdout.write.bind(process.stdout);
   (process.stdout as { write: unknown }).write = () => true;
   try {
-    const code = await work([], undefined, counting);
+    const code = await work(['--all'], undefined, counting);
     assert.equal(code, 0);
     assert.equal(asked, 0, 'an empty store asked no binary what version it was');
   } finally {
