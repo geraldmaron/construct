@@ -59,6 +59,13 @@ const VOICE_INSIDE_THE_JSON =
  */
 interface VoicedPrompt {
   readonly voice?: VoiceOverride;
+  /**
+   * The locale the composed document is rendered in. Absent means the house
+   * default, American English. Governs the reader surface of this document
+   * only — it never touches the claims, timestamps, or store rows the
+   * document is composed from.
+   */
+  readonly locale?: string;
 }
 
 export const COMPOSER_ROLE = 'composer';
@@ -221,7 +228,7 @@ export function composerPrompt(input: VoicedPrompt & {
     // The composer writes the document a person reads, so it writes in the one
     // voice the run was worked in. Nothing framed this pass in particular:
     // arranging every concern is Construct's own job, not any one concern's.
-    constructIdentity({ voice: input.voice }),
+    constructIdentity({ voice: input.voice, locale: input.locale }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -410,7 +417,7 @@ export function positionPrompt(input: VoicedPrompt & {
   readonly sources: readonly SourceDeliverable[];
 }): string {
   return [
-    constructIdentity({ voice: input.voice }),
+    constructIdentity({ voice: input.voice, locale: input.locale }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -514,7 +521,7 @@ export function positionRepairPrompt(input: VoicedPrompt & {
   readonly objections: readonly SharedObjection[];
 }): string {
   return [
-    constructIdentity({ voice: input.voice }),
+    constructIdentity({ voice: input.voice, locale: input.locale }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -692,7 +699,7 @@ export function closingPrompt(input: VoicedPrompt & {
     // Framed by the role that delivered the work, written in the one voice the
     // run was worked in: an answer that closes a gap lands in the document a
     // person reads, beside claims drawn from deliverables written in that voice.
-    constructIdentity({ framedBy: input.source.role, voice: input.voice }),
+    constructIdentity({ framedBy: input.source.role, voice: input.voice, locale: input.locale }),
     '',
     VOICE_INSIDE_THE_JSON,
     '',
@@ -747,11 +754,12 @@ export function createHostGapCloser(
   outcome: string,
   groundRoots: readonly string[],
   voice?: VoiceOverride,
+  locale?: string,
 ): GapCloser {
   return async (source, gaps) => {
     const text = await invokeRetrying(host, {
       role: `${source.role}${CLOSING_ROLE_SUFFIX}`,
-      task: closingPrompt({ outcome, source, gaps, groundRoots, voice }),
+      task: closingPrompt({ outcome, source, gaps, groundRoots, voice, locale }),
     });
     return toClosingReply(extractJson(text), source.role, gaps);
   };
