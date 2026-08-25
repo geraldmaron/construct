@@ -176,7 +176,7 @@ const OUTCOME = 'Decide whether the pilot ships in Q4';
 test('a composed claim and its support verdict reach the reader as text, not as terminal commands', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => compose([`--run=${latestRun()}`], forgingComposeHost()),
   ]);
   assertNoRawControls(out, 'compose');
