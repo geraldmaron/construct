@@ -10,7 +10,9 @@
  * The idle clock is the backstop under all of it. Every protection here can be
  * defeated by a defect somewhere else; a daemon that exits on its own after a
  * quiet period cannot become the thing a machine accumulates, whatever raised
- * it and whatever went wrong afterwards.
+ * it and whatever went wrong afterwards. It is turned off in exactly one case:
+ * a daemon a platform supervisor raised and is accountable for, where exiting
+ * on a quiet machine is the defect rather than the protection.
  */
 
 import { rmSync } from 'node:fs';
@@ -44,8 +46,14 @@ export interface DaemonCounts {
 export interface DaemonConfig {
   readonly socketPath: string;
   readonly version: string;
-  /** The quiet period after which the daemon exits itself. */
-  readonly idleExitSeconds: number;
+  /**
+   * The quiet period after which the daemon exits itself, or null for a daemon
+   * that never exits on its own. Null belongs to a supervised daemon and to
+   * nothing else: the idle clock is the backstop that reaps an orphan nobody
+   * is talking to, and only a platform supervisor — which starts, stops, and
+   * accounts for the process itself — replaces it.
+   */
+  readonly idleExitSeconds: number | null;
   readonly sweepIntervalMs: number;
   readonly sweep: () => Promise<SweepOutcome>;
   readonly counts: () => DaemonCounts;
@@ -270,23 +278,27 @@ export async function startDaemon(config: DaemonConfig): Promise<DaemonHandle | 
   };
   schedule();
 
-  const idleMs = config.idleExitSeconds * 1000;
-  idleTimer = setInterval(
-    () => {
-      if (stopping !== null) return;
-      if (open.size > 0 || inFlight !== null) {
-        lastActivity = now();
-        return;
-      }
-      if (now() - lastActivity >= idleMs) stop('idle');
-    },
-    Math.max(20, Math.min(1000, Math.round(idleMs / 4))),
-  );
+  if (config.idleExitSeconds !== null) {
+    const idleMs = config.idleExitSeconds * 1000;
+    idleTimer = setInterval(
+      () => {
+        if (stopping !== null) return;
+        if (open.size > 0 || inFlight !== null) {
+          lastActivity = now();
+          return;
+        }
+        if (now() - lastActivity >= idleMs) stop('idle');
+      },
+      Math.max(20, Math.min(1000, Math.round(idleMs / 4))),
+    );
+  }
 
   config.log.write(
     `listening on ${config.socketPath} (version ${config.version}, sweep every ` +
-      `${String(Math.round(config.sweepIntervalMs / 1000))}s, idle exit after ` +
-      `${String(config.idleExitSeconds)}s)`,
+      `${String(Math.round(config.sweepIntervalMs / 1000))}s, ` +
+      (config.idleExitSeconds === null
+        ? 'no idle exit: the supervisor owns this process)'
+        : `idle exit after ${String(config.idleExitSeconds)}s)`),
   );
 
   return { socketPath: config.socketPath, stopped, stop };

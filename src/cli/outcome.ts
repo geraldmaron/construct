@@ -161,6 +161,14 @@ export function planRun(
    * going to happen.
    */
   dispatching?: readonly Implication[],
+  /**
+   * Where the plan's own line goes. A caller with no terminal — the resident
+   * sweeper, whose stdout is a shared logfile — passes its own sink rather
+   * than leaving unstamped lines interleaved among timestamped ones.
+   */
+  say: (text: string) => void = (text) => {
+    process.stdout.write(text);
+  },
 ): void {
   const plan = buildPlan({
     id: `plan-${started.runId}`,
@@ -175,7 +183,7 @@ export function planRun(
     plannedAt: at,
   });
   recordPlan(store, plan);
-  process.stdout.write(
+  say(
     `\nplan ${plan.id}: ${plan.steps.length} step${plan.steps.length === 1 ? '' : 's'}, ` +
       `risk ${plan.riskTier}` +
       (plan.sourcesDeclared.length > 0
@@ -188,9 +196,7 @@ export function planRun(
       `\n  construct plan ${started.runId}\n`,
   );
   for (const d of plan.discarded) {
-    process.stdout.write(
-      `  discarded: ${escapeForTerminal(d.description)} — ${escapeForTerminal(d.reason)}\n`,
-    );
+    say(`  discarded: ${escapeForTerminal(d.description)} — ${escapeForTerminal(d.reason)}\n`);
   }
 }
 
