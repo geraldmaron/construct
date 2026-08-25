@@ -570,7 +570,10 @@ export async function work(
     for (const id of report.settled) {
       const task = getTask(store, id);
       if (!task) continue;
-      if (task.state === 'failed') {
+      // Done is the one state that reads as a checkmark; everything else a
+      // settled task could be lands on the failure row, so the glyph and the
+      // word printed beside it can never disagree about which one this was.
+      if (task.state !== 'done') {
         process.stdout.write(`  ✗ ${task.role.padEnd(20)} ${escapeForTerminal(failureLine(task.error))}\n`);
         continue;
       }
