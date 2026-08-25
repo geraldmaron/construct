@@ -437,7 +437,17 @@ export async function work(
       // Licensing ground the dispatch cannot open is how a run comes back
       // three-tasks-done with every file read failed and every deliverable
       // ungrounded. Knowable here, before a model call is paid for.
-      const reach = groundReach(groundRootsFor(store, runId), dispatchDirectory);
+      //
+      // A declared locator is stored exactly as typed, and a directory source
+      // is routinely typed relative to wherever `source add` was run. Compared
+      // to dispatchDirectory (already made absolute above) without resolving
+      // first, a relative root can never match even the directory it actually
+      // names — so the refusal's own suggested fix, typed back verbatim,
+      // reproduced the identical refusal. Resolving both sides against the
+      // same cwd before comparing is what makes --dir=<the named root> the
+      // remedy it is printed as, rather than a second dead end.
+      const roots = groundRootsFor(store, runId).map((root) => resolve(root));
+      const reach = groundReach(roots, dispatchDirectory);
       const unreachable = unreachableGroundMessage(reach, dispatchDirectory, UNREACHABLE_GROUND_FLAG);
       if (unreachable && !args.allowDistantGround) {
         process.stderr.write(`work: ${unreachable}`);
