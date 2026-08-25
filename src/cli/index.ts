@@ -38,6 +38,7 @@ import { plan } from './plan.ts';
 import { audit, propose } from './propose.ts';
 import { consent, mode, settings, trust } from './settings.ts';
 import { standing } from './standing.ts';
+import { schedule } from './schedule.ts';
 import { staff } from './staff.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
@@ -80,6 +81,7 @@ export { plan } from './plan.ts';
 export { audit, propose } from './propose.ts';
 export { consent, mode, settings, trust } from './settings.ts';
 export { standing } from './standing.ts';
+export { resolveScheduleContext, schedule, scheduleStatusLine } from './schedule.ts';
 export { staff } from './staff.ts';
 export { completions } from './completions.ts';
 export { wire } from './wire.ts';
@@ -95,7 +97,7 @@ export { init } from './init.ts';
  */
 export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
-  'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
+  'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'doctor', 'backup',
   'cleanup', 'completions', 'status', 'version', 'help',
@@ -151,6 +153,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
   standing: { gloss: 'set and fire standing outcomes on a schedule', flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace'] },
+  schedule: { gloss: 'install the platform timer that fires what is due', flags: ['every', 'at', 'dry-run'] },
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
   consent: { gloss: 'show or set standing consent for low-risk changes', flags: ['workspace', 'set'] },
@@ -188,7 +191,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
  * caught by the help-coverage test.
  */
 const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.freeze([
-  ['Starting work', ['outcome', 'ask', 'standing', 'watch']],
+  ['Starting work', ['outcome', 'ask', 'standing', 'watch', 'schedule']],
   ['Running it', ['work', 'notes']],
   ['Reading back', ['status', 'show', 'log', 'plan', 'inbox', 'corpus']],
   ['Outward changes and decisions', ['propose', 'audit', 'decide', 'waive', 'revoke']],
@@ -362,6 +365,8 @@ async function run(argv: string[]): Promise<number> {
       return audit(argv.slice(1));
     case 'standing':
       return standing(argv.slice(1));
+    case 'schedule':
+      return schedule(argv.slice(1));
     case 'mode':
       return mode(argv.slice(1));
     case 'consent':
