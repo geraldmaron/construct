@@ -12,6 +12,7 @@ import { resolvePaths } from '../kernel/paths.ts';
 import { loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
+import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
 import { serveRole } from './roleserve.ts';
 import { now, packageVersion, secretFile, withStoreAsync } from './runtime.ts';
 
@@ -51,6 +52,41 @@ export async function roleServe(): Promise<number> {
         clock: now,
         serverVersion: packageVersion(),
       },
+      process.stdin,
+      process.stdout,
+    );
+  } finally {
+    store.close();
+  }
+  return 0;
+}
+
+/**
+ * Serve the flagged host-pull execution surface over MCP stdio: an ambient host
+ * (Bob, goose, nanobot) claims a ready task and submits a draft for it on its
+ * own capacity. Off unless a deployment set the flag, refusing plainly when it
+ * did not — a prototype behind a gate is not reachable by accident. It loads the
+ * capability secret to mint task-scoped tokens, exactly as role-serve does and
+ * unlike the presence projection, which holds no secret and is left untouched.
+ */
+export async function hostPullServe(): Promise<number> {
+  if (!hostPullEnabled(process.env)) {
+    process.stderr.write(
+      `host-pull-serve: the host-pull execution prototype is off. Set ${HOST_PULL_FLAG_ENV}=1 to enable it.\n`,
+    );
+    return 2;
+  }
+  const secret = loadSecret(secretFile());
+  if (secret === null) {
+    process.stderr.write(
+      'host-pull-serve: no capability secret exists yet — it is established the first time "construct work" dispatches.\n',
+    );
+    return 1;
+  }
+  const store = openStore(storePath(resolvePaths()));
+  try {
+    await serveHostPull(
+      { store, secret, clock: now, serverVersion: packageVersion() },
       process.stdin,
       process.stdout,
     );
