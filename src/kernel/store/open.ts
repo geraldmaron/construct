@@ -174,6 +174,22 @@
  * and an absent record must fail to the reading that keeps it out of the
  * standing lane rather than the one that waves it through.
  *
+ * Schema version 23 adds `settings_ratifications`, additive: a project settings
+ * file checked out of a repository is attacker-authored ground — cloning a repo
+ * hands you whatever `.construct/settings.json` its author wrote — so it is
+ * inert until a person ratifies its exact bytes. A row is that ratification, and
+ * the primary key is the pair `(repo_identity, content_hash)`, never the hash
+ * alone: a byte-identical trivial file must not carry trust from one repository
+ * into another, so trust is scoped to the repository it was granted in. The
+ * `settings` column keeps the validated values the ratified bytes parsed to, so
+ * a later prompt can show which keys a changed file changed rather than only
+ * that it changed; `path` is the absolute path trust was granted for, so a
+ * re-ask can say whether a still-untrusted file is the same one edited or a
+ * different one entirely. An upsert on the key — re-ratifying the same bytes for
+ * the same repository refreshes the record rather than duplicating it — and
+ * plainly deletable, because a ratification is a trust grant a person may
+ * withdraw, not evidence whose history must survive.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -197,7 +213,7 @@ import { accessSync, chmodSync, constants, existsSync, mkdirSync } from 'node:fs
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 22;
+export const SCHEMA_VERSION = 23;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -842,6 +858,18 @@ BEGIN SELECT RAISE(ABORT, 'source_watch_firings is append-only: every firing kee
 CREATE TRIGGER IF NOT EXISTS source_watch_firings_no_delete
 BEFORE DELETE ON source_watch_firings
 BEGIN SELECT RAISE(ABORT, 'source_watch_firings is append-only: every firing keeps its lineage'); END;
+
+CREATE TABLE IF NOT EXISTS settings_ratifications (
+  repo_identity TEXT NOT NULL,
+  content_hash  TEXT NOT NULL,
+  path          TEXT NOT NULL,
+  settings      TEXT NOT NULL,
+  ratified_at   TEXT NOT NULL,
+  PRIMARY KEY (repo_identity, content_hash)
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS settings_ratifications_repo
+  ON settings_ratifications (repo_identity, ratified_at);
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
