@@ -23,6 +23,7 @@ import { groundRootsFor } from '../kernel/run/sourcereads.ts';
 import { groundReach, unreachableGroundMessage } from '../kernel/run/reachability.ts';
 import { synthesizeIssues } from '../kernel/run/synthesis.ts';
 import { loadOrCreateSecret } from '../kernel/capabilities/secretfile.ts';
+import { resolvedLocale } from './locale.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import {
   chooseResource,
@@ -505,6 +506,9 @@ export async function work(
       // What method the machine can offer a role beyond its lens: the skills
       // library, read where it actually sits rather than assumed present.
       skills: readReachableSkills,
+      // Rendered prose only — the work log and every timestamp this run
+      // writes are the same bytes no matter what this resolves to.
+      locale: resolvedLocale(store, { env }),
       ...(args.voice ? { voice: { instruction: args.voice, source: 'cli --voice' } } : {}),
     });
 
