@@ -25,15 +25,25 @@ export interface PathsEnv {
 
 const APP = 'construct';
 
+/**
+ * The XDG base-directory spec requires an empty value to be treated the same
+ * as an unset one. Honoring that here is load-bearing: joining an empty base
+ * yields a path relative to the cwd, and a resident process handed one would
+ * bind its socket and write its store wherever it happened to be started.
+ */
+function xdgBase(value: string | undefined, fallback: string): string {
+  return value !== undefined && value !== '' ? value : fallback;
+}
+
 export function resolvePaths(
   env: PathsEnv = process.env,
-  home: string = env.HOME ?? homedir(),
+  home: string = xdgBase(env.HOME, homedir()),
 ): Paths {
   return {
-    configDir: join(env.XDG_CONFIG_HOME ?? join(home, '.config'), APP),
-    stateDir: join(env.XDG_STATE_HOME ?? join(home, '.local', 'state'), APP),
-    dataDir: join(env.XDG_DATA_HOME ?? join(home, '.local', 'share'), APP),
-    cacheDir: join(env.XDG_CACHE_HOME ?? join(home, '.cache'), APP),
+    configDir: join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), APP),
+    stateDir: join(xdgBase(env.XDG_STATE_HOME, join(home, '.local', 'state')), APP),
+    dataDir: join(xdgBase(env.XDG_DATA_HOME, join(home, '.local', 'share')), APP),
+    cacheDir: join(xdgBase(env.XDG_CACHE_HOME, join(home, '.cache')), APP),
   };
 }
 
@@ -49,7 +59,7 @@ export function resolvePaths(
  */
 export function resolveSkillsDir(
   env: PathsEnv = process.env,
-  home: string = env.HOME ?? homedir(),
+  home: string = xdgBase(env.HOME, homedir()),
 ): string {
   return join(home, '.claude', 'skills');
 }
@@ -69,11 +79,11 @@ export function resolveSkillsDir(
 export function resolveScheduleDir(
   platform: NodeJS.Platform,
   env: PathsEnv = process.env,
-  home: string = env.HOME ?? homedir(),
+  home: string = xdgBase(env.HOME, homedir()),
 ): string | null {
   if (platform === 'darwin') return join(home, 'Library', 'LaunchAgents');
   if (platform === 'linux') {
-    return join(env.XDG_CONFIG_HOME ?? join(home, '.config'), 'systemd', 'user');
+    return join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'systemd', 'user');
   }
   return null;
 }
@@ -126,7 +136,7 @@ export type SkillsHostName = (typeof SKILLS_HOST_NAMES)[number];
 export function resolveHostSkillsDir(
   host: SkillsHostName,
   env: PathsEnv = process.env,
-  home: string = env.HOME ?? homedir(),
+  home: string = xdgBase(env.HOME, homedir()),
 ): string {
   if (host === 'claude') return resolveSkillsDir(env, home);
   return join(home, ...OTHER_HOST_SKILLS_PATH[host]);
