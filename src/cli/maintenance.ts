@@ -34,7 +34,8 @@ import { skillPackSkew } from '../kernel/skills/projection.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { censusLines, surveyResources } from '../hosts/census.ts';
-import { now, packageVersion } from './runtime.ts';
+import { detectAmbientHost } from '../hosts/ambient.ts';
+import { HOST_NAMES, now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
 import { readSkillFolders } from './skills.ts';
 
@@ -55,7 +56,7 @@ function humanizeAge(ms: number): string {
   return `${String(Math.max(1, Math.floor(ms / (60 * 1000))))}m`;
 }
 
-export function doctor(cwd: string = process.cwd()): number {
+export function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = process.env): number {
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
   checks.push({
@@ -104,6 +105,24 @@ export function doctor(cwd: string = process.cwd()): number {
   for (const line of censusLines(surveyResources())) {
     checks.push({ name: 'host', ok: true, detail: line });
   }
+
+  // Whether this process is itself running inside a host — the one fact the
+  // census above cannot show, since it reports what is installed on the
+  // machine, not what invoked Construct right now. Reported, never gated,
+  // like every other host line: the agent-session resident this check exists
+  // for needs to see it stated plainly, not infer it from a dispatch that
+  // went to the wrong place.
+  const ambient = detectAmbientHost(env);
+  checks.push({
+    name: 'ambient',
+    ok: true,
+    detail:
+      ambient === null
+        ? 'not running inside a detected host session; dispatch falls back to opencode when nothing else says otherwise'
+        : (HOST_NAMES as readonly string[]).includes(ambient.host)
+          ? `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: available`
+          : `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: projection-only (no wired dispatch adapter)`,
+  });
 
   // Predecessor markers in the project tree: reported like host presence,
   // not gated — finding one says nothing about whether this install is

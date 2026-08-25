@@ -11,6 +11,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Paths } from '../../src/kernel/paths.ts';
+import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
 
 export interface SterileFixture {
   readonly root: string;
@@ -55,4 +56,26 @@ export function sterileHome(): string {
     rmSync(home, { recursive: true, force: true });
   });
   return home;
+}
+
+/**
+ * Clears every env var ambient-host detection reads, for the whole of one
+ * test file, and restores whatever was there when the file finishes. Whoever
+ * runs the suite is itself very likely a detected host — an agent session
+ * running its own tests carries exactly the markers this module looks for —
+ * so a test that wants a machine with no ambient host, or wants to control
+ * which one it sees, needs that starting from a known-clear slate rather than
+ * whatever launched the test runner.
+ *
+ * Call it once at module scope, the same as `sterileHome`.
+ */
+export function sterileAmbientEnv(): void {
+  const previous = new Map(AMBIENT_ENV_KEYS.map((key) => [key, process.env[key]]));
+  for (const key of AMBIENT_ENV_KEYS) delete process.env[key];
+  after(() => {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
 }
