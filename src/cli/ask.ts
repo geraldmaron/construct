@@ -29,7 +29,7 @@ import { readReachableSkills } from './skills.ts';
 import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, now, secretFile, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
-import { parseFlags, parseHostFlags, workspaceFlag } from './flags.ts';
+import { firstUnknownFlag, parseFlags, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { failureLine, money } from './present.ts';
 import { surveyor } from './survey.ts';
 import { planRun } from './outcome.ts';
@@ -55,6 +55,12 @@ export interface AskArgs {
 }
 
 export function parseAskArgs(argv: string[]): AskArgs {
+  // The question is free-form, but a leading `--flag` naming nothing is a typo
+  // rather than a word of it, and is refused rather than folded into the text.
+  const unknown = firstUnknownFlag(argv, new Set(['host', 'model', 'binary', 'dir', 'timeout', 'workspace', 'ceiling']));
+  if (unknown !== undefined) {
+    throw new Error(`unknown flag ${unknown}; quote it inside the question if it belongs there`);
+  }
   const { flags, rest } = parseFlags(argv);
 
   // Same rule as `outcome`, from the same parser: a flag that only means
@@ -95,6 +101,10 @@ export function parseAskArgs(argv: string[]): AskArgs {
  * read them back.
  */
 export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  if (wantsHelp(argv)) {
+    process.stdout.write(ASK_USAGE);
+    return 0;
+  }
   let args: AskArgs;
   try {
     args = parseAskArgs(argv);
