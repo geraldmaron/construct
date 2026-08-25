@@ -136,6 +136,17 @@
  * relationship. It becomes one only when a decision says so, and until then
  * nothing reads it.
  *
+ * Schema version 20 adds `estimative_judgments`, append-only: every likelihood
+ * a run emitted, as the whole number the assessor gave rather than the band
+ * word derived from it, beside the confidence level, the observation that
+ * settles the claim, and the date or event by which it settles. A band with no
+ * resolution criterion can never be scored, so the columns that make it
+ * scorable are NOT NULL. Append-only for the reason `source_reads` is: the row
+ * is what was judged at the time it was judged, and a judgment that could be
+ * edited afterward would let the record agree with the outcome. Kept as the
+ * integer because a calibration curve is drawn over integers; the band is a
+ * rendering, and re-deriving it costs nothing.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -159,7 +170,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 19;
+export const SCHEMA_VERSION = 20;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -646,6 +657,29 @@ BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row')
 CREATE TRIGGER IF NOT EXISTS proposed_source_edges_no_delete
 BEFORE DELETE ON proposed_source_edges
 BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
+
+CREATE TABLE IF NOT EXISTS estimative_judgments (
+  seq             INTEGER PRIMARY KEY AUTOINCREMENT,
+  run             TEXT NOT NULL,
+  decision        TEXT,
+  claim           TEXT NOT NULL,
+  percent         INTEGER NOT NULL CHECK (percent BETWEEN 1 AND 99),
+  confidence      TEXT NOT NULL CHECK (confidence IN ('high', 'moderate')),
+  resolution      TEXT NOT NULL,
+  horizon         TEXT NOT NULL,
+  reference_class TEXT,
+  recorded_at     TEXT NOT NULL
+) STRICT;
+
+CREATE INDEX IF NOT EXISTS estimative_judgments_run ON estimative_judgments (run, seq);
+
+CREATE TRIGGER IF NOT EXISTS estimative_judgments_no_update
+BEFORE UPDATE ON estimative_judgments
+BEGIN SELECT RAISE(ABORT, 'estimative_judgments is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS estimative_judgments_no_delete
+BEFORE DELETE ON estimative_judgments
+BEGIN SELECT RAISE(ABORT, 'estimative_judgments is append-only'); END;
 
 CREATE TABLE IF NOT EXISTS plans (
   id         TEXT PRIMARY KEY,

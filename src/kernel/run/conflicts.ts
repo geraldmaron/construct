@@ -25,6 +25,21 @@
  */
 
 import type { Position, RaiseDecision } from '../store/decisions.ts';
+import {
+  AGREEMENT_TERMS,
+  CONFIDENCE_LEVELS,
+  EVIDENCE_TERMS,
+  assessRisk,
+  renderJudgment,
+  unquantifiedRisk,
+} from './estimative.ts';
+import type {
+  AgreementTerm,
+  Confidence,
+  ConfidenceLevel,
+  EstimativeJudgment,
+  EvidenceTerm,
+} from './estimative.ts';
 
 export const STANCES = ['proceed', 'hold', 'unclear'] as const;
 
@@ -48,6 +63,14 @@ export interface DeclaredStance {
   readonly because: string | null;
   /** What it says it is relying on, or null when it cited nothing. */
   readonly citation: string | null;
+  /**
+   * What the role says is at stake on its side, as a likelihood with its
+   * separate confidence — or the rung below when its basis is too thin for a
+   * band. Null when it declared no stakes, or when what it declared did not
+   * hold together, which are the same answer to a reader: the framing carries
+   * no estimate from this role rather than a repaired one.
+   */
+  readonly stakes: EstimativeJudgment | null;
 }
 
 /**
@@ -103,6 +126,105 @@ function citationOrNull(value: string | null): string | null {
 }
 
 /**
+ * The three PHIA criteria out of the one BASIS line, or null when any of them
+ * is absent.
+ *
+ * All three or none, because the criteria are what a confidence level means. A
+ * confidence assembled from two of them and a blank would read on the surface
+ * exactly like one scored against all three, and the criterion nobody answered
+ * is usually the one that was weak.
+ */
+function parseBasis(line: string | null): Confidence['basis'] | null {
+  if (!line) return null;
+  const parts = line.split(';');
+  const read = (label: RegExp): string | null => {
+    for (const part of parts) {
+      const match = new RegExp(`^\\s*${label.source}\\s*[:\\-–—]\\s*(.+)$`, 'i').exec(part);
+      if (match && match[1].trim()) return match[1].trim();
+    }
+    return null;
+  };
+  const informationBase = read(/information base/);
+  const analyticalRigour = read(/analytical rigou?r/);
+  const complexityAndVolatility = read(/complexity (?:and|&) volatility/);
+  if (!informationBase || !analyticalRigour || !complexityAndVolatility) return null;
+  return { informationBase, analyticalRigour, complexityAndVolatility };
+}
+
+function declaredLevel(value: string | null): ConfidenceLevel | null {
+  const word = value?.trim().toLowerCase().split(/[\s.,;]/)[0];
+  return word && (CONFIDENCE_LEVELS as readonly string[]).includes(word)
+    ? (word as ConfidenceLevel)
+    : null;
+}
+
+function oneOf<T extends string>(value: string | null, vocabulary: readonly T[]): T | null {
+  const word = value?.trim().toLowerCase().split(/[\s.,;]/)[0];
+  return word && (vocabulary as readonly string[]).includes(word) ? (word as T) : null;
+}
+
+/**
+ * The stakes a deliverable declared, or null.
+ *
+ * Strict in the same direction the stance parser is strict: a block that does
+ * not hold together yields nothing rather than a repaired judgment. The
+ * repairs available here are all worse than the absence — a missing horizon
+ * filled in by the kernel is a date the assessor never gave, and a
+ * low-confidence number quietly kept is the ladder broken by the code that
+ * exists to hold it. The constructors do the refusing, so every rule is
+ * enforced in one place whether a judgment arrives from a model or from a
+ * caller.
+ *
+ * Exported because both declared-line protocols carry the same block, and two
+ * parsers for one shape would eventually disagree about it.
+ */
+export function parseStakes(text: unknown): EstimativeJudgment | null {
+  if (typeof text !== 'string' || !text.trim()) return null;
+  const lines = text.split('\n').map(undecorate).filter(Boolean);
+
+  const claim = labeled(lines, 'stakes');
+  if (!claim || !claim.trim()) return null;
+  const level = declaredLevel(labeled(lines, 'confidence'));
+  const basis = parseBasis(labeled(lines, 'basis'));
+  if (!level || !basis) return null;
+  const confidence: Confidence = { level, basis };
+
+  // The whole token must be the integer: "55.5%" is refused rather than read
+  // as 55, because truncating it would put a precision in the record the
+  // assessor never claimed — the same refusal bandFor makes, made here where
+  // the fractional part is still visible.
+  const declared = labeled(lines, 'likelihood');
+  const percent = declared !== null ? /^(\d{1,3})\s*%?$/.exec(declared.trim())?.[1] : undefined;
+
+  try {
+    if (percent === undefined) {
+      const evidence = oneOf<EvidenceTerm>(labeled(lines, 'evidence'), EVIDENCE_TERMS);
+      const agreement = oneOf<AgreementTerm>(labeled(lines, 'agreement'), AGREEMENT_TERMS);
+      if (!evidence || !agreement) return null;
+      return unquantifiedRisk({
+        claim,
+        confidence,
+        evidence,
+        agreement,
+        missing: labeled(lines, 'missing') ?? '',
+        raisedBy: labeled(lines, 'raises') ?? '',
+      });
+    }
+    return assessRisk({
+      claim,
+      percent: Number(percent),
+      confidence,
+      resolution: labeled(lines, 'resolves') ?? '',
+      horizon: labeled(lines, 'horizon') ?? '',
+      referenceClass: citationOrNull(labeled(lines, 'class')),
+      indicators: [labeled(lines, 'watch') ?? ''].filter(Boolean),
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The stance a deliverable declared, or null if it declared none.
  *
  * Strict on the vocabulary and forgiving on the formatting: only the three
@@ -149,6 +271,7 @@ export function parseStance(text: unknown): DeclaredStance | null {
     qualifier,
     because: because && because.trim() ? because.trim() : null,
     citation: citationOrNull(labeled(lines, 'cite')),
+    stakes: parseStakes(text),
   };
 }
 
@@ -238,15 +361,24 @@ export function frameConflict(input: FrameInput): RaiseDecision | null {
     )
     .join(', ');
 
+  // A position carries its role's own stakes where the role declared them: the
+  // branch is what the user is choosing between, and a branch with no stated
+  // consequence is a preference. Where the role's basis was too thin for a
+  // band, the rung below travels instead — what is missing and what would
+  // settle it is a more useful thing to read than a number nobody could stand
+  // behind.
   const positions: Position[] = [...sides]
     .sort((a, b) => a.role.localeCompare(b.role))
-    .map((s) => ({
-      role: s.role,
-      stance: s.declared.because
+    .map((s) => {
+      const declared = s.declared.because
         ? `${stanceLabel(s.declared)} — ${s.declared.because}`
-        : stanceLabel(s.declared),
-      citation: s.declared.citation,
-    }));
+        : stanceLabel(s.declared);
+      return {
+        role: s.role,
+        stance: s.declared.stakes ? `${declared}. ${renderJudgment(s.declared.stakes)}` : declared,
+        citation: s.declared.citation,
+      };
+    });
 
   // The reversible default, stated as its own position rather than left to the
   // reader to work out.

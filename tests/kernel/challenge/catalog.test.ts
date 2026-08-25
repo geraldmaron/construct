@@ -402,3 +402,26 @@ test('a deliverable that cites elsewhere and not here is told exactly that', () 
   assert.match(run.results[0].detail, /cites elsewhere/);
   assert.match(run.results[0].detail, /work it could have done/);
 });
+
+/**
+ * The estimative-form check as a declared challenge. Its four failure shapes
+ * are held one at a time in the estimative module's own tests; what matters
+ * here is that the catalog reaches them, that a deliverable making no
+ * estimative claim passes rather than being graded on an ordinary adverb, and
+ * that the detail names what to fix.
+ */
+test('a deliverable that makes no estimative claim passes the estimative check', () => {
+  const run = runStructuralChallenges(brief(['estimative-form']), GOOD);
+  assert.deepEqual(run.unanswered, []);
+  assert.equal(run.results[0].passed, true);
+  assert.match(run.results[0].detail, /whether the number is well judged/);
+});
+
+test('a band stated without its range and its horizon fails the estimative check', () => {
+  const run = runStructuralChallenges(
+    brief(['estimative-form']),
+    ['LIKELIHOOD: 60', 'Deletion is likely to slip.'].join('\n'),
+  );
+  assert.equal(run.results[0].passed, false);
+  assert.match(run.results[0].detail, /carries no numeric range/);
+});

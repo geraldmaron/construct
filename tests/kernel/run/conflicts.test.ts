@@ -37,7 +37,7 @@ function stance(
 ): RoleStance {
   return {
     role,
-    declared: { stance: stance as RoleStance['declared']['stance'], qualifier, because, citation },
+    declared: { stance: stance as RoleStance['declared']['stance'], qualifier, because, citation, stakes: null },
   };
 }
 
@@ -58,6 +58,9 @@ test('a declared stance is parsed through whatever markdown wraps it', () => {
     qualifier: null,
     because: 'no processing agreement is in place',
     citation: 'GDPR Art. 28',
+    // No stakes block, so no estimate travels with the position — the framing
+    // carries what the role declared and nothing filled in for it.
+    stakes: null,
   });
 
   // Observed: product-scoping, live, in the same run as the plain one above —
@@ -285,4 +288,97 @@ test('a long qualifier is cut inside the tally and kept whole on the position', 
 
   const security = decision.positions.find((p) => p.role === 'security');
   assert.ok(security!.stance.includes('other tenants'), 'the position keeps the whole qualifier');
+});
+
+/**
+ * Stakes on a position. The deliverable declares a whole number and code
+ * derives the word, so the two tests below are about what a role can and
+ * cannot get into the framing: a complete block at moderate confidence reaches
+ * the user as a band with its range and a separate confidence sentence, and
+ * the same block at low confidence reaches them as the rung below rather than
+ * as a quieter number.
+ */
+const STAKES_BLOCK = [
+  'STANCE: hold',
+  'BECAUSE: the migration is not reversible',
+  'CITE: none',
+  'STAKES: the cutover loses rows',
+  'LIKELIHOOD: 60',
+  'CONFIDENCE: moderate',
+  'BASIS: information base: two prior migrations are logged; analytical rigour: one pass, ' +
+    'unchecked; complexity and volatility: the schema still moves weekly',
+  'RESOLVES: the row counts on both sides of the first production cutover',
+  'HORIZON: within 30 days',
+  'CLASS: the two logged migrations of this table',
+  'WATCH: a third schema change before cutover moves this up',
+].join('\n');
+
+test('a declared whole number reaches the framing as a band with its range', () => {
+  const declared = parseStance(STAKES_BLOCK);
+  assert.ok(declared?.stakes);
+  assert.equal(declared.stakes.kind, 'assessed');
+
+  const decision = frameConflict({
+    run: 'run-4',
+    outcome: 'migrate the table',
+    at: AT,
+    stances: [{ role: 'engineering', declared }, stance('product', 'proceed', 'the date holds', null)],
+  });
+  assert.ok(decision);
+  const engineering = decision.positions.find((p) => p.role === 'engineering');
+  assert.match(engineering!.stance, /the cutover loses rows: likely \(55–80%\)\./);
+  assert.match(engineering!.stance, /Confidence is moderate — information base:/);
+  assert.match(engineering!.stance, /Resolves: the row counts/);
+  assert.match(engineering!.stance, /Horizon: within 30 days\./);
+  // The role never wrote the word, so it never appears where the role could
+  // have chosen it: the band and the number sit together or not at all.
+  assert.doesNotMatch(STAKES_BLOCK, /likely/);
+});
+
+test('at low confidence the position carries the rung below, not a quieter number', () => {
+  const declared = parseStance(
+    STAKES_BLOCK.replace('LIKELIHOOD: 60', 'LIKELIHOOD: none')
+      .replace('CONFIDENCE: moderate', 'CONFIDENCE: low')
+      .replace('RESOLVES: the row counts on both sides of the first production cutover', 'EVIDENCE: limited')
+      .replace('HORIZON: within 30 days', 'AGREEMENT: low')
+      .replace('CLASS: the two logged migrations of this table', 'MISSING: nobody has counted the rows')
+      .replace('WATCH: a third schema change before cutover moves this up', 'RAISES: one dry run with counts on both sides'),
+  );
+  assert.ok(declared?.stakes);
+  assert.equal(declared.stakes.kind, 'unquantified');
+
+  const decision = frameConflict({
+    run: 'run-5',
+    outcome: 'migrate the table',
+    at: AT,
+    stances: [{ role: 'engineering', declared }, stance('product', 'proceed', 'the date holds', null)],
+  });
+  assert.ok(decision);
+  const engineering = decision.positions.find((p) => p.role === 'engineering');
+  assert.match(engineering!.stance, /no likelihood is stated/);
+  assert.match(engineering!.stance, /Evidence is limited and agreement is low/);
+  assert.match(engineering!.stance, /Missing: nobody has counted the rows/);
+  assert.doesNotMatch(engineering!.stance, /\d+–\d+%/);
+});
+
+test('a number declared at low confidence yields no stakes rather than a kept one', () => {
+  // The ladder holds where the block arrives, not only where a caller builds
+  // one: nothing repairs the judgment and nothing keeps the number.
+  const declared = parseStance(STAKES_BLOCK.replace('CONFIDENCE: moderate', 'CONFIDENCE: low'));
+  assert.equal(declared?.stakes, null);
+  assert.equal(declared?.stance, 'hold', 'the stance itself still parses');
+});
+
+test('a block missing one of the three confidence criteria yields no stakes', () => {
+  const declared = parseStance(
+    STAKES_BLOCK.replace(/^BASIS:.*$/m, 'BASIS: information base: two prior migrations are logged'),
+  );
+  assert.equal(declared?.stakes, null);
+});
+
+test('a fractional likelihood is refused whole, never truncated to a claim nobody made', () => {
+  const declared = parseStance(STAKES_BLOCK.replace('LIKELIHOOD: 60', 'LIKELIHOOD: 55.5%'));
+  // The block carries no evidence/agreement rung to fall back to, so the
+  // judgment is dropped entirely rather than repaired into "55".
+  assert.equal(declared?.stakes, null);
 });

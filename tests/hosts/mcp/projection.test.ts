@@ -377,7 +377,7 @@ test('a role\'s question reaches the user and the answer lands on the run', asyn
         run: 'run-1',
         task: 't-privacy',
         role: 'privacy',
-        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
         at: AT,
       }),
     );
@@ -456,7 +456,7 @@ test('answer takes ask ids only, once, and names decide for the rest', async () 
         run: 'run-1',
         task: 't-privacy',
         role: 'privacy',
-        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
         at: AT,
       }),
     );
@@ -505,7 +505,7 @@ test('relaying a question and its answer dispatches nothing and moves no task', 
         run,
         task: 't-privacy',
         role: 'privacy',
-        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
         at: AT,
       }),
     );

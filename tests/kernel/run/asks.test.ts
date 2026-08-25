@@ -17,7 +17,14 @@ const AT = '2026-08-10T00:00:00.000Z';
 
 test('both lines make an ask; either alone makes none', () => {
   const both = parseAsk('work...\nASK: Which regions launch first?\nASSUMING: EU only.');
-  assert.deepEqual(both, { question: 'Which regions launch first?', assuming: 'EU only.' });
+  assert.deepEqual(both, {
+    question: 'Which regions launch first?',
+    assuming: 'EU only.',
+    // No stakes block was declared, which is a complete answer rather than a
+    // gap: an ask ships on its reversible default whether or not the role put
+    // a number on what rides on it.
+    stakes: null,
+  });
 
   assert.equal(parseAsk('ASK: Which regions?'), null, 'a question with no default is refused');
   assert.equal(parseAsk('ASSUMING: EU only.'), null);
@@ -36,7 +43,7 @@ test('the framing is the question and the standing default, in the asking role n
     run: 'run-1',
     task: 't-privacy',
     role: 'privacy',
-    ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+    ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
     at: AT,
   });
   assert.equal(decision.id, 't-privacy:ask');
@@ -56,7 +63,7 @@ test('an open ask reads back with the default that is already carrying the work'
         run: 'run-1',
         task: 't-privacy',
         role: 'privacy',
-        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
         at: AT,
       }),
     );
@@ -107,7 +114,7 @@ test('answered asks read back with role, question, and the resolution as given',
         run: 'run-1',
         task: 't-privacy',
         role: 'privacy',
-        ask: { question: 'Which regions launch first?', assuming: 'EU only' },
+        ask: { question: 'Which regions launch first?', assuming: 'EU only', stakes: null },
         at: AT,
       }),
     );
@@ -122,4 +129,44 @@ test('answered asks read back with role, question, and the resolution as given',
     store.close();
     fixture.cleanup();
   }
+});
+
+/**
+ * What rides on the assumption. An ask ships whether or not the role put a
+ * number on it — the reversible default is what makes silence safe — but where
+ * the role did state stakes, the default position carries them, because a
+ * default with no stated consequence asks the user to guess what silence costs.
+ */
+test('the default position carries the stakes the role declared', () => {
+  const ask = parseAsk(
+    [
+      'ASK: Which regions launch first?',
+      'ASSUMING: EU only',
+      'STAKES: a second launch region needs a separate lawful basis',
+      'LIKELIHOOD: 30',
+      'CONFIDENCE: moderate',
+      'BASIS: information base: the EU basis is documented; analytical rigour: one reading of ' +
+        'the record; complexity and volatility: the regional rules are stable',
+      'RESOLVES: the launch plan naming its regions',
+      'HORIZON: by the end of the quarter',
+      'CLASS: none available',
+      'WATCH: a second region appearing in the plan moves this up',
+    ].join('\n'),
+  );
+  assert.ok(ask?.stakes);
+
+  const decision = frameAsk({ run: 'run-1', task: 't-privacy', role: 'privacy', ask, at: AT });
+  const standing = decision.positions.find((p) => p.role === 'construct');
+  assert.match(standing!.stance, /the reversible default if you do nothing: EU only/);
+  assert.match(standing!.stance, /unlikely \(20–45%\)\./);
+  assert.match(standing!.stance, /Confidence is moderate — information base:/);
+  assert.match(standing!.stance, /Reference class: none available\./);
+});
+
+test('an ask with no stakes block still ships its default', () => {
+  const ask = parseAsk('ASK: Which regions launch first?\nASSUMING: EU only');
+  assert.equal(ask?.stakes, null);
+  const decision = frameAsk({ run: 'run-1', task: 't-privacy', role: 'privacy', ask, at: AT });
+  const standing = decision.positions.find((p) => p.role === 'construct');
+  assert.match(standing!.stance, /the deliverable already proceeds on it$/);
 });
