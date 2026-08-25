@@ -13,8 +13,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ALWAYS_ON_LABEL,
+  ALWAYS_ON_UNIT,
   SCHEDULE_LABEL,
   ScheduleCadenceError,
+  alwaysOnPlan,
+  alwaysOnUnitPaths,
   cadenceMinutesFromUnitText,
   firingTimes,
   schedulePlan,
@@ -173,6 +177,98 @@ test('a cadence reads back out of the entry it was written into', () => {
 test('text this module did not write reads back as unknown, never as a guess', () => {
   assert.strictEqual(cadenceMinutesFromUnitText('darwin', '<plist><dict/></plist>'), null);
   assert.strictEqual(cadenceMinutesFromUnitText('linux', '[Timer]\nOnBootSec=5min\n'), null);
+});
+
+function alwaysOnDarwin() {
+  return alwaysOnPlan({
+    platform: 'darwin',
+    dir: '/home/somebody/Library/LaunchAgents',
+    uid: 501,
+    ...BIN,
+  });
+}
+
+function alwaysOnLinux() {
+  return alwaysOnPlan({
+    platform: 'linux',
+    dir: '/home/somebody/.config/systemd/user',
+    uid: 1000,
+    ...BIN,
+  });
+}
+
+test('the always-on launchd job runs the daemon in foreground and restarts only on crash', () => {
+  const plan = alwaysOnDarwin();
+  const [unit] = plan.units;
+  assert.match(unit.path, /com\.construct\.daemon\.plist$/);
+  assert.match(unit.text, /<string>daemon<\/string>/);
+  assert.match(unit.text, /<string>run<\/string>/);
+  assert.match(unit.text, /<string>--foreground<\/string>/);
+  assert.ok(unit.text.includes(BIN.nodePath));
+  assert.ok(unit.text.includes(BIN.cliPath));
+  // KeepAlive is a dict (restart on crash, stay stopped on clean exit), never
+  // the bare `true` launchd also accepts, which restarts even a clean exit.
+  assert.match(unit.text, /<key>KeepAlive<\/key>\s*<dict>\s*<key>SuccessfulExit<\/key>\s*<false\/>\s*<\/dict>/);
+  assert.doesNotMatch(unit.text, /<key>KeepAlive<\/key>\s*<true\/>/);
+  assert.match(unit.text, /<key>ThrottleInterval<\/key>\s*<integer>30<\/integer>/);
+  assert.match(unit.text, /<key>ProcessType<\/key>\s*<string>Background<\/string>/);
+  assert.match(unit.text, /<key>LowPriorityBackgroundIO<\/key>\s*<true\/>/);
+  assert.match(unit.text, /<key>Nice<\/key>\s*<integer>10<\/integer>/);
+  // The one place RunAtLoad is licensed: an always-on service the user
+  // explicitly installed should be there after login.
+  assert.match(unit.text, /<key>RunAtLoad<\/key>\s*<true\/>/);
+});
+
+test('the always-on systemd unit is a restarted long-running process, not a oneshot', () => {
+  const [unit] = alwaysOnLinux().units;
+  assert.match(unit.path, /construct-daemon\.service$/);
+  assert.match(unit.text, /^Type=exec$/m);
+  assert.match(unit.text, /^ExecStart=.*"daemon" "run" "--foreground"$/m);
+  assert.match(unit.text, /^Restart=on-failure$/m);
+  assert.match(unit.text, /^RestartSec=5$/m);
+  assert.match(unit.text, /^MemoryHigh=192M$/m);
+  assert.match(unit.text, /^MemoryMax=256M$/m);
+  assert.match(unit.text, /^TasksMax=32$/m);
+  assert.match(unit.text, /^NoNewPrivileges=yes$/m);
+  assert.match(unit.text, /^RestrictAddressFamilies=AF_UNIX$/m);
+  assert.match(unit.text, /^WantedBy=default\.target$/m);
+  assert.doesNotMatch(unit.text, /^\[Timer\]/m, 'always-on has no timer: the unit itself stays up');
+});
+
+test('no always-on unit carries an environment entry either', () => {
+  for (const plan of [alwaysOnDarwin(), alwaysOnLinux()]) {
+    for (const unit of plan.units) {
+      assert.doesNotMatch(unit.text, /^Environment=/m, unit.path);
+      assert.doesNotMatch(unit.text, /EnvironmentVariables/, unit.path);
+    }
+  }
+});
+
+test('launchctl and systemctl load and forget the always-on job by its own distinct label', () => {
+  const darwinPlan = alwaysOnDarwin();
+  assert.deepStrictEqual(darwinPlan.load, [
+    ['launchctl', 'bootstrap', 'gui/501', darwinPlan.units[0].path],
+  ]);
+  assert.deepStrictEqual(darwinPlan.unload, [['launchctl', 'bootout', `gui/501/${ALWAYS_ON_LABEL}`]]);
+
+  const linuxPlan = alwaysOnLinux();
+  assert.deepStrictEqual(linuxPlan.load, [
+    ['systemctl', '--user', 'daemon-reload'],
+    ['systemctl', '--user', 'enable', '--now', `${ALWAYS_ON_UNIT}.service`],
+  ]);
+  assert.deepStrictEqual(linuxPlan.unload, [
+    ['systemctl', '--user', 'disable', '--now', `${ALWAYS_ON_UNIT}.service`],
+    ['systemctl', '--user', 'daemon-reload'],
+  ]);
+});
+
+test('the calendar and always-on tiers never name the same file', () => {
+  const dir = '/home/somebody/state';
+  for (const platform of ['darwin', 'linux'] as const) {
+    const calendar = new Set(scheduleUnitPaths(platform, dir));
+    const always = new Set(alwaysOnUnitPaths(platform, dir));
+    for (const path of always) assert.ok(!calendar.has(path), `${platform}: ${path}`);
+  }
 });
 
 test('a path with a space survives both spellings intact', () => {
