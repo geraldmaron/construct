@@ -29,7 +29,7 @@ import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { parseHostFlags, workspaceFlag } from './flags.ts';
+import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
@@ -76,12 +76,24 @@ export function parseOutcomeArgs(argv: string[]): OutcomeArgs {
         '--escalate was removed: a named host\'s model is primary on every outcome now; use --host=<opencode|claude|codex|cursor>',
       );
     }
+    // Help is answered by the caller before any text is recorded; it is never
+    // a word of the outcome.
+    if (isHelpFlag(arg)) continue;
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
     if (match) {
       flags[match[1]] = match[2];
       continue;
     }
     words.push(arg);
+  }
+
+  // Outcome text is free-form, but a leading `--flag` that names nothing is a
+  // typo, not a word: swallowing it into the outcome would record something
+  // other than what was meant into a log nobody can edit. Quoting the sentence
+  // is the escape hatch for a genuine `--` in the text.
+  const unknown = firstUnknownFlag(argv, new Set(['host', 'model', 'binary', 'dir', 'timeout', 'domains', 'workspace']));
+  if (unknown !== undefined) {
+    throw new Error(`unknown flag ${unknown}; quote it inside the outcome text if it belongs there`);
   }
 
   // A flag that is quietly ignored is a flag that lies. --model/--binary/--dir
@@ -245,6 +257,12 @@ export async function outcome(
   hostOverride?: HostAdapter,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<number> {
+  // Answered before the text is read, so no run is recorded for a request for
+  // help.
+  if (wantsHelp(argv)) {
+    process.stdout.write(OUTCOME_USAGE);
+    return 0;
+  }
   let args: OutcomeArgs;
   try {
     args = parseOutcomeArgs(argv);

@@ -123,6 +123,53 @@ export function parseHostFlags(flags: Record<string, string>): HostFlags {
   };
 }
 
+/** The two tokens that ask for a verb's usage, anywhere a person may type them. */
+export function isHelpFlag(token: string): boolean {
+  return token === '--help' || token === '-h';
+}
+
+/**
+ * Whether this argv asks for help — a bare `--help`/`-h` before any `--`
+ * terminator. Text after a lone `--` is literal, so `outcome -- --help`
+ * records the words rather than showing help. Every verb reads it here so the
+ * flag means the same thing on the free-text verbs and the rest alike.
+ */
+export function wantsHelp(argv: readonly string[]): boolean {
+  for (const arg of argv) {
+    if (arg === '--') return false;
+    if (isHelpFlag(arg)) return true;
+  }
+  return false;
+}
+
+/** The name of a long flag token (`--name` or `--name=value`), or undefined. */
+export function flagName(token: string): string | undefined {
+  const match = /^--([a-z][a-z-]*)(?:=.*)?$/.exec(token);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * The first token that looks like a flag but names none the verb knows, or
+ * undefined when every flag token is recognized. Plain words are never flags,
+ * so a free-text verb's words pass through untouched; a leading `--typo` does
+ * not. Help tokens are always known, and a lone `--` ends the scan so text
+ * after it is literal. This is the seam that lets a surface fail closed on an
+ * unknown flag rather than silently swallow it — a `--drt-run` ignored is a
+ * command that did something other than what was typed and said nothing.
+ */
+export function firstUnknownFlag(
+  argv: readonly string[],
+  known: ReadonlySet<string>,
+): string | undefined {
+  for (const arg of argv) {
+    if (arg === '--') return undefined;
+    if (isHelpFlag(arg)) continue;
+    const name = flagName(arg);
+    if (name !== undefined && !known.has(name)) return arg;
+  }
+  return undefined;
+}
+
 /** A comma-separated flag value as the list it names, blanks dropped. */
 export function splitList(value: string): string[] {
   return value

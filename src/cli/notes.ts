@@ -23,7 +23,7 @@ import { createHostChallenger, createHostProducer } from '../hosts/contextloop.t
 import { createHostDensifier } from '../hosts/densifier.ts';
 import { adapterForHost, now, terminalReport, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
-import { parseHostFlags, splitFlags } from './flags.ts';
+import { firstUnknownFlag, parseHostFlags, splitFlags, wantsHelp } from './flags.ts';
 import { driftGround, surveyDeclared } from './survey.ts';
 import { writeDrift } from './present.ts';
 
@@ -65,6 +65,11 @@ export interface NotesArgs {
 }
 
 export function parseNotesArgs(argv: string[]): NotesArgs {
+  const unknown = firstUnknownFlag(
+    argv,
+    new Set(['host', 'model', 'binary', 'dir', 'timeout', 'workspace', 'run', 'max-notes']),
+  );
+  if (unknown !== undefined) throw new Error(`unknown flag ${unknown}`);
   const { flags, words } = splitFlags(argv);
   if (words.length !== 1) {
     throw new Error(words.length === 0 ? 'a notes path is required' : 'one notes path at a time');
@@ -98,6 +103,10 @@ export function parseNotesArgs(argv: string[]): NotesArgs {
  * instead of guessing.
  */
 export async function notes(argv: string[], hostOverride?: HostAdapter): Promise<number> {
+  if (wantsHelp(argv)) {
+    process.stdout.write(NOTES_USAGE);
+    return 0;
+  }
   let args: NotesArgs;
   try {
     args = parseNotesArgs(argv);
