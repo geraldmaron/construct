@@ -11,8 +11,15 @@
  * as pure text (kernel/schedule/units.ts) and can be read back by anyone,
  * including `--dry-run`. What this file adds is the two acts that touch the
  * machine: writing those files, and asking launchctl or systemctl to load
- * them. Nothing resident is installed and nothing starts at login — the entry
- * fires, the process runs once, and it exits.
+ * them. By default nothing resident is installed and nothing starts at
+ * login — the entry fires, the process runs once, and it exits.
+ *
+ * `--always-on` installs a second kind of entry instead: a supervised
+ * long-running unit that runs `construct daemon run --foreground` and is
+ * restarted by the platform on crash. The two kinds are mutually exclusive —
+ * a calendar firing and an always-on daemon doing the same sweeps is double
+ * work — so install refuses whichever tier isn't already on disk, and
+ * uninstall removes whichever one is.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -22,21 +29,32 @@ import { tmpdir } from 'node:os';
 import { resolveScheduleDir } from '../kernel/paths.ts';
 import {
   ScheduleCadenceError,
+  alwaysOnPlan,
+  alwaysOnUnitPaths,
   cadenceMinutesFromUnitText,
   scheduleCadencePath,
   schedulePlan,
   scheduleUnitPaths,
 } from '../kernel/schedule/units.ts';
-import type { SchedulePlan, SchedulePlatform, ScheduleAnchor } from '../kernel/schedule/units.ts';
+import type {
+  AlwaysOnPlan,
+  SchedulePlan,
+  SchedulePlatform,
+  ScheduleAnchor,
+} from '../kernel/schedule/units.ts';
 import { splitFlags } from './flags.ts';
 import { parseCadence, renderCadence } from './cadence.ts';
 
 const SCHEDULE_USAGE =
   'usage: construct schedule install --every=<N>h|1d [--at=HH:MM] [--dry-run]\n' +
+  '       construct schedule install --always-on [--dry-run]\n' +
   '       construct schedule uninstall [--dry-run]\n' +
   '       construct schedule status\n' +
   '         (installs the platform entry that fires `construct standing --due`\n' +
-  '          and `construct watch --due`; nothing resident is left running)\n';
+  '          and `construct watch --due`; nothing resident is left running.\n' +
+  '          --always-on installs a supervised daemon instead, running\n' +
+  '          `construct daemon run --foreground`. The two are mutually\n' +
+  '          exclusive: install one and the other refuses.)\n';
 
 /**
  * Where an install would write, what it would run, and who as. Resolved once
@@ -132,8 +150,12 @@ function describe(plan: SchedulePlan, everyMinutes: number): string {
   return `every ${renderCadence(everyMinutes)} (at ${times})`;
 }
 
-/** Writing the generated text where the platform expects to read it. */
-function writeUnits(plan: SchedulePlan): void {
+/**
+ * Writing the generated text where the platform expects to read it. Accepts
+ * either tier's plan structurally — both name a `units` array — rather than
+ * naming `SchedulePlan` and forcing the always-on tier through a cast.
+ */
+function writeUnits(plan: { readonly units: SchedulePlan['units'] }): void {
   for (const unit of plan.units) {
     mkdirSync(dirname(unit.path), { recursive: true });
     writeFileSync(unit.path, unit.text);
@@ -160,15 +182,28 @@ function runPlatformCommands(commands: readonly (readonly string[])[]): number {
   return failed;
 }
 
-/** Which of a platform's entry files are on disk right now. */
-function installedUnits(context: Pick<ScheduleContext, 'platform' | 'dir'>): readonly string[] {
+/** Which of the calendar tier's entry files are on disk right now. */
+function installedCalendarUnits(context: Pick<ScheduleContext, 'platform' | 'dir'>): readonly string[] {
   return scheduleUnitPaths(context.platform, context.dir).filter((path) => existsSync(path));
 }
 
+/** Which of the always-on tier's entry files are on disk right now. */
+function installedAlwaysOnUnits(context: Pick<ScheduleContext, 'platform' | 'dir'>): readonly string[] {
+  return alwaysOnUnitPaths(context.platform, context.dir).filter((path) => existsSync(path));
+}
+
 function scheduleInstall(flags: Record<string, string>, context: ScheduleContext): number {
+  if (flags['always-on'] !== undefined) return scheduleInstallAlwaysOn(flags, context);
   if (flags.every === undefined) {
     process.stderr.write(SCHEDULE_USAGE);
     return 2;
+  }
+  if (installedAlwaysOnUnits(context).length > 0) {
+    process.stderr.write(
+      'schedule: an always-on daemon is installed here already — a calendar firing on top of it is ' +
+        'double work; remove it first with: construct schedule uninstall\n',
+    );
+    return 1;
   }
   let everyMinutes: number;
   let anchor: ScheduleAnchor | null;
@@ -204,7 +239,7 @@ function scheduleInstall(flags: Record<string, string>, context: ScheduleContext
   // Replacing rather than refusing, so a cadence change is one command. The
   // platform is asked to forget the old entry first: a launchd job left loaded
   // against a rewritten plist keeps firing the schedule that was replaced.
-  if (installedUnits(context).length > 0) runPlatformCommands(plan.unload);
+  if (installedCalendarUnits(context).length > 0) runPlatformCommands(plan.unload);
   writeUnits(plan);
   const failed = runPlatformCommands(plan.load);
   process.stdout.write(`installed ${plan.label}: ${describe(plan, everyMinutes)}\n`);
@@ -221,34 +256,112 @@ function scheduleInstall(flags: Record<string, string>, context: ScheduleContext
   return 0;
 }
 
+/**
+ * Installs the supervised, long-running unit instead of the calendar pair.
+ * Refused whenever the calendar tier is already installed: a firing on a
+ * cadence and an always-on daemon doing the same sweeps duplicate each
+ * other's work, so the two tiers are mutually exclusive rather than layered.
+ */
+function scheduleInstallAlwaysOn(flags: Record<string, string>, context: ScheduleContext): number {
+  if (installedCalendarUnits(context).length > 0) {
+    process.stderr.write(
+      'schedule: a calendar schedule is installed here already — an always-on daemon covering the same ' +
+        'ground is double work; remove it first with: construct schedule uninstall\n',
+    );
+    return 1;
+  }
+  const plan: AlwaysOnPlan = alwaysOnPlan({
+    platform: context.platform,
+    dir: context.dir,
+    nodePath: context.nodePath,
+    cliPath: context.cliPath,
+    uid: context.uid,
+  });
+
+  if (flags['dry-run'] !== undefined) {
+    process.stdout.write('schedule: dry-run plan — always-on daemon\n');
+    for (const unit of plan.units) {
+      process.stdout.write(`\n${unit.path}\n${'-'.repeat(unit.path.length)}\n${unit.text}`);
+    }
+    process.stdout.write('\nwould then run:\n');
+    for (const command of plan.load) process.stdout.write(`  ${command.join(' ')}\n`);
+    process.stdout.write('\nNothing was written. Drop --dry-run to install it.\n');
+    return 0;
+  }
+
+  if (installedAlwaysOnUnits(context).length > 0) runPlatformCommands(plan.unload);
+  writeUnits(plan);
+  const failed = runPlatformCommands(plan.load);
+  process.stdout.write(`installed ${plan.label}: always-on daemon\n`);
+  for (const unit of plan.units) process.stdout.write(`  ${unit.path}\n`);
+  if (failed > 0) {
+    process.stderr.write(
+      'schedule: the entry was written but the platform did not load it — ' +
+        'run the command above by hand, or remove it with construct schedule uninstall\n',
+    );
+    return 1;
+  }
+  process.stdout.write('  runs: construct daemon run --foreground\n');
+  process.stdout.write('Read what it raises with: construct inbox\n');
+  return 0;
+}
+
+/**
+ * Removes whichever tier is installed, without the caller having to say
+ * which. Both tiers are read for and unloaded if present — normally only one
+ * ever is, because install refuses to lay the second tier on top of the
+ * first, but uninstall stays defensive rather than assuming that refusal was
+ * never bypassed by hand.
+ */
 function scheduleUninstall(flags: Record<string, string>, context: ScheduleContext): number {
-  const present = installedUnits(context);
+  const calendar = installedCalendarUnits(context);
+  const alwaysOnPaths = installedAlwaysOnUnits(context);
+  const present = [...calendar, ...alwaysOnPaths];
   if (present.length === 0) {
     process.stdout.write('no schedule is installed; nothing to remove.\n');
     return 0;
   }
   // Regenerated only for the commands that undo a load: what gets removed is
   // whatever is on disk, so an entry written by an older cadence still goes.
-  const plan = schedulePlan({
-    platform: context.platform,
-    dir: context.dir,
-    everyMinutes: 1440,
-    anchor: null,
-    nodePath: context.nodePath,
-    cliPath: context.cliPath,
-    uid: context.uid,
-  });
+  const plans: (SchedulePlan | AlwaysOnPlan)[] = [];
+  if (calendar.length > 0) {
+    plans.push(
+      schedulePlan({
+        platform: context.platform,
+        dir: context.dir,
+        everyMinutes: 1440,
+        anchor: null,
+        nodePath: context.nodePath,
+        cliPath: context.cliPath,
+        uid: context.uid,
+      }),
+    );
+  }
+  if (alwaysOnPaths.length > 0) {
+    plans.push(
+      alwaysOnPlan({
+        platform: context.platform,
+        dir: context.dir,
+        nodePath: context.nodePath,
+        cliPath: context.cliPath,
+        uid: context.uid,
+      }),
+    );
+  }
   if (flags['dry-run'] !== undefined) {
     process.stdout.write('schedule: dry-run plan — would run:\n');
-    for (const command of plan.unload) process.stdout.write(`  ${command.join(' ')}\n`);
+    for (const plan of plans) {
+      for (const command of plan.unload) process.stdout.write(`  ${command.join(' ')}\n`);
+    }
     process.stdout.write('and remove:\n');
     for (const path of present) process.stdout.write(`  ${path}\n`);
     process.stdout.write('\nNothing was removed. Drop --dry-run to uninstall it.\n');
     return 0;
   }
-  const failed = runPlatformCommands(plan.unload);
+  let failed = 0;
+  for (const plan of plans) failed += runPlatformCommands(plan.unload);
   for (const path of present) rmSync(path, { force: true });
-  process.stdout.write(`removed ${plan.label}:\n`);
+  process.stdout.write(plans.length === 1 ? `removed ${plans[0].label}:\n` : 'removed:\n');
   for (const path of present) process.stdout.write(`  ${path}\n`);
   if (failed > 0) {
     process.stderr.write(
@@ -266,8 +379,12 @@ function scheduleUninstall(flags: Record<string, string>, context: ScheduleConte
  * nothing.
  */
 export function scheduleStatusLine(context: Pick<ScheduleContext, 'platform' | 'dir'>): string {
-  const present = installedUnits(context);
-  if (present.length === 0) {
+  const alwaysOnPaths = installedAlwaysOnUnits(context);
+  if (alwaysOnPaths.length > 0) {
+    return `always-on daemon — ${alwaysOnPaths.join(', ')}`;
+  }
+  const calendar = installedCalendarUnits(context);
+  if (calendar.length === 0) {
     return 'no schedule installed — install one with: construct schedule install --every=6h';
   }
   const cadencePath = scheduleCadencePath(context.platform, context.dir);
@@ -278,7 +395,7 @@ export function scheduleStatusLine(context: Pick<ScheduleContext, 'platform' | '
     minutes = null;
   }
   const cadence = minutes === null ? 'cadence unreadable (edited by hand?)' : `every ${renderCadence(minutes)}`;
-  return `${cadence} — ${present.join(', ')}`;
+  return `${cadence} — ${calendar.join(', ')}`;
 }
 
 /**
