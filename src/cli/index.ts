@@ -16,7 +16,7 @@ import { StoreUnavailableError } from '../kernel/store/open.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { packageVersion } from './runtime.ts';
 import { backup, cleanup, doctor } from './maintenance.ts';
-import { roleServe, serve } from './serve.ts';
+import { hostPullServe, roleServe, serve } from './serve.ts';
 import { skills } from './skills.ts';
 import { outcome } from './outcome.ts';
 import { ask } from './ask.ts';
@@ -49,7 +49,7 @@ import { wire } from './wire.ts';
 export { HOST_NAMES } from './runtime.ts';
 export type { HostName } from './runtime.ts';
 export { backup, cleanup, doctor, parseCleanupArgs } from './maintenance.ts';
-export { roleServe, serve } from './serve.ts';
+export { hostPullServe, roleServe, serve } from './serve.ts';
 export { skills } from './skills.ts';
 export { outcome, parseOutcomeArgs } from './outcome.ts';
 export type { OutcomeArgs } from './outcome.ts';
@@ -100,7 +100,7 @@ export const VERBS: readonly string[] = Object.freeze([
  * Dispatched to by the coordinator, never typed by a person, so it stays out
  * of the usage line while remaining a real verb the docs may name.
  */
-export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve']);
+export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve', 'host-pull-serve']);
 
 const USAGE = `usage: construct <${VERBS.join('|')}>\n`;
 
@@ -199,6 +199,8 @@ async function run(argv: string[]): Promise<number> {
       return wire(argv.slice(1));
     case 'role-serve':
       return roleServe();
+    case 'host-pull-serve':
+      return hostPullServe();
     case 'revoke':
       return revoke(argv.slice(1));
     case 'doctor':
