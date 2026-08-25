@@ -970,15 +970,58 @@ export function openStore(path: string): Store {
   };
 }
 
-/** Run `fn` in a transaction, rolling back if it throws. */
-export function transact<T>(store: Store, fn: () => T): T {
-  store.db.exec('BEGIN');
+/**
+ * How deep inside a transaction each open store is. SQLite has one transaction
+ * per connection, so a caller that wraps work which itself transacts would
+ * otherwise fail on the inner begin; the depth turns every inner one into a
+ * savepoint, which commits with its caller and rolls back alone.
+ */
+const transactionDepth = new WeakMap<Store, number>();
+
+function beginTransaction(store: Store, immediate: boolean): number {
+  const depth = transactionDepth.get(store) ?? 0;
+  store.db.exec(depth === 0 ? (immediate ? 'BEGIN IMMEDIATE' : 'BEGIN') : `SAVEPOINT nested_${String(depth)}`);
+  transactionDepth.set(store, depth + 1);
+  return depth;
+}
+
+function endTransaction(store: Store, depth: number, committing: boolean): void {
+  transactionDepth.set(store, depth);
+  if (depth === 0) {
+    store.db.exec(committing ? 'COMMIT' : 'ROLLBACK');
+    return;
+  }
+  const name = `nested_${String(depth)}`;
+  store.db.exec(committing ? `RELEASE ${name}` : `ROLLBACK TO ${name}; RELEASE ${name}`);
+}
+
+function inTransaction<T>(store: Store, immediate: boolean, fn: () => T): T {
+  const depth = beginTransaction(store, immediate);
   try {
     const result = fn();
-    store.db.exec('COMMIT');
+    endTransaction(store, depth, true);
     return result;
   } catch (error) {
-    store.db.exec('ROLLBACK');
+    endTransaction(store, depth, false);
     throw error;
   }
+}
+
+/** Run `fn` in a transaction, rolling back if it throws. */
+export function transact<T>(store: Store, fn: () => T): T {
+  return inTransaction(store, false, fn);
+}
+
+/**
+ * Run `fn` in a transaction that takes the write lock at its first statement
+ * rather than at its first write.
+ *
+ * This is what makes a read-then-write decision hold: a plain transaction lets
+ * two connections both read the same "nothing has claimed this yet" and only
+ * then discover they disagree, which for a firing means the same due work
+ * filed twice. Taking the lock up front makes the second one wait, read the
+ * first one's committed answer, and find nothing left to claim.
+ */
+export function transactImmediate<T>(store: Store, fn: () => T): T {
+  return inTransaction(store, true, fn);
 }
