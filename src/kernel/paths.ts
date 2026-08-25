@@ -55,6 +55,18 @@ export function resolveSkillsDir(
 }
 
 /**
+ * The repo-local root for the sqlite store when a ratified project settings
+ * file declares `state: local`: inside the repository rather than under home.
+ * Takes the repository root as an argument rather than discovering one —
+ * finding a repository root means walking a checkout looking for its `.git`,
+ * and this module stays the one that reads env or home, not the one that
+ * walks a checkout.
+ */
+export function localStateDataDir(repoRoot: string): string {
+  return join(repoRoot, '.construct', 'state');
+}
+
+/**
  * Every other host reachable by name reads its skills from a documented
  * directory of its own, each a fixed path segment list under home rather than
  * a computed one — a host's convention is a fact this module cites, not a

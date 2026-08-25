@@ -35,13 +35,23 @@
  * an attacker would write one. Every value this module hands back is rendered
  * for a terminal through escapeForTerminal at the point it is printed; ground
  * hints, which are model-facing, additionally go through escapeForPrompt.
+ *
+ * `state` is the one preference whose effect is not "how Construct behaves"
+ * but "where Construct keeps what it knows": `local` roots the sqlite store
+ * inside the repository instead of the user's home directory, for the
+ * fully-embedded case of a disposable environment where the repository is the
+ * only thing that persists. It resolves through this same ladder — a file
+ * still needs ratifying before it can set it — but where it actually takes
+ * effect, and the refusal that guards a repo-local store from being
+ * accidentally committable, live in cli/local-state.ts, not here: this module
+ * only says what a valid value looks like.
  */
 
 import { closeSync, constants, lstatSync, openSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import type { Paths } from '../kernel/paths.ts';
-import { HOST_NAMES } from './runtime.ts';
+import { HOST_NAMES } from './host-names.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
 import { symlinkToward } from './skills.ts';
@@ -135,6 +145,28 @@ function validateLocale(raw: unknown, where: string): string {
   return value;
 }
 
+const STATE_VALUES = ['home', 'local'] as const;
+type StateValue = (typeof STATE_VALUES)[number];
+
+/**
+ * Where the sqlite store lives: `home`, under the user's data directory (the
+ * default), or `local`, inside the repository — see cli/local-state.ts for
+ * where that second value actually takes effect and the refusal that guards
+ * it. Validated here the same way `host` is: an enum, not a path, because a
+ * value that resolved to an arbitrary filesystem location would let a
+ * checked-out file point Construct's client-fact store anywhere on disk.
+ */
+function validateState(raw: unknown, where: string): StateValue {
+  if (typeof raw !== 'string') {
+    throw new SettingsError(`${where}: state must be "local" or "home", not ${typeof raw}`);
+  }
+  const value = raw.trim();
+  if (!(STATE_VALUES as readonly string[]).includes(value)) {
+    throw new SettingsError(`${where}: state must be "local" or "home" — got "${value}"`);
+  }
+  return value as StateValue;
+}
+
 const MAX_GROUND_HINTS = 20;
 const MAX_GROUND_HINT_LENGTH = 200;
 
@@ -210,6 +242,16 @@ export const PREFERENCE_SPECS: readonly PreferenceSpec[] = Object.freeze([
     // terminal, so a hint printed here reads the same as it would be handed to a
     // model, with nothing that could forge either boundary.
     harden: (shown) => escapeForTerminal(escapeForPrompt(shown)),
+  },
+  {
+    key: 'state',
+    envVar: 'CONSTRUCT_STATE',
+    flag: 'state',
+    fallback: 'home',
+    fromFile: (raw) => validateState(raw, 'settings file'),
+    fromScalar: (raw) => validateState(raw, 'setting'),
+    show: (value) => value as string,
+    harden: (shown) => escapeForTerminal(shown),
   },
 ]);
 
@@ -350,7 +392,7 @@ function withinOrEqual(dir: string, ceiling: string): boolean {
  * repository nested inside another resolves to its own root and discovery never
  * reaches the outer one. Null when no ancestor carries a `.git`.
  */
-function gitRoot(cwd: string): string | null {
+export function gitRoot(cwd: string): string | null {
   let dir = resolve(cwd);
   for (;;) {
     try {

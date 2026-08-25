@@ -18,8 +18,10 @@ import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { backup, doctor } from '../../src/cli/index.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
-import { resolvePaths } from '../../src/kernel/paths.ts';
+import { localStateDataDir, resolvePaths } from '../../src/kernel/paths.ts';
 import { claimTask, completeTask, enqueueTask } from '../../src/kernel/store/tasks.ts';
+import { ratifySettingsFile } from '../../src/kernel/store/ratifications.ts';
+import { discoverProjectSettings, fileValuesToObject } from '../../src/cli/settings-file.ts';
 
 function captureStdio<T>(fn: () => T): { result: T; out: string; err: string } {
   const realOut = process.stdout.write.bind(process.stdout);
@@ -309,6 +311,98 @@ test('doctor is silent about stale drafts when the store does not exist yet', ()
 
     assert.ok(!out.includes(' stale-draft '), `expected no stale-draft lines, got:\n${out}`);
     assert.ok(!fs.existsSync(storePathUnder(cwd)), 'doctor must not create a database merely by being asked a question');
+    assert.equal(result, 0);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// state: local
+// ---------------------------------------------------------------------------
+
+function sh(cwd: string, args: readonly string[]): void {
+  execFileSync('git', args, { cwd, encoding: 'utf8' });
+}
+
+/** Ratify a `.construct/settings.json` already written at `cwd`, against the home store `withIsolatedDirs` points at. */
+function ratifyProjectFile(cwd: string): void {
+  const store = openStore(storePathUnder(cwd));
+  try {
+    const found = discoverProjectSettings(cwd, cwd);
+    assert.ok(found.outcome === 'found', 'sanity: the project file must be discoverable before it can be ratified');
+    ratifySettingsFile(store, {
+      repoIdentity: found.repoIdentity,
+      contentHash: found.hash,
+      path: found.path,
+      settings: fileValuesToObject(found.values),
+      ratifiedAt: '2026-08-25T00:00:00.000Z',
+    });
+  } finally {
+    store.close();
+  }
+}
+
+test('doctor reports state: local in effect and roots the store check at the repo path', () => {
+  const cwd = mkFixtureDir();
+  try {
+    sh(cwd, ['init', '-q']);
+    fs.writeFileSync(path.join(cwd, '.gitignore'), '.construct/state/\n');
+    fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, '.construct', 'settings.json'), '{"state":"local"}');
+
+    const { result, out } = captureStdio(() =>
+      withIsolatedDirs(cwd, () => {
+        ratifyProjectFile(cwd);
+        return doctor(cwd);
+      }),
+    );
+
+    const repoStore = path.join(localStateDataDir(cwd), 'construct.db');
+    const localStateLines = out.split('\n').filter((line) => line.startsWith('ok   local-state'));
+    assert.equal(localStateLines.length, 1, `expected 1 local-state line, got:\n${out}`);
+    assert.match(out, /local-state\s+state: local is in effect/);
+    assert.ok(out.includes(repoStore), `expected the repo-rooted store path in the local-state line, got:\n${out}`);
+    assert.match(out, new RegExp(`store\\s+${repoStore.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    assert.equal(result, 0, 'an active, allowed local state does not fail doctor');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('doctor FAILs the store check when state: local is ratified but the store path is not ignored', () => {
+  const cwd = mkFixtureDir();
+  try {
+    sh(cwd, ['init', '-q']);
+    // No .gitignore at all — the repo-local store path is not covered.
+    fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
+    fs.writeFileSync(path.join(cwd, '.construct', 'settings.json'), '{"state":"local"}');
+
+    const { result, out } = captureStdio(() =>
+      withIsolatedDirs(cwd, () => {
+        ratifyProjectFile(cwd);
+        return doctor(cwd);
+      }),
+    );
+
+    assert.match(out, /FAIL store.*not covered by this repository's ignore rules/);
+    const failedLocalState = out.split('\n').filter((line) => line.startsWith('FAIL local-state'));
+    assert.equal(failedLocalState.length, 1, `expected 1 FAILed local-state line, got:\n${out}`);
+    assert.match(out, /local-state.*was requested but refused/);
+    assert.equal(result, 1, 'a refused local-state activation fails doctor, not just warns');
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('doctor is silent about local-state when no project file requests it', () => {
+  const cwd = mkFixtureDir();
+  try {
+    fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-local-state"}\n');
+
+    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+
+    assert.ok(!out.includes(' local-state '), `expected no local-state lines, got:\n${out}`);
     assert.equal(result, 0);
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
