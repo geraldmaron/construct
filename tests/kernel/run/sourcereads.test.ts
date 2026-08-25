@@ -307,6 +307,39 @@ test('escapeForPrompt renders every control character, not only newline and carr
 });
 
 /**
+ * The escape covers the invisible-character class, not just the control range:
+ * a format character carries no glyph, so a path that reads as innocent can
+ * reorder or hide what a role reads once it is joined into a prompt. Each class
+ * is built from its codepoint rather than pasted in, so an editor stripping
+ * invisibles cannot quietly empty the test.
+ */
+test('escapeForPrompt renders a bidirectional override rather than letting it reorder a line', () => {
+  const rlo = String.fromCodePoint(0x202e);
+  assert.equal(hasUnsafePathText(`plan${rlo}dm.md`), true);
+  const escaped = escapeForPrompt(`plan${rlo}dm.md`);
+  assert.equal(escaped, 'plan\\x202edm.md');
+  assert.ok(!hasUnsafePathText(escaped));
+  assert.equal(escapeForPrompt(`a${String.fromCodePoint(0x2066)}b`), 'a\\x2066b');
+});
+
+test('escapeForPrompt renders a zero-width character rather than letting it hide in a path', () => {
+  const zwsp = String.fromCodePoint(0x200b);
+  const bom = String.fromCodePoint(0xfeff);
+  assert.equal(hasUnsafePathText(`re${zwsp}port.md`), true);
+  assert.equal(escapeForPrompt(`re${zwsp}port.md`), 're\\x200bport.md');
+  assert.equal(escapeForPrompt(`${bom}report.md`), '\\xfeffreport.md');
+  assert.ok(!hasUnsafePathText(escapeForPrompt(`re${zwsp}${bom}port.md`)));
+});
+
+test('escapeForPrompt renders a Unicode tag character rather than passing an invisible instruction', () => {
+  const tag = String.fromCodePoint(0xe0061);
+  assert.equal(hasUnsafePathText(`ok${tag}.md`), true);
+  const escaped = escapeForPrompt(`ok${tag}.md`);
+  assert.equal(escaped, 'ok\\xe0061.md');
+  assert.ok(!hasUnsafePathText(escaped));
+});
+
+/**
  * compareSourceReads diffs two batches of one source's own read rows. The
  * fixtures below are read rows directly rather than a store, because the
  * comparison is pure: what changed is a function of the two batches alone.
