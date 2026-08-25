@@ -83,7 +83,7 @@ export async function hostPullServe(): Promise<number> {
     );
     return 1;
   }
-  const store = openStore(storePath(resolvePaths()));
+  const store = openStore(resolveStoreLocation(process.cwd(), process.env).path);
   try {
     await serveHostPull(
       { store, secret, clock: now, serverVersion: packageVersion() },
