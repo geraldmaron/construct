@@ -2651,3 +2651,30 @@ of AI Agents 2026, Gartner 2026-05-26, ClarityArc, waxell.ai); enterprise
 provenance/audit-trail writing (miniOrange, Saviynt, Atlan). This section is the
 research the STRATEGY edit below rests on, per Gerald's standing approval of a
 strategy change backed by research.
+
+## 28. Host-independence, validated in practice against real hosts (2026-08-25)
+
+The stakeholder requirement: Construct must not be dependent on Claude Code
+except where a user intentionally chose it (commitment 1). Verified — not
+reasoned — against the published alpha.17 in a sterile HOME with all
+CLAUDE_*/CURSOR_*/TERM_PROGRAM markers stripped, and against the real non-Claude
+hosts installed on the build machine (opencode, codex, cursor-agent, goose).
+
+Evidence: the whole free/local surface works with no host and no Claude marker;
+the coded last-resort dispatch default is `opencode` (`work.ts` `ambientDefault
+?? 'opencode'`), not claude; `doctor` reports all four hosts in one format, and
+codex/cursor get more auth introspection than claude, whose auth is never
+probed; the cost-ordered selection sorts claude last (cost-class unknown) behind
+any logged-in subscription or local host; ambient detection resolves to the host
+you are actually in (cursor detected and dispatched to cursor-agent live); and
+`npm run probe:codex` passed all ten live conformance checks through the real
+codex binary — practical proof of end-to-end dispatch with no Claude Code
+present. The one real asymmetry is `TUNED_FAMILIES = [claude]` (every other
+family runs best-effort with a per-dispatch degradation note), which is
+disclosed in README/STRATEGY/doctor and breaks nothing; the second-tuned-family
+question is per-skill measurement, not a gate (STRATEGY Phase 4).
+
+The only improper privileging found is doc-level: `docs/first-run.md` uses
+`--host=claude` in every runnable example, which can make a non-Claude user
+think Construct requires Claude Code. Filed as construct-7jgy.13. No code change
+is needed for host-independence; the fix is host-neutral examples.
