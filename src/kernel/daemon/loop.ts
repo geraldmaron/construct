@@ -111,6 +111,7 @@ export async function startDaemon(config: DaemonConfig): Promise<DaemonHandle | 
 
   let sweepTimer: NodeJS.Timeout | null = null;
   let idleTimer: NodeJS.Timeout | null = null;
+  let worstReportedP99 = 0;
 
   const status = (): StatusReply => {
     const counts = config.counts();
@@ -226,11 +227,16 @@ export async function startDaemon(config: DaemonConfig): Promise<DaemonHandle | 
       config.log.write('sweep skipped: the previous one is still running');
       return;
     }
+    // Measured over the daemon's whole life, never reset. A reset re-arms the
+    // monitor's baseline at the moment it is called, so a reset taken just
+    // before a sweep makes that sweep's own blocking invisible — which is the
+    // one stall this is here to see. Reported when it gets worse, so a daemon
+    // that stalled once says so once rather than every minute afterwards.
     const p99 = delay.percentile(99) / 1e6;
-    if (p99 > EVENT_LOOP_P99_LIMIT_MS) {
+    if (p99 > EVENT_LOOP_P99_LIMIT_MS && p99 > worstReportedP99) {
+      worstReportedP99 = p99;
       config.log.write(`event loop p99 ${p99.toFixed(0)}ms exceeds ${String(EVENT_LOOP_P99_LIMIT_MS)}ms`);
     }
-    delay.reset();
     const run = (async () => {
       try {
         const outcome = await config.sweep();
