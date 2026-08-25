@@ -168,8 +168,11 @@
  * action's origin is what lets the apply gate keep a model-chosen action out of
  * the standing lane while still honoring the keyword default and an override.
  * Its own table for the reason `source_shapes` is its own: this schema is
- * created, never altered. A proposal with no row is read as the keyword default,
- * which is what a proposal filed before this setting existed in fact was.
+ * created, never altered. A proposal with no row reads as model-chosen, the
+ * side that refuses standing consent: the model-action path predates this
+ * table, so a proposal filed before it could have been a model's own choice,
+ * and an absent record must fail to the reading that keeps it out of the
+ * standing lane rather than the one that waves it through.
  *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to

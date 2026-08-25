@@ -28,6 +28,7 @@ import {
   markApplied,
   parseDocsLocator,
   pendingProposals,
+  getProposal,
   proposeWrite,
   recordSourceRead,
   retireSource,
@@ -314,6 +315,32 @@ test('standing consent will not carry a change whose action a model chose', () =
     propose(store, 'p-keyword', 'low');
     markApplied(store, 'p-keyword', 'auto', LATER);
     assert.equal(decisionOf(store, 'p-keyword')?.basis, 'standing-consent');
+  });
+});
+
+test('a proposal with no recorded action origin does not ride standing consent', () => {
+  withStore((store) => {
+    declare(store);
+    setSourceDeclaration(
+      store,
+      'src-1',
+      { authority: 'working', relevance: 'the tracker', sensitive: false },
+      AT,
+    );
+    setWriteConsent(store, 'acme', true, AT);
+    // A write_proposals row with no proposal_action_sources companion — the
+    // shape a proposal filed before that table existed has, and the shape a
+    // model-chosen action left unrecorded would have. The apply gate must read
+    // the absence as the refusing side, not wave it into the standing lane.
+    store.db
+      .prepare(
+        `INSERT INTO write_proposals
+           (id, workspace, run, source, change, justification, risk, proposed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run('p-unrecorded', 'acme', 'run-1', 'src-1', 'update p-unrecorded', 'note', 'low', AT);
+    assert.equal(getProposal(store, 'p-unrecorded')?.actionSource, 'model');
+    assert.throws(() => markApplied(store, 'p-unrecorded', 'auto', LATER), /chosen by a model/);
   });
 });
 

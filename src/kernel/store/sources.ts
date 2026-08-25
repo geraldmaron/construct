@@ -836,7 +836,7 @@ export function getProposal(store: Store, id: string): WriteProposal | null {
     justification: row.justification,
     risk: row.risk as WriteProposal['risk'],
     proposedAt: row.proposed_at,
-    actionSource: (row.action_source ?? 'keyword') as WriteActionSource,
+    actionSource: (row.action_source ?? 'model') as WriteActionSource,
   };
 }
 
