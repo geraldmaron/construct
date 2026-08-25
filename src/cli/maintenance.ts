@@ -39,6 +39,7 @@ import { censusLines, surveyResources } from '../hosts/census.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { HOST_NAMES, now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
+import { scheduleReport } from './schedule.ts';
 import { readSkillFolders } from './skills.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
@@ -156,6 +157,13 @@ export function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv = pro
           ? `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: available`
           : `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: projection-only (no wired dispatch adapter)`,
   });
+
+  // Whether a platform entry is installed to fire what has come due, read
+  // from the entry's own text. Reported, never gated: a machine with no
+  // schedule is not broken, it is one where somebody else owns the clock, and
+  // this check asks the platform nothing — it reads the file and says what
+  // cadence that file states.
+  checks.push({ name: 'schedule', ok: true, detail: scheduleReport(process.platform, env) });
 
   // Predecessor markers in the project tree: reported like host presence,
   // not gated — finding one says nothing about whether this install is
