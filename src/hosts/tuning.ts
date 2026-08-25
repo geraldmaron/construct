@@ -57,12 +57,6 @@ export function tuningOf(model: string | undefined | null): ModelTuning {
   return hit ? { family: hit.family, tuned: true } : { family: null, tuned: false };
 }
 
-/** The degradation note recorded whenever an untuned family runs. */
-export const BEST_EFFORT_NOTE =
-  'best-effort: producer prompts are not validated against this model family; ' +
-  'output shape and citation habits are unmeasured for it, and any claim about ' +
-  'this run carries that qualification';
-
 /**
  * The one-line matrix stamp for doctor/version. It carries the as-of dates so
  * going stale is visible in the output itself.

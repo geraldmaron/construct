@@ -1,5 +1,59 @@
 # Changelog
 
+## Unreleased
+
+What a source is, how two of them stand to each other, and how sure a finding
+is allowed to sound — three things a run previously had no way to say.
+
+- **A wish list and the record no longer enter a dispatch as the same kind of
+  thing** (construct-oxyk). A source carried a locator and nothing about how far
+  to trust it, so the 2027 aspiration and the signed agreement reached a role
+  identically. `construct source describe` (and `source add`) now take
+  `--authority` — `source-of-truth`, `working`, `aspirational`, `archive` — plus
+  a free-text `--relevance` and a `--sensitive` flag, stored in
+  `source_declarations` at schema version 18. What the user typed travels: roles
+  are told it before they read, and a citation into a described source renders
+  its tier where a reader sees it, so a memo resting on an aspirational plan
+  reads as one. The label beside a citation is the description as it stands, not
+  as it stood at authoring — demote a plan and the work resting on it stops
+  looking settled — while what the roles were actually told at dispatch stays in
+  the work log. Nothing writes a declaration except the command: a tier nobody
+  typed does not exist. `--sensitive` also narrows consent, so standing approval
+  for low-risk outward writes stops covering a change made against that source.
+- **Two sources can stand in a declared relationship, and ground assembly honors
+  it** (construct-4u0o). `construct source relate|relations|unrelate` records
+  `governs`, `depends-on`, `feeds`, `supersedes`, `covers-same-initiative` and
+  `contradicts` in `source_edges` at schema version 19, and each word changes
+  what a run is built from rather than only annotating it. Ground is partitioned
+  along the edges: sources that govern, feed, depend on or contradict each other
+  reach the same role together; sources declared to cover one initiative are
+  spread across roles so nobody pays twice for one view; a superseded source is
+  kept out of any dispatch carrying its replacement. A finding resting on both
+  sides of an edge has to name the boundary it crossed. Watches read the edges
+  too, so a sweep that sees one end move while the other stands still raises that
+  as its own decision, naming the relationship — the difference between a file
+  changing and a plan no longer following the strategy it is held to. A model may
+  propose an edge (`construct propose relation`), and a proposal is all it is
+  until `construct decide` says otherwise: standing consent never covers one,
+  because a relationship reshapes every later run's ground.
+- **A likelihood and a confidence are two statements, and neither is allowed to
+  stand in for the other** (construct-98ac). "We are fairly confident this is
+  likely" hides which hedge is about the world and which is about the evidence,
+  so the two are separated at the type level. A likelihood is a whole number the
+  model assigns; the seven-band word is derived from it by arithmetic the code
+  owns, never picked by the model, and `renderLikelihood` will not print the word
+  without the range beside it. A likelihood may be stated only at moderate
+  confidence or above — below that the constructors have nowhere to put one, and
+  the honest shape is the evidence and agreement terms, what is missing, and what
+  observation would raise confidence. Every stated likelihood lands in
+  `estimative_judgments` (schema version 20, append-only) with its resolution
+  criterion and horizon written at the moment of the judgment, and the
+  `estimative-form` challenge checks the form of what shipped. What it does not
+  hold yet is resolutions, so the honest statement is that judgments are logged
+  and no calibration figure exists. Whether the separation makes a model better
+  calibrated is unmeasured; this ships as structural discipline and the log that
+  makes the question answerable.
+
 ## 3.0.0-alpha.15 — 2026-08-24
 
 - **The skills ship inside the package that claims to carry them**

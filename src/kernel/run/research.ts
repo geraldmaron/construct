@@ -42,9 +42,6 @@
  * measures a prompt the product does not send measures itself.
  */
 
-/** How a research citation is written, so a reader can tell it from a ground one. */
-export const RESEARCH_CITATION_MARKER = '[research:';
-
 export const RESEARCH_PROTOCOL = [
   [
     'Researching, if this work needs a fact your material does not hold. Your',
