@@ -365,3 +365,18 @@ test('an entry point that does not exist is refused rather than written', () => 
   assert.ok('problem' in resolved);
   assert.match((resolved as { problem: string }).problem, /does not exist/);
 });
+
+test('the always-on flag passes the CLI unknown-flag gate, not only the injected surface', async () => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const home = mkdtempSync(join(tmpdir(), 'construct-sched-flag-'));
+  const run = promisify(execFile);
+  const { stdout } = await run(
+    process.execPath,
+    ['bin/construct.mjs', 'schedule', 'install', '--always-on', '--dry-run'],
+    { env: { PATH: process.env.PATH ?? '', HOME: home }, cwd: process.cwd() },
+  );
+  assert.match(stdout, /always-on daemon/);
+});
