@@ -69,8 +69,31 @@ function snapshot(dir: string): Record<string, string> {
   return files;
 }
 
-test('--out writes a stamped pack, and running it again rewrites the same bytes', async () => {
-  const first = await run((root) => [['skills', `--out=${join(root, 'pack')}`]]);
+test('bare "construct skills" writes nothing — it only prints usage', async () => {
+  const result = await run((root) => [['skills']]);
+  try {
+    assert.equal(result.code, 2);
+    assert.match(result.err, /usage: construct skills/);
+    assert.deepEqual(folders(result.root), []);
+    assert.equal(result.out, '', 'a bare invocation never writes');
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('an unrecognized subcommand writes nothing — it only prints usage', async () => {
+  const result = await run((root) => [['skills', 'generate', `--out=${join(root, 'pack')}`]]);
+  try {
+    assert.equal(result.code, 2);
+    assert.match(result.err, /usage: construct skills/);
+    assert.deepEqual(folders(result.root), []);
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('pack --out writes a stamped lens pack, and running it again rewrites the same bytes', async () => {
+  const first = await run((root) => [['skills', 'pack', `--out=${join(root, 'pack')}`]]);
   try {
     assert.equal(first.code, 0);
     const dir = join(first.root, 'pack');
@@ -78,8 +101,8 @@ test('--out writes a stamped pack, and running it again rewrites the same bytes'
     const names = Object.keys(written);
     assert.ok(names.length > 0);
     assert.ok(names.every((n) => n.startsWith('construct-')));
-    assert.match(first.out, /skills: \d+ skill\(s\) written to /);
-    assert.match(first.out, /construct skills --uninstall/);
+    assert.match(first.out, /skills: \d+ lens skill\(s\) written to /);
+    assert.match(first.out, /construct skills pack --uninstall/);
     for (const name of names) {
       assert.match(written[name], /^\s+generator: construct$/m);
       assert.match(written[name], /^\s+version: \S+$/m);
@@ -88,7 +111,7 @@ test('--out writes a stamped pack, and running it again rewrites the same bytes'
 
     // Rewriting in place, byte for byte, is what makes a stale pack fixable by
     // re-running rather than by diffing.
-    const again = await run(() => [['skills', `--out=${dir}`]]);
+    const again = await run(() => [['skills', 'pack', `--out=${dir}`]]);
     assert.equal(again.code, 0);
     assert.deepEqual(snapshot(dir), written);
     rmSync(again.root, { recursive: true, force: true });
@@ -97,7 +120,7 @@ test('--out writes a stamped pack, and running it again rewrites the same bytes'
   }
 });
 
-test('--uninstall removes the generated folders and keeps everything else', async () => {
+test('pack --uninstall removes the generated folders and keeps everything else', async () => {
   const result = await run((root) => {
     const dir = join(root, 'pack');
     mkdirSync(join(dir, 'hand-authored'), { recursive: true });
@@ -106,8 +129,8 @@ test('--uninstall removes the generated folders and keeps everything else', asyn
       '---\nname: hand-authored\ndescription: written by a person\n---\n\n# Mine\n',
     );
     return [
-      ['skills', `--out=${dir}`],
-      ['skills', '--uninstall', `--out=${dir}`],
+      ['skills', 'pack', `--out=${dir}`],
+      ['skills', 'pack', '--uninstall', `--out=${dir}`],
     ];
   });
   try {
@@ -125,8 +148,10 @@ test('--uninstall removes the generated folders and keeps everything else', asyn
   }
 });
 
-test('--uninstall on a directory that was never written says so and changes nothing', async () => {
-  const result = await run((root) => [['skills', '--uninstall', `--out=${join(root, 'absent')}`]]);
+test('pack --uninstall on a directory that was never written says so and changes nothing', async () => {
+  const result = await run((root) => [
+    ['skills', 'pack', '--uninstall', `--out=${join(root, 'absent')}`],
+  ]);
   try {
     assert.equal(result.code, 0);
     assert.match(result.out, /nothing to remove/);
@@ -136,11 +161,11 @@ test('--uninstall on a directory that was never written says so and changes noth
   }
 });
 
-test('with no --out the pack lands beside the project, under .claude/skills', async () => {
+test('pack with no --out lands beside the project, under .claude/skills', async () => {
   const previousCwd = process.cwd();
   const result = await run((root) => {
     process.chdir(root);
-    return [['skills']];
+    return [['skills', 'pack']];
   });
   try {
     assert.equal(result.code, 0);
@@ -151,8 +176,10 @@ test('with no --out the pack lands beside the project, under .claude/skills', as
   }
 });
 
-test('a flag the command does not know is refused rather than guessed at', async () => {
-  const result = await run((root) => [['skills', '--force', `--out=${join(root, 'pack')}`]]);
+test('a flag pack does not know is refused rather than guessed at', async () => {
+  const result = await run((root) => [
+    ['skills', 'pack', '--force', `--out=${join(root, 'pack')}`],
+  ]);
   try {
     assert.equal(result.code, 2);
     assert.match(result.err, /usage: construct skills/);
@@ -182,7 +209,7 @@ test('a symlink planted under the output tree is refused by name, never written 
     // A checked-out repository can carry this: a pack folder that is really
     // a link pointing outside the directory the user named.
     symlinkSync(elsewhere, join(out, 'construct-analyst'));
-    return [['skills', `--out=${out}`]];
+    return [['skills', 'pack', `--out=${out}`]];
   });
 
   assert.equal(code, 1);
@@ -197,7 +224,7 @@ test('an output directory that is itself a symlink is refused, not followed', as
     const elsewhere = join(root, 'elsewhere');
     mkdirSync(elsewhere, { recursive: true });
     symlinkSync(elsewhere, join(root, 'linked-skills'));
-    return [['skills', `--out=${join(root, 'linked-skills')}`]];
+    return [['skills', 'pack', `--out=${join(root, 'linked-skills')}`]];
   });
 
   assert.equal(code, 1);
@@ -214,7 +241,7 @@ test('a planted parent of the default out (.claude as a link) is refused, not fo
     // silently; the walk from the working directory sees it.
     symlinkSync(elsewhere, join(root, '.claude'));
     process.chdir(root);
-    return [['skills']];
+    return [['skills', 'pack']];
   });
   try {
     assert.equal(result.code, 1);
@@ -235,7 +262,7 @@ test('a refusal writes nothing at all — no partial pack, however late the plan
     // construct-security sorts near the end of the pack; a per-file check
     // would have written everything before it.
     symlinkSync(elsewhere, join(out, 'construct-security'));
-    return [['skills', `--out=${out}`]];
+    return [['skills', 'pack', `--out=${out}`]];
   });
 
   assert.equal(code, 1);
@@ -248,8 +275,8 @@ test('--uninstall through a symlinked out is refused, and the real pack survives
     const real = join(root, 'real-pack');
     symlinkSync(real, join(root, 'linked-pack'));
     return [
-      ['skills', `--out=${real}`],
-      ['skills', '--uninstall', `--out=${join(root, 'linked-pack')}`],
+      ['skills', 'pack', `--out=${real}`],
+      ['skills', 'pack', '--uninstall', `--out=${join(root, 'linked-pack')}`],
     ];
   });
 
