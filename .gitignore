@@ -32,3 +32,6 @@ __probe__/
 .env
 .env.*
 !.env.example
+
+# Local MCP wiring written by `construct wire`; never committed
+.mcp.json
