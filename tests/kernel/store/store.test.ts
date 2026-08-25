@@ -36,6 +36,12 @@ import {
 } from '../../../src/kernel/store/decisions.ts';
 import { buildProjection } from '../../../src/kernel/tracker/projection.ts';
 import { setSourceDeclaration, sourceDeclaration } from '../../../src/kernel/store/sources.ts';
+import { declareSourceEdge, sourceEdgesFor } from '../../../src/kernel/store/source-edges.ts';
+import {
+  estimativeJudgmentsFor,
+  recordEstimativeJudgment,
+} from '../../../src/kernel/store/estimative.ts';
+import { assessRisk } from '../../../src/kernel/run/estimative.ts';
 import { DatabaseSync } from 'node:sqlite';
 
 const AT = '2026-08-03T00:00:00.000Z';
@@ -207,6 +213,109 @@ test('a store written before sources carried declarations keeps its rows and its
       };
       assert.equal(after.locator, 'PROJ');
       assert.equal(after.retired_at, null);
+    } finally {
+      store.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+/**
+ * Relationships between sources are additive in the same sense, and the claim
+ * is again about a store that already exists. The fixture is one written before
+ * the relationships table: the sources table with its two triggers, the
+ * declarations table beside it, and two described sources. Opening it must add
+ * the relationships table and change nothing else — the descriptions still read
+ * back, the source triggers still refuse, and the two existing sources can be
+ * related to each other through a table that was not there when they were
+ * declared.
+ */
+test('a store written before sources could be related keeps its rows, and gains the table', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    mkdirSync(join(fixture.root, 'data'), { recursive: true });
+    const before = new DatabaseSync(path);
+    before.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
+      CREATE TABLE sources (
+        id         TEXT PRIMARY KEY,
+        workspace  TEXT NOT NULL,
+        kind       TEXT NOT NULL CHECK (kind IN ('directory', 'git', 'github', 'jira', 'docs')),
+        locator    TEXT NOT NULL,
+        added_at   TEXT NOT NULL,
+        retired_at TEXT
+      ) STRICT;
+      CREATE UNIQUE INDEX sources_active
+        ON sources (workspace, kind, locator) WHERE retired_at IS NULL;
+      CREATE TRIGGER sources_retire_only
+      BEFORE UPDATE ON sources
+      WHEN NEW.id != OLD.id OR NEW.workspace != OLD.workspace OR NEW.kind != OLD.kind
+        OR NEW.locator != OLD.locator OR NEW.added_at != OLD.added_at
+        OR OLD.retired_at IS NOT NULL OR NEW.retired_at IS NULL
+      BEGIN SELECT RAISE(ABORT, 'a source is retired, never edited'); END;
+      CREATE TRIGGER sources_no_delete
+      BEFORE DELETE ON sources
+      BEGIN SELECT RAISE(ABORT, 'a source is retired, never deleted'); END;
+      CREATE TABLE source_declarations (
+        source      TEXT PRIMARY KEY REFERENCES sources (id),
+        authority   TEXT NOT NULL CHECK (authority IN ('source-of-truth', 'working', 'aspirational', 'archive')),
+        relevance   TEXT NOT NULL,
+        sensitive   INTEGER NOT NULL CHECK (sensitive IN (0, 1)),
+        recorded_at TEXT NOT NULL
+      ) STRICT;
+    `);
+    before.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '18');
+    const addOld = before.prepare(
+      'INSERT INTO sources (id, workspace, kind, locator, added_at) VALUES (?, ?, ?, ?, ?)',
+    );
+    addOld.run('src-strategy', 'acme', 'directory', '/strategy', AT);
+    addOld.run('src-repo', 'acme', 'git', '/repo', AT);
+    before
+      .prepare(
+        `INSERT INTO source_declarations (source, authority, relevance, sensitive, recorded_at)
+         VALUES (?, 'source-of-truth', 'the agreement', 0, ?)`,
+      )
+      .run('src-strategy', AT);
+    before.close();
+
+    const store = openStore(path);
+    try {
+      assert.equal(sourceDeclaration(store, 'src-strategy')?.authority, 'source-of-truth');
+      assert.throws(
+        () => store.db.prepare("UPDATE sources SET locator = 'OTHER' WHERE id = ?").run('src-repo'),
+        /retired, never edited/,
+        'the source triggers are untouched',
+      );
+
+      const existing = store.db.prepare('SELECT COUNT(*) AS n FROM source_edges').get() as { n: number };
+      assert.equal(existing.n, 0, 'nothing invented a relationship on the way in');
+
+      declareSourceEdge(store, {
+        id: 'rel-old',
+        workspace: 'acme',
+        from: 'src-strategy',
+        to: 'src-repo',
+        relation: 'governs',
+        note: 'declared after the fact',
+        declaredAt: AT,
+      });
+      assert.deepEqual(
+        sourceEdgesFor(store, 'acme').map((edge) => [edge.from, edge.relation, edge.to]),
+        [['src-strategy', 'governs', 'src-repo']],
+      );
+      assert.throws(
+        () => store.db.prepare('DELETE FROM source_edges WHERE id = ?').run('rel-old'),
+        /retired, never deleted/,
+        'the new table arrives with its own discipline, not without one',
+      );
+      const untouched = store.db.prepare('SELECT * FROM sources WHERE id = ?').get('src-repo') as {
+        locator: string;
+        retired_at: string | null;
+      };
+      assert.equal(untouched.locator, '/repo');
+      assert.equal(untouched.retired_at, null);
     } finally {
       store.close();
     }
@@ -544,4 +653,128 @@ test('the store module reads neither the clock nor the environment', async () =>
     assert.ok(!/new Date\(|Date\.now\(/.test(code), `${file} must not read the clock`);
     assert.ok(!/process\.env|homedir\(/.test(code), `${file} must not read the environment`);
   }
+});
+
+/**
+ * The calibration log is additive, which is a claim about a store that already
+ * exists rather than about the statement that creates it. So the fixture is a
+ * store built without it — the work log, its append-only triggers, one row —
+ * opened by this build, which must add the new table beside them and leave
+ * every one of them exactly as it was.
+ */
+test('a store written before judgments were logged keeps its rows and its triggers', () => {
+  const fixture = sterile();
+  try {
+    const path = join(fixture.root, 'data', 'construct.db');
+    mkdirSync(join(fixture.root, 'data'), { recursive: true });
+    const before = new DatabaseSync(path);
+    before.exec(`
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL) STRICT;
+      CREATE TABLE work_log (
+        seq         INTEGER PRIMARY KEY AUTOINCREMENT,
+        run         TEXT NOT NULL,
+        task        TEXT,
+        role        TEXT NOT NULL,
+        action      TEXT NOT NULL,
+        detail      TEXT NOT NULL,
+        recorded_at TEXT NOT NULL
+      ) STRICT;
+      CREATE TRIGGER work_log_no_update
+      BEFORE UPDATE ON work_log
+      BEGIN SELECT RAISE(ABORT, 'work_log is append-only'); END;
+    `);
+    before.prepare('INSERT INTO meta (key, value) VALUES (?, ?)').run('schema_version', '19');
+    before
+      .prepare('INSERT INTO work_log (run, role, action, detail, recorded_at) VALUES (?, ?, ?, ?, ?)')
+      .run('run-old', 'privacy', 'dispatched', '{}', AT);
+    before.close();
+
+    const store = openStore(path);
+    try {
+      const kept = readWorkLog(store, 'run-old');
+      assert.equal(kept.length, 1);
+      assert.equal(kept[0].action, 'dispatched');
+      assert.throws(
+        () => store.db.prepare("UPDATE work_log SET action = 'x' WHERE seq = 1").run(),
+        /append-only/,
+        'the work log trigger is untouched',
+      );
+
+      // Additive: the new table is there, empty, and a judgment can be logged
+      // against the pre-existing run without that run's log row moving.
+      assert.deepEqual(estimativeJudgmentsFor(store, 'run-old'), []);
+      recordEstimativeJudgment(
+        store,
+        {
+          run: 'run-old',
+          decision: 'run-old:stance',
+          judgment: assessRisk({
+            claim: 'the cutover loses rows',
+            percent: 60,
+            confidence: {
+              level: 'moderate',
+              basis: {
+                informationBase: 'two prior migrations are logged',
+                analyticalRigour: 'one pass, unchecked',
+                complexityAndVolatility: 'the schema still moves weekly',
+              },
+            },
+            resolution: 'the row counts on both sides of the first cutover',
+            horizon: 'within 30 days',
+            referenceClass: null,
+          }),
+        },
+        AT,
+      );
+      const logged = estimativeJudgmentsFor(store, 'run-old');
+      assert.equal(logged.length, 1);
+      // The integer is what is kept: the band is a rendering of it, and a
+      // calibration curve is drawn over the numbers.
+      assert.equal(logged[0].percent, 60);
+      assert.equal(logged[0].confidence, 'moderate');
+      assert.equal(logged[0].horizon, 'within 30 days');
+      assert.equal(logged[0].referenceClass, null);
+      assert.equal(logged[0].recordedAt, AT);
+      assert.equal(readWorkLog(store, 'run-old').length, 1);
+
+      assert.throws(
+        () => store.db.prepare('UPDATE estimative_judgments SET percent = 90').run(),
+        /append-only/,
+      );
+      assert.throws(() => store.db.prepare('DELETE FROM estimative_judgments').run(), /append-only/);
+    } finally {
+      store.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('a likelihood that never resolves cannot be logged as one that could', () => {
+  withStore((store) => {
+    assert.throws(
+      () =>
+        store.db
+          .prepare(
+            `INSERT INTO estimative_judgments
+               (run, claim, percent, confidence, resolution, horizon, recorded_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run('run-1', 'the cutover loses rows', 60, 'low', 'counts on both sides', '30 days', AT),
+      /CHECK constraint failed/,
+      'the ladder holds at the storage seam: a band needs moderate confidence or better',
+    );
+    assert.throws(
+      () =>
+        store.db
+          .prepare(
+            `INSERT INTO estimative_judgments
+               (run, claim, percent, confidence, resolution, horizon, recorded_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          )
+          .run('run-1', 'the cutover loses rows', 100, 'high', 'counts on both sides', '30 days', AT),
+      /CHECK constraint failed/,
+      '100 is a statement of fact, not an estimate',
+    );
+  });
 });

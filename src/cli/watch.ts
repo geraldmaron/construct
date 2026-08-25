@@ -13,13 +13,16 @@ import { join } from 'node:path';
 import { getSource, sourceShape } from '../kernel/store/sources.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import {
+  activeWatchForSource,
   declareSourceWatch,
   dueSourceWatches,
+  firingsForSourceWatch,
   latestSourceWatchFiring,
   listSourceWatches,
   recordSourceWatchFiring,
   retireSourceWatch,
 } from '../kernel/store/source-watches.ts';
+import { sourceEdgesTouching } from '../kernel/store/source-edges.ts';
 import {
   constructFindings,
   divergenceFindings,
@@ -29,11 +32,17 @@ import {
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import {
+  edgeDivergenceFindings,
+  lastObservedChange,
   snapshotFromSurvey,
+  sourceChangeSummary,
   sourceGroundLine,
   sourceWatchFindings,
 } from '../kernel/watch/source-ground.ts';
 import type { SourceSnapshot } from '../kernel/watch/source-ground.ts';
+import type { Store } from '../kernel/store/open.ts';
+import type { Finding } from '../kernel/watch/watch.ts';
+import type { Source } from '../kernel/store/sources.ts';
 import { describeDivergence, lostRecords, reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { surveySource } from '../hosts/sources.ts';
 import { gatherDivergence, gatherRepoEvidence, isFailure, recordedHistory } from '../hosts/repo/evidence.ts';
@@ -171,6 +180,53 @@ function watchRetire(id: string | undefined): number {
 }
 
 /**
+ * What this sweep's change means for the sources this one is declared to stand
+ * in a relationship with.
+ *
+ * A watch over one source can say that source moved. Only a declared
+ * relationship says what else was supposed to move with it, and only the other
+ * end's own watch can say whether it did. Both are asked here, and a
+ * relationship whose other end nothing is watching produces nothing: an
+ * unwatched source has not been seen to hold still, and saying otherwise would
+ * be inventing the fact the finding rests on.
+ */
+function divergenceAcrossRelations(
+  store: Store,
+  input: {
+    readonly source: Source;
+    readonly prior: SourceSnapshot;
+    readonly current: SourceSnapshot;
+    readonly since: string;
+    readonly firedAt: string;
+  },
+): Finding[] {
+  const detail = sourceChangeSummary(input.prior, input.current);
+  if (detail === null) return [];
+  const findings: Finding[] = [];
+  for (const edge of sourceEdgesTouching(store, input.source.id)) {
+    const otherId = edge.from === input.source.id ? edge.to : edge.from;
+    const other = getSource(store, otherId);
+    if (!other) continue;
+    const watch = activeWatchForSource(store, otherId);
+    if (!watch) continue;
+    const firings = firingsForSourceWatch(store, watch.id);
+    findings.push(
+      ...edgeDivergenceFindings({
+        edge,
+        moved: input.source,
+        detail,
+        other,
+        otherLastSweptAt: firings.at(-1)?.firedAt ?? null,
+        otherLastChangedAt: lastObservedChange(firings),
+        since: input.since,
+        firedAt: input.firedAt,
+      }),
+    );
+  }
+  return findings;
+}
+
+/**
  * Fire what has come due: survey each elapsed watch's source structurally,
  * compare the survey to what the last firing recorded, and raise whatever
  * changed. No host is consulted here regardless of what a declaration names —
@@ -207,7 +263,21 @@ function watchDue(): number {
       const priorFiring = latestSourceWatchFiring(store, declared.id);
       const prior = priorFiring ? (priorFiring.snapshot as SourceSnapshot) : null;
 
-      const findings = sourceWatchFindings({ source, prior, current, firedAt: at });
+      const findings = [
+        ...sourceWatchFindings({ source, prior, current, firedAt: at }),
+        // What this source moving says about the sources the user declared it
+        // stands in a relationship with. Raised in the same sweep, into the
+        // same inbox, because it is one call about one change.
+        ...(prior === null || priorFiring === null
+          ? []
+          : divergenceAcrossRelations(store, {
+              source,
+              prior,
+              current,
+              since: priorFiring.firedAt,
+              firedAt: at,
+            })),
+      ];
       // Raised before recorded: a crash between the two leaves the next sweep
       // comparing against the same prior state and re-detecting the change,
       // which a duplicate decision survives; the other order could record a

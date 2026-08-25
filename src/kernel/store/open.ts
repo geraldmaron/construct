@@ -117,6 +117,25 @@
  * never altered. An upsert, because a declaration is a statement its author may
  * restate; nothing writes one except at a user's word.
  *
+ * Schema version 19 adds `source_edges` and `proposed_source_edges`: how a user
+ * says two of their declared sources stand to each other — one governs another,
+ * depends on it, feeds it, supersedes it, covers the same initiative, or
+ * contradicts it. A declaration says what one source is; nothing said what a
+ * pair of them are, so material that supersedes other material reached a
+ * dispatch beside it, and two sources drifting apart went unremarked because
+ * nothing recorded that they were ever supposed to agree.
+ *
+ * `source_edges` is retired rather than edited or deleted, under the same two
+ * triggers `sources` carries: a relationship a run was assembled from is part
+ * of that run's record, and one that could be rewritten afterwards would let
+ * the record agree with whatever is believed now. `proposed_source_edges` is
+ * the parts of a model's proposed relationship, keyed to the `write_proposals`
+ * row that carries its fate — immutable and undeletable for the same reason
+ * `doc_edits` is: the proposal and the change it proposes are written together
+ * so neither can exist without the other. A proposed relationship is not a
+ * relationship. It becomes one only when a decision says so, and until then
+ * nothing reads it.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -140,7 +159,7 @@ import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 18;
+export const SCHEMA_VERSION = 19;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -516,6 +535,35 @@ CREATE TABLE IF NOT EXISTS source_declarations (
   recorded_at TEXT NOT NULL
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS source_edges (
+  id          TEXT PRIMARY KEY,
+  workspace   TEXT NOT NULL,
+  from_source TEXT NOT NULL REFERENCES sources (id),
+  to_source   TEXT NOT NULL REFERENCES sources (id),
+  relation    TEXT NOT NULL CHECK (relation IN ('governs', 'depends-on', 'feeds', 'supersedes', 'covers-same-initiative', 'contradicts')),
+  note        TEXT NOT NULL,
+  declared_at TEXT NOT NULL,
+  retired_at  TEXT
+) STRICT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS source_edges_active
+  ON source_edges (from_source, to_source, relation) WHERE retired_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS source_edges_from ON source_edges (from_source);
+CREATE INDEX IF NOT EXISTS source_edges_to ON source_edges (to_source);
+
+CREATE TRIGGER IF NOT EXISTS source_edges_retire_only
+BEFORE UPDATE ON source_edges
+WHEN NEW.id != OLD.id OR NEW.workspace != OLD.workspace OR NEW.from_source != OLD.from_source
+  OR NEW.to_source != OLD.to_source OR NEW.relation != OLD.relation OR NEW.note != OLD.note
+  OR NEW.declared_at != OLD.declared_at
+  OR OLD.retired_at IS NOT NULL OR NEW.retired_at IS NULL
+BEGIN SELECT RAISE(ABORT, 'a relationship is retired, never edited'); END;
+
+CREATE TRIGGER IF NOT EXISTS source_edges_no_delete
+BEFORE DELETE ON source_edges
+BEGIN SELECT RAISE(ABORT, 'a relationship is retired, never deleted'); END;
+
 CREATE TABLE IF NOT EXISTS workspace_mode (
   workspace   TEXT PRIMARY KEY,
   mode        TEXT NOT NULL CHECK (mode IN ('team', 'seat')),
@@ -581,6 +629,23 @@ BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_delete
 BEFORE DELETE ON proposal_decisions
 BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS proposed_source_edges (
+  proposal    TEXT PRIMARY KEY REFERENCES write_proposals (id),
+  from_source TEXT NOT NULL REFERENCES sources (id),
+  to_source   TEXT NOT NULL REFERENCES sources (id),
+  relation    TEXT NOT NULL CHECK (relation IN ('governs', 'depends-on', 'feeds', 'supersedes', 'covers-same-initiative', 'contradicts')),
+  note        TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS proposed_source_edges_no_update
+BEFORE UPDATE ON proposed_source_edges
+BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
+
+CREATE TRIGGER IF NOT EXISTS proposed_source_edges_no_delete
+BEFORE DELETE ON proposed_source_edges
+BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
 
 CREATE TABLE IF NOT EXISTS plans (
   id         TEXT PRIMARY KEY,

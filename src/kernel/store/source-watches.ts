@@ -114,6 +114,24 @@ export function listSourceWatches(store: Store, opts?: { includeRetired?: boolea
 }
 
 /**
+ * The active watch over one source, or null when nothing is watching it.
+ *
+ * A comparison across two sources asks this before it says anything about the
+ * second one: an unwatched source that has not been seen to change has not
+ * been seen at all, and reporting that silence as stillness would be ignorance
+ * dressed up as evidence.
+ */
+export function activeWatchForSource(store: Store, source: string): SourceWatch | null {
+  const row = store.db
+    .prepare(
+      `SELECT * FROM source_watches WHERE source = ? AND retired_at IS NULL
+       ORDER BY declared_at, id LIMIT 1`,
+    )
+    .get(source) as Row | undefined;
+  return row ? toWatch(row) : null;
+}
+
+/**
  * Retire a source watch: it stops coming due but stays inspectable, because
  * its firings point at it. Retiring twice is an error, not a no-op — the
  * second caller believed something false about what was still running.

@@ -321,3 +321,129 @@ test('watch --due runs and exits: the process tree is untouched, nothing spawned
     rmSync(ground, { recursive: true, force: true });
   }
 });
+
+/**
+ * The promise the north star makes about watches — strategies quietly
+ * diverging — needs two sources and a statement that they were supposed to
+ * agree. A watch over one source can only say that source moved.
+ *
+ * So: two watched sources, a declared relationship between them, ground moving
+ * under one of them and standing still under the other. The finding raised
+ * must name the relationship, because a reader who does not accept the
+ * relationship should not be asked to accept what was derived from it.
+ */
+test('one end of a declared relationship moving alone is raised as a divergence that cites it', () => {
+  const governing = docsGround(['strategy.md']);
+  const governed = docsGround(['plan.md']);
+  try {
+    const { code, out } = runAll([
+      () => source(['add', '--kind=directory', `--locator=${governing}`, '--workspace=ops']),
+      () => source(['add', '--kind=directory', `--locator=${governed}`, '--workspace=ops']),
+      () => {
+        const [a, b] = inStore((store) => sourcesFor(store, 'ops').map((row) => row.id));
+        return source([
+          'relate',
+          `--from=${a}`,
+          `--to=${b}`,
+          '--as=governs',
+          '--note=the strategy sets what the plan is held to',
+          '--workspace=ops',
+        ]);
+      },
+      () => {
+        const [a] = inStore((store) => sourcesFor(store, 'ops').map((row) => row.id));
+        return watch(['add', `--source=${a}`, '--every=1m']);
+      },
+      () => {
+        const [, b] = inStore((store) => sourcesFor(store, 'ops').map((row) => row.id));
+        return watch(['add', `--source=${b}`, '--every=1m']);
+      },
+      () => {
+        // A baseline for each, two minutes back so both are due. The governing
+        // side's baseline describes emptier ground than what is on disk, so it
+        // moved; the governed side's matches disk exactly, so it did not.
+        inStore((store) => {
+          const twoMinAgo = new Date(Date.now() - 2 * 60_000).toISOString();
+          for (const w of listSourceWatches(store)) {
+            const src = getSource(store, w.source);
+            assert.ok(src);
+            const moved = src!.locator === governing;
+            recordSourceWatchFiring(store, {
+              watch: w.id,
+              run: `watch-${w.id}`,
+              firedAt: twoMinAgo,
+              snapshot: moved ? { outcome: 'listed', total: 0, documents: [] } : snapshotFromSurvey(surveySource(src!)),
+            });
+          }
+        });
+        return 0;
+      },
+      () => watch(['--due']),
+      () => {
+        inStore((store) => {
+          const questions = openDecisions(store).map((d) => d.question);
+          assert.equal(questions.length, 2, 'the change itself, and what it means for the other end');
+          const divergence = openDecisions(store).find((d) =>
+            /Does the side that stood still need to move too\?/.test(d.question),
+          );
+          assert.ok(divergence, 'the relationship was read, not just the source');
+          assert.match(divergence!.question, /A rule and the thing held to it are no longer moving together/);
+          assert.match(
+            divergence!.positions.map((p) => p.citation).join('\n'),
+            /declared relationship: directory source at .* governs directory source at .* — "the strategy sets what the plan is held to"/,
+          );
+        });
+        return 0;
+      },
+    ]);
+    assert.equal(code, 0);
+    assert.match(out, /2 raised as new decision\(s\)\./);
+  } finally {
+    rmSync(governing, { recursive: true, force: true });
+    rmSync(governed, { recursive: true, force: true });
+  }
+});
+
+test('a relationship whose other end nothing watches raises no divergence', () => {
+  const governing = docsGround(['strategy.md']);
+  const governed = docsGround(['plan.md']);
+  try {
+    const { code } = runAll([
+      () => source(['add', '--kind=directory', `--locator=${governing}`, '--workspace=ops']),
+      () => source(['add', '--kind=directory', `--locator=${governed}`, '--workspace=ops']),
+      () => {
+        const [a, b] = inStore((store) => sourcesFor(store, 'ops').map((row) => row.id));
+        return source(['relate', `--from=${a}`, `--to=${b}`, '--as=governs', '--workspace=ops']);
+      },
+      () => {
+        const [a] = inStore((store) => sourcesFor(store, 'ops').map((row) => row.id));
+        return watch(['add', `--source=${a}`, '--every=1m']);
+      },
+      () => {
+        inStore((store) => {
+          const w = listSourceWatches(store)[0];
+          recordSourceWatchFiring(store, {
+            watch: w.id,
+            run: `watch-${w.id}`,
+            firedAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+            snapshot: { outcome: 'listed', total: 0, documents: [] },
+          });
+        });
+        return 0;
+      },
+      () => watch(['--due']),
+      () => {
+        inStore((store) => {
+          const questions = openDecisions(store).map((d) => d.question);
+          assert.equal(questions.length, 1, 'the source moved; nothing was observed about the other end');
+          assert.match(questions[0], /Ground this watch follows has moved/);
+        });
+        return 0;
+      },
+    ]);
+    assert.equal(code, 0);
+  } finally {
+    rmSync(governing, { recursive: true, force: true });
+    rmSync(governed, { recursive: true, force: true });
+  }
+});

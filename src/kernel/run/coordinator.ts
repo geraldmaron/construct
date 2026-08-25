@@ -42,7 +42,9 @@ import { unheadedSlots } from '../plan/ladder.ts';
 import { operationalLessonsFor } from '../lessons/admission.ts';
 import { groundRootsFor } from './sourcereads.ts';
 import { ANSWER_THE_ASK, ROLE_OWNERSHIP_BOUND, groundedMaterialProtocol } from './grounding.ts';
-import type { DeclaredSource, Material } from './grounding.ts';
+import type { DeclaredRelation, DeclaredSource, Material } from './grounding.ts';
+import { partitionMaterial } from './partition.ts';
+import { relationPhrase, sourceEdgesAmong } from '../store/source-edges.ts';
 import type { Store } from '../store/open.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
@@ -52,6 +54,8 @@ import type { Domain } from '../implication/domains.ts';
 import { deliverableConcerns, licensedReviewFor } from './accountability.ts';
 import { STANCE_PROTOCOL, frameConflict, parseStance } from './conflicts.ts';
 import { ASK_PROTOCOL, answeredAsksFor, frameAsk, parseAsk } from './asks.ts';
+import { ESTIMATIVE_PROTOCOL } from './estimative.ts';
+import { recordEstimativeJudgment } from '../store/estimative.ts';
 import { answerDirective } from './ask.ts';
 import { RESEARCH_PROTOCOL } from './research.ts';
 import type { AnsweredAsk } from './asks.ts';
@@ -406,12 +410,21 @@ export function materialFor(store: Store, run: string): Material[] {
  * holding. A source nobody described is absent rather than defaulted, because
  * a tier this system picked would read to the role exactly like one the user
  * stated.
+ *
+ * `only` narrows to the sources one dispatch actually holds, so a role whose
+ * ground was divided is told about its own ground and not about material it
+ * never received.
  */
-export function declaredSourcesFor(store: Store, run: string): DeclaredSource[] {
+export function declaredSourcesFor(
+  store: Store,
+  run: string,
+  only?: ReadonlySet<string>,
+): DeclaredSource[] {
   const seen = new Set<string>();
   const declared: DeclaredSource[] = [];
   for (const read of sourceReadsFor(store, run)) {
     if (seen.has(read.source)) continue;
+    if (only !== undefined && !only.has(read.source)) continue;
     seen.add(read.source);
     const declaration = sourceDeclaration(store, read.source);
     if (!declaration) continue;
@@ -422,6 +435,24 @@ export function declaredSourcesFor(store: Store, run: string): DeclaredSource[] 
     });
   }
   return declared;
+}
+
+/**
+ * The relationships in force among a given set of sources, in the words a role
+ * reads: locators rather than ids, and the relationship spoken from the end the
+ * user typed first.
+ *
+ * Only relationships with both ends inside the set come back. A relationship
+ * reaching material this dispatch does not hold describes nothing the role can
+ * act on, and naming it would tell the role about ground it was not given.
+ */
+export function declaredRelationsFor(store: Store, sources: readonly string[]): DeclaredRelation[] {
+  return sourceEdgesAmong(store, sources).map((edge) => ({
+    fromLocator: getSource(store, edge.from)?.locator ?? edge.from,
+    toLocator: getSource(store, edge.to)?.locator ?? edge.to,
+    phrase: relationPhrase(edge.relation),
+    note: edge.note,
+  }));
 }
 
 export function assignmentFor(
@@ -445,6 +476,12 @@ export function assignmentFor(
      * said, and the role is told nothing rather than told a default.
      */
     readonly declarations?: readonly DeclaredSource[];
+    /**
+     * How the user declared those sources stand to each other. Absent means no
+     * relationship reaches this dispatch's ground, and the role is told of none
+     * rather than left to infer one.
+     */
+    readonly relations?: readonly DeclaredRelation[];
     /**
      * What the portable method library on this machine can offer this role.
      * Absent means nobody looked and nothing is said about method skills;
@@ -522,7 +559,12 @@ export function assignmentFor(
   const surface = options.writeSurface ? WRITE_SURFACE_PROTOCOL : NO_WRITE_SURFACE_NOTE;
   const material =
     options.material && options.material.length > 0
-      ? groundedMaterialProtocol(options.material, options.groundRoots ?? [], options.declarations ?? [])
+      ? groundedMaterialProtocol(
+          options.material,
+          options.groundRoots ?? [],
+          options.declarations ?? [],
+          options.relations ?? [],
+        )
       : MATERIAL_PROTOCOL;
   // The acquisition ladder's second rung, defined where the role can read it.
   // Spoken on every dispatch rather than only when a gap appears, because the
@@ -595,7 +637,11 @@ export function assignmentFor(
     answered +
     `${surface}\n\n` +
     (asking ? '' : `${STANCE_PROTOCOL}\n\n`) +
-    ASK_PROTOCOL
+    `${ASK_PROTOCOL}\n\n` +
+    // Once, for both protocols. A stance and an ask each carry stakes, and the
+    // block that describes how to state one is the same block; saying it twice
+    // would spend prompt on a shape the role already has.
+    ESTIMATIVE_PROTOCOL
   );
 }
 
@@ -801,6 +847,20 @@ export function frameConflicts(
 
     raiseDecision(store, decision);
     raised += 1;
+    // Every band that reached the user is logged with what settles it, so a
+    // calibration curve can be drawn from the record rather than from memory.
+    // Only the likelihood-bearing ones: a judgment on the rung below states no
+    // band and has nothing to score.
+    for (const side of stances) {
+      const stakes = side.declared.stakes;
+      if (stakes?.kind === 'assessed') {
+        recordEstimativeJudgment(
+          store,
+          { run, decision: decision.id, judgment: stakes },
+          options.clock(),
+        );
+      }
+    }
     appendWorkLog(store, {
       run,
       role: 'construct',
@@ -871,11 +931,28 @@ export async function workRun(
     // What the run read and where it may read further, fetched once: the
     // assignment and the citation gate must judge against the same ground, or
     // a role could be licensed one set of roots and graded on another.
-    const material = materialFor(store, task.run);
-    const groundRoots = material.length > 0 ? groundRootsFor(store, task.run) : [];
-    // What the user says that ground is. Read here beside the material so the
-    // declaration and the documents it describes reach the role together.
-    const declarations = material.length > 0 ? declaredSourcesFor(store, task.run) : [];
+    //
+    // The run's whole ground is read first, then divided along whatever
+    // relationships the user declared between its sources. The division is a
+    // function of the run's own tasks and read record, so every dispatch of a
+    // run computes the same one and each takes its own slice out of it; a run
+    // with no declared relationship among its sources divides into itself, and
+    // every role gets everything exactly as before.
+    const runMaterial = materialFor(store, task.run);
+    const runSources = [...new Set(runMaterial.map((item) => item.source))];
+    const material =
+      partitionMaterial({
+        material: runMaterial,
+        edges: sourceEdgesAmong(store, runSources),
+        dispatches: listTasks(store, task.run).map((sibling) => sibling.id),
+      }).get(task.id) ?? runMaterial;
+    const mine = new Set(material.map((item) => item.source));
+    const groundRoots = material.length > 0 ? groundRootsFor(store, task.run, mine) : [];
+    // What the user says that ground is, and how they say its sources stand to
+    // each other. Read here beside the material so the statements and the
+    // documents they are about reach the role together.
+    const declarations = material.length > 0 ? declaredSourcesFor(store, task.run, mine) : [];
+    const relations = material.length > 0 ? declaredRelationsFor(store, [...mine]) : [];
     // What those roots declare they already check. Read through the injected
     // reader so the kernel stays off the filesystem, and only over roots the
     // workspace declared — a manifest sitting beside this process says nothing
@@ -952,6 +1029,17 @@ export async function workRun(
           source: d.source,
           authority: d.authority,
           sensitive: d.sensitive,
+        })),
+        // Which of the run's sources this dispatch was actually given, and the
+        // boundaries standing between them when it was. A finding that reaches
+        // across one of those boundaries can only be read against the ground
+        // the role held, so both halves are recorded where the deliverable's
+        // provenance is read from.
+        ground: [...mine],
+        related: relations.map((r) => ({
+          from: r.fromLocator,
+          relation: r.phrase,
+          to: r.toLocator,
         })),
       },
       at: options.clock(),
@@ -1115,6 +1203,7 @@ export async function workRun(
             material,
             groundRoots,
             declarations,
+            relations,
             manifests,
             answers: answeredAsksFor(store, task.run),
             lessons: lessons.map((l) => l.body),
@@ -1404,6 +1493,13 @@ export async function workRun(
               ask: declaredAsk,
               at: settledAt,
             }));
+            if (declaredAsk.stakes?.kind === 'assessed') {
+              recordEstimativeJudgment(
+                store,
+                { run: task.run, decision: askId, judgment: declaredAsk.stakes },
+                settledAt,
+              );
+            }
             appendWorkLog(store, {
               run: task.run,
               task: task.id,
