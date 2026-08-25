@@ -137,6 +137,14 @@ export interface CoordinatorOptions {
    */
   readonly voice?: VoiceOverride;
   /**
+   * The locale rendered prose is written in. Absent means the built-in
+   * default, American English (constructIdentity's own DEFAULT_LOCALE) —
+   * governs the reader surface only, never the record: work log entries and
+   * every stored timestamp are the same bytes regardless of what this is set
+   * to.
+   */
+  readonly locale?: string;
+  /**
    * Whether a deliverable that fails a free structural check goes back to its
    * author once before the run keeps it. Defaults to on: the checks exist to
    * catch work the brief asked for and did not get, and a run that records that
@@ -461,6 +469,8 @@ export function assignmentFor(
   options: {
     readonly writeSurface?: boolean;
     readonly voice?: VoiceOverride;
+    /** The locale rendered prose is written in. Absent means the house default. */
+    readonly locale?: string;
     /**
      * What this dispatch read, when it read anything. Empty or absent means the
      * role reasons from its domain and cites no paths; present means the
@@ -524,6 +534,7 @@ export function assignmentFor(
     framedBy: brief.role,
     concern: domain?.concern,
     voice: options.voice,
+    locale: options.locale,
   });
   // Why this role is here, in the words the record holds. A role that knows
   // which concern fired can open from it; one that does not has to guess at
@@ -1196,6 +1207,7 @@ export async function workRun(
           task: assignmentFor(brief, catalog, {
             writeSurface: roleEnv !== undefined,
             voice: options.voice,
+            locale: options.locale,
             // What the run read is a fact the store already holds, so the
             // assignment asks it rather than taking a caller's word. A run
             // that read nothing hands back an empty list and the role is told

@@ -50,6 +50,7 @@ import {
 import { groundRootsFor } from '../kernel/run/sourcereads.ts';
 import { voiceOverrideFor } from '../kernel/run/voicerecord.ts';
 import { attributionLine } from '../kernel/voice/voice.ts';
+import { resolvedLocale } from './locale.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import {
@@ -192,6 +193,10 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // same reason `work` says it: a document that will not sound like Construct
     // is a thing the user should see themselves having chosen.
     const voice = voiceOverrideFor(store, run) ?? undefined;
+    // The reader surface only: which spelling, dates, units, and currency the
+    // composed document is written in. Never touches a claim, a timestamp, or
+    // a store row — those are the same regardless of what this resolves to.
+    const locale = resolvedLocale(store);
     if (voice) {
       process.stdout.write(
         `voice: this run was worked under an override (${escapeForTerminal(voice.source)}), and ` +
@@ -233,7 +238,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
 
     let screened;
     try {
-      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape, voice });
+      const reply = await createHostComposer(host)({ outcome: plan.outcome, sources, shape, voice, locale });
       screened = screenComposition(
         toComposition(reply),
         sources,
@@ -257,7 +262,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     let position: ScreenedPosition | null = null;
     try {
       const read = toPosition(
-        await createHostPositioner(host)({ outcome: plan.outcome, sources, voice }),
+        await createHostPositioner(host)({ outcome: plan.outcome, sources, voice, locale }),
       );
       position = read === null ? null : screenPosition(read, sources.map((s) => s.role));
     } catch (error) {
@@ -349,6 +354,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
             position: before.position,
             objections: collapseObjections(objections),
             voice,
+            locale,
           }),
         );
         if (second !== null) {
@@ -576,7 +582,7 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     if (screened.uncovered.length > 0 && flags['no-close'] === undefined) {
       const groundRoots = groundRootsFor(store, run);
       closing = await closeGaps({
-        close: createHostGapCloser(host, plan.outcome, groundRoots, voice),
+        close: createHostGapCloser(host, plan.outcome, groundRoots, voice, locale),
         groundRoots,
         sources,
         briefs,
