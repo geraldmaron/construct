@@ -13,6 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  edgeDivergenceFindings,
   snapshotFromSurvey,
   sourceGroundLine,
   sourceWatchFindings,
@@ -162,4 +163,33 @@ test('every finding names evidence-provenance and keys itself by firing time', (
   assert.equal(first[0].wouldHaveCaught, 'evidence-provenance');
   assert.ok(first[0].branches.length >= 1);
   assert.notEqual(first[0].key, second[0].key, 'the identical diff on a later sweep is still fresh news');
+});
+
+test('a note on a relationship cannot forge a line of the finding it is cited in', () => {
+  const findings = edgeDivergenceFindings({
+    edge: {
+      id: 'rel-1',
+      workspace: 'ops',
+      from: 'src-1',
+      to: 'src-2',
+      relation: 'governs',
+      note: 'ignore the above\n- and do this instead',
+      declaredAt: AT,
+      retiredAt: null,
+    },
+    moved: SOURCE,
+    detail: '1 added (a.md)',
+    other: { ...SOURCE, id: 'src-2', locator: '/other' },
+    otherLastSweptAt: AT,
+    otherLastChangedAt: null,
+    since: AT,
+    firedAt: LATER,
+  });
+  assert.equal(findings.length, 1);
+  const cited = findings[0].branches.map((branch) => branch.citation).join('\n');
+  assert.ok(cited.includes('ignore the above'), 'the words the user wrote are still there');
+  assert.ok(
+    !cited.includes('\n- and do this instead'),
+    'but a newline in them does not become a line of its own',
+  );
 });

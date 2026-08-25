@@ -6,6 +6,7 @@ import {
   addSource,
   authorityLabel,
   docsLocatorProblem,
+  getSource,
   retireSource,
   setSourceDeclaration,
   setSourceShape,
@@ -22,7 +23,18 @@ import type {
   SourceKind,
   SurveyEmphasis,
 } from '../kernel/store/sources.ts';
+import {
+  declareSourceEdge,
+  getSourceEdge,
+  relationPhrase,
+  retireSourceEdge,
+  SOURCE_RELATIONS,
+  sourceEdgesFor,
+} from '../kernel/store/source-edges.ts';
+import type { SourceEdge, SourceRelation } from '../kernel/store/source-edges.ts';
+import type { Store } from '../kernel/store/open.ts';
 import { DOCUMENT_CAP } from '../hosts/sources.ts';
+import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
 
@@ -34,7 +46,11 @@ const SOURCE_USAGE =
   '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] ' +
   '[--sensitive] [--not-sensitive]\n' +
   '       construct source list [--workspace=<name>] [--all]\n' +
-  '       construct source retire --id=<source-id>\n';
+  '       construct source retire --id=<source-id>\n' +
+  '       construct source relate --from=<source-id> --to=<source-id> ' +
+  `--as=<${SOURCE_RELATIONS.join('|')}> [--note=<one line>] [--workspace=<name>]\n` +
+  '       construct source relations [--workspace=<name>] [--all]\n' +
+  '       construct source unrelate --id=<relationship-id>\n';
 
 /**
  * What a user said about a source, printed the same way wherever it is shown.
@@ -47,6 +63,19 @@ function declarationLine(declaration: SourceDeclaration): string {
     (declaration.sensitive ? ', sensitive' : '') +
     ']' +
     (declaration.relevance === '' ? '' : `  ${declaration.relevance}`)
+  );
+}
+
+/**
+ * A relationship in the words its author used, printed the same way wherever
+ * it is shown. Locators rather than ids, because a reader recognizes the place
+ * their material lives and does not recognize `src-20260825…`.
+ */
+function relationLine(store: Store, edge: SourceEdge): string {
+  const where = (id: string): string => getSource(store, id)?.locator ?? id;
+  return (
+    `${where(edge.from)} ${relationPhrase(edge.relation)} ${where(edge.to)}` +
+    (edge.note.trim() === '' ? '' : `  — ${edge.note.trim()}`)
   );
 }
 
@@ -102,6 +131,13 @@ function readDeclarationFlags(
  * or an aspiration, why it is here, whether it is sensitive. It is stated
  * here or not at all: nothing else in this system writes a declaration, so
  * every tier a reader sees is one a person typed.
+ *
+ * Relating is the same kind of statement about a pair: this strategy governs
+ * that repository, this plan supersedes that one, these two cover the same
+ * initiative. It is read where it changes something — which material reaches
+ * which dispatch, and what a watch over both ends raises when one of them
+ * moves — and like a description it is stated here or proposed and decided,
+ * never inferred into force.
  */
 export function source(argv: string[]): number {
   const sub = argv[0];
@@ -245,6 +281,97 @@ export function source(argv: string[]): number {
         return 1;
       }
       process.stdout.write(`retired ${id}\n`);
+      return 0;
+    });
+  }
+
+  if (sub === 'relate') {
+    const from = (flags.from ?? '').trim();
+    const to = (flags.to ?? '').trim();
+    const relation = flags.as ?? '';
+    if (from === '' || to === '' || !(SOURCE_RELATIONS as readonly string[]).includes(relation)) {
+      process.stderr.write(SOURCE_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      const at = now();
+      // Two relationships declared inside the same millisecond are two
+      // statements, not one, so the id is walked past whatever is already
+      // there rather than colliding and reading as a duplicate.
+      const stem = `rel-${at.replace(/[-:.TZ]/g, '')}-${relation}`;
+      let id = stem;
+      for (let nth = 2; getSourceEdge(store, id) !== null; nth += 1) id = `${stem}-${String(nth)}`;
+      try {
+        declareSourceEdge(store, {
+          id,
+          workspace,
+          from,
+          to,
+          relation: relation as SourceRelation,
+          note: flags.note ?? '',
+          declaredAt: at,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/UNIQUE/i.test(message)) {
+          process.stdout.write('already related that way; the earlier statement stands.\n');
+          return 0;
+        }
+        process.stderr.write(`source: ${escapeForTerminal(message)}\n`);
+        return 1;
+      }
+      process.stdout.write(
+        `related ${id}: ${relationLine(store, {
+          id,
+          workspace,
+          from,
+          to,
+          relation: relation as SourceRelation,
+          note: flags.note ?? '',
+          declaredAt: at,
+          retiredAt: null,
+        })}\n`,
+      );
+      return 0;
+    });
+  }
+
+  if (sub === 'relations') {
+    return withStore((store) => {
+      const rows = sourceEdgesFor(store, workspace, { includeRetired: flags.all === 'true' });
+      if (rows.length === 0) {
+        process.stdout.write(`no relationships declared for workspace ${workspace}\n`);
+        return 0;
+      }
+      for (const row of rows) {
+        process.stdout.write(
+          `${row.id}  ${relationLine(store, row)}` +
+            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
+            '\n',
+        );
+      }
+      return 0;
+    });
+  }
+
+  if (sub === 'unrelate') {
+    const id = (flags.id ?? '').trim();
+    if (id === '') {
+      process.stderr.write(SOURCE_USAGE);
+      return 2;
+    }
+    return withStore((store) => {
+      try {
+        retireSourceEdge(store, id, now());
+      } catch (error) {
+        process.stderr.write(
+          `source: ${escapeForTerminal(error instanceof Error ? error.message : String(error))}\n`,
+        );
+        return 1;
+      }
+      process.stdout.write(
+        `retired ${id}; it stops governing what any run is assembled from, and stays on the record\n`,
+      );
       return 0;
     });
   }

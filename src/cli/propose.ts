@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 import type { Store } from '../kernel/store/open.ts';
 import {
   DOC_EDIT_KINDS,
+  decisionOf,
   getProposal,
   getSource,
   pendingProposals,
@@ -30,6 +31,13 @@ import {
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
 import type { DocEditKind, Source, WriteProposal } from '../kernel/store/sources.ts';
+import {
+  proposeSourceEdge,
+  relationPhrase,
+  SOURCE_RELATIONS,
+  sourceEdgesTouching,
+} from '../kernel/store/source-edges.ts';
+import type { SourceRelation } from '../kernel/store/source-edges.ts';
 import { listTasks } from '../kernel/store/tasks.ts';
 import { planFor } from '../kernel/store/plans.ts';
 import {
@@ -73,6 +81,11 @@ const PROPOSE_USAGE =
   '         [--workspace=<name>] [--dry-run] [--host=<opencode|claude>]\n' +
   '         (labels and comments carry out under standing consent when a host is given; ' +
   'creates and updates always wait for a person)\n' +
+  '       construct propose relation --from=<source-id> --to=<source-id> ' +
+  `--as=<${SOURCE_RELATIONS.join('|')}>\n` +
+  '         --because=<what in the material says so> [--note=<one line>]\n' +
+  '         [--run=<id>] [--workspace=<name>] [--dry-run]\n' +
+  '         (never live on standing consent; it takes a decision you make)\n' +
   '       construct propose list [--workspace=<name>]\n';
 
 /**
@@ -337,6 +350,167 @@ function proposeDoc(flags: Record<string, string>): number {
 }
 
 /**
+ * Whether an earlier proposal of this exact relationship still stands, and the
+ * id this one should be filed under if it does not.
+ *
+ * The id is derived from the pair and the word so that proposing the same
+ * relationship twice does not fill the queue with the same row. What that
+ * derivation cannot do on its own is tell a relationship still in play from one
+ * whose life is over: a proposal rejected, or adopted and later retired, is
+ * settled, and a second look that reaches the same conclusion is a new
+ * statement about ground that has moved since. Refusing it would leave that
+ * pair unproposable through this command forever, with an exit code saying
+ * everything was fine.
+ *
+ * So an id is reused only while the earlier row is genuinely live — waiting for
+ * a decision, or approved and not yet carried out. Anything else mints a fresh
+ * one, walked past whatever is already there the way `source relate` walks its
+ * own.
+ *
+ * Whether the relationship itself already stands is asked of the relationship,
+ * never of the stem's own history: the row that adopted it may carry a fresh
+ * retry id, or the user may have declared it directly, and either way a
+ * relationship that exists is not proposed again.
+ */
+function settledRelationProposal(
+  store: Store,
+  stem: string,
+  triple: { readonly from: string; readonly to: string; readonly relation: SourceRelation },
+):
+  | { readonly standing: true; readonly id: string; readonly because: string; readonly live?: string }
+  | { readonly standing: false; readonly id: string } {
+  const live = sourceEdgesTouching(store, triple.from).find(
+    (edge) =>
+      edge.from === triple.from && edge.to === triple.to && edge.relation === triple.relation,
+  );
+  if (live !== undefined) {
+    return { standing: true, id: live.id, because: `it is live as ${live.id}`, live: live.id };
+  }
+  if (getProposal(store, stem) === null) return { standing: false, id: stem };
+  const decision = decisionOf(store, stem);
+  if (decision === null) {
+    return { standing: true, id: stem, because: 'it is still waiting for your decision' };
+  }
+  if (decision.verdict === 'approved') {
+    return { standing: true, id: stem, because: 'you approved it and it has not been carried out yet' };
+  }
+  // Rejected, or adopted and since retired. The pair is proposable again.
+  const fresh = `${stem}-${now().replace(/[-:.TZ]/g, '')}`;
+  let id = fresh;
+  for (let nth = 2; getProposal(store, id) !== null; nth += 1) id = `${fresh}-${String(nth)}`;
+  return { standing: false, id };
+}
+
+/**
+ * File a relationship between two declared sources that a model noticed, as a
+ * proposal and nothing more.
+ *
+ * A model reading two sources can see that one supersedes the other, or that
+ * both cover one initiative, well before anybody types it. That observation is
+ * worth having and is not worth acting on by itself: a relationship changes
+ * which material reaches which dispatch on every later run, and one that
+ * appeared without a person saying so would be Construct's guess wearing the
+ * user's authority. So this writes a row to be decided on, and the store is
+ * what refuses to make it live without a decision.
+ *
+ * The proposal names the `--from` source as its target, because that is the end
+ * the statement is made about, and it is filed at high risk — the store's word
+ * for "standing consent does not reach this". Standing consent is a blanket yes
+ * to small changes in someone else's tracker; reshaping the ground every future
+ * run is assembled from is not one of those.
+ */
+function proposeRelation(flags: Record<string, string>): number {
+  const from = (flags.from ?? '').trim();
+  const to = (flags.to ?? '').trim();
+  const relation = flags.as ?? '';
+  const because = (flags.because ?? '').trim();
+  if (from === '' || to === '' || !(SOURCE_RELATIONS as readonly string[]).includes(relation)) {
+    process.stderr.write(PROPOSE_USAGE);
+    return 2;
+  }
+  if (because === '') {
+    process.stderr.write(
+      'propose: a relationship nobody justified is a guess with a row around it.\n' +
+        '  --because=<what in the material says these two stand this way>\n',
+    );
+    return 2;
+  }
+  return withStore((store) => {
+    const asked = (flags.run ?? '').trim();
+    const run = asked === '' || asked === 'true' ? '' : asked;
+    const recorded = run === '' ? null : planFor(store, run);
+    if (run !== '' && !recorded) {
+      process.stderr.write(`propose: no plan recorded for ${run}\n`);
+      return 1;
+    }
+    const workspace = flags.workspace?.trim() || recorded?.workspace || workspaceFlag(flags);
+    const where = (id: string): string => getSource(store, id)?.locator ?? id;
+    const note = (flags.note ?? '').trim();
+    const change =
+      `relate ${where(from)} ${relationPhrase(relation as SourceRelation)} ${where(to)}` +
+      (note === '' ? '' : ` — ${note}`);
+    const at = now();
+    const settled = settledRelationProposal(store, `prop-${relation}-${from}-${to}`, {
+      from,
+      to,
+      relation: relation as SourceRelation,
+    });
+    if (settled.standing) {
+      if (settled.live !== undefined) {
+        process.stdout.write(
+          `this relationship already stands as ${settled.live}; what exists is not proposed again.\n` +
+            `  construct source relations --workspace=${workspace}\n`,
+        );
+        return 0;
+      }
+      process.stdout.write(
+        `already proposed as ${settled.id}, and ${settled.because}.\n` +
+          `  construct decide --pending --workspace=${workspace}\n`,
+      );
+      return 0;
+    }
+    const id = settled.id;
+    const row: WriteProposal = {
+      id,
+      workspace,
+      run: run === '' ? null : run,
+      source: from,
+      change,
+      justification: because,
+      risk: 'high',
+      proposedAt: at,
+    };
+    process.stdout.write('as the queue will show it:\n\n');
+    writeProposalRow(store, row, writeConsentAllowsLowRisk(store, workspace));
+
+    if (flags['dry-run'] !== undefined) {
+      process.stdout.write('\nnothing was filed: --dry-run shows what would be proposed.\n');
+      return 0;
+    }
+    try {
+      proposeSourceEdge(store, row, {
+        from,
+        to,
+        relation: relation as SourceRelation,
+        note,
+        recordedAt: at,
+      });
+    } catch (error) {
+      process.stderr.write(`propose: ${escapeForTerminal((error as Error).message)}\n`);
+      return 1;
+    }
+    process.stdout.write(
+      `\nfiled ${id}.\n` +
+        'Nothing reads this relationship yet, and nothing here can make it live: it becomes one\n' +
+        'only through a decision you make, and never on standing consent.\n' +
+        `  construct decide --approve=${id} "<why>"\n` +
+        `  construct decide --apply=${id}\n`,
+    );
+    return 0;
+  });
+}
+
+/**
  * One tracker's current issues, read from a file the caller supplies — the
  * same reason cli/reconcile.ts's --live works this way: Construct holds no
  * tracker connectors, so it never fetches a live issue on its own.
@@ -543,6 +717,8 @@ export async function propose(argv: string[], hostOverride?: HostAdapter): Promi
   if (words[0] === 'doc') return proposeDoc(flags);
 
   if (words[0] === 'triage') return proposeTriage(flags, hostOverride);
+
+  if (words[0] === 'relation') return proposeRelation(flags);
 
   if (words.length > 0) {
     process.stderr.write(`propose: unknown subcommand "${words[0]}"\n${PROPOSE_USAGE}`);

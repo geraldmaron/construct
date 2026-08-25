@@ -210,6 +210,45 @@ point: demote a plan to aspirational and the work resting on it should stop
 looking settled. What the roles were actually told at dispatch is kept in the
 work log (`construct log --run=<id>`), so the history is still there.
 
+A description says what one source is. Say how two of them stand to each other
+and Construct starts reading the pair:
+
+```bash
+construct source relate --from=<source-id> --to=<source-id> --as=governs --note="the strategy sets what the repo is held to"
+construct source relations
+construct source unrelate --id=<relationship-id>
+```
+
+The words are `governs`, `depends-on`, `feeds`, `supersedes`,
+`covers-same-initiative` and `contradicts`, and each one changes something. A
+run with several roles divides its ground along them: sources that govern,
+feed, depend on or contradict each other always reach the same role together,
+sources you said cover one initiative are spread across different roles so
+nobody pays twice for one view, and a source something supersedes is kept out
+of any dispatch carrying its replacement. Roles are told the relationships in
+your own words, and a finding resting on both sides of one has to say which
+boundary it crossed.
+
+Watches read them too. Put a watch on both ends of a relationship and a sweep
+that sees one side move while the other stands still raises that as its own
+decision, naming the relationship it came from — which is the difference
+between "a file changed" and "the plan no longer follows the strategy it is
+held to".
+
+A model can propose a relationship it noticed, and a proposal is all it ever
+is until you decide:
+
+```bash
+construct propose relation --from=<source-id> --to=<source-id> --as=supersedes --because="the newer plan names the older one as replaced"
+construct decide --approve=<proposal-id> "<why>"
+construct decide --apply=<proposal-id>
+```
+
+Standing consent never covers one of these, whatever else it covers: a
+relationship reshapes what every later run is assembled from, so it waits for
+you. Applying needs no host — the change lands in your own store, not in
+anyone else's system.
+
 Once ground is declared, you can ask what disagrees inside it without waiting
 for a run to notice:
 

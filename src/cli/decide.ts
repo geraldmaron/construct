@@ -14,6 +14,8 @@ import {
   pendingProposals,
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
+import { adoptProposedEdge, proposedSourceEdge } from '../kernel/store/source-edges.ts';
+import type { SourceEdge } from '../kernel/store/source-edges.ts';
 import { getDecision, resolveDecision } from '../kernel/store/decisions.ts';
 import { recordLesson } from '../kernel/store/lessons.ts';
 import { planFor } from '../kernel/store/plans.ts';
@@ -36,7 +38,8 @@ const DECIDE_USAGE =
   '       construct decide --reject=<proposal-id> "<why>"\n' +
   '       construct decide --apply=<proposal-id> --host=<opencode|claude> ' +
   '[--model=…] [--binary=…] [--dir=…] [--timeout=<minutes>]\n' +
-  '         (codex and cursor dispatch read-only and cannot carry a change out)\n';
+  '         (codex and cursor dispatch read-only and cannot carry a change out)\n' +
+  '         (a proposed relationship between your own sources needs no host)\n';
 
 /**
  * The outward-write queue, made visible.
@@ -112,6 +115,36 @@ function decideWrite(proposal: string, verdict: 'approved' | 'rejected', reason:
  * unapplied, which is the honest state and the one that leaves the change
  * with the person who approved it.
  */
+/**
+ * Carry out an approved relationship between two of the user's own sources, or
+ * answer null when the proposal is not one and belongs on the host path.
+ *
+ * The authority is the store's, not this function's: `adoptProposedEdge` runs
+ * the same `markApplied` gate every other applied change passes, inside the
+ * transaction that declares the relationship, so an undecided or rejected
+ * proposal takes the declaration down with it rather than leaving a
+ * relationship live with no decision behind it.
+ */
+function adoptRelation(proposal: string): number | null {
+  return withStore((store) => {
+    if (proposedSourceEdge(store, proposal) === null) return null;
+    let edge: SourceEdge;
+    try {
+      edge = adoptProposedEdge(store, proposal, 'adopted by decision', now());
+    } catch (error) {
+      process.stderr.write(
+        `decide: ${proposal} was not adopted — ${escapeForTerminal((error as Error).message)}\n`,
+      );
+      return 1;
+    }
+    process.stdout.write(
+      `adopted ${proposal} as ${edge.id}; it is now read wherever ground is assembled.\n` +
+        '  construct source relations\n',
+    );
+    return 0;
+  });
+}
+
 async function applyApproved(
   proposal: string,
   host: HostFlags,
@@ -215,6 +248,14 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
   }
 
   if (flags.apply !== undefined) {
+    // A relationship between the user's own sources lands in the user's own
+    // store, so no host is asked and none is needed. Checked before the host
+    // flags are parsed, because demanding a host for a change that reaches
+    // nobody else's system would be an obstacle invented on the way to a local
+    // write.
+    const local = adoptRelation(flags.apply.trim());
+    if (local !== null) return local;
+
     let host: HostFlags;
     try {
       host = parseHostFlags(flags);

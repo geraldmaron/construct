@@ -331,11 +331,18 @@ export function compareSourceReads(
  * documents. Derived from the read record, never from the declarations alone:
  * a source whose every read row is unreachable licenses nothing, because a
  * root nobody could survey is a root the citation gate cannot vouch for.
+ *
+ * `only` narrows the answer to a named set of sources, which is what a
+ * dispatch holding a partitioned slice of the run's ground passes: the
+ * assignment and the citation gate must judge against the same ground, so a
+ * role whose material was divided cannot be licensed the roots of the material
+ * it did not get.
  */
-export function groundRootsFor(store: Store, run: string): string[] {
+export function groundRootsFor(store: Store, run: string, only?: ReadonlySet<string>): string[] {
   const reachable = new Set(
     sourceReadsFor(store, run)
       .filter((read) => read.coverage !== 'unreachable')
+      .filter((read) => only === undefined || only.has(read.source))
       .map((read) => read.source),
   );
   const roots: string[] = [];

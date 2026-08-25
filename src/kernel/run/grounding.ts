@@ -96,6 +96,56 @@ export function declaredSourcesBlock(declarations: readonly DeclaredSource[]): s
 }
 
 /**
+ * One relationship a user declared between two of the sources behind this
+ * dispatch, carried to the role in the words they used.
+ *
+ * Locators rather than ids, because the role reads paths and never sees a
+ * source id; the relationship word is Construct's closed vocabulary, and the
+ * note is the user's own sentence.
+ */
+export interface DeclaredRelation {
+  readonly fromLocator: string;
+  readonly toLocator: string;
+  /** How the two stand, read from `fromLocator` towards `toLocator`. */
+  readonly phrase: string;
+  /** Why the user says they stand that way. Their line, possibly empty. */
+  readonly note: string;
+}
+
+/**
+ * The relationships block: what the workspace says these sources are to each
+ * other, and what a finding owes when it rests on both sides of one.
+ *
+ * This is the provenance half of a declared relationship. The partition
+ * decides what a dispatch holds; this decides what its findings have to say
+ * about a claim that reaches across a boundary somebody drew. Every field
+ * renders through `escapeForPrompt` for the reason the material lines do: a
+ * locator and a user's own sentence both arrive here as text somebody else
+ * wrote.
+ */
+export function declaredRelationsBlock(relations: readonly DeclaredRelation[]): string {
+  if (relations.length === 0) return '';
+  const lines = relations.map((relation) => {
+    const note =
+      relation.note.trim() === '' ? '' : ` The user says: "${escapeForPrompt(relation.note.trim())}"`;
+    return (
+      `- ${escapeForPrompt(relation.fromLocator)} ${escapeForPrompt(relation.phrase)} ` +
+      `${escapeForPrompt(relation.toLocator)}.${note}`
+    );
+  });
+  return (
+    'How the person who declared these sources says they stand to each other. ' +
+    'These are their statements about their own material, and they are the only ' +
+    'relationships in force — do not infer others:\n' +
+    `${lines.join('\n')}\n` +
+    'A finding that rests on both sides of one of these has crossed a boundary ' +
+    'somebody drew, so say which one, in the finding: name the two sources and ' +
+    'the relationship between them. A reader deciding what to do with the ' +
+    'finding needs to know it depends on that relationship holding.'
+  );
+}
+
+/**
  * How to work material into findings.
  *
  * Every sentence here is a discipline a shallow run fails: reading each
@@ -275,6 +325,7 @@ export function groundedMaterialProtocol(
   material: readonly Material[],
   groundRoots: readonly string[] = [],
   declarations: readonly DeclaredSource[] = [],
+  relations: readonly DeclaredRelation[] = [],
 ): string {
   const lines = material.map(
     (m) =>
@@ -301,10 +352,12 @@ export function groundedMaterialProtocol(
         `actually read is not a citation.\n\n${GROUND_EXHAUSTION_RULE}`
       : '';
   const declared = declaredSourcesBlock(declarations);
+  const related = declaredRelationsBlock(relations);
   return (
     'Your material for this task is these documents, and nothing else around ' +
     'you. Files that happen to sit near you are not evidence for it.\n' +
-    `${lines.join('\n')}${gap}${declared === '' ? '' : `\n\n${declared}`}${license}\n\n` +
+    `${lines.join('\n')}${gap}${declared === '' ? '' : `\n\n${declared}`}` +
+    `${related === '' ? '' : `\n\n${related}`}${license}\n\n` +
     `${GROUND_IS_MATERIAL_RULE}\n\n${GROUNDED_SYNTHESIS_PROTOCOL}`
   );
 }

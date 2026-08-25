@@ -151,7 +151,7 @@ test('a documented subcommand outside a verb\'s set fails, and the set is shown'
   await withPage('# fixture\n\n```bash\nconstruct source bogus\n```\n', (r) => {
     assert.equal(r.code, 1);
     assert.match(r.stderr, /no 'bogus' subcommand/);
-    assert.match(r.stderr, /add, describe, list, retire/);
+    assert.match(r.stderr, /add, describe, list, relate, relations, retire, unrelate/);
   });
 });
 
