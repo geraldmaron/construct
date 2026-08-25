@@ -19,6 +19,7 @@ import {
   recordFiring,
   retireStanding,
 } from '../kernel/store/standing.ts';
+import { transactImmediate } from '../kernel/store/open.ts';
 import { DOMAINS } from '../kernel/implication/domains.ts';
 import { startRun, startRunSelected } from '../kernel/run/outcome.ts';
 import type { StartedRun } from '../kernel/run/outcome.ts';
@@ -61,26 +62,44 @@ export interface DueStandingWork {
  * daemon) fire the same intentions the CLI does and leave the working to
  * whoever is allowed to pay for it.
  */
-export function fileDueStanding(store: Store, at: () => string): DueStandingWork {
-  const due = dueStanding(store, at());
-  const runs: FiledStanding[] = [];
-  for (const item of due) {
-    const firedAt = at();
-    const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
-    // Two firings inside one clock tick must not share a run id.
-    let runId = base;
-    for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
-    const started =
-      item.domains !== null
-        ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
-        : startRun(store, { runId, outcome: item.outcome, at: firedAt });
-    planRun(store, started, null, item.workspace, firedAt);
-    // Recorded after the run exists: a crash between the two re-files on the
-    // next firing, which idempotent runs absorb; the other order could mark
-    // fired an intention that never ran.
-    recordFiring(store, { standing: item.id, run: runId, firedAt });
-    runs.push({ standing: item.id, run: runId, everyMinutes: item.everyMinutes, started });
-  }
+export function fileDueStanding(
+  store: Store,
+  at: () => string,
+  /**
+   * Where the filing's own narration goes. A firer with no terminal — the
+   * resident sweeper — passes its own sink and keeps its log one stream.
+   */
+  say: (text: string) => void = (text) => {
+    process.stdout.write(text);
+  },
+): DueStandingWork {
+  // Reading what is due and recording the firings are one act, under the write
+  // lock from the first statement. Two firers is the ordinary case — a
+  // calendar entry can fire while a daemon sweeps — and separately they would
+  // both read the same intention as due and both file it. Serialized, the
+  // second reads the first one's recorded firing and finds nothing due.
+  const runs = transactImmediate(store, () => {
+    const due = dueStanding(store, at());
+    const filed: FiledStanding[] = [];
+    for (const item of due) {
+      const firedAt = at();
+      const base = `run-${firedAt.replace(/[-:.TZ]/g, '')}`;
+      // Two firings inside one clock tick must not share a run id.
+      let runId = base;
+      for (let n = 2; planFor(store, runId) !== null; n += 1) runId = `${base}-${String(n)}`;
+      const started =
+        item.domains !== null
+          ? startRunSelected(store, { runId, outcome: item.outcome, at: firedAt, domains: item.domains })
+          : startRun(store, { runId, outcome: item.outcome, at: firedAt });
+      planRun(store, started, null, item.workspace, firedAt, undefined, say);
+      // Recorded after the run exists: a crash between the two re-files on the
+      // next firing, which idempotent runs absorb; the other order could mark
+      // fired an intention that never ran.
+      recordFiring(store, { standing: item.id, run: runId, firedAt });
+      filed.push({ standing: item.id, run: runId, everyMinutes: item.everyMinutes, started });
+    }
+    return filed;
+  });
 
   // A firing recorded is not a firing finished. A --due killed mid-flight
   // leaves pending or leased tasks on a run whose cadence now reads as

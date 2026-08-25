@@ -10,13 +10,17 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { standing } from '../../src/cli/index.ts';
+import { fileDueStanding } from '../../src/cli/standing.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
-import { firingsFor, listStanding } from '../../src/kernel/store/standing.ts';
+import { declareStanding, firingsFor, listStanding } from '../../src/kernel/store/standing.ts';
+import { sterile } from '../harness/sterile.ts';
 import { planFor } from '../../src/kernel/store/plans.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
 
@@ -76,6 +80,122 @@ function inStore<T>(fn: (store: ReturnType<typeof openStore>) => T): T {
     store.close();
   }
 }
+
+const RACE_STANDING = {
+  id: 'standing-race',
+  workspace: 'default',
+  outcome: 'watch the week for what no longer agrees',
+  domains: ['privacy'],
+  everyMinutes: 60,
+  declaredAt: '2026-08-03T00:00:00.000Z',
+};
+
+test('a firer with its own sink writes nothing to stdout', () => {
+  const fixture = sterile();
+  try {
+    const store = openStore(join(fixture.root, 'data', 'construct.db'));
+    try {
+      declareStanding(store, { ...RACE_STANDING, id: 'standing-sink', everyMinutes: 1 });
+
+      // The resident sweeper's stdout is a shared logfile whose every other
+      // line is timestamped. A filing that writes there directly lands
+      // unstamped in among them.
+      const captured: string[] = [];
+      const realOut = process.stdout.write.bind(process.stdout);
+      let leaked = 0;
+      (process.stdout as { write: unknown }).write = (): boolean => {
+        leaked += 1;
+        return true;
+      };
+      let filed: readonly { readonly run: string }[];
+      try {
+        filed = fileDueStanding(store, () => '2026-08-03T01:00:00.000Z', (text) => {
+          captured.push(text);
+        }).filed;
+      } finally {
+        (process.stdout as { write: unknown }).write = realOut;
+      }
+
+      assert.strictEqual(filed.length, 1, 'the intention was filed');
+      assert.strictEqual(leaked, 0, 'and said nothing to stdout');
+      assert.ok(captured.join('').includes('plan '), `the sink got it instead: ${captured.join('')}`);
+    } finally {
+      store.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('two firers racing one due intention file it exactly once', async () => {
+  // A calendar entry firing while a daemon sweeps is the ordinary case, and
+  // separately each would read the same intention as due and file it. Two
+  // processes, released at one wall-clock moment against one store file.
+  const fixture = sterile();
+  try {
+    const dbPath = join(fixture.root, 'data', 'construct.db');
+    const seeded = openStore(dbPath);
+    declareStanding(seeded, RACE_STANDING);
+    seeded.close();
+
+    const src = fileURLToPath(new URL('../../src/', import.meta.url));
+    const releaseAt = Date.now() + 3000;
+    const script =
+      `const { openStore } = await import(${JSON.stringify(`${src}kernel/store/open.ts`)});\n` +
+      `const { fileDueStanding } = await import(${JSON.stringify(`${src}cli/standing.ts`)});\n` +
+      `const store = openStore(${JSON.stringify(dbPath)});\n` +
+      `while (Date.now() < ${String(releaseAt)}) {}\n` +
+      `const { filed } = fileDueStanding(store, () => '2026-08-03T02:00:00.000Z', () => {});\n` +
+      `process.stdout.write('filed=' + String(filed.length));\n`;
+
+    const firers = await Promise.all(
+      [0, 1].map(
+        async (index) =>
+          new Promise<string>((resolve) => {
+            // Opening the store is its own write, and two opens landing
+            // together contend over that instead of over the firing. Staggered
+            // so what collides is the moment the barrier releases.
+            setTimeout(() => {
+            const child = spawn(process.execPath, ['--input-type=module', '--eval', script], {
+              env: { ...process.env, XDG_DATA_HOME: join(fixture.root, 'share') },
+            });
+            let out = '';
+            child.stdout.setEncoding('utf8');
+            child.stdout.on('data', (chunk: string) => {
+              out += chunk;
+            });
+            let err = '';
+            child.stderr.setEncoding('utf8');
+            child.stderr.on('data', (chunk: string) => {
+              err += chunk;
+            });
+            child.on('close', () => {
+              resolve(out === '' ? err : out);
+            });
+            }, index * 500);
+          }),
+      ),
+    );
+
+    const reopened = openStore(dbPath);
+    try {
+      assert.strictEqual(
+        firingsFor(reopened, RACE_STANDING.id).length,
+        1,
+        `one firing on the record, not two: ${firers.join(' | ')}`,
+      );
+    } finally {
+      reopened.close();
+    }
+    assert.deepStrictEqual(
+      firers.map((line) => line.trim()).sort(),
+      ['filed=0', 'filed=1'],
+      'and only one firer believed it had filed anything',
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
 
 test('declaring a standing outcome stores the intention and runs nothing', async () => {
   const { code, out } = await runAll([

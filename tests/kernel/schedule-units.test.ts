@@ -13,6 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ALWAYS_ON_COMMAND,
   ALWAYS_ON_LABEL,
   ALWAYS_ON_UNIT,
   SCHEDULE_LABEL,
@@ -183,6 +184,7 @@ function alwaysOnDarwin() {
   return alwaysOnPlan({
     platform: 'darwin',
     dir: '/home/somebody/Library/LaunchAgents',
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
     uid: 501,
     ...BIN,
   });
@@ -192,6 +194,7 @@ function alwaysOnLinux() {
   return alwaysOnPlan({
     platform: 'linux',
     dir: '/home/somebody/.config/systemd/user',
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
     uid: 1000,
     ...BIN,
   });
@@ -223,7 +226,7 @@ test('the always-on systemd unit is a restarted long-running process, not a ones
   const [unit] = alwaysOnLinux().units;
   assert.match(unit.path, /construct-daemon\.service$/);
   assert.match(unit.text, /^Type=exec$/m);
-  assert.match(unit.text, /^ExecStart=.*"daemon" "run" "--foreground"$/m);
+  assert.match(unit.text, /^ExecStart=.*"daemon" "run" "--foreground" "--idle-exit=never"$/m);
   assert.match(unit.text, /^Restart=on-failure$/m);
   assert.match(unit.text, /^RestartSec=5$/m);
   assert.match(unit.text, /^MemoryHigh=192M$/m);
@@ -233,6 +236,35 @@ test('the always-on systemd unit is a restarted long-running process, not a ones
   assert.match(unit.text, /^RestrictAddressFamilies=AF_UNIX$/m);
   assert.match(unit.text, /^WantedBy=default\.target$/m);
   assert.doesNotMatch(unit.text, /^\[Timer\]/m, 'always-on has no timer: the unit itself stays up');
+});
+
+test('the always-on unit turns the idle clock off, on both platforms', () => {
+  // Both supervisors restart on crash and only on crash, so a daemon that
+  // exited cleanly on a quiet machine would stay down: an always-on tier that
+  // is not always on. The flag is what keeps it up.
+  assert.ok(ALWAYS_ON_COMMAND.includes('--idle-exit=never'), ALWAYS_ON_COMMAND.join(' '));
+  assert.match(alwaysOnDarwin().units[0].text, /<string>--idle-exit=never<\/string>/);
+  assert.match(alwaysOnLinux().units[0].text, /"--idle-exit=never"/);
+});
+
+test('the always-on launchd job keeps the daemon log, which launchd would otherwise discard', () => {
+  const [unit] = alwaysOnDarwin().units;
+  assert.match(unit.text, /<key>StandardOutPath<\/key>\s*<string>[^<]*daemon\.log<\/string>/);
+  assert.match(unit.text, /<key>StandardErrorPath<\/key>\s*<string>[^<]*daemon\.log<\/string>/);
+});
+
+test('a percent or a dollar in a path reaches systemd as itself, not as a specifier', () => {
+  const [unit] = alwaysOnPlan({
+    platform: 'linux',
+    dir: '/home/somebody/.config/systemd/user',
+    uid: 1000,
+    nodePath: '/opt/node 50%/bin/node',
+    cliPath: '/opt/con$truct/bin/construct.mjs',
+    logPath: '/home/somebody/.local/state/construct/daemon.log',
+  }).units;
+  // systemd reads %% as a literal percent and $$ as a literal dollar inside a
+  // double-quoted word; anything else is substituted before exec.
+  assert.match(unit.text, /^ExecStart="\/opt\/node 50%%\/bin\/node" "\/opt\/con\$\$truct\/bin\/construct\.mjs" /m);
 });
 
 test('no always-on unit carries an environment entry either', () => {
