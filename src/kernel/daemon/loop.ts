@@ -220,7 +220,7 @@ export async function startDaemon(config: DaemonConfig): Promise<DaemonHandle | 
    * than the interval, so a tick that finds the previous sweep still running
    * is skipped rather than queued.
    */
-  const tick = async (): Promise<void> => {
+  const tick = (): void => {
     if (stopping !== null) return;
     if (inFlight !== null) {
       config.log.write('sweep skipped: the previous one is still running');
@@ -249,14 +249,17 @@ export async function startDaemon(config: DaemonConfig): Promise<DaemonHandle | 
       }
     })();
     inFlight = run;
-    await run;
   };
 
+  // The timer runs on its own cadence rather than restarting itself when the
+  // sweep finishes. That is what makes the skip above a real branch: a sweep
+  // slower than the interval is the case worth protecting against, and a timer
+  // that waits for the sweep can never observe it.
   const schedule = (): void => {
     sweepTimer = setTimeout(() => {
-      void tick().finally(() => {
-        if (stopping === null) schedule();
-      });
+      if (stopping !== null) return;
+      schedule();
+      tick();
     }, jittered(config.sweepIntervalMs));
   };
   schedule();

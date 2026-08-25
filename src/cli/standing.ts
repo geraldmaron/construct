@@ -3,8 +3,9 @@
  * cadence.
  *
  * Declaring stores the intention and runs nothing; `--due` files and works
- * what has elapsed. There is deliberately no daemon and no waiting here: cron
- * or launchd owns the clock, and the store only knows what is due.
+ * what has elapsed. Nothing here waits or wakes: the clock belongs to whatever
+ * fires this verb — cron, launchd, or the opt-in resident a person raises with
+ * `construct daemon start` — and the store only knows what is due.
  */
 
 import { planFor } from '../kernel/store/plans.ts';
@@ -142,9 +143,9 @@ async function standingDue(argv: string[], hostOverride?: HostAdapter): Promise<
 /**
  * Standing outcomes: a recurring intention the spine re-files on its own
  * cadence. Declaring stores the intention and runs nothing; `--due` files and
- * works what has elapsed. There is deliberately no daemon and no waiting
- * here — cron or launchd owns the clock, exactly as docs/scheduled-operation.md
- * always had it, and the store only knows what is due.
+ * works what has elapsed. Nothing here waits or wakes — the clock belongs to
+ * whatever fires this verb, exactly as docs/scheduled-operation.md has it, and
+ * the store only knows what is due.
  */
 export async function standing(argv: string[], hostOverride?: HostAdapter): Promise<number> {
   const { flags, words } = splitFlags(argv);
