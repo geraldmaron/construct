@@ -184,6 +184,57 @@ test('a ratified state: local file whose store path is not ignored is refused, n
   }
 });
 
+test('a malformed project settings file never crashes resolution — it falls back to the home store with a clean notice', () => {
+  const r = repo();
+  const originalWrite = process.stderr.write.bind(process.stderr);
+  let captured = '';
+  process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
+    captured += typeof chunk === 'string' ? chunk : String(chunk);
+    return originalWrite(chunk as never, ...(rest as []));
+  }) as typeof process.stderr.write;
+  try {
+    mkdirSync(join(r.root, '.construct'), { recursive: true });
+    writeFileSync(join(r.root, '.construct', 'settings.json'), 'not json at all {{{');
+
+    const paths = homePaths(r.home);
+    openStore(storePath(paths)).close();
+
+    const location = resolveStoreLocation(r.root, {}, r.home);
+    assert.equal(location.local, false);
+    assert.equal(location.path, storePath(paths));
+    assert.match(captured, /project settings file was not applied/);
+    assert.match(captured, /not valid JSON/);
+  } finally {
+    process.stderr.write = originalWrite;
+    r.cleanup();
+  }
+});
+
+test('a project settings file carrying an unknown or consent-bearing key never crashes resolution', () => {
+  const r = repo();
+  const originalWrite = process.stderr.write.bind(process.stderr);
+  let captured = '';
+  process.stderr.write = ((chunk: unknown, ...rest: unknown[]) => {
+    captured += typeof chunk === 'string' ? chunk : String(chunk);
+    return originalWrite(chunk as never, ...(rest as []));
+  }) as typeof process.stderr.write;
+  try {
+    mkdirSync(join(r.root, '.construct'), { recursive: true });
+    writeFileSync(join(r.root, '.construct', 'settings.json'), '{"consent":"on"}');
+
+    const paths = homePaths(r.home);
+    openStore(storePath(paths)).close();
+
+    const location = resolveStoreLocation(r.root, {}, r.home);
+    assert.equal(location.local, false);
+    assert.equal(location.path, storePath(paths));
+    assert.match(captured, /project settings file was not applied/);
+  } finally {
+    process.stderr.write = originalWrite;
+    r.cleanup();
+  }
+});
+
 test('CONSTRUCT_STATE=home forces home even once redirection is ratified and active', () => {
   const r = repo();
   try {
