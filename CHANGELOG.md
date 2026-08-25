@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.16 — 2026-08-25
 
 What a source is, how two of them stand to each other, and how sure a finding
 is allowed to sound — three things a run previously had no way to say.
