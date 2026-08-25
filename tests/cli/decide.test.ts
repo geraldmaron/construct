@@ -363,3 +363,12 @@ test('the queue is one listing: propose list renders the same rows, and the inbo
   assert.match(out, /high risk is never covered by it/);
   assert.match(out, /A proposal moves only through a recorded decision/);
 });
+
+test('resolving a decision that is not open reads as a plain sentence, not an internal symbol', async () => {
+  const { code, err } = await run(async () => decide(['no-such-decision', 'my call']));
+  assert.equal(code, 1);
+  assert.match(err, /decide: no open decision no-such-decision/);
+  // The function that raised it is a debugging detail, not something the person
+  // who typed the command should read.
+  assert.doesNotMatch(err, /resolveDecision/);
+});
