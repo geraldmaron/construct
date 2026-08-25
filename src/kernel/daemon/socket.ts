@@ -15,15 +15,35 @@
  * the live daemon instead of raising a second one against the same store.
  */
 
+import { createHash } from 'node:crypto';
 import { chmodSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import type { Server } from 'node:net';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-/** Where the daemon binds. Keyed to the state directory, never to the cwd. */
-export function daemonSocketPath(paths: Paths): string {
-  return join(paths.stateDir, 'daemon.sock');
+/**
+ * A unix socket path must fit sun_path, which macOS caps at 104 bytes; a path
+ * past the cap fails listen() with EINVAL, so a state directory nested deep
+ * enough could never host a daemon at all. Held a few bytes under the cap so
+ * the count never argues with a trailing NUL.
+ */
+const SOCKET_PATH_BYTE_BUDGET = 100;
+
+/**
+ * Where the daemon binds. Keyed to the state directory, never to the cwd, so
+ * every checkout against the same store computes the same socket. When the
+ * natural path inside the state directory would overrun the sun_path budget,
+ * the key survives as a digest of the state directory in the system tmp dir —
+ * still one socket per store, from any client, just at an address short
+ * enough for the kernel to accept.
+ */
+export function daemonSocketPath(paths: Paths, tmpBase: string = tmpdir()): string {
+  const natural = join(paths.stateDir, 'daemon.sock');
+  if (Buffer.byteLength(natural, 'utf8') <= SOCKET_PATH_BYTE_BUDGET) return natural;
+  const key = createHash('sha256').update(paths.stateDir).digest('hex').slice(0, 16);
+  return join(tmpBase, `construct-daemon-${key}.sock`);
 }
 
 /** Where the daemon writes its account of itself. */
