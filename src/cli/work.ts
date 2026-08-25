@@ -40,6 +40,7 @@ import { dispatchFloorFor } from '../hosts/floors.ts';
 import { surveyResources } from '../hosts/census.ts';
 import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
+import { detectAmbientHost } from '../hosts/ambient.ts';
 import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
 import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
@@ -75,6 +76,18 @@ export interface WorkArgs {
    */
   readonly hostExplicit: boolean;
   /**
+   * The ambient host this process was detected running inside, when --host
+   * was not typed. Carried separately from `host` so a caller can tell "the
+   * default resolved to opencode because nothing was detected" apart from
+   * "the default resolved to opencode because that is what was ambiently
+   * detected" — the two print different things.
+   */
+  readonly ambientHost?: string;
+  /** The env var that matched, for `ambientHost` to be explained rather than asserted. */
+  readonly ambientMarker?: string;
+  /** Whether `ambientHost` has a wired dispatch adapter (false: detected but projection-only). */
+  readonly ambientWired: boolean;
+  /**
    * The user asking for a voice other than Construct's, in their own words.
    * Absent is the house voice — the case that needs no flag and no record.
    */
@@ -107,7 +120,7 @@ export const DEFAULT_SPEND_CEILING = 10;
  */
 const BOOLEAN_FLAGS = ['allow-distant-ground'] as const;
 
-export function parseWorkArgs(argv: string[]): WorkArgs {
+export function parseWorkArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): WorkArgs {
   const args: Record<string, string> = {};
   for (const arg of argv) {
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
@@ -125,9 +138,15 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     return value;
   };
 
-  // Validated against the one list the adapter switch reads, so a host added
-  // there is dispatchable here without a second edit that can be forgotten.
-  const host = args.host ?? 'opencode';
+  // The fallback, when nothing was typed: the session Construct is already
+  // running inside, when that session has a wired adapter — never a host the
+  // user is not in — and only then 'opencode', the last resort this project
+  // shipped with before ambient detection existed. A typed --host always wins
+  // outright; this is only what fills the silence.
+  const ambient = args.host === undefined ? detectAmbientHost(env) : null;
+  const ambientDefault =
+    ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host) ? ambient.host : undefined;
+  const host = args.host ?? ambientDefault ?? 'opencode';
   if (!(HOST_NAMES as readonly string[]).includes(host)) {
     throw new Error(`Invalid --host=${host}; expected ${HOST_NAMES.join('|')}`);
   }
@@ -157,6 +176,9 @@ export function parseWorkArgs(argv: string[]): WorkArgs {
     allowDistantGround: args['allow-distant-ground'] === 'true' || args['allow-distant-ground'] === '',
     host,
     hostExplicit: args.host !== undefined,
+    ambientHost: ambient?.host,
+    ambientMarker: ambient?.marker,
+    ambientWired: ambientDefault !== undefined,
     voice: args.voice?.trim() ? args.voice.trim() : undefined,
     ...(timeoutMs === undefined ? {} : { timeoutMs }),
   };
@@ -174,11 +196,20 @@ function selectionIsOurs(input: {
   readonly recordedHost: string | null;
   readonly binary: string | undefined;
   readonly overridden: boolean;
+  /**
+   * Whether this process is ambiently running inside a host that has a wired
+   * adapter. Treated like `hostExplicit`: a user physically in a session has
+   * already answered the question a cost-optimizing census would otherwise
+   * ask on their behalf, and the answer is "run it here" — the incident this
+   * carries a fix for was exactly the opposite of that being honored.
+   */
+  readonly ambientWired: boolean;
 }): boolean {
   if (input.overridden) return false;
   if (input.hostExplicit) return false;
   if (input.recordedHost !== null) return false;
   if (input.binary !== undefined) return false;
+  if (input.ambientWired) return false;
   return true;
 }
 
@@ -196,10 +227,11 @@ export async function work(
   argv: string[],
   hostOverride?: HostAdapter,
   probe?: ProbeExec,
+  env: NodeJS.ProcessEnv = process.env,
 ): Promise<number> {
   let args: WorkArgs;
   try {
-    args = parseWorkArgs(argv);
+    args = parseWorkArgs(argv, env);
   } catch (error) {
     process.stderr.write(`work: ${(error as Error).message}\n`);
     return 2;
@@ -306,6 +338,7 @@ export async function work(
         recordedHost: recorded?.host ?? null,
         binary,
         overridden: hostOverride !== undefined && probe === undefined,
+        ambientWired: args.ambientWired,
       })
     ) {
       const need: WorkNeed = needFor(pending.map((t) => t.brief));
@@ -329,6 +362,17 @@ export async function work(
         });
       }
       if (selection.host === null) {
+        // Reaching here means ambient detection either found nothing or found
+        // a host with no wired adapter (selectionIsOurs already sent a wired
+        // ambient host straight to dispatch, never through this refusal) — so
+        // the hint says which of those two it was, rather than only listing
+        // the hosts a census found unusable.
+        if (args.ambientHost !== undefined) {
+          process.stderr.write(
+            `  Running inside ${args.ambientHost} (detected via ${args.ambientMarker}), which has no ` +
+              'wired dispatch adapter — presence only, not execution.\n',
+          );
+        }
         process.stderr.write(
           `  Name one yourself to dispatch anyway: construct work --host=<${HOST_NAMES.join('|')}>\n`,
         );
