@@ -75,7 +75,10 @@ test('inbox --json round-trips and carries the open decisions', async () => {
         id: 'run-x:stance',
         run: 'run-x',
         question: 'ship now or wait?',
-        positions: [{ role: 'strategy-alignment', stance: 'ship now', citation: 'task:t-1#L1' }],
+        positions: [
+          { role: 'strategy-alignment', stance: 'ship now', citation: 'task:t-1#L1' },
+          { role: 'compliance', stance: 'wait for the audit', citation: 'task:t-2#L1' },
+        ],
         raisedAt: AT,
       });
     },
