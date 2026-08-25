@@ -155,6 +155,7 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
 
   const userConfigDir = paths.configDir;
   const userEmbedCache = path.join(paths.cacheDir, 'embeddings');
+  const userExtractCache = path.join(paths.cacheDir, 'extractions');
   const userConfigEnv = path.join(userConfigDir, 'config.env');
   const userLibLink = path.join(userConfigDir, 'lib');
   const userPgComposeDir = path.join(userConfigDir, 'services', 'postgres');
@@ -278,6 +279,17 @@ export function buildCleanupCatalog(target: CleanupTarget): CleanupItem[] {
       describe: () => 'Removes the cached embedding model. Skip if reinstalling soon — re-downloading takes a minute.',
       remove: () => removeUnlessSuccessorOwns(userEmbedCache),
       keeps: () => successorOwns(userEmbedCache),
+    },
+    {
+      id: 'machine-cache-extractions',
+      scope: 'machine',
+      risk: 'ask',
+      label: `${rel(home, userExtractCache)} (extracted document text)`,
+      detect: () => existsAny(userExtractCache),
+      describe: () =>
+        'Removes text extracted from surveyed binary documents (PDFs, office files). This is the readable contents of documents you grounded runs against — remove it once you are done with them. Re-extracted on the next survey.',
+      remove: () => removeUnlessSuccessorOwns(userExtractCache),
+      keeps: () => successorOwns(userExtractCache),
     },
     {
       id: 'machine-config-env',

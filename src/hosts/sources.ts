@@ -22,7 +22,7 @@
  * what a run may cite changes.
  */
 
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { basename, join, extname } from 'node:path';
 import {
@@ -218,8 +218,14 @@ function extractDocument(document: string, opts: ExtractOptions, docling: Doclin
   }
   const path = extractionPathFor(opts.cacheRoot, document);
   try {
-    mkdirSync(opts.cacheRoot, { recursive: true });
-    writeFileSync(path, read.text);
+    // Extracted text is the readable contents of a client's document — often
+    // the very material the survey exists to keep licensed. It is written only
+    // for this user, so the directory and file are locked to the owner. A
+    // create-time mode is masked by umask, so the mode is stated outright after.
+    mkdirSync(opts.cacheRoot, { recursive: true, mode: 0o700 });
+    chmodSync(opts.cacheRoot, 0o700);
+    writeFileSync(path, read.text, { mode: 0o600 });
+    chmodSync(path, 0o600);
   } catch (error) {
     return {
       outcome: 'refused',
