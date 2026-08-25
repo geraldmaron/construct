@@ -535,7 +535,7 @@ test('a citation claiming a deliverable line must resolve to one before anything
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', 'Report what the storage documents disagree about'],
     declareDocs(),
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     // The findings become proposals first, so the citation used below is one a
     // reader can actually follow rather than one invented for the test.
     () => main(['propose', `--run=${latestRun()}`, '--source=docs-1']),
