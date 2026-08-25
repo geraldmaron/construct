@@ -1,5 +1,49 @@
 # Changelog
 
+## 3.0.0-alpha.18 — 2026-08-25
+
+The experience shell, reshaped. Six isolated-environment walks of the install
+path (as an operator, an agent-session resident, a terminal-first dev, an
+embedded engineer, a multi-client consultant, and an automation context) found
+where what Construct does diverges from what a user reasonably expects and what
+best-in-class tools do. This release closes those gaps. The engine and its
+security posture were already sound; these are the surfaces around it.
+
+- **Bare commands are safe again.** `work`, `skills`, and `wire` no longer act
+  on a bare invocation: `work` with no `--run` (or `--all`) prints usage and
+  dispatches nothing rather than spending on every queued task; `skills` writes
+  only through `skills pack`; `wire` previews and needs `--yes`. Typing a command
+  to see what it does no longer mutates state or spends money.
+- **`--help` works everywhere, and unknown flags are refused.** Every verb takes
+  `--help`/`-h` and prints its own usage without acting — `outcome --help` no
+  longer records a run named "--help". An unknown flag on a verb that does not
+  take free text is rejected rather than silently ignored, so a typo fails closed.
+- **`construct help` is a map, not a wall.** The 39 verbs are grouped by task
+  with a one-line gloss each and the spine (`outcome → work → show → inbox →
+  verdict`) called out first, so the model is legible from the CLI itself.
+- **Client work stops pooling silently.** A repo can bind its workspace in
+  `.construct/settings.json`, and `source add`/`outcome` warn before landing in
+  the shared `default` workspace with nothing bound — closing the confidentiality
+  footgun where two clients' ground could mix by forgetting a flag.
+- **One place to see and set configuration.** `construct settings` shows every
+  setting — file-backed and store-backed — each labeled with where it lives, and
+  `settings set <key> <value>` writes it; `mode`/`consent`/`trust` remain as
+  aliases. Trust state resolves against the home store, so it stays correct even
+  under `state: local`, and a malformed project settings file degrades to the
+  home store with a clean notice instead of a stack trace.
+- **From installed to first outcome.** `doctor` ends with a next step, and a new
+  `construct init` confirms the host you are in, offers to wire MCP with your
+  consent, and prints the spine. A new `construct status` answers "where am I" in
+  one view — latest run, task counts, open decisions, pending proposals, host.
+- **Read verbs behave for scripts.** `show`/`log`/`plan` exit non-zero on a
+  not-found id (a real-but-empty run still exits 0), and a failed task no longer
+  renders as "success".
+- **The docs stop implying Claude Code is required.** A host-independence audit
+  confirmed there is no such dependency in the code — opencode is the default,
+  host selection is even-handed, and dispatch through codex was validated live
+  (RESEARCH-DECISIONS §28). The examples now use a host placeholder and lead with
+  `construct wire`, and four shipped verbs the README had omitted are documented.
+
 ## 3.0.0-alpha.17 — 2026-08-25
 
 The host you are already in runs the work, the machine keeps less than you
