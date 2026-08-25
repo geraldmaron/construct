@@ -317,3 +317,15 @@ test('an oversized log is rolled aside once at open', () => {
     fixture.cleanup();
   }
 });
+
+test('a state dir past the sun_path budget gets a digest-keyed socket in tmp, same for every client', () => {
+  const deep = '/tmp/' + 'x'.repeat(120);
+  const paths = { configDir: deep, stateDir: deep, dataDir: deep, cacheDir: deep };
+  const a = daemonSocketPath(paths, '/tmp/shortbase');
+  const b = daemonSocketPath(paths, '/tmp/shortbase');
+  assert.equal(a, b);
+  assert.ok(a.startsWith('/tmp/shortbase/construct-daemon-'), a);
+  assert.ok(Buffer.byteLength(a, 'utf8') <= 100, a);
+  const other = daemonSocketPath({ ...paths, stateDir: deep + 'y' }, '/tmp/shortbase');
+  assert.notEqual(a, other);
+});
