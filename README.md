@@ -36,7 +36,7 @@ construct outcome "We want to hire a contractor in Poland"
 
 `construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Those six are the spine, not the whole surface. The surface is 33 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
+Those six are the spine, not the whole surface. The surface is 37 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 
 | What you are doing | Verbs |
 |---|---|
@@ -46,12 +46,12 @@ Those six are the spine, not the whole surface. The surface is 33 verbs, countin
 | Outward changes and decisions | `propose` `audit` `decide` `waive` `revoke` |
 | Ground | `source` `review` |
 | Learning and governance | `lessons` `verdict` `staff` |
-| Workspace settings | `mode` `consent` `record` |
+| Workspace settings | `mode` `consent` `record` `settings` `trust` |
 | Composition and reconciliation | `compose` `reconcile` |
-| Presence | `serve` |
-| Maintenance | `doctor` `backup` `cleanup` `skills` `version` |
+| Presence | `serve` `wire` |
+| Maintenance | `doctor` `backup` `cleanup` `skills` `completions` `version` |
 
-There is a 34th, `role-serve`, and you never type it: the dispatcher launches it as one role's write surface, with the role's token in the environment rather than in arguments.
+Two more, `role-serve` and `host-pull-serve`, never appear in the usage line and you never type them: the dispatcher launches `role-serve` as one role's write surface, with the role's token in the environment rather than in arguments, and `host-pull-serve` is an off-by-default execution prototype.
 
 Which of these spend money is worth knowing before you run one. `ask`, `work`, `review`, `compose`, `notes` when it reasons over what you drop in, `outcome --host`, `propose --host` (the plain form as well as `triage`), `standing --due --host` (it runs the full work loop for every firing that has come due), and `decide --apply` all dispatch to a host. Everything else, all of reading back included, is free and local.
 
@@ -59,11 +59,13 @@ Running work needs an agent host present, because Construct never ships its own 
 
 **Four wired is not four equal, and the difference is declared rather than discovered.** Each adapter states its capabilities, and only `opencode` and `claude` declare `outward-write`, because only those two dispatch with no sandbox flag. Codex dispatches `-s read-only` and Cursor dispatches `--mode plan`, both probed, so a model under either cannot carry out a change however it is asked. That makes `decide --apply` an `opencode`-or-`claude` command, and it says so before a model call is spent rather than after one comes back having failed. The read-only posture is not a gap to work around: it is what makes a review role safe. The same asymmetry runs the other way, and it is stated on screen at apply time: an apply through an unconfined host runs with whatever reach your own install of that host grants it.
 
-If you already work inside an agent host, `construct serve` puts the spine inside it over MCP, so Claude Code, Codex, VS Code agent mode, and OpenCode reach the same store with no CLI to learn:
+If you already work inside an agent host, `construct serve` puts the spine inside it over MCP, so Claude Code, Codex, Cursor, VS Code agent mode, and OpenCode reach the same store with no CLI to learn. Each host registers an MCP server its own way, and the entry is always the same one: `construct serve`. A host with a CLI helper takes it in a line — Claude Code, for example:
 
 ```bash
 claude mcp add construct construct serve
 ```
+
+Run from inside a host, `construct wire` detects which host that is and writes the same entry into its MCP config for you; any host that reads a plain config file also takes the entry directly, and `docs/first-run.md`'s "other way in" shows that form.
 
 
 Chat dogfood without an IDE: nanobot WebUI with Construct attached over MCP
