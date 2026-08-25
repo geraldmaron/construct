@@ -1,0 +1,281 @@
+/**
+ * tests/kernel/daemon/loop.test.ts — the protections the resident is allowed
+ * to exist because of, each exercised rather than asserted.
+ *
+ * Every claim here is one the daemon's design rests on: a second instance
+ * cannot bind, a socket left behind by a dead one does not block a live one,
+ * a quiet daemon exits itself, a newer client retires an older daemon, a slow
+ * sweep does not overlap itself, and shutdown removes the file that is the
+ * daemon's identity. All of it runs in-process on tiny timers against a
+ * tmpdir, so nothing here leaves a process behind to be reaped by hand.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { createConnection } from 'node:net';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { ftruncateSync, openSync, closeSync } from 'node:fs';
+import { startDaemon } from '../../../src/kernel/daemon/loop.ts';
+import type { DaemonConfig, DaemonHandle, SweepOutcome } from '../../../src/kernel/daemon/loop.ts';
+import {
+  daemonSocketPath,
+  ensureStateDir,
+  socketFileExists,
+} from '../../../src/kernel/daemon/socket.ts';
+import { LOG_ROTATE_BYTES, openDaemonLog } from '../../../src/kernel/daemon/log.ts';
+import { encodeLine, LineReader, PROTOCOL } from '../../../src/kernel/daemon/protocol.ts';
+import type { Reply } from '../../../src/kernel/daemon/protocol.ts';
+import { sterile } from '../../harness/sterile.ts';
+
+const QUIET: SweepOutcome = { foundWork: false, lines: [] };
+
+interface Bench {
+  readonly socket: string;
+  readonly lines: string[];
+  readonly cleanup: () => void;
+  readonly config: (overrides?: Partial<DaemonConfig>) => DaemonConfig;
+}
+
+function bench(): Bench {
+  const fixture = sterile();
+  ensureStateDir(fixture.paths);
+  const socket = daemonSocketPath(fixture.paths);
+  const lines: string[] = [];
+  return {
+    socket,
+    lines,
+    cleanup: fixture.cleanup,
+    config: (overrides = {}) => ({
+      socketPath: socket,
+      version: '1.0.0',
+      idleExitSeconds: 100,
+      sweepIntervalMs: 100_000,
+      sweep: async () => QUIET,
+      counts: () => ({ standingDue: 0, watchDue: 0 }),
+      storePath: fixture.paths.dataDir,
+      log: {
+        write: (line) => {
+          lines.push(line);
+        },
+        close: () => {},
+      },
+      ...overrides,
+    }),
+  };
+}
+
+/** One raw exchange, so a test can greet as any version it likes. */
+async function exchange(
+  socketPath: string,
+  clientVersion: string,
+  request: unknown,
+): Promise<{ daemonVersion: string; reply: Reply }> {
+  return new Promise((resolve, reject) => {
+    const socket = createConnection(socketPath);
+    const reader = new LineReader();
+    let daemonVersion: string | null = null;
+    let reply: Reply | null = null;
+    socket.setEncoding('utf8');
+    socket.on('connect', () => {
+      socket.write(encodeLine({ v: clientVersion, proto: PROTOCOL }));
+      socket.write(encodeLine(request));
+    });
+    socket.on('data', (chunk: string) => {
+      for (const line of reader.push(chunk)) {
+        if (daemonVersion === null) daemonVersion = (JSON.parse(line) as { v: string }).v;
+        else reply = JSON.parse(line) as Reply;
+      }
+    });
+    socket.on('error', reject);
+    socket.on('close', () => {
+      if (daemonVersion === null || reply === null) reject(new Error('no answer'));
+      else resolve({ daemonVersion, reply });
+    });
+  });
+}
+
+async function stopped(handle: DaemonHandle): Promise<void> {
+  handle.stop('client');
+  await handle.stopped;
+}
+
+test('a second daemon cannot bind the socket a live one owns', async () => {
+  const b = bench();
+  try {
+    const first = await startDaemon(b.config());
+    assert.ok(first, 'the first daemon binds');
+    assert.ok(socketFileExists(b.socket), 'the socket file is on disk');
+    assert.strictEqual(statSync(b.socket).mode & 0o777, 0o600, 'the socket is private to its owner');
+
+    const second = await startDaemon(b.config());
+    assert.strictEqual(second, null, 'a second start finds the live owner and stands down');
+
+    await stopped(first);
+    assert.ok(!socketFileExists(b.socket), 'shutdown removes the socket file');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a socket file with nobody behind it is unlinked and rebound', async () => {
+  const b = bench();
+  try {
+    // What a killed daemon leaves: the path is occupied, and nothing answers.
+    writeFileSync(b.socket, '');
+    assert.ok(socketFileExists(b.socket), 'the stale file is in the way');
+
+    const daemon = await startDaemon(b.config());
+    assert.ok(daemon, 'a stale socket does not stop a fresh daemon');
+    await stopped(daemon);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('the socket binds under the injected state directory, never a real home', async () => {
+  const fixture = sterile();
+  try {
+    ensureStateDir(fixture.paths);
+    assert.ok(
+      daemonSocketPath(fixture.paths).startsWith(fixture.root),
+      'the daemon is keyed to the injected paths',
+    );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test('a daemon nobody talks to exits itself after the quiet period', async () => {
+  const b = bench();
+  try {
+    const daemon = await startDaemon(b.config({ idleExitSeconds: 0.2 }));
+    assert.ok(daemon);
+    const reason = await daemon.stopped;
+    assert.strictEqual(reason, 'idle', 'the idle clock is the orphan backstop');
+    assert.ok(!socketFileExists(b.socket), 'and it takes its socket with it');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a sweep that found work resets the quiet period', async () => {
+  const b = bench();
+  try {
+    let sweeps = 0;
+    const daemon = await startDaemon(
+      b.config({
+        idleExitSeconds: 0.4,
+        sweepIntervalMs: 100,
+        sweep: async () => {
+          sweeps += 1;
+          return { foundWork: sweeps < 4, lines: [`sweep ${String(sweeps)}`] };
+        },
+      }),
+    );
+    assert.ok(daemon);
+    await daemon.stopped;
+    assert.ok(sweeps >= 4, `work kept it alive past the quiet period (${String(sweeps)} sweeps)`);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a newer client retires an older daemon after its request is answered', async () => {
+  const b = bench();
+  try {
+    const daemon = await startDaemon(b.config({ version: '1.0.0' }));
+    assert.ok(daemon);
+    const { daemonVersion, reply } = await exchange(b.socket, '2.0.0', { cmd: 'status' });
+    assert.strictEqual(daemonVersion, '1.0.0', 'the daemon greets with its own version');
+    assert.ok(reply.ok, 'the request is finished before anything else happens');
+
+    const reason = await daemon.stopped;
+    assert.strictEqual(reason, 'stale-version', 'then the stale daemon exits itself');
+    assert.ok(!socketFileExists(b.socket), 'so the next start binds a fresh one');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a same-version client is served and the daemon stays up', async () => {
+  const b = bench();
+  try {
+    const daemon = await startDaemon(b.config({ version: '1.0.0' }));
+    assert.ok(daemon);
+    const { reply } = await exchange(b.socket, '1.0.0', { cmd: 'status' });
+    assert.ok(reply.ok && 'uptimeSeconds' in reply, 'status answers with the daemon it reached');
+    assert.ok(socketFileExists(b.socket), 'and the daemon is still there');
+    await stopped(daemon);
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a stop request stops it', async () => {
+  const b = bench();
+  try {
+    const daemon = await startDaemon(b.config());
+    assert.ok(daemon);
+    const { reply } = await exchange(b.socket, '1.0.0', { cmd: 'stop' });
+    assert.ok(reply.ok, 'the stop is acknowledged before the socket goes');
+    const reason = await daemon.stopped;
+    assert.strictEqual(reason, 'client');
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('a tick that lands on a running sweep is skipped, never queued', async () => {
+  const b = bench();
+  try {
+    let entered = 0;
+    let concurrent = 0;
+    let peak = 0;
+    const daemon = await startDaemon(
+      b.config({
+        sweepIntervalMs: 40,
+        sweep: async () => {
+          entered += 1;
+          concurrent += 1;
+          peak = Math.max(peak, concurrent);
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          concurrent -= 1;
+          return QUIET;
+        },
+      }),
+    );
+    assert.ok(daemon);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await stopped(daemon);
+    assert.ok(entered >= 2, `the sweep ran more than once (${String(entered)})`);
+    assert.strictEqual(peak, 1, 'and never twice at the same time');
+    assert.ok(
+      b.lines.some((line) => line.includes('sweep skipped')),
+      'and the ticks that landed on it said so',
+    );
+  } finally {
+    b.cleanup();
+  }
+});
+
+test('an oversized log is rolled aside once at open', () => {
+  const fixture = sterile();
+  try {
+    ensureStateDir(fixture.paths);
+    const logPath = `${fixture.paths.stateDir}/daemon.log`;
+    const fd = openSync(logPath, 'w');
+    ftruncateSync(fd, LOG_ROTATE_BYTES + 1);
+    closeSync(fd);
+
+    const log = openDaemonLog(logPath);
+    log.write('fresh');
+    log.close();
+
+    assert.ok(statSync(`${logPath}.1`).size > LOG_ROTATE_BYTES, 'the old log is kept as .1');
+    const current = readFileSync(logPath, 'utf8');
+    assert.match(current, /fresh\n$/, 'and the new one starts empty');
+    assert.match(current, /^\d{4}-\d{2}-\d{2}T/, 'every line is timestamped');
+  } finally {
+    fixture.cleanup();
+  }
+});

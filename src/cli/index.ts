@@ -42,6 +42,7 @@ import { staff } from './staff.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
 import { init } from './init.ts';
+import { daemon } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
 
 /**
@@ -84,6 +85,7 @@ export { staff } from './staff.ts';
 export { completions } from './completions.ts';
 export { wire } from './wire.ts';
 export { init } from './init.ts';
+export { daemon } from './daemon.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.
@@ -98,7 +100,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'doctor', 'backup',
-  'cleanup', 'completions', 'status', 'version', 'help',
+  'cleanup', 'completions', 'daemon', 'status', 'version', 'help',
 ]);
 
 /**
@@ -175,6 +177,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
+  daemon: { gloss: 'run, inspect, and stop the opt-in resident sweeper', flags: ['every', 'foreground', 'idle-exit'] },
   version: { gloss: 'print the version and tuning stamp', flags: [] },
   help: { gloss: 'show this help', flags: [] },
 });
@@ -197,7 +200,7 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Workspace settings', ['mode', 'consent', 'record', 'settings', 'trust']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
   ['Presence and hosts', ['serve', 'wire', 'init']],
-  ['Maintenance', ['doctor', 'backup', 'cleanup', 'skills', 'completions', 'version', 'help']],
+  ['Maintenance', ['doctor', 'backup', 'cleanup', 'daemon', 'skills', 'completions', 'version', 'help']],
 ]);
 
 /**
@@ -400,6 +403,8 @@ async function run(argv: string[]): Promise<number> {
       return cleanup(argv.slice(1));
     case 'completions':
       return completions(argv.slice(1));
+    case 'daemon':
+      return daemon(argv.slice(1));
     case 'version':
     case '--version':
     case '-v':
