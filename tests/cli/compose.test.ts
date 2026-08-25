@@ -249,7 +249,7 @@ test('a run with several deliverables composes, and what no deliverable supports
   let composed = 0;
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], composeHost())), composed),
   ]);
   assert.equal(composed, 0);
@@ -286,7 +286,7 @@ test('a run with several deliverables composes, and what no deliverable supports
 test('a composed document names the staff that framed it, at the top, in Construct\'s name', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => compose([`--run=${latestRun()}`], composeHost()),
   ]);
   const heading = out.indexOf(`# ${OUTCOME}`);
@@ -305,7 +305,7 @@ test('a composed document names the staff that framed it, at the top, in Constru
 test('a clean support verdict still prints whatever the check attached to it, not just a silent pass', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     () => compose([`--run=${latestRun()}`], cleanComposeHost('same family produced and checked this')),
   ]);
   assert.match(out, /: all claims supported — same family produced and checked this/);
@@ -320,7 +320,7 @@ test('a call a specialist says misreads it goes back once, and the repair is wha
   let composed = 0;
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => (
       (composed = await compose(
         [`--run=${latestRun()}`],
@@ -347,7 +347,7 @@ test('a second call that answers the objection by losing an attribution is refus
   let composed = 0;
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => (
       (composed = await compose(
         [`--run=${latestRun()}`],
@@ -387,7 +387,7 @@ test('the call is sent back once and no further, however many objections survive
   };
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () =>
       compose([`--run=${latestRun()}`], counting(call(REPAIRED_CALL, 'strategy-alignment'))),
   ]);
@@ -411,7 +411,7 @@ test('a composition whose claims could not be checked is refused, not promoted u
   };
   const { err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], unchecking)), composed),
   ]);
   assert.equal(composed, 1);
@@ -445,7 +445,7 @@ test('a support call that comes back empty once is retried, not fatal', async ()
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], flaky)), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -516,7 +516,7 @@ test('a composed document renders a real table and a real diagram, not bullets s
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], mixedKindsHost())), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -575,7 +575,7 @@ test('an ask naming the document type comes back with the sections only that sha
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], specHost())), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -632,7 +632,7 @@ test('an ask naming an RFC comes back with alternatives and no cost or sequence'
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Write an RFC for the caching layer redesign'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], rfcHost())), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -697,7 +697,7 @@ test('--shape=onepager is accepted and renders only its own sections', async () 
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the caching layer for me'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () =>
       ((composed = await compose([`--run=${latestRun()}`, '--shape=onepager'], onepagerHost())), composed),
   ]);
@@ -755,7 +755,7 @@ test('a run worked under a voice override composes under it, without the user re
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([`--voice=${LIMERICK}`], workHost()),
+    () => work(['--all', `--voice=${LIMERICK}`], workHost()),
     async () => (
       (composed = await compose([`--run=${latestRun()}`], recordingHost(composeHost(), seen))),
       composed
@@ -789,7 +789,7 @@ test('a run nobody overrode still composes in Construct\'s own voice', async () 
   let composed = 0;
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => (
       (composed = await compose([`--run=${latestRun()}`], recordingHost(composeHost(), seen))),
       composed
@@ -805,7 +805,7 @@ test('one deliverable composes nothing, and points at reading it instead', async
   let composed = 0;
   const { err } = await run([
     ['outcome', '--domains=strategy-alignment', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], composeHost())), composed),
   ]);
   assert.equal(composed, 1);
@@ -817,7 +817,7 @@ test('without a host it prices the work instead of guessing at it', async () => 
   let composed = 0;
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`])), composed),
   ]);
   assert.equal(composed, 0);
@@ -844,7 +844,7 @@ test('--record hands back the stored form, markers and slugs intact', async () =
   let composed = 0;
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`, '--record'], composeHost())), composed),
   ]);
 
@@ -878,7 +878,7 @@ test("the model's shape choice wins even when the wording alone would default to
   // return review. The model is told to answer "spec" instead.
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the export tool for me'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], shapeChoosingHost('spec'))), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -902,7 +902,7 @@ test('a shape call that fails falls back to the keyword guess, disclosed as a fa
   };
   const { out, err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Write a spec for the export tool'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], failing)), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -931,7 +931,7 @@ test('a fallback that matched no keyword at all says so rather than naming the d
       '--domains=strategy-alignment,product-scoping',
       'Put the reasoning somewhere permanent, with what it costs us, so I stop relitigating it',
     ],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () => ((composed = await compose([`--run=${latestRun()}`], failing)), composed),
   ]);
   assert.equal(composed, 0, err);
@@ -952,7 +952,7 @@ test('an explicit --shape flag never calls the model', async () => {
   let composed = 0;
   const { err } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', 'Look into the export tool for me'],
-    () => work([], workHost()),
+    () => work(['--all'], workHost()),
     async () =>
       ((composed = await compose([`--run=${latestRun()}`, '--shape=spec'], watching)), composed),
   ]);

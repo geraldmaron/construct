@@ -423,7 +423,7 @@ test('help lists the spine commands', async () => {
 test('an outcome queues work, and construct work runs it to a deliverable', async () => {
   const { code, out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], standInHost()),
+    () => work(['--all'], standInHost()),
     ['log'],
   ]);
 
@@ -444,7 +444,7 @@ test('construct show renders the deliverable a run produced, with its qualifiers
   // text the user paid for was readable only with sqlite by hand.
   const { code, out } = await runAll([
     ['outcome', 'We want to hire a contractor in Poland'],
-    () => work([], standInHost()),
+    () => work(['--all'], standInHost()),
     async () => {
       const store = openStore(
         join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'),
@@ -502,7 +502,7 @@ test('construct show hands the reader the publish view, and --record still gives
 
   const { out } = await runAll([
     ['outcome', '--domains=security', 'store customer passwords properly'],
-    () => work([], marked()),
+    () => work(['--all'], marked()),
     async () => {
       const { show } = await import('../../src/cli/index.ts');
       return show(['--run', await runId()]);
@@ -516,7 +516,7 @@ test('construct show hands the reader the publish view, and --record still gives
 
   const record = await runAll([
     ['outcome', '--domains=security', 'store customer passwords properly'],
-    () => work([], marked()),
+    () => work(['--all'], marked()),
     async () => {
       const { show } = await import('../../src/cli/index.ts');
       return show(['--run', await runId(), '--record']);
@@ -534,7 +534,7 @@ test('construct show without a run id is a usage error, not a dump', async () =>
 });
 
 test('work with nothing queued says so rather than reporting an empty success', async () => {
-  const { code, out } = await run(() => work([], standInHost()));
+  const { code, out } = await run(() => work(['--all'], standInHost()));
   assert.equal(code, 0);
   assert.match(out, /nothing to work/);
   assert.match(out, /construct outcome/);
@@ -543,7 +543,7 @@ test('work with nothing queued says so rather than reporting an empty success', 
 test('the spend ceiling stops the CLI and tells the user how to raise it', async () => {
   const { code, out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work(['--ceiling=0.015', '--concurrency=1'], standInHost()),
+    () => work(['--all', '--ceiling=0.015', '--concurrency=1'], standInHost()),
   ]);
 
   assert.equal(code, 1, 'a halted run must not exit as though it finished');
@@ -568,7 +568,7 @@ test('a failed task shows why it failed, and the run does not exit clean', async
   };
   const { code, out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], failing),
+    () => work(['--all'], failing),
   ]);
   assert.equal(code, 1);
   assert.match(out, /Model not found/);
@@ -578,9 +578,9 @@ test('a failed task shows why it failed, and the run does not exit clean', async
 test('work reports what it did, not everything the store holds', async () => {
   const { out } = await runAll([
     ['outcome', 'hire two contractors in Germany'],
-    () => work([], standInHost()),
+    () => work(['--all'], standInHost()),
     ['outcome', 'encrypt customer passwords'],
-    () => work([], standInHost()),
+    () => work(['--all'], standInHost()),
   ]);
   // The second invocation worked one task; the first one's roles must not
   // reappear under it.
@@ -606,7 +606,7 @@ test('work says which deliverables need a licensed human, and what is wrong with
 
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], emptyAnswer),
+    () => work(['--all'], emptyAnswer),
   ]);
 
   assert.match(out, /needs review by a licensed attorney/, 'privacy output must not read as advice');
@@ -647,7 +647,7 @@ test('the work summary renders issue markers as reader sentences, and the stored
   let storedText = '';
   const { code, out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], markedIssues),
+    () => work(['--all'], markedIssues),
     async () => {
       const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
       try {
@@ -693,7 +693,7 @@ test('roles that disagree put one framed decision in front of the user', async (
 
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], divided),
+    () => work(['--all'], divided),
     ['inbox'],
   ]);
 
@@ -788,7 +788,7 @@ test('a run where everything failed is not reported as a run that finished', asy
 
   const { out, code } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], refusing),
+    () => work(['--all'], refusing),
     // The second invocation is the one the bead is about: the user comes back
     // to a run whose tasks are all settled, all failed.
     ['work'],
@@ -822,7 +822,7 @@ test('the invocation that fails everything states the recourse, not the one afte
   const { out, code } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
     // Exactly one work invocation. No second call to fall through to.
-    () => work([], refusing),
+    () => work(['--all'], refusing),
   ]);
 
   assert.match(out, /Missing Authentication header/, 'the recorded error is shown');
@@ -854,7 +854,7 @@ test('a run still in flight does not read like a run that died', async () => {
 
   const dead = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], refusing),
+    () => work(['--all'], refusing),
     ['log'],
   ]);
 
@@ -900,7 +900,7 @@ test('a store with no outcome at all still says to record one', async () => {
 test('a host that reports no cost is called out rather than counted as free', async () => {
   const { out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], standInHost(null)),
+    () => work(['--all'], standInHost(null)),
   ]);
   assert.match(out, /reported no cost/);
   assert.match(out, /ceiling did not bind/);
@@ -909,7 +909,7 @@ test('a host that reports no cost is called out rather than counted as free', as
 test('a host that cannot start is an error, not a quiet no-op', async () => {
   const { code, err } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    ['work', '--binary=/nonexistent/opencode'],
+    ['work', '--all', '--binary=/nonexistent/opencode'],
   ]);
   assert.equal(code, 1);
   assert.match(err, /not available/);
@@ -1124,7 +1124,7 @@ test('a run over declared sources dispatches roles grounded in the named documen
       ['outcome', 'launch a paid beta to EU users next month'],
       // Dispatched where the ground is: a run licensed a root it cannot open
       // is refused now, which is the whole point of the check.
-      () => work([`--dir=${ground}`], capturing),
+      () => work(['--all', `--dir=${ground}`], capturing),
       ['log'],
     ]);
 
@@ -1240,7 +1240,7 @@ test('a dispatch meets the recorded throughput floor before it spends ten minute
     const { out } = await runAll([
       ['source', 'add', '--kind=directory', `--locator=${ground}`],
       ['outcome', 'launch a paid beta to EU users next month'],
-      () => work([`--dir=${ground}`, '--model=ollama/qwen3.6:35b'], standInHost()),
+      () => work(['--all', `--dir=${ground}`, '--model=ollama/qwen3.6:35b'], standInHost()),
     ]);
     assert.match(out, /nearest recorded observation \(2026-08-10, ollama\/qwen3\.6:35b\)/);
     // A caution with no next move is a slower failure, so both ways out are named.
@@ -1261,7 +1261,7 @@ test('a dispatch on a model nothing was measured on is not cautioned about one t
     const { out } = await runAll([
       ['source', 'add', '--kind=directory', `--locator=${ground}`],
       ['outcome', 'launch a paid beta to EU users next month'],
-      () => work(['--model=claude-sonnet-5'], standInHost()),
+      () => work(['--all', '--model=claude-sonnet-5'], standInHost()),
     ]);
     assert.doesNotMatch(out, /nearest recorded observation/);
   } finally {
@@ -1281,7 +1281,7 @@ test('a timeout failure names the flag that moves the wall, not just the wall', 
   };
   const { code, out } = await runAll([
     ['outcome', 'launch a paid beta to EU users next month'],
-    () => work([], timedOut),
+    () => work(['--all'], timedOut),
   ]);
   assert.equal(code, 1);
   assert.match(out, /invocation exceeded 600000ms — raise it with --timeout=<minutes>/);
