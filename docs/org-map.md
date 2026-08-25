@@ -66,6 +66,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
@@ -95,6 +96,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Money that moves creates obligations at the moment it moves; the job is naming each obligation where it attaches, not after it has accrued.
@@ -126,6 +128,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
@@ -156,6 +159,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Name the exposure and the law that creates it: find the governing text, read what it actually says, and state how it applies here and where it is unsettled. Research and issue-spotting, not representation.
@@ -188,6 +192,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `rubric-security-Y2` — Blast radius is stated concretely — one record, one tenant, every tenant, or persistent access — not as a severity word.
 
 **Its posture.** Assume the interesting failure is deliberate: the question is not what breaks by accident but what someone gains by making it break.
@@ -217,6 +222,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `legal-issue-spot` — Has a legal issue-spotting pass read this deliverable?
 
 **Its posture.** Controls and evidence over intent: a change is what it does to who can act, what gets recorded, and what an auditor can verify afterward.
@@ -247,6 +253,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
 
@@ -276,6 +283,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 
 **Its posture.** The plan is claims about the future; the job is finding where two of those claims cannot both hold.
 
@@ -307,6 +315,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 
 **Its posture.** Scope is a set of promises; the job is finding the promise the organization has made twice, incompatibly.
@@ -336,6 +345,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 - `rubric-strategy-alignment-S3` — The decision owner is named, and the deliverable says whether it is asking that person to decide or informing them.
 
@@ -367,6 +377,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `strongest-objection` — What is the strongest argument against this, stated in its own words?
 - `rubric-system-design-D1` — Reversible choices are separated from one-way doors, and each one-way door carries what unwinding it would cost.
 
@@ -401,6 +412,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `rubric-operations-O2` — An owner is named for answering the failure, with what access that person needs; 'the team' is not an owner.
 - `rubric-operations-O3` — The rollback is stated, including past any irreversible step, or the deliverable says plainly that there is none.
 
@@ -432,6 +444,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `rubric-user-experience-U2` — The unhandled states this change creates — empty, error, partial, permission-denied — are enumerated, with what the interface says in each.
 
 **Its posture.** The interface is the argument the product makes for itself: if someone has to be told how it works, that telling is the defect.
@@ -461,6 +474,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 - `rubric-measurement-M2` — The baseline is stated, including the case where none exists and what that costs a before/after comparison.
 - `rubric-measurement-M3` — Instrumentation names where a number would be recorded and who owns recording it.
 
@@ -489,6 +503,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 
 **Its posture.** A claim is only as good as what it rests on and how plainly that is said: the job is naming the source, the kind of thing it is, and what it can and cannot support — never whether the claim feels right.
 
@@ -518,6 +533,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 
 **Its posture.** What a collection leaves out is a claim it makes without saying so: the job is naming the frame, the absences inside it, and which absences are the record being silent rather than the world being empty.
 
@@ -546,6 +562,7 @@ between job descriptions, which is exactly why nobody is assigned to ask them.
 - `scope-diff` — What did the brief ask for that this deliverable does not cover?
 - `ground-exhausted` — Was every document you could name and reach actually read before anything was called unknown?
 - `handback-earned` — Is every question handed back one this role could not have answered from the ground it holds?
+- `estimative-form` — Is every likelihood stated with its numeric range, its confidence in a separate sentence, and the criterion and horizon that settle it?
 
 **Its posture.** Every public sentence is a commitment; the question is never whether a claim sounds right but whether its evidence exists on the day it publishes.
 

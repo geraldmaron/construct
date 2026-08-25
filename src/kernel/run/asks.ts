@@ -16,7 +16,9 @@
  * in its open-questions slot, and the protocol says so to the role.
  */
 
-import { labeled, undecorate } from './conflicts.ts';
+import { labeled, parseStakes, undecorate } from './conflicts.ts';
+import { renderJudgment } from './estimative.ts';
+import type { EstimativeJudgment } from './estimative.ts';
 import type { Position, RaiseDecision } from '../store/decisions.ts';
 import { openDecisions, resolvedDecisions } from '../store/decisions.ts';
 import type { Store } from '../store/open.ts';
@@ -37,6 +39,13 @@ export const ASK_PROTOCOL = [
 export interface DeclaredAsk {
   readonly question: string;
   readonly assuming: string;
+  /**
+   * What the role says riding on the assumption, as a likelihood with its
+   * separate confidence, or the rung below when its basis is too thin. Null
+   * when it declared none: an ask still ships without one, since the
+   * reversible default is what makes silence safe, not the estimate.
+   */
+  readonly stakes: EstimativeJudgment | null;
 }
 
 /**
@@ -50,7 +59,7 @@ export function parseAsk(text: unknown): DeclaredAsk | null {
   const question = labeled(lines, 'ask');
   const assuming = labeled(lines, 'assuming');
   if (!question || !question.trim() || !assuming || !assuming.trim()) return null;
-  return { question: question.trim(), assuming: assuming.trim() };
+  return { question: question.trim(), assuming: assuming.trim(), stakes: parseStakes(text) };
 }
 
 export interface FrameAskInput {
@@ -76,7 +85,11 @@ export function frameAsk(input: FrameAskInput): RaiseDecision {
       role: 'construct',
       stance:
         `the reversible default if you do nothing: ${input.ask.assuming} — ` +
-        'the deliverable already proceeds on it',
+        'the deliverable already proceeds on it' +
+        // What is riding on the assumption, where the role said. A default
+        // whose consequence is stated is a choice the user can weigh; one
+        // stated bare asks them to guess what silence costs.
+        (input.ask.stakes ? `. ${renderJudgment(input.ask.stakes)}` : ''),
       citation: null,
     },
   ];

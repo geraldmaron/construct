@@ -234,6 +234,32 @@ export {
   stanceLabel,
 } from './run/conflicts.ts';
 export type { DeclaredStance, FrameInput, RoleStance, Stance } from './run/conflicts.ts';
+export { parseStakes } from './run/conflicts.ts';
+export {
+  AGREEMENT_TERMS,
+  CONFIDENCE_LEVELS,
+  ESTIMATIVE_BANDS,
+  ESTIMATIVE_PROTOCOL,
+  EVIDENCE_TERMS,
+  assessRisk,
+  bandFor,
+  estimativeProblems,
+  renderConfidence,
+  renderJudgment,
+  renderLikelihood,
+  unquantifiedRisk,
+} from './run/estimative.ts';
+export type {
+  AgreementTerm,
+  AssessedRisk,
+  Confidence,
+  ConfidenceBasis,
+  ConfidenceLevel,
+  EstimativeBand,
+  EstimativeJudgment,
+  EvidenceTerm,
+  UnquantifiedRisk,
+} from './run/estimative.ts';
 export {
   DEFAULT_STALE_DRAFT_THRESHOLD_MS,
   DRAFT_ACTION,

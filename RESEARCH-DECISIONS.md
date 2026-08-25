@@ -2397,3 +2397,77 @@ with these numbers). Re-derivable by `node scripts/score-namer-arms.mjs
 --expect`, which runs under `npm run lint`.
 
 Recorded for `construct-xn5g`.
+
+## 25. Likelihood and confidence are two statements, on the evidence ladder (2026-08-25)
+
+Risk findings refused likelihood language outright, on the reasoning that a
+model's verbalized confidence is miscalibrated. That is true and it is an
+argument about confidence, not about likelihood. The refusal collapsed the two
+into one, and the collapse is what made the refusal look like the only safe
+option: if "we are fairly confident this is likely" is the only available
+sentence, and its confidence half cannot be trusted, then the whole sentence
+goes. The standards separate the two, and the separation is what lets an
+assessor with thin calibration data still say the most it can honestly say.
+
+### What the decision is
+
+Four rules, each traceable to a published standard.
+
+1. **Likelihood is the ICD 203 seven-band lexicon** (ODNI, Intelligence
+   Community Directive 203, 2015-01-02): almost no chance 1–5%, very unlikely
+   5–20%, unlikely 20–45%, roughly even chance 45–55%, likely 55–80%, very
+   likely 80–95%, almost certain 95–99%. The assessor emits a whole number and
+   code derives the word.
+2. **Confidence is High/Moderate/Low against PHIA's three named criteria**
+   (Professional Head of Intelligence Assessment, *Professional Development
+   Framework* probability yardstick, 2025-03-24): information base, analytical
+   rigour, complexity and volatility. It states the basis, never a probability,
+   and it gets its own sentence — ICD 203 D.6.e.2 forbids combining a
+   likelihood and a confidence in one sentence, because a reader cannot tell
+   which half the hedge is about.
+3. **The ladder** (IPCC, Mastrandrea et al., *Guidance Note for Lead Authors on
+   Consistent Treatment of Uncertainties*, 2010): a likelihood is stated only at
+   moderate confidence or better. Below that the finding states evidence and
+   agreement terms, what is missing, and what observation would raise
+   confidence. The same guidance bans using the mid-band as a way of expressing
+   ignorance, so "roughly even chance" is a claim about the world owing the same
+   stated basis as any other.
+4. **Every band carries what makes it scorable**: a falsifiable outcome
+   statement, a resolution criterion, a time horizon, a reference class or
+   "none available", and the indicators that would move it. No horizon, no
+   likelihood.
+
+### What each measurement settles
+
+| Question | Measurement | What it settles |
+|---|---|---|
+| Seven bands or three levels? | Friedman, Baker, Mellers, Tetlock & Zeckhauser, *International Studies Quarterly* 62(2), 2018, over 888,328 Good Judgment Project forecasts: rounding to the seven-band scheme costs an ordinary assessor ~0.5–0.7% Brier against their exact number; rounding to three bins costs ~11.8%. | Seven bands, never a high/medium/low scale. Three levels throw away most of what the assessor knew. |
+| Who picks the band word? | Tang, Shen & Kejriwal, arXiv:2405.15185, 2024: GPT-4's readings of estimative terms diverge from human readings on 12 of 17 terms. | Code maps the integer to the word. A model asked for the phrase supplies its own reading of the phrase. |
+| Is the word enough on its own? | Budescu, Broomell & Por, *Psychological Science* 20(3), 2009: readers given a bare estimative word regress it toward even odds, and printing the numeric range removes the effect. | The word and its range are printed together, always. |
+| Can bands be multiplied into a score? | Cox, *Risk Analysis* 28(2), 2008: risk-matrix arithmetic over ordinal categories ranks worse than random on negatively correlated risks. | Never. Bands are content with a stated basis; they are not arithmetic. |
+
+### What is unmeasured, stated plainly
+
+**Whether separating likelihood from confidence improves an LLM's calibration
+is not measured here, and nothing in this section claims it.** Every figure
+above is about human assessors and human readers, except the one about GPT-4's
+term readings, which measures divergence rather than calibration. What ships is
+structural discipline — a form that can be checked deterministically — plus a
+log of every emitted band with its resolution criterion and horizon, so that a
+calibration curve becomes drawable from the record instead of arguable from
+first principles. Until resolutions accumulate the honest statement is that
+judgments are logged and no calibration figure exists yet. That is checkable,
+and it is a better position than refusing to judge.
+
+The other limit worth stating: the deterministic checks answer "was this stated
+in the form that can be scored later", never "is the number any good". A
+deliverable can pass every check with a badly chosen 60.
+
+### What does not change
+
+Commitment 9 is untouched. Routing and heat consume none of these judgments;
+they are deliverable content, evaluated by the structural checks and by whoever
+reads the finding. A band never becomes a score, a priority, or an input to
+which role gets dispatched.
+
+Recorded for `construct-98ac`.

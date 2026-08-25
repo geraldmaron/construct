@@ -29,7 +29,7 @@ function stance(
   because: string,
   citation: string | null,
 ): RoleStance {
-  return { role, declared: { stance: word, qualifier: null, because, citation } };
+  return { role, declared: { stance: word, qualifier: null, because, citation, stakes: null } };
 }
 
 function score(fixture: string): { code: number; result: Record<string, unknown> } {

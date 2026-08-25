@@ -54,6 +54,7 @@ import {
   namesHarnessCorpus,
   selfAttestsCiting,
 } from '../verify/claims.ts';
+import { estimativeProblems } from '../run/estimative.ts';
 import { RUBRIC_LINES, rubricChallengeId } from './readers.ts';
 import { handbacksEarned } from './answerable.ts';
 import type { Brief } from '../brief/schema.ts';
@@ -427,6 +428,32 @@ export const CHALLENGES: readonly Challenge[] = [
       handbacksEarned(deliverable, context?.groundRoots),
   },
   {
+    id: 'estimative-form',
+    subject: 'deliverable',
+    question:
+      'Is every likelihood stated with its numeric range, its confidence in a separate sentence, ' +
+      'and the criterion and horizon that settle it?',
+    // Free and self-limiting, the way ground-exhaustion is: a deliverable that
+    // makes no estimative claim passes saying so, and one that makes one is
+    // held to the whole form. What it cannot answer is whether the number is
+    // right — that is what the log of judgments and their eventual resolutions
+    // is for, and no check over the text can stand in for it.
+    structural: (deliverable) => {
+      const problems = estimativeProblems(deliverable);
+      if (problems.length === 0) {
+        return {
+          passed: true,
+          detail:
+            'no likelihood is stated without its range, its own confidence sentence, and the ' +
+            'criterion and horizon that settle it — whether the number is well judged is a ' +
+            'substantive question this check cannot answer',
+        };
+      }
+      const more = problems.length > 2 ? ` (and ${String(problems.length - 2)} more)` : '';
+      return { passed: false, detail: `${problems.slice(0, 2).join('; ')}${more}` };
+    },
+  },
+  {
     id: 'legal-issue-spot',
     subject: 'deliverable',
     question: 'Has a legal issue-spotting pass read this deliverable?',
@@ -463,6 +490,7 @@ export const SPINE_CHALLENGES: readonly string[] = [
   'scope-diff',
   'ground-exhausted',
   'handback-earned',
+  'estimative-form',
 ];
 
 /**
