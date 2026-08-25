@@ -34,3 +34,5 @@ documentation rather than a record.
 - [`model-family-promotion.md`](model-family-promotion.md) — what a model family
   passes to move from best-effort to tuned, written down so promotion is a
   procedure rather than one session's memory.
+- [`exit-codes.md`](exit-codes.md) — the complete `0`/`1`/`2` exit-code
+  contract every verb returns, and the one process-level exception to it.
