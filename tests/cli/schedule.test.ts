@@ -15,7 +15,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { schedule, resolveScheduleContext, scheduleStatusLine } from '../../src/cli/schedule.ts';
 import type { ScheduleContext, ScheduleRefusal } from '../../src/cli/schedule.ts';
-import { schedulePlan } from '../../src/kernel/schedule/units.ts';
+import { alwaysOnPlan, schedulePlan } from '../../src/kernel/schedule/units.ts';
 import { sterile, sterileHome } from '../harness/sterile.ts';
 
 sterileHome();
@@ -194,6 +194,137 @@ test('a dry-run uninstall names exactly the files that are there', (t) => {
   assert.match(result.out, /construct-schedule\.timer/);
   assert.doesNotMatch(result.out, /construct-schedule\.service/, 'a file that is not there is not removed');
   assert.match(result.out, /Nothing was removed/);
+});
+
+test('a dry-run always-on install prints the daemon unit and writes nothing', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'LaunchAgents');
+  const result = capture(['install', '--always-on', '--dry-run'], context('darwin', dir));
+  assert.strictEqual(result.code, 0);
+  assert.match(result.out, /always-on daemon/);
+  assert.match(result.out, /com\.construct\.daemon\.plist/);
+  assert.match(result.out, /launchctl bootstrap gui\/501/);
+  assert.match(result.out, /Nothing was written/);
+  assert.strictEqual(
+    scheduleStatusLine({ platform: 'darwin', dir }),
+    'no schedule installed — install one with: construct schedule install --every=6h',
+    'the dry run left the machine as it found it',
+  );
+});
+
+test('a dry-run always-on install on linux prints the hardened service and the systemctl lines', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const result = capture(
+    ['install', '--always-on', '--dry-run'],
+    context('linux', join(fixture.root, 'systemd')),
+  );
+  assert.strictEqual(result.code, 0);
+  assert.match(result.out, /construct-daemon\.service/);
+  assert.match(result.out, /Type=exec/);
+  assert.match(result.out, /Restart=on-failure/);
+  assert.match(result.out, /MemoryMax=256M/);
+  assert.match(result.out, /systemctl --user enable --now construct-daemon\.service/);
+});
+
+test('installing --always-on refuses when the calendar schedule is already installed', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'LaunchAgents');
+  mkdirSync(dir, { recursive: true });
+  const calendarPlan = schedulePlan({
+    platform: 'darwin',
+    dir,
+    everyMinutes: 360,
+    anchor: null,
+    nodePath: '/opt/node/bin/node',
+    cliPath: '/opt/construct/bin/construct.mjs',
+    uid: 501,
+  });
+  writeFileSync(calendarPlan.units[0].path, calendarPlan.units[0].text);
+
+  const result = capture(['install', '--always-on', '--dry-run'], context('darwin', dir));
+  assert.strictEqual(result.code, 1);
+  assert.match(result.err, /calendar schedule is installed/);
+  assert.match(result.err, /construct schedule uninstall/);
+});
+
+test('installing the calendar tier refuses when the always-on daemon is already installed', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'systemd');
+  mkdirSync(dir, { recursive: true });
+  const daemonPlan = alwaysOnPlan({
+    platform: 'linux',
+    dir,
+    nodePath: '/opt/node/bin/node',
+    cliPath: '/opt/construct/bin/construct.mjs',
+    uid: 1000,
+  });
+  writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
+
+  const result = capture(['install', '--every=6h', '--dry-run'], context('linux', dir));
+  assert.strictEqual(result.code, 1);
+  assert.match(result.err, /always-on daemon is installed/);
+  assert.match(result.err, /construct schedule uninstall/);
+});
+
+test('status reports the always-on daemon distinctly from a calendar cadence', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'LaunchAgents');
+  mkdirSync(dir, { recursive: true });
+  const daemonPlan = alwaysOnPlan({
+    platform: 'darwin',
+    dir,
+    nodePath: '/opt/node/bin/node',
+    cliPath: '/opt/construct/bin/construct.mjs',
+    uid: 501,
+  });
+  writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
+
+  const result = capture(['status'], context('darwin', dir));
+  assert.strictEqual(result.code, 0);
+  assert.match(result.out, /always-on daemon/);
+  assert.match(result.out, /com\.construct\.daemon\.plist/);
+});
+
+test('uninstall removes an installed always-on daemon and reports its own unload commands', (t) => {
+  const fixture = sterile();
+  t.after(() => {
+    fixture.cleanup();
+  });
+  const dir = join(fixture.root, 'systemd');
+  mkdirSync(dir, { recursive: true });
+  const daemonPlan = alwaysOnPlan({
+    platform: 'linux',
+    dir,
+    nodePath: '/opt/node/bin/node',
+    cliPath: '/opt/construct/bin/construct.mjs',
+    uid: 1000,
+  });
+  writeFileSync(daemonPlan.units[0].path, daemonPlan.units[0].text);
+
+  const dryRun = capture(['uninstall', '--dry-run'], context('linux', dir));
+  assert.strictEqual(dryRun.code, 0);
+  assert.match(dryRun.out, /construct-daemon\.service/);
+  assert.match(dryRun.out, /systemctl --user disable --now construct-daemon\.service/);
+  assert.match(
+    scheduleStatusLine({ platform: 'linux', dir }),
+    /always-on daemon/,
+    'the dry run left the daemon entry in place',
+  );
 });
 
 test('an unknown subcommand prints usage rather than acting', (t) => {

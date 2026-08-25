@@ -13,11 +13,19 @@
  * (kernel/paths.ts is the only module permitted to) and passes it in, the same
  * injected-paths discipline every other kernel module keeps.
  *
- * Calendar form is the only form generated. A plain interval firing that lands
+ * Calendar form is the default generated. A plain interval firing that lands
  * while the machine is asleep is simply missed — launchd's own documentation
  * says so — and a laptop is asleep for most of the intervals a nightly cadence
  * names. Calendar firings coalesce into one event on wake, and systemd's
  * `Persistent=true` catches up the same way.
+ *
+ * A second, always-on form is also generated, for a user who explicitly asks
+ * for one: a long-running unit supervised by the platform (`Restart=` on
+ * Linux, `KeepAlive` on macOS) rather than a firing that runs once and exits.
+ * The two forms name different labels and write different files, so they can
+ * coexist on disk, but the CLI refuses to have both loaded at once — a
+ * calendar firing and an always-on daemon covering the same ground is double
+ * work, not defense in depth.
  */
 
 import { join } from 'node:path';
@@ -30,6 +38,15 @@ export const SCHEDULE_LABEL = 'com.construct.schedule';
 
 /** The systemd unit stem; the timer and its oneshot service share it. */
 export const SCHEDULE_UNIT = 'construct-schedule';
+
+/** The launchd job label for the always-on daemon — distinct from the calendar tier's, so the two can never collide on disk. */
+export const ALWAYS_ON_LABEL = 'com.construct.daemon';
+
+/** The systemd unit stem for the always-on daemon. There is no timer for this tier: the unit itself is the long-running process. */
+export const ALWAYS_ON_UNIT = 'construct-daemon';
+
+/** The line the always-on unit runs: the daemon's own foreground entry, supervised by the platform rather than by Construct. */
+export const ALWAYS_ON_COMMAND: readonly string[] = Object.freeze(['daemon', 'run', '--foreground']);
 
 /**
  * The line the timer fires, as argument lists. Two commands rather than one:
@@ -84,6 +101,24 @@ export interface SchedulePlanInput {
   readonly cliPath: string;
   /** The user launchctl is asked to load the job for. Unread on Linux. */
   readonly uid: number;
+}
+
+/** Everything an always-on install needs: no cadence, because nothing fires — the unit itself stays up. */
+export interface AlwaysOnPlanInput {
+  readonly platform: SchedulePlatform;
+  readonly dir: string;
+  readonly nodePath: string;
+  readonly cliPath: string;
+  readonly uid: number;
+}
+
+/** Everything an always-on install writes and runs, and everything an uninstall undoes. Carries no firing: this tier has no cadence to state. */
+export interface AlwaysOnPlan {
+  readonly platform: SchedulePlatform;
+  readonly label: string;
+  readonly units: readonly ScheduleUnit[];
+  readonly load: readonly (readonly string[])[];
+  readonly unload: readonly (readonly string[])[];
 }
 
 /** The hour a daily cadence lands on when the caller names none. */
@@ -231,6 +266,75 @@ function timerText(firing: ScheduleFiring): string {
   );
 }
 
+/**
+ * The always-on plist: a supervised long-running process rather than a
+ * calendar firing. `KeepAlive` is a dict, not the bare `true` launchd also
+ * accepts, because a bare true restarts even a clean exit — this tier
+ * restarts on crash and stays stopped when the daemon exits on its own.
+ * `RunAtLoad` is true here, and nowhere else in this module: an always-on
+ * service the user explicitly asked for should be there after login the same
+ * way any other login-item service is, and every other tier stays false
+ * because a oneshot has nothing to start at load time.
+ */
+function alwaysOnPlistText(input: AlwaysOnPlanInput): string {
+  const args = [input.nodePath, input.cliPath, ...ALWAYS_ON_COMMAND]
+    .map((arg) => `    <string>${xmlEscape(arg)}</string>`)
+    .join('\n');
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" ' +
+    '"http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n' +
+    '<plist version="1.0">\n' +
+    '<dict>\n' +
+    '  <key>Label</key>\n' +
+    `  <string>${ALWAYS_ON_LABEL}</string>\n` +
+    '  <key>ProgramArguments</key>\n' +
+    '  <array>\n' +
+    `${args}\n` +
+    '  </array>\n' +
+    '  <key>KeepAlive</key>\n' +
+    '  <dict>\n' +
+    '    <key>SuccessfulExit</key>\n' +
+    '    <false/>\n' +
+    '  </dict>\n' +
+    '  <key>ThrottleInterval</key>\n  <integer>30</integer>\n' +
+    '  <key>ProcessType</key>\n  <string>Background</string>\n' +
+    '  <key>LowPriorityBackgroundIO</key>\n  <true/>\n' +
+    '  <key>Nice</key>\n  <integer>10</integer>\n' +
+    '  <key>RunAtLoad</key>\n  <true/>\n' +
+    '</dict>\n' +
+    '</plist>\n'
+  );
+}
+
+/**
+ * The always-on systemd service: `Type=exec` rather than `oneshot`, restarted
+ * by the supervisor on failure, and hardened because it now lives for as long
+ * as the session does instead of for one firing. No `Environment=` line, ever
+ * — the same rule as every other tier, so no unit file can carry a secret.
+ */
+function alwaysOnServiceText(input: AlwaysOnPlanInput): string {
+  const exec = [input.nodePath, input.cliPath, ...ALWAYS_ON_COMMAND].map(systemdQuote).join(' ');
+  return (
+    '[Unit]\n' +
+    'Description=Construct: the standing daemon\n' +
+    '\n' +
+    '[Service]\n' +
+    'Type=exec\n' +
+    `ExecStart=${exec}\n` +
+    'Restart=on-failure\n' +
+    'RestartSec=5\n' +
+    'MemoryHigh=192M\n' +
+    'MemoryMax=256M\n' +
+    'TasksMax=32\n' +
+    'NoNewPrivileges=yes\n' +
+    'RestrictAddressFamilies=AF_UNIX\n' +
+    '\n' +
+    '[Install]\n' +
+    'WantedBy=default.target\n'
+  );
+}
+
 function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -289,6 +393,52 @@ export function schedulePlan(input: SchedulePlanInput): SchedulePlan {
     ],
     unload: [
       ['systemctl', '--user', 'disable', '--now', `${SCHEDULE_UNIT}.timer`],
+      ['systemctl', '--user', 'daemon-reload'],
+    ],
+  };
+}
+
+/**
+ * Where the always-on entry lives. Linux has no timer file for this tier —
+ * the service itself is the long-running unit, so only one file is written,
+ * where the calendar tier writes two.
+ */
+export function alwaysOnUnitPaths(platform: SchedulePlatform, dir: string): readonly string[] {
+  return platform === 'darwin'
+    ? [join(dir, `${ALWAYS_ON_LABEL}.plist`)]
+    : [join(dir, `${ALWAYS_ON_UNIT}.service`)];
+}
+
+/**
+ * Everything an always-on install writes and runs, from a binary path alone
+ * — there is no cadence to fold in, because nothing here fires and stops.
+ * The load/unload commands follow the same launchctl/systemctl shape the
+ * calendar tier uses, against the always-on label and unit name, so the two
+ * tiers can never be confused for one another on disk or in `launchctl
+ * list`/`systemctl --user list-units`.
+ */
+export function alwaysOnPlan(input: AlwaysOnPlanInput): AlwaysOnPlan {
+  if (input.platform === 'darwin') {
+    const [path] = alwaysOnUnitPaths('darwin', input.dir);
+    return {
+      platform: 'darwin',
+      label: ALWAYS_ON_LABEL,
+      units: [{ path, text: alwaysOnPlistText(input) }],
+      load: [['launchctl', 'bootstrap', `gui/${String(input.uid)}`, path]],
+      unload: [['launchctl', 'bootout', `gui/${String(input.uid)}/${ALWAYS_ON_LABEL}`]],
+    };
+  }
+  const [path] = alwaysOnUnitPaths('linux', input.dir);
+  return {
+    platform: 'linux',
+    label: `${ALWAYS_ON_UNIT}.service`,
+    units: [{ path, text: alwaysOnServiceText(input) }],
+    load: [
+      ['systemctl', '--user', 'daemon-reload'],
+      ['systemctl', '--user', 'enable', '--now', `${ALWAYS_ON_UNIT}.service`],
+    ],
+    unload: [
+      ['systemctl', '--user', 'disable', '--now', `${ALWAYS_ON_UNIT}.service`],
       ['systemctl', '--user', 'daemon-reload'],
     ],
   };
