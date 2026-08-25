@@ -401,11 +401,11 @@ async function run(argv: string[]): Promise<number> {
     case 'revoke':
       return revoke(argv.slice(1));
     case 'doctor':
-      return doctor();
+      return await doctor();
     case 'backup':
       return backup(argv.slice(1));
     case 'cleanup':
-      return cleanup(argv.slice(1));
+      return await cleanup(argv.slice(1));
     case 'completions':
       return completions(argv.slice(1));
     case 'daemon':

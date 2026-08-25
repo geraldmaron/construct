@@ -23,6 +23,7 @@ import { openSync, rmSync, writeFileSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { resolvePaths } from '../kernel/paths.ts';
+import type { Paths } from '../kernel/paths.ts';
 import {
   DEFAULT_IDLE_EXIT_SECONDS,
   DEFAULT_SWEEP_INTERVAL_MS,
@@ -139,6 +140,43 @@ async function talk(
       resolve({ hello, reply });
     });
   });
+}
+
+/**
+ * What `doctor` (and anything else that only wants to look, not act) can
+ * learn about the daemon without sending it a `stop`: whether the socket is
+ * absent, present but answering nobody's home (stale), or a live daemon that
+ * answered a status request. Shares the one client seam (`talk`) that
+ * `daemon status` itself uses, so the two surfaces can never disagree about
+ * what "running" means. `socketPath` rides along on the two non-live states
+ * so a caller can name where it looked without resolving the path itself.
+ */
+export type DaemonProbe =
+  | { readonly state: 'absent'; readonly socketPath: string }
+  | { readonly state: 'stale'; readonly socketPath: string }
+  | { readonly state: 'live'; readonly hello: Hello; readonly reply: StatusReply };
+
+/**
+ * A read-only look at whichever daemon owns this machine's socket, never
+ * throwing: a probe that could throw would make `doctor` crash on exactly the
+ * residue it exists to report. Absent (no socket file) and stale (a socket
+ * file nothing answers on) are both "not live" but are named differently
+ * because they call for different action — nothing, versus
+ * `construct daemon start` or `construct cleanup` reaping the file.
+ */
+export async function probeDaemon(paths: Paths): Promise<DaemonProbe> {
+  const socketPath = daemonSocketPath(paths);
+  if (!socketFileExists(socketPath)) return { state: 'absent', socketPath };
+  let answer: Awaited<ReturnType<typeof talk>>;
+  try {
+    answer = await talk(socketPath, { cmd: 'status' });
+  } catch {
+    return { state: 'stale', socketPath };
+  }
+  if (answer === null || !answer.reply.ok || !('version' in answer.reply)) {
+    return { state: 'stale', socketPath };
+  }
+  return { state: 'live', hello: answer.hello, reply: answer.reply };
 }
 
 /** Where the daemon's own state lives, computed once per invocation. */

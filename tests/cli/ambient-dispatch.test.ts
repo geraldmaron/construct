@@ -219,7 +219,7 @@ test('outcome names no host in the next-step hint with no ambient markers', asyn
   }
 });
 
-function captureStdout<T>(fn: () => T): { result: T; out: string } {
+async function captureStdout<T>(fn: () => T | Promise<T>): Promise<{ result: T; out: string }> {
   const realOut = process.stdout.write.bind(process.stdout);
   let out = '';
   process.stdout.write = ((chunk: string) => {
@@ -227,20 +227,20 @@ function captureStdout<T>(fn: () => T): { result: T; out: string } {
     return true;
   }) as typeof process.stdout.write;
   try {
-    return { result: fn(), out };
+    return { result: await fn(), out };
   } finally {
     process.stdout.write = realOut;
   }
 }
 
-test('doctor names an available in-session execution when the ambient host is wired', () => {
+test('doctor names an available in-session execution when the ambient host is wired', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-doctor-'));
   const previousData = process.env.XDG_DATA_HOME;
   const previousState = process.env.XDG_STATE_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
-    const { out } = captureStdout(() => doctor(root, CLAUDE_ENV));
+    const { out } = await captureStdout(() => doctor(root, CLAUDE_ENV));
     assert.match(out, /ok {3}ambient {2}running inside claude \(detected via CLAUDECODE\); in-session execution: available/);
   } finally {
     if (previousData === undefined) delete process.env.XDG_DATA_HOME;
@@ -251,14 +251,14 @@ test('doctor names an available in-session execution when the ambient host is wi
   }
 });
 
-test('doctor names projection-only in-session execution when the ambient host has no adapter', () => {
+test('doctor names projection-only in-session execution when the ambient host has no adapter', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-doctor-bob-'));
   const previousData = process.env.XDG_DATA_HOME;
   const previousState = process.env.XDG_STATE_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
-    const { out } = captureStdout(() => doctor(root, BOB_ENV));
+    const { out } = await captureStdout(() => doctor(root, BOB_ENV));
     assert.match(
       out,
       /ok {3}ambient {2}running inside bob \(detected via BOB_SHELL_CLI_IDE_SERVER_PORT\); in-session execution: projection-only/,
@@ -272,14 +272,14 @@ test('doctor names projection-only in-session execution when the ambient host ha
   }
 });
 
-test('doctor names no detected host session with no ambient markers', () => {
+test('doctor names no detected host session with no ambient markers', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-doctor-none-'));
   const previousData = process.env.XDG_DATA_HOME;
   const previousState = process.env.XDG_STATE_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
-    const { out } = captureStdout(() => doctor(root, {}));
+    const { out } = await captureStdout(() => doctor(root, {}));
     assert.match(out, /ok {3}ambient {2}not running inside a detected host session/);
   } finally {
     if (previousData === undefined) delete process.env.XDG_DATA_HOME;
