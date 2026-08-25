@@ -1,11 +1,78 @@
 # Running Construct on a schedule
 
-Construct has no scheduler of its own, and that is a principle rather than a
-gap: the predecessor's daemon leak is the recorded lesson, so nothing in this
-tool waits, polls, or wakes. What it has is a **standing outcome** — a
-recurring intention recorded in the store — and a CLI verb that fires whatever
-has come due. The clock stays with whatever the machine already trusts:
-`cron`, `launchd`, a CI job.
+The kernel contains no scheduler: every tier below fires the same
+`construct standing --due` and `construct watch --due` verbs, and all
+scheduling state — cadences, last-firing times, what elapsed — stays in the
+store, not in a resident process. The invariant is not "no daemon exists"; it
+is narrower and stays true at every tier: **nothing resident runs that no
+explicit user verb asked for.** Unasked residency stays dead. Asked-for
+residency is a ladder, and you pick the rung.
+
+## The ladder
+
+**Tier 1, the default: `construct schedule install`.** One verb writes a
+platform timer — a launchd `LaunchAgent` on macOS, a systemd user timer on
+Linux — that fires `construct standing --due && construct watch --due` on a
+cadence you name. The process exists only for the length of one firing; there
+is nothing to start, crash, or leak between firings, and the platform's own
+calendar form catches up missed firings after sleep instead of dropping them.
+
+**Tier 2, opt-in: an on-demand daemon**, for a watch that needs sub-interval
+latency tier 1 cannot give it. It is being built on a sibling branch and is
+not runnable here. Conceptually: nothing spawns it but an explicit start
+verb, it binds a single instance to a unix socket in the per-user state
+directory rather than trusting a pidfile, and it exits itself after a bounded
+idle period rather than waiting to be told to stop — so a leaked daemon has
+its own backstop.
+
+**Tier 3, opt-in: always-on supervised mode**, for a user who explicitly
+wants a process that outlives every firing. It reuses tier 1's generated
+units in long-running form with resource limits (`Restart=on-failure`,
+memory and task ceilings, no elevated privileges) instead of a oneshot, and
+it is scoped to your login session — a personal tool should stop when you log
+out. It is also being built on a sibling branch and is not runnable here.
+
+Every tier keeps two things true regardless of which one you pick: nothing
+holds a credential in memory between firings (a short-lived child resolves
+secrets at use time and exits), and the sterile test harness can never spawn
+any of them — each is reachable only through its own explicit verb.
+
+## Installing the default
+
+```bash
+construct schedule install --every=6h
+```
+
+`--every` takes an hour step that divides a day evenly (`1h`, `2h`, `3h`,
+`4h`, `6h`, `8h`, `12h`) or `1d`. A cadence that does not divide the day
+evenly is refused rather than approximated, because an approximated calendar
+entry is a schedule that silently drifts from what you asked for. `--at`
+anchors the time of day (`--at=02:30` on a six-hour cadence fires at 02:30,
+08:30, 14:30, 20:30); left off, a daily cadence defaults to 09:00 and a
+sub-daily one starts at midnight. Add `--dry-run` to print the generated
+entry and the platform commands it would run without writing or loading
+anything:
+
+```bash
+construct schedule install --every=1d --at=09:00 --dry-run
+```
+
+Installing again with a different cadence replaces the entry — the old one
+is unloaded first, so you never end up with two schedules fighting over the
+same firing. Take it back out with:
+
+```bash
+construct schedule uninstall
+```
+
+### Doing it by hand
+
+The generated entry is nothing you could not write yourself: a `cron` line,
+a raw `launchd` plist, or a systemd timer that runs
+`construct standing --due && construct watch --due` on whatever cadence you
+choose. If you already manage scheduled jobs some other way, wiring it in by
+hand still works — `construct schedule install` exists so you do not have
+to, not because the hand-wired form stopped being valid.
 
 ## Standing outcomes
 
@@ -18,7 +85,7 @@ construct standing               # list them, with cadence and last firing
 construct standing retire <id>   # stop it; its firings stay on the record
 ```
 
-Then schedule the one firing line:
+The one firing line a schedule (or a hand-wired cron entry) calls:
 
 ```bash
 construct standing --due --host=claude --ceiling=5
@@ -31,10 +98,11 @@ every execution keeps full run lineage and `construct standing` can show when
 each intention last fired. A `--due` that finds nothing elapsed files nothing
 and says so — but it still resumes any earlier standing-filed run left with
 unfinished tasks, so a firing killed mid-flight is picked up by the next
-`--due` rather than waiting out another cadence. Declaring with `--domains=<name,…>` names the staff outright, so
-an unattended firing spends nothing on inference; the names are checked
-against the catalog at declaration, where a typo costs one retype instead of
-every firing until somebody reads the log.
+`--due` rather than waiting out another cadence. Declaring with
+`--domains=<name,…>` names the staff outright, so an unattended firing spends
+nothing on inference; the names are checked against the catalog at
+declaration, where a typo costs one retype instead of every firing until
+somebody reads the log.
 
 ## The bare recipe
 
@@ -81,7 +149,7 @@ construct watch list             # every declared watch, with cadence and last f
 construct watch retire <id>      # stop it; its firings stay on the record
 ```
 
-Then schedule the one firing line, exactly as a standing outcome's:
+The other firing line a schedule calls, exactly as a standing outcome's:
 
 ```bash
 construct watch --due
@@ -102,12 +170,17 @@ to use.
 ## Checking on it
 
 ```bash
-construct standing       # what stands, and when each last fired
-construct watch list     # every declared source watch, and when each last fired
-construct inbox          # what needs a human
-construct log | tail     # what happened last
-construct doctor         # is the machine's install healthy
+construct schedule status  # what tier-1 entry is installed, and its cadence
+construct standing         # what stands, and when each last fired
+construct watch list       # every declared source watch, and when each last fired
+construct inbox            # what needs a human
+construct log | tail       # what happened last
+construct doctor           # is the machine's install healthy, schedule included
 ```
+
+`construct doctor` reports the installed schedule's presence and cadence
+alongside its other checks; an absent schedule is a normal state and is
+reported as one, not as a failure.
 
 ## What not to schedule
 
