@@ -13,6 +13,7 @@
  */
 
 import type { Store } from './open.ts';
+import { transact } from './open.ts';
 
 export const DECISION_STATES = ['open', 'resolved'] as const;
 
@@ -34,6 +35,13 @@ export interface Decision {
   readonly raisedAt: string;
   readonly resolvedAt: string | null;
   readonly resolution: string | null;
+  /**
+   * Whose hand the resolution came through — `cli:user` for a person at the
+   * command line, `mcp:<client>` for a model through an MCP tool. Null while a
+   * decision is still open. A resolution that cannot say whose it was is a
+   * resolution nothing downstream should trust as a person's.
+   */
+  readonly resolvedBy: string | null;
 }
 
 export interface RaiseDecision {
@@ -54,6 +62,7 @@ interface Row {
   readonly raised_at: string;
   readonly resolved_at: string | null;
   readonly resolution: string | null;
+  readonly resolved_by: string | null;
 }
 
 function toDecision(row: Row): Decision {
@@ -66,8 +75,19 @@ function toDecision(row: Row): Decision {
     raisedAt: row.raised_at,
     resolvedAt: row.resolved_at,
     resolution: row.resolution,
+    resolvedBy: row.resolved_by,
   };
 }
+
+/**
+ * The provenance join, spelled once. Every read of a decision carries whose
+ * hand resolved it, drawn from the companion table so an existing store that
+ * predates provenance simply reports null rather than failing to load.
+ */
+const DECISION_SELECT = `
+  SELECT d.*, p.resolved_by AS resolved_by
+  FROM decisions d
+  LEFT JOIN decision_provenance p ON p.decision = d.id`;
 
 /**
  * Put a decision in the inbox. Requires at least two positions: a "decision"
@@ -94,22 +114,42 @@ export function raiseDecision(store: Store, decision: RaiseDecision): void {
     );
 }
 
-/** Record the user's choice. Never chooses; the resolution arrives from outside. */
+/**
+ * Record the user's choice. Never chooses; the resolution arrives from outside.
+ *
+ * `resolvedBy` names whose hand it arrived through — `cli:user` for a person at
+ * the command line, `mcp:<client>` for a model through an MCP tool — and it is
+ * required, not defaulted, because a resolution whose provenance is guessed is
+ * exactly the forgery this records against. The provenance is written in the
+ * same transaction as the resolution, so the two can never disagree.
+ */
 export function resolveDecision(
   store: Store,
   id: string,
   resolution: string,
   resolvedAt: string,
+  resolvedBy: string,
 ): void {
-  const result = store.db
-    .prepare(
-      `UPDATE decisions SET state = 'resolved', resolution = ?, resolved_at = ?
-       WHERE id = ? AND state = 'open'`,
-    )
-    .run(resolution, resolvedAt, id);
-  if (result.changes === 0) {
-    throw new Error(`resolveDecision: no open decision ${id}`);
+  if (resolvedBy.trim() === '') {
+    throw new Error(`resolveDecision: ${id} needs a non-empty resolver provenance`);
   }
+  transact(store, () => {
+    const result = store.db
+      .prepare(
+        `UPDATE decisions SET state = 'resolved', resolution = ?, resolved_at = ?
+         WHERE id = ? AND state = 'open'`,
+      )
+      .run(resolution, resolvedAt, id);
+    if (result.changes === 0) {
+      throw new Error(`resolveDecision: no open decision ${id}`);
+    }
+    store.db
+      .prepare(
+        `INSERT OR REPLACE INTO decision_provenance (decision, resolved_by, recorded_at)
+         VALUES (?, ?, ?)`,
+      )
+      .run(id, resolvedBy, resolvedAt);
+  });
 }
 
 /** The inbox: open decisions, oldest first. */
@@ -117,10 +157,10 @@ export function openDecisions(store: Store, run?: string): Decision[] {
   const rows = (
     run
       ? store.db
-          .prepare("SELECT * FROM decisions WHERE state = 'open' AND run = ? ORDER BY raised_at, id")
+          .prepare(`${DECISION_SELECT} WHERE d.state = 'open' AND d.run = ? ORDER BY d.raised_at, d.id`)
           .all(run)
       : store.db
-          .prepare("SELECT * FROM decisions WHERE state = 'open' ORDER BY raised_at, id")
+          .prepare(`${DECISION_SELECT} WHERE d.state = 'open' ORDER BY d.raised_at, d.id`)
           .all()
   ) as unknown as Row[];
   return rows.map(toDecision);
@@ -129,12 +169,12 @@ export function openDecisions(store: Store, run?: string): Decision[] {
 /** Resolved decisions for a run, oldest resolution first: the answers on record. */
 export function resolvedDecisions(store: Store, run: string): Decision[] {
   const rows = store.db
-    .prepare("SELECT * FROM decisions WHERE state = 'resolved' AND run = ? ORDER BY resolved_at, id")
+    .prepare(`${DECISION_SELECT} WHERE d.state = 'resolved' AND d.run = ? ORDER BY d.resolved_at, d.id`)
     .all(run) as unknown as Row[];
   return rows.map(toDecision);
 }
 
 export function getDecision(store: Store, id: string): Decision | null {
-  const row = store.db.prepare('SELECT * FROM decisions WHERE id = ?').get(id) as Row | undefined;
+  const row = store.db.prepare(`${DECISION_SELECT} WHERE d.id = ?`).get(id) as Row | undefined;
   return row ? toDecision(row) : null;
 }

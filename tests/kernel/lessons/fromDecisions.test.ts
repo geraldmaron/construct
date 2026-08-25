@@ -24,6 +24,7 @@ const RESOLVED: Decision = {
   raisedAt: '2026-08-13T00:00:00.000Z',
   resolvedAt: '2026-08-13T01:00:00.000Z',
   resolution: 'mobile-launch-completion first; UGC waits for the next cycle',
+  resolvedBy: 'cli:user',
 };
 
 test('a resolved decision distills to a lesson naming both sides and the resolution', () => {

@@ -249,6 +249,15 @@ export function docsReadNamesLocatorContainer(locator: string, descriptor: strin
   return descriptor.toLowerCase().includes(docsLocatorContainerName(parsed).toLowerCase());
 }
 
+/**
+ * Where the write action on a proposal came from. `keyword` is the mechanical
+ * default read off the finding's own words, `override` is an operator's
+ * explicit choice, and `model` is a model's own pick. Only the first two reach
+ * the standing-consent lane: a model that chose a low-risk action must not be
+ * able to turn a finding into one a workspace's standing yes carries out unread.
+ */
+export type WriteActionSource = 'override' | 'model' | 'keyword';
+
 export interface WriteProposal {
   readonly id: string;
   readonly workspace: string;
@@ -259,6 +268,12 @@ export interface WriteProposal {
   readonly justification: string;
   readonly risk: 'low' | 'high';
   readonly proposedAt: string;
+  /**
+   * Where the action came from. Absent on the read of a proposal filed before
+   * this was recorded, which is read as the keyword default — what such a
+   * proposal in fact was.
+   */
+  readonly actionSource?: WriteActionSource;
 }
 
 /**
@@ -310,7 +325,18 @@ export interface ProposalDecision {
   readonly basis: 'human-approval' | 'standing-consent';
   readonly reason: string;
   readonly decidedAt: string;
+  /**
+   * Whose hand recorded this decision — `cli:user` for a person at the command
+   * line. Null on a store that predates provenance. An approval carried out as
+   * authority for an outward write is honored only when this says a person made
+   * it: a model that wrote a byte-identical approval row must not be able to
+   * pass itself off as the human the outward-write ladder waits for.
+   */
+  readonly resolvedBy: string | null;
 }
+
+/** The provenance of a human-recorded decision. The only value the apply gate reads as a person. */
+export const HUMAN_DECISION = 'cli:user';
 
 interface SourceRow {
   readonly id: string;
@@ -683,6 +709,14 @@ export function proposeWrite(store: Store, proposal: WriteProposal): void {
       proposal.risk,
       proposal.proposedAt,
     );
+  // The action's origin, beside the proposal it belongs to. A proposal filed
+  // without one is the keyword default — what a caller who named no action in
+  // fact chose — so that is what is recorded rather than left absent.
+  store.db
+    .prepare(
+      `INSERT INTO proposal_action_sources (proposal, action_source) VALUES (?, ?)`,
+    )
+    .run(proposal.id, proposal.actionSource ?? 'keyword');
 }
 
 /**
@@ -772,7 +806,14 @@ export function docEditFor(store: Store, proposal: string): DocEdit | null {
 }
 
 export function getProposal(store: Store, id: string): WriteProposal | null {
-  const row = store.db.prepare('SELECT * FROM write_proposals WHERE id = ?').get(id) as
+  const row = store.db
+    .prepare(
+      `SELECT p.*, a.action_source
+       FROM write_proposals p
+       LEFT JOIN proposal_action_sources a ON a.proposal = p.id
+       WHERE p.id = ?`,
+    )
+    .get(id) as
     | {
         id: string;
         workspace: string;
@@ -782,6 +823,7 @@ export function getProposal(store: Store, id: string): WriteProposal | null {
         justification: string;
         risk: string;
         proposed_at: string;
+        action_source: string | null;
       }
     | undefined;
   if (!row) return null;
@@ -794,6 +836,7 @@ export function getProposal(store: Store, id: string): WriteProposal | null {
     justification: row.justification,
     risk: row.risk as WriteProposal['risk'],
     proposedAt: row.proposed_at,
+    actionSource: (row.action_source ?? 'keyword') as WriteActionSource,
   };
 }
 
@@ -801,11 +844,20 @@ export function getProposal(store: Store, id: string): WriteProposal | null {
 export function decisionOf(store: Store, proposal: string): ProposalDecision | null {
   const row = store.db
     .prepare(
-      `SELECT proposal, verdict, basis, reason, decided_at
-       FROM proposal_decisions WHERE proposal = ? ORDER BY seq DESC LIMIT 1`,
+      `SELECT d.proposal, d.verdict, d.basis, d.reason, d.decided_at, v.resolved_by
+       FROM proposal_decisions d
+       LEFT JOIN proposal_decision_provenance v ON v.decision = d.seq
+       WHERE d.proposal = ? ORDER BY d.seq DESC LIMIT 1`,
     )
     .get(proposal) as
-    | { proposal: string; verdict: string; basis: string; reason: string; decided_at: string }
+    | {
+        proposal: string;
+        verdict: string;
+        basis: string;
+        reason: string;
+        decided_at: string;
+        resolved_by: string | null;
+      }
     | undefined;
   if (!row) return null;
   return {
@@ -814,6 +866,7 @@ export function decisionOf(store: Store, proposal: string): ProposalDecision | n
     basis: row.basis as ProposalDecision['basis'],
     reason: row.reason,
     decidedAt: row.decided_at,
+    resolvedBy: row.resolved_by,
   };
 }
 
@@ -848,6 +901,7 @@ export function decideProposal(
   verdict: 'approved' | 'rejected',
   reason: string,
   decidedAt: string,
+  resolvedBy: string = HUMAN_DECISION,
 ): void {
   if (!getProposal(store, proposal)) {
     throw new Error(`decideProposal: no proposal ${proposal}`);
@@ -856,12 +910,30 @@ export function decideProposal(
   if (prior?.verdict === 'applied') {
     throw new Error(`decideProposal: ${proposal} was already applied; there is nothing left to decide`);
   }
-  store.db
+  // Two sequential writes rather than a nested transaction: this runs inside a
+  // caller's transaction as often as not (adopting a source relationship is one
+  // such caller), and an inner BEGIN there is an error, not a safeguard. The
+  // provenance follows the row it qualifies, so a decision cannot be read back
+  // without it.
+  const seq = store.db
     .prepare(
       `INSERT INTO proposal_decisions (proposal, verdict, basis, reason, decided_at)
        VALUES (?, ?, 'human-approval', ?, ?)`,
     )
-    .run(proposal, verdict, reason, decidedAt);
+    .run(proposal, verdict, reason, decidedAt).lastInsertRowid;
+  recordDecisionProvenance(store, seq, resolvedBy);
+}
+
+/** The provenance beside a proposal-decision row, written in the same transaction. */
+function recordDecisionProvenance(store: Store, seq: bigint | number, resolvedBy: string): void {
+  if (resolvedBy.trim() === '') {
+    throw new Error('recordDecisionProvenance: a decision needs a non-empty resolver provenance');
+  }
+  store.db
+    .prepare(
+      `INSERT OR REPLACE INTO proposal_decision_provenance (decision, resolved_by) VALUES (?, ?)`,
+    )
+    .run(seq, resolvedBy);
 }
 
 /**
@@ -871,11 +943,32 @@ export function decideProposal(
  * that is the catastrophe class the hard gate owns.
  *
  * Standing consent is a judgment about a class of change, made before anyone
- * knew which source it would land in. A source its owner declared sensitive is
- * outside that judgment: it takes a decision made about this proposal, by a
- * person, with the target in front of them.
+ * knew which source it would land in. Three things sit outside that judgment
+ * and each takes a decision made about this proposal, by a person, with the
+ * target in front of them:
+ *
+ *   - A source its owner declared sensitive. Sensitivity is a stated fact, so
+ *     the absence of a declaration is not "not sensitive" — it is "unknown",
+ *     and an unknown source does not ride a blanket yes. Standing is granted
+ *     only when a declaration exists and says the source is not sensitive.
+ *   - A high-risk change, always.
+ *   - A change whose action a model chose. A model that picked a low-risk
+ *     action would otherwise turn a finding into one the standing yes carries
+ *     out unread; only the mechanical keyword default and an explicit operator
+ *     override reach the low-risk lane.
+ *
+ * An approval only counts as human authority when its provenance says a person
+ * recorded it. A model that wrote a byte-identical `approved` row through an
+ * MCP surface has forged the very thing this gate waits for, so an approval
+ * that is not `cli:user` is refused here rather than laundered into an apply.
  */
-export function markApplied(store: Store, proposal: string, reason: string, decidedAt: string): void {
+export function markApplied(
+  store: Store,
+  proposal: string,
+  reason: string,
+  decidedAt: string,
+  resolvedBy: string = HUMAN_DECISION,
+): void {
   const record = getProposal(store, proposal);
   if (!record) throw new Error(`markApplied: no proposal ${proposal}`);
   const prior = decisionOf(store, proposal);
@@ -885,28 +978,48 @@ export function markApplied(store: Store, proposal: string, reason: string, deci
   if (prior?.verdict === 'rejected') {
     throw new Error(`markApplied: ${proposal} was rejected; a rejection is not overridden by applying anyway`);
   }
-  const sensitive = sourceDeclaration(store, record.source)?.sensitive === true;
+  if (prior?.verdict === 'approved' && prior.resolvedBy !== HUMAN_DECISION) {
+    throw new Error(
+      `markApplied: ${proposal} was approved by ${prior.resolvedBy ?? 'an unrecorded hand'}, not a person; ` +
+        'an outward write is carried out only on a human approval',
+    );
+  }
+  const declaration = sourceDeclaration(store, record.source);
+  const knownNotSensitive = declaration?.sensitive === false;
+  const modelChosen = record.actionSource === 'model';
+  const consented = writeConsentAllowsLowRisk(store, record.workspace);
   let basis: ProposalDecision['basis'];
   if (prior?.verdict === 'approved') {
     basis = 'human-approval';
-  } else if (record.risk === 'low' && !sensitive && writeConsentAllowsLowRisk(store, record.workspace)) {
+  } else if (record.risk === 'low' && knownNotSensitive && !modelChosen && consented) {
     basis = 'standing-consent';
   } else {
+    // The narrower reasons — a missing declaration, a model-chosen action —
+    // matter only where consent is present and is the thing not reaching this
+    // change; without consent it simply needs one, or a human approval.
     throw new Error(
       `markApplied: ${proposal} has no authority to apply — it needs a human approval` +
-        (sensitive
-          ? ' (its source is declared sensitive, which standing consent does not cover)'
-          : record.risk === 'low'
-            ? ' or standing workspace consent'
-            : ' (high-risk never applies on standing consent)'),
+        (record.risk !== 'low'
+          ? ' (high-risk never applies on standing consent)'
+          : declaration?.sensitive === true
+            ? ' (its source is declared sensitive, which standing consent does not cover)'
+            : consented && declaration === null
+              ? ' (its source has no declaration, so standing consent cannot know it is safe)'
+              : consented && modelChosen
+                ? ' (its action was chosen by a model, which standing consent does not cover)'
+                : ' or standing workspace consent'),
     );
   }
-  store.db
+  // Sequential rather than a nested transaction: markApplied runs inside a
+  // caller's transaction (adopting a source relationship is one such caller),
+  // where an inner BEGIN is an error. The provenance follows the applied row.
+  const seq = store.db
     .prepare(
       `INSERT INTO proposal_decisions (proposal, verdict, basis, reason, decided_at)
        VALUES (?, 'applied', ?, ?, ?)`,
     )
-    .run(proposal, basis, reason, decidedAt);
+    .run(proposal, basis, reason, decidedAt).lastInsertRowid;
+  recordDecisionProvenance(store, seq, resolvedBy);
 }
 
 /** Proposals in a workspace with no decision yet, oldest first: the human's queue. */

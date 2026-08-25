@@ -9,8 +9,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join } from 'node:path';
-import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { chmodSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { sterile } from '../../harness/sterile.ts';
 import {
   SCHEMA_VERSION,
@@ -70,6 +70,27 @@ test('storePath derives from injected Paths and openStore creates missing dirs',
     again.close();
   } finally {
     fixture.cleanup();
+  }
+});
+
+test('the store and its directory are private, even under a permissive umask', () => {
+  // A process umask of 0 would otherwise let the store be created world-
+  // readable. The containment is set explicitly, so it holds regardless.
+  const previous = process.umask(0o000);
+  const fixture = sterile();
+  try {
+    const path = storePath(fixture.paths);
+    const store = openStore(path);
+    store.close();
+    assert.equal(statSync(path).mode & 0o077, 0, 'the database file is readable only by its owner');
+    assert.equal(
+      statSync(dirname(path)).mode & 0o077,
+      0,
+      'the directory holding the store, its -wal and -shm is owner-only',
+    );
+  } finally {
+    fixture.cleanup();
+    process.umask(previous);
   }
 });
 
@@ -530,13 +551,14 @@ test('the inbox holds open decisions and resolution comes from outside', () => {
     assert.equal(inbox[0].positions.length, 2, 'both sides survive with their citations');
     assert.equal(inbox[0].resolution, null, 'nothing auto-arbitrates');
 
-    resolveDecision(store, 'd1', 'wait for the DPA', '2026-08-04T00:00:00.000Z');
+    resolveDecision(store, 'd1', 'wait for the DPA', '2026-08-04T00:00:00.000Z', 'cli:user');
     assert.equal(openDecisions(store, 'r').length, 0);
     const resolved = getDecision(store, 'd1');
     assert.equal(resolved?.state, 'resolved');
     assert.equal(resolved?.resolution, 'wait for the DPA');
+    assert.equal(resolved?.resolvedBy, 'cli:user', 'the resolver provenance is recorded');
 
-    assert.throws(() => resolveDecision(store, 'd1', 'again', AT), /no open decision/);
+    assert.throws(() => resolveDecision(store, 'd1', 'again', AT, 'cli:user'), /no open decision/);
   });
 });
 

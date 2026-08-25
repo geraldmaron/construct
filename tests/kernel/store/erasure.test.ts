@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import type { Store } from '../../../src/kernel/store/open.ts';
@@ -150,4 +151,33 @@ test('the fact of an erasure is not itself erasable', () => {
     assert.throws(() => store.db.prepare('DELETE FROM erasures').run(), /append-only/);
     assert.throws(() => store.db.prepare('UPDATE erasures SET reason = ?').run('x'), /append-only/);
   });
+});
+
+test('erased bytes do not survive in the raw database or its write-ahead log', () => {
+  // The words are gone only if they are gone from the file, not merely from the
+  // rows a query can reach. A unique sentinel is written, erased, and then hunted
+  // for in the raw bytes of both the database and its WAL.
+  const sentinel = 'ERASE-SENTINEL-7f3a9c2e-forget-me';
+  const fixture = sterile();
+  const path = join(fixture.root, 'data', 'construct.db');
+  try {
+    const store = openStore(path);
+    addRecord(store, { id: 'rec-x', workspace: 'default', kind: 'person', name: 'Subject', createdAt: AT });
+    updateRecordField(store, {
+      record: 'rec-x',
+      field: 'note',
+      value: sentinel,
+      citation: 'note:n-1#L1',
+      recordedAt: AT,
+    });
+    eraseRecord(store, 'rec-x', 'the person asked to be forgotten', LATER);
+    store.close();
+
+    const bytesHold = (file: string): boolean =>
+      existsSync(file) && readFileSync(file).includes(Buffer.from(sentinel));
+    assert.equal(bytesHold(path), false, 'the erased words are absent from the database file');
+    assert.equal(bytesHold(`${path}-wal`), false, 'and absent from the write-ahead log');
+  } finally {
+    fixture.cleanup();
+  }
 });

@@ -559,7 +559,9 @@ async function callTool(
         }
         const asked = getDecision(core.store, askId);
         if (!asked) throw new RangeError(`no ask "${askId}"`);
-        resolveDecision(core.store, askId, given, core.clock());
+        // Whose hand this answer came through, kept distinct from the CLI's
+        // `cli:user` so nothing downstream reads a model's answer as a person's.
+        resolveDecision(core.store, askId, given, core.clock(), `mcp:${client}`);
         return toolResult(id, {
           answered: askId,
           run: asked.run,
@@ -573,7 +575,7 @@ async function callTool(
         }
         const resolution = typeof input.resolution === 'string' ? input.resolution.trim() : '';
         if (!resolution) throw new RangeError('decide requires a non-empty string "resolution"');
-        resolveDecision(core.store, input.id, resolution, core.clock());
+        resolveDecision(core.store, input.id, resolution, core.clock(), `mcp:${client}`);
         return toolResult(id, { decided: input.id, resolution });
       }
       case 'verdict': {

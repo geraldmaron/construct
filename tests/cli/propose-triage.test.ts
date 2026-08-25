@@ -24,7 +24,12 @@ import { consent, propose } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
-import { addSource, decisionOf, pendingProposals } from '../../src/kernel/store/sources.ts';
+import {
+  addSource,
+  decisionOf,
+  pendingProposals,
+  setSourceDeclaration,
+} from '../../src/kernel/store/sources.ts';
 import { triageProposals } from '../../src/kernel/run/triage.ts';
 
 interface Capture {
@@ -65,6 +70,14 @@ function declareSource(id = 'src-1'): void {
   const store = openStore(storePath(resolvePaths()));
   try {
     addSource(store, { id, workspace: 'acme', kind: 'jira', locator: 'PROJ', addedAt: AT });
+    // Standing consent reaches a source only once it is declared not sensitive;
+    // without a declaration its safety is unknown and it waits for a person.
+    setSourceDeclaration(
+      store,
+      id,
+      { authority: 'working', relevance: 'the tracker', sensitive: false },
+      AT,
+    );
   } finally {
     store.close();
   }

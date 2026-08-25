@@ -147,6 +147,30 @@
  * integer because a calibration curve is drawn over integers; the band is a
  * rendering, and re-deriving it costs nothing.
  *
+ * Schema version 21 adds `decision_provenance` and `proposal_decision_provenance`,
+ * both additive: who a resolution came through, kept beside the resolution it
+ * belongs to. A decision recorded by a person at the CLI and one a model wrote
+ * through an MCP tool were byte-identical rows, so a change carried out on a
+ * human's approval and one carried out on a model's forgery of that approval
+ * were the same evidence to everything that read them. These are their own
+ * tables rather than columns on `decisions` and `proposal_decisions` for the
+ * reason `source_shapes` is its own: this schema is created, never altered, and
+ * a column added to an existing table would silently not exist in a store that
+ * already has one. The provenance is keyed to the row it qualifies — a decision
+ * id, a proposal-decision seq — and written in the same call that writes that
+ * row, so a resolution can never exist without the record of whose it was.
+ *
+ * Schema version 22 adds `proposal_action_sources`, additive: where the write
+ * action on a proposal came from — the mechanical keyword default, an explicit
+ * operator override, or a model's own choice. Standing consent is a workspace's
+ * yes to a class of low-risk change, and a model that picked a low-risk action
+ * turned a high-risk finding into one that rides that yes unread. Recording the
+ * action's origin is what lets the apply gate keep a model-chosen action out of
+ * the standing lane while still honoring the keyword default and an override.
+ * Its own table for the reason `source_shapes` is its own: this schema is
+ * created, never altered. A proposal with no row is read as the keyword default,
+ * which is what a proposal filed before this setting existed in fact was.
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -166,11 +190,11 @@
  */
 
 import { DatabaseSync } from 'node:sqlite';
-import { accessSync, constants, existsSync, mkdirSync } from 'node:fs';
+import { accessSync, chmodSync, constants, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 20;
+export const SCHEMA_VERSION = 22;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -324,6 +348,12 @@ CREATE TABLE IF NOT EXISTS decisions (
 ) STRICT;
 
 CREATE INDEX IF NOT EXISTS decisions_open ON decisions (state, raised_at);
+
+CREATE TABLE IF NOT EXISTS decision_provenance (
+  decision    TEXT PRIMARY KEY REFERENCES decisions (id),
+  resolved_by TEXT NOT NULL,
+  recorded_at TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS tasks (
   id             TEXT PRIMARY KEY,
@@ -622,6 +652,11 @@ CREATE TRIGGER IF NOT EXISTS write_proposals_no_delete
 BEFORE DELETE ON write_proposals
 BEGIN SELECT RAISE(ABORT, 'a proposal is immutable; its fate is a decision row'); END;
 
+CREATE TABLE IF NOT EXISTS proposal_action_sources (
+  proposal      TEXT PRIMARY KEY REFERENCES write_proposals (id),
+  action_source TEXT NOT NULL CHECK (action_source IN ('override', 'model', 'keyword'))
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS proposal_decisions (
   seq        INTEGER PRIMARY KEY AUTOINCREMENT,
   proposal   TEXT NOT NULL,
@@ -640,6 +675,11 @@ BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS proposal_decisions_no_delete
 BEFORE DELETE ON proposal_decisions
 BEGIN SELECT RAISE(ABORT, 'proposal_decisions is append-only'); END;
+
+CREATE TABLE IF NOT EXISTS proposal_decision_provenance (
+  decision    INTEGER PRIMARY KEY REFERENCES proposal_decisions (seq),
+  resolved_by TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS proposed_source_edges (
   proposal    TEXT PRIMARY KEY REFERENCES write_proposals (id),
@@ -823,8 +863,17 @@ export function storePath(paths: Paths): string {
 export function openStore(path: string): Store {
   let db: DatabaseSync;
   try {
-    mkdirSync(dirname(path), { recursive: true });
+    const dataDir = dirname(path);
+    mkdirSync(dataDir, { recursive: true });
     db = new DatabaseSync(path);
+    // The store holds a workspace's records, notes, and decisions — private by
+    // default, the same discipline the capability secret at rest is created
+    // under. The directory mode is the real containment: SQLite opens its own
+    // -wal and -shm files beside this one, and chmodding those would race their
+    // creation, so 0700 on the directory is what keeps them from other users.
+    // The database file itself is narrowed to 0600 on top of that.
+    chmodSync(dataDir, 0o700);
+    chmodSync(path, 0o600);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA foreign_keys = ON');
     // Two processes legitimately write this store at once — a coordinator
@@ -833,6 +882,12 @@ export function openStore(path: string): Store {
     // second writer throws SQLITE_BUSY immediately instead of waiting the few
     // milliseconds the first needs to commit.
     db.exec('PRAGMA busy_timeout = 5000');
+    // An erasure removes a person's records and notes on request, and a logical
+    // delete leaves the bytes on freed pages for anyone who reads the file raw.
+    // secure_delete overwrites the content of a freed page rather than only
+    // unlinking it, so what the erasure ritual reports gone is gone from the
+    // page it sat on — the freelist and VACUUM the ritual runs finish the job.
+    db.exec('PRAGMA secure_delete = ON');
     db.exec(SCHEMA);
   } catch (error) {
     throw new StoreUnavailableError(path, reasonFor(error));
