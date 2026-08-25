@@ -15,6 +15,7 @@ import { readWorkLog } from '../kernel/store/worklog.ts';
 import { listTasks } from '../kernel/store/tasks.ts';
 import { openDecisions } from '../kernel/store/decisions.ts';
 import { pendingProposalCount } from '../kernel/store/sources.ts';
+import { planFor } from '../kernel/store/plans.ts';
 import { externalReadsFor } from '../kernel/store/externalreads.ts';
 import { CAPABILITY_DENIED_ACTION } from '../kernel/run/rolewrite.ts';
 import { latestDraft, promotionOf } from '../kernel/run/promotion.ts';
@@ -28,6 +29,19 @@ import { withStore } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
 import { runFlag } from './flags.ts';
 import { jsonFlag, writeJson } from './json.ts';
+
+/**
+ * Whether a run id names a run this store actually recorded, as opposed to
+ * one that simply has nothing to show yet. A run gets exactly one plan,
+ * write-once, at outcome time (`kernel/store/plans.ts`), so a plan's presence
+ * is the one fact that separates "this id was never recorded" from "this id
+ * is real and genuinely has no tasks or log entries yet" — the second is a
+ * normal resting state and stays exit `0`; the first is a typo or a stale id
+ * and a script needs to be able to tell the two apart by exit code alone.
+ */
+function runExists(store: Store, run: string): boolean {
+  return planFor(store, run) !== null;
+}
 
 /**
  * How an entry's inference was reached, when that is not the free default
@@ -115,6 +129,11 @@ export function show(argv: string[]): number {
 
   return withStore((store) => {
     const tasks = listTasks(store, run);
+    // A run id nobody ever recorded and a real run with no tasks yet print
+    // the identical "no tasks" reply — the only way a script can tell a typo
+    // from an honestly empty run is the exit code, so that is where the two
+    // diverge; the message stays the one line it has always been.
+    const exists = tasks.length > 0 || runExists(store, run);
     if (asJson) {
       // The stored record, not the reader's rendering: each task as it is
       // held, its draft's raw deliverable, and the external reads beside it —
@@ -139,11 +158,11 @@ export function show(argv: string[]): number {
         }),
         externalReads: externalReadsFor(store, run),
       });
-      return 0;
+      return exists ? 0 : 1;
     }
     if (tasks.length === 0) {
       process.stdout.write(`no tasks for ${run}. Record an outcome first: construct outcome "<what you want>"\n`);
-      return 0;
+      return exists ? 0 : 1;
     }
     // What the workspace said the ground is, so a citation carries its
     // standing: a claim resting on an aspirational document reads as one.
@@ -218,15 +237,21 @@ export function log(argv: string[]): number {
 
   return withStore((store) => {
     const entries = readWorkLog(store, run);
+    // Unscoped `log` reads the whole store, where an empty result is simply
+    // the store being new — there is no id to have gotten wrong. Scoped by
+    // `--run`, an empty result is ambiguous the same way `show`'s is, and
+    // resolved the same way: a plan on record makes the run real even before
+    // it has logged anything.
+    const exists = run === undefined || entries.length > 0 || runExists(store, run);
     if (jsonFlag(argv)) {
       // The append-only stream itself plus the task rows the footer below is
       // derived from — the record the footer's prose reads, not the prose.
       writeJson({ run: run ?? null, entries, tasks: listTasks(store, run) });
-      return 0;
+      return exists ? 0 : 1;
     }
     if (entries.length === 0) {
       process.stdout.write(run ? `no work log entries for ${run}\n` : 'work log is empty\n');
-      return 0;
+      return exists ? 0 : 1;
     }
     for (const entry of entries) {
       process.stdout.write(
@@ -249,11 +274,13 @@ export function log(argv: string[]): number {
  * the stream alone. Found on a live, healthy run that was reasonably read as
  * hung, where telling them apart meant opening construct.db by hand.
  *
- * Why this lives on `log` rather than a new `construct status` verb. The user
- * whose confusion produced the bead reached for `construct log`, so answering
- * anywhere else costs a discovery step at exactly the moment someone is unsure
- * whether their run is broken. It also honours the project's preference for
- * extending an existing surface over adding one.
+ * This stays on `log` rather than moving to `construct status`: a user
+ * reading the event stream because they suspect one run is hung wants the
+ * answer right there, not a second command to remember at exactly the moment
+ * they are unsure whether it is broken. `status` answers a different
+ * question — where the whole workspace stands, across runs, decisions, and
+ * proposals, without asking which run to look at — and reads this same task
+ * state rather than re-deriving it.
  *
  * The stream itself is untouched and stays append-only: this is a footer that
  * reads current task state, clearly separated from the events above it. Nothing
