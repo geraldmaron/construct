@@ -38,6 +38,7 @@ import { audit, propose } from './propose.ts';
 import { consent, mode, settings } from './settings.ts';
 import { standing } from './standing.ts';
 import { staff } from './staff.ts';
+import { completions } from './completions.ts';
 
 /**
  * The surface, re-exported. Tests and any other in-process caller reach a
@@ -75,6 +76,7 @@ export { audit, propose } from './propose.ts';
 export { consent, mode, settings } from './settings.ts';
 export { standing } from './standing.ts';
 export { staff } from './staff.ts';
+export { completions } from './completions.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.
@@ -89,7 +91,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
   'settings', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'doctor', 'backup',
-  'cleanup', 'version', 'help',
+  'cleanup', 'completions', 'version', 'help',
 ]);
 
 /**
@@ -199,6 +201,8 @@ async function run(argv: string[]): Promise<number> {
       return backup(argv.slice(1));
     case 'cleanup':
       return cleanup(argv.slice(1));
+    case 'completions':
+      return completions(argv.slice(1));
     case 'version':
     case '--version':
     case '-v':
