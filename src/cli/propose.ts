@@ -856,6 +856,9 @@ export async function propose(argv: string[], hostOverride?: HostAdapter): Promi
           justification: proposal.justification,
           risk: proposal.risk,
           proposedAt: at,
+          // Carried through so a model's pick is kept out of the standing lane
+          // at apply time — the same distinction the queue disclosure shows.
+          actionSource: proposal.actionSource,
         });
         filed += 1;
         risks[proposal.risk] += 1;
