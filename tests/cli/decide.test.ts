@@ -31,6 +31,7 @@ import {
   decisionOf,
   proposeWrite,
   setEngagementMode,
+  setSourceDeclaration,
 } from '../../src/kernel/store/sources.ts';
 import { getProjection } from '../../src/kernel/store/projections.ts';
 import type { HostAdapter } from '../../src/kernel/hosts/interface.ts';
@@ -99,6 +100,13 @@ function outwardHost(detail: string): HostAdapter & { readonly asked: () => numb
 /** One tracker source and one waiting change per risk class, in workspace acme. */
 function seedQueue(store: Store): void {
   addSource(store, { id: 'src-1', workspace: 'acme', kind: 'jira', locator: 'PROJ', addedAt: AT });
+  // Standing consent reaches a source only once it is declared not sensitive.
+  setSourceDeclaration(
+    store,
+    'src-1',
+    { authority: 'working', relevance: 'the customer tracker', sensitive: false },
+    AT,
+  );
   proposeWrite(store, {
     id: 'p-low',
     workspace: 'acme',
