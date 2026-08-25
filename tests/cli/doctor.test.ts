@@ -23,7 +23,7 @@ import { claimTask, completeTask, enqueueTask } from '../../src/kernel/store/tas
 import { ratifySettingsFile } from '../../src/kernel/store/ratifications.ts';
 import { discoverProjectSettings, fileValuesToObject } from '../../src/cli/settings-file.ts';
 
-function captureStdio<T>(fn: () => T): { result: T; out: string; err: string } {
+async function captureStdio<T>(fn: () => T | Promise<T>): Promise<{ result: T; out: string; err: string }> {
   const realOut = process.stdout.write.bind(process.stdout);
   const realErr = process.stderr.write.bind(process.stderr);
   let out = '';
@@ -37,7 +37,7 @@ function captureStdio<T>(fn: () => T): { result: T; out: string; err: string } {
     return true;
   }) as typeof process.stderr.write;
   try {
-    const result = fn();
+    const result = await fn();
     return { result, out, err };
   } finally {
     process.stdout.write = realOut;
@@ -74,7 +74,7 @@ function withIsolatedDirs<T>(root: string, fn: () => T): T {
   }
 }
 
-test('doctor reports each predecessor marker with the cleanup pointer', () => {
+test('doctor reports each predecessor marker with the cleanup pointer', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.mkdirSync(path.join(cwd, '.construct', 'launcher'), { recursive: true });
@@ -91,7 +91,7 @@ test('doctor reports each predecessor marker with the cleanup pointer', () => {
     execFileSync('git', ['init', '-q'], { cwd });
     execFileSync('git', ['config', 'core.hooksPath', '.beads/hooks'], { cwd });
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const litterLines = out.split('\n').filter((line) => line.startsWith('ok   litter'));
     // .construct/launcher/ existing implies .construct/ itself exists too, so
@@ -106,12 +106,12 @@ test('doctor reports each predecessor marker with the cleanup pointer', () => {
   }
 });
 
-test('doctor prints no litter lines for a clean project tree, and still exits 0', () => {
+test('doctor prints no litter lines for a clean project tree, and still exits 0', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"clean"}\n');
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' litter '), `expected no litter lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -135,13 +135,13 @@ function writeGeneratedSkill(dir: string, name: string, version: string): void {
   );
 }
 
-test('doctor names a skill pack stamped by a different construct version', () => {
+test('doctor names a skill pack stamped by a different construct version', async () => {
   const cwd = mkFixtureDir();
   try {
     const stale = `${installedVersion()}-fixture-stale`;
     writeGeneratedSkill(path.join(cwd, '.claude', 'skills'), 'construct-example', stale);
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const skillsLines = out.split('\n').filter((line) => line.startsWith('ok   skills'));
     assert.equal(skillsLines.length, 1, `expected 1 skills line, got:\n${out}`);
@@ -152,12 +152,12 @@ test('doctor names a skill pack stamped by a different construct version', () =>
   }
 });
 
-test('doctor is silent when the skill pack matches the installed version', () => {
+test('doctor is silent when the skill pack matches the installed version', async () => {
   const cwd = mkFixtureDir();
   try {
     writeGeneratedSkill(path.join(cwd, '.claude', 'skills'), 'construct-example', installedVersion());
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' skills '), `expected no skills lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -166,12 +166,12 @@ test('doctor is silent when the skill pack matches the installed version', () =>
   }
 });
 
-test('doctor is silent when no skill pack is present', () => {
+test('doctor is silent when no skill pack is present', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-pack"}\n');
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' skills '), `expected no skills lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -187,10 +187,10 @@ function backupLine(out: string): string {
   return line;
 }
 
-test('doctor says plainly when no copy of the store has ever been taken', () => {
+test('doctor says plainly when no copy of the store has ever been taken', async () => {
   const cwd = mkFixtureDir();
   try {
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const line = backupLine(out);
     assert.match(line, /no copy of the store has ever been taken/);
@@ -201,11 +201,11 @@ test('doctor says plainly when no copy of the store has ever been taken', () => 
   }
 });
 
-test('doctor names the copy once one has been taken, and stays out of the exit code', () => {
+test('doctor names the copy once one has been taken, and stays out of the exit code', async () => {
   const cwd = mkFixtureDir();
   try {
     const vault = path.join(cwd, 'vault');
-    const { result, out } = captureStdio(() =>
+    const { result, out } = await captureStdio(() =>
       withIsolatedDirs(cwd, () => {
         // A store to copy. Created directly rather than by a run: what doctor
         // is being asked here is whether a copy exists, not what is in it.
@@ -266,13 +266,13 @@ function seedSettledDraft(root: string, opts: { id: string; run: string; settled
   }
 }
 
-test('doctor names a settled deliverable stuck at draft past the threshold', () => {
+test('doctor names a settled deliverable stuck at draft past the threshold', async () => {
   const cwd = mkFixtureDir();
   try {
     const settledAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
     seedSettledDraft(cwd, { id: 't-fixture-stale', run: 'run-fixture', settledAt });
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     const staleLines = out.split('\n').filter((line) => line.startsWith('ok   stale-draft'));
     assert.equal(staleLines.length, 1, `expected 1 stale-draft line, got:\n${out}`);
@@ -285,14 +285,14 @@ test('doctor names a settled deliverable stuck at draft past the threshold', () 
   }
 });
 
-test('doctor is silent about stale drafts when none have settled past the threshold', () => {
+test('doctor is silent about stale drafts when none have settled past the threshold', async () => {
   const cwd = mkFixtureDir();
   try {
     // Settled a moment ago, well inside the threshold — present in the store,
     // still draft, but not yet worth naming.
     seedSettledDraft(cwd, { id: 't-fresh', run: 'run-fresh', settledAt: new Date().toISOString() });
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' stale-draft '), `expected no stale-draft lines, got:\n${out}`);
     assert.equal(result, 0);
@@ -301,13 +301,13 @@ test('doctor is silent about stale drafts when none have settled past the thresh
   }
 });
 
-test('doctor is silent about stale drafts when the store does not exist yet', () => {
+test('doctor is silent about stale drafts when the store does not exist yet', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-store-yet"}\n');
     assert.ok(!fs.existsSync(storePathUnder(cwd)), 'sanity: no store has been created for this fixture');
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' stale-draft '), `expected no stale-draft lines, got:\n${out}`);
     assert.ok(!fs.existsSync(storePathUnder(cwd)), 'doctor must not create a database merely by being asked a question');
@@ -343,7 +343,7 @@ function ratifyProjectFile(cwd: string): void {
   }
 }
 
-test('doctor reports state: local in effect and roots the store check at the repo path', () => {
+test('doctor reports state: local in effect and roots the store check at the repo path', async () => {
   const cwd = mkFixtureDir();
   try {
     sh(cwd, ['init', '-q']);
@@ -351,7 +351,7 @@ test('doctor reports state: local in effect and roots the store check at the rep
     fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
     fs.writeFileSync(path.join(cwd, '.construct', 'settings.json'), '{"state":"local"}');
 
-    const { result, out } = captureStdio(() =>
+    const { result, out } = await captureStdio(() =>
       withIsolatedDirs(cwd, () => {
         ratifyProjectFile(cwd);
         return doctor(cwd);
@@ -370,7 +370,7 @@ test('doctor reports state: local in effect and roots the store check at the rep
   }
 });
 
-test('doctor FAILs the store check when state: local is ratified but the store path is not ignored', () => {
+test('doctor FAILs the store check when state: local is ratified but the store path is not ignored', async () => {
   const cwd = mkFixtureDir();
   try {
     sh(cwd, ['init', '-q']);
@@ -378,7 +378,7 @@ test('doctor FAILs the store check when state: local is ratified but the store p
     fs.mkdirSync(path.join(cwd, '.construct'), { recursive: true });
     fs.writeFileSync(path.join(cwd, '.construct', 'settings.json'), '{"state":"local"}');
 
-    const { result, out } = captureStdio(() =>
+    const { result, out } = await captureStdio(() =>
       withIsolatedDirs(cwd, () => {
         ratifyProjectFile(cwd);
         return doctor(cwd);
@@ -395,12 +395,12 @@ test('doctor FAILs the store check when state: local is ratified but the store p
   }
 });
 
-test('doctor is silent about local-state when no project file requests it', () => {
+test('doctor is silent about local-state when no project file requests it', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.writeFileSync(path.join(cwd, 'package.json'), '{"name":"no-local-state"}\n');
 
-    const { result, out } = captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
     assert.ok(!out.includes(' local-state '), `expected no local-state lines, got:\n${out}`);
     assert.equal(result, 0);
