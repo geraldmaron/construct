@@ -2678,3 +2678,103 @@ The only improper privileging found is doc-level: `docs/first-run.md` uses
 `--host=claude` in every runnable example, which can make a non-Claude user
 think Construct requires Claude Code. Filed as construct-7jgy.13. No code change
 is needed for host-independence; the fix is host-neutral examples.
+
+## 29. A daemon, earned: the three-tier residency decision (2026-08-25)
+
+Gerald reopened the daemon question directly: he is fine with having one,
+provided it follows best practices, carries protections, is planned, bounded,
+and configurable. That instruction opens the kill-list wording ("any daemon that
+runs when nothing asked it to") for amendment, so this section is the research
+the amendment rests on, run 2026-08-25 against primary sources (the systemd
+`daemon(7)`, `systemd.resource-control(5)`, `systemd.exec(5)`, and
+`systemd.timer(5)` man pages; the `launchd.plist(5)` man page; watchman,
+git-fsmonitor, Syncthing, tailscaled, Docker Desktop, and ollama's own
+documentation; Node's process docs and nodejs/node#61933).
+
+**What the leak lesson actually indicts.** The predecessor's daemon leak (38
+orphans in ten minutes, 2026-07-18) had a specific mechanism: library-level
+auto-start during `init`, with single-instance dedup keyed on an isolated test
+HOME, spawning detached processes that outlived their tests. That indicts
+auto-start from library code paths and broken single-instancing — not resident
+processes as a class. Watchman runs on every Meta dev machine and
+`git fsmonitor--daemon` ships in every git install, both as client-spawned
+socket-owned daemons, without this failure, because the daemon's identity *is*
+the socket: binding is atomic, a stale socket is a failed connect then an
+unlink-and-rebind, and nothing spawns except an explicit client action.
+
+**What the platforms already provide.** Both target OSes ship first-class
+"run this periodically, catch up after sleep" primitives whose entire failure
+surface the OS vendor owns: systemd user timers with `OnCalendar` +
+`Persistent=true` + `RandomizedDelaySec`, and launchd `StartCalendarInterval`,
+which coalesces missed firings into one event on wake (raw `StartInterval`
+firings that land during sleep are simply missed — the man page says so — which
+is why calendar form is the only correct one for a laptop). Supervisor-run
+oneshots get crash containment, restart backoff, and resource limits for free,
+and the process does not exist between firings. Meanwhile the modern guidance
+on both platforms is the same: never self-daemonize (`daemon(7)` new-style;
+launchd runs jobs foreground and warns against `RunAtLoad` speculative
+launches); the supervisor owns detachment and restart.
+
+**The decision: three tiers, each opt-in, none automatic.**
+
+- **Tier 1, the default: a `schedule` verb installs the platform timer.**
+  One verb writes the systemd user timer + oneshot service (Linux) or the
+  LaunchAgent with `StartCalendarInterval` and `KeepAlive=false` (macOS) that
+  fires the existing `construct standing --due && construct watch --due` line;
+  `--uninstall` removes it and `status` shows it. Nothing resident, zero
+  battery cost, wake catch-up handled by the platform. This replaces the
+  "wire cron yourself" instruction in `docs/scheduled-operation.md`.
+- **Tier 2, opt-in: a watchman-shape on-demand daemon** for watches that earn
+  sub-interval latency. Spawned only by an explicit user verb, never from
+  library init; single instance by unix-socket bind in the per-user state dir
+  (0700 dir, 0600 socket), keyed to the state dir and never the cwd, so a
+  second checkout or worktree can never raise a second daemon against the same
+  store; idle exit after a bounded quiet period (stricter than watchman, which
+  only reaps watches); version handshake on the socket so a stale daemon from
+  an old install exits itself; `daemon status|stop` verbs; crash-don't-linger
+  on unhandled rejection (Node's default, kept deliberately); graceful SIGTERM
+  with store flush; poll budgets, jittered coarse timers, and a heap cap
+  in-process because launchd offers no memory ceiling.
+- **Tier 3, opt-in: the same generated units in long-running mode** for a user
+  who explicitly wants always-on: `Restart=on-failure` with `MemoryHigh=`/
+  `MemoryMax=`/`TasksMax=`, `NoNewPrivileges=yes`, `RestrictAddressFamilies=`
+  on Linux; `ProcessType=Background` + `LowPriorityBackgroundIO` on macOS.
+  Login-session scoped on both platforms (no `enable-linger` by default; a
+  LaunchAgent is per-session by construction) — a personal tool should stop
+  when its person logs out.
+
+Three constraints hold across every tier. **No secrets resident:** anything
+needing a credential execs a short-lived child that resolves it at use time
+and exits; nothing long-lived holds keys in memory or env, and unit files
+carry no `Environment=` secrets. **No watchdog theater:** systemd's
+`WatchdogSec` needs `sd_notify`, `NOTIFY_SOCKET` is a unix datagram socket,
+Node core cannot write to one (dgram is UDP-only; the 2026 request to add
+unix-dgram, nodejs/node#61933, closed as not planned), and the zero-dependency
+rule rules out the native module — so tiers use `Type=exec` and supervisor
+restart-on-exit, with `systemd-notify` child-spawn recorded as the path if
+readiness signaling is ever wanted. **The sterile harness can never spawn it:**
+the daemon entry is reachable only through the explicit verb, and the tests
+that cover the verb assert the spawn is keyed to the injected Paths — the
+exact hole the 2.x leak came through, closed by construction.
+
+**Challenge, run before committing.** Strongest failure mode: the leak class
+recurs through a new door — a test, a worktree, or a second checkout raises an
+orphan. Controls: explicit-verb-only spawn, socket-bind keyed on state dir,
+idle exit as the backstop for every orphan (a leaked daemon with no clients
+exits itself), and `doctor`/`cleanup` taught to see and reap daemon state.
+Best alternative not chosen as the default: the permanent supervised service
+(tier 3). Rejected as default because the checks are minutes-granularity, not
+latency-sensitive; residency is a real battery and attack-surface cost that a
+`--due` firing does not carry; and the tool's own history says the burden of
+proof sits on the resident process. It survives as the explicit third choice
+because a user who asks for always-on is "something asking." Verdict:
+**accepted with controls** — the controls being the cross-tier constraints
+above, each of which lands as an acceptance criterion on the implementation
+beads, per commitment 15 (a protection that is asserted rather than tested is
+a claim).
+
+What this does not change: watches over external ground still wait behind the
+Phase 4 breadth gates; the first standing watch is still pointed at Construct
+itself (Phase 3); and the kernel still contains no scheduler — all three tiers
+fire the same `--due` verbs, and scheduling state stays in the store where
+`standing`/`watch` already keep it.
