@@ -176,7 +176,9 @@ export function consent(argv: string[]): number {
  * where that value lives and came from. */
 interface SettingRow {
   readonly key: string;
-  readonly value: string;
+  /** The effective value, already hardened for the terminal (file rows) or a
+   * closed enum (store rows) — printed as-is, never re-escaped. */
+  readonly shown: string;
   /** The store or file the value lives in, and the layer or scope within it. */
   readonly scope: string;
 }
@@ -226,23 +228,23 @@ export function settings(argv: string[]): number {
         // touch rather than one the ladder inferred from a project binding.
         const workspace = workspaceFlag(flags);
         const rows: SettingRow[] = [
-          ...resolved.map((r) => ({ key: r.key, value: r.display, scope: `file, ${r.source}` })),
+          ...resolved.map((r) => ({ key: r.key, shown: r.display, scope: `file, ${r.source}` })),
           {
             key: 'mode',
-            value: engagementMode(opStore, workspace),
+            shown: engagementMode(opStore, workspace),
             scope: `store, workspace ${workspace}`,
           },
           {
             key: 'consent',
-            value: writeConsentAllowsLowRisk(opStore, workspace) ? 'on' : 'off',
+            shown: writeConsentAllowsLowRisk(opStore, workspace) ? 'on' : 'off',
             scope: `store, workspace ${workspace}`,
           },
         ];
         const keyWidth = Math.max(...rows.map((r) => r.key.length));
-        const valueWidth = Math.max(...rows.map((r) => r.value.length));
+        const valueWidth = Math.max(...rows.map((r) => r.shown.length));
         for (const row of rows) {
           process.stdout.write(
-            `${row.key.padEnd(keyWidth)}  ${row.value.padEnd(valueWidth)}  (${row.scope})\n`,
+            `${row.key.padEnd(keyWidth)}  ${row.shown.padEnd(valueWidth)}  (${row.scope})\n`,
           );
         }
         if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
