@@ -53,24 +53,28 @@ function gitStatus(cwd: string, args: readonly string[]): number | null {
 
 /**
  * Why a repo-local store at `storeFile` may not be used, or null when it may.
- * Both checks are required: `check-ignore` says the path is covered by
- * ignore rules, `ls-files --error-unmatch` says it is not already tracked. A
- * spawn failure (no git binary, not a working tree) fails closed — refused,
- * the same as an explicit "no" — rather than treating "could not tell" as a
- * yes.
+ * Both checks are required, and the tracked check runs first: git's own
+ * `check-ignore` stops reporting a path as ignored once that path is
+ * tracked — an ignore pattern that would otherwise cover it goes silent
+ * rather than being overridden — so a `check-ignore` alone would refuse a
+ * tracked-but-ignored path for the wrong reason (or, on a subtly different
+ * pattern, not at all). `ls-files --error-unmatch` is the one direct answer
+ * to "is this already committable", and it is asked first. A spawn failure
+ * (no git binary, not a working tree) fails closed — refused, the same as an
+ * explicit "no" — rather than treating "could not tell" as a yes.
  */
 export function localStateRefusalReason(repoRoot: string, storeFile: string): string | null {
-  if (gitStatus(repoRoot, ['check-ignore', '-q', '--', storeFile]) !== 0) {
-    return (
-      `${storeFile} is not covered by this repository's ignore rules — add it ` +
-      '(or its containing directory) to .gitignore before state: local can take effect'
-    );
-  }
   if (gitStatus(repoRoot, ['ls-files', '--error-unmatch', '--', storeFile]) === 0) {
     return (
       `${storeFile} is already tracked by git — gitignore has no effect on a ` +
       'tracked path; remove it from the index (git rm --cached) before ' +
       'state: local can take effect'
+    );
+  }
+  if (gitStatus(repoRoot, ['check-ignore', '-q', '--', storeFile]) !== 0) {
+    return (
+      `${storeFile} is not covered by this repository's ignore rules — add it ` +
+      '(or its containing directory) to .gitignore before state: local can take effect'
     );
   }
   return null;
