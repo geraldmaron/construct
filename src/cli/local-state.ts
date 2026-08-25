@@ -34,7 +34,7 @@ import { homedir } from 'node:os';
 import { localStateDataDir, resolvePaths } from '../kernel/paths.ts';
 import { openStore, storePath, StoreUnavailableError } from '../kernel/store/open.ts';
 import { settingsFileRatified } from '../kernel/store/ratifications.ts';
-import { gitRoot, resolveSettings } from './settings-file.ts';
+import { gitRoot, resolveSettings, SettingsError } from './settings-file.ts';
 import type { ResolveInputs } from './settings-file.ts';
 
 /** Where the store lives for this working directory, and whether it is repo-local. */
@@ -92,6 +92,17 @@ export function localStateRefusalReason(repoRoot: string, storeFile: string): st
  * lives inside it, so nothing has ever been ratified in a store that has
  * never been opened, and this checks existence first rather than opening
  * (and thereby creating) one just to find it empty.
+ *
+ * A project settings file is a repository's own bytes — an attacker's, not
+ * this machine's — so a malformed or unrecognized one (bad JSON, an unknown
+ * key, a consent-bearing key that only belongs in the store) must never take
+ * an unrelated command down with it. Every store-opening command routes
+ * through here before its own body runs, so a raw SettingsError escaping
+ * this function would surface as an uncaught stack trace ahead of any
+ * command-specific handling. It is caught here instead: the project file is
+ * treated as if it said nothing, the command proceeds against the home
+ * store — the safe default — and a one-line notice on stderr states what
+ * happened and why, in place of the trace.
  */
 export function resolveStoreLocation(
   cwd: string,
@@ -117,6 +128,12 @@ export function resolveStoreLocation(
       ratified: (repoIdentity, hash) => settingsFileRatified(homeStore, repoIdentity, hash),
     };
     stateIsLocal = resolveSettings(inputs).find((s) => s.key === 'state')?.display === 'local';
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    process.stderr.write(
+      `construct: the project settings file was not applied — ${error.message}; using the home store.\n`,
+    );
+    return { path: homeStorePath, local: false, repoRoot: null };
   } finally {
     homeStore.close();
   }
