@@ -33,10 +33,13 @@ import {
 } from '../kernel/store/source-edges.ts';
 import type { SourceEdge, SourceRelation } from '../kernel/store/source-edges.ts';
 import type { Store } from '../kernel/store/open.ts';
+import { existsSync } from 'node:fs';
 import { DOCUMENT_CAP } from '../hosts/sources.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
-import { parseFlags, workspaceFlag } from './flags.ts';
+import { parseFlags } from './flags.ts';
+import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
+import { messageOf } from './errors.ts';
 import { jsonFlag, writeJson } from './json.ts';
 
 const SOURCE_USAGE =
@@ -143,7 +146,6 @@ function readDeclarationFlags(
 export function source(argv: string[]): number {
   const sub = argv[0];
   const { flags } = parseFlags(argv.slice(1));
-  const workspace = workspaceFlag(flags);
 
   if (sub === 'add') {
     const kind = flags.kind ?? '';
@@ -187,13 +189,17 @@ export function source(argv: string[]): number {
       return 2;
     }
     return withStore((store) => {
+      const { workspace, unboundDefault } = effectiveWorkspace(store, flags.workspace);
+      // Sources are append-only — a declaration is retired, never deleted — so
+      // the warning has to reach the operator before the row lands, not after
+      // it is already visible to every other repository on the machine.
+      if (unboundDefault) process.stderr.write(`source: ${SHARED_DEFAULT_WORKSPACE_NOTICE}\n`);
       const at = now();
       const id = `src-${at.replace(/[-:.TZ]/g, '')}`;
       try {
         addSource(store, { id, workspace, kind: kind as SourceKind, locator, addedAt: at });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (/UNIQUE/i.test(message)) {
+        if (/UNIQUE/i.test(messageOf(error))) {
           process.stderr.write(
             `source: ${workspace} already declares ${kind} ${locator} — retire the old declaration first if it moved\n`,
           );
@@ -212,6 +218,14 @@ export function source(argv: string[]): number {
         line += `, ${declarationLine(stated.declaration)}`;
       }
       process.stdout.write(`${line}\n`);
+      // A directory source whose path is not there yet is declared, not
+      // refused: validation is deferred to read time. Say so, rather than
+      // returning success in silence, so a typo'd path is noticed now.
+      if (kind === 'directory' && !existsSync(locator)) {
+        process.stderr.write(
+          `source: ${locator} is not there yet — the source is declared and this path is checked when it is read\n`,
+        );
+      }
       return 0;
     });
   }
@@ -238,7 +252,7 @@ export function source(argv: string[]): number {
       try {
         setSourceDeclaration(store, id, stated.declaration, now());
       } catch (error) {
-        process.stderr.write(`source: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.stderr.write(`source: ${messageOf(error)}\n`);
         return 1;
       }
       process.stdout.write(`described ${id}: ${declarationLine(stated.declaration)}\n`);
@@ -248,6 +262,7 @@ export function source(argv: string[]): number {
 
   if (sub === 'list') {
     return withStore((store) => {
+      const { workspace } = effectiveWorkspace(store, flags.workspace);
       const rows = sourcesFor(store, workspace, { includeRetired: flags.all === 'true' });
       if (jsonFlag(argv)) {
         // Each source row with the shape and declaration recorded against it
@@ -291,7 +306,7 @@ export function source(argv: string[]): number {
       try {
         retireSource(store, id, now());
       } catch (error) {
-        process.stderr.write(`source: ${error instanceof Error ? error.message : String(error)}\n`);
+        process.stderr.write(`source: ${messageOf(error)}\n`);
         return 1;
       }
       process.stdout.write(`retired ${id}\n`);
@@ -308,6 +323,7 @@ export function source(argv: string[]): number {
       return 2;
     }
     return withStore((store) => {
+      const { workspace } = effectiveWorkspace(store, flags.workspace);
       const at = now();
       // Two relationships declared inside the same millisecond are two
       // statements, not one, so the id is walked past whatever is already
@@ -326,7 +342,7 @@ export function source(argv: string[]): number {
           declaredAt: at,
         });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = messageOf(error);
         if (/UNIQUE/i.test(message)) {
           process.stdout.write('already related that way; the earlier statement stands.\n');
           return 0;
@@ -352,6 +368,7 @@ export function source(argv: string[]): number {
 
   if (sub === 'relations') {
     return withStore((store) => {
+      const { workspace } = effectiveWorkspace(store, flags.workspace);
       const rows = sourceEdgesFor(store, workspace, { includeRetired: flags.all === 'true' });
       if (rows.length === 0) {
         process.stdout.write(`no relationships declared for workspace ${workspace}\n`);
@@ -378,9 +395,7 @@ export function source(argv: string[]): number {
       try {
         retireSourceEdge(store, id, now());
       } catch (error) {
-        process.stderr.write(
-          `source: ${escapeForTerminal(error instanceof Error ? error.message : String(error))}\n`,
-        );
+        process.stderr.write(`source: ${escapeForTerminal(messageOf(error))}\n`);
         return 1;
       }
       process.stdout.write(
