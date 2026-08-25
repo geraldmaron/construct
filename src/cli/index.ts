@@ -35,7 +35,7 @@ import { record } from './record.ts';
 import { compose } from './compose.ts';
 import { plan } from './plan.ts';
 import { audit, propose } from './propose.ts';
-import { consent, mode, settings } from './settings.ts';
+import { consent, mode, settings, trust } from './settings.ts';
 import { standing } from './standing.ts';
 import { staff } from './staff.ts';
 
@@ -72,7 +72,7 @@ export { record } from './record.ts';
 export { compose } from './compose.ts';
 export { plan } from './plan.ts';
 export { audit, propose } from './propose.ts';
-export { consent, mode, settings } from './settings.ts';
+export { consent, mode, settings, trust } from './settings.ts';
 export { standing } from './standing.ts';
 export { staff } from './staff.ts';
 
@@ -87,7 +87,7 @@ export { staff } from './staff.ts';
 export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'standing', 'record', 'mode', 'consent',
-  'settings', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
+  'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'doctor', 'backup',
   'cleanup', 'version', 'help',
 ]);
@@ -177,6 +177,8 @@ async function run(argv: string[]): Promise<number> {
       return consent(argv.slice(1));
     case 'settings':
       return settings(argv.slice(1));
+    case 'trust':
+      return trust(argv.slice(1));
     case 'staff':
       return staff(argv.slice(1));
     case 'skills':

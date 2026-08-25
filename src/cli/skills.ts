@@ -88,7 +88,7 @@ const SKILLS_USAGE =
  * walk stops at the first component that does not exist — nothing past it
  * can be a link to follow.
  */
-function symlinkToward(root: string, target: string): string | null {
+export function symlinkToward(root: string, target: string): string | null {
   const stops = [root];
   let current = root;
   for (const part of relative(root, target).split(sep)) {

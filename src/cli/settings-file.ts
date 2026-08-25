@@ -37,12 +37,14 @@
  * hints, which are model-facing, additionally go through escapeForPrompt.
  */
 
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { closeSync, constants, lstatSync, openSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import type { Paths } from '../kernel/paths.ts';
 import { HOST_NAMES } from './runtime.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { escapeForPrompt } from '../kernel/run/sourcereads.ts';
+import { symlinkToward } from './skills.ts';
 
 /**
  * The layers of the ladder, lowest precedence first. A value's source is the
@@ -254,28 +256,21 @@ export type FileValues = ReadonlyMap<string, unknown>;
 const SPEC_BY_KEY = new Map(PREFERENCE_SPECS.map((s) => [s.key, s] as const));
 
 /**
- * Read and validate one settings file. A file that is not there contributes
- * nothing (null). A file that is there is held to the closed schema: it must be
- * a JSON object, every key must be a preference key, and every value must
- * parse. Anything else is a SettingsError naming the file, because a preference
- * file that is malformed should say so loudly rather than be half-read.
+ * Hold parsed settings text to the closed schema: a JSON object, every key a
+ * preference key, every value parsing. The `where` names the file (or the fact
+ * that these are ratified bytes) so a refusal points somewhere. Shared by every
+ * reader, whichever way the bytes reached it, so one file and another are held
+ * to exactly the same schema.
  */
-export function readSettingsFile(path: string): FileValues | null {
-  let text: string;
-  try {
-    text = readFileSync(path, 'utf8');
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
-    throw error;
-  }
+function parseSettings(text: string, where: string): FileValues {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new SettingsError(`${path}: not valid JSON`);
+    throw new SettingsError(`${where}: not valid JSON`);
   }
   if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new SettingsError(`${path}: a settings file is a JSON object of preferences`);
+    throw new SettingsError(`${where}: a settings file is a JSON object of preferences`);
   }
   const values = new Map<string, unknown>();
   for (const [key, raw] of Object.entries(parsed as Record<string, unknown>)) {
@@ -286,6 +281,44 @@ export function readSettingsFile(path: string): FileValues | null {
   return values;
 }
 
+/**
+ * Read and validate one settings file by path. A file that is not there
+ * contributes nothing (null). This is for the global file, which lives in the
+ * user's own config directory and is theirs to write; a project file, which is
+ * a repository's and therefore an attacker's to write, does not come through
+ * here — it comes through {@link discoverProjectSettings}, which reads its bytes
+ * once behind the trust guards rather than by re-opening a path.
+ */
+export function readSettingsFile(path: string): FileValues | null {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
+  return parseSettings(text, path);
+}
+
+/**
+ * Render one file value the way it will be shown to a person: through the same
+ * spec that hardens it for the terminal (and, for ground hints, for a prompt
+ * line as well), so a value from a checked-out file cannot carry a byte that
+ * moves the cursor or forges a boundary. A key with no spec cannot occur in a
+ * validated FileValues, but is escaped defensively rather than trusted.
+ */
+export function renderFileValue(key: string, value: unknown): string {
+  const spec = SPEC_BY_KEY.get(key);
+  return spec ? spec.harden(spec.show(value)) : escapeForTerminal(String(value));
+}
+
+/** A validated FileValues as a plain object, for storage beside a ratification. */
+export function fileValuesToObject(values: FileValues): Record<string, unknown> {
+  const object: Record<string, unknown> = {};
+  for (const [key, value] of values) object[key] = value;
+  return object;
+}
+
 /** The global settings file: one per machine, beside every other Construct state. */
 export function globalSettingsPath(paths: Paths): string {
   return join(paths.configDir, 'settings.json');
@@ -294,17 +327,35 @@ export function globalSettingsPath(paths: Paths): string {
 const PROJECT_SETTINGS_DIR = '.construct';
 const PROJECT_SETTINGS_FILE = 'settings.json';
 
+/** The raw-bytes SHA-256 of a settings file, hex. */
+export function hashSettingsBytes(bytes: Buffer): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+/** Two absolute paths naming the same directory, compared by segment not prefix. */
+function sameDir(a: string, b: string): boolean {
+  return resolve(a) === resolve(b);
+}
+
+/** Whether `dir` is `ceiling` or lies inside it, by path segment rather than string prefix. */
+function withinOrEqual(dir: string, ceiling: string): boolean {
+  const rel = relative(resolve(ceiling), resolve(dir));
+  return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !rel.startsWith(sep));
+}
+
 /**
- * The project settings file nearest the working directory, found by walking up
- * the tree the way git finds `.git`, or null if none is in the ancestry.
+ * The nearest ancestor of `cwd` (or `cwd` itself) that is a git root — a
+ * directory carrying a `.git`, whether that is a directory (an ordinary
+ * checkout), a file (a worktree or a submodule), or a link. Nearest wins, so a
+ * repository nested inside another resolves to its own root and discovery never
+ * reaches the outer one. Null when no ancestor carries a `.git`.
  */
-export function findProjectSettingsPath(cwd: string): string | null {
-  let dir = cwd;
+function gitRoot(cwd: string): string | null {
+  let dir = resolve(cwd);
   for (;;) {
-    const candidate = join(dir, PROJECT_SETTINGS_DIR, PROJECT_SETTINGS_FILE);
     try {
-      readFileSync(candidate, 'utf8');
-      return candidate;
+      lstatSync(join(dir, '.git'));
+      return dir;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
@@ -315,19 +366,184 @@ export function findProjectSettingsPath(cwd: string): string | null {
 }
 
 /**
- * SEAM (project-file trust). Whether a project settings file discovered in the
- * working tree may inform a run is a trust question with its own weight, and its
- * full answer — ratifying a file the way a person ratifies any other input from
- * a checked-out repository — is separate work. Until that gate lands, a project
- * file is admitted only under an explicit opt-in, so a file that merely sits in
- * a repository someone cloned is never silently trusted. When the trust gate
- * arrives it replaces the body of this function with the real ratification
- * check; every reader of the project layer already routes through here, so
- * nothing else has to change to close the hole.
+ * The best-effort origin remote of a git checkout, as a stable identity for the
+ * repository independent of where it sits on disk. Read straight from the config
+ * of an ordinary checkout; a worktree or submodule keeps its config elsewhere
+ * (its `.git` is a file, not a directory), so those fall through to null and the
+ * caller keys on the checkout's real path instead. Never throws: a repository
+ * with no remote, or an unreadable config, simply has no remote identity.
  */
-export function projectSettingsAdmitted(env: Record<string, string | undefined>): boolean {
-  const optIn = env.CONSTRUCT_TRUST_PROJECT_SETTINGS?.trim().toLowerCase();
-  return optIn === '1' || optIn === 'true' || optIn === 'yes' || optIn === 'on';
+function gitOriginRemote(root: string): string | null {
+  let text: string;
+  try {
+    if (!statSync(join(root, '.git')).isDirectory()) return null;
+    text = readFileSync(join(root, '.git', 'config'), 'utf8');
+  } catch {
+    return null;
+  }
+  const lines = text.split('\n');
+  let inOrigin = false;
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const section = /^\[(.+)\]$/.exec(trimmed);
+    if (section) {
+      inOrigin = /^remote\s+"origin"$/.test(section[1].trim());
+      continue;
+    }
+    if (!inOrigin) continue;
+    const url = /^url\s*=\s*(.+)$/.exec(trimmed);
+    if (url) return url[1].trim();
+  }
+  return null;
+}
+
+/**
+ * A directory an attacker cannot have planted the file in: one this user owns
+ * and that is not writable by the world. Discovery in a world-writable or
+ * non-owner directory is refused, because there `/tmp/.construct` — a file any
+ * user could drop — would otherwise bind the run. Returns the reason it is
+ * unsafe, or null when it is safe. Ownership is only checked where the platform
+ * reports a uid; a world-writable bit is refused wherever the platform sets one.
+ */
+function unsafeDirReason(dir: string): string | null {
+  let mode: number;
+  let uid: number;
+  try {
+    const st = statSync(dir);
+    mode = st.mode;
+    uid = st.uid;
+  } catch (error) {
+    return `cannot inspect ${dir}: ${(error as NodeJS.ErrnoException).code ?? 'unknown error'}`;
+  }
+  if ((mode & 0o002) !== 0) return `${dir} is writable by any user on this machine`;
+  const self = typeof process.getuid === 'function' ? process.getuid() : null;
+  if (self !== null && uid !== self) return `${dir} is not owned by you`;
+  return null;
+}
+
+/**
+ * What a look for a project settings file found. A file only ever *binds* when
+ * `found`; `refused` is a file that exists but sits behind a link, in a
+ * directory the world can write, or one this user does not own, and it carries
+ * the reason so a person can be told why their file was ignored; `absent` is no
+ * file in the bounded chain at all.
+ */
+export type ProjectDiscovery =
+  | { readonly outcome: 'absent' }
+  | { readonly outcome: 'refused'; readonly path: string; readonly reason: string }
+  | {
+      readonly outcome: 'found';
+      /** The absolute path the file was found at. */
+      readonly path: string;
+      /** The repository this file's trust is scoped to: its remote, or its real path. */
+      readonly repoIdentity: string;
+      /** The SHA-256 of the exact bytes read, which is what a ratification is keyed on. */
+      readonly hash: string;
+      /** The validated values those same bytes parsed to — never re-read by path. */
+      readonly values: FileValues;
+    };
+
+/**
+ * Look for a project settings file that may bind this working directory, and
+ * read it under the guards that make a checked-out file safe to consider at all.
+ *
+ * A project file is attacker-authored ground: cloning a repository hands you
+ * whatever `.construct/settings.json` its author wrote. Five things hold before
+ * its bytes are ever hashed or its values ever handed back.
+ *
+ *   - DISCOVERY IS BOUNDED. The walk goes up only as far as the git root of the
+ *     working directory — the nearest one, so a nested repository never reaches
+ *     the outer tree's file — or, with no git root, the user's home directory.
+ *     Above that there is no fallback: an unbounded walk to the filesystem root
+ *     is what makes `/tmp/.construct` bind a run in `/tmp`.
+ *   - THE DIRECTORY IS THE USER'S. Discovery in a world-writable or non-owner
+ *     directory is refused, because there anyone could have planted the file.
+ *   - NO COMPONENT IS A LINK. Every path component from the git root down is
+ *     lstat'd; a `.construct` or a `settings.json` that is a symbolic link is
+ *     refused, because a link is an instruction to read somewhere else.
+ *   - THE BYTES ARE READ ONCE. The file is opened with `O_NOFOLLOW` — refusing a
+ *     link swapped in at the final component after the walk — read once into a
+ *     buffer, and it is that buffer that is hashed and that buffer that is
+ *     parsed. Nothing re-opens the path, so the hash and the values are of the
+ *     same bytes no later write can change underneath them.
+ *   - THE VALUES ARE STILL THE CLOSED SCHEMA. A consent key, an unknown key, a
+ *     host that is a path — every refusal the schema already makes holds here
+ *     too, because the same parser runs on these bytes as on any other.
+ */
+export function discoverProjectSettings(cwd: string, home: string | null): ProjectDiscovery {
+  const root = gitRoot(cwd);
+  // The floor is the git root, or home when there is no repository. With
+  // neither — a working directory under no repository and outside home — there
+  // is nothing to bound the walk, and an unbounded walk is the vulnerability, so
+  // discovery finds nothing rather than climbing to the filesystem root.
+  const floor = root ?? (home !== null && withinOrEqual(cwd, home) ? resolve(home) : null);
+  if (floor === null) return { outcome: 'absent' };
+
+  let dir = resolve(cwd);
+  for (;;) {
+    const conDir = join(dir, PROJECT_SETTINGS_DIR);
+    const file = join(conDir, PROJECT_SETTINGS_FILE);
+    let exists = false;
+    try {
+      lstatSync(file);
+      exists = true;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+    if (exists) return admitProjectFile(floor, dir, conDir, file, root);
+    if (sameDir(dir, floor)) return { outcome: 'absent' };
+    const parent = dirname(dir);
+    if (parent === dir) return { outcome: 'absent' };
+    dir = parent;
+  }
+}
+
+/**
+ * The guards for one candidate file, in the order that keeps each meaningful: a
+ * link anywhere from the repo root down is refused before the directory's
+ * ownership is trusted, ownership before the bytes are opened, and the open
+ * itself refuses a link swapped in at the last moment.
+ */
+function admitProjectFile(
+  floor: string,
+  dir: string,
+  conDir: string,
+  file: string,
+  root: string | null,
+): ProjectDiscovery {
+  // Every component from the repo floor down, the audited walk skills.ts uses.
+  const link = symlinkToward(floor, file);
+  if (link !== null) {
+    return { outcome: 'refused', path: file, reason: `${link} is a symbolic link` };
+  }
+  for (const guarded of [dir, conDir]) {
+    const unsafe = unsafeDirReason(guarded);
+    if (unsafe !== null) return { outcome: 'refused', path: file, reason: unsafe };
+  }
+
+  // Read the bytes exactly once, refusing a link at the final component, and
+  // hash and parse that one buffer. Re-opening by path after hashing is the
+  // gap a settings file could be swapped through; there is no second open.
+  let bytes: Buffer;
+  try {
+    const fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+    try {
+      bytes = readFileSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
+      return { outcome: 'refused', path: file, reason: `${file} is a symbolic link` };
+    }
+    throw error;
+  }
+
+  const values = parseSettings(bytes.toString('utf8'), file);
+  const hash = hashSettingsBytes(bytes);
+  const remote = root ? gitOriginRemote(root) : null;
+  const repoIdentity = remote !== null ? `remote:${remote}` : `path:${realpathSync(file)}`;
+  return { outcome: 'found', path: file, repoIdentity, hash, values };
 }
 
 export interface ResolveInputs {
@@ -335,6 +551,16 @@ export interface ResolveInputs {
   readonly cwd: string;
   readonly env: Record<string, string | undefined>;
   readonly flags: Record<string, string>;
+  /** The user's home directory, the discovery floor when there is no repository. */
+  readonly home: string | null;
+  /**
+   * Whether a discovered project file — identified by its repository and the
+   * hash of its exact bytes — has been ratified. The ladder holds no store; the
+   * caller supplies this from wherever ratifications live. A file that has not
+   * been ratified for this repository and these bytes contributes nothing, which
+   * is the whole of the gate.
+   */
+  readonly ratified: (repoIdentity: string, hash: string) => boolean;
 }
 
 /** One resolved preference: its key, the value shown safe for the screen, and where it came from. */
@@ -362,14 +588,18 @@ function fromFileLayer(values: FileValues | null, key: string): Contribution {
 /**
  * Resolve every preference against the full ladder, returning each with the
  * layer that won. The project file is read and validated whether or not it is
- * admitted — a malformed project file is a real error the operator should see —
- * but its values enter the ladder only when the trust seam admits them.
+ * trusted — a malformed project file is a real error the operator should see,
+ * and a refused one is not silently ignored either — but its values enter the
+ * ladder only once ratified for this repository and these bytes. The
+ * ratification check runs before any value is placed in the ladder a run acts
+ * on, so an untrusted file has no effect on a resolved setting at all.
  */
 export function resolveSettings(inputs: ResolveInputs): ResolvedSetting[] {
   const globalValues = readSettingsFile(globalSettingsPath(inputs.paths));
-  const projectPath = findProjectSettingsPath(inputs.cwd);
-  const projectValues = projectPath ? readSettingsFile(projectPath) : null;
-  const projectAdmitted = projectValues !== null && projectSettingsAdmitted(inputs.env);
+  const discovery = discoverProjectSettings(inputs.cwd, inputs.home);
+  const projectValues = discovery.outcome === 'found' ? discovery.values : null;
+  const projectAdmitted =
+    discovery.outcome === 'found' && inputs.ratified(discovery.repoIdentity, discovery.hash);
 
   return PREFERENCE_SPECS.map((spec) => {
     // Highest precedence first: the first layer that carries a value wins.
@@ -408,16 +638,20 @@ export function resolveSettings(inputs: ResolveInputs): ResolvedSetting[] {
 }
 
 /**
- * A note for the print command when a project settings file exists but is not
- * admitted, so the operator learns why its values did not take rather than
- * suspecting the resolver. Null when there is nothing to say.
+ * A note for the print command when a project settings file exists but did not
+ * inform the run, so the operator learns why rather than suspecting the
+ * resolver: it was found and not yet trusted, or it was refused outright. Null
+ * when there is nothing to say — no file, or a file already trusted.
  */
 export function projectTrustNote(inputs: ResolveInputs): string | null {
-  const projectPath = findProjectSettingsPath(inputs.cwd);
-  if (!projectPath) return null;
-  if (projectSettingsAdmitted(inputs.env)) return null;
+  const discovery = discoverProjectSettings(inputs.cwd, inputs.home);
+  if (discovery.outcome === 'absent') return null;
+  if (discovery.outcome === 'refused') {
+    return `a project settings file at ${discovery.path} was refused: ${discovery.reason}`;
+  }
+  if (inputs.ratified(discovery.repoIdentity, discovery.hash)) return null;
   return (
-    `a project settings file at ${projectPath} was found but not applied — ` +
-    'set CONSTRUCT_TRUST_PROJECT_SETTINGS=on to opt in until project-file trust ships'
+    `a project settings file at ${discovery.path} was found but is not trusted — ` +
+    'review it with `construct trust`, then `construct trust --ratify` to let it inform runs'
   );
 }
