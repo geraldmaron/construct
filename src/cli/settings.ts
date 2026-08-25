@@ -17,8 +17,12 @@ import {
   writeConsentAllowsLowRisk,
 } from '../kernel/store/sources.ts';
 import type { EngagementMode } from '../kernel/store/sources.ts';
+import { resolvePaths } from '../kernel/paths.ts';
+import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
+import { projectTrustNote, resolveSettings, SettingsError } from './settings-file.ts';
+import type { ResolveInputs } from './settings-file.ts';
 
 const MODE_USAGE = 'usage: construct mode [--workspace=<name>] [--set=<team|seat>]\n';
 
@@ -87,4 +91,44 @@ export function consent(argv: string[]): number {
     );
     return 0;
   });
+}
+
+/**
+ * Print every file-backed preference, its effective value, and the layer that
+ * value came from — a built-in default, the global file, an admitted project
+ * file, a CONSTRUCT_* environment variable, or a flag. This is the whole point
+ * of the ladder: a preference whose winning layer a person has to discover by
+ * opening files in turn is a preference nobody can reason about.
+ *
+ * Consent-bearing settings are deliberately absent here. They do not resolve
+ * from a file, so they have no layer to name; `construct mode` and
+ * `construct consent` remain the one place each is read and set.
+ */
+export function settings(argv: string[]): number {
+  const { flags } = parseFlags(argv);
+  const inputs: ResolveInputs = {
+    paths: resolvePaths(),
+    cwd: process.cwd(),
+    env: process.env,
+    flags,
+  };
+  let resolved;
+  let note: string | null;
+  try {
+    resolved = resolveSettings(inputs);
+    note = projectTrustNote(inputs);
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    process.stderr.write(`construct settings: ${error.message}\n`);
+    return 1;
+  }
+  const keyWidth = Math.max(...resolved.map((r) => r.key.length));
+  const valueWidth = Math.max(...resolved.map((r) => r.display.length));
+  for (const setting of resolved) {
+    process.stdout.write(
+      `${setting.key.padEnd(keyWidth)}  ${setting.display.padEnd(valueWidth)}  (${setting.source})\n`,
+    );
+  }
+  if (note !== null) process.stdout.write(`\n${escapeForTerminal(note)}\n`);
+  return 0;
 }
