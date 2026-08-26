@@ -32,7 +32,7 @@ import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { sessionNamingPacket, usesSessionDispatch } from '../hosts/session.ts';
+import { sessionNamingPacket, usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
 
@@ -46,10 +46,7 @@ const OUTCOME_USAGE =
  * staffing happened. Construct does not classify the intent. The host infers.
  * Two surfaces only: this session dispatches, or the turn goes to inbox.
  */
-export function sessionOutcomeHandoff(
-  session: { readonly host: string; readonly marker: string },
-  words: string,
-): string {
+export function sessionOutcomeHandoff(session: AmbientDetection, words: string): string {
   return sessionNamingPacket(session, words);
 }
 
