@@ -28,7 +28,7 @@ Three limits are load-bearing rather than fine print. **Legal and compliance out
 
 **[docs/first-run.md](docs/first-run.md) is first run**: talk in the host you already have; staff shows up. The terminal command list is [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
-Talk there. Staff shows up. Ordinary language, no catalog words, no `--host`. This session names the concerns via MCP `record_outcome` (catalog + why), or routes to inbox, verdict, or log. The host decides the path. Construct does not map phrases to seats. Then the work happens here via `claim_task` / `submit_work`. Construct keeps the log, the inbox, and verdicts. It will not spawn a second CLI.
+Talk there. Staff shows up. Ordinary language, no catalog words, no `--host`. The host infers. Two surfaces only: dispatch through this session (`record_outcome`, then `claim_task` / `submit_work`), or an inbox call when the decision is yours. Construct does not classify, name, or route. No phrase table. Then the work happens here. Construct will not spawn a second CLI.
 
 ```bash
 construct serve
