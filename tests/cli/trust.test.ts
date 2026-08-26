@@ -44,6 +44,9 @@ import {
 } from '../../src/cli/settings-file.ts';
 import type { ResolveInputs } from '../../src/cli/settings-file.ts';
 import type { Paths } from '../../src/kernel/paths.ts';
+import { sterileAmbientEnv } from '../harness/sterile.ts';
+
+sterileAmbientEnv();
 
 interface Repo {
   readonly home: string;

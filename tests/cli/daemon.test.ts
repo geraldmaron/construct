@@ -33,6 +33,9 @@ const env = {
   XDG_DATA_HOME: join(root, 'data'),
   XDG_CONFIG_HOME: join(root, 'config'),
   XDG_CACHE_HOME: join(root, 'cache'),
+  // node:sqlite is still experimental on Node 22; the warning is not a
+  // product failure and must not make "nothing is reported as broken" red.
+  NODE_NO_WARNINGS: '1',
 };
 const paths = resolvePaths(env, root);
 const socket = daemonSocketPath(paths);
