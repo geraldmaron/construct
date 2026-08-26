@@ -20,7 +20,8 @@ The methods in play are investigative-research, decision-framing, and
 intake — how the work is done, not job-title seats.
 
 A first-run talk plants those method skills and the first-run instruction
-into this host, or says they did not. The talk line creates no run.
+into this host, or says they did not, and wires recording onto this
+session when the host can take it. The talk line creates no run.
 
 ## When the call is yours
 

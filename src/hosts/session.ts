@@ -80,6 +80,14 @@ export function sessionNamingPacket(session: AmbientDetection, words?: string): 
 export function unnamedRunMessage(run: string): string {
   return (
     `run ${run} is on record but has no named work — nothing to dispatch.\n` +
-    'This session names via MCP record_outcome with namings, or construct outcome --domains=<name,…>.\n'
+    'This conversation continues, or one inbox card — what happened, what you decide, one button.\n'
+  );
+}
+
+/** In-session work with nothing seated: reprint the surfaces, not a verb. */
+export function nothingSeatedMessage(): string {
+  return (
+    'Nothing is seated yet. Talk here. Staff shows up.\n' +
+    'This conversation continues, or one inbox card — what happened, what you decide, one button.\n'
   );
 }

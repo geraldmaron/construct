@@ -44,7 +44,7 @@ async function captureMain(
   const realOut = process.stdout.write.bind(process.stdout);
   (process.stdout as { write: unknown }).write = (c: string) => (chunks.push(String(c)), true);
   try {
-    const code = await main(argv, env);
+    const code = await main(argv, env, root);
     const store = openStore(storePath(resolvePaths()));
     try {
       assert.equal(listTasks(store).length, 0, 'talk must not staff a run');
@@ -74,7 +74,7 @@ async function captureOutcome(
   const realOut = process.stdout.write.bind(process.stdout);
   (process.stdout as { write: unknown }).write = (c: string) => (chunks.push(String(c)), true);
   try {
-    const code = await outcome(argv, undefined, env);
+    const code = await outcome(argv, undefined, env, root);
     const inSession = env.CURSOR_AGENT !== undefined || env.CLAUDECODE !== undefined;
     if (inSession) {
       const store = openStore(storePath(resolvePaths()));
@@ -99,6 +99,7 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   const { code, out } = await captureOutcome([KEYWORD_RICH], CURSOR_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Recording is on this session/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /one button/);
@@ -107,6 +108,8 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /no domains implicated/);
   assert.doesNotMatch(out, /record_outcome/);
+  assert.doesNotMatch(out, /construct serve/);
+  assert.doesNotMatch(out, /construct wire/);
   assert.doesNotMatch(out, /Catalog \(name only these/);
   assert.doesNotMatch(out, /Name the concerns these words implicate/);
   assert.doesNotMatch(out, /^- privacy:/m);
@@ -116,6 +119,7 @@ test('host in session does not invent a hollow run when the keyword map would be
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Recording is on this session/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /inbox/);
@@ -204,10 +208,12 @@ test('bare construct in a host session is talk, not the verb catalog', async () 
   const { code, out } = await captureMain([], CURSOR_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Recording is on this session/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.doesNotMatch(out, /Catalog \(name only these/);
   assert.doesNotMatch(out, /Name the concerns these words implicate/);
+  assert.doesNotMatch(out, /construct serve/);
   assert.doesNotMatch(out, /Starting work/);
   assert.doesNotMatch(out, /--host=/);
   assert.doesNotMatch(out, /run run-/);

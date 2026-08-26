@@ -4,8 +4,9 @@
  *
  * Not a portable method skill. It is Construct-bound: the stranger already
  * spoke; this session names the concerns and records them so staff appears.
- * talk() plants the file. talk() does not create a run. The catalog is not
- * printed to the stranger — it already lives on the recording tool.
+ * talk() plants the file and silent-wires the recording tool onto this
+ * host. talk() does not create a run. The catalog is not printed to the
+ * stranger — it lives on the recording tool.
  */
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
@@ -39,12 +40,13 @@ export function firstRunInstructionText(version: string): string {
     'them in this session. Seats appear. A packet is not a seat.',
     '',
     'Do not treat the talk line as the recorder. The talk line reprints what',
-    'they said and creates no run. You finish the turn.',
+    'they said, wires the recording tool onto this session when it can, and',
+    'creates no run. You finish the turn.',
     '',
     'Do not print the catalog. Do not ask them to name concerns. Do not ask',
-    'them to type a command. The recording tool already on this session',
-    'lists the catalog ids. If they have to type a verb, first ten seconds',
-    'are undone.',
+    'them to type a command. The recording tool on this session lists the',
+    'catalog ids — catalog and record_outcome. If they have to type a verb,',
+    'first ten seconds are undone.',
     '',
     'If a call is actually theirs, that is one inbox card with one ask —',
     'not a list.',
@@ -52,11 +54,12 @@ export function firstRunInstructionText(version: string): string {
     '## Mechanism',
     '',
     '1. Read the words they said.',
-    '2. Read the catalog ids from the recording tool already on this session.',
-    '3. Name every concern those words implicate, each with a reason in',
-    '   their words. Record the outcome and those namings through that tool.',
-    '   An empty namings list means this implicates nothing — say that; do',
-    '   not invent engineering.',
+    '2. If catalog and record_outcome are not on your tool list, they were',
+    '   just wired. Load them and continue this turn.',
+    '3. Read the catalog ids from that tool. Name every concern those words',
+    '   implicate, each with a reason in their words. Record the outcome and',
+    '   those namings through record_outcome. An empty namings list means',
+    '   this implicates nothing — say that; do not invent engineering.',
     '4. Staff is the lenses those domains equip. Empty staff or',
     '   engineering-only staff after you named real concerns is a miss.',
     '5. Reply in this conversation with what was seated. Inbox only if a',

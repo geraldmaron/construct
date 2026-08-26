@@ -42,7 +42,7 @@ import { surveyResources } from '../hosts/census.ts';
 import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { unnamedRunMessage, usesSessionDispatch } from '../hosts/session.ts';
+import { nothingSeatedMessage, unnamedRunMessage, usesSessionDispatch } from '../hosts/session.ts';
 import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
 import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
@@ -754,9 +754,7 @@ function sessionWork(
       process.stdout.write(`nothing to work for ${scoped}. Its tasks are already settled.\n`);
       return 0;
     }
-    process.stdout.write(
-      'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
-    );
+    process.stdout.write(nothingSeatedMessage());
     return 0;
   }
 
