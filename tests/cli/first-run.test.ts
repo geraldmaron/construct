@@ -742,7 +742,7 @@ test('in-session talk is unfinished until the host calls record_outcome', async 
       const named = (await read()) as {
         result?: { content: Array<{ text: string }>; isError?: boolean };
       };
-      assert.equal(named.result?.isError, undefined);
+      assert.equal(named.result?.isError ?? false, false);
       const recorded = JSON.parse(named.result!.content[0]!.text) as {
         outcome: string;
         tasksQueued: number;
