@@ -167,25 +167,32 @@ export interface NamingCache {
   set(outcome: string, implications: readonly Implication[]): void;
 }
 
-export type InferredBy = 'namer' | 'keywords' | 'cache' | 'none' | 'user' | 'coverage-gap';
+export type InferredBy =
+  | 'namer'
+  | 'session'
+  | 'keywords'
+  | 'cache'
+  | 'none'
+  | 'user'
+  | 'coverage-gap';
 
 export interface NamedMap extends ImplicationMap {
   /**
-   * 'namer'    — a model read the outcome and named these (the primary path).
+   * 'namer'    — Construct's namer seam named these (a host model consulted
+   *              as a namer, not this session handing namings in).
+   * 'session'  — this session already had the words and supplied the namings
+   *              to record_outcome. Not Construct's namer. Not the keyword map.
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
    * 'user'     — the user named the domains outright; nothing was inferred.
-   * 'none'     — the namer read the catalog and confidently named nothing.
+   * 'none'     — the catalog was considered and nothing was named.
    *              A genuine answer, not a gap.
-   * 'coverage-gap' — the namer had signal — one or more real catalog domains,
+   * 'coverage-gap' — signal existed — one or more real catalog domains,
    *              each with a reason — and none of it crossed its own stated
    *              confidence floor. Distinct from 'none' on purpose: 'none' is
-   *              the namer's considered answer, 'coverage-gap' is the namer
-   *              seeing something it would not commit to. Routing nothing
-   *              either way, but a reader deciding whether to look closer
-   *              needs to tell the two apart — this is the nanobot trial's
-   *              privacy-read-as-security failure, named rather than routed.
+   *              a considered "nothing here," 'coverage-gap' is seeing
+   *              something it would not commit to.
    */
   readonly inferredBy: InferredBy;
   /**
@@ -219,6 +226,12 @@ export interface NameInput {
   /** Absent means the zero-model fallback: the keyword map alone answers. */
   readonly namer?: DomainNamer;
   readonly cache?: NamingCache;
+  /**
+   * When the namings are already in hand from this session, the result is
+   * tagged `session`, not `namer`. Construct's namer seam is the leftover
+   * `namer` path.
+   */
+  readonly source?: 'session';
 }
 
 /**
@@ -370,7 +383,14 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
   // the low-confidence refusal, not silence in general, that this state
   // exists to distinguish from a considered "nothing here."
   const isCoverageGap = limited.length === 0 && allUnmet.some((u) => u.reason === 'low-confidence');
-  const inferredBy: InferredBy = limited.length > 0 ? 'namer' : isCoverageGap ? 'coverage-gap' : 'none';
+  const inferredBy: InferredBy =
+    limited.length > 0
+      ? input.source === 'session'
+        ? 'session'
+        : 'namer'
+      : isCoverageGap
+        ? 'coverage-gap'
+        : 'none';
   // A cached nothing is a real answer: the namer considered the catalog and
   // named nothing, and the same outcome must not pay to hear it twice — but
   // a coverage gap is not that. The cache stores only the implication list,

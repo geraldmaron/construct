@@ -230,11 +230,13 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
   if (started.inferredBy === 'user') {
     process.stdout.write('\nYou named these; nothing was inferred and no model was consulted.\n');
   }
-  if (started.inferredBy === 'namer' || started.inferredBy === 'cache') {
+  if (started.inferredBy === 'namer' || started.inferredBy === 'cache' || started.inferredBy === 'session') {
     process.stdout.write(
       started.inferredBy === 'cache'
         ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
-        : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
+        : started.inferredBy === 'session'
+          ? '\nThese came from this session reading the outcome; each reason above is its stated evidence.\n'
+          : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
     );
   }
   if (started.namerFailure !== undefined) {

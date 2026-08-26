@@ -99,7 +99,13 @@ async function hostNamedRecord(
   words: string,
   namings: Array<{ domain: string; why: string }> | undefined,
   at: string,
-): Promise<{ tasksQueued: number; implicated: string[]; out: string; isError?: boolean }> {
+): Promise<{
+  tasksQueued: number;
+  implicated: string[];
+  inferredBy?: string;
+  out: string;
+  isError?: boolean;
+}> {
   const store = openStore(storePath(resolvePaths()));
   const handle = createProjectionHandler({
     store,
@@ -124,11 +130,13 @@ async function hostNamedRecord(
   const body = JSON.parse(result.content[0]!.text) as {
     tasksQueued: number;
     implicated: Array<{ domain: string }>;
+    inferredBy?: string;
   };
   store.close();
   return {
     tasksQueued: body.tasksQueued,
     implicated: body.implicated.map((row) => row.domain),
+    inferredBy: body.inferredBy,
     out: JSON.stringify(body),
   };
 }
@@ -212,6 +220,9 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.equal(recorded.isError, undefined);
     assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
     assert.deepEqual(recorded.implicated, ['privacy', 'security']);
+    assert.equal(recorded.inferredBy, 'session', 'host-supplied namings are this session, not Construct\'s namer');
+    assert.notEqual(recorded.inferredBy, 'namer');
+    assert.notEqual(recorded.inferredBy, 'keywords');
     assertNotDoctorStatusVerbWall(recorded.out, 'record_outcome');
 
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));

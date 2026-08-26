@@ -69,6 +69,7 @@ test('routing is labeled by how the inference was reached, fallback named as fal
   assert.equal(buildPlan(input({ inferredBy: 'namer' })).routing[0]?.routedBy, 'namer');
   assert.equal(buildPlan(input({ inferredBy: 'cache' })).routing[0]?.routedBy, 'namer');
   assert.equal(buildPlan(input({ inferredBy: 'user' })).routing[0]?.routedBy, 'user');
+  assert.equal(buildPlan(input({ inferredBy: 'session' })).routing[0]?.routedBy, 'session');
 });
 
 test('understanding absorbs the densified intake and falls back to the raw outcome', () => {
