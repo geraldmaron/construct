@@ -164,7 +164,8 @@ test('an in-session outcome does not staff from the keyword map and creates no h
       outcome(['is this ready'], undefined, CURSOR_ENV),
     );
     assert.equal(result, 0);
-    assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /Talk here/);
+    assert.match(out, /A packet is not a seat/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);

@@ -79,7 +79,9 @@ function firstHeadingLead(markdown: string): string {
 
 function assertSameFirstRunStory(page: string, label: string): void {
   const lead = firstHeadingLead(page);
-  assert.match(lead, /You talk\. Staff shows up/);
+  assert.match(lead, /You talk\./);
+  assert.match(lead, /Staff shows up/);
+  assert.match(lead, /talk packet without a seat is a miss/);
   assert.match(lead, /ordinary\s+language/);
   assert.match(lead, /The host infers/);
   assert.match(lead, /does\s+not classify intent/);
@@ -215,6 +217,7 @@ test('README first-run opens with talk, not a phrase table or verb wall', () => 
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
   assert.match(short, /Staff shows up/);
+  assert.match(short, /talk packet without a seat is a miss/);
   assert.match(short, /The host infers/);
   assert.match(short, /Two surfaces only/);
   assert.match(short, /one button/);
@@ -318,7 +321,8 @@ test('in-session words without a host naming do not fake keyword staff', async (
     const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
-    assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /Talk here/);
+    assert.match(out, /A packet is not a seat/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);
@@ -413,7 +417,8 @@ test('bare construct is talk, not the verb catalog', async () => {
     const { result, out } = await capture(() => main([], CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
-    assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /Talk here/);
+    assert.match(out, /A packet is not a seat/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.doesNotMatch(out, /Starting work/);
@@ -513,14 +518,31 @@ test('in-session talk plants method skills or says they did not', async () => {
     const previous = process.env.HOME;
     process.env.HOME = home;
     try {
-      const { result, out } = await capture(() => main([], { ...CURSOR_ENV, HOME: home }));
+      const { result, out } = await capture(() => main(['look at this'], { ...CURSOR_ENV, HOME: home }));
       assert.equal(result, 0);
+      assert.match(out, /A packet is not a seat/);
+      assert.match(out, /Catalog \(name only these, exactly\)/);
+      assert.doesNotMatch(out, /record_outcome/);
+      assert.doesNotMatch(out, /construct outcome/);
       const planted = existsSync(join(home, '.cursor', 'skills', 'investigative-research', 'SKILL.md'));
+      const instruction = join(home, '.cursor', 'skills', 'first-run', 'SKILL.md');
       if (planted) {
         assert.match(out, /Method skills (planted|already)/);
         assert.equal(existsSync(join(home, '.cursor', 'skills', 'construct-analyst', 'SKILL.md')), false);
       } else {
         assert.match(out, /Method skills (did not plant|were not planted)/);
+      }
+      assert.equal(existsSync(instruction), true, 'first-run instruction must plant');
+      const body = readFileSync(instruction, 'utf8');
+      assert.match(body, /A packet is not a seat/);
+      assert.match(body, /- privacy:/);
+      assert.doesNotMatch(body, /record_outcome/);
+      assert.doesNotMatch(body, /construct outcome/);
+      const store = openStore(storePath(resolvePaths()));
+      try {
+        assert.equal(listTasks(store).length, 0, 'talk itself creates no run');
+      } finally {
+        store.close();
       }
     } finally {
       if (previous === undefined) delete process.env.HOME;

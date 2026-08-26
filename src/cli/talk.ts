@@ -2,15 +2,18 @@
  * cli/talk.ts — first-run: ordinary language in, no verb lesson.
  *
  * Bare `construct` and a sentence that is not a verb start here. The host
- * infers. Two surfaces: this conversation continues, or one inbox card.
- * First-run must not look like Construct. No run is created from this
- * path — a hollow record would steal the next work.
+ * names and records. Two surfaces: this conversation continues, or one
+ * inbox card. talk() plants the host instruction and creates no run — a
+ * hollow record would steal the next work. A packet without a seat is a
+ * miss.
  */
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
+import { plantFirstRunInstruction, type InstructionPlant } from '../hosts/first-run-instruction.ts';
 import { sessionNamingPacket, type AmbientDetection } from '../hosts/session.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { plantShippedSkills, type PlantReport } from './skills.ts';
+import { packageVersion } from './runtime.ts';
 
 const HOSTS_THEY_HAVE =
   'Talk in the host you already use — Cursor, Claude Code, Codex, OpenCode, or IBM Bob.\n';
@@ -41,6 +44,16 @@ function plantLine(report: PlantReport): string {
   return `Method skills already in ${report.dir}.\n`;
 }
 
+function instructionLine(plant: InstructionPlant | undefined): string {
+  if (plant === undefined) return '';
+  if (plant.error !== undefined) {
+    return `First-run instruction did not plant: ${plant.error}\n`;
+  }
+  return plant.written
+    ? `First-run instruction planted in ${plant.dir}.\n`
+    : `First-run instruction already in ${plant.dir}.\n`;
+}
+
 function plantForSession(session: AmbientDetection, env: NodeJS.ProcessEnv): PlantReport {
   if (!(SKILLS_HOST_NAMES as readonly string[]).includes(session.host)) {
     return {
@@ -55,18 +68,28 @@ function plantForSession(session: AmbientDetection, env: NodeJS.ProcessEnv): Pla
   return plantShippedSkills(dir);
 }
 
-/** In-session first-run: the host infers; this process does not staff. */
+/** In-session first-run: the host names and records; this process does not staff. */
 export function sessionTalkPacket(
   session: AmbientDetection,
   words: string | undefined,
   plant: PlantReport,
+  instruction?: InstructionPlant,
 ): string {
-  return sessionNamingPacket(session, words) + plantLine(plant);
+  return sessionNamingPacket(session, words) + plantLine(plant) + instructionLine(instruction);
+}
+
+function plantInstructionForSession(
+  session: AmbientDetection,
+  env: NodeJS.ProcessEnv,
+): InstructionPlant | undefined {
+  if (!(SKILLS_HOST_NAMES as readonly string[]).includes(session.host)) return undefined;
+  const dir = resolveHostSkillsDir(session.host as SkillsHostName, env);
+  return plantFirstRunInstruction(dir, packageVersion());
 }
 
 /**
  * First-run talk. In a host session this prints the naming packet and plants
- * method skills (or says they did not). With no host it bounces: no run.
+ * the host instruction (or says they did not). With no host it bounces: no run.
  */
 export function talk(argv: string[] = [], env: NodeJS.ProcessEnv = process.env): number {
   const words = argv.join(' ').trim();
@@ -76,6 +99,9 @@ export function talk(argv: string[] = [], env: NodeJS.ProcessEnv = process.env):
     return 0;
   }
   const plant = plantForSession(session, env);
-  process.stdout.write(sessionTalkPacket(session, words.length > 0 ? words : undefined, plant));
+  const instruction = plantInstructionForSession(session, env);
+  process.stdout.write(
+    sessionTalkPacket(session, words.length > 0 ? words : undefined, plant, instruction),
+  );
   return 0;
 }

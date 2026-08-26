@@ -136,5 +136,5 @@ test('bare construct is talk, not the grouped help', async () => {
   assert.strictEqual(result.code, 0);
   assert.doesNotMatch(result.out, /Start here:/);
   assert.doesNotMatch(result.out, /Starting work/);
-  assert.match(result.out, /Talk in the host you already use|Talk here\. Staff shows up/);
+  assert.match(result.out, /Talk in the host you already use|Talk here/);
 });
