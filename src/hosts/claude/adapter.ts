@@ -91,6 +91,12 @@ export interface ClaudeConfig {
    * registered and the role has no write surface — safe rather than broken.
    */
   readonly roleServe?: RoleServeLaunch;
+  /**
+   * Environment used to decide in-session dispatch. Injected so a test can
+   * prove the spawn path without inheriting the runner's CLAUDECODE, and so
+   * `work` can pass the env it already detected from.
+   */
+  readonly env?: NodeJS.ProcessEnv;
 }
 
 export interface ClaudeRequest {
@@ -179,10 +185,18 @@ function framedTask(request: ClaudeRequest): string {
   return frameHostTask(request);
 }
 
+function claudeSessionMarker(env: NodeJS.ProcessEnv): string | null {
+  if (env.CLAUDECODE === '1') return 'CLAUDECODE';
+  if (env.CLAUDE_CODE_ENTRYPOINT !== undefined) return 'CLAUDE_CODE_ENTRYPOINT';
+  return null;
+}
+
 export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
   const binary = config.binary ?? 'claude';
   const spawn = config.spawn ?? defaultSpawn;
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const env = config.env ?? process.env;
+  const sessionMarker = claudeSessionMarker(env);
   const inFlight = new Map<string, SpawnedProcess>();
   const cancelled = new Set<string>();
 
@@ -264,12 +278,28 @@ export function createClaudeAdapter(config: ClaudeConfig = {}): ClaudeAdapter {
     },
 
     async init(): Promise<void> {
+      // Already inside Claude Code: probing `claude --version` starts a
+      // second runtime that is not this session. In-session dispatch does
+      // not spawn.
+      if (sessionMarker !== null && config.binary === undefined) {
+        observedVersion = `in-session (${sessionMarker})`;
+        ready = true;
+        return;
+      }
       observedVersion = await runVersionProbe();
       ready = true;
     },
 
     async invoke(request: unknown, context?: HostContext): Promise<HostResult> {
       if (!ready) throw new HostNotReadyError(HOST_NAME);
+      if (sessionMarker !== null && config.binary === undefined) {
+        throw new InvocationError(
+          `This process is already inside Claude Code (${sessionMarker}). ` +
+            'Spawning claude would be a second runtime. ' +
+            'Dispatch through construct serve (claim_task / submit_work).',
+          { host: HOST_NAME, code: 'HOST_UNAVAILABLE' },
+        );
+      }
 
       const req = request as ClaudeRequest;
       if (!req || typeof req.role !== 'string' || !req.role || typeof req.task !== 'string' || !req.task) {

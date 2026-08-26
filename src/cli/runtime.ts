@@ -32,7 +32,13 @@ export type { HostName } from './host-names.ts';
 
 export function adapterForHost(
   host: string | undefined,
-  opts: { readonly binary?: string; readonly model?: string; readonly dir?: string; readonly timeoutMs?: number },
+  opts: {
+    readonly binary?: string;
+    readonly model?: string;
+    readonly dir?: string;
+    readonly timeoutMs?: number;
+    readonly env?: NodeJS.ProcessEnv;
+  },
 ): HostAdapter {
   if (host === 'claude') return createClaudeAdapter(opts);
   if (host === 'codex') return createCodexAdapter(opts);

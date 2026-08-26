@@ -2778,3 +2778,50 @@ Phase 4 breadth gates; the first standing watch is still pointed at Construct
 itself (Phase 3); and the kernel still contains no scheduler — all three tiers
 fire the same `--due` verbs, and scheduling state stays in the store where
 `standing`/`watch` already keep it.
+
+## 30. In-session dispatch is host-pull on serve, never a second runtime (2026-08-26)
+
+Gerald: Cursor is actually on this device; that should work. Do not just update
+doctor. Architect: dispatch through the host that is already there. Construct
+owns completion, the log, and the inbox. Do not start a Construct-side run
+because the host was helpful — that is a second runtime.
+
+**What was failing.** `construct doctor` reported Cursor in-session execution
+available; `construct work --host=cursor` spawned `cursor-agent` and died
+(`Could not start cursor-agent`). Doctor treated "adapter exists" as spawnable.
+The same shape would fire for Claude Code, Codex, OpenCode, and Bob: fork the
+CLI you are already inside of.
+
+**What was rejected.** Using `CURSOR_AGENT_SOCKET` to start another agent turn.
+That is a second runtime wearing the first session's socket. Host-pull already
+authorized in §26–§27 is the shape: the session that is running claims a task
+and submits a draft.
+
+**Decision (session, under decide-by-default).**
+
+1. If an ambient host is present and the user did not ask for a *different*
+   spawn (`--binary`, or `--host` naming a different host), `work` does not
+   spawn. It prepares the queue and prints the claim_task / submit_work
+   packet. `construct serve` is the product dispatch surface (secret
+   established; host-pull tools listed). Completion stays kernel-owned
+   (commitment 14): drafts only; no promote.
+2. Typed `--host=cursor` while inside Cursor is still the session, not a
+   second CLI. Explicit `--binary` still means spawn that executable.
+3. The same rule for Claude Code, Codex, OpenCode, and Bob. Codex has no
+   ambient marker (upstream declined; §26 gap stands). OpenCode has no
+   documented session marker either. Bob is surveyed, never spawnable, and
+   in-session via serve.
+4. In-session `outcome` without `--host` / `--domains` records the text with
+   an empty catalog (`inferredBy: none`) and tells the session it is the
+   namer. The keyword map is the zero-model fallback when no session is
+   wrapping the command — not first-run.
+5. Doctor honesty is a consequence: found / version / auth / spawnable, plus
+   an ambient line that matches what `work` will do.
+
+**What this is not.** A Construct-only chat UI (commitment 1). A Grok Bot
+face. A Construct-side run started because the host was helpful.
+
+**Close gate.** `npm run lint && npm run typecheck && npm test && npm run smoke`.
+Tests cover the doctor/work lie, in-session work without spawn, keyword-map
+refuse, missing-outcome wording, adapter no-spawn, and serve listing host-pull
+tools.

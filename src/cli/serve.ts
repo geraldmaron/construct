@@ -8,7 +8,7 @@
  */
 
 import { openStore } from '../kernel/store/open.ts';
-import { loadSecret } from '../kernel/capabilities/secretfile.ts';
+import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
 import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
@@ -97,16 +97,19 @@ export async function hostPullServe(): Promise<number> {
 }
 
 /**
- * Serve the spine's projection over MCP stdio: presence inside whatever MCP
- * host the user already works in (one server, every host — commitment 1's
- * amendment). An MCP configuration launches this ({"command": "construct",
- * "args": ["serve"]}); it holds no capability secret and exposes no dispatch
- * and no completion writes — those stay on `work` and the role server.
+ * Serve the spine over MCP stdio: presence plus in-session dispatch. An MCP
+ * configuration launches this (`{"command": "construct", "args": ["serve"]}`).
+ * Host-pull tools (claim_task / submit_work) let the host that is already
+ * running execute queued work on its own capacity. Completion stays
+ * kernel-owned: a draft lands, a verdict promotes, no tool here marks work
+ * final. The secret is created on first serve if needed, the same way `work`
+ * establishes it before a spawned dispatch.
  */
 export async function serve(): Promise<number> {
   return withStoreAsync(async (store) => {
+    const secret = loadOrCreateSecret(secretFile());
     await serveProjection(
-      { store, clock: now, serverVersion: packageVersion() },
+      { store, clock: now, serverVersion: packageVersion(), secret },
       process.stdin,
       process.stdout,
     );

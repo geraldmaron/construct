@@ -173,7 +173,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   inbox: { gloss: 'hold the decisions that are genuinely yours', flags: ['json'] },
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
-  serve: { gloss: 'put the spine inside your host over MCP', flags: [] },
+  serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: [] },
   wire: { gloss: 'wire the MCP entry into your host’s config', flags: ['yes'] },
   init: { gloss: 'confirm your host and see the spine, right after install', flags: ['yes'] },
   doctor: { gloss: 'report host presence and store health', flags: [] },

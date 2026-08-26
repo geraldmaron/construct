@@ -94,9 +94,9 @@ so the walk still reads end to end and the record shows what moved.
 | # | Milestone | Deficiency | Hits |
 |---|---|---|---|
 | 1 | Dispatch | **Closed — host self-detection ships.** Construct reads the marker a host sets on its own subprocesses (`CLAUDECODE`, `CURSOR_AGENT`, and peers, in `hosts/ambient.ts`), so `outcome`, `work`, and the relayed follow-up command default to the session the user is in and name OpenCode only when no host is detected. The incident's proximate cause, resolved. | A, B |
-| 2 | Dispatch | **The projection cannot dispatch, by design.** An in-session agent must hand the human a shell command to run work at all — the thin-projection constraint (STRATEGY, Phase 2) colliding with the seamlessness expectation. Direction-grade: options and recommendation recorded on the program epic; the STRATEGY sentence is Gerald's to change. Still open. | A, B |
+| 2 | Dispatch | **Closed — in-session work is host-pull on `construct serve`.** When the user is already inside a host, `work` hands that session the queued tasks (`claim_task` / `submit_work`) and does not spawn a second CLI. Completion stays kernel-owned. Doctor reports spawnable vs in-session honestly. | A, B |
 | 3 | Install | **Partly closed — project-scoped state ships; install-shape guidance does not.** `state: local` (opt-in, ratified) roots the store inside the repo, so state no longer bleeds across projects unasked. What remains: nothing yet tells the installing agent which install shape fits the session it is in, and `npm install -g` may still need a PATH or shell reload the agent does not anticipate. | B, C, D |
-| 4 | Verify | **Closed — `doctor` names the host you are in.** An `ambient` line reports whether Construct was invoked from inside a host and whether in-session execution is available or projection-only, alongside the machine census — the one fact the agent-session resident needs, now stated plainly rather than inferred from a misrouted dispatch. | B |
+| 4 | Verify | **Closed — `doctor` names the host you are in, and `work` does what that line says.** An `ambient` line reports in-session dispatch through `construct serve` (will not spawn), alongside the machine census of found / version / auth / spawnable. | B |
 | 5 | Wire | **Closed — `construct wire` auto-wires the ambient host.** Run inside a host, it detects which one and writes the `construct serve` entry into that host's MCP config (Claude Code and Cursor today), so the milestone no longer requires hand-editing a recipe. A host it has no writer for, or none detected, refuses and names the manual recipe rather than guessing. | A, B, D |
 | 6 | Ground | **Partly closed — a committed posture file exists; source declarations are still per-session.** `.construct/settings.json` is now a committed, ratified statement of the repo's posture (host, locale, ground hints, `state`), so preferences travel with the repo. What remains: declared *sources* are still added one command at a time and are not themselves committed, and the silent `default` workspace is still the confidentiality footgun. | D, E |
 | 7 | Read back | **The projection's read surface escapes unlike the terminal's.** Inbox positions reach the MCP projection unescaped (construct-ayva), so what an in-session agent reads back is not held to the same injection discipline as the CLI. | A, B |
@@ -111,7 +111,6 @@ program epic **construct-INSTALL** (seamless install-to-first-value within the
 host the user already works in) and its children. Of the two rows recorded as a
 direction-grade decision with options in `RESEARCH-DECISIONS.md` §26, host
 self-detection has since shipped (row 1); the projection-dispatch inversion (row
-2) remains the open one, and the piece of §26 that edits the presence/execution
-seam STRATEGY describes is flagged there for Gerald's ratification rather than
-decided by a session. Every other row is ordinary execution behind the existing
-gates, assigned to the epic's children.
+2) ships as host-pull on `construct serve`, with completion still kernel-owned.
+Every other row is ordinary execution behind the existing gates, assigned to the
+epic's children.

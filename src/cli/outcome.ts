@@ -320,6 +320,25 @@ export async function outcome(
     }
 
     if (args.host === undefined) {
+      const ambient = detectAmbientHost(env);
+      // In-session first-run: the host that already read these words is the
+      // namer. Staffing from the keyword map here is the product lying about
+      // what inferred the work. Record the text; do not queue from keywords.
+      // hostOverride is the spawn-path / namer test seam — do not take the
+      // in-session path when a caller supplied a host to consult.
+      if (ambient !== null && hostOverride === undefined) {
+        const started = startRun(store, { runId, outcome: args.text, at, catalog: [] });
+        process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
+        process.stdout.write(
+          `Running inside ${ambient.host} (detected via ${ambient.marker}). ` +
+            'This session is the namer — the keyword map is not first-run.\n' +
+            'Record via MCP record_outcome with namings, or name concerns: ' +
+            `construct outcome --domains=<name,…> ${JSON.stringify(args.text)}\n` +
+            `Then dispatch through this session: construct work --run ${started.runId}\n`,
+        );
+        planRun(store, started, null, workspace, at);
+        return 0;
+      }
       const started = startRun(store, { runId, outcome: args.text, at });
       if (started.implicated.length === 0) {
         process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
@@ -351,7 +370,13 @@ export async function outcome(
 
     const host =
       hostOverride ??
-      adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
+      adapterForHost(args.host, {
+        binary: args.binary,
+        model: args.model,
+        dir: args.dir,
+        timeoutMs: args.timeoutMs,
+        env,
+      });
 
     try {
       await host.init();

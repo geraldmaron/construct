@@ -22,6 +22,9 @@ import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
 import { deliverableConcerns } from '../../../src/kernel/run/accountability.ts';
 import { spendOf } from '../../../src/kernel/run/coordinator.ts';
 import { validate } from '../../../src/kernel/hosts/interface.ts';
+import { sterileAmbientEnv } from '../../harness/sterile.ts';
+
+sterileAmbientEnv();
 
 const SUCCESS = readFileSync(new URL('fixtures/success.json', import.meta.url), 'utf8');
 const FALLBACK = readFileSync(new URL('fixtures/silent-fallback.json', import.meta.url), 'utf8');

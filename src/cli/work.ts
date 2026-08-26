@@ -12,7 +12,7 @@
 import { resolve } from 'node:path';
 import { readRunDispatch } from '../kernel/store/dispatch.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
-import { appendWorkLog } from '../kernel/store/worklog.ts';
+import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import { latestDraft } from '../kernel/run/promotion.ts';
@@ -42,6 +42,7 @@ import { surveyResources } from '../hosts/census.ts';
 import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
+import { usesSessionDispatch } from '../hosts/session.ts';
 import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
 import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
@@ -138,8 +139,29 @@ const BOOLEAN_FLAGS = ['allow-distant-ground', 'all'] as const;
 const WORK_USAGE =
   'usage: construct work --run=<id> [options]\n' +
   '   or: construct work --all [options]   dispatch every pending task across every run\n' +
-  'construct work with neither --run nor --all does nothing: dispatching every queued\n' +
-  'task is real spend, and it is never the no-argument default.\n';
+  'construct work with neither --run nor --all works the most recently recorded run\n' +
+  'that still has pending tasks. Dispatching every queued run is --all.\n';
+
+/** The most recently enqueued run that still has pending work. */
+export function latestPendingRun(store: Parameters<typeof listTasks>[0]): string | undefined {
+  const pending = listTasks(store).filter((task) => task.state === 'pending');
+  if (pending.length === 0) return undefined;
+  const runs = [...new Set(pending.map((task) => task.run))].sort();
+  return runs[runs.length - 1];
+}
+
+/** Whether this store has any record of the run — a log entry or a task. */
+export function runRecorded(store: Parameters<typeof readWorkLog>[0], run: string): boolean {
+  return readWorkLog(store, run).length > 0 || listTasks(store, run).length > 0;
+}
+
+function latestRecordedRun(store: Parameters<typeof readWorkLog>[0]): string | undefined {
+  const entries = readWorkLog(store);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i]?.action === 'outcome-received') return entries[i]?.run;
+  }
+  return undefined;
+}
 
 export function parseWorkArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): WorkArgs {
   const args: Record<string, string> = {};
@@ -260,10 +282,31 @@ export async function work(
   }
 
   return withStoreAsync(async (store) => {
+    // First-run: `construct work` after `construct outcome` should find the
+    // run that was just recorded, not ask the user to copy an id and not
+    // spend across every older run. --all remains the fleet door.
+    if (!args.run && !args.all) {
+      const latest = latestPendingRun(store);
+      if (latest !== undefined) {
+        args = { ...args, run: latest };
+      }
+    }
+
     // The run remembers the surface it was filed with; a flag typed now still
     // wins, and the divergence goes on the record rather than passing silently.
     const recorded = args.run ? readRunDispatch(store, args.run) : null;
     const hostName = args.hostExplicit ? args.host : (recorded?.host ?? args.host);
+
+    const session = usesSessionDispatch(env, {
+      host: hostName,
+      hostExplicit: args.hostExplicit,
+      binary: args.binary,
+    });
+    // hostOverride is the test seam for the spawn path. An in-session
+    // invocation must not use it: that would be a Construct-side run.
+    if (session !== null && hostOverride === undefined) {
+      return sessionWork(store, args, session);
+    }
     const model = args.model ?? recorded?.model ?? undefined;
     const binary = args.binary ?? recorded?.binary ?? undefined;
     const dir = args.dir ?? recorded?.dir ?? undefined;
@@ -303,6 +346,21 @@ export async function work(
       const failedTasks = counts.failed ?? 0;
 
       if (done === 0 && failedTasks === 0) {
+        if (args.run && runRecorded(store, args.run)) {
+          process.stdout.write(
+            `run ${args.run} is on record but queued no tasks — nothing to dispatch.\n` +
+              'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
+          );
+          return 0;
+        }
+        const recordedRun = latestRecordedRun(store);
+        if (recordedRun !== undefined) {
+          process.stdout.write(
+            `run ${recordedRun} is on record but queued no tasks — nothing to dispatch.\n` +
+              'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
+          );
+          return 0;
+        }
         process.stdout.write(
           'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
         );
@@ -416,7 +474,8 @@ export async function work(
     }
 
     const host =
-      hostOverride ?? adapterForHost(selected, { binary, model, dir, timeoutMs: args.timeoutMs });
+      hostOverride ??
+      adapterForHost(selected, { binary, model, dir, timeoutMs: args.timeoutMs, env });
 
     // Where the roles will actually run: the host's --dir when given, and
     // otherwise wherever this process was invoked, which is what every adapter
@@ -680,4 +739,64 @@ export async function work(
     }
     return report.failed > 0 ? 1 : 0;
   });
+}
+
+/**
+ * In-session dispatch: this process is already inside the host. Do not spawn
+ * that host's CLI. Make the queued work claimable through `construct serve`
+ * (claim_task / submit_work). The session executes; Construct keeps the log,
+ * the inbox, and completion.
+ */
+function sessionWork(
+  store: Parameters<typeof listTasks>[0],
+  args: WorkArgs,
+  session: { readonly host: string; readonly marker: string },
+): number {
+  const pending = listTasks(store, args.run).filter((task) => task.state === 'pending');
+  if (pending.length === 0) {
+    if (args.run && runRecorded(store, args.run)) {
+      process.stdout.write(
+        `run ${args.run} is on record but queued no tasks — nothing to dispatch.\n` +
+          'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
+      );
+      return 0;
+    }
+    const recordedRun = latestRecordedRun(store);
+    if (recordedRun !== undefined) {
+      process.stdout.write(
+        `run ${recordedRun} is on record but queued no tasks — nothing to dispatch.\n` +
+          'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
+      );
+      return 0;
+    }
+    process.stdout.write(
+      'nothing to work. Record an outcome first: construct outcome "<what you want>"\n',
+    );
+    return 0;
+  }
+
+  // The secret is what claim_task mints against. Establishing it here means
+  // the first in-session run does not die on serve looking for a secret that
+  // only a spawned `work` used to create.
+  loadOrCreateSecret(secretFile());
+
+  const runs = [...new Set(pending.map((task) => task.run))];
+  process.stdout.write(
+    `In-session dispatch through ${session.host} (detected via ${session.marker}).\n` +
+      `Construct will not spawn a second ${session.host} CLI — this session executes the work.\n` +
+      `${String(pending.length)} task(s) ready` +
+      (args.run ? ` for ${args.run}` : ` across ${String(runs.length)} run(s)`) +
+      '. Claim each with MCP construct serve (claim_task), execute it here, then submit_work.\n' +
+      'Construct owns the log, the inbox, and verdicts. Submitting a draft does not mark work final.\n',
+  );
+  for (const task of pending) {
+    const brief =
+      task.brief && typeof task.brief === 'object' && 'outcome' in task.brief
+        ? String((task.brief as { outcome?: unknown }).outcome ?? '')
+        : '';
+    process.stdout.write(
+      `  ${task.id}  ${task.role}` + (brief ? `  — ${escapeForTerminal(brief.slice(0, 120))}` : '') + '\n',
+    );
+  }
+  return 0;
 }
