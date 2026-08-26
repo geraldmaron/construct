@@ -2,9 +2,10 @@
  * tests/cli/first-run-surface.test.ts — first-run mechanism, not a phrase catalog.
  *
  * Cheap check locks the mechanism only:
- *   - Host in session: intent is inferred by the host (or handled as a
- *     generic host request / routed to inbox). The keyword map is not
- *     consulted. Empty fake staff from keywords is a fail.
+ *   - Host in session: the host infers. Two surfaces only — this session
+ *     dispatches, or the turn goes to inbox. No Construct-side intent
+ *     classifier, no namer protocol. The keyword map is not consulted.
+ *     Empty fake staff from keywords is a fail.
  *   - No hardcoded sentence → domain ID.
  *   - First construct command in the walkthrough is not doctor / status / help.
  */
@@ -69,23 +70,28 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   assert.equal(code, 0);
   assert.match(out, /This session infers the intent/);
   assert.match(out, /keyword map is not consulted/);
-  assert.match(out, /record_outcome/);
+  assert.match(out, /this session dispatches/);
   assert.match(out, /inbox/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /\bemployment\b/);
   assert.doesNotMatch(out, /\bcontracts\b/);
   assert.doesNotMatch(out, /no domains implicated/);
+  assert.doesNotMatch(out, /record_outcome/);
+  assert.doesNotMatch(out, /\bnamer\b/i);
 });
 
 test('host in session does not invent a hollow run when the keyword map would be silent', async () => {
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
   assert.match(out, /keyword map is not consulted/);
-  assert.match(out, /record_outcome|inbox/);
+  assert.match(out, /this session dispatches/);
+  assert.match(out, /inbox/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /no domains implicated/);
+  assert.doesNotMatch(out, /record_outcome/);
+  assert.doesNotMatch(out, /\bnamer\b/i);
 });
 
 test('a terminal with no host session still uses the keyword map', async () => {

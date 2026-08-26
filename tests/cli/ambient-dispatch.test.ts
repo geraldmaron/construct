@@ -194,9 +194,11 @@ test('in-session outcome does not staff from the keyword map or name a run to wo
     const text = out.join('');
     assert.match(text, /This session infers the intent/);
     assert.match(text, /keyword map is not consulted/);
-    assert.match(text, /record_outcome/);
+    assert.match(text, /this session dispatches/);
+    assert.match(text, /inbox/);
     assert.doesNotMatch(text, /implicated domains/);
     assert.doesNotMatch(text, /Run them: {2}construct work --run/);
+    assert.doesNotMatch(text, /record_outcome/);
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     if (previous === undefined) delete process.env.XDG_DATA_HOME;

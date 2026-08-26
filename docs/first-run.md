@@ -34,9 +34,8 @@ construct outcome "We want to hire a contractor in Poland"
 ```
 
 Inside a host session (Cursor, Claude Code, and peers Construct can detect),
-that command does not staff from the keyword map. This session names the
-concerns — MCP `record_outcome` with namings — or the turn is a host request
-/ inbox item.
+that command does not staff from the keyword map. The host infers. Two
+surfaces: this session dispatches, or the turn goes to inbox.
 
 From a terminal, with no host session around the process, Construct reads
 the sentence and works out which concerns it touches:
