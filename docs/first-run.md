@@ -1,8 +1,7 @@
 # Your first run
 
-First-run is saying what you want, in ordinary language. "Is this ready?"
-"Do the claims match?" — not a catalog word, not `construct doctor`, not
-the verb list.
+First-run is saying what you want, in ordinary language — not a catalog
+word, not `construct doctor`, not the verb list.
 
 This walks you from nothing to one finished outcome, and it should take about
 ten minutes. Every command below was run as written against this CLI, except
@@ -31,20 +30,16 @@ Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
 
 ```bash
-construct outcome "is this ready"
-```
-
-That staffs the product seat. "Do the claims match?" staffs evidence. A
-question about whether the shape survives staffs system-design. Empty staff
-on those sentences is a fail.
-
-A longer sentence works the same way:
-
-```bash
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-Construct reads that sentence and works out which concerns it touches:
+Inside a host session (Cursor, Claude Code, and peers Construct can detect),
+that command does not staff from the keyword map. This session names the
+concerns — MCP `record_outcome` with namings — or the turn is a host request
+/ inbox item.
+
+From a terminal, with no host session around the process, Construct reads
+the sentence and works out which concerns it touches:
 
 ```
 run run-20260805134446726
