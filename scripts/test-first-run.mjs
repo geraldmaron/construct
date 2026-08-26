@@ -7,10 +7,10 @@
  * the release-tag workflow. This subset is not optional: a first-run
  * regression must fail a push, not wait for a manual dispatch.
  *
- * Locked cases — the mechanism, not a phrase catalog:
- *   - Host in session: intent is inferred by the host (or a generic host
- *     request / inbox). The keyword map is not consulted. Empty fake staff
- *     from keywords is a fail.
+ * Locked cases — the mechanism, not a phrase catalog and not a namer:
+ *   - Host in session: the host infers. Two surfaces only — session
+ *     dispatch or inbox. The keyword map is not consulted. Empty fake
+ *     staff from keywords is a fail.
  *   - No hardcoded sentence → domain ID.
  *   - First construct command in the walkthrough is not doctor / status / help.
  *
