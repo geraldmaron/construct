@@ -296,6 +296,19 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
   },
 ]);
 
+/**
+ * Whole-phrase first-run seats. The keyword matcher strips function words, so
+ * "is this ready" collapses to the single token "ready" and would conscript
+ * product-scoping on every sentence that said ready. These phrases are held
+ * as phrases: the sentence must contain them, and empty staff on them is a
+ * fail.
+ */
+export const FIRST_RUN_PHRASES: readonly { phrase: string; domain: string }[] = Object.freeze([
+  { phrase: 'is this ready', domain: 'product-scoping' },
+  { phrase: 'do the claims match', domain: 'evidence-provenance' },
+  { phrase: 'this shape', domain: 'system-design' },
+]);
+
 /** The catalog keyed by domain name. */
 export function domainsByName(
   catalog: readonly Domain[] = DOMAINS,

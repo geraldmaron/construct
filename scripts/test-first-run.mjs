@@ -7,11 +7,11 @@
  * the release-tag workflow. This subset is not optional: a first-run
  * regression must fail a push, not wait for a manual dispatch.
  *
- * Locked cases, named so a later edit cannot drop one by accident:
- *   - "is this ready" staffs through this session, not the keyword map
- *   - "do the claims match" staffs evidence-provenance
- *   - system-design is not hijacked to program-sequencing by the word "ship"
- *   - first output is not doctor / status / the verb catalog
+ * Locked cases — empty staff is a fail, not a pass:
+ *   - "is this ready" staffs product-scoping
+ *   - "do the claims match" staffs evidence-provenance or coverage-gaps
+ *   - a product-shape ask staffs system-design
+ *   - first construct command in the walkthrough is not doctor / status / help
  *
  * Files that have not landed yet are skipped; files that exist are run.
  * An empty run is a failure — the check is not optional.

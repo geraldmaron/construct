@@ -1,5 +1,9 @@
 # Your first run
 
+First-run is saying what you want, in ordinary language. "Is this ready?"
+"Do the claims match?" — not a catalog word, not `construct doctor`, not
+the verb list.
+
 This walks you from nothing to one finished outcome, and it should take about
 ten minutes. Every command below was run as written against this CLI, except
 the ones that dispatch to a host and spend money; those are checked against the
@@ -19,25 +23,22 @@ the second half of this walkthrough.
 npm install -g @geraldmaron/construct@alpha
 ```
 
-You need Node 22.18 or newer. Then check that the parts Construct owns are
-healthy:
-
-```bash
-construct doctor
-```
-
-You should see a column of `ok` lines and `doctor: healthy`. It checks Node,
-where state lives, whether the database is writable, whether the store has ever
-been copied, which agent hosts are present on this machine (and how each
-compares to the pinned version), leftover 2.x litter in the project tree, and
-the installed skills pack. Only the Node and store checks gate the exit code;
-the rest inform. The full check table, line by line, is in
-[consumer-install.md](consumer-install.md).
+You need Node 22.18 or newer.
 
 ## Record an outcome
 
 Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
+
+```bash
+construct outcome "is this ready"
+```
+
+That staffs the product seat. "Do the claims match?" staffs evidence. A
+question about whether the shape survives staffs system-design. Empty staff
+on those sentences is a fail.
+
+A longer sentence works the same way:
 
 ```bash
 construct outcome "We want to hire a contractor in Poland"
@@ -94,6 +95,22 @@ construct outcome --domains=employment,contracts "We want to hire a contractor i
 Naming a domain nobody defined is an error that lists the catalog rather than
 inventing a role, and the record shows your choice as your choice rather than
 as something the system inferred.
+
+## Health check
+
+`construct doctor` is a health check, not the first beat. It reports Node,
+where state lives, whether the database is writable, whether the store has
+ever been copied, which agent hosts are present (and how each compares to
+the pinned version), leftover 2.x litter in the project tree, and the
+installed skills pack. Only the Node and store checks gate the exit code;
+the rest inform. The full check table, line by line, is in
+[consumer-install.md](consumer-install.md).
+
+```bash
+construct doctor
+```
+
+You should see a column of `ok` lines and `doctor: healthy`.
 
 ## Run the work
 

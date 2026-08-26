@@ -26,15 +26,14 @@ What that leaves is smaller, and it is the part that was always doing the work: 
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
-**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version:
+**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version. Talk first — "Is this ready?" "Do the claims match?" — not doctor, not the verb list:
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
-construct doctor
-construct outcome "We want to hire a contractor in Poland"
+construct outcome "is this ready"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct doctor` is a health check, not the first beat. `construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
 Those six are the spine, not the whole surface. The surface is 37 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 

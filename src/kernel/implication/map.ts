@@ -11,12 +11,15 @@
  * made here in prose.
  *
  * Scoring is the harvested dispatcher's, unchanged. This module contributes the
- * signal floor and the evidence trail, nothing else — a second matcher for the
- * same job is exactly the drift the glossary and commitment 16 exist to catch.
+ * signal floor, the evidence trail, and the whole-phrase first-run seats the
+ * keyword matcher cannot hold without collapsing them to a single token. A
+ * second keyword scorer for the same job is exactly the drift the glossary
+ * and commitment 16 exist to catch; the first-run seats are phrases, not
+ * keywords.
  */
 
 import { matchingKeywords, suggestRoutes } from '../routing/dispatcher.ts';
-import { DOMAINS, domainsByName } from './domains.ts';
+import { DOMAINS, FIRST_RUN_PHRASES, domainsByName } from './domains.ts';
 import type { Domain } from './domains.ts';
 
 /**
@@ -63,6 +66,40 @@ export interface MapInput {
 export interface ImplicationMap {
   readonly outcome: string;
   readonly implicated: readonly Implication[];
+}
+
+function normalizePhrase(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Seat the ordinary-language first-run phrases the keyword matcher cannot
+ * hold. This is not a second keyword scorer: it only admits a domain already
+ * in the catalog when the outcome contains the whole phrase. Empty staff on
+ * those phrases is the failure this exists to close.
+ */
+function seatFirstRunPhrases(
+  outcome: string,
+  catalog: readonly Domain[],
+  implicated: Implication[],
+): void {
+  const haystack = normalizePhrase(outcome);
+  if (haystack.length === 0) return;
+  const byName = domainsByName(catalog);
+  const seated = new Set(implicated.map((row) => row.domain));
+  for (const seat of FIRST_RUN_PHRASES) {
+    if (!haystack.includes(seat.phrase)) continue;
+    if (seated.has(seat.domain)) continue;
+    const domain = byName.get(seat.domain);
+    if (!domain) continue;
+    implicated.push({
+      domain: domain.domain,
+      concern: domain.concern,
+      score: 10,
+      signals: [seat.phrase],
+    });
+    seated.add(seat.domain);
+  }
 }
 
 /**
@@ -118,6 +155,8 @@ export function mapImplications(input: MapInput): ImplicationMap {
       signals: evidence.map((m) => m.keyword),
     });
   }
+
+  seatFirstRunPhrases(outcome, catalog, implicated);
 
   implicated.sort((a, b) => b.score - a.score || a.domain.localeCompare(b.domain));
   return {
