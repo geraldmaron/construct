@@ -245,7 +245,8 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'metric', 'metrics', 'kpi', 'dashboard', 'funnel', 'conversion',
       'experiment', 'a/b test', 'ab test', 'retention', 'churn',
       'instrumentation', 'telemetry', 'data quality', 'success metric',
-      'baseline', 'measure', 'track usage', 'analytics',
+      'baseline', 'measure', 'measurement', 'track usage', 'analytics',
+
     ],
   },
   {

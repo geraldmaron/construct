@@ -24,6 +24,7 @@ import { PINNED_VERSION as OPENCODE_PINNED } from './opencode/pin.ts';
 import { PINNED_VERSION as CLAUDE_PINNED } from './claude/pin.ts';
 import { PINNED_VERSION as CODEX_PINNED } from './codex/pin.ts';
 import { PINNED_VERSION as CURSOR_PINNED } from './cursor/pin.ts';
+import { PINNED_VERSION as BOB_PINNED } from './bob/pin.ts';
 
 export interface HostPresence {
   /** The host, by the name its adapter (or future adapter) uses. */
@@ -36,6 +37,12 @@ export interface HostPresence {
   readonly pinned?: string;
   /** What is known about authentication, stated conservatively. */
   readonly auth: string;
+  /**
+   * Whether `construct work` can spawn this host's CLI. Distinct from
+   * in-session dispatch: a host you are already inside of is used through
+   * `construct serve`, and is not spawnable just because an adapter exists.
+   */
+  readonly spawnable: boolean;
   /** Whether an adapter can dispatch work through this host today. */
   readonly dispatchable: boolean;
 }
@@ -78,6 +85,7 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     ...(opencode !== null ? { version: opencode } : {}),
     pinned: OPENCODE_PINNED,
     auth: 'not probed — auth lives in the host\'s own config',
+    spawnable: opencode !== null,
     dispatchable: opencode !== null,
   });
 
@@ -88,6 +96,7 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     ...(claude !== null ? { version: claude } : {}),
     pinned: CLAUDE_PINNED,
     auth: 'not probed — auth lives in the host\'s own config',
+    spawnable: claude !== null,
     dispatchable: claude !== null,
   });
 
@@ -102,6 +111,7 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     ...(codex !== null ? { version: codex } : {}),
     pinned: CODEX_PINNED,
     auth: codexAuth ?? (codex !== null ? 'login status unavailable' : 'not probed'),
+    spawnable: codex !== null,
     dispatchable: codex !== null,
   });
 
@@ -115,7 +125,22 @@ export function surveyHosts(exec: ProbeExec = defaultExec): HostPresence[] {
     ...(cursor !== null ? { version: cursor } : {}),
     pinned: CURSOR_PINNED,
     auth: cursorAuth ?? (cursor !== null ? 'not logged in' : 'not probed'),
+    spawnable: cursor !== null,
     dispatchable: cursor !== null,
+  });
+
+  // Bob is a probe target with no spawn adapter. Doctor must still name it,
+  // so an in-session Bob user is not told a host they have cannot be seen.
+  // In-session dispatch goes through `construct serve`, not a spawned CLI.
+  const bob = exec('bob', ['--version']);
+  rows.push({
+    host: 'bob',
+    found: bob !== null,
+    ...(bob !== null ? { version: bob } : {}),
+    ...(BOB_PINNED !== null ? { pinned: BOB_PINNED } : {}),
+    auth: 'not probed — IBMid SSO or BOB_API_KEY',
+    spawnable: false,
+    dispatchable: false,
   });
 
   return rows;
@@ -126,7 +151,8 @@ export function presenceLines(rows: readonly HostPresence[]): string[] {
   return rows.map((r) => {
     const found = r.found ? (r.version ?? 'found') : 'not found';
     const pin = r.pinned ? ` (pinned: ${r.pinned})` : '';
-    const dispatch = r.dispatchable ? '' : r.found ? ' — no dispatch adapter yet' : '';
-    return `${r.host}: ${found}${pin}${dispatch}; auth: ${r.auth}`;
+    const spawn = r.spawnable ? 'yes' : 'no';
+    const adapter = r.dispatchable || !r.found ? '' : ' — no spawn adapter';
+    return `${r.host}: ${found}${pin}; spawnable: ${spawn}${adapter}; auth: ${r.auth}`;
   });
 }

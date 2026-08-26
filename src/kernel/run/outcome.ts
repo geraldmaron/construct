@@ -80,6 +80,11 @@ export interface StartRunNamedInput extends StartRunInput {
    * every case; this only redirects the inference's input.
    */
   readonly namerText?: string;
+  /**
+   * Host-supplied namings on record_outcome. Tags the run as this session,
+   * not Construct's namer.
+   */
+  readonly source?: 'session';
 }
 
 /** Deterministic, so re-recording a run enqueues its work once. */
@@ -237,6 +242,7 @@ export async function startRunNamed(
     catalog: input.catalog,
     namer: input.namer,
     cache: input.cache,
+    ...(input.source === undefined ? {} : { source: input.source }),
   });
   return record(store, input, map.implicated, {
     inferredBy: map.inferredBy,
@@ -315,6 +321,7 @@ export async function startAskNamed(
     catalog: input.catalog,
     namer: input.namer,
     cache: input.cache,
+    ...(input.source === undefined ? {} : { source: input.source }),
   });
   return record(
     store,
@@ -378,7 +385,7 @@ function record(
     // A consulted model is logged whether or not it named anything. A
     // consultation that cost money and produced silence is exactly the entry a
     // user needs to see, and the one a "log it if it worked" rule would drop.
-    if (inferredBy === 'namer' || inferredBy === 'cache') {
+    if (inferredBy === 'namer' || inferredBy === 'cache' || inferredBy === 'session') {
       logged.push(
         appendWorkLog(store, {
           run: input.runId,

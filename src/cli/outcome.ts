@@ -5,9 +5,12 @@
  * Without a host named this path is deterministic, does no I/O beyond the
  * store, and costs nothing. With one, that host's model reads every outcome as
  * the primary namer and the keyword map is only the fallback if the model
- * fails. The plan is recorded write-once here so `work` executes against a
- * stated plan rather than an implicit one, which is why `ask` and the standing
- * firings both come back through this file to record theirs.
+ * fails. Inside an ambient host session, this verb does not consult the
+ * keyword map and does not create a run: the host infers, and the only
+ * surfaces are this session's dispatch or the inbox. The plan is recorded
+ * write-once here so `work` executes against a stated plan rather than an
+ * implicit one, which is why `ask` and the standing firings both come back
+ * through this file to record theirs.
  */
 
 import type { Store } from '../kernel/store/open.ts';
@@ -29,12 +32,23 @@ import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
+import { sessionNamingPacket, usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
 
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
   '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
+
+/**
+ * What an in-session first-run prints when a host already has the words.
+ * No run is created: a hollow or keyword-staffed record would look like
+ * staffing happened. Construct does not classify the intent. The host infers.
+ * Two surfaces only: this session dispatches, or the turn goes to inbox.
+ */
+export function sessionOutcomeHandoff(session: AmbientDetection, words: string): string {
+  return sessionNamingPacket(session, words);
+}
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -216,11 +230,13 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
   if (started.inferredBy === 'user') {
     process.stdout.write('\nYou named these; nothing was inferred and no model was consulted.\n');
   }
-  if (started.inferredBy === 'namer' || started.inferredBy === 'cache') {
+  if (started.inferredBy === 'namer' || started.inferredBy === 'cache' || started.inferredBy === 'session') {
     process.stdout.write(
       started.inferredBy === 'cache'
         ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
-        : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
+        : started.inferredBy === 'session'
+          ? '\nThese came from this session reading the outcome; each reason above is its stated evidence.\n'
+          : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
     );
   }
   if (started.namerFailure !== undefined) {
@@ -256,9 +272,11 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
  * Record an outcome.
  *
  * Without --host the path is deterministic, does no I/O beyond the store, and
- * costs nothing — the keyword map answers or it does not. With --host, that
- * host's model reads every outcome as the primary namer and the map is only
- * the fallback if the model fails (adopted 2026-08-05 on the
+ * costs nothing — the keyword map answers or it does not, except inside an
+ * ambient host session, where the map is not consulted, no run is created,
+ * and the host infers (session dispatch or inbox — not a Construct classifier).
+ * With --host, that host's model reads every outcome as the primary namer and
+ * the map is only the fallback if the model fails (adopted 2026-08-05 on the
  * RESEARCH-DECISIONS.md §10 figures: on wording the catalog's authors never
  * wrote, the map missed 0.634 where the namer missed 0.301).
  *
@@ -319,6 +337,21 @@ export async function outcome(
       return 0;
     }
 
+    const session = usesSessionDispatch(env, {
+      host: args.host,
+      hostExplicit: args.host !== undefined,
+      binary: args.binary,
+    });
+    // In-session first-run: the host that already read these words infers.
+    // Creating a hollow run here poisons the next `work` (it becomes the
+    // latest record and steals the default) and looks like staffing happened.
+    // A typed --host that names this session is still this session.
+    // hostOverride / --binary is the spawn-path / namer test seam.
+    if (session !== null && hostOverride === undefined) {
+      process.stdout.write(sessionOutcomeHandoff(session, args.text));
+      return 0;
+    }
+
     if (args.host === undefined) {
       const started = startRun(store, { runId, outcome: args.text, at });
       if (started.implicated.length === 0) {
@@ -351,7 +384,13 @@ export async function outcome(
 
     const host =
       hostOverride ??
-      adapterForHost(args.host, { binary: args.binary, model: args.model, dir: args.dir, timeoutMs: args.timeoutMs });
+      adapterForHost(args.host, {
+        binary: args.binary,
+        model: args.model,
+        dir: args.dir,
+        timeoutMs: args.timeoutMs,
+        env,
+      });
 
     try {
       await host.init();

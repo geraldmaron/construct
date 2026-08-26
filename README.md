@@ -26,30 +26,45 @@ What that leaves is smaller, and it is the part that was always doing the work: 
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
-**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version:
+**[docs/first-run.md](docs/first-run.md) is first run**: talk in the host you already have; staff shows up. The terminal command list is [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
+
+Talk there. Staff shows up. Ordinary language, no catalog words, no `--host`. The host infers. Two surfaces only: dispatch through this session (`record_outcome`, then `claim_task` / `submit_work`), or an inbox call when the decision is yours. Construct does not classify, name, or route. No phrase table. Then the work happens here. Construct will not spawn a second CLI.
 
 ```bash
-npm install -g @geraldmaron/construct@alpha
-construct doctor
+construct serve
+```
+
+That is first run. `init`, `doctor`, and the verb catalog are later on this page. They are not beat two.
+
+From a plain terminal with no host wrapping the command, the keyword map is the zero-model fallback:
+
+```bash
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work` works the most recently recorded outcome, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Those six are the spine, not the whole surface. The surface is 37 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
+Plant method skills and wire MCP once, when you want the host's skills directory filled:
+
+```bash
+npm install -g @geraldmaron/construct@alpha
+construct init --yes
+```
+
+Those six are the spine, not the whole surface. The surface is 41 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 
 | What you are doing | Verbs |
 |---|---|
-| Starting work | `outcome` `ask` `standing` `watch` |
+| Starting work | `outcome` `ask` `standing` `watch` `schedule` |
 | Running it | `work` `notes` |
-| Reading back | `show` `log` `plan` `inbox` `corpus` |
+| Reading back | `status` `show` `log` `plan` `inbox` `corpus` |
 | Outward changes and decisions | `propose` `audit` `decide` `waive` `revoke` |
 | Ground | `source` `review` |
 | Learning and governance | `lessons` `verdict` `staff` |
 | Workspace settings | `mode` `consent` `record` `settings` `trust` |
 | Composition and reconciliation | `compose` `reconcile` |
-| Presence | `serve` `wire` |
-| Maintenance | `doctor` `backup` `cleanup` `skills` `completions` `version` |
+| Presence and hosts | `serve` `wire` `init` |
+| Maintenance | `doctor` `backup` `cleanup` `daemon` `skills` `completions` `version` `help` |
 
 Two more, `role-serve` and `host-pull-serve`, never appear in the usage line and you never type them: the dispatcher launches `role-serve` as one role's write surface, with the role's token in the environment rather than in arguments, and `host-pull-serve` is an off-by-default execution prototype.
 
@@ -65,7 +80,7 @@ If you already work inside an agent host, `construct serve` puts the spine insid
 claude mcp add construct construct serve
 ```
 
-Run from inside a host, `construct wire` detects which host that is and writes the same entry into its MCP config for you; any host that reads a plain config file also takes the entry directly, and `docs/first-run.md`'s "other way in" shows that form.
+Run from inside a host, `construct wire` detects which host that is and writes the same entry into its MCP config for you; any host that reads a plain config file also takes the entry directly, and `docs/cli-walkthrough.md`'s "other way in" shows that form.
 
 
 Chat dogfood without an IDE: nanobot WebUI with Construct attached over MCP
@@ -74,7 +89,7 @@ first-party *execution* host; MCP presence reaches Claude Code, Codex, Cursor,
 and peers. Do not stand up a Construct-only chat UI — commitment 1. Xirp is a
 future projection target, not a substitute (`RESEARCH-DECISIONS.md` §16).
 
-That surface is presence, not execution. It can record outcomes, read the log and the inbox, and relay your decisions and verdicts, and it deliberately cannot dispatch work or advance a deliverable toward finished.
+`construct serve` is how an in-session host does the work. `claim_task` and `submit_work` let the host that is already running execute a queued task on its own capacity and submit a draft. Construct still owns the log, the inbox, and completion: a draft lands, a verdict promotes, and no tool on that surface marks work final. Spawning a second CLI from inside the session you are already in is a second runtime, and `work` will not do it.
 
 If you have a predecessor install and want it removed, `construct cleanup` does it (`--dry-run`, `--yes`, `--scope`, `--keep-state`) and refuses to remove the Construct that is running. `npm install @geraldmaron/construct@alpha` reaches it; a plain install stays on 2.x until the gate passes.
 
@@ -222,6 +237,8 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 ```
 
 That line is the whole gate; nothing is done without it. `npm run lint` is a chain of small checks rather than a linter: no absolute paths, glossary parity, no tracker ids in code, skill-spec conformance, reader-rubric parity, the connector gate, terminal-escape safety, a check that every command printed in the documentation names a verb and subcommand the CLI actually accepts (asked of the CLI, not of a table beside it), and a regeneration of `docs/org-map.md` compared against the committed copy, so a catalog edit that would quietly falsify that page fails here instead. `npm test` is the sterile suite through `node --test`. `npm run smoke` packs the package, installs it into a scratch project, and runs the spine as a consumer would.
+
+Ordinary GitHub Actions on push and pull request run `lint`, `typecheck`, and the first-run staffing/surface subset (`npm run test:first-run`). The full gate — that line, plus the suite under a read-only `HOME` — is the `ci` workflow's `workflow_dispatch` and the release-tag workflow before publish. Tracker-only commits under `.beads/` do not start a run.
 
 Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it runs natively via Node's type-stripping in development, with no build step for `npm test`. `npm run build` produces the published `dist/` for packaging.
 

@@ -2,14 +2,16 @@
  * tests/hosts/mcp/projection.test.ts — the spine's presence inside an MCP
  * host, and the boundary it must not cross.
  *
- * The load-bearing assertions are the negative ones: the projection exposes
- * no dispatch and nothing that advances completion — no submit_draft, no
- * append_work_log, no promote. Completion is kernel-owned and the role
- * server's token-scoped writes are the only role door; a projection that grew
- * either would let a host model spend money or certify work as a side effect
- * of being present. The strongest of them is structural rather than
- * by-name: no module this surface can reach, transitively, is able to spawn a
- * host, so no tool on it can spend whatever a later one is written to do.
+ * The load-bearing assertions are the negative ones: the projection never
+ * starts a Construct-side host spawn, and nothing on it advances completion
+ * — no submit_draft, no append_work_log, no promote. Host-pull tools
+ * (claim_task / submit_work) are offered only when a secret is supplied;
+ * they let the host that is already running execute work on its own
+ * capacity and submit a draft. Completion is kernel-owned and the role
+ * server's token-scoped writes are the only role door. The strongest
+ * negative is structural rather than by-name: no module this surface can
+ * reach, transitively, is able to spawn a host, so no tool on it can start
+ * a second runtime.
  *
  * The positive assertions: the caller-as-namer path drives the SAME admission
  * gate the CLI's subprocess namer drives (catalog membership, a stated
@@ -41,7 +43,7 @@ import { addRecord, updateRecordField } from '../../../src/kernel/store/records.
 import { recordCatalogSighting } from '../../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
-import type { JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
+import type { JsonRpcRequest, JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -145,7 +147,7 @@ test('caller-as-namer: proposals pass the admission gate, and the reply names wh
     // Only the catalog domain with a stated reason survives, once.
     assert.deepEqual(started.implicated.map((i) => i.domain), ['privacy']);
     assert.equal(started.implicated[0].reason, 'EU users means GDPR obligations before launch.');
-    assert.equal(started.inferredBy, 'namer');
+    assert.equal(started.inferredBy, 'session');
     // The invented domain and the reasonless one are named back to the caller.
     assert.deepEqual(started.notAdmitted.sort(), ['astrology', 'commerce-tax']);
     assert.equal(started.tasksQueued, 1);
@@ -172,6 +174,27 @@ test('an empty namings array is an answer, not a failure', async () => {
     assert.equal(started.namerFailure, undefined, 'naming nothing is not a failure');
   } finally {
     f.cleanup();
+  }
+});
+
+test('on a host-pull serve, omitting namings is an error — this session already read the words', async () => {
+  const sterileFixture = sterile();
+  const store = openStore(join(sterileFixture.paths.dataDir, 'construct.db'));
+  const handle = createProjectionHandler({
+    store,
+    clock: () => AT,
+    serverVersion: 'test',
+    secret: 'test-secret-not-a-real-key',
+  });
+  try {
+    const reply = await handle(call('record_outcome', { outcome: 'is this ready' }) as JsonRpcRequest);
+    const { body, isError } = payload(reply);
+    assert.equal(isError, true);
+    assert.match(String((body as { error?: string }).error), /requires namings/);
+    assert.equal(listTasks(store).length, 0);
+  } finally {
+    store.close();
+    sterileFixture.cleanup();
   }
 });
 
@@ -210,7 +233,7 @@ test('a cache hit is named in notAdmittedBecause, not left to be inferred from i
       }),
     );
     const first = payload(firstReply).body as { inferredBy: string; notAdmitted?: string[] };
-    assert.equal(first.inferredBy, 'namer');
+    assert.equal(first.inferredBy, 'session');
     assert.equal(first.notAdmitted?.length ?? 0, 0, 'nothing was rejected on the first consultation');
 
     // The exact same outcome text, a second time, with a fresh proposal that

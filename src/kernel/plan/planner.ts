@@ -45,6 +45,8 @@ function routedByFrom(inferredBy: InferredBy): RoutedBy {
     case 'namer':
     case 'cache':
       return 'namer';
+    case 'session':
+      return 'session';
     case 'user':
       return 'user';
     default:

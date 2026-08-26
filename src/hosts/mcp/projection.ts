@@ -15,10 +15,11 @@
  *
  * What is deliberately ABSENT, and why:
  *
- *   - No dispatch. `construct work` spends money on a host adapter, behind the
- *     CLI's explicit opt-in and spend ceiling. The projection is presence,
- *     never execution — a host model must not be able to start a paid run as a
- *     side effect of being helpful. `run_status` is the read of that surface.
+ *   - No Construct-side spawn. A host model must not start a paid adapter run
+ *     as a side effect of being helpful — that is a second runtime. In-session
+ *     dispatch is host-pull (`claim_task` / `submit_work`): the host already
+ *     running executes the work on its own capacity and submits a draft.
+ *     `run_status` remains the read of that surface.
  *   - No completion advancement. draft -> challenged -> final is kernel-owned
  *     (a dispatcher-owned transition over recorded verdicts), and no tool on
  *     this server touches it. Role writes (submit_draft, append_work_log) stay
@@ -82,12 +83,19 @@ import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import type { JsonRpcRequest, JsonRpcResponse, MessageHandler } from './jsonrpc.ts';
+import { createHostPullHandler, HOST_PULL_TOOLS } from './hostpull.ts';
 
 export interface ProjectionCore {
   readonly store: Store;
   /** Injected; the kernel never reads the clock, and neither does this file. */
   readonly clock: () => string;
   readonly serverVersion: string;
+  /**
+   * When present, this server also offers host-pull dispatch (claim_task /
+   * submit_work). Absent, the surface stays the presence-only tool set — the
+   * unit tests that prove record/read/relay do not need a secret.
+   */
+  readonly secret?: string;
 }
 
 /**
@@ -112,23 +120,26 @@ export const PROJECTION_TOOLS = [
     name: 'record_outcome',
     description:
       'Record an outcome — what the user wants to happen, in their words. ' +
-      'You have already read those words, so you may act as the namer: read ' +
-      'the catalog first, then pass `namings`, the catalog domains this ' +
-      'outcome implicates, each with the reason in `why`. Passing an empty ' +
-      'namings array is a real answer ("this implicates nothing"). Omitting ' +
-      'namings entirely leaves the inference to the deterministic keyword ' +
-      'map. Your namings are proposals: anything outside the catalog or ' +
-      'without a reason is discarded by the kernel, and the reply says what ' +
-      'was admitted — except when this exact outcome text was already ' +
-      'consulted once before, by any host in any prior session: that first ' +
-      'answer is served from a cache instead, your namings are not evaluated ' +
-      'against the catalog at all, `inferredBy` reads "cache", and any of ' +
-      'your proposed domains missing from the cached answer land in ' +
-      '`notAdmitted` with `notAdmittedBecause` saying why. Optionally state ' +
-      'your own `confidence` (0 to 1) on a naming when you are unsure it ' +
-      "truly applies — below 0.5 it is kept as a named coverage gap rather " +
-      'than routed, so a weak read does not silently become a match. Leave ' +
-      'it out when you are simply sure.',
+      'You have already read those words. This session infers: read the ' +
+      'catalog first, then pass `namings`, the catalog domains this outcome ' +
+      'implicates, each with the reason in `why`. Passing an empty namings ' +
+      'array is a real answer ("this implicates nothing"). On construct ' +
+      'serve (the product path) namings are required — omitting them is an ' +
+      'error, not a fall-through to the keyword map. A projection without a ' +
+      'host-pull secret still accepts an omitted namings field as the ' +
+      'deterministic keyword path. Your namings are proposals: anything ' +
+      'outside the catalog or without a reason is discarded by the kernel, ' +
+      'and the reply says what was admitted — except when this exact ' +
+      'outcome text was already consulted once before, by any host in any ' +
+      'prior session: that first answer is served from a cache instead, ' +
+      'your namings are not evaluated against the catalog at all, ' +
+      '`inferredBy` reads "cache", and any of your proposed domains missing ' +
+      'from the cached answer land in `notAdmitted` with ' +
+      '`notAdmittedBecause` saying why. Optionally state your own ' +
+      '`confidence` (0 to 1) on a naming when you are unsure it truly ' +
+      'applies — below 0.5 it is kept as a named coverage gap rather than ' +
+      'routed, so a weak read does not silently become a match. Leave it ' +
+      'out when you are simply sure.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -447,8 +458,19 @@ async function recordOutcome(
   const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
 
   if (input.namings === undefined) {
-    // No proposals: the deterministic keyword path, exactly as the CLI's
-    // host-less form. Free, no model consulted, and it says so via inferredBy.
+    // Product serve always carries a secret. That means this session already
+    // read the words. Falling through to the keyword map is how ordinary
+    // language implicates nothing. Empty namings [] remains a real
+    // "this implicates nothing" answer.
+    if (core.secret !== undefined) {
+      throw new RangeError(
+        'record_outcome requires namings — this session already read the words. ' +
+        'Read the catalog, then pass namings: [{domain, why}, …]. ' +
+        'An empty array means this implicates nothing. ' +
+        'The keyword map is not first-run inside a host.',
+      );
+    }
+    // No secret: a presence-only projection, same as the CLI's host-less form.
     return startedReply(startRun(core.store, { runId, outcome: text, at }));
   }
 
@@ -462,10 +484,12 @@ async function recordOutcome(
     outcome: text,
     at,
     host,
-    // The caller is the model: its proposals ARE the namer's answer, and they
-    // pass the same admission gate a subprocess namer's would.
+    // This session already read the words. The proposals pass the same
+    // admission gate a Construct namer's would, and the run is tagged
+    // session — not namer, not the keyword map.
     namer: () => Promise.resolve(namings),
     cache: storeNamingCache(core.store, { host, at }),
+    source: 'session',
   });
   return startedReply(started, namings);
 }
@@ -698,6 +722,15 @@ export function createProjectionHandler(
   core: ProjectionCore,
 ): (message: JsonRpcRequest) => Promise<JsonRpcResponse | null> {
   let client = 'unknown-client';
+  const pull =
+    core.secret !== undefined
+      ? createHostPullHandler({
+          store: core.store,
+          secret: core.secret,
+          clock: core.clock,
+          serverVersion: core.serverVersion,
+        })
+      : null;
 
   return async (message: JsonRpcRequest): Promise<JsonRpcResponse | null> => {
     const method = typeof message.method === 'string' ? message.method : '';
@@ -722,9 +755,16 @@ export function createProjectionHandler(
       case 'ping':
         return response(message.id, {});
       case 'tools/list':
-        return response(message.id, { tools: PROJECTION_TOOLS });
-      case 'tools/call':
+        return response(message.id, {
+          tools: pull ? [...PROJECTION_TOOLS, ...HOST_PULL_TOOLS] : PROJECTION_TOOLS,
+        });
+      case 'tools/call': {
+        const name = (message.params as { name?: unknown } | null)?.name;
+        if (pull && (name === 'claim_task' || name === 'submit_work')) {
+          return pull(message);
+        }
         return callTool(core, client, message.id, message.params);
+      }
       default:
         if (isNotification) return null; // notifications/initialized and friends
         return failure(message.id, -32601, `method not found: ${method}`);

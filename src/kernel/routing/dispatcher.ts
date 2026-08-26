@@ -79,10 +79,15 @@ function singular(word: string): string {
 
 /**
  * A keyword part matches a token exactly, or — for a part of 5+ chars — as a
- * prefix of it, so "secret" also matches "secrets". A short fragment can never
+ * prefix whose leftover is a simple inflection, so "secret" also matches
+ * "secrets" and "schedule" matches "scheduled". A short fragment can never
  * match inside an unrelated longer word: a bidirectional substring check ("rag"
  * matching "storage", "average", "drag") is exactly the false-positive class
  * this replaced, and plural folding below is not a reopening of it.
+ *
+ * The leftover must be an inflection, not any continuation. Otherwise
+ * "experiment" would staff measurement from Node's "ExperimentalWarning",
+ * which is a compiler noise token, not a measurement ask.
  *
  * Number is the one inflection compared in both directions, because a catalog
  * author's choice of singular or plural is arbitrary and should not decide
@@ -90,10 +95,22 @@ function singular(word: string): string {
  * rule still runs one way, so "student" reaches "students" without "st"
  * reaching anything.
  */
+const PREFIX_INFLECTIONS = new Set(['s', 'es', 'ed', 'ing', 'er', 'ers']);
+
+function prefixLeftoverIsInflection(part: string, token: string): boolean {
+  if (part.length < 5 || !token.startsWith(part) || token.length <= part.length) {
+    return false;
+  }
+  const leftover = token.slice(part.length);
+  if (PREFIX_INFLECTIONS.has(leftover)) return true;
+  // Silent-e stems: schedule → scheduled (leftover is "d", not "ed").
+  return leftover === 'd' && part.endsWith('e');
+}
+
 function partMatches(part: string, tokens: readonly string[]): boolean {
   const partSingular = singular(part);
   return tokens.some(
-    (t) => t === part || (part.length >= 5 && t.startsWith(part)) || singular(t) === partSingular,
+    (t) => t === part || prefixLeftoverIsInflection(part, t) || singular(t) === partSingular,
   );
 }
 
