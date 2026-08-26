@@ -32,6 +32,9 @@ a spawn that will fail.
 - **First-run story ships in the package** at `docs/first-run.md` and
   `docs/start.md`. No `construct serve` bash block as beat two.
 - **First-run talk plants method skills** or says they did not.
+- **Host inference is the coverage lock, not a phrase map.** A
+  keyword map that scores 0 on ordinary-language lines is correct.
+  Empty or engineering-only staff after a host read is a miss.
 
 - **`work` uses this session.** `CURSOR_AGENT` / `CLAUDECODE` / Bob's marker
   mean in-session host-pull through `construct serve` (`claim_task` /
