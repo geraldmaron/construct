@@ -13,7 +13,6 @@
 
 import { detectAmbientHost } from './ambient.ts';
 import type { AmbientDetection, AmbientHostName } from './ambient.ts';
-import { catalogListing } from './first-run-instruction.ts';
 
 export type { AmbientDetection, AmbientHostName };
 
@@ -61,23 +60,17 @@ export function usesSessionDispatch(
  * What an in-session first-run prints when the user has spoken and this
  * session has not yet named the concerns. No run is created here: a hollow
  * record would steal the next `work` and look like staffing happened.
- * The host names and records. A packet without a seat is a miss. Two
- * surfaces only: this conversation continues, or one inbox card.
- * Stranger-facing text names no construct verb.
+ * Talk reprints what they said. Then staff shows up — the host names and
+ * records. Catalog ids live on the recording tool; they are not printed.
+ * Two surfaces only: this conversation continues, or one inbox card.
  */
 export function sessionNamingPacket(session: AmbientDetection, words?: string): string {
   const heard = words !== undefined && words.length > 0;
   return (
-    `You are in ${session.host}. Talk here.\n` +
+    `You are in ${session.host}. Talk here. Staff shows up.\n` +
     'Ordinary language is enough. No --host.\n' +
     (heard ? `Words just heard: ${JSON.stringify(words)}\n` : '') +
-    'This conversation continues until seats appear. A packet is not a seat.\n' +
     'Two surfaces: this conversation continues, or one inbox card — what happened, what you decide, one button.\n' +
-    (heard
-      ? 'Name the concerns these words implicate. Record them in this session. Empty or engineering-only staff is a miss.\n' +
-        'Catalog (name only these, exactly):\n' +
-        `${catalogListing()}\n`
-      : '') +
     'how: namer\n' +
     'where: session\n'
   );

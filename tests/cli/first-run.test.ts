@@ -102,6 +102,17 @@ function assertSameFirstRunStory(page: string, label: string): void {
   assertNoPhraseTable(page, label);
 }
 
+function assertTalkReprintsNoCatalog(text: string, words?: string): void {
+  assert.match(text, /Talk here\. Staff shows up/);
+  if (words !== undefined) {
+    assert.match(text, new RegExp(`Words just heard: ${JSON.stringify(words).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  }
+  assert.doesNotMatch(text, /Catalog \(name only these/);
+  assert.doesNotMatch(text, /name the concerns/i);
+  assert.doesNotMatch(text, /^- [a-z-]+:/m);
+  assert.doesNotMatch(text, /program-sequencing:/);
+}
+
 function assertNotDoctorStatusVerbWall(text: string, label: string): void {
   const head = text.slice(0, 500);
   assert.doesNotMatch(head, /\bconstruct doctor\b/, `${label} must not open with doctor`);
@@ -321,8 +332,7 @@ test('in-session words without a host naming do not fake keyword staff', async (
     const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
-    assert.match(out, /Talk here/);
-    assert.match(out, /A packet is not a seat/);
+    assertTalkReprintsNoCatalog(out, 'look at this');
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);
@@ -417,8 +427,7 @@ test('bare construct is talk, not the verb catalog', async () => {
     const { result, out } = await capture(() => main([], CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
-    assert.match(out, /Talk here/);
-    assert.match(out, /A packet is not a seat/);
+    assertTalkReprintsNoCatalog(out);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.doesNotMatch(out, /Starting work/);
@@ -520,8 +529,7 @@ test('in-session talk plants method skills or says they did not', async () => {
     try {
       const { result, out } = await capture(() => main(['look at this'], { ...CURSOR_ENV, HOME: home }));
       assert.equal(result, 0);
-      assert.match(out, /A packet is not a seat/);
-      assert.match(out, /Catalog \(name only these, exactly\)/);
+      assertTalkReprintsNoCatalog(out, 'look at this');
       assert.doesNotMatch(out, /record_outcome/);
       assert.doesNotMatch(out, /construct outcome/);
       const planted = existsSync(join(home, '.cursor', 'skills', 'investigative-research', 'SKILL.md'));
@@ -535,7 +543,9 @@ test('in-session talk plants method skills or says they did not', async () => {
       assert.equal(existsSync(instruction), true, 'first-run instruction must plant');
       const body = readFileSync(instruction, 'utf8');
       assert.match(body, /A packet is not a seat/);
-      assert.match(body, /- privacy:/);
+      assert.match(body, /recording tool already on this session/);
+      assert.doesNotMatch(body, /## Catalog/);
+      assert.doesNotMatch(body, /^- privacy:/m);
       assert.doesNotMatch(body, /record_outcome/);
       assert.doesNotMatch(body, /construct outcome/);
       const store = openStore(storePath(resolvePaths()));
