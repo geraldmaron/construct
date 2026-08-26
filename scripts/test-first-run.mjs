@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * test-first-run.mjs — the cheap first-run mechanism subset.
+ * test-first-run.mjs — the cheap first-run mechanism/surface subset.
  *
  * Ordinary CI runs this instead of the full suite. The full gate (npm test,
  * read-only HOME, packaged-install smoke) stays on workflow_dispatch and on
@@ -23,8 +23,17 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 const FILES = [
+  'tests/cli/first-run-surface.test.ts',
   'tests/cli/first-run.test.ts',
   'tests/cli/session-dispatch.test.ts',
+  'tests/cli/ambient-dispatch.test.ts',
+  'tests/cli/init.test.ts',
+  'tests/cli/status.test.ts',
+  'tests/cli/staff.test.ts',
+  'tests/cli/work-dispatch-scope.test.ts',
+  'tests/cli/help-and-flags.test.ts',
+  'tests/hosts/mcp/projection.test.ts',
+  'tests/kernel/staffing/profile.test.ts',
 ];
 
 function main() {
@@ -32,7 +41,7 @@ function main() {
   const missing = FILES.filter((file) => !existsSync(file));
   if (present.length === 0) {
     process.stderr.write(
-      'test-first-run: no first-run mechanism files found — the check is not optional\n',
+      'test-first-run: no first-run staffing/surface files found — the check is not optional\n',
     );
     process.exit(1);
   }

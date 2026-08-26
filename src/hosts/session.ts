@@ -60,15 +60,14 @@ export function usesSessionDispatch(
  * What an in-session first-run prints when the user has spoken and this
  * session has not yet named the concerns. No run is created here: a hollow
  * record would steal the next `work` and look like staffing happened.
+ * The host infers. Two surfaces only: this session dispatches, or inbox.
  */
 export function sessionNamingPacket(session: AmbientDetection, words?: string): string {
   return (
-    `Running inside ${session.host} (detected via ${session.marker}). ` +
-    'This session is the namer — the keyword map is not first-run.\n' +
+    `Running inside ${session.host} (detected via ${session.marker}).\n` +
+    'This session infers the intent — the keyword map is not consulted.\n' +
     (words !== undefined && words.length > 0 ? `Words just heard: ${JSON.stringify(words)}\n` : '') +
-    'Call MCP record_outcome with namings (catalog domain + why). ' +
-    'An empty namings array is a real answer that this implicates nothing.\n' +
-    'Then claim_task / submit_work on construct serve. Do not spawn a second CLI.\n'
+    'Two surfaces: this session dispatches, or the turn goes to inbox.\n'
   );
 }
 

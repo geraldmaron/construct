@@ -181,7 +181,7 @@ test('the no-host refusal names nothing extra when no ambient host is detected',
   assert.match(capture.err, /Name one yourself to dispatch anyway/);
 });
 
-test('outcome names the detected ambient host in its work-them-next hint', async () => {
+test('in-session outcome does not staff from the keyword map or name a run to work next', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-outcome-'));
   const previous = process.env.XDG_DATA_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
@@ -191,10 +191,14 @@ test('outcome names the detected ambient host in its work-them-next hint', async
   try {
     const code = await outcome([OUTCOME], undefined, CLAUDE_ENV);
     assert.equal(code, 0);
-    assert.match(out.join(''), /This session is the namer/);
-    assert.match(out.join(''), /record_outcome/);
-    assert.doesNotMatch(out.join(''), /run run-/);
-    assert.doesNotMatch(out.join(''), /implicated domains/);
+    const text = out.join('');
+    assert.match(text, /This session infers the intent/);
+    assert.match(text, /keyword map is not consulted/);
+    assert.match(text, /this session dispatches/);
+    assert.match(text, /inbox/);
+    assert.doesNotMatch(text, /implicated domains/);
+    assert.doesNotMatch(text, /Run them: {2}construct work --run/);
+    assert.doesNotMatch(text, /record_outcome/);
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     if (previous === undefined) delete process.env.XDG_DATA_HOME;

@@ -1,5 +1,5 @@
 # Ordinary push and pull request run lint, typecheck, and the first-run
-# mechanism subset. The full gate (unit suite, read-only HOME,
+# mechanism/surface subset. The full gate (unit suite, read-only HOME,
 # packaged-install smoke) stays in this file and runs on workflow_dispatch.
 # Release tags still run the full gate in release.yml before publish.
 # Tracker-only commits under .beads/ do not start a run.

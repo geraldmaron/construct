@@ -17,12 +17,16 @@ import { join } from 'node:path';
 import { main, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
-import { sterileHome } from '../harness/sterile.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 // A dispatch reads the machine's agent skills directory to find out what
 // method it can offer a role, so home is moved for this file: what the suite
 // observes must not depend on what is installed for whoever runs it.
 sterileHome();
+// The runner is often already inside a host. Without this, `main(['outcome',
+// …])` would hand off and create no run, then a bare `work` would find
+// nothing. These cases are the terminal first-run: outcome then work.
+sterileAmbientEnv();
 
 interface Capture {
   readonly code: number;
