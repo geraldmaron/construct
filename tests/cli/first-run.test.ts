@@ -2,8 +2,8 @@
  * tests/cli/first-run.test.ts — cheap first-run checks that stay on ordinary CI.
  *
  * Talk, then staff shows up. These run under `npm test` (the CI `test` job),
- * not as a lint-only extra. A first path that is doctor, status, or a verb
- * wall fails here. A page that says construct serve cannot dispatch fails
+ * not as a lint-only extra. first-run.md may not teach init, doctor, or the
+ * verb catalog. A page that says construct serve cannot dispatch fails
  * here. In-session Cursor work does not spawn cursor-agent.
  */
 
@@ -126,17 +126,29 @@ test('first-run lead is talk then staff, not init plus doctor', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   const lead = firstHeadingLead(page);
   assert.match(lead, /You talk\. Staff shows up/);
-  assert.match(lead, /ordinary language/);
+  assert.match(lead, /No catalog words/);
   assert.match(lead, /record_outcome/);
   assert.match(lead, /claim_task/);
   assert.match(lead, /submit_work/);
-  assert.match(lead, /They are not beat two/);
-  assert.doesNotMatch(lead, /construct init/);
-  assert.doesNotMatch(lead, /construct doctor/);
+  assert.match(lead, /investigative-research/);
+  assert.match(lead, /decision-framing/);
+  assert.match(lead, /intake/);
+  assert.doesNotMatch(page, /construct init/);
+  assert.doesNotMatch(page, /construct doctor/);
+  assert.doesNotMatch(page, /Starting work/);
   const fence = firstShellFence(lead);
   assert.match(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct init/);
   assert.doesNotMatch(fence, /construct doctor/);
+});
+
+test('first-run inbox is the only Construct-shaped surface', () => {
+  const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
+  assert.match(page, /only Construct-shaped surface is an inbox card/);
+  assert.match(page, /construct decide/);
+  assert.doesNotMatch(page, /construct outcome/);
+  assert.doesNotMatch(page, /construct work/);
+  assert.doesNotMatch(page, /construct status/);
 });
 
 test('user-facing docs do not claim construct serve cannot dispatch', () => {

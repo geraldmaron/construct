@@ -26,7 +26,7 @@ What that leaves is smaller, and it is the part that was always doing the work: 
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
-**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
+**[docs/first-run.md](docs/first-run.md) is first run**: talk in the host you already have; staff shows up. The terminal command list is [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
 Talk there. Staff shows up. "Is this ready?" "Do the claims match?" "What is the product shape?" — ordinary language, no catalog words, no `--host`. This session names the concerns via MCP `record_outcome` (catalog + why), then does the work here via `claim_task` / `submit_work`. Construct keeps the log, the inbox, and verdicts. It will not spawn a second CLI.
 
@@ -80,7 +80,7 @@ If you already work inside an agent host, `construct serve` puts the spine insid
 claude mcp add construct construct serve
 ```
 
-Run from inside a host, `construct wire` detects which host that is and writes the same entry into its MCP config for you; any host that reads a plain config file also takes the entry directly, and `docs/first-run.md`'s "other way in" shows that form.
+Run from inside a host, `construct wire` detects which host that is and writes the same entry into its MCP config for you; any host that reads a plain config file also takes the entry directly, and `docs/cli-walkthrough.md`'s "other way in" shows that form.
 
 
 Chat dogfood without an IDE: nanobot WebUI with Construct attached over MCP
