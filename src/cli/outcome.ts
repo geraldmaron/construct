@@ -55,7 +55,7 @@ export function sessionOutcomeHandoff(
   cwd: string = process.cwd(),
 ): string {
   const prepared = prepareInSessionTalk(session, words, env, cwd);
-  return sessionTalkPacket(session, words, prepared.plant, prepared.instruction, prepared.wired);
+  return sessionTalkPacket(session, words, prepared.plant, prepared.instruction, prepared.attach);
 }
 
 export interface OutcomeArgs {

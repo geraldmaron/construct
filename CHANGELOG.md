@@ -16,14 +16,17 @@ a spawn that will fail.
 
 - **Talk reprints what they said. Then staff shows up.** The host
   names and records. `talk` creates no run, prints no catalog, and
-  silent-wires recording onto this session when the host can take
-  it. Callable is the wire; called, with host namings, is the gate.
-  Talk remembers the words (not a run). Serve initialize repeats
-  them and `record_outcome` records the host's namings. A socket
-  that is never called is still a miss. If the stranger is needed,
-  that is one inbox card, not a menu. Beat two is still talk.
-  In-session `work` with nothing seated reprints the surfaces; it
-  does not teach a verb.
+  teaches no verb. A file this session will not load is not a
+  wire: Cursor and Claude Code read MCP at session start, so writing
+  `mcp.json` is a next-session attach. Talk asks the host's live
+  list. If `construct-mcp` is already ready, this session can call
+  `record_outcome` with namings. If it is not, talk says recording
+  could not attach and writes no project MCP file. Restart and
+  `--yes` leave the conversation. Talk remembers the words (not a
+  run). A socket that is never called is still a miss. If the
+  stranger is needed, that is one inbox card, not a menu. Beat two
+  is still talk. In-session `work` with nothing seated reprints the
+  surfaces; it does not teach a verb.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,
   not the grouped verb catalog. An ordinary sentence that is not a verb
   does the same. `construct help` still prints the rest of the surface.

@@ -193,7 +193,7 @@ test('in-session outcome does not staff from the keyword map or name a run to wo
     assert.equal(code, 0);
     const text = out.join('');
     assert.match(text, /Talk here\. Staff shows up/);
-    assert.match(text, /Recording is on this session/);
+    assert.match(text, /Recording could not attach here/);
     assert.doesNotMatch(text, /Catalog \(name only these/);
     assert.doesNotMatch(text, /Name the concerns these words implicate/);
     assert.doesNotMatch(text, /construct serve/);

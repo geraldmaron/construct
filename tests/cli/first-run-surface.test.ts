@@ -99,7 +99,7 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   const { code, out } = await captureOutcome([KEYWORD_RICH], CURSOR_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
-  assert.match(out, /Recording is on this session/);
+  assert.match(out, /Recording could not attach here/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /one button/);
@@ -119,7 +119,7 @@ test('host in session does not invent a hollow run when the keyword map would be
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
-  assert.match(out, /Recording is on this session/);
+  assert.match(out, /Recording could not attach here/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /inbox/);
@@ -208,7 +208,7 @@ test('bare construct in a host session is talk, not the verb catalog', async () 
   const { code, out } = await captureMain([], CURSOR_ENV);
   assert.equal(code, 0);
   assert.match(out, /Talk here\. Staff shows up/);
-  assert.match(out, /Recording is on this session/);
+  assert.match(out, /Recording could not attach here/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.doesNotMatch(out, /Catalog \(name only these/);

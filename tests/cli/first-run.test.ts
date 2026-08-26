@@ -4,12 +4,12 @@
  * Locks the mechanism, not a phrase table. The host names concerns or we
  * say we need the host. Keyword map is not first-run. Empty staff after a
  * host read is a fail. First output is not doctor or a verb wall.
- * Callable is the wire; called, with host namings on the wired serve, is the gate.
+ * A file this session will not load is not a wire. Called, with host namings
+ * on a socket this session already has, is the gate.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -24,6 +24,7 @@ import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
 import { readHeard } from '../../src/kernel/store/heard.ts';
+import { plantReadyMcpList } from '../harness/attached-serve.ts';
 import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 sterileHome();
@@ -103,80 +104,6 @@ function assertSameFirstRunStory(page: string, label: string): void {
   assert.doesNotMatch(lead, /```(?:bash|sh|shell|zsh)?/);
   assert.doesNotMatch(lead, /record_outcome/);
   assertNoPhraseTable(page, label);
-}
-
-/** Newline-framed JSON reader with a deadline, so a hang fails instead of stalling. */
-function lineReader(child: ChildProcessWithoutNullStreams): (timeoutMs?: number) => Promise<unknown> {
-  let buffer = '';
-  const lines: string[] = [];
-  const waiters: Array<(line: string) => void> = [];
-  child.stdout.setEncoding('utf8');
-  child.stdout.on('data', (chunk: string) => {
-    buffer += chunk;
-    for (;;) {
-      const i = buffer.indexOf('\n');
-      if (i < 0) break;
-      const line = buffer.slice(0, i);
-      buffer = buffer.slice(i + 1);
-      if (!line.trim()) continue;
-      const waiter = waiters.shift();
-      if (waiter) waiter(line);
-      else lines.push(line);
-    }
-  });
-  return (timeoutMs = 15_000) =>
-    new Promise((resolve, reject) => {
-      const queued = lines.shift();
-      if (queued !== undefined) {
-        resolve(JSON.parse(queued));
-        return;
-      }
-      const timer = setTimeout(() => reject(new Error('no response before deadline')), timeoutMs);
-      waiters.push((line) => {
-        clearTimeout(timer);
-        resolve(JSON.parse(line));
-      });
-    });
-}
-
-function send(child: ChildProcessWithoutNullStreams, message: unknown): void {
-  child.stdin.write(`${JSON.stringify(message)}\n`);
-}
-
-/**
- * Launch the exact construct-mcp entry talk wired into this cwd.
- * Callable is the wire; this is the process the host actually calls.
- */
-function spawnWiredServe(cwd: string): ChildProcessWithoutNullStreams {
-  const mcpPath = join(cwd, '.cursor', 'mcp.json');
-  assert.equal(existsSync(mcpPath), true, 'talk must silent-wire serve onto this session');
-  const mcp = JSON.parse(readFileSync(mcpPath, 'utf8')) as {
-    mcpServers?: Record<string, { command?: string; args?: string[] }>;
-  };
-  const entry = mcp.mcpServers?.['construct-mcp'];
-  assert.ok(entry?.command, 'construct-mcp is on the socket');
-  assert.ok(Array.isArray(entry.args) && entry.args.at(-1) === 'serve', 'wired args must end in serve');
-  return spawn(entry.command, entry.args, {
-    cwd,
-    env: { ...process.env, ...CURSOR_ENV },
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
-}
-
-async function closeServe(child: ChildProcessWithoutNullStreams): Promise<void> {
-  if (!child.killed && child.exitCode === null) {
-    child.stdin.end();
-    await new Promise<void>((resolve) => {
-      const timer = setTimeout(() => {
-        child.kill('SIGTERM');
-        resolve();
-      }, 5_000);
-      child.once('exit', () => {
-        clearTimeout(timer);
-        resolve();
-      });
-    });
-  }
 }
 
 function assertTalkReprintsNoCatalog(text: string, words?: string): void {
@@ -413,7 +340,7 @@ test('in-session words without a host naming do not fake keyword staff', async (
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
     assertTalkReprintsNoCatalog(out, 'look at this');
-    assert.match(out, /Recording is on this session/);
+    assert.match(out, /Recording could not attach here/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);
@@ -509,7 +436,7 @@ test('bare construct is talk, not the verb catalog', async () => {
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
     assertTalkReprintsNoCatalog(out);
-    assert.match(out, /Recording is on this session/);
+    assert.match(out, /Recording could not attach here/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.doesNotMatch(out, /Starting work/);
@@ -614,20 +541,14 @@ test('in-session talk plants method skills or says they did not', async () => {
       );
       assert.equal(result, 0);
       assertTalkReprintsNoCatalog(out, 'look at this');
-      assert.match(out, /Recording is on this session/);
+      assert.match(out, /Recording could not attach here/);
       assert.doesNotMatch(out, /record_outcome/);
       assert.doesNotMatch(out, /construct outcome/);
       assert.doesNotMatch(out, /construct serve/);
       assert.doesNotMatch(out, /construct wire/);
       const planted = existsSync(join(home, '.cursor', 'skills', 'investigative-research', 'SKILL.md'));
       const instruction = join(home, '.cursor', 'skills', 'first-run', 'SKILL.md');
-      const mcpPath = join(home, '.cursor', 'mcp.json');
-      assert.equal(existsSync(mcpPath), true, 'talk must silent-wire serve onto this session');
-      const mcp = JSON.parse(readFileSync(mcpPath, 'utf8')) as {
-        mcpServers: Record<string, { args?: string[] }>;
-      };
-      assert.ok(mcp.mcpServers['construct-mcp'], 'construct-mcp is on the socket');
-      assert.deepEqual(mcp.mcpServers['construct-mcp'].args?.slice(-1), ['serve']);
+      assert.equal(existsSync(join(home, '.cursor', 'mcp.json')), false, 'a file this session will not load is not a wire');
       if (planted) {
         assert.match(out, /Method skills (planted|already)/);
         assert.equal(existsSync(join(home, '.cursor', 'skills', 'construct-analyst', 'SKILL.md')), false);
@@ -638,7 +559,8 @@ test('in-session talk plants method skills or says they did not', async () => {
       const body = readFileSync(instruction, 'utf8');
       assert.match(body, /A packet is not a seat/);
       assert.match(body, /record_outcome/);
-      assert.match(body, /just wired/);
+      assert.match(body, /did not attach/);
+      assert.doesNotMatch(body, /just wired/);
       assert.doesNotMatch(body, /## Catalog/);
       assert.doesNotMatch(body, /^- privacy:/m);
       assert.doesNotMatch(body, /construct outcome/);
@@ -658,23 +580,27 @@ test('in-session talk plants method skills or says they did not', async () => {
   });
 });
 
-test('in-session talk is unfinished until the host calls record_outcome', async () => {
+test('in-session talk does not write a file this session will not load', async () => {
   await isolated(async (cwd) => {
     const words = 'We want to hire a contractor in Poland';
     const { result, out } = await capture(() => main([words], CURSOR_ENV, cwd));
     assert.equal(result, 0);
     assertTalkReprintsNoCatalog(out, words);
-    assert.match(out, /Recording is on this session/);
+    assert.match(out, /Recording could not attach here/);
+    assert.doesNotMatch(out, /Recording is on this session/);
+    assert.doesNotMatch(out, /--yes/);
+    assert.doesNotMatch(out, /restart/i);
+    assert.equal(existsSync(join(cwd, '.cursor', 'mcp.json')), false);
 
     const storeFile = storePath(resolvePaths());
-    const heard = readHeard(storeFile);
-    assert.equal(heard?.words, words, 'talk remembers the words; that is not a run');
+    assert.equal(readHeard(storeFile)?.words, words, 'talk remembers the words; that is not a run');
     assert.equal(existsSync(storeFile), false, 'talk itself creates no store and no run');
 
     const rule = join(cwd, '.cursor', 'rules', 'construct-first-run.mdc');
-    assert.equal(existsSync(rule), true, 'host rule must plant so the turn gets finished');
+    assert.equal(existsSync(rule), true);
     const ruleBody = readFileSync(rule, 'utf8');
-    assert.match(ruleBody, /Call record_outcome this turn/);
+    assert.match(ruleBody, /did not attach/);
+    assert.doesNotMatch(ruleBody, /just wired/);
     assert.doesNotMatch(ruleBody, /construct outcome/);
     assert.doesNotMatch(ruleBody, /## Catalog/);
 
@@ -682,96 +608,70 @@ test('in-session talk is unfinished until the host calls record_outcome', async 
     assert.equal(before.result, 0);
     assert.match(before.out, /Nothing is seated yet/);
     assert.doesNotMatch(before.out, /construct outcome/);
+  });
+});
 
-    // Socket up, host connects, never records: still a miss.
-    const idle = spawnWiredServe(cwd);
-    try {
-      const readIdle = lineReader(idle);
-      send(idle, {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'initialize',
-        params: { protocolVersion: '2025-06-18', clientInfo: { name: 'cursor' } },
-      });
-      const initIdle = (await readIdle()) as { result?: { instructions?: string } };
-      const idleInstructions = String(initIdle.result?.instructions ?? '');
-      assert.match(idleInstructions, /Words just heard/);
-      assert.match(idleInstructions, /hire a contractor in Poland/);
-      assert.match(idleInstructions, /Call record_outcome this turn/);
-    } finally {
-      await closeServe(idle);
-    }
-    {
-      const store = openStore(storeFile);
-      try {
-        assert.equal(listTasks(store).length, 0, 'initialize on the wired serve does not staff');
-      } finally {
-        store.close();
-      }
-    }
-    assert.equal(readHeard(storeFile)?.words, words, 'heard stays until record_outcome is called');
-    const stillEmpty = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.match(stillEmpty.out, /Nothing is seated yet/);
-    assert.doesNotMatch(stillEmpty.out, /construct outcome/);
+test('when serve is already on this session, the host records namings this turn', async () => {
+  await isolated(async (cwd) => {
+    const words = 'We want to hire a contractor in Poland';
+    const env = { ...CURSOR_ENV, ...plantReadyMcpList(cwd, 'cursor-agent') };
+    const { result, out } = await capture(() => main([words], env, cwd));
+    assert.equal(result, 0);
+    assertTalkReprintsNoCatalog(out, words);
+    assert.match(out, /Recording is on this session/);
+    assert.doesNotMatch(out, /Recording could not attach here/);
+    assert.equal(existsSync(join(cwd, '.cursor', 'mcp.json')), false, 'already-on-socket talk writes no project file');
 
-    // Same words, same wire: the host records namings. That is the gate.
-    const serve = spawnWiredServe(cwd);
-    try {
-      const read = lineReader(serve);
-      send(serve, {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'initialize',
-        params: { protocolVersion: '2025-06-18', clientInfo: { name: 'cursor' } },
-      });
-      await read();
-      send(serve, {
-        jsonrpc: '2.0',
-        id: 2,
-        method: 'tools/call',
-        params: {
-          name: 'record_outcome',
-          arguments: {
-            namings: [
-              { domain: 'employment', why: 'hiring a contractor is how people are engaged' },
-              { domain: 'contracts', why: 'a contractor is an agreement with another party' },
-            ],
-          },
-        },
-      });
-      const named = (await read()) as {
-        result?: { content: Array<{ text: string }>; isError?: boolean };
-      };
-      assert.equal(named.result?.isError ?? false, false);
-      const recorded = JSON.parse(named.result!.content[0]!.text) as {
-        outcome: string;
-        tasksQueued: number;
-        how?: string;
-        where?: string;
-        staff?: string[];
-        implicated: Array<{ domain: string }>;
-      };
-      assert.equal(recorded.outcome, words);
-      assert.ok(recorded.tasksQueued > 0, 'host called and seats appeared');
-      assert.deepEqual(
-        recorded.implicated.map((row) => row.domain),
-        ['employment', 'contracts'],
-      );
-      assert.equal(recorded.how, 'namer');
-      assert.equal(recorded.where, 'session');
-      assert.ok(recorded.staff?.includes('legal'));
-      assert.ok(!recorded.staff?.includes('engineering'), 'engineering-only staff is a miss');
-    } finally {
-      await closeServe(serve);
-    }
+    const storeFile = storePath(resolvePaths());
+    assert.equal(readHeard(storeFile)?.words, words);
+    assert.equal(existsSync(storeFile), false, 'talk itself creates no run');
+
+    const workBefore = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.match(workBefore.out, /Nothing is seated yet/);
 
     const store = openStore(storeFile);
-    try {
-      assert.equal(listTasks(store).length > 0, true);
-    } finally {
-      store.close();
-    }
+    const handle = createProjectionHandler({
+      store,
+      clock: () => '2026-08-26T16:40:00.000Z',
+      serverVersion: 'test',
+      secret: 'test-secret-not-a-real-key',
+    });
+    const named = await handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'record_outcome',
+        arguments: {
+          namings: [
+            { domain: 'employment', why: 'hiring a contractor is how people are engaged' },
+            { domain: 'contracts', why: 'a contractor is an agreement with another party' },
+          ],
+        },
+      },
+    });
+    const resultBody = named?.result as { content: Array<{ text: string }>; isError?: boolean };
+    assert.equal(resultBody.isError ?? false, false);
+    const recorded = JSON.parse(resultBody.content[0]!.text) as {
+      outcome: string;
+      tasksQueued: number;
+      how?: string;
+      where?: string;
+      staff?: string[];
+      implicated: Array<{ domain: string }>;
+    };
+    assert.equal(recorded.outcome, words);
+    assert.ok(recorded.tasksQueued > 0, 'host called and seats appeared');
+    assert.deepEqual(
+      recorded.implicated.map((row) => row.domain),
+      ['employment', 'contracts'],
+    );
+    assert.equal(recorded.how, 'namer');
+    assert.equal(recorded.where, 'session');
+    assert.ok(recorded.staff?.includes('legal'));
+    assert.ok(!recorded.staff?.includes('engineering'), 'engineering-only staff is a miss');
     assert.equal(readHeard(storeFile), null, 'heard words clear after the host records');
+    store.close();
 
     const after = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(after.result, 0);

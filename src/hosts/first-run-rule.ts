@@ -2,8 +2,9 @@
  * hosts/first-run-rule.ts — always-on host rule planted beside the wire.
  *
  * A skill the host may not load is not follow-through. This writes a project
- * rule the ambient host applies on every turn: talk reprinted their words;
- * this session records namings; seats appear. No catalog. No typed verb.
+ * rule: if record_outcome is already on this session's tool list, call it
+ * this turn. A file this session will not load is not a wire. No catalog.
+ * No typed verb.
  */
 
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
@@ -25,12 +26,14 @@ function ruleText(): string {
     '',
     'You are the host. Talk reprinted their words. A packet is not a seat.',
     '',
-    'Call record_outcome this turn with namings for those words. Do not print',
-    'the catalog. Do not ask them to name concerns. Do not ask them to type a',
-    'command. Empty or engineering-only staff is a miss.',
+    'If record_outcome is on your tool list, call it this turn with namings',
+    'for those words. Do not print the catalog. Do not ask them to name',
+    'concerns. Do not ask them to type a command. Empty or engineering-only',
+    'staff is a miss.',
     '',
-    'If catalog and record_outcome are not on your tool list, they were just',
-    'wired. Load them and finish this turn. Reply with what was seated.',
+    'If record_outcome is not on your tool list, recording did not attach.',
+    'Stay in this conversation. Do not restart. Do not ask them to type a',
+    'command. A file for later is a miss.',
     '',
   ].join('\n');
 }
