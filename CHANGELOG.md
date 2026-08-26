@@ -32,18 +32,18 @@ a spawn that will fail.
   older run still has pending work. `--all` remains the fleet door. A
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
-- **First-run hears ordinary language.** Talk in the host ("is this ready",
-  "do the claims match", "what is the product shape") with no catalog
-  words and no `--host`. This session names via `record_outcome`, then
-  `claim_task` / `submit_work`. README and `docs/first-run.md` lead with
-  talk, then staff. `init`, `doctor`, and the verb catalog are not on
-  that page. The only Construct-shaped surface there is an inbox card
-  when the call is yours. The terminal command list lives in
-  `docs/cli-walkthrough.md`. `construct serve` can dispatch; the
-  cannot-dispatch claim is gone.
+- **First-run hears ordinary language.** Talk in the host, no catalog
+  words, no `--host`. The host names concerns or routes to inbox,
+  verdict, or log. Construct does not map phrases to seats. The keyword
+  map is not first-run: omitting namings on `construct serve` is an
+  error, not a fall-through. Empty staff after a host read is a miss.
+  README and `docs/first-run.md` lead with talk, then staff. `init`,
+  `doctor`, and the verb catalog are not on that page. The only
+  Construct-shaped surface there is an inbox card when the call is
+  yours. The terminal command list lives in `docs/cli-walkthrough.md`.
+  `construct serve` can dispatch; the cannot-dispatch claim is gone.
   Prefix matching only accepts simple inflections, so Node's
-  `ExperimentalWarning` does not staff measurement. "Product shape"
-  staffs system-design, not program-sequencing from `ship`.
+  `ExperimentalWarning` does not staff measurement.
 - **`init --yes` plants method skills** (investigative-research,
   decision-framing, intake, and the rest) into the ambient host's skills
   directory, then wires MCP. Not the generated job-title lens pack.
