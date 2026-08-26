@@ -89,8 +89,8 @@ export interface StartRunNamedInput extends StartRunInput {
    */
   readonly namerText?: string;
   /**
-   * Host-supplied namings on record_outcome. Tags the run as this session,
-   * not Construct's namer.
+   * Host-supplied namings on record_outcome. Sets `ranIn` to session.
+   * How stays namer — the two facts are not one word.
    */
   readonly source?: 'session';
 }

@@ -60,14 +60,18 @@ export function usesSessionDispatch(
  * What an in-session first-run prints when the user has spoken and this
  * session has not yet named the concerns. No run is created here: a hollow
  * record would steal the next `work` and look like staffing happened.
- * The host infers. Two surfaces only: this session dispatches, or inbox.
+ * The host infers. Two surfaces only: this conversation continues, or
+ * one inbox card. First-run must not look like Construct — no catalog,
+ * no `--host` lesson, no verb wall.
  */
 export function sessionNamingPacket(session: AmbientDetection, words?: string): string {
   return (
-    `Running inside ${session.host} (detected via ${session.marker}).\n` +
-    'This session infers the intent — the keyword map is not consulted.\n' +
+    `You are in ${session.host}. Talk here. Staff shows up.\n` +
+    'Ordinary language is enough. No catalog. No --host.\n' +
     (words !== undefined && words.length > 0 ? `Words just heard: ${JSON.stringify(words)}\n` : '') +
-    'Two surfaces: this session dispatches, or the turn goes to inbox.\n'
+    'Two surfaces: this conversation continues, or one inbox card — what happened, what you decide, one button.\n' +
+    'how: namer\n' +
+    'where: session\n'
   );
 }
 

@@ -148,7 +148,7 @@ test('caller-as-namer: proposals pass the admission gate, and the reply names wh
     // Only the catalog domain with a stated reason survives, once.
     assert.deepEqual(started.implicated.map((i) => i.domain), ['privacy']);
     assert.equal(started.implicated[0].reason, 'EU users means GDPR obligations before launch.');
-    assert.equal(started.inferredBy, 'session');
+    assert.equal(started.inferredBy, 'namer');
     assert.equal(started.ranIn, 'session');
     // The invented domain and the reasonless one are named back to the caller.
     assert.deepEqual(started.notAdmitted.sort(), ['astrology', 'commerce-tax']);
@@ -235,7 +235,7 @@ test('a cache hit is named in notAdmittedBecause, not left to be inferred from i
       }),
     );
     const first = payload(firstReply).body as { inferredBy: string; ranIn?: string; notAdmitted?: string[] };
-    assert.equal(first.inferredBy, 'session');
+    assert.equal(first.inferredBy, 'namer');
     assert.equal(first.ranIn, 'session');
     assert.equal(first.notAdmitted?.length ?? 0, 0, 'nothing was rejected on the first consultation');
 

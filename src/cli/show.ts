@@ -426,7 +426,7 @@ export function inbox(argv: string[] = []): number {
       }
       process.stdout.write('\n');
     }
-    process.stdout.write(`Say your call on this card.\n${waitingLine}`);
+    process.stdout.write(`What happened is on the card. Your call is the button.\n${waitingLine}`);
     return 0;
   });
 }

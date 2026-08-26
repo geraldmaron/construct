@@ -22,12 +22,13 @@ a spawn that will fail.
   no `--host` lesson, no stolen work. Point at the host they already
   have.
 - **How and where are first-class.** `record_outcome` and the CLI report
-  both `inferredBy` (how) and `ranIn` (where). Host-supplied namings are
-  `session` / `session`. Construct's namer seam stays `namer` / `cli`.
-- **Inbox resolve is one action.** The card is the action. CLI
-  `construct inbox <id> "<call>"` and MCP `inbox` with `id` and
-  `resolution` record the call. First-run does not teach `construct
-  decide`.
+  both facts on one print: `how: namer` and `where: session` (or `cli`).
+  Do not alias namer to session. Host-supplied namings are `namer` /
+  `session`. Construct's namer seam is `namer` / `cli`.
+- **Inbox resolve is one action.** The card is the action: what
+  happened, what you decide, one button. CLI `construct inbox <id>
+  "<call>"` and MCP `inbox` with `id` and `resolution` record the call.
+  First-run does not teach `construct decide`.
 - **First-run story ships in the package** at `docs/first-run.md` and
   `docs/start.md`. No `construct serve` bash block as beat two.
 - **First-run talk plants method skills** or says they did not.
