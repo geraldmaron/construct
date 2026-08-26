@@ -76,6 +76,7 @@ import { startRun, startRunNamed } from '../../kernel/run/outcome.ts';
 import type { StartedRun } from '../../kernel/run/outcome.ts';
 import { DOMAINS } from '../../kernel/implication/domains.ts';
 import { recordVerdict } from '../../kernel/implication/verdict.ts';
+import { lensForDomain } from '../../kernel/plan/lenses.ts';
 import { validateBrief } from '../../kernel/brief/schema.ts';
 import type { DomainNaming } from '../../kernel/implication/naming.ts';
 import type { Store } from '../../kernel/store/open.ts';
@@ -133,7 +134,7 @@ export const PROJECTION_TOOLS = [
       'outcome text was already consulted once before, by any host in any ' +
       'prior session: that first answer is served from a cache instead, ' +
       'your namings are not evaluated against the catalog at all, ' +
-      '`inferredBy` reads "cache" (how) and `ranIn` stays "session" (where), and any of your proposed domains missing ' +
+      '`how`/`inferredBy` reads "cache" and `where`/`ranIn` stays "session" — two facts, not one word — and any of your proposed domains missing ' +
       'from the cached answer land in `notAdmitted` with ' +
       '`notAdmittedBecause` saying why. Optionally state your own ' +
       '`confidence` (0 to 1) on a naming when you are unsure it truly ' +
@@ -413,6 +414,19 @@ function toolResult(id: unknown, payload: unknown, isError = false): JsonRpcResp
   });
 }
 
+/** Lenses the admitted domains equip. Empty after a host named nothing is a real answer; empty after a host named real catalog domains is a miss. */
+function staffFrom(implicated: readonly { domain: string }[]): string[] {
+  const seen = new Set<string>();
+  const staff: string[] = [];
+  for (const row of implicated) {
+    const lens = lensForDomain(row.domain)?.lens;
+    if (lens === undefined || seen.has(lens)) continue;
+    seen.add(lens);
+    staff.push(lens);
+  }
+  return staff;
+}
+
 /** The reply `record_outcome` sends back: what was admitted, and how. */
 function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): unknown {
   const admitted = new Set(started.implicated.map((i) => i.domain));
@@ -429,6 +443,10 @@ function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): 
     })),
     inferredBy: started.inferredBy,
     ranIn: started.ranIn,
+    // Two facts, one print. Do not alias namer to session.
+    how: started.inferredBy,
+    where: started.ranIn,
+    staff: staffFrom(started.implicated),
     ...(started.host !== undefined ? { host: started.host } : {}),
     tasksQueued: started.tasks.length,
     ...(started.namerFailure !== undefined ? { namerFailure: started.namerFailure } : {}),

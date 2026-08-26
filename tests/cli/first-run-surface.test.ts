@@ -136,10 +136,19 @@ test('a terminal with no host session still uses the keyword map', async () => {
 test('the implication map has no hardcoded sentence-to-domain table', () => {
   const mapSrc = readFileSync(join(ROOT, 'src/kernel/implication/map.ts'), 'utf8');
   const domainsSrc = readFileSync(join(ROOT, 'src/kernel/implication/domains.ts'), 'utf8');
-  assert.doesNotMatch(mapSrc, /FIRST_RUN_PHRASES|seatFirstRunPhrases/);
-  assert.doesNotMatch(domainsSrc, /FIRST_RUN_PHRASES/);
-  assert.doesNotMatch(mapSrc, /phrase:\s*['"][^'"]+['"]\s*,\s*domain:/);
-  assert.doesNotMatch(domainsSrc, /phrase:\s*['"][^'"]+['"]\s*,\s*domain:/);
+  const namerSrc = readFileSync(join(ROOT, 'src/hosts/namer.ts'), 'utf8');
+  const firstRun = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
+  const start = readFileSync(join(ROOT, 'docs/start.md'), 'utf8');
+  for (const [label, src] of [
+    ['map.ts', mapSrc],
+    ['domains.ts', domainsSrc],
+    ['namer.ts', namerSrc],
+    ['docs/first-run.md', firstRun],
+    ['docs/start.md', start],
+  ] as const) {
+    assert.doesNotMatch(src, /FIRST_RUN_PHRASES|seatFirstRunPhrases/, `${label} encodes a phrase table`);
+    assert.doesNotMatch(src, /phrase:\s*['"][^'"]+['"]\s*,\s*domain:/, `${label} encodes a phrase table`);
+  }
 });
 
 function firstConstructCommand(markdown: string): string | null {

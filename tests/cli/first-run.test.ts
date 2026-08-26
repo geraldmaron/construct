@@ -17,6 +17,7 @@ import { createCursorAdapter } from '../../src/hosts/cursor/adapter.ts';
 import { HOST_PULL_TOOLS } from '../../src/hosts/mcp/hostpull.ts';
 import { createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
 import { mapImplications } from '../../src/kernel/implication/map.ts';
+import { lensForDomain } from '../../src/kernel/plan/lenses.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
@@ -122,6 +123,9 @@ async function hostNamedRecord(
   implicated: string[];
   inferredBy?: string;
   ranIn?: string;
+  how?: string;
+  where?: string;
+  staff?: string[];
   out: string;
   isError?: boolean;
 }> {
@@ -151,6 +155,9 @@ async function hostNamedRecord(
     implicated: Array<{ domain: string }>;
     inferredBy?: string;
     ranIn?: string;
+    how?: string;
+    where?: string;
+    staff?: string[];
   };
   store.close();
   return {
@@ -158,6 +165,9 @@ async function hostNamedRecord(
     implicated: body.implicated.map((row) => row.domain),
     inferredBy: body.inferredBy,
     ranIn: body.ranIn,
+    how: body.how,
+    where: body.where,
+    staff: body.staff,
     out: JSON.stringify(body),
   };
 }
@@ -233,8 +243,13 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.deepEqual(recorded.implicated, ['privacy', 'security']);
     assert.equal(recorded.inferredBy, 'namer', 'how: a host model named the concerns');
     assert.equal(recorded.ranIn, 'session', 'where: this session ran');
+    assert.equal(recorded.how, 'namer');
+    assert.equal(recorded.where, 'session');
+    assert.notEqual(recorded.how, recorded.where, 'do not alias namer to session');
     assert.notEqual(recorded.inferredBy, 'session');
     assert.notEqual(recorded.inferredBy, 'keywords');
+    assert.deepEqual(recorded.staff, ['legal', 'security']);
+    assert.ok(!recorded.staff?.includes('engineering'), 'engineering-only staff is a miss');
     assertNotDoctorStatusVerbWall(recorded.out, 'record_outcome');
 
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
@@ -248,6 +263,39 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.match(out, /security/);
     assert.doesNotMatch(out, /cursor-agent/);
     assert.doesNotMatch(out, /Record an outcome first/i);
+  });
+});
+
+test('host-named catalog domains staff the lenses that equip them', async () => {
+  await isolated(async () => {
+    const recorded = await hostNamedRecord(
+      'look at this',
+      [
+        { domain: 'security', why: 'who can reach the new credential path' },
+        { domain: 'operations', why: 'what happens on each run after it ships' },
+        { domain: 'program-sequencing', why: 'the run now depends on a prior step' },
+        { domain: 'privacy', why: 'personal data crosses a jurisdiction' },
+        { domain: 'compliance', why: 'a regulator-facing placement' },
+        { domain: 'product-scoping', why: 'a product surface and who it is for' },
+        { domain: 'contracts', why: 'an agreement with another party' },
+      ],
+      '2026-08-26T15:00:00.000Z',
+    );
+    assert.equal(recorded.isError, undefined);
+    assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
+    assert.equal(recorded.how, 'namer');
+    assert.equal(recorded.where, 'session');
+    assert.notEqual(recorded.how, recorded.where);
+    const lenses = new Set(
+      recorded.implicated
+        .map((domain) => lensForDomain(domain)?.lens)
+        .filter((lens): lens is string => lens !== undefined),
+    );
+    for (const need of ['security', 'operations', 'program', 'legal', 'compliance', 'product']) {
+      assert.ok(lenses.has(need), `host-named domains must staff ${need}, got ${[...lenses].join(',')}`);
+      assert.ok(recorded.staff?.includes(need), `reply staff missing ${need}: ${recorded.staff?.join(',')}`);
+    }
+    assert.ok(!recorded.staff?.includes('engineering'), 'engineering-only staff is a miss');
   });
 });
 
