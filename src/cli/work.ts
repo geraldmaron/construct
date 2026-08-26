@@ -12,7 +12,7 @@
 import { resolve } from 'node:path';
 import { readRunDispatch } from '../kernel/store/dispatch.ts';
 import { countTasksByState, getTask, listTasks } from '../kernel/store/tasks.ts';
-import { appendWorkLog, readWorkLog } from '../kernel/store/worklog.ts';
+import { appendWorkLog, latestOutcomeReceivedRun, readWorkLog } from '../kernel/store/worklog.ts';
 import { DEFAULT_CONCURRENCY, frameConflicts, workRun } from '../kernel/run/coordinator.ts';
 import { deliverableConcerns, licensedReviewFor } from '../kernel/run/accountability.ts';
 import { latestDraft } from '../kernel/run/promotion.ts';
@@ -42,7 +42,7 @@ import { surveyResources } from '../hosts/census.ts';
 import type { ProbeExec } from '../hosts/presence.ts';
 import { readRepoManifest } from '../hosts/repo/gates.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { usesSessionDispatch } from '../hosts/session.ts';
+import { unnamedRunMessage, usesSessionDispatch } from '../hosts/session.ts';
 import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './runtime.ts';
 import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
@@ -139,8 +139,8 @@ const BOOLEAN_FLAGS = ['allow-distant-ground', 'all'] as const;
 const WORK_USAGE =
   'usage: construct work --run=<id> [options]\n' +
   '   or: construct work --all [options]   dispatch every pending task across every run\n' +
-  'construct work with neither --run nor --all works the most recently recorded run\n' +
-  'that still has pending tasks. Dispatching every queued run is --all.\n';
+  'construct work with neither --run nor --all works the most recently recorded outcome.\n' +
+  'An older run that still has pending tasks is --run=<id> or --all, never the silent default.\n';
 
 /** The most recently enqueued run that still has pending work. */
 export function latestPendingRun(store: Parameters<typeof listTasks>[0]): string | undefined {
@@ -156,11 +156,7 @@ export function runRecorded(store: Parameters<typeof readWorkLog>[0], run: strin
 }
 
 function latestRecordedRun(store: Parameters<typeof readWorkLog>[0]): string | undefined {
-  const entries = readWorkLog(store);
-  for (let i = entries.length - 1; i >= 0; i--) {
-    if (entries[i]?.action === 'outcome-received') return entries[i]?.run;
-  }
-  return undefined;
+  return latestOutcomeReceivedRun(store);
 }
 
 export function parseWorkArgs(argv: string[], env: NodeJS.ProcessEnv = process.env): WorkArgs {
@@ -282,11 +278,11 @@ export async function work(
   }
 
   return withStoreAsync(async (store) => {
-    // First-run: `construct work` after `construct outcome` should find the
-    // run that was just recorded, not ask the user to copy an id and not
-    // spend across every older run. --all remains the fleet door.
+    // First-run: `construct work` after a record stays on THAT outcome.
+    // An older run that still has pending tasks is --run or --all, never the
+    // silent default — picking it is pointing at someone else's run.
     if (!args.run && !args.all) {
-      const latest = latestPendingRun(store);
+      const latest = latestRecordedRun(store);
       if (latest !== undefined) {
         args = { ...args, run: latest };
       }
@@ -347,18 +343,12 @@ export async function work(
 
       if (done === 0 && failedTasks === 0) {
         if (args.run && runRecorded(store, args.run)) {
-          process.stdout.write(
-            `run ${args.run} is on record but queued no tasks — nothing to dispatch.\n` +
-              'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
-          );
+          process.stdout.write(unnamedRunMessage(args.run));
           return 0;
         }
         const recordedRun = latestRecordedRun(store);
         if (recordedRun !== undefined) {
-          process.stdout.write(
-            `run ${recordedRun} is on record but queued no tasks — nothing to dispatch.\n` +
-              'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
-          );
+          process.stdout.write(unnamedRunMessage(recordedRun));
           return 0;
         }
         process.stdout.write(
@@ -754,19 +744,14 @@ function sessionWork(
 ): number {
   const pending = listTasks(store, args.run).filter((task) => task.state === 'pending');
   if (pending.length === 0) {
-    if (args.run && runRecorded(store, args.run)) {
-      process.stdout.write(
-        `run ${args.run} is on record but queued no tasks — nothing to dispatch.\n` +
-          'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
-      );
-      return 0;
-    }
-    const recordedRun = latestRecordedRun(store);
-    if (recordedRun !== undefined) {
-      process.stdout.write(
-        `run ${recordedRun} is on record but queued no tasks — nothing to dispatch.\n` +
-          'Name concerns with --domains=…, or record via MCP record_outcome with namings.\n',
-      );
+    const scoped = args.run ?? latestRecordedRun(store);
+    if (scoped && runRecorded(store, scoped)) {
+      const anyTasks = listTasks(store, scoped);
+      if (anyTasks.length === 0) {
+        process.stdout.write(unnamedRunMessage(scoped));
+        return 0;
+      }
+      process.stdout.write(`nothing to work for ${scoped}. Its tasks are already settled.\n`);
       return 0;
     }
     process.stdout.write(

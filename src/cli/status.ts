@@ -12,6 +12,7 @@
  */
 
 import { countTasksByState, listTasks } from '../kernel/store/tasks.ts';
+import { latestOutcomeReceivedRun } from '../kernel/store/worklog.ts';
 import { openDecisions } from '../kernel/store/decisions.ts';
 import { pendingProposalCount } from '../kernel/store/sources.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
@@ -28,18 +29,16 @@ function ambientLine(ambient: AmbientDetection | null): string {
 /**
  * The workspace's current state, in one view.
  *
- * "Latest run" is the run behind the most recently enqueued task in the
- * store — the same ordering `listTasks` already keeps — rather than a second
- * notion of recency invented for this verb. A store with no tasks at all
- * answers gracefully rather than erroring: an empty workspace is a real,
- * valid state, not a failure to report on.
+ * "Latest run" is the most recently recorded outcome, not the last enqueued
+ * task. A later record that queued no work is still the latest run — showing
+ * an older run's tasks in its place is pointing at someone else's work. A
+ * store with no outcomes at all answers gracefully rather than erroring.
  */
 export function status(argv: string[] = []): number {
   const asJson = jsonFlag(argv);
 
   return withStore((store) => {
-    const allTasks = listTasks(store);
-    const latestRun = allTasks.length > 0 ? allTasks[allTasks.length - 1]!.run : null;
+    const latestRun = latestOutcomeReceivedRun(store) ?? null;
     const runTasks = latestRun !== null ? listTasks(store, latestRun) : [];
     const counts = latestRun !== null ? countTasksByState(store, latestRun) : {};
     const openInbox = openDecisions(store);
@@ -61,17 +60,28 @@ export function status(argv: string[] = []): number {
     }
 
     if (latestRun === null) {
-      process.stdout.write('no runs yet — record one with construct outcome "<what you want>"\n');
+      process.stdout.write(
+        ambient !== null
+          ? `no named work yet — talk in ${ambient.host}. This session names via MCP record_outcome with namings.\n`
+          : 'no runs yet — record one with construct outcome "<what you want>"\n',
+      );
     } else {
       const pending = (counts.pending ?? 0) + (counts.leased ?? 0);
       const done = counts.done ?? 0;
       const failed = counts.failed ?? 0;
       process.stdout.write(`latest run: ${latestRun}\n`);
-      process.stdout.write(
-        `  ${String(runTasks.length)} task(s): ${String(done)} done, ${String(pending)} pending, ` +
-          `${String(failed)} failed\n`,
-      );
-      process.stdout.write(`  construct show --run=${latestRun}   construct log --run=${latestRun}\n`);
+      if (runTasks.length === 0) {
+        process.stdout.write(
+          '  0 task(s): this run has no named work\n' +
+            '  This session names via MCP record_outcome with namings\n',
+        );
+      } else {
+        process.stdout.write(
+          `  ${String(runTasks.length)} task(s): ${String(done)} done, ${String(pending)} pending, ` +
+            `${String(failed)} failed\n`,
+        );
+        process.stdout.write(`  construct show --run=${latestRun}   construct log --run=${latestRun}\n`);
+      }
     }
 
     process.stdout.write(

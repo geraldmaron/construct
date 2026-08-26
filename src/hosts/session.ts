@@ -55,3 +55,27 @@ export function usesSessionDispatch(
   if (opts.hostExplicit && opts.host !== undefined && opts.host !== ambient.host) return null;
   return ambient;
 }
+
+/**
+ * What an in-session first-run prints when the user has spoken and this
+ * session has not yet named the concerns. No run is created here: a hollow
+ * record would steal the next `work` and look like staffing happened.
+ */
+export function sessionNamingPacket(session: AmbientDetection, words?: string): string {
+  return (
+    `Running inside ${session.host} (detected via ${session.marker}). ` +
+    'This session is the namer — the keyword map is not first-run.\n' +
+    (words !== undefined && words.length > 0 ? `Words just heard: ${JSON.stringify(words)}\n` : '') +
+    'Call MCP record_outcome with namings (catalog domain + why). ' +
+    'An empty namings array is a real answer that this implicates nothing.\n' +
+    'Then claim_task / submit_work on construct serve. Do not spawn a second CLI.\n'
+  );
+}
+
+/** A recorded run that never received namings is not "no outcome yet". */
+export function unnamedRunMessage(run: string): string {
+  return (
+    `run ${run} is on record but has no named work — nothing to dispatch.\n` +
+    'This session names via MCP record_outcome with namings, or construct outcome --domains=<name,…>.\n'
+  );
+}

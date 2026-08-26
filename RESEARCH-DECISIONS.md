@@ -2811,17 +2811,26 @@ and submits a draft.
    ambient marker (upstream declined; §26 gap stands). OpenCode has no
    documented session marker either. Bob is surveyed, never spawnable, and
    in-session via serve.
-4. In-session `outcome` without `--host` / `--domains` records the text with
-   an empty catalog (`inferredBy: none`) and tells the session it is the
-   namer. The keyword map is the zero-model fallback when no session is
-   wrapping the command — not first-run.
-5. Doctor honesty is a consequence: found / version / auth / spawnable, plus
-   an ambient line that matches what `work` will do.
+4. In-session `outcome` without `--host` / `--domains` creates **no run**.
+   A hollow record was poisoning the next `work` (latest outcome, no tasks)
+   and looking like staffing happened. This session names via MCP
+   `record_outcome` with namings. On `construct serve` (secret present),
+   omitting namings is an error, not a keyword-map fall-through. Empty
+   `namings: []` remains a real "implicates nothing" answer. The keyword
+   map is the zero-model fallback when no session is wrapping the command
+   — not first-run.
+5. Bare `work` and `status` scope to the latest `outcome-received` run, not
+   the last pending task. An older pending run is `--run` / `--all`, never
+   the silent default.
+6. Doctor honesty is a consequence: found / version / auth / spawnable, plus
+   an ambient line that matches what `work` will do. First-run copy leads
+   with talking in the host, not doctor or the verb catalog.
 
 **What this is not.** A Construct-only chat UI (commitment 1). A Grok Bot
 face. A Construct-side run started because the host was helpful.
 
 **Close gate.** `npm run lint && npm run typecheck && npm test && npm run smoke`.
 Tests cover the doctor/work lie, in-session work without spawn, keyword-map
-refuse, missing-outcome wording, adapter no-spawn, and serve listing host-pull
-tools.
+refuse, no hollow in-session run, ordinary-language namings → staff →
+session work, bare work not spending an older run, adapter no-spawn, and
+serve listing host-pull tools.
