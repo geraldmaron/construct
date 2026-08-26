@@ -3,17 +3,22 @@
  *
  * Bare `construct` and a sentence that is not a verb start here. The host
  * names and records. Two surfaces: this conversation continues, or one
- * inbox card. talk() plants the host instruction, silent-wires serve so
- * this session can record, and creates no run — a hollow record would
- * steal the next work. A packet without a seat is a miss.
+ * inbox card. talk() plants the host instruction and rule, remembers the
+ * words, and silent-wires serve so this session can record. talk() creates
+ * no run — a hollow record would steal the next work. Callable is the
+ * wire; called, with host namings, is the gate. A socket you never call
+ * is still a miss.
  */
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { plantFirstRunInstruction, type InstructionPlant } from '../hosts/first-run-instruction.ts';
+import { plantFirstRunRule } from '../hosts/first-run-rule.ts';
+import { writeHeard } from '../kernel/store/heard.ts';
 import { sessionNamingPacket, type AmbientDetection } from '../hosts/session.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { plantShippedSkills, type PlantReport } from './skills.ts';
 import { packageVersion } from './runtime.ts';
+import { resolveStoreLocation } from './local-state.ts';
 import { ensureAmbientServeWired, type ServeWire } from './wire.ts';
 
 const HOSTS_THEY_HAVE =
@@ -102,6 +107,27 @@ function plantInstructionForSession(
   return plantFirstRunInstruction(dir, packageVersion());
 }
 
+/** Wire, remember the words, plant the host rule. Creates no run. */
+export function prepareInSessionTalk(
+  session: AmbientDetection,
+  words: string | undefined,
+  env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
+): {
+  readonly plant: PlantReport;
+  readonly instruction: InstructionPlant | undefined;
+  readonly wired: ServeWire;
+} {
+  const plant = plantForSession(session, env);
+  const instruction = plantInstructionForSession(session, env);
+  plantFirstRunRule(session.host, cwd);
+  const wired = ensureAmbientServeWired(cwd, env);
+  if (words !== undefined && words.length > 0) {
+    writeHeard(resolveStoreLocation(cwd, { ...process.env, ...env }).path, words, new Date().toISOString());
+  }
+  return { plant, instruction, wired };
+}
+
 /**
  * First-run talk. In a host session this prints the naming packet, plants
  * the host instruction, and silent-wires serve onto this host so the host
@@ -118,11 +144,15 @@ export function talk(
     process.stdout.write(hostlessTalkBounce(words.length > 0 ? words : undefined));
     return 0;
   }
-  const plant = plantForSession(session, env);
-  const instruction = plantInstructionForSession(session, env);
-  const wired = ensureAmbientServeWired(cwd, env);
+  const prepared = prepareInSessionTalk(session, words.length > 0 ? words : undefined, env, cwd);
   process.stdout.write(
-    sessionTalkPacket(session, words.length > 0 ? words : undefined, plant, instruction, wired),
+    sessionTalkPacket(
+      session,
+      words.length > 0 ? words : undefined,
+      prepared.plant,
+      prepared.instruction,
+      prepared.wired,
+    ),
   );
   return 0;
 }

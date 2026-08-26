@@ -81,6 +81,7 @@ import { validateBrief } from '../../kernel/brief/schema.ts';
 import type { DomainNaming } from '../../kernel/implication/naming.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
+import { clearHeard, heardInstructions, readHeard } from '../../kernel/store/heard.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import type { JsonRpcRequest, JsonRpcResponse, MessageHandler } from './jsonrpc.ts';
@@ -478,7 +479,9 @@ async function recordOutcome(
   client: string,
   input: Record<string, unknown>,
 ): Promise<unknown> {
-  const text = typeof input.outcome === 'string' ? input.outcome.trim() : '';
+  const supplied = typeof input.outcome === 'string' ? input.outcome.trim() : '';
+  const heard = readHeard(core.store.path);
+  const text = supplied.length > 0 ? supplied : (heard?.words ?? '');
   if (!text) throw new RangeError('record_outcome requires a non-empty string "outcome"');
 
   const at = core.clock();
@@ -518,6 +521,7 @@ async function recordOutcome(
     cache: storeNamingCache(core.store, { host, at }),
     source: 'session',
   });
+  clearHeard(core.store.path);
   return startedReply(started, namings);
 }
 
@@ -781,12 +785,14 @@ export function createProjectionHandler(
         const declared = params?.clientInfo?.name;
         if (typeof declared === 'string' && declared) client = declared;
         const asked = params?.protocolVersion;
+        const instructions = heardInstructions(readHeard(core.store.path));
         return response(message.id, {
           // Echo a client's version when it names one; a mismatch is the
           // client's to judge, exactly as on the role server.
           protocolVersion: typeof asked === 'string' && asked ? asked : PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: 'construct', version: core.serverVersion },
+          ...(instructions !== undefined ? { instructions } : {}),
         });
       }
       case 'ping':

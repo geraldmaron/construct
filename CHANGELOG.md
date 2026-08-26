@@ -17,9 +17,11 @@ a spawn that will fail.
 - **Talk reprints what they said. Then staff shows up.** The host
   names and records. `talk` creates no run, prints no catalog, and
   silent-wires recording onto this session when the host can take
-  it — a planted skill with no socket is not follow-through. Catalog
-  ids live on the recording tool, not stdout. If the stranger is
-  needed, that is one inbox card, not a menu. Beat two is still talk.
+  it. Callable is the wire; called, with host namings, is the gate.
+  Talk remembers the words (not a run). Serve initialize repeats
+  them and `record_outcome` records the host's namings. A socket
+  that is never called is still a miss. If the stranger is needed,
+  that is one inbox card, not a menu. Beat two is still talk.
   In-session `work` with nothing seated reprints the surfaces; it
   does not teach a verb.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,

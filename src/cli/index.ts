@@ -90,7 +90,7 @@ export { completions } from './completions.ts';
 export { wire } from './wire.ts';
 export { init } from './init.ts';
 export { daemon } from './daemon.ts';
-export { hostlessTalkBounce, sessionTalkPacket, talk } from './talk.ts';
+export { hostlessTalkBounce, prepareInSessionTalk, sessionTalkPacket, talk } from './talk.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.

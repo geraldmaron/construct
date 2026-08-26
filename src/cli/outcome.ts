@@ -33,12 +33,7 @@ import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
-import { hostlessTalkBounce, sessionTalkPacket } from './talk.ts';
-import { plantFirstRunInstruction } from '../hosts/first-run-instruction.ts';
-import { plantShippedSkills } from './skills.ts';
-import { packageVersion } from './runtime.ts';
-import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
-import { ensureAmbientServeWired } from './wire.ts';
+import { hostlessTalkBounce, prepareInSessionTalk, sessionTalkPacket } from './talk.ts';
 import { mapImplications } from '../kernel/implication/map.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
@@ -59,22 +54,8 @@ export function sessionOutcomeHandoff(
   env: NodeJS.ProcessEnv = process.env,
   cwd: string = process.cwd(),
 ): string {
-  const host = session.host;
-  const canPlant = (SKILLS_HOST_NAMES as readonly string[]).includes(host);
-  const dir = canPlant ? resolveHostSkillsDir(host as SkillsHostName, env) : undefined;
-  const plant = canPlant && dir !== undefined
-    ? plantShippedSkills(dir)
-    : {
-        attempted: true,
-        planted: false,
-        written: 0,
-        already: 0,
-        error: `${host} has no skills directory Construct knows`,
-      };
-  const instruction =
-    dir !== undefined ? plantFirstRunInstruction(dir, packageVersion()) : undefined;
-  const wired = ensureAmbientServeWired(cwd, env);
-  return sessionTalkPacket(session, words, plant, instruction, wired);
+  const prepared = prepareInSessionTalk(session, words, env, cwd);
+  return sessionTalkPacket(session, words, prepared.plant, prepared.instruction, prepared.wired);
 }
 
 export interface OutcomeArgs {
