@@ -33,10 +33,11 @@ a spawn that will fail.
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
 - **First-run hears ordinary language.** Talk in the host, no catalog
-  words, no `--host`. The host names concerns or routes to inbox,
-  verdict, or log. Construct does not map phrases to seats. The keyword
-  map is not first-run: omitting namings on `construct serve` is an
-  error, not a fall-through. Empty staff after a host read is a miss.
+  words, no `--host`. The host infers. Two surfaces only: dispatch
+  through this session, or an inbox call. No Construct-side classifier,
+  namer, or third router. The keyword map is not first-run: omitting
+  namings on `construct serve` is an error, not a fall-through. Empty
+  staff after a host read is a miss.
   README and `docs/first-run.md` lead with talk, then staff. `init`,
   `doctor`, and the verb catalog are not on that page. The only
   Construct-shaped surface there is an inbox card when the call is

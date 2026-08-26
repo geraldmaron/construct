@@ -138,11 +138,14 @@ test('first-run lead is talk then staff, not init plus doctor', () => {
   const lead = firstHeadingLead(page);
   assert.match(lead, /You talk\. Staff shows up/);
   assert.match(lead, /ordinary\s+language/);
-  assert.match(lead, /The host decides the path/);
-  assert.match(lead, /does not map phrases to seats/);
+  assert.match(lead, /The host infers/);
+  assert.match(lead, /does not classify intent/);
+  assert.match(lead, /Two surfaces only/);
   assert.match(lead, /record_outcome/);
   assert.match(lead, /claim_task/);
   assert.match(lead, /submit_work/);
+  assert.doesNotMatch(page, /verdict, or log/);
+  assert.doesNotMatch(page, /host decides the path/);
   assert.match(lead, /investigative-research/);
   assert.match(lead, /decision-framing/);
   assert.match(lead, /intake/);
@@ -160,7 +163,7 @@ test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
   assert.match(page, /construct decide/);
-  assert.match(page, /inbox, verdict, or log/);
+  assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
   assert.doesNotMatch(page, /construct work/);
   assert.doesNotMatch(page, /construct status/);
@@ -185,7 +188,9 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
   assert.match(short, /Staff shows up/);
-  assert.match(short, /does not map phrases to seats/);
+  assert.match(short, /The host infers/);
+  assert.match(short, /Two surfaces only/);
+  assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
   assertNoPhraseTable(short, 'README short version');
   const fence = firstShellFence(short);
