@@ -14,6 +14,11 @@ import { parseCleanupArgs, cleanup } from '../../src/cli/index.ts';
 import type { SpawnFn } from '../../src/kernel/cleanup/catalog.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { daemonSocketPath } from '../../src/kernel/daemon/socket.ts';
+import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
+import { sterileAmbientEnv } from '../harness/sterile.ts';
+
+sterileAmbientEnv();
+process.env.NODE_NO_WARNINGS = '1';
 
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
@@ -166,7 +171,8 @@ test("cleanup --yes --all does not delete a live daemon's socket", async () => {
   process.env.XDG_STATE_HOME = path.join(home, 'state');
   process.env.XDG_DATA_HOME = path.join(home, 'data');
   try {
-    const daemonEnv = { ...process.env, HOME: home };
+    const daemonEnv: NodeJS.ProcessEnv = { ...process.env, HOME: home, NODE_NO_WARNINGS: '1' };
+    for (const key of AMBIENT_ENV_KEYS) delete daemonEnv[key];
     const started = spawnSync(process.execPath, [LAUNCHER, 'daemon', 'start', '--idle-exit=120', '--every=3600'], {
       cwd: home,
       env: daemonEnv,
