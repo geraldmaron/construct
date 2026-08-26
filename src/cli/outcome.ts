@@ -8,10 +8,9 @@
  * fails. Inside an ambient host session, this verb does not consult the
  * keyword map and does not create a run: the host infers, and the only
  * surfaces are this session's dispatch or the inbox. The plan is recorded
- * write-once here so `work`
- * executes against a stated plan rather than an implicit one, which is why
- * `ask` and the standing firings both come back through this file to record
- * theirs.
+ * write-once here so `work` executes against a stated plan rather than an
+ * implicit one, which is why `ask` and the standing firings both come back
+ * through this file to record theirs.
  */
 
 import type { Store } from '../kernel/store/open.ts';
