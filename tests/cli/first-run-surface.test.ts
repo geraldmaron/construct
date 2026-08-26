@@ -98,8 +98,7 @@ async function captureOutcome(
 test('host in session does not consult the keyword map — keyword-rich text staffs nothing', async () => {
   const { code, out } = await captureOutcome([KEYWORD_RICH], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here/);
-  assert.match(out, /A packet is not a seat/);
+  assert.match(out, /Talk here\. Staff shows up/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /one button/);
@@ -108,18 +107,20 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /no domains implicated/);
   assert.doesNotMatch(out, /record_outcome/);
-  assert.match(out, /Catalog \(name only these, exactly\)/);
-  assert.match(out, /- privacy:/);
+  assert.doesNotMatch(out, /Catalog \(name only these/);
+  assert.doesNotMatch(out, /Name the concerns these words implicate/);
+  assert.doesNotMatch(out, /^- privacy:/m);
 });
 
 test('host in session does not invent a hollow run when the keyword map would be silent', async () => {
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here/);
-  assert.match(out, /A packet is not a seat/);
+  assert.match(out, /Talk here\. Staff shows up/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /inbox/);
+  assert.doesNotMatch(out, /Catalog \(name only these/);
+  assert.doesNotMatch(out, /Name the concerns these words implicate/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /no domains implicated/);
@@ -202,10 +203,11 @@ test('an ordinary sentence with no host is a bounce, not the verb catalog', asyn
 test('bare construct in a host session is talk, not the verb catalog', async () => {
   const { code, out } = await captureMain([], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here/);
-  assert.match(out, /A packet is not a seat/);
+  assert.match(out, /Talk here\. Staff shows up/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
+  assert.doesNotMatch(out, /Catalog \(name only these/);
+  assert.doesNotMatch(out, /Name the concerns these words implicate/);
   assert.doesNotMatch(out, /Starting work/);
   assert.doesNotMatch(out, /--host=/);
   assert.doesNotMatch(out, /run run-/);

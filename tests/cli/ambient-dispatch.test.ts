@@ -192,8 +192,9 @@ test('in-session outcome does not staff from the keyword map or name a run to wo
     const code = await outcome([OUTCOME], undefined, CLAUDE_ENV);
     assert.equal(code, 0);
     const text = out.join('');
-    assert.match(text, /Talk here/);
-    assert.match(text, /A packet is not a seat/);
+    assert.match(text, /Talk here\. Staff shows up/);
+    assert.doesNotMatch(text, /Catalog \(name only these/);
+    assert.doesNotMatch(text, /Name the concerns these words implicate/);
     assert.match(text, /how: namer/);
     assert.match(text, /where: session/);
     assert.match(text, /inbox/);

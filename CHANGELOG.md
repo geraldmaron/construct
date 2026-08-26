@@ -14,10 +14,11 @@ Construct owns completion, the log, and the inbox. Doctor honesty is a
 consequence: a host that is present and in-session is used, not advertised as
 a spawn that will fail.
 
-- **A talk packet is not a seat.** In-session ordinary language is
-  unfinished until the host names concerns and records them. `talk`
-  plants a first-run instruction and the catalog; it creates no run.
-  Beat two is still talk. The stranger is not taught a verb.
+- **Talk reprints what they said. Then staff shows up.** The host
+  names and records. `talk` creates no run and prints no catalog and
+  no naming lesson — catalog ids live on the recording tool. A list
+  of domains is not staff. If the stranger is needed, that is one
+  inbox card, not a menu. Beat two is still talk.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,
   not the grouped verb catalog. An ordinary sentence that is not a verb
   does the same. `construct help` still prints the rest of the surface.
