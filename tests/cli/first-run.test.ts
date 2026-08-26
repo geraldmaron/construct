@@ -249,6 +249,24 @@ test('README first-run opens with talk, not a phrase table or verb wall', () => 
   assert.doesNotMatch(short, /construct decide/);
 });
 
+test('this checkout ships a Cursor project socket loaded before first words', () => {
+  const raw = readFileSync(join(ROOT, '.cursor', 'mcp.json'), 'utf8');
+  const config = JSON.parse(raw) as {
+    mcpServers?: Record<string, { command?: string; args?: string[] }>;
+  };
+  const entry = config.mcpServers?.['construct-mcp'];
+  assert.ok(entry, 'construct-mcp must be on the project socket');
+  assert.equal(entry.command, 'node');
+  assert.ok(
+    entry.args?.some((arg) => arg.includes('bin/construct.mjs')),
+    'launch this checkout\'s bin/construct.mjs',
+  );
+  assert.deepEqual(entry.args?.slice(-1), ['serve']);
+  const firstRun = readFileSync(join(ROOT, 'docs', 'first-run.md'), 'utf8');
+  assert.doesNotMatch(firstRun, /construct serve/);
+  assert.doesNotMatch(firstRun, /--yes/);
+});
+
 test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
   await isolated(async () => {
     const recorded = await hostNamedRecord(

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "construct-mcp": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/bin/construct.mjs",
+        "serve"
+      ]
+    }
+  }
+}
