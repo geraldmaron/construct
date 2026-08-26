@@ -33,8 +33,9 @@ __probe__/
 .env.*
 !.env.example
 
-# Local MCP wiring written by first-run talk / `construct wire`; never committed
+# Local MCP wiring from `construct wire --yes` in other hosts; never committed.
+# This checkout's Cursor socket is the committed .cursor/mcp.json — a fresh
+# chat loads it at session start. talk() does not write that file.
 .mcp.json
-.cursor/mcp.json
 .cursor/rules/construct-first-run.mdc
 .claude/rules/construct-first-run.md

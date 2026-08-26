@@ -27,6 +27,11 @@ a spawn that will fail.
   stranger is needed, that is one inbox card, not a menu. Beat two
   is still talk. In-session `work` with nothing seated reprints the
   surfaces; it does not teach a verb.
+- **This checkout ships a Cursor project socket.** `.cursor/mcp.json`
+  launches `construct-mcp` via `bin/construct.mjs serve` at session
+  start. A fresh Cursor chat on this tree can already list
+  `record_outcome` before anyone talks. That is the host they already
+  use, not `talk()` attaching a file.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,
   not the grouped verb catalog. An ordinary sentence that is not a verb
   does the same. `construct help` still prints the rest of the surface.
