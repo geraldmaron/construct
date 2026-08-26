@@ -55,6 +55,14 @@ export interface StartedRun {
    */
   readonly inferredBy: InferredBy;
   /**
+   * Where the naming ran. `session` is this host conversation; `cli` is the
+   * terminal path (keyword map, Construct's namer seam, or a user-named staff).
+   * How and where are two facts. Aliasing one as the other is a lie.
+   */
+  readonly ranIn: 'session' | 'cli';
+  /** The host that named, when one did. Absent on the keyword and user paths. */
+  readonly host?: string;
+  /**
    * Present when a supplied namer threw and the keyword map answered in its
    * place. Travels out for the same reason `inferredBy` does: a fallback the
    * user cannot see is a keyword answer impersonating a model's.
@@ -215,6 +223,7 @@ export function startRun(store: Store, input: StartRunInput): StartedRun {
   const map = mapImplications({ outcome: input.outcome, catalog: input.catalog });
   return record(store, input, map.implicated, {
     inferredBy: map.implicated.length > 0 ? 'keywords' : 'none',
+    ranIn: 'cli',
   });
 }
 
@@ -246,6 +255,7 @@ export async function startRunNamed(
   });
   return record(store, input, map.implicated, {
     inferredBy: map.inferredBy,
+    ranIn: input.source === 'session' ? 'session' : 'cli',
     host: input.host,
     namerFailure: map.namerFailure,
     namerRetriedAfter: map.namerRetriedAfter,
@@ -298,7 +308,7 @@ export function startRunSelected(store: Store, input: StartRunSelectedInput): St
     });
   }
 
-  return record(store, input, implicated, { inferredBy: 'user' });
+  return record(store, input, implicated, { inferredBy: 'user', ranIn: 'cli' });
 }
 
 /**
@@ -329,6 +339,7 @@ export async function startAskNamed(
     map.implicated,
     {
       inferredBy: map.inferredBy,
+      ranIn: input.source === 'session' ? 'session' : 'cli',
       host: input.host,
       namerFailure: map.namerFailure,
       namerRetriedAfter: map.namerRetriedAfter,
@@ -353,6 +364,7 @@ type RunShape = 'outcome' | 'ask';
  */
 interface Inference {
   readonly inferredBy: InferredBy;
+  readonly ranIn: 'session' | 'cli';
   readonly host?: string;
   readonly namerFailure?: string;
   readonly namerRetriedAfter?: string;
@@ -367,7 +379,7 @@ function record(
   inference: Inference,
   shape: RunShape = 'outcome',
 ): StartedRun {
-  const { inferredBy, host, namerFailure, namerRetriedAfter } = inference;
+  const { inferredBy, ranIn, host, namerFailure, namerRetriedAfter } = inference;
   return transact(store, () => {
     const logged: number[] = [];
     const tasks: string[] = [];
@@ -394,6 +406,7 @@ function record(
           detail: {
             outcome: input.outcome,
             inferredBy,
+            ranIn,
             host: host ?? null,
             named: implicated.length,
           },
@@ -555,6 +568,8 @@ function record(
       logged,
       tasks,
       inferredBy,
+      ranIn,
+      ...(host !== undefined ? { host } : {}),
       ...(namerFailure !== undefined ? { namerFailure } : {}),
       ...(namerRetriedAfter !== undefined ? { namerRetriedAfter } : {}),
     };

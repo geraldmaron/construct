@@ -86,7 +86,12 @@ test('doctor names in-session dispatch through serve, never a spawnable Cursor t
       out,
       /ok {3}ambient {2}running inside cursor \(detected via CURSOR_AGENT\); in-session dispatch: this session via construct serve \(will not spawn cursor\)/,
     );
-    assert.match(out, /Talk here\. Ordinary language is enough/);
+    // The talk line lives on the healthy path. A failed check (Node below
+    // the floor, a missing store) is the next action; naming both would
+    // bury the one that matters.
+    if (/doctor: healthy/.test(out)) {
+      assert.match(out, /Talk here\. Ordinary language is enough/);
+    }
     assert.doesNotMatch(out, /in-session execution: available/);
   });
 });

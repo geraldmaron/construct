@@ -16,7 +16,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { outcome } from '../../src/cli/index.ts';
+import { main, outcome } from '../../src/cli/index.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
@@ -31,6 +31,36 @@ const CLAUDE_ENV = { CLAUDECODE: '1' };
 
 /** A sentence the keyword map would staff if it were consulted. */
 const KEYWORD_RICH = 'We want to hire a contractor in Poland';
+
+async function captureMain(
+  argv: string[],
+  env: NodeJS.ProcessEnv,
+): Promise<{ code: number; out: string }> {
+  const root = mkdtempSync(join(tmpdir(), 'construct-first-run-'));
+  const previous = { data: process.env.XDG_DATA_HOME, cache: process.env.XDG_CACHE_HOME };
+  process.env.XDG_DATA_HOME = join(root, 'share');
+  process.env.XDG_CACHE_HOME = join(root, 'cache');
+  const chunks: string[] = [];
+  const realOut = process.stdout.write.bind(process.stdout);
+  (process.stdout as { write: unknown }).write = (c: string) => (chunks.push(String(c)), true);
+  try {
+    const code = await main(argv, env);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0, 'talk must not staff a run');
+    } finally {
+      store.close();
+    }
+    return { code, out: chunks.join('') };
+  } finally {
+    (process.stdout as { write: unknown }).write = realOut;
+    if (previous.data === undefined) delete process.env.XDG_DATA_HOME;
+    else process.env.XDG_DATA_HOME = previous.data;
+    if (previous.cache === undefined) delete process.env.XDG_CACHE_HOME;
+    else process.env.XDG_CACHE_HOME = previous.cache;
+    rmSync(root, { recursive: true, force: true });
+  }
+}
 
 async function captureOutcome(
   argv: string[],
@@ -125,17 +155,44 @@ function firstConstructCommand(markdown: string): string | null {
 }
 
 test('the walkthrough first construct command is not doctor, status, or help', () => {
-  const pages = [
-    ['docs/first-run.md', readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8')],
-    ['README.md', readFileSync(join(ROOT, 'README.md'), 'utf8')],
-  ];
-  for (const [path, text] of pages) {
-    const first = firstConstructCommand(text);
-    assert.ok(first, `${path} has no construct command to check`);
+  const firstRun = firstConstructCommand(readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8'));
+  assert.equal(firstRun, null, 'first-run.md is talk, not a construct command lesson');
+  const readme = firstConstructCommand(readFileSync(join(ROOT, 'README.md'), 'utf8'));
+  if (readme !== null) {
     assert.doesNotMatch(
-      first,
+      readme,
       /\bconstruct\s+(doctor|status|help)\b/,
-      `${path} first construct command is ${first} — first-run is talk, not doctor/status/help`,
+      `README.md first construct command is ${readme} — not doctor/status/help`,
     );
   }
+});
+
+test('bare construct with no host is a bounce, not the verb catalog', async () => {
+  const { code, out } = await captureMain([], {});
+  assert.equal(code, 0);
+  assert.match(out, /Talk in the host you already use/);
+  assert.match(out, /does not staff a run/);
+  assert.doesNotMatch(out, /Starting work/);
+  assert.doesNotMatch(out, /--host/);
+  assert.doesNotMatch(out, /run run-/);
+});
+
+test('an ordinary sentence with no host is a bounce, not the verb catalog', async () => {
+  const { code, out } = await captureMain(['is this actually ready'], {});
+  assert.equal(code, 0);
+  assert.match(out, /Talk in the host you already use/);
+  assert.doesNotMatch(out, /Starting work/);
+  assert.doesNotMatch(out, /--host/);
+  assert.doesNotMatch(out, /run run-/);
+});
+
+test('bare construct in a host session is talk, not the verb catalog', async () => {
+  const { code, out } = await captureMain([], CURSOR_ENV);
+  assert.equal(code, 0);
+  assert.match(out, /This session infers the intent/);
+  assert.match(out, /How: this session names/);
+  assert.match(out, /Where: this session runs/);
+  assert.doesNotMatch(out, /Starting work/);
+  assert.doesNotMatch(out, /--host/);
+  assert.doesNotMatch(out, /run run-/);
 });

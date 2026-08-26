@@ -124,9 +124,17 @@ test('every verb in the VERBS table appears grouped with a gloss', async () => {
 });
 
 test('the top-level help flag spellings all reach the grouped surface', async () => {
-  for (const argv of [['help'], ['--help'], ['-h'], []]) {
+  for (const argv of [['help'], ['--help'], ['-h']]) {
     const result = await capture(argv);
-    assert.strictEqual(result.code, 0, `${argv.join(' ') || '(no args)'} exits 0`);
+    assert.strictEqual(result.code, 0, `${argv.join(' ')} exits 0`);
     assert.match(result.out, /Start here:/, 'shows the grouped help');
   }
+});
+
+test('bare construct is talk, not the grouped help', async () => {
+  const result = await capture([]);
+  assert.strictEqual(result.code, 0);
+  assert.doesNotMatch(result.out, /Start here:/);
+  assert.doesNotMatch(result.out, /Starting work/);
+  assert.match(result.out, /Talk in the host you already use|This session infers the intent/);
 });

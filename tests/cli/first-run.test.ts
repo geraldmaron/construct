@@ -8,10 +8,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { ask, outcome, work } from '../../src/cli/index.ts';
+import { ask, inbox, main, outcome, work } from '../../src/cli/index.ts';
+import { latestOutcomeReceivedRun } from '../../src/kernel/store/worklog.ts';
 import { createCursorAdapter } from '../../src/hosts/cursor/adapter.ts';
 import { HOST_PULL_TOOLS } from '../../src/hosts/mcp/hostpull.ts';
 import { createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
@@ -75,10 +76,28 @@ function firstHeadingLead(markdown: string): string {
   return markdown.slice(0, start);
 }
 
-function firstShellFence(markdown: string): string {
-  const match = markdown.match(/```(?:bash|sh|shell|zsh)?\n([\s\S]*?)```/);
-  assert.ok(match?.[1], 'expected a shell fence');
-  return match[1];
+function assertSameFirstRunStory(page: string, label: string): void {
+  const lead = firstHeadingLead(page);
+  assert.match(lead, /You talk\. Staff shows up/);
+  assert.match(lead, /ordinary\s+language/);
+  assert.match(lead, /The host infers/);
+  assert.match(lead, /does\s+not classify intent/);
+  assert.match(lead, /Two surfaces only/);
+  assert.match(lead, /record_outcome/);
+  assert.match(lead, /claim_task/);
+  assert.match(lead, /submit_work/);
+  assert.match(lead, /investigative-research/);
+  assert.match(lead, /decision-framing/);
+  assert.match(lead, /intake/);
+  assert.doesNotMatch(page, /verdict, or log/);
+  assert.doesNotMatch(page, /host decides the path/);
+  assert.doesNotMatch(page, /construct init/);
+  assert.doesNotMatch(page, /construct doctor/);
+  assert.doesNotMatch(page, /Starting work/);
+  assert.doesNotMatch(page, /construct decide/);
+  assert.doesNotMatch(lead, /```(?:bash|sh|shell|zsh)?/);
+  assert.doesNotMatch(lead, /construct serve/);
+  assertNoPhraseTable(page, label);
 }
 
 function assertNotDoctorStatusVerbWall(text: string, label: string): void {
@@ -103,6 +122,7 @@ async function hostNamedRecord(
   tasksQueued: number;
   implicated: string[];
   inferredBy?: string;
+  ranIn?: string;
   out: string;
   isError?: boolean;
 }> {
@@ -131,46 +151,35 @@ async function hostNamedRecord(
     tasksQueued: number;
     implicated: Array<{ domain: string }>;
     inferredBy?: string;
+    ranIn?: string;
   };
   store.close();
   return {
     tasksQueued: body.tasksQueued,
     implicated: body.implicated.map((row) => row.domain),
     inferredBy: body.inferredBy,
+    ranIn: body.ranIn,
     out: JSON.stringify(body),
   };
 }
 
 test('first-run lead is talk then staff, not init plus doctor', () => {
-  const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
-  const lead = firstHeadingLead(page);
-  assert.match(lead, /You talk\. Staff shows up/);
-  assert.match(lead, /ordinary\s+language/);
-  assert.match(lead, /The host infers/);
-  assert.match(lead, /does not classify intent/);
-  assert.match(lead, /Two surfaces only/);
-  assert.match(lead, /record_outcome/);
-  assert.match(lead, /claim_task/);
-  assert.match(lead, /submit_work/);
-  assert.doesNotMatch(page, /verdict, or log/);
-  assert.doesNotMatch(page, /host decides the path/);
-  assert.match(lead, /investigative-research/);
-  assert.match(lead, /decision-framing/);
-  assert.match(lead, /intake/);
-  assert.doesNotMatch(page, /construct init/);
-  assert.doesNotMatch(page, /construct doctor/);
-  assert.doesNotMatch(page, /Starting work/);
-  assertNoPhraseTable(page, 'docs/first-run.md');
-  const fence = firstShellFence(lead);
-  assert.match(fence, /construct serve/);
-  assert.doesNotMatch(fence, /construct init/);
-  assert.doesNotMatch(fence, /construct doctor/);
+  assertSameFirstRunStory(readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8'), 'docs/first-run.md');
+});
+
+test('the shipped /start story matches first-run', () => {
+  assertSameFirstRunStory(readFileSync(join(ROOT, 'docs/start.md'), 'utf8'), 'docs/start.md');
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { files: string[]; version: string };
+  assert.ok(pkg.files.includes('docs/first-run.md'), 'first-run story ships in the package');
+  assert.ok(pkg.files.includes('docs/start.md'), '/start story ships in the package');
+  assert.notEqual(pkg.version, '3.0.0-alpha.18');
 });
 
 test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
-  assert.match(page, /construct decide/);
+  assert.match(page, /Say your call on this card/);
+  assert.doesNotMatch(page, /construct decide/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
   assert.doesNotMatch(page, /construct work/);
@@ -189,10 +198,10 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
   assert.match(serve, /submit_work/);
 });
 
-test('README short version opens with serve, not a phrase table or verb wall', () => {
+test('README short version opens with talk, not a phrase table or verb wall', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  const from = readme.indexOf('docs/first-run.md');
-  const until = readme.indexOf('## Which seat');
+  const from = readme.indexOf('**[docs/first-run.md]');
+  const until = readme.indexOf('From a plain terminal');
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
   assert.match(short, /Staff shows up/);
@@ -201,10 +210,10 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
   assertNoPhraseTable(short, 'README short version');
-  const fence = firstShellFence(short);
-  assert.match(fence, /construct serve/);
-  assert.doesNotMatch(fence, /construct init/);
-  assert.doesNotMatch(fence, /construct doctor/);
+  assert.doesNotMatch(short, /```(?:bash|sh|shell|zsh)?/);
+  assert.doesNotMatch(short, /construct serve/);
+  assert.doesNotMatch(short, /construct init/);
+  assert.doesNotMatch(short, /construct doctor/);
 });
 
 test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
@@ -220,7 +229,8 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.equal(recorded.isError, undefined);
     assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
     assert.deepEqual(recorded.implicated, ['privacy', 'security']);
-    assert.equal(recorded.inferredBy, 'session', 'host-supplied namings are this session, not Construct\'s namer');
+    assert.equal(recorded.inferredBy, 'session', 'how: this session named the concerns');
+    assert.equal(recorded.ranIn, 'session', 'where: this session ran');
     assert.notEqual(recorded.inferredBy, 'namer');
     assert.notEqual(recorded.inferredBy, 'keywords');
     assertNotDoctorStatusVerbWall(recorded.out, 'record_outcome');
@@ -346,4 +356,163 @@ test('product serve lists host-pull dispatch tools', () => {
   const names = HOST_PULL_TOOLS.map((tool) => tool.name);
   assert.ok(names.includes('claim_task'));
   assert.ok(names.includes('submit_work'));
+});
+
+test('bare construct is talk, not the verb catalog', async () => {
+  await isolated(async () => {
+    const { result, out } = await capture(() => main([], CURSOR_ENV));
+    assert.equal(result, 0);
+    assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
+    assert.match(out, /This session infers the intent/);
+    assert.match(out, /How: this session names/);
+    assert.match(out, /Where: this session runs/);
+    assert.doesNotMatch(out, /Starting work/);
+    assert.doesNotMatch(out, /Those six are the spine/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
+  });
+});
+
+test('a host-less bounce creates no hollow run and teaches no --host', async () => {
+  await isolated(async () => {
+    const { result, out } = await capture(() => main(['is this actually ready']));
+    assert.equal(result, 0);
+    assertNotDoctorStatusVerbWall(out, 'host-less ordinary sentence');
+    assert.match(out, /Talk in the host you already use/);
+    assert.match(out, /does not staff a run/);
+    assert.doesNotMatch(out, /--host/);
+    assert.doesNotMatch(out, /construct serve/);
+    assert.doesNotMatch(out, /Starting work/);
+    assert.doesNotMatch(out, /run run-/);
+    assert.doesNotMatch(out, /implicated domains/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
+  });
+});
+
+test('host-less outcome with no domains creates no run', async () => {
+  await isolated(async () => {
+    const { result, out, err } = await capture(() => outcome(['xyzzy plugh frobnicate']));
+    assert.equal(result, 0);
+    assert.match(out, /does not staff a run/);
+    assert.doesNotMatch(out, /--host/);
+    assert.doesNotMatch(out, /run run-/);
+    assert.doesNotMatch(out, /recorded, not silently dropped/);
+    assert.doesNotMatch(err, /shared 'default' workspace/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+      assert.equal(latestOutcomeReceivedRun(store), undefined);
+    } finally {
+      store.close();
+    }
+
+    const after = await capture(() => work([]));
+    assert.equal(after.result, 0);
+    assert.match(after.out, /Record an outcome first/);
+    assert.doesNotMatch(after.out, /is on record but has no named work/);
+    assert.doesNotMatch(after.out, /--host/);
+  });
+});
+
+test('a host-less bounce does not steal work from a prior run', async () => {
+  await isolated(async () => {
+    const staffed = await capture(() => outcome(['We want to hire a contractor in Poland']));
+    assert.equal(staffed.result, 0);
+    assert.match(staffed.out, /run run-/);
+    const store = openStore(storePath(resolvePaths()));
+    let prior: string | undefined;
+    try {
+      prior = latestOutcomeReceivedRun(store);
+      assert.ok(prior);
+      assert.ok(listTasks(store).length > 0);
+    } finally {
+      store.close();
+    }
+
+    const bounced = await capture(() => outcome(['xyzzy plugh frobnicate']));
+    assert.equal(bounced.result, 0);
+    assert.match(bounced.out, /does not staff a run/);
+    assert.doesNotMatch(bounced.err, /shared 'default' workspace/);
+
+    const after = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(latestOutcomeReceivedRun(after), prior);
+    } finally {
+      after.close();
+    }
+
+    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 0);
+    assert.doesNotMatch(out, /is on record but has no named work/);
+    assert.match(out, new RegExp(prior!));
+  });
+});
+
+test('in-session talk plants method skills or says they did not', async () => {
+  await isolated(async () => {
+    const home = mkdtempSync(join(tmpdir(), 'construct-talk-home-'));
+    const previous = process.env.HOME;
+    process.env.HOME = home;
+    try {
+      const { result, out } = await capture(() => main([], { ...CURSOR_ENV, HOME: home }));
+      assert.equal(result, 0);
+      const planted = existsSync(join(home, '.cursor', 'skills', 'investigative-research', 'SKILL.md'));
+      if (planted) {
+        assert.match(out, /Method skills (planted|already)/);
+        assert.equal(existsSync(join(home, '.cursor', 'skills', 'construct-analyst', 'SKILL.md')), false);
+      } else {
+        assert.match(out, /Method skills (did not plant|were not planted)/);
+      }
+    } finally {
+      if (previous === undefined) delete process.env.HOME;
+      else process.env.HOME = previous;
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+test('inbox records the call as one action', async () => {
+  await isolated(async () => {
+    const { createProjectionHandler } = await import('../../src/hosts/mcp/projection.ts');
+    const { raiseDecision, getDecision } = await import('../../src/kernel/store/decisions.ts');
+    const store = openStore(storePath(resolvePaths()));
+    raiseDecision(store, {
+      id: 'run-x:stance',
+      run: 'run-x',
+      question: 'ship now or wait?',
+      positions: [
+        { role: 'strategy-alignment', stance: 'ship now', citation: 'task:t-1#L1' },
+        { role: 'compliance', stance: 'wait', citation: 'task:t-2#L1' },
+      ],
+      raisedAt: '2026-08-26T14:10:00.000Z',
+    });
+    const handle = createProjectionHandler({
+      store,
+      clock: () => '2026-08-26T14:10:01.000Z',
+      serverVersion: 'test',
+    });
+    const named = await handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'inbox', arguments: { id: 'run-x:stance', resolution: 'wait' } },
+    });
+    const result = named?.result as { content: Array<{ text: string }> };
+    assert.match(result.content[0]!.text, /"decided":"run-x:stance"/);
+    assert.equal(getDecision(store, 'run-x:stance')?.resolution, 'wait');
+    store.close();
+
+    const { result: listed, out } = await capture(() => inbox([]));
+    assert.equal(listed, 0);
+    assert.doesNotMatch(out, /construct decide/);
+  });
 });

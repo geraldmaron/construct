@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.19 — 2026-08-26
+
+A stranger already in a host talks ordinary language. Staff shows up. The
+first ten seconds are talk, not the verb catalog. A host-less line does not
+record a hollow run.
 
 In-session dispatch through the host that is already there. When the user is
 already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob, `construct
@@ -8,6 +12,25 @@ work` hands that session the queued tasks and does not spawn a second CLI.
 Construct owns completion, the log, and the inbox. Doctor honesty is a
 consequence: a host that is present and in-session is used, not advertised as
 a spawn that will fail.
+
+- **Bare `construct` is talk.** No subcommand starts the host talk path,
+  not the grouped verb catalog. An ordinary sentence that is not a verb
+  does the same. `construct help` still prints the rest of the surface.
+- **A host-less bounce creates no run.** A silent keyword map used to
+  record an empty outcome and point at `--host`, then steal the next
+  `work` from the shared default workspace. Fail-closed: no hollow run,
+  no `--host` lesson, no stolen work. Point at the host they already
+  have.
+- **How and where are first-class.** `record_outcome` and the CLI report
+  both `inferredBy` (how) and `ranIn` (where). Host-supplied namings are
+  `session` / `session`. Construct's namer seam stays `namer` / `cli`.
+- **Inbox resolve is one action.** The card is the action. CLI
+  `construct inbox <id> "<call>"` and MCP `inbox` with `id` and
+  `resolution` record the call. First-run does not teach `construct
+  decide`.
+- **First-run story ships in the package** at `docs/first-run.md` and
+  `docs/start.md`. No `construct serve` bash block as beat two.
+- **First-run talk plants method skills** or says they did not.
 
 - **`work` uses this session.** `CURSOR_AGENT` / `CLAUDECODE` / Bob's marker
   mean in-session host-pull through `construct serve` (`claim_task` /
@@ -49,6 +72,7 @@ a spawn that will fail.
 - **`init --yes` plants method skills** (investigative-research,
   decision-framing, intake, and the rest) into the ambient host's skills
   directory, then wires MCP. Not the generated job-title lens pack.
+  First-run talk plants the same set, or says it did not.
 - **Ordinary CI is the first-run mechanism lock.** Push and pull request
   run `lint`, `typecheck`, and `npm run test:first-run`. The full gate
   (`npm test`, read-only HOME, packaged-install smoke) stays on

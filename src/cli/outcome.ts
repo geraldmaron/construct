@@ -32,7 +32,11 @@ import { createHostNamer } from '../hosts/namer.ts';
 import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { sessionNamingPacket, usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
+import { usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
+import { hostlessTalkBounce, sessionTalkPacket } from './talk.ts';
+import { plantShippedSkills } from './skills.ts';
+import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import { mapImplications } from '../kernel/implication/map.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
 
@@ -46,8 +50,23 @@ const OUTCOME_USAGE =
  * staffing happened. Construct does not classify the intent. The host infers.
  * Two surfaces only: this session dispatches, or the turn goes to inbox.
  */
-export function sessionOutcomeHandoff(session: AmbientDetection, words: string): string {
-  return sessionNamingPacket(session, words);
+export function sessionOutcomeHandoff(
+  session: AmbientDetection,
+  words: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string {
+  const host = session.host;
+  const plant =
+    (SKILLS_HOST_NAMES as readonly string[]).includes(host)
+      ? plantShippedSkills(resolveHostSkillsDir(host as SkillsHostName, env))
+      : {
+          attempted: true,
+          planted: false,
+          written: 0,
+          already: 0,
+          error: `${host} has no skills directory Construct knows`,
+        };
+  return sessionTalkPacket(session, words, plant);
 }
 
 export interface OutcomeArgs {
@@ -239,6 +258,16 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
           : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
     );
   }
+  process.stdout.write(
+    `how: ${started.inferredBy}` +
+      (started.inferredBy === 'session'
+        ? ' — this session named the concerns'
+        : started.inferredBy === 'namer'
+          ? ' — Construct\'s namer seam'
+          : '') +
+      `\nwhere: ${started.ranIn}` +
+      (started.ranIn === 'session' ? ' — this session ran\n' : ' — the terminal path\n'),
+  );
   if (started.namerFailure !== undefined) {
     // A keyword answer standing in for a model's is a degradation, and the
     // user hears it here as well as in the log.
@@ -306,6 +335,34 @@ export async function outcome(
     return 2;
   }
 
+  const session = usesSessionDispatch(env, {
+    host: args.host,
+    hostExplicit: args.host !== undefined,
+    binary: args.binary,
+  });
+  // Fail-closed before the store opens or the shared-workspace notice
+  // fires. Either of those looks like staffing: a notice that "this
+  // lands in the shared default" is a record that did not happen, and
+  // opening the store just to bounce still leaves a file behind.
+  // In-session: the host that already read these words infers.
+  // A typed --host that names this session is still this session.
+  // hostOverride / --binary is the spawn-path / namer test seam.
+  if (args.domains === undefined && session !== null && hostOverride === undefined) {
+    process.stdout.write(sessionOutcomeHandoff(session, args.text, env));
+    return 0;
+  }
+  // Host-less and the keyword map is silent: no hollow run, no `--host`
+  // lesson. A silent map used to record an empty outcome and then steal
+  // the next `work` from the shared default workspace. Keyword matches
+  // still record — that is the rest of the surface, not first-run.
+  if (args.domains === undefined && args.host === undefined) {
+    const preview = mapImplications({ outcome: args.text });
+    if (preview.implicated.length === 0) {
+      process.stdout.write(hostlessTalkBounce(args.text));
+      return 0;
+    }
+  }
+
   return withStoreAsync(async (store) => {
     const at = now();
     const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
@@ -314,7 +371,8 @@ export async function outcome(
     // settings ladder now that the store is open: an explicit --workspace, then
     // a ratified project binding, then the shared default. The warning fires
     // before the run is recorded, so a run about to pool in the shared default
-    // says so before it is filed rather than after.
+    // says so before it is filed rather than after. Fail-closed paths above
+    // never reach this line.
     const { workspace, unboundDefault } = effectiveWorkspace(store, args.explicitWorkspace);
     if (unboundDefault) process.stderr.write(`outcome: ${SHARED_DEFAULT_WORKSPACE_NOTICE}\n`);
 
@@ -337,46 +395,8 @@ export async function outcome(
       return 0;
     }
 
-    const session = usesSessionDispatch(env, {
-      host: args.host,
-      hostExplicit: args.host !== undefined,
-      binary: args.binary,
-    });
-    // In-session first-run: the host that already read these words infers.
-    // Creating a hollow run here poisons the next `work` (it becomes the
-    // latest record and steals the default) and looks like staffing happened.
-    // A typed --host that names this session is still this session.
-    // hostOverride / --binary is the spawn-path / namer test seam.
-    if (session !== null && hostOverride === undefined) {
-      process.stdout.write(sessionOutcomeHandoff(session, args.text));
-      return 0;
-    }
-
     if (args.host === undefined) {
       const started = startRun(store, { runId, outcome: args.text, at });
-      if (started.implicated.length === 0) {
-        process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
-        process.stdout.write(
-          'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
-        );
-        // The signpost that makes the dead end a choice rather than a wall
-        //: the user, not the tool, decides to spend money. Named first, when
-        // detected, is the host this process is already running inside — the
-        // command a user in that session would actually want to type — with
-        // the full list still shown as every other way to spend.
-        const ambient = detectAmbientHost(env);
-        const ambientWired = ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host);
-        process.stdout.write(
-          '\nA host model can be asked instead, at cost:\n' +
-            (ambientWired
-              ? `  construct outcome --host=${ambient.host} ${JSON.stringify(args.text)}  ` +
-                `(this session is running inside ${ambient.host})\n`
-              : '') +
-            `  construct outcome --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.text)}\n`,
-        );
-        planRun(store, started, null, workspace, at);
-        return 0;
-      }
       reportRun(started, env);
       planRun(store, started, null, workspace, at);
       return 0;

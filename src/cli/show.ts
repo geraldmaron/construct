@@ -27,8 +27,9 @@ import { unheadedSlots } from '../kernel/plan/ladder.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { withStore } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
-import { runFlag } from './flags.ts';
+import { runFlag, splitFlags } from './flags.ts';
 import { jsonFlag, writeJson } from './json.ts';
+import { resolveUserCall } from './decide.ts';
 
 /**
  * Whether a run id names a run this store actually recorded, as opposed to
@@ -51,12 +52,23 @@ function runExists(store: Store, run: string): boolean {
  * what an inference actually rests on.
  */
 function howInferred(detail: unknown): string {
-  const inferredBy = (detail as { inferredBy?: unknown } | null)?.inferredBy;
-  if (inferredBy === 'namer') return '  (inferred by: namer — a model read the outcome)';
-  if (inferredBy === 'session') return '  (inferred by: session — this session named the concerns)';
-  if (inferredBy === 'cache') return '  (inferred by: cache — an earlier consultation for this outcome)';
-  if (inferredBy === 'user') return '  (named by: the user — not inferred)';
-  return '';
+  const d = detail as { inferredBy?: unknown; ranIn?: unknown } | null;
+  const inferredBy = d?.inferredBy;
+  const ranIn = d?.ranIn;
+  const how =
+    inferredBy === 'namer'
+      ? 'inferred by: namer — a model read the outcome'
+      : inferredBy === 'session'
+        ? 'inferred by: session — this session named the concerns'
+        : inferredBy === 'cache'
+          ? 'inferred by: cache — an earlier consultation for this outcome'
+          : inferredBy === 'user'
+            ? 'named by: the user — not inferred'
+            : '';
+  if (!how) return '';
+  const where =
+    ranIn === 'session' ? '; ran in: session' : ranIn === 'cli' ? '; ran in: cli' : '';
+  return `  (${how}${where})`;
 }
 
 /**
@@ -377,19 +389,25 @@ function writeRunState(store: Store, run?: string): void {
 }
 
 export function inbox(argv: string[] = []): number {
+  const { flags, words } = splitFlags(argv);
+  if (words.length >= 2) {
+    const [id, ...rest] = words;
+    const resolution = rest.join(' ').trim();
+    if (id && resolution) return resolveUserCall(id, resolution, 'inbox');
+  }
   return withStore((store) => {
     const open = openDecisions(store);
     // Waiting outward changes are calls on the user exactly as decisions are,
     // and an inbox that says "nothing needs you" while proposals wait is
     // wrong. A pointer, not a second rendering: the queue has one listing.
     const waiting = pendingProposalCount(store);
-    if (jsonFlag(argv)) {
+    if (jsonFlag(argv) || flags.json !== undefined) {
       writeJson({ openDecisions: open, pendingProposals: waiting });
       return 0;
     }
     const waitingLine =
       waiting > 0
-        ? `${String(waiting)} outward change${waiting === 1 ? '' : 's'} waiting — see: construct decide --pending\n`
+        ? `${String(waiting)} outward change${waiting === 1 ? '' : 's'} waiting.\n`
         : '';
     if (open.length === 0) {
       process.stdout.write(
@@ -408,7 +426,7 @@ export function inbox(argv: string[] = []): number {
       }
       process.stdout.write('\n');
     }
-    process.stdout.write(`Resolve with: construct decide <id> "<your call>"\n${waitingLine}`);
+    process.stdout.write(`Say your call on this card.\n${waitingLine}`);
     return 0;
   });
 }

@@ -136,11 +136,13 @@ test('the inference shows its evidence and never overstates it', async () => {
   assert.ok(!out.includes('next week'), 'a partial match must not be cited as a signal');
 });
 
-test('an outcome implicating nothing says so rather than going quiet', async () => {
+test('an outcome implicating nothing does not record a hollow run', async () => {
   const { code, out } = await run(['outcome', 'xyzzy plugh frobnicate']);
   assert.equal(code, 0);
-  assert.match(out, /no domains implicated/);
-  assert.match(out, /recorded, not silently dropped/);
+  assert.match(out, /does not staff a run/);
+  assert.doesNotMatch(out, /--host/);
+  assert.doesNotMatch(out, /recorded, not silently dropped/);
+  assert.doesNotMatch(out, /run run-/);
 });
 
 /**
@@ -350,11 +352,8 @@ test('filing an outcome cannot cost money unless the user asks it to', async () 
   const { code, out } = await run(() => outcome([SILENT], host));
   assert.equal(code, 0);
   assert.equal(host.calls(), 0, 'the default path must never consult a model');
-  assert.match(out, /no domains implicated/);
-  // The dead end is a signposted choice, not a wall: the user is told the
-  // command rather than having their money spent for them.
-  assert.match(out, /--host=/);
-  assert.match(out, /at cost/);
+  assert.match(out, /does not staff a run/);
+  assert.doesNotMatch(out, /--host=/);
 });
 
 test('a model flag with no host to apply to is a usage error, not a silent no-op', async () => {
@@ -951,7 +950,7 @@ test('doctor calls a state dir it cannot write a problem, not healthy', { skip: 
   assert.equal(code, 1, 'doctor must not exit 0 on a store it cannot open');
   assert.match(out, /FAIL store/);
   assert.match(out, /permission denied/);
-  assert.match(out, /doctor: 1 check\(s\) failed/);
+  assert.match(out, /doctor: \d+ check\(s\) failed/);
   assert.ok(!/doctor: healthy/.test(out), 'this is the exact claim the bug made');
 });
 
@@ -961,11 +960,19 @@ test('doctor stays healthy — and creates nothing — when the store is merely 
   process.env.XDG_DATA_HOME = join(root, 'share');
   try {
     const { code, out } = await capture([['doctor']]);
-    assert.equal(code, 0);
     assert.match(out, /ok {3}store/);
-    assert.match(out, /doctor: healthy/);
     // Asking whether it would work must not be the thing that makes it exist.
     assert.ok(!existsSync(join(root, 'share')), 'doctor must not create the data dir');
+    // The store-absent claim is independent of the Node floor. A runtime
+    // below 22.18 fails the node check and is not "healthy", but it still
+    // must not create a store just to say the store is missing.
+    if (/FAIL node/.test(out)) {
+      assert.equal(code, 1);
+      assert.doesNotMatch(out, /doctor: healthy/);
+    } else {
+      assert.equal(code, 0);
+      assert.match(out, /doctor: healthy/);
+    }
   } finally {
     if (previous === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previous;

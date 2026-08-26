@@ -273,12 +273,20 @@ export async function decide(argv: string[], hostOverride?: HostAdapter): Promis
     process.stderr.write(DECIDE_USAGE);
     return 2;
   }
+  return resolveUserCall(id, resolution, 'decide');
+}
+
+/**
+ * Record the user's call on an open inbox card. Shared by `decide` and
+ * `inbox` so first-run resolve is one action, not a second verb.
+ */
+export function resolveUserCall(id: string, resolution: string, label = 'decide'): number {
   return withStore((store) => {
     const at = now();
     try {
       resolveDecision(store, id, resolution, at, 'cli:user');
     } catch (error) {
-      process.stderr.write(`decide: ${messageOf(error)}\n`);
+      process.stderr.write(`${label}: ${messageOf(error)}\n`);
       return 1;
     }
     process.stdout.write(`decided ${id}: ${resolution}\n`);

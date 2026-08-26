@@ -45,6 +45,7 @@ import { wire } from './wire.ts';
 import { init } from './init.ts';
 import { daemon, daemonLiveHere } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
+import { talk } from './talk.ts';
 
 /**
  * The surface, re-exported. Tests and any other in-process caller reach a
@@ -67,6 +68,7 @@ export type { ReviewArgs } from './review.ts';
 export { DEFAULT_SPEND_CEILING, parseWorkArgs, work } from './work.ts';
 export type { WorkArgs } from './work.ts';
 export { inbox, log, reasonClause, show } from './show.ts';
+export { resolveUserCall } from './decide.ts';
 export { status } from './status.ts';
 export { lessons } from './lessons.ts';
 export { decide } from './decide.ts';
@@ -88,6 +90,7 @@ export { completions } from './completions.ts';
 export { wire } from './wire.ts';
 export { init } from './init.ts';
 export { daemon } from './daemon.ts';
+export { hostlessTalkBounce, sessionTalkPacket, talk } from './talk.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.
@@ -170,7 +173,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   verdict: { gloss: 'say whether a run was right to surface what it did', flags: ['run', 'confirm', 'dismiss', 'missed', 'source'] },
   corpus: { gloss: 'export the verdict corpus', flags: [] },
   log: { gloss: 'read back what a run did, in whose name', flags: ['run', 'json'] },
-  inbox: { gloss: 'hold the decisions that are genuinely yours', flags: ['json'] },
+  inbox: { gloss: 'hold the decisions that are genuinely yours, or record your call on one', flags: ['json'] },
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: [] },
@@ -267,7 +270,10 @@ export function groupedHelp(): string {
  * consult one. The other commands stay synchronous — awaiting a number costs
  * nothing and keeps one entry point.
  */
-export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
+export async function main(
+  argv: string[] = process.argv.slice(2),
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<number> {
   // `construct outcome … | head -1` closes the pipe while the command is still
   // writing, and an unhandled write to a closed stdout throws an 'error' event
   // that Node reports as a crash with a full stack. Piping into head, less, or
@@ -282,7 +288,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   process.stderr.on('error', quitOnClosedOutput);
 
   try {
-    return await run(argv);
+    return await run(argv, env);
   } catch (error) {
     // Only this class. Every other throw keeps its stack, because a defect that
     // reads as a tidy one-liner is a defect nobody reports.
@@ -292,7 +298,14 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
   }
 }
 
-async function run(argv: string[]): Promise<number> {
+async function run(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
+  // Bare `construct` is first-run talk, not the verb catalog. A stranger's
+  // first ten seconds must not open on thirty-seven verbs. `help` / `--help`
+  // / `-h` still print the grouped surface — that is a request for it.
+  if (argv.length === 0) {
+    return talk([], env);
+  }
+
   const command = argv[0] ?? 'help';
 
   // The whole surface, before any verb acts. `help`, and the two flag spellings
@@ -337,11 +350,11 @@ async function run(argv: string[]): Promise<number> {
     case 'notes':
       return notes(argv.slice(1));
     case 'outcome':
-      return outcome(argv.slice(1));
+      return outcome(argv.slice(1), undefined, env);
     case 'ask':
       return ask(argv.slice(1));
     case 'work':
-      return work(argv.slice(1));
+      return work(argv.slice(1), undefined, undefined, env);
     case 'watch':
       return watch(argv.slice(1));
     case 'reconcile':
@@ -417,7 +430,8 @@ async function run(argv: string[]): Promise<number> {
       process.stdout.write(`${tuningStamp()}\n`);
       return 0;
     default:
-      process.stdout.write(groupedHelp());
-      return 1;
+      // An ordinary sentence is talk, not a typo against the verb table.
+      // `construct help` still prints the catalog. This path does not.
+      return talk(argv, env);
   }
 }
