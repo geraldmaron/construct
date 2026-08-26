@@ -273,11 +273,11 @@ test('ordinary language via this session queues staff and work dispatches that r
       params: {
         name: 'record_outcome',
         arguments: {
-          outcome: 'is this ready',
+          outcome: 'look at this',
           namings: [
             {
-              domain: 'product-scoping',
-              why: 'readiness is a scope and success-signal question',
+              domain: 'privacy',
+              why: 'the host named privacy after reading the words',
             },
           ],
         },
@@ -289,7 +289,7 @@ test('ordinary language via this session queues staff and work dispatches that r
     assert.equal(body.tasksQueued, 1);
     assert.deepEqual(
       body.implicated.map((row) => row.domain),
-      ['product-scoping'],
+      ['privacy'],
     );
     store.close();
 
@@ -299,14 +299,14 @@ test('ordinary language via this session queues staff and work dispatches that r
     assert.match(out, /will not spawn a second cursor CLI/);
     assert.match(out, /claim_task/);
     assert.match(out, /submit_work/);
-    assert.match(out, /product-scoping/);
+    assert.match(out, /privacy/);
     assert.doesNotMatch(err, /Could not start/);
     assert.doesNotMatch(out, /Record an outcome first/i);
     assert.doesNotMatch(out, /implicated domains/);
   });
 });
 
-test('ordinary language about claims matching staffs evidence-provenance through this session', async () => {
+test('a second host naming staffs a different concern, not a phrase table', async () => {
   await isolated(async () => {
     const store = openStore(storePath(resolvePaths()));
     const handle = createProjectionHandler({
@@ -322,11 +322,11 @@ test('ordinary language about claims matching staffs evidence-provenance through
       params: {
         name: 'record_outcome',
         arguments: {
-          outcome: 'do the claims match',
+          outcome: 'look at this too',
           namings: [
             {
-              domain: 'evidence-provenance',
-              why: 'matching claims is a question of where each claim comes from and whether it can be checked',
+              domain: 'security',
+              why: 'the host named security after reading the words',
             },
           ],
         },
@@ -341,7 +341,7 @@ test('ordinary language about claims matching staffs evidence-provenance through
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assert.match(out, /In-session dispatch through cursor/);
-    assert.match(out, /evidence-provenance/);
+    assert.match(out, /security/);
   });
 });
 

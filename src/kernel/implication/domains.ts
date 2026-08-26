@@ -201,10 +201,6 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       // Ordinary words for the same worry: rebuilding a piece, splitting
       // something apart, or standing a new service next to an old one.
       'rewrite', 'split out', 'replace the',
-      // The shape of the product is a system-design question, not a ship date.
-      // "ship" is a program-sequencing keyword and must not win this phrase.
-      'product shape',
-
     ],
   },
   {

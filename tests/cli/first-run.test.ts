@@ -1,10 +1,9 @@
 /**
  * tests/cli/first-run.test.ts — cheap first-run checks that stay on ordinary CI.
  *
- * Talk, then staff shows up. These run under `npm test` (the CI `test` job),
- * not as a lint-only extra. first-run.md may not teach init, doctor, or the
- * verb catalog. A page that says construct serve cannot dispatch fails
- * here. In-session Cursor work does not spawn cursor-agent.
+ * Locks the mechanism, not a phrase table. The host names concerns or we
+ * say we need the host. Keyword map is not first-run. Empty staff after a
+ * host read is a fail. First output is not doctor or a verb wall.
  */
 
 import { test } from 'node:test';
@@ -90,11 +89,17 @@ function assertNotDoctorStatusVerbWall(text: string, label: string): void {
   assert.doesNotMatch(head, /Those six are the spine/, `${label} must not open with the verb wall`);
 }
 
-async function sessionRecord(
-  outcomeText: string,
-  namings: Array<{ domain: string; why: string }>,
+function assertNoPhraseTable(body: string, label: string): void {
+  assert.doesNotMatch(body, /is this ready/i, `${label} still encodes a sacred first-run phrase`);
+  assert.doesNotMatch(body, /do the claims match/i, `${label} still encodes a sacred first-run phrase`);
+  assert.doesNotMatch(body, /product shape/i, `${label} still encodes a sacred first-run phrase`);
+}
+
+async function hostNamedRecord(
+  words: string,
+  namings: Array<{ domain: string; why: string }> | undefined,
   at: string,
-): Promise<{ tasksQueued: number; implicated: string[]; out: string }> {
+): Promise<{ tasksQueued: number; implicated: string[]; out: string; isError?: boolean }> {
   const store = openStore(storePath(resolvePaths()));
   const handle = createProjectionHandler({
     store,
@@ -108,12 +113,18 @@ async function sessionRecord(
     method: 'tools/call',
     params: {
       name: 'record_outcome',
-      arguments: { outcome: outcomeText, namings },
+      arguments: namings === undefined ? { outcome: words } : { outcome: words, namings },
     },
   });
-  const body = JSON.parse(
-    ((named?.result as { content: Array<{ text: string }> }).content[0] as { text: string }).text,
-  ) as { tasksQueued: number; implicated: Array<{ domain: string }> };
+  const result = named?.result as { content: Array<{ text: string }>; isError?: boolean };
+  if (result.isError) {
+    store.close();
+    return { tasksQueued: 0, implicated: [], out: result.content[0]?.text ?? '', isError: true };
+  }
+  const body = JSON.parse(result.content[0]!.text) as {
+    tasksQueued: number;
+    implicated: Array<{ domain: string }>;
+  };
   store.close();
   return {
     tasksQueued: body.tasksQueued,
@@ -126,7 +137,9 @@ test('first-run lead is talk then staff, not init plus doctor', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   const lead = firstHeadingLead(page);
   assert.match(lead, /You talk\. Staff shows up/);
-  assert.match(lead, /No catalog words/);
+  assert.match(lead, /ordinary\s+language/);
+  assert.match(lead, /The host decides the path/);
+  assert.match(lead, /does not map phrases to seats/);
   assert.match(lead, /record_outcome/);
   assert.match(lead, /claim_task/);
   assert.match(lead, /submit_work/);
@@ -136,6 +149,7 @@ test('first-run lead is talk then staff, not init plus doctor', () => {
   assert.doesNotMatch(page, /construct init/);
   assert.doesNotMatch(page, /construct doctor/);
   assert.doesNotMatch(page, /Starting work/);
+  assertNoPhraseTable(page, 'docs/first-run.md');
   const fence = firstShellFence(lead);
   assert.match(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct init/);
@@ -146,6 +160,7 @@ test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
   assert.match(page, /construct decide/);
+  assert.match(page, /inbox, verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
   assert.doesNotMatch(page, /construct work/);
   assert.doesNotMatch(page, /construct status/);
@@ -163,106 +178,80 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
   assert.match(serve, /submit_work/);
 });
 
-test('README short version opens with serve, not init or the verb table', () => {
+test('README short version opens with serve, not a phrase table or verb wall', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
   const from = readme.indexOf('docs/first-run.md');
   const until = readme.indexOf('## Which seat');
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
   assert.match(short, /Staff shows up/);
+  assert.match(short, /does not map phrases to seats/);
   assert.match(short, /They are not beat two/);
+  assertNoPhraseTable(short, 'README short version');
   const fence = firstShellFence(short);
   assert.match(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct init/);
   assert.doesNotMatch(fence, /construct doctor/);
 });
 
-test('is this ready staffs product through this session', async () => {
+test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
   await isolated(async () => {
-    const recorded = await sessionRecord(
-      'is this ready',
-      [{ domain: 'product-scoping', why: 'readiness is a scope and success-signal question' }],
-      '2026-08-26T13:00:00.000Z',
+    const recorded = await hostNamedRecord(
+      'look at this',
+      [
+        { domain: 'privacy', why: 'the host named privacy after reading the words' },
+        { domain: 'security', why: 'the host named security after reading the words' },
+      ],
+      '2026-08-26T14:00:00.000Z',
     );
-    assert.equal(recorded.tasksQueued, 1);
-    assert.deepEqual(recorded.implicated, ['product-scoping']);
+    assert.equal(recorded.isError, undefined);
+    assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
+    assert.deepEqual(recorded.implicated, ['privacy', 'security']);
     assertNotDoctorStatusVerbWall(recorded.out, 'record_outcome');
 
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(result, 0);
-    assertNotDoctorStatusVerbWall(out, 'work after is-this-ready');
+    assertNotDoctorStatusVerbWall(out, 'work after host naming');
     assert.match(out, /In-session dispatch through cursor/);
     assert.match(out, /will not spawn a second cursor CLI/);
     assert.match(out, /claim_task/);
     assert.match(out, /submit_work/);
-    assert.match(out, /product-scoping/);
+    assert.match(out, /privacy/);
+    assert.match(out, /security/);
     assert.doesNotMatch(out, /cursor-agent/);
+    assert.doesNotMatch(out, /Record an outcome first/i);
   });
 });
 
-test('do the claims match staffs provenance and coverage through this session', async () => {
+test('omitting namings on serve is need-the-host, not keyword staff', async () => {
   await isolated(async () => {
-    const recorded = await sessionRecord(
-      'do the claims match',
-      [
-        {
-          domain: 'evidence-provenance',
-          why: 'matching claims is a question of where each claim comes from and whether it can be checked',
-        },
-        {
-          domain: 'coverage-gaps',
-          why: 'whether the claims cover the ground, or leave a hole, is a coverage question',
-        },
-      ],
-      '2026-08-26T13:01:00.000Z',
-    );
-    assert.equal(recorded.tasksQueued, 2);
-    assert.deepEqual(recorded.implicated, ['evidence-provenance', 'coverage-gaps']);
-
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /evidence-provenance/);
-    assert.match(out, /coverage-gaps/);
-    assert.match(out, /claim_task/);
-    assert.doesNotMatch(out, /cursor-agent/);
+    const recorded = await hostNamedRecord('look at this', undefined, '2026-08-26T14:01:00.000Z');
+    assert.equal(recorded.isError, true);
+    assert.match(recorded.out, /requires namings|keyword map is not first-run/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
   });
 });
 
-test('product shape staffs system-design, not program-sequencing from ship', () => {
-  const mapped = mapImplications({ outcome: 'what is the product shape' });
-  const domains = mapped.implicated.map((row) => row.domain);
-  assert.ok(domains.includes('system-design'), `expected system-design, got ${domains.join(',')}`);
-  assert.ok(!domains.includes('program-sequencing'), 'ship must not pull sequencing from product shape');
-});
-
-test('product shape through this session staffs system-design', async () => {
+test('in-session words without a host naming do not fake keyword staff', async () => {
   await isolated(async () => {
-    const recorded = await sessionRecord(
-      'what is the product shape',
-      [
-        {
-          domain: 'system-design',
-          why: 'the shape of the product is a boundaries and coupling question',
-        },
-      ],
-      '2026-08-26T13:02:00.000Z',
-    );
-    assert.deepEqual(recorded.implicated, ['system-design']);
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /system-design/);
-    assert.doesNotMatch(out, /program-sequencing/);
-  });
-});
-
-test('an in-session outcome first prints the naming packet, not doctor or verbs', async () => {
-  await isolated(async () => {
-    const { result, out } = await capture(() => outcome(['is this ready'], undefined, CURSOR_ENV));
+    const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
     assert.match(out, /This session is the namer/);
+    assert.match(out, /keyword map is not first-run/);
     assert.match(out, /record_outcome/);
     assert.doesNotMatch(out, /implicated domains/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
   });
 });
 
@@ -292,26 +281,26 @@ test('engineer ask does not staff measurement from ExperimentalWarning', async (
   });
 });
 
-test('work finds the outcome this session just recorded', async () => {
+test('work finds the run the host just named', async () => {
   await isolated(async () => {
-    await sessionRecord(
-      'is this ready',
-      [{ domain: 'product-scoping', why: 'readiness is a scope and success-signal question' }],
-      '2026-08-26T13:03:00.000Z',
+    await hostNamedRecord(
+      'look at this',
+      [{ domain: 'privacy', why: 'the host named privacy after reading the words' }],
+      '2026-08-26T14:02:00.000Z',
     );
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(result, 0);
-    assert.match(out, /product-scoping/);
+    assert.match(out, /privacy/);
     assert.doesNotMatch(out, /Record an outcome first/i);
   });
 });
 
 test('in-session Cursor work does not spawn cursor-agent', async () => {
   await isolated(async () => {
-    await sessionRecord(
-      'is this ready',
-      [{ domain: 'product-scoping', why: 'readiness is a scope and success-signal question' }],
-      '2026-08-26T13:04:00.000Z',
+    await hostNamedRecord(
+      'look at this',
+      [{ domain: 'privacy', why: 'the host named privacy after reading the words' }],
+      '2026-08-26T14:03:00.000Z',
     );
     let spawned = 0;
     const adapter = createCursorAdapter({
@@ -323,7 +312,7 @@ test('in-session Cursor work does not spawn cursor-agent', async () => {
     });
     await adapter.init();
     assert.equal(spawned, 0);
-    await assert.rejects(() => adapter.invoke({ role: 'product-scoping', task: 'look' }), /second runtime|construct serve/);
+    await assert.rejects(() => adapter.invoke({ role: 'privacy', task: 'look' }), /second runtime|construct serve/);
     assert.equal(spawned, 0);
 
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
