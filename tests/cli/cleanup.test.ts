@@ -15,10 +15,6 @@ import type { SpawnFn } from '../../src/kernel/cleanup/catalog.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { daemonSocketPath } from '../../src/kernel/daemon/socket.ts';
 import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
-import { sterileAmbientEnv } from '../harness/sterile.ts';
-
-sterileAmbientEnv();
-process.env.NODE_NO_WARNINGS = '1';
 
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
