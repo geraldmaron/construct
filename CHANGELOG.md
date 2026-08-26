@@ -36,8 +36,11 @@ a spawn that will fail.
   "do the claims match", "what is the product shape") with no catalog
   words and no `--host`. This session names via `record_outcome`, then
   `claim_task` / `submit_work`. README and `docs/first-run.md` lead with
-  talk, then staff. `init`, `doctor`, and the verb catalog are not beat
-  two. `construct serve` can dispatch; the cannot-dispatch claim is gone.
+  talk, then staff. `init`, `doctor`, and the verb catalog are not on
+  that page. The only Construct-shaped surface there is an inbox card
+  when the call is yours. The terminal command list lives in
+  `docs/cli-walkthrough.md`. `construct serve` can dispatch; the
+  cannot-dispatch claim is gone.
   Prefix matching only accepts simple inflections, so Node's
   `ExperimentalWarning` does not staff measurement. "Product shape"
   staffs system-design, not program-sequencing from `ship`.

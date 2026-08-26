@@ -112,19 +112,19 @@ agent to do that work. What stays off the socket is `promote`, `review`,
 just this. If it exists with other servers already in it, add
 `construct-mcp` as one more key under `mcpServers`.
 
-For a host that isn't Cursor, `docs/first-run.md`'s "other way in" section
-covers the same entry for Claude Code, Codex, and any host that reads a
-plain MCP config file — the `command`/`args` pair is identical; only where
-the host expects to find the file changes.
+For a host that isn't Cursor, `docs/cli-walkthrough.md`'s "other way in"
+section covers the same entry for Claude Code, Codex, and any host that
+reads a plain MCP config file — the `command`/`args` pair is identical;
+only where the host expects to find the file changes.
 
 ## Step 3: There is no init step
 
 `construct outcome` (or any other first command) creates whatever state it
 needs the moment it runs — a workspace named `default` if you don't name
 one, the store itself if it doesn't exist yet. There is nothing to
-provision first. `docs/first-run.md` covers that first real command; this
-recipe stops at doctor because doctor is what proves the wiring, not the
-workspace.
+provision first. `docs/first-run.md` is talk, then staff; the terminal
+commands live in `docs/cli-walkthrough.md`. This recipe stops at doctor
+because doctor is what proves the wiring, not the workspace.
 
 ## Step 4: Verify with doctor
 
