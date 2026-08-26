@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { status } from '../../src/cli/index.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
-import { startRunSelected } from '../../src/kernel/run/outcome.ts';
+import { startRun, startRunSelected } from '../../src/kernel/run/outcome.ts';
 import { claimTask, completeTask } from '../../src/kernel/store/tasks.ts';
 import { raiseDecision } from '../../src/kernel/store/decisions.ts';
 
@@ -132,6 +132,31 @@ test('status summarizes the latest run, task counts, open decisions, and ambient
   assert.match(out, /1 done, .* pending/);
   assert.match(out, /open decisions: 1/);
   assert.match(out, /ambient host: claude \(detected via CLAUDECODE\)/);
+});
+
+test('status names the latest recorded outcome even when it queued no tasks', async () => {
+  const { code, out } = await run(
+    (store) => {
+      startRunSelected(store, {
+        runId: 'run-status-older',
+        outcome: 'earlier outcome',
+        at: AT,
+        domains: ['security'],
+      });
+      startRun(store, {
+        runId: 'run-status-hollow',
+        outcome: 'is this ready',
+        at: '2026-08-25T00:10:00.000Z',
+        catalog: [],
+      });
+    },
+    ['status'],
+    { CURSOR_AGENT: '1' },
+  );
+  assert.equal(code, 0);
+  assert.match(out, /latest run: run-status-hollow/);
+  assert.match(out, /no named work/);
+  assert.doesNotMatch(out, /run-status-older/);
 });
 
 test('status --json round-trips and carries the same facts the prose reports', async () => {

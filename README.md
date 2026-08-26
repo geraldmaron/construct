@@ -28,13 +28,14 @@ Three limits are load-bearing rather than fine print. **Legal and compliance out
 
 **[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
+Talk there. "Is this ready?" "Do the claims match?" — ordinary language, no catalog words, no `--host`. This session names the concerns via MCP `record_outcome` (catalog + why), then does the work here via `claim_task` / `submit_work`. Construct keeps the log, the inbox, and verdicts. It will not spawn a second CLI.
+
+Plant method skills and wire MCP once:
+
 ```bash
 npm install -g @geraldmaron/construct@alpha
-construct doctor
 construct init --yes
 ```
-
-Talk in the host. Method skills are planted; MCP `construct serve` can dispatch (`claim_task` / `submit_work`); the inbox and the verdict stay Construct's. `construct work` hands this session the queued tasks and will not spawn a second CLI.
 
 From a plain terminal with no host wrapping the command, the same install then records an outcome and the keyword map is the zero-model fallback:
 
@@ -42,7 +43,7 @@ From a plain terminal with no host wrapping the command, the same install then r
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work` runs the most recently recorded run that still has pending work, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work` works the most recently recorded outcome, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
 Those six are the spine, not the whole surface. The surface is 41 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 

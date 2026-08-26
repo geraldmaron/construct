@@ -177,6 +177,27 @@ test('an empty namings array is an answer, not a failure', async () => {
   }
 });
 
+test('on a host-pull serve, omitting namings is an error — this session is the namer', async () => {
+  const sterileFixture = sterile();
+  const store = openStore(join(sterileFixture.paths.dataDir, 'construct.db'));
+  const handle = createProjectionHandler({
+    store,
+    clock: () => AT,
+    serverVersion: 'test',
+    secret: 'test-secret-not-a-real-key',
+  });
+  try {
+    const reply = await handle(call('record_outcome', { outcome: 'is this ready' }));
+    const { body, isError } = payload(reply);
+    assert.equal(isError, true);
+    assert.match(String((body as { error?: string }).error), /requires namings/);
+    assert.equal(listTasks(store).length, 0);
+  } finally {
+    store.close();
+    sterileFixture.cleanup();
+  }
+});
+
 test('omitting namings is the deterministic keyword path — no model is claimed', async () => {
   const f = fixture();
   try {

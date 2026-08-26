@@ -192,7 +192,9 @@ test('outcome names the detected ambient host in its work-them-next hint', async
     const code = await outcome([OUTCOME], undefined, CLAUDE_ENV);
     assert.equal(code, 0);
     assert.match(out.join(''), /This session is the namer/);
-    assert.match(out.join(''), /construct work --run run-\S+/);
+    assert.match(out.join(''), /record_outcome/);
+    assert.doesNotMatch(out.join(''), /run run-/);
+    assert.doesNotMatch(out.join(''), /implicated domains/);
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     if (previous === undefined) delete process.env.XDG_DATA_HOME;

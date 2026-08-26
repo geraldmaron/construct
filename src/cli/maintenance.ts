@@ -268,8 +268,9 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
   if (failed === 0) {
     if (ambient !== null) {
       process.stdout.write(
-        `Ready. You are in ${ambient.host}. Record an outcome in this session ` +
-          '(MCP record_outcome with namings), then claim_task / submit_work on construct serve.\n',
+        `Ready. You are in ${ambient.host}. Talk here. Ordinary language is enough. ` +
+          'This session names via MCP record_outcome with namings, then claim_task / submit_work. ' +
+          'Construct will not spawn a second CLI.\n',
       );
     } else {
       process.stdout.write('Ready. Record your first outcome:  construct outcome "<what you want>"\n');

@@ -21,9 +21,10 @@ import { skills } from './skills.ts';
 import { wire } from './wire.ts';
 
 const SPINE =
+  'Talk in this host. Ordinary language is enough — this session names the concerns.\n' +
   'The spine: outcome -> work -> show -> inbox -> verdict\n' +
-  '  outcome  records what you want, and queues the work\n' +
-  '  work     runs the queued work through this session (MCP claim_task)\n' +
+  '  outcome  this session records via MCP record_outcome with namings\n' +
+  '  work     this session claims via construct serve (claim_task)\n' +
   '  show     reads a run\'s deliverables back\n' +
   '  inbox    holds the decisions only you can make\n' +
   '  verdict  says whether a run was right about what it surfaced\n';

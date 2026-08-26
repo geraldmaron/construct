@@ -20,15 +20,23 @@ a spawn that will fail.
 - **`construct serve` carries host-pull.** The product MCP surface lists
   `claim_task` / `submit_work` once a capability secret exists. No promote.
   The flagged `host-pull-serve` prototype remains behind its gate.
-- **In-session `outcome` does not staff from the keyword map.** First-run
-  inside a host records the text and tells this session it is the namer.
-  `--domains` and MCP `record_outcome` with namings remain the ways to name
-  concerns. The keyword map is the zero-model fallback when no session is
-  wrapping the command.
-- **Bare `work` finds the run it just recorded.** The most recently enqueued
-  run that still has pending tasks is the default; `--all` remains the fleet
-  door. A recorded run that queued no tasks says so, and does not say
-  "record an outcome first".
+- **In-session `outcome` does not staff from the keyword map, and does not
+  create a hollow run.** First-run inside a host tells this session it is
+  the namer: call MCP `record_outcome` with namings. No run is written until
+  those namings exist. Empty `namings: []` is a real "implicates nothing"
+  answer. On `construct serve`, omitting namings is an error, not a
+  fall-through to the keyword map. The keyword map is the zero-model
+  fallback when no session is wrapping the command.
+- **Bare `work` and `status` stay on the latest outcome.** The most recently
+  recorded outcome is the default, even when it queued no tasks and an
+  older run still has pending work. `--all` remains the fleet door. A
+  recorded run that has no named work says so, and does not say "record an
+  outcome first" or spend someone else's run.
+- **First-run hears ordinary language.** Talk in the host ("is this ready",
+  "do the claims match") with no catalog words and no `--host`. This
+  session names via `record_outcome`, then `claim_task` / `submit_work`.
+  README and `docs/first-run.md` lead with that, not doctor or the verb
+  catalog.
 - **`init --yes` plants method skills** (investigative-research,
   decision-framing, intake, and the rest) into the ambient host's skills
   directory, then wires MCP. Not the generated job-title lens pack.

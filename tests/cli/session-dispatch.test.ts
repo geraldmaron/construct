@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { doctor, outcome, work } from '../../src/cli/index.ts';
+import { doctor, outcome, status, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { createCursorAdapter } from '../../src/hosts/cursor/adapter.ts';
 import { usesSessionDispatch } from '../../src/hosts/session.ts';
@@ -21,8 +21,10 @@ import { presenceLines, surveyHosts } from '../../src/hosts/presence.ts';
 import type { ProbeExec } from '../../src/hosts/presence.ts';
 import { HOST_PULL_TOOLS } from '../../src/hosts/mcp/hostpull.ts';
 import { PROJECTION_TOOLS, createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
-import { openStore } from '../../src/kernel/store/open.ts';
-import { enqueueTask } from '../../src/kernel/store/tasks.ts';
+import { openStore, storePath } from '../../src/kernel/store/open.ts';
+import { resolvePaths } from '../../src/kernel/paths.ts';
+import { startRun, startRunSelected } from '../../src/kernel/run/outcome.ts';
+import { enqueueTask, listTasks } from '../../src/kernel/store/tasks.ts';
 import { sterile, sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 sterileHome();
@@ -84,6 +86,7 @@ test('doctor names in-session dispatch through serve, never a spawnable Cursor t
       out,
       /ok {3}ambient {2}running inside cursor \(detected via CURSOR_AGENT\); in-session dispatch: this session via construct serve \(will not spawn cursor\)/,
     );
+    assert.match(out, /Talk here\. Ordinary language is enough/);
     assert.doesNotMatch(out, /in-session execution: available/);
   });
 });
@@ -150,28 +153,40 @@ test('work finds the run it just recorded when no --run is typed', async () => {
   });
 });
 
-test('an in-session outcome does not staff from the keyword map', async () => {
+test('an in-session outcome does not staff from the keyword map and creates no hollow run', async () => {
   await isolated(async () => {
     const { result, out } = await capture(() =>
-      outcome(['research the market and ship an experiment'], undefined, CURSOR_ENV),
+      outcome(['is this ready'], undefined, CURSOR_ENV),
     );
     assert.equal(result, 0);
     assert.match(out, /This session is the namer/);
     assert.match(out, /keyword map is not first-run/);
+    assert.match(out, /record_outcome/);
     assert.doesNotMatch(out, /implicated domains/);
+    assert.doesNotMatch(out, /run run-/);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
   });
 });
 
 test('a recorded run with no tasks is not reported as "record an outcome first"', async () => {
   await isolated(async () => {
-    const { out: recorded } = await capture(() =>
-      outcome(['research the market and ship an experiment'], undefined, CURSOR_ENV),
-    );
-    const id = /run (run-\S+)/.exec(recorded)?.[1];
-    assert.ok(id);
-    const { out } = await capture(() => work([`--run=${id}`], undefined, undefined, CURSOR_ENV));
-    assert.match(out, /on record but queued no tasks/);
-    assert.doesNotMatch(out, /Record an outcome first/);
+    const store = openStore(storePath(resolvePaths()));
+    startRun(store, {
+      runId: 'run-hollow',
+      outcome: 'is this ready',
+      at: '2026-08-26T12:00:00.000Z',
+      catalog: [],
+    });
+    store.close();
+    const { out } = await capture(() => work(['--run=run-hollow'], undefined, undefined, CURSOR_ENV));
+    assert.match(out, /no named work/);
+    assert.doesNotMatch(out, /Record an outcome first/i);
+    assert.doesNotMatch(out, /record an outcome first/);
   });
 });
 
@@ -233,5 +248,183 @@ test('Claude in-session is the same dispatch shape as Cursor', async () => {
     assert.equal(result, 0);
     assert.match(out, /In-session dispatch through claude/);
     assert.match(out, /will not spawn a second claude CLI/);
+  });
+});
+
+test('ordinary language via this session queues staff and work dispatches that run', async () => {
+  await isolated(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    const handle = createProjectionHandler({
+      store,
+      clock: () => '2026-08-26T12:00:00.000Z',
+      serverVersion: 'test',
+      secret: 'test-secret-not-a-real-key',
+    });
+    await handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: { clientInfo: { name: 'cursor' } },
+    });
+    const named = await handle({
+      jsonrpc: '2.0',
+      id: 2,
+      method: 'tools/call',
+      params: {
+        name: 'record_outcome',
+        arguments: {
+          outcome: 'is this ready',
+          namings: [
+            {
+              domain: 'product-scoping',
+              why: 'readiness is a scope and success-signal question',
+            },
+          ],
+        },
+      },
+    });
+    const body = JSON.parse(
+      ((named?.result as { content: Array<{ text: string }> }).content[0] as { text: string }).text,
+    ) as { tasksQueued: number; implicated: Array<{ domain: string }> };
+    assert.equal(body.tasksQueued, 1);
+    assert.deepEqual(
+      body.implicated.map((row) => row.domain),
+      ['product-scoping'],
+    );
+    store.close();
+
+    const { result, out, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 0);
+    assert.match(out, /In-session dispatch through cursor/);
+    assert.match(out, /will not spawn a second cursor CLI/);
+    assert.match(out, /claim_task/);
+    assert.match(out, /submit_work/);
+    assert.match(out, /product-scoping/);
+    assert.doesNotMatch(err, /Could not start/);
+    assert.doesNotMatch(out, /Record an outcome first/i);
+    assert.doesNotMatch(out, /implicated domains/);
+  });
+});
+
+test('ordinary language about claims matching staffs evidence-provenance through this session', async () => {
+  await isolated(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    const handle = createProjectionHandler({
+      store,
+      clock: () => '2026-08-26T12:01:00.000Z',
+      serverVersion: 'test',
+      secret: 'test-secret-not-a-real-key',
+    });
+    const named = await handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'record_outcome',
+        arguments: {
+          outcome: 'do the claims match',
+          namings: [
+            {
+              domain: 'evidence-provenance',
+              why: 'matching claims is a question of where each claim comes from and whether it can be checked',
+            },
+          ],
+        },
+      },
+    });
+    const body = JSON.parse(
+      ((named?.result as { content: Array<{ text: string }> }).content[0] as { text: string }).text,
+    ) as { tasksQueued: number };
+    assert.equal(body.tasksQueued, 1);
+    store.close();
+
+    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 0);
+    assert.match(out, /In-session dispatch through cursor/);
+    assert.match(out, /evidence-provenance/);
+  });
+});
+
+test('on construct serve, omitting namings is refused rather than falling to the keyword map', async () => {
+  await isolated(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      const handle = createProjectionHandler({
+        store,
+        clock: () => '2026-08-26T12:02:00.000Z',
+        serverVersion: 'test',
+        secret: 'test-secret-not-a-real-key',
+      });
+      const reply = await handle({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'record_outcome', arguments: { outcome: 'is this ready' } },
+      });
+      const result = reply?.result as { content: Array<{ text: string }>; isError?: boolean };
+      assert.equal(result.isError, true);
+      assert.match(result.content[0]!.text, /requires namings/);
+      assert.match(result.content[0]!.text, /keyword map is not first-run/);
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
+    }
+  });
+});
+
+test('bare work after an unnamed latest record does not spend an older pending run', async () => {
+  await isolated(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    startRunSelected(store, {
+      runId: 'run-older',
+      outcome: 'investigate the launch',
+      at: '2026-08-26T11:00:00.000Z',
+      domains: ['evidence-provenance'],
+    });
+    startRun(store, {
+      runId: 'run-later-hollow',
+      outcome: 'is this ready',
+      at: '2026-08-26T12:00:00.000Z',
+      catalog: [],
+    });
+    store.close();
+
+    const { out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.match(out, /run-later-hollow/);
+    assert.match(out, /no named work/);
+    assert.doesNotMatch(out, /In-session dispatch/);
+    assert.doesNotMatch(out, /run-older/);
+    assert.doesNotMatch(out, /Record an outcome first/i);
+  });
+});
+
+test('status after an unnamed latest record does not report an older run as latest', async () => {
+  await isolated(async () => {
+    const store = openStore(storePath(resolvePaths()));
+    startRunSelected(store, {
+      runId: 'run-older-status',
+      outcome: 'investigate the launch',
+      at: '2026-08-26T11:00:00.000Z',
+      domains: ['evidence-provenance'],
+    });
+    startRun(store, {
+      runId: 'run-later-status',
+      outcome: 'is this ready',
+      at: '2026-08-26T12:00:00.000Z',
+      catalog: [],
+    });
+    store.close();
+
+    const previous = process.env.CURSOR_AGENT;
+    process.env.CURSOR_AGENT = '1';
+    try {
+      const { out } = await capture(() => status([]));
+      assert.match(out, /latest run: run-later-status/);
+      assert.match(out, /no named work/);
+      assert.doesNotMatch(out, /run-older-status/);
+    } finally {
+      if (previous === undefined) delete process.env.CURSOR_AGENT;
+      else process.env.CURSOR_AGENT = previous;
+    }
   });
 });

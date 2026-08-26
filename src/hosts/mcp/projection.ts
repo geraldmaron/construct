@@ -120,23 +120,26 @@ export const PROJECTION_TOOLS = [
     name: 'record_outcome',
     description:
       'Record an outcome — what the user wants to happen, in their words. ' +
-      'You have already read those words, so you may act as the namer: read ' +
-      'the catalog first, then pass `namings`, the catalog domains this ' +
-      'outcome implicates, each with the reason in `why`. Passing an empty ' +
-      'namings array is a real answer ("this implicates nothing"). Omitting ' +
-      'namings entirely leaves the inference to the deterministic keyword ' +
-      'map. Your namings are proposals: anything outside the catalog or ' +
-      'without a reason is discarded by the kernel, and the reply says what ' +
-      'was admitted — except when this exact outcome text was already ' +
-      'consulted once before, by any host in any prior session: that first ' +
-      'answer is served from a cache instead, your namings are not evaluated ' +
-      'against the catalog at all, `inferredBy` reads "cache", and any of ' +
-      'your proposed domains missing from the cached answer land in ' +
-      '`notAdmitted` with `notAdmittedBecause` saying why. Optionally state ' +
-      'your own `confidence` (0 to 1) on a naming when you are unsure it ' +
-      "truly applies — below 0.5 it is kept as a named coverage gap rather " +
-      'than routed, so a weak read does not silently become a match. Leave ' +
-      'it out when you are simply sure.',
+      'You have already read those words, so you are the namer: read the ' +
+      'catalog first, then pass `namings`, the catalog domains this outcome ' +
+      'implicates, each with the reason in `why`. Passing an empty namings ' +
+      'array is a real answer ("this implicates nothing"). On construct ' +
+      'serve (the product path) namings are required — omitting them is an ' +
+      'error, not a fall-through to the keyword map. A projection without a ' +
+      'host-pull secret still accepts an omitted namings field as the ' +
+      'deterministic keyword path. Your namings are proposals: anything ' +
+      'outside the catalog or without a reason is discarded by the kernel, ' +
+      'and the reply says what was admitted — except when this exact ' +
+      'outcome text was already consulted once before, by any host in any ' +
+      'prior session: that first answer is served from a cache instead, ' +
+      'your namings are not evaluated against the catalog at all, ' +
+      '`inferredBy` reads "cache", and any of your proposed domains missing ' +
+      'from the cached answer land in `notAdmitted` with ' +
+      '`notAdmittedBecause` saying why. Optionally state your own ' +
+      '`confidence` (0 to 1) on a naming when you are unsure it truly ' +
+      'applies — below 0.5 it is kept as a named coverage gap rather than ' +
+      'routed, so a weak read does not silently become a match. Leave it ' +
+      'out when you are simply sure.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -455,8 +458,19 @@ async function recordOutcome(
   const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
 
   if (input.namings === undefined) {
-    // No proposals: the deterministic keyword path, exactly as the CLI's
-    // host-less form. Free, no model consulted, and it says so via inferredBy.
+    // Product serve always carries a secret. That means this session already
+    // read the words and is the namer. Falling through to the keyword map
+    // is how ordinary language implicates nothing. Empty namings [] remains
+    // a real "this implicates nothing" answer.
+    if (core.secret !== undefined) {
+      throw new RangeError(
+        'record_outcome requires namings — this session is the namer. ' +
+          'Read the catalog, then pass namings: [{domain, why}, …]. ' +
+          'An empty array means this implicates nothing. ' +
+          'The keyword map is not first-run inside a host.',
+      );
+    }
+    // No secret: a presence-only projection, same as the CLI's host-less form.
     return startedReply(startRun(core.store, { runId, outcome: text, at }));
   }
 
