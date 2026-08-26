@@ -15,6 +15,9 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main } from '../../src/cli/index.ts';
+import { sterileAmbientEnv } from '../harness/sterile.ts';
+
+sterileAmbientEnv();
 
 interface Capture {
   readonly code: number;

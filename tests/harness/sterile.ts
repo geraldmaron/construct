@@ -45,14 +45,25 @@ export function sterile(): SterileFixture {
  *
  * Call it once at module scope. The test runner gives each file its own
  * process, so the swap cannot reach a test in another file.
+ *
+ * Also clears ambient-host markers. Whoever runs the suite is itself very
+ * likely a detected host, and `outcome` / `work` now treat that session as
+ * the worker. A file that only moved HOME would still inherit the runner's
+ * `CURSOR_AGENT` and take the in-session path instead of the keyword map.
  */
 export function sterileHome(): string {
   const previous = process.env.HOME;
+  const previousAmbient = new Map(AMBIENT_ENV_KEYS.map((key) => [key, process.env[key]]));
   const home = mkdtempSync(join(tmpdir(), 'construct-home-'));
   process.env.HOME = home;
+  for (const key of AMBIENT_ENV_KEYS) delete process.env[key];
   after(() => {
     if (previous === undefined) delete process.env.HOME;
     else process.env.HOME = previous;
+    for (const [key, value] of previousAmbient) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
     rmSync(home, { recursive: true, force: true });
   });
   return home;

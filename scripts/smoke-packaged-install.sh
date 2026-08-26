@@ -55,6 +55,10 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
+# Whoever runs this script is itself very likely a detected host. In-session
+# outcome does not staff from the keyword map; this smoke is the terminal-first
+# packaged path and must not inherit the runner's session markers.
+unset CLAUDECODE CLAUDE_CODE_ENTRYPOINT CURSOR_AGENT CURSOR_CLI BOB_SHELL_CLI_IDE_SERVER_PORT
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
 store="$XDG_DATA_HOME/construct/construct.db"
 

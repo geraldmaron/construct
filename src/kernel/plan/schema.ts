@@ -97,7 +97,7 @@ export interface PlanStep {
  * dispatcher is the frozen lexical fallback and is labeled as exactly that
  * wherever it decided.
  */
-export type RoutedBy = 'namer' | 'lexical-fallback' | 'user';
+export type RoutedBy = 'namer' | 'session' | 'lexical-fallback' | 'user';
 
 export interface PlanRouting {
   readonly step: string;

@@ -115,3 +115,16 @@ export function readWorkLog(store: Store, run?: string): WorkLogEntry[] {
   ) as unknown as Row[];
   return rows.map(toEntry);
 }
+
+/**
+ * The run behind the most recently appended outcome-received entry. Session
+ * is the truth: a later hollow record must not lose to an older pending run,
+ * and a later record with no tasks must not hide behind the last enqueued task.
+ */
+export function latestOutcomeReceivedRun(store: Store): string | undefined {
+  const entries = readWorkLog(store);
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i]?.action === 'outcome-received') return entries[i]?.run;
+  }
+  return undefined;
+}

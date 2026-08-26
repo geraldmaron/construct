@@ -24,9 +24,35 @@
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+// Fail before the CLI graph loads `node:sqlite`. On Node 20 the import
+// throws an unknown-builtin error that names the module, not the floor.
+// Major 22 and newer have the builtin (experimental on 22.x); the 22.18
+// floor remains doctor's to report. This check is only the crash.
+const major = Number(process.versions.node.split('.')[0]);
+if (!Number.isFinite(major) || major < 22) {
+  process.stderr.write(
+    `construct: Node v${process.versions.node} cannot run this tool.\n` +
+      '  node:sqlite needs Node 22 or newer (the install floor is 22.18).\n',
+  );
+  process.exit(1);
+}
+
 const dist = new URL('../dist/cli/index.js', import.meta.url);
 const src = new URL('../src/cli/index.ts', import.meta.url);
 const target = existsSync(fileURLToPath(src)) ? src : dist;
 
-const { main } = await import(target.href);
+let main;
+try {
+  ({ main } = await import(target.href));
+} catch (error) {
+  const text = error instanceof Error ? `${error.message}\n${error.stack ?? ''}` : String(error);
+  if (/node:sqlite|ERR_UNKNOWN_BUILTIN_MODULE/.test(text)) {
+    process.stderr.write(
+      `construct: Node v${process.versions.node} cannot load node:sqlite.\n` +
+        '  Need Node 22.18 or newer. `construct doctor` cannot run until that is met.\n',
+    );
+    process.exit(1);
+  }
+  throw error;
+}
 process.exitCode = await main();

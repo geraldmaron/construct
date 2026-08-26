@@ -30,12 +30,18 @@ function byHost(exec: ProbeExec, model?: string): Record<string, ReturnType<type
   return Object.fromEntries(resourcesFrom(surveyHosts(exec), model).map((r) => [r.host, r]));
 }
 
-test('the census covers exactly the hosts the CLI will dispatch to', () => {
+test('the census covers exactly the hosts the CLI will dispatch to, plus presence-only Bob', () => {
   assert.deepEqual([...CENSUS_HOSTS].sort(), [...HOST_NAMES].sort());
+  const surveyed = resourcesFrom(surveyHosts(world({}))).map((r) => r.host).sort();
+  assert.ok(surveyed.includes('bob'), 'bob is surveyed as presence-only');
+  assert.equal(
+    resourcesFrom(surveyHosts(world({}))).find((r) => r.host === 'bob')?.dispatchable,
+    false,
+  );
   assert.deepEqual(
-    resourcesFrom(surveyHosts(world({}))).map((r) => r.host).sort(),
+    surveyed.filter((host) => host !== 'bob'),
     [...HOST_NAMES].sort(),
-    'a host the survey knows and the census does not would be invisible to selection',
+    'every spawnable host the survey knows is visible to selection',
   );
 });
 

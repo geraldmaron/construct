@@ -12,6 +12,11 @@ import type { CursorDeliverable, CursorSpawnFn, SpawnedProcess } from '../../../
 import { PINNED_VERSION } from '../../../src/hosts/cursor/pin.ts';
 import { reduceEnvelope } from '../../../src/hosts/cursor/result.ts';
 import { constructIdentity } from '../../../src/kernel/voice/voice.ts';
+import { sterileAmbientEnv } from '../../harness/sterile.ts';
+
+// This runner is itself a Cursor session. Without a clear slate, init()
+// would take the in-session path and never spawn the fake.
+sterileAmbientEnv();
 
 // Captured 2026-08-11 from cursor-agent 2026.08.11-e8db854, `-p --output-format json`.
 const SUCCESS_ENVELOPE =

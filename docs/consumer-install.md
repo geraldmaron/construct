@@ -101,29 +101,30 @@ wiring, not something either app's policy commits:
 
 `construct serve` is the projection: presence inside whatever MCP host
 reads this file. Per `docs/first-run.md`, it can read the catalog, record
-an outcome, read the work log and where a run's tasks stand, show the
-inbox and the questions roles have put to you, relay a decision or an
-answer, record a verdict, drop a note, and read the workspace's subjects.
-It can't dispatch work (spending your money stays behind a command you
-type yourself), can't run `review` or `compose` for the same reason, can't
-advance a deliverable toward finished, and can't erase anything. If
+an outcome, dispatch work through `claim_task` / `submit_work` once a
+capability secret exists (product `serve` creates one), read the work log
+and where a run's tasks stand, show the inbox and the questions roles have
+put to you, relay a decision or an answer, record a verdict, drop a note,
+and read the workspace's subjects. Construct does not spawn a second
+agent to do that work. What stays off the socket is `promote`, `review`,
+`compose`, a CLI `ask`, and erasure — human-gated or destructive. If
 `.cursor/mcp.json` doesn't exist yet in the target repo, create it with
 just this. If it exists with other servers already in it, add
 `construct-mcp` as one more key under `mcpServers`.
 
-For a host that isn't Cursor, `docs/first-run.md`'s "other way in" section
-covers the same entry for Claude Code, Codex, and any host that reads a
-plain MCP config file — the `command`/`args` pair is identical; only where
-the host expects to find the file changes.
+For a host that isn't Cursor, `docs/cli-walkthrough.md`'s "other way in"
+section covers the same entry for Claude Code, Codex, and any host that
+reads a plain MCP config file — the `command`/`args` pair is identical;
+only where the host expects to find the file changes.
 
 ## Step 3: There is no init step
 
 `construct outcome` (or any other first command) creates whatever state it
 needs the moment it runs — a workspace named `default` if you don't name
 one, the store itself if it doesn't exist yet. There is nothing to
-provision first. `docs/first-run.md` covers that first real command; this
-recipe stops at doctor because doctor is what proves the wiring, not the
-workspace.
+provision first. `docs/first-run.md` is talk, then staff; the terminal
+commands live in `docs/cli-walkthrough.md`. This recipe stops at doctor
+because doctor is what proves the wiring, not the workspace.
 
 ## Step 4: Verify with doctor
 

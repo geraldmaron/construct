@@ -154,7 +154,7 @@ test('the choice, the cost, and everything passed over are on the work log', asy
   assert.equal(detail.floor, 'frontier');
   assert.match(detail.degradation as string, /nothing present clears the "frontier" floor/);
   const rejected = detail.rejected as { host: string; why: string }[];
-  assert.deepEqual(rejected.map((r) => r.host).sort(), ['claude', 'cursor', 'opencode']);
+  assert.deepEqual(rejected.map((r) => r.host).sort(), ['bob', 'claude', 'cursor', 'opencode']);
   for (const entry of rejected) assert.ok(entry.why.length > 0);
 });
 

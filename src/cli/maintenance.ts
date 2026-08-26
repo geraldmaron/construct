@@ -38,7 +38,7 @@ import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { censusLines, surveyResources } from '../hosts/census.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { HOST_NAMES, now, packageVersion } from './runtime.ts';
+import { now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
 import { scheduleReport } from './schedule.ts';
 import { readSkillFolders } from './skills.ts';
@@ -153,10 +153,8 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
     ok: true,
     detail:
       ambient === null
-        ? 'not running inside a detected host session; dispatch falls back to opencode when nothing else says otherwise'
-        : (HOST_NAMES as readonly string[]).includes(ambient.host)
-          ? `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: available`
-          : `running inside ${ambient.host} (detected via ${ambient.marker}); in-session execution: projection-only (no wired dispatch adapter)`,
+        ? 'not running inside a detected host session; dispatch spawns a host CLI when one is spawnable'
+        : `running inside ${ambient.host} (detected via ${ambient.marker}); in-session dispatch: this session via construct serve (will not spawn ${ambient.host})`,
   });
 
   // Whether a platform entry is installed to fire what has come due, read
@@ -268,7 +266,15 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
   // "it works" to a first outcome. Only printed on the healthy path: a failed
   // check is the next action, and naming both would bury the one that matters.
   if (failed === 0) {
-    process.stdout.write('Ready. Record your first outcome:  construct outcome "<what you want>"\n');
+    if (ambient !== null) {
+      process.stdout.write(
+        `Ready. You are in ${ambient.host}. Talk here. Ordinary language is enough. ` +
+          'This session names via MCP record_outcome with namings, then claim_task / submit_work. ' +
+          'Construct will not spawn a second CLI.\n',
+      );
+    } else {
+      process.stdout.write('Ready. Record your first outcome:  construct outcome "<what you want>"\n');
+    }
   }
   return failed === 0 ? 0 : 1;
 }

@@ -44,7 +44,7 @@ the ones below it:
   src/kernel     coverage, obligation, provenance; append-only log
   ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─
   src/hosts      adapters: OpenCode, Claude Code, Codex, Cursor (pinned)
-  construct serve   the same store over MCP: presence, not execution
+  construct serve   the same store over MCP: presence plus host-pull dispatch
 ```
 
 (Sketch deliberately rough: this is a draft's diagram, per the house

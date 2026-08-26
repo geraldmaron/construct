@@ -181,7 +181,7 @@ test('the no-host refusal names nothing extra when no ambient host is detected',
   assert.match(capture.err, /Name one yourself to dispatch anyway/);
 });
 
-test('outcome names the detected ambient host in its work-them-next hint', async () => {
+test('in-session outcome does not staff from the keyword map or name a run to work next', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-outcome-'));
   const previous = process.env.XDG_DATA_HOME;
   process.env.XDG_DATA_HOME = join(root, 'share');
@@ -191,7 +191,14 @@ test('outcome names the detected ambient host in its work-them-next hint', async
   try {
     const code = await outcome([OUTCOME], undefined, CLAUDE_ENV);
     assert.equal(code, 0);
-    assert.match(out.join(''), /Run them: {2}construct work --run run-\S+ --host=claude/);
+    const text = out.join('');
+    assert.match(text, /This session infers the intent/);
+    assert.match(text, /keyword map is not consulted/);
+    assert.match(text, /this session dispatches/);
+    assert.match(text, /inbox/);
+    assert.doesNotMatch(text, /implicated domains/);
+    assert.doesNotMatch(text, /Run them: {2}construct work --run/);
+    assert.doesNotMatch(text, /record_outcome/);
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     if (previous === undefined) delete process.env.XDG_DATA_HOME;
@@ -233,7 +240,7 @@ async function captureStdout<T>(fn: () => T | Promise<T>): Promise<{ result: T; 
   }
 }
 
-test('doctor names an available in-session execution when the ambient host is wired', async () => {
+test('doctor names in-session dispatch through serve when the ambient host is present', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-doctor-'));
   const previousData = process.env.XDG_DATA_HOME;
   const previousState = process.env.XDG_STATE_HOME;
@@ -241,7 +248,7 @@ test('doctor names an available in-session execution when the ambient host is wi
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
     const { out } = await captureStdout(() => doctor(root, CLAUDE_ENV));
-    assert.match(out, /ok {3}ambient {2}running inside claude \(detected via CLAUDECODE\); in-session execution: available/);
+    assert.match(out, /ok {3}ambient {2}running inside claude \(detected via CLAUDECODE\); in-session dispatch: this session via construct serve \(will not spawn claude\)/);
   } finally {
     if (previousData === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previousData;
@@ -251,7 +258,7 @@ test('doctor names an available in-session execution when the ambient host is wi
   }
 });
 
-test('doctor names projection-only in-session execution when the ambient host has no adapter', async () => {
+test('doctor names in-session dispatch through serve for Bob, which has no spawn adapter', async () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-ambient-doctor-bob-'));
   const previousData = process.env.XDG_DATA_HOME;
   const previousState = process.env.XDG_STATE_HOME;
@@ -261,7 +268,7 @@ test('doctor names projection-only in-session execution when the ambient host ha
     const { out } = await captureStdout(() => doctor(root, BOB_ENV));
     assert.match(
       out,
-      /ok {3}ambient {2}running inside bob \(detected via BOB_SHELL_CLI_IDE_SERVER_PORT\); in-session execution: projection-only/,
+      /ok {3}ambient {2}running inside bob \(detected via BOB_SHELL_CLI_IDE_SERVER_PORT\); in-session dispatch: this session via construct serve/,
     );
   } finally {
     if (previousData === undefined) delete process.env.XDG_DATA_HOME;

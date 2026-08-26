@@ -1,13 +1,9 @@
 /**
- * tests/cli/work-dispatch-scope.test.ts — a bare `construct work` must never
- * be the thing that dispatches every queued task.
+ * tests/cli/work-dispatch-scope.test.ts — a bare `construct work` finds the
+ * outcome just recorded, and never spends across every older run.
  *
- * Observed: with no --run typed, `work` fans out to every pending task in the
- * store. Typing `construct work` with nothing else — the way a reader tries a
- * command to see what it does — is a real spend triggered by curiosity. Every
- * other verb in the spine prints usage on a bare invocation instead of acting;
- * `work` is the one verb where "act instead of showing usage" costs money, so
- * it is exactly the one that must not do that by default.
+ * First-run is `outcome` then `work` with no id to copy. That must work the
+ * latest pending run. `--all` remains the only door into a fleet dispatch.
  *
  * Also covers the settled-task print agreeing with itself: a failed task's row
  * carries a failure glyph and a failure word together, never a checkmark.
@@ -21,12 +17,16 @@ import { join } from 'node:path';
 import { main, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
-import { sterileHome } from '../harness/sterile.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 // A dispatch reads the machine's agent skills directory to find out what
 // method it can offer a role, so home is moved for this file: what the suite
 // observes must not depend on what is installed for whoever runs it.
 sterileHome();
+// The runner is often already inside a host. Without this, `main(['outcome',
+// …])` would hand off and create no run, then a bare `work` would find
+// nothing. These cases are the terminal first-run: outcome then work.
+sterileAmbientEnv();
 
 interface Capture {
   readonly code: number;
@@ -88,18 +88,55 @@ async function run(
 
 const OUTCOME = 'launch a paid beta to EU users next month';
 
-test('a bare construct work with real work queued prints usage and dispatches nothing', async () => {
+test('a bare construct work finds the outcome it just recorded', async () => {
   const { host, counter } = countingHost();
-  let worked = -1;
   const { out, err } = await run([
     ['outcome', OUTCOME],
-    async () => ((worked = await work([], host)), worked),
+    () => work([], host),
   ]);
-  assert.equal(worked, 2, 'a fleet dispatch with no opt-in is a usage error, not an action');
-  assert.equal(counter.calls, 0, 'nothing was dispatched, so nothing was spent');
-  assert.doesNotMatch(out, /worked \d+ task/, 'no dispatch summary — nothing ran');
-  assert.match(err, /usage: construct work/);
-  assert.match(err, /--all/, 'the opt-in this refusal requires is named');
+  assert.ok(counter.calls > 0, 'first-run work does not require copying a run id');
+  assert.match(out, /worked \d+ task/);
+  assert.doesNotMatch(err, /usage: construct work/);
+});
+
+test('a bare construct work with two pending runs spends only the latest', async () => {
+  const { host, counter } = countingHost();
+  const { code } = await run([
+    ['outcome', OUTCOME],
+    ['outcome', 'hire a contractor in Poland'],
+    async () => {
+      const store = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      let latest: string;
+      let olderPending = 0;
+      try {
+        const runs = store.db.prepare('SELECT DISTINCT run FROM tasks ORDER BY run').all() as { run: string }[];
+        latest = runs[runs.length - 1]!.run;
+        olderPending = (
+          store.db
+            .prepare("SELECT COUNT(*) AS n FROM tasks WHERE run != ? AND state = 'pending'")
+            .get(latest) as { n: number }
+        ).n;
+      } finally {
+        store.close();
+      }
+      assert.ok(olderPending > 0, 'the first outcome still has pending work');
+      const worked = await work([], host);
+      const leftover = openStore(join(process.env.XDG_DATA_HOME as string, 'construct', 'construct.db'));
+      try {
+        const still = (
+          leftover.db
+            .prepare("SELECT COUNT(*) AS n FROM tasks WHERE run != ? AND state = 'pending'")
+            .get(latest) as { n: number }
+        ).n;
+        assert.equal(still, olderPending, 'older pending tasks were not spent by a bare work');
+      } finally {
+        leftover.close();
+      }
+      return worked;
+    },
+  ]);
+  assert.ok(counter.calls > 0);
+  assert.equal(code, 0);
 });
 
 test('--run alone is enough — no --all needed to work a named run', async () => {

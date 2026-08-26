@@ -11,8 +11,11 @@ documentation rather than a record.
 
 ## Start here
 
-- [`first-run.md`](first-run.md) — nothing to one finished outcome, in about ten
-  minutes. Every command in it was run as written.
+- [`first-run.md`](first-run.md) — talk in the host you already have; staff
+  shows up. The only Construct-shaped surface is an inbox card when the
+  call is yours.
+- [`cli-walkthrough.md`](cli-walkthrough.md) — the terminal command
+  walkthrough. Not first-run.
 - [`consumer-install.md`](consumer-install.md) — putting Construct inside a
   different repo, an app you are building rather than Construct itself.
 
