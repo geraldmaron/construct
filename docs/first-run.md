@@ -1,17 +1,19 @@
 # Your first run
 
 This walks you from nothing to one finished outcome, and it should take about
-ten minutes. Every command below was run as written against this CLI, except
-the ones that dispatch to a host and spend money; those are checked against the
-CLI's own usage line rather than dispatched. If one of them behaves differently
-for you, that difference is the most useful thing you can report back.
+ten minutes. Every command below is a real verb on this CLI. Commands that
+dispatch to a spawned host and spend money are checked against the CLI's own
+usage line rather than dispatched. If one of them behaves differently for you,
+that difference is the most useful thing you can report back.
 
 Construct is an alpha. It works, and it is not finished. Two things are worth
-knowing before you start. Recording an outcome is free and happens on your
-machine, but actually running the work sends it to an agent host (OpenCode,
-Claude Code, Codex, or Cursor), and that costs whatever your host charges.
-Construct never ships its own agent runtime, so a host has to be present for
-the second half of this walkthrough.
+knowing before you start. If you are already inside Cursor, Claude Code,
+Codex, OpenCode, or IBM Bob, first-run is: talk in that host, plant the
+method skills, let MCP dispatch, and keep the inbox and the verdict as
+Construct's. The keyword map is the zero-model fallback for a plain terminal
+with no host wrapping the command — it is not first-run. Construct never
+ships its own agent runtime, and it will not spawn a second CLI from inside
+the session you are already in.
 
 ## Install
 
@@ -28,16 +30,36 @@ construct doctor
 
 You should see a column of `ok` lines and `doctor: healthy`. It checks Node,
 where state lives, whether the database is writable, whether the store has ever
-been copied, which agent hosts are present on this machine (and how each
-compares to the pinned version), leftover 2.x litter in the project tree, and
-the installed skills pack. Only the Node and store checks gate the exit code;
-the rest inform. The full check table, line by line, is in
-[consumer-install.md](consumer-install.md).
+been copied, which agent hosts are present on this machine (found, version
+against the pin, whether `work` can spawn each one, and auth), leftover 2.x
+litter in the project tree, and the installed skills pack. If you are already
+inside a host, an `ambient` line says so and names in-session dispatch through
+`construct serve` — that session will not spawn a second CLI. Only the Node
+and store checks gate the exit code; the rest inform. The full check table,
+line by line, is in [consumer-install.md](consumer-install.md).
+
+If doctor named a session, plant the method skills and wire MCP next:
+
+```bash
+construct init --yes
+```
+
+That copies investigative-research, decision-framing, intake, and the rest
+into the host's skills directory — not job-title personas — and writes the
+`construct serve` entry so this session can claim_task / submit_work.
 
 ## Record an outcome
 
 Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
+
+If you are already in a host, talk there — or record the sentence and name
+the concerns yourself (`--domains=…`) or via MCP `record_outcome` with
+namings. An in-session `construct outcome` without those does **not** staff
+from the keyword map; it records the text and tells this session it is the
+namer.
+
+From a plain terminal with no host wrapping the command:
 
 ```bash
 construct outcome "We want to hire a contractor in Poland"
@@ -98,27 +120,28 @@ as something the system inferred.
 ## Run the work
 
 ```bash
-construct work --run=<your-run-id> --host=<detected host>
+construct work
 ```
 
-The `--host=<detected host>` in the `Run them:` line above is not decoration:
-when you run a command inside an agent host, Construct reads the marker that
-host sets on its own subprocesses and fills in the host you are already in, so
-the follow-up command targets this session rather than sending you to another
-tool. Run from a plain terminal that no host wraps, and that suffix is simply
-absent — you name a host yourself (`--host=<opencode|claude|codex|cursor>`,
-whichever `construct doctor` shows you have). Construct never depends on any one
-of them.
+Inside a host session, that does not spawn `cursor-agent`, `claude`, or any
+other CLI. It prepares the queued tasks and tells this session to claim each
+one through `construct serve` (`claim_task`), execute it here, and
+`submit_work`. Construct keeps the log, the inbox, and verdicts. A typed
+`--binary` is the one request to spawn that executable anyway.
 
-This is the step that costs money. Each implicated role gets its own
-assignment, works the outcome from its own concern, and reports back. The
-dispatch runs under a spend ceiling (10 by default, in your host's cost units,
-raised with `--ceiling=`), and hitting it stops dispatch rather than surprising
-you. A host that reports no cost cannot be bound by it, and the run says so
-rather than reporting that work as free.
+From a plain terminal, `work` finds the most recently recorded run that still
+has pending tasks (or takes `--run=<id>` / `--all`) and dispatches through a
+spawnable host CLI. Name one yourself when doctor shows none in-session
+(`--host=<opencode|claude|codex|cursor>`).
 
-If your host is not installed or not authenticated, this is where you find out,
-and the error says which it was.
+A spawned dispatch is the step that costs money: each implicated role gets its
+own assignment, works the outcome from its own concern, and reports back. The
+spend ceiling (10 by default, in your host's cost units, raised with
+`--ceiling=`) binds on that path. In-session host-pull spends the host's own
+already-present capacity; Construct does not start a second paid run.
+
+If a spawned host is not installed or not authenticated, this is where you
+find out, and the error says which it was.
 
 ## Read the deliverable
 

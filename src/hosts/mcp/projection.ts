@@ -15,10 +15,11 @@
  *
  * What is deliberately ABSENT, and why:
  *
- *   - No dispatch. `construct work` spends money on a host adapter, behind the
- *     CLI's explicit opt-in and spend ceiling. The projection is presence,
- *     never execution — a host model must not be able to start a paid run as a
- *     side effect of being helpful. `run_status` is the read of that surface.
+ *   - No Construct-side spawn. A host model must not start a paid adapter run
+ *     as a side effect of being helpful — that is a second runtime. In-session
+ *     dispatch is host-pull (`claim_task` / `submit_work`): the host already
+ *     running executes the work on its own capacity and submits a draft.
+ *     `run_status` remains the read of that surface.
  *   - No completion advancement. draft -> challenged -> final is kernel-owned
  *     (a dispatcher-owned transition over recorded verdicts), and no tool on
  *     this server touches it. Role writes (submit_draft, append_work_log) stay
@@ -82,12 +83,19 @@ import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import type { JsonRpcRequest, JsonRpcResponse, MessageHandler } from './jsonrpc.ts';
+import { createHostPullHandler, HOST_PULL_TOOLS } from './hostpull.ts';
 
 export interface ProjectionCore {
   readonly store: Store;
   /** Injected; the kernel never reads the clock, and neither does this file. */
   readonly clock: () => string;
   readonly serverVersion: string;
+  /**
+   * When present, this server also offers host-pull dispatch (claim_task /
+   * submit_work). Absent, the surface stays the presence-only tool set — the
+   * unit tests that prove record/read/relay do not need a secret.
+   */
+  readonly secret?: string;
 }
 
 /**
@@ -698,6 +706,15 @@ export function createProjectionHandler(
   core: ProjectionCore,
 ): (message: JsonRpcRequest) => Promise<JsonRpcResponse | null> {
   let client = 'unknown-client';
+  const pull =
+    core.secret !== undefined
+      ? createHostPullHandler({
+          store: core.store,
+          secret: core.secret,
+          clock: core.clock,
+          serverVersion: core.serverVersion,
+        })
+      : null;
 
   return async (message: JsonRpcRequest): Promise<JsonRpcResponse | null> => {
     const method = typeof message.method === 'string' ? message.method : '';
@@ -722,9 +739,16 @@ export function createProjectionHandler(
       case 'ping':
         return response(message.id, {});
       case 'tools/list':
-        return response(message.id, { tools: PROJECTION_TOOLS });
-      case 'tools/call':
+        return response(message.id, {
+          tools: pull ? [...PROJECTION_TOOLS, ...HOST_PULL_TOOLS] : PROJECTION_TOOLS,
+        });
+      case 'tools/call': {
+        const name = (message.params as { name?: unknown } | null)?.name;
+        if (pull && (name === 'claim_task' || name === 'submit_work')) {
+          return pull(message);
+        }
         return callTool(core, client, message.id, message.params);
+      }
       default:
         if (isNotification) return null; // notifications/initialized and friends
         return failure(message.id, -32601, `method not found: ${method}`);

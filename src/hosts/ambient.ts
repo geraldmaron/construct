@@ -3,11 +3,12 @@
  * inside, read from the environment markers hosts set on their own
  * subprocesses.
  *
- * This is presence, not dispatch capability. An ambient host can be detected
- * and still have no wired adapter to spawn work through (Bob today), which is
- * why detection stays a separate fact from "can Construct actually dispatch
- * there" — the caller (`cli/work.ts`, `cli/outcome.ts`, the doctor surface)
- * decides what to do with the two facts together, against `HOST_NAMES`.
+ * This is presence, not spawn capability. An ambient host can be detected
+ * and still have no wired adapter to spawn (Bob today). In-session dispatch
+ * does not need a spawn adapter: `work` hands the session the tasks through
+ * `construct serve`. Detection stays a separate fact from spawnability —
+ * the caller (`cli/work.ts`, `cli/outcome.ts`, the doctor surface) decides
+ * what to do with the two facts together.
  *
  * Detection lives here, in the hosts layer, deliberately: the kernel reads no
  * env beyond `kernel/paths.ts`, and an ambient host is exactly the kind of

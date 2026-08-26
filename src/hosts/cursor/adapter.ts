@@ -69,6 +69,12 @@ export interface CursorConfig {
   readonly dir?: string;
   readonly timeoutMs?: number;
   readonly spawn?: CursorSpawnFn;
+  /**
+   * Environment used to decide in-session dispatch. Injected so a test can
+   * prove the spawn path without inheriting the runner's CURSOR_AGENT, and so
+   * `work` can pass the env it already detected from.
+   */
+  readonly env?: NodeJS.ProcessEnv;
 }
 
 export interface CursorRequest {
@@ -138,10 +144,18 @@ function framedTask(request: CursorRequest): string {
   return frameHostTask(request);
 }
 
+function cursorSessionMarker(env: NodeJS.ProcessEnv): string | null {
+  if (env.CURSOR_AGENT !== undefined) return 'CURSOR_AGENT';
+  if (env.CURSOR_CLI !== undefined) return 'CURSOR_CLI';
+  return null;
+}
+
 export function createCursorAdapter(config: CursorConfig = {}): CursorAdapter {
   const binary = config.binary ?? 'cursor-agent';
   const spawn = config.spawn ?? defaultSpawn;
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const env = config.env ?? process.env;
+  const sessionMarker = cursorSessionMarker(env);
   const inFlight = new Map<string, SpawnedProcess>();
   const cancelled = new Set<string>();
 
@@ -220,12 +234,29 @@ export function createCursorAdapter(config: CursorConfig = {}): CursorAdapter {
     },
 
     async init(): Promise<void> {
+      // Already inside Cursor: probing `cursor-agent --version` starts a
+      // second runtime that is not this session, and on machines where the
+      // CLI is not on PATH it fails the whole run. In-session dispatch does
+      // not spawn.
+      if (sessionMarker !== null && config.binary === undefined) {
+        observedVersion = `in-session (${sessionMarker})`;
+        ready = true;
+        return;
+      }
       observedVersion = await runVersionProbe();
       ready = true;
     },
 
     async invoke(request: unknown, context?: HostContext): Promise<HostResult> {
       if (!ready) throw new HostNotReadyError(HOST_NAME);
+      if (sessionMarker !== null && config.binary === undefined) {
+        throw new InvocationError(
+          `This process is already inside Cursor (${sessionMarker}). ` +
+            'Spawning cursor-agent would be a second runtime. ' +
+            'Dispatch through construct serve (claim_task / submit_work).',
+          { host: HOST_NAME, code: 'HOST_UNAVAILABLE' },
+        );
+      }
 
       const req = request as CursorRequest;
       if (!req || typeof req.role !== 'string' || !req.role || typeof req.task !== 'string' || !req.task) {

@@ -63,11 +63,25 @@ test('init with no ambient host says so plainly and still prints the spine', () 
   });
 });
 
-test('init --yes forwards to wire’s own confirmed path and writes the entry', () => {
+test('init --yes plants method skills and wires the MCP entry', () => {
   withRepo((cwd) => {
-    const { code, out } = capture(() => init(['--yes'], cwd, { CLAUDECODE: '1' }));
-    assert.equal(code, 0);
-    assert.match(out, /wired construct-mcp into \.mcp\.json for claude/);
-    assert.ok(existsSync(join(cwd, '.mcp.json')), 'explicit consent writes through wire');
+    const home = mkdtempSync(join(tmpdir(), 'construct-init-home-'));
+    try {
+      const { code, out } = capture(() => init(['--yes'], cwd, { CLAUDECODE: '1', HOME: home }));
+      assert.equal(code, 0);
+      assert.match(out, /wired construct-mcp into \.mcp\.json for claude/);
+      assert.ok(existsSync(join(cwd, '.mcp.json')), 'explicit consent writes through wire');
+      assert.ok(
+        existsSync(join(home, '.claude', 'skills', 'investigative-research', 'SKILL.md')),
+        'method skills plant into the host directory, not job-title personas',
+      );
+      assert.equal(
+        existsSync(join(home, '.claude', 'skills', 'construct-analyst', 'SKILL.md')),
+        false,
+        'init does not plant the generated lens pack',
+      );
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 });

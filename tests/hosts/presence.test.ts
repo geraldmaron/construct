@@ -25,17 +25,21 @@ test('a machine with every host reports versions, pins, and codex auth', () => {
   assert.equal(byHost.opencode?.found, true);
   assert.equal(byHost.opencode?.version, '1.15.4');
   assert.equal(byHost.opencode?.dispatchable, true);
+  assert.equal(byHost.opencode?.spawnable, true);
   assert.equal(byHost.claude?.dispatchable, true);
   assert.equal(byHost.codex?.found, true);
   assert.equal(byHost.codex?.dispatchable, true);
   assert.equal(byHost.codex?.auth, 'Logged in using ChatGPT');
+  assert.equal(byHost.bob?.spawnable, false);
+  assert.equal(byHost.bob?.dispatchable, false);
 });
 
 test('a bare machine reports every host as not found and stays a report', () => {
   const rows = surveyHosts(world({}));
-  assert.ok(rows.every((r) => !r.found && !r.dispatchable));
+  assert.ok(rows.every((r) => !r.found && !r.dispatchable && !r.spawnable));
   for (const line of presenceLines(rows)) {
     assert.match(line, /not found/);
+    assert.match(line, /spawnable: no/);
   }
 });
 

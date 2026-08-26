@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased
+
+In-session dispatch through the host that is already there. When the user is
+already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob, `construct
+work` hands that session the queued tasks and does not spawn a second CLI.
+Construct owns completion, the log, and the inbox. Doctor honesty is a
+consequence: a host that is present and in-session is used, not advertised as
+a spawn that will fail.
+
+- **`work` uses this session.** `CURSOR_AGENT` / `CLAUDECODE` / Bob's marker
+  mean in-session host-pull through `construct serve` (`claim_task` /
+  `submit_work`). A typed `--binary` is the one request to spawn that
+  executable. Typed `--host` that names the ambient session is still the
+  session, not a second process.
+- **The Cursor (and Claude) adapters refuse to spawn when already inside that
+  host.** Probing `cursor-agent --version` from a Cursor session was a second
+  runtime, and on machines without the CLI on PATH it failed the whole run.
+- **`construct serve` carries host-pull.** The product MCP surface lists
+  `claim_task` / `submit_work` once a capability secret exists. No promote.
+  The flagged `host-pull-serve` prototype remains behind its gate.
+- **In-session `outcome` does not staff from the keyword map.** First-run
+  inside a host records the text and tells this session it is the namer.
+  `--domains` and MCP `record_outcome` with namings remain the ways to name
+  concerns. The keyword map is the zero-model fallback when no session is
+  wrapping the command.
+- **Bare `work` finds the run it just recorded.** The most recently enqueued
+  run that still has pending tasks is the default; `--all` remains the fleet
+  door. A recorded run that queued no tasks says so, and does not say
+  "record an outcome first".
+- **`init --yes` plants method skills** (investigative-research,
+  decision-framing, intake, and the rest) into the ambient host's skills
+  directory, then wires MCP. Not the generated job-title lens pack.
+- **Doctor reports spawnable separately from in-session.** Bob is surveyed
+  and never spawnable. A missing `cursor-agent` is `spawnable: no` even
+  when this process is inside Cursor.
+- **Node major < 22 refuses before `node:sqlite`.** A readable sentence,
+  not a stack. 22.14 still runs; doctor still reports the 22.18 floor.
+
 ## 3.0.0-alpha.18 — 2026-08-25
 
 The experience shell, reshaped. Six isolated-environment walks of the install

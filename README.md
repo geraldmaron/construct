@@ -26,30 +26,38 @@ What that leaves is smaller, and it is the part that was always doing the work: 
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
-**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version:
+**[docs/first-run.md](docs/first-run.md) is the ten-minute walkthrough**, and every command in it has been run as written. The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
 construct doctor
+construct init --yes
+```
+
+Talk in the host. Method skills are planted; MCP `construct serve` can dispatch (`claim_task` / `submit_work`); the inbox and the verdict stay Construct's. `construct work` hands this session the queued tasks and will not spawn a second CLI.
+
+From a plain terminal with no host wrapping the command, the same install then records an outcome and the keyword map is the zero-model fallback:
+
+```bash
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work --run <id>` runs it, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
+`construct outcome` infers which domains the outcome implicates and queues the work, citing its evidence for each. `construct work` runs the most recently recorded run that still has pending work, `construct log --run <id>` reads back what was done in whose name, `construct inbox` holds the decisions that are genuinely yours, `construct lessons` lists and admits held run-derived lessons, and `construct verdict --run <id>` is where you say whether it was right to surface what it surfaced. Two flags are worth knowing: `--host=<opencode|claude|codex|cursor>` on `outcome` has that host's model read your words instead of the keyword map, and `--domains=<names>` skips inference when you already know which concerns apply.
 
-Those six are the spine, not the whole surface. The surface is 37 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
+Those six are the spine, not the whole surface. The surface is 41 verbs, counting `help` itself. `construct help` prints the list, and every verb run with no arguments prints its own usage, which is the one description of a flag that cannot go stale. Grouped:
 
 | What you are doing | Verbs |
 |---|---|
-| Starting work | `outcome` `ask` `standing` `watch` |
+| Starting work | `outcome` `ask` `standing` `watch` `schedule` |
 | Running it | `work` `notes` |
-| Reading back | `show` `log` `plan` `inbox` `corpus` |
+| Reading back | `status` `show` `log` `plan` `inbox` `corpus` |
 | Outward changes and decisions | `propose` `audit` `decide` `waive` `revoke` |
 | Ground | `source` `review` |
 | Learning and governance | `lessons` `verdict` `staff` |
 | Workspace settings | `mode` `consent` `record` `settings` `trust` |
 | Composition and reconciliation | `compose` `reconcile` |
-| Presence | `serve` `wire` |
-| Maintenance | `doctor` `backup` `cleanup` `skills` `completions` `version` |
+| Presence and hosts | `serve` `wire` `init` |
+| Maintenance | `doctor` `backup` `cleanup` `daemon` `skills` `completions` `version` `help` |
 
 Two more, `role-serve` and `host-pull-serve`, never appear in the usage line and you never type them: the dispatcher launches `role-serve` as one role's write surface, with the role's token in the environment rather than in arguments, and `host-pull-serve` is an off-by-default execution prototype.
 
@@ -74,7 +82,7 @@ first-party *execution* host; MCP presence reaches Claude Code, Codex, Cursor,
 and peers. Do not stand up a Construct-only chat UI — commitment 1. Xirp is a
 future projection target, not a substitute (`RESEARCH-DECISIONS.md` §16).
 
-That surface is presence, not execution. It can record outcomes, read the log and the inbox, and relay your decisions and verdicts, and it deliberately cannot dispatch work or advance a deliverable toward finished.
+`construct serve` is how an in-session host does the work. `claim_task` and `submit_work` let the host that is already running execute a queued task on its own capacity and submit a draft. Construct still owns the log, the inbox, and completion: a draft lands, a verdict promotes, and no tool on that surface marks work final. Spawning a second CLI from inside the session you are already in is a second runtime, and `work` will not do it.
 
 If you have a predecessor install and want it removed, `construct cleanup` does it (`--dry-run`, `--yes`, `--scope`, `--keep-state`) and refuses to remove the Construct that is running. `npm install @geraldmaron/construct@alpha` reaches it; a plain install stays on 2.x until the gate passes.
 
