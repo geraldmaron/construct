@@ -21,12 +21,17 @@ import { join } from 'node:path';
 import { main, work } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
-import { sterileHome } from '../harness/sterile.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 // A dispatch reads the machine's agent skills directory to find out what
 // method it can offer a role, so home is moved for this file: what the suite
 // observes must not depend on what is installed for whoever runs it.
 sterileHome();
+// These cases record an outcome through `main`, which reads process.env.
+// Whoever runs the suite is often already inside a host; without a clear
+// slate that path hands off instead of staffing, and the rest of the file
+// has no run to work.
+sterileAmbientEnv();
 
 interface Capture {
   readonly code: number;
