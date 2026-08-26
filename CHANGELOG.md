@@ -33,10 +33,14 @@ a spawn that will fail.
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
 - **First-run hears ordinary language.** Talk in the host ("is this ready",
-  "do the claims match") with no catalog words and no `--host`. This
-  session names via `record_outcome`, then `claim_task` / `submit_work`.
-  README and `docs/first-run.md` lead with that, not doctor or the verb
-  catalog.
+  "do the claims match", "what is the product shape") with no catalog
+  words and no `--host`. This session names via `record_outcome`, then
+  `claim_task` / `submit_work`. README and `docs/first-run.md` lead with
+  talk, then staff. `init`, `doctor`, and the verb catalog are not beat
+  two. `construct serve` can dispatch; the cannot-dispatch claim is gone.
+  Prefix matching only accepts simple inflections, so Node's
+  `ExperimentalWarning` does not staff measurement. "Product shape"
+  staffs system-design, not program-sequencing from `ship`.
 - **`init --yes` plants method skills** (investigative-research,
   decision-framing, intake, and the rest) into the ambient host's skills
   directory, then wires MCP. Not the generated job-title lens pack.

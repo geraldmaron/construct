@@ -101,12 +101,13 @@ wiring, not something either app's policy commits:
 
 `construct serve` is the projection: presence inside whatever MCP host
 reads this file. Per `docs/first-run.md`, it can read the catalog, record
-an outcome, read the work log and where a run's tasks stand, show the
-inbox and the questions roles have put to you, relay a decision or an
-answer, record a verdict, drop a note, and read the workspace's subjects.
-It can't dispatch work (spending your money stays behind a command you
-type yourself), can't run `review` or `compose` for the same reason, can't
-advance a deliverable toward finished, and can't erase anything. If
+an outcome, dispatch work through `claim_task` / `submit_work` once a
+capability secret exists (product `serve` creates one), read the work log
+and where a run's tasks stand, show the inbox and the questions roles have
+put to you, relay a decision or an answer, record a verdict, drop a note,
+and read the workspace's subjects. Construct does not spawn a second
+agent to do that work. What stays off the socket is `promote`, `review`,
+`compose`, a CLI `ask`, and erasure — human-gated or destructive. If
 `.cursor/mcp.json` doesn't exist yet in the target repo, create it with
 just this. If it exists with other servers already in it, add
 `construct-mcp` as one more key under `mcpServers`.
