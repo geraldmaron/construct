@@ -147,7 +147,7 @@ test('caller-as-namer: proposals pass the admission gate, and the reply names wh
     // Only the catalog domain with a stated reason survives, once.
     assert.deepEqual(started.implicated.map((i) => i.domain), ['privacy']);
     assert.equal(started.implicated[0].reason, 'EU users means GDPR obligations before launch.');
-    assert.equal(started.inferredBy, 'namer');
+    assert.equal(started.inferredBy, 'session');
     // The invented domain and the reasonless one are named back to the caller.
     assert.deepEqual(started.notAdmitted.sort(), ['astrology', 'commerce-tax']);
     assert.equal(started.tasksQueued, 1);
@@ -177,7 +177,7 @@ test('an empty namings array is an answer, not a failure', async () => {
   }
 });
 
-test('on a host-pull serve, omitting namings is an error — this session is the namer', async () => {
+test('on a host-pull serve, omitting namings is an error — this session already read the words', async () => {
   const sterileFixture = sterile();
   const store = openStore(join(sterileFixture.paths.dataDir, 'construct.db'));
   const handle = createProjectionHandler({
@@ -233,7 +233,7 @@ test('a cache hit is named in notAdmittedBecause, not left to be inferred from i
       }),
     );
     const first = payload(firstReply).body as { inferredBy: string; notAdmitted?: string[] };
-    assert.equal(first.inferredBy, 'namer');
+    assert.equal(first.inferredBy, 'session');
     assert.equal(first.notAdmitted?.length ?? 0, 0, 'nothing was rejected on the first consultation');
 
     // The exact same outcome text, a second time, with a fresh proposal that

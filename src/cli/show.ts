@@ -53,6 +53,7 @@ function runExists(store: Store, run: string): boolean {
 function howInferred(detail: unknown): string {
   const inferredBy = (detail as { inferredBy?: unknown } | null)?.inferredBy;
   if (inferredBy === 'namer') return '  (inferred by: namer — a model read the outcome)';
+  if (inferredBy === 'session') return '  (inferred by: session — this session named the concerns)';
   if (inferredBy === 'cache') return '  (inferred by: cache — an earlier consultation for this outcome)';
   if (inferredBy === 'user') return '  (named by: the user — not inferred)';
   return '';

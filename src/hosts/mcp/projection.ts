@@ -120,7 +120,7 @@ export const PROJECTION_TOOLS = [
     name: 'record_outcome',
     description:
       'Record an outcome — what the user wants to happen, in their words. ' +
-      'You have already read those words, so you are the namer: read the ' +
+      'You have already read those words. This session infers: read the ' +
       'catalog first, then pass `namings`, the catalog domains this outcome ' +
       'implicates, each with the reason in `why`. Passing an empty namings ' +
       'array is a real answer ("this implicates nothing"). On construct ' +
@@ -459,15 +459,15 @@ async function recordOutcome(
 
   if (input.namings === undefined) {
     // Product serve always carries a secret. That means this session already
-    // read the words and is the namer. Falling through to the keyword map
-    // is how ordinary language implicates nothing. Empty namings [] remains
-    // a real "this implicates nothing" answer.
+    // read the words. Falling through to the keyword map is how ordinary
+    // language implicates nothing. Empty namings [] remains a real
+    // "this implicates nothing" answer.
     if (core.secret !== undefined) {
       throw new RangeError(
-        'record_outcome requires namings — this session is the namer. ' +
-          'Read the catalog, then pass namings: [{domain, why}, …]. ' +
-          'An empty array means this implicates nothing. ' +
-          'The keyword map is not first-run inside a host.',
+        'record_outcome requires namings — this session already read the words. ' +
+        'Read the catalog, then pass namings: [{domain, why}, …]. ' +
+        'An empty array means this implicates nothing. ' +
+        'The keyword map is not first-run inside a host.',
       );
     }
     // No secret: a presence-only projection, same as the CLI's host-less form.
@@ -484,10 +484,12 @@ async function recordOutcome(
     outcome: text,
     at,
     host,
-    // The caller is the model: its proposals ARE the namer's answer, and they
-    // pass the same admission gate a subprocess namer's would.
+    // This session already read the words. The proposals pass the same
+    // admission gate a Construct namer's would, and the run is tagged
+    // session — not namer, not the keyword map.
     namer: () => Promise.resolve(namings),
     cache: storeNamingCache(core.store, { host, at }),
+    source: 'session',
   });
   return startedReply(started, namings);
 }
