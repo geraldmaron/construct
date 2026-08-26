@@ -21,7 +21,9 @@ intake — how the work is done, not job-title seats.
 
 A first-run talk plants those method skills and the first-run instruction
 into this host, or says they did not, and wires recording onto this
-session when the host can take it. The talk line creates no run.
+session when the host can take it. The talk line remembers the words
+and creates no run. The host records namings. A socket that is never
+called is still a miss.
 
 ## When the call is yours
 

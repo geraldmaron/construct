@@ -36,3 +36,5 @@ __probe__/
 # Local MCP wiring written by first-run talk / `construct wire`; never committed
 .mcp.json
 .cursor/mcp.json
+.cursor/rules/construct-first-run.mdc
+.claude/rules/construct-first-run.md
