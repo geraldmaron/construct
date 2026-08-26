@@ -20,7 +20,7 @@ organizational distillation layer. That layer rides hosts; it is not a host.
 | Surface | Job | How |
 |---|---|---|
 | CLI spine | Outcome → work → log → inbox → decide → compose → show | `construct …` |
-| MCP projection | Presence inside any MCP host; no completion writes | `construct serve` |
+| MCP projection | Presence plus in-session dispatch (`claim_task` / `submit_work`); no completion writes | `construct serve` |
 | OpenCode | First-party execution adapter | `--host=opencode` |
 | Claude / Codex / Cursor | Additional execution adapters | `--host=claude\|codex\|cursor` |
 | Writing outward | Carrying an approved change out; codex and cursor dispatch read-only and are refused | `decide --apply --host=opencode\|claude` |

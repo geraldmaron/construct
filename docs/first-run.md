@@ -1,17 +1,30 @@
 # Your first run
 
-If you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob,
-first-run is talk in that host. "Is this ready?" "Do the claims match?" —
-ordinary language, no catalog words, no `--host`. This session names the
-concerns via MCP `record_outcome` (catalog + why), then does the work here
-via `claim_task` / `submit_work`. Construct keeps the log, the inbox, and
-verdicts. It will not spawn a second CLI.
+You talk. Staff shows up. That is first run.
 
-The keyword map is the zero-model fallback for a plain terminal with no host
-wrapping the command — it is not first-run. Construct never ships its own
-agent runtime.
+You are already in a session that can call tools. Point it at
+Construct with the same entry every host uses:
 
-Plant method skills and wire MCP once, then talk:
+```bash
+construct serve
+```
+
+Then say what you are looking at, in ordinary language. "Is this
+ready." "Do the claims match." "What is the product shape." The
+session calls `record_outcome` with the domains that question
+implicates. Tasks queue under those names. The same session
+pulls the next one with `claim_task` and writes the finding back
+with `submit_work`. You never leave the conversation to type a
+verb. Construct will not spawn a second CLI.
+
+That is the product working. Install, `init`, `doctor`, and the
+CLI verb list are below. They are not beat two.
+
+The keyword map is the zero-model fallback for a plain terminal
+with no host wrapping the command — it is not first-run.
+Construct never ships its own agent runtime.
+
+## Install, then the same conversation
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
@@ -22,12 +35,12 @@ That copies investigative-research, decision-framing, intake, and the rest
 into the host's skills directory — not job-title personas — and writes the
 `construct serve` entry so this session can claim_task / submit_work.
 
-You need Node 22.18 or newer. `construct doctor` is a health check, not the
-first beat: it reports Node, the store, which hosts are present (found,
-version, spawnable, auth), leftover 2.x litter, and the skills pack. Inside
-a host, an `ambient` line names in-session dispatch through `construct
-serve`. Only Node and store checks gate the exit code. The full check table
-is in [consumer-install.md](consumer-install.md).
+You need Node 22.18 or newer. `construct doctor` is recovery and a health
+check, not onboarding. It reports Node, the store, which hosts are present
+(found, version, spawnable, auth), leftover 2.x litter, and the skills pack.
+Inside a host, an `ambient` line names in-session dispatch through
+`construct serve`. Only Node and store checks gate the exit code. The full
+check table is in [consumer-install.md](consumer-install.md).
 
 The rest of this page is the terminal-first walkthrough — every command
 below is a real verb, and commands that would spawn a host and spend money
@@ -518,13 +531,13 @@ was not admitted. Omitting namings is an error, not a fall-through to the
 keyword map. An empty namings array is a real answer that this implicates
 nothing.
 
-What is deliberately missing is as much of the point. The surface cannot
-dispatch work, because spending your money stays behind a command you type
-yourself, and `review` and `compose` are absent for the same reason: they are
-several model calls wearing the clothes of a read. It cannot advance a
-deliverable toward finished, because that judgment is not a model's to make
-about its own output. Erasing a record or a note is not there either. The one
-operation with no way back stays in front of a person at a terminal.
+The surface can dispatch work. When a secret is set, `claim_task` and
+`submit_work` are on the same socket: the session that just named the
+outcome is the session that pulls the next task. Product `serve` creates
+that secret. Construct does not spawn a second agent to do the work. What
+stays off the socket is `promote`, `review`, `compose`, a CLI `ask`, and
+erasure — human-gated or destructive. A host that only sees this surface
+cannot skip the human and cannot unwrite the log.
 
 ## When something is wrong
 

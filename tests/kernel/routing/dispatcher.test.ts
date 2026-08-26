@@ -140,3 +140,19 @@ test('folding does not reopen the substring false-positive class', () => {
   const routes: Route[] = [{ path: 'p', keywords: ['rag'] }];
   assert.deepEqual(suggestRoutes({ intent: 'increase the storage average', routes }).suggestions, []);
 });
+
+test('a prefix leftover must be a simple inflection, not any continuation', () => {
+  const routes: Route[] = [{ path: 'p', keywords: ['experiment'] }];
+  assert.equal(suggestRoutes({ intent: 'run an experiment on signup', routes }).suggestions.length, 1);
+  assert.equal(suggestRoutes({ intent: 'running experiments this week', routes }).suggestions.length, 1);
+  assert.equal(
+    suggestRoutes({ intent: '(node:1) ExperimentalWarning: SQLite is an experimental feature', routes })
+      .suggestions.length,
+    0,
+  );
+});
+
+test('silent-e stems still reach their -ed form', () => {
+  const routes: Route[] = [{ path: 'p', keywords: ['schedule'] }];
+  assert.equal(suggestRoutes({ intent: 'the cutover is scheduled for Friday', routes }).suggestions.length, 1);
+});
