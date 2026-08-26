@@ -97,6 +97,12 @@ one is not in the GitHub log. Treat it as unconfirmed until seen on CI.
 Last green `main` CI: `3d10e94c`, before the residency/daemon merge
 (`construct-opp7.8`). `v3.0.0-alpha.18` release workflow is green.
 
+This audit branch reproduced the same red on
+[run 32914311678](https://github.com/geraldmaron/construct/actions/runs/32914311678)
+(`3cb80f4b`, markdown-only): `test` and `sterile-readonly-home` failed on
+the same `not ok 92` assertion; `packaged-install-smoke` passed. The
+report did not cause the red. Main already was.
+
 A sharp engineer who clones today sees a red badge. That is enough to
 stop a release by itself.
 
