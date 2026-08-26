@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * test-first-run.mjs — the cheap first-run staffing/surface subset.
+ * test-first-run.mjs — the cheap first-run mechanism/surface subset.
  *
  * Ordinary CI runs this instead of the full suite. The full gate (npm test,
  * read-only HOME, packaged-install smoke) stays on workflow_dispatch and on
  * the release-tag workflow. This subset is not optional: a first-run
  * regression must fail a push, not wait for a manual dispatch.
  *
- * Locked cases — empty staff is a fail, not a pass:
- *   - "is this ready" staffs product-scoping
- *   - "do the claims match" staffs evidence-provenance or coverage-gaps
- *   - a product-shape ask staffs system-design
- *   - first construct command in the walkthrough is not doctor / status / help
+ * Locked cases — the mechanism, not a phrase catalog:
+ *   - Host in session: intent is inferred by the host (or a generic host
+ *     request / inbox). The keyword map is not consulted. Empty fake staff
+ *     from keywords is a fail.
+ *   - No hardcoded sentence → domain ID.
+ *   - First construct command in the walkthrough is not doctor / status / help.
  *
  * Files that have not landed yet are skipped; files that exist are run.
  * An empty run is a failure — the check is not optional.
@@ -24,6 +25,7 @@ import { pathToFileURL } from 'node:url';
 const FILES = [
   'tests/cli/first-run-surface.test.ts',
   'tests/cli/session-dispatch.test.ts',
+  'tests/cli/ambient-dispatch.test.ts',
   'tests/cli/init.test.ts',
   'tests/cli/status.test.ts',
   'tests/cli/staff.test.ts',

@@ -5,9 +5,12 @@
  * Without a host named this path is deterministic, does no I/O beyond the
  * store, and costs nothing. With one, that host's model reads every outcome as
  * the primary namer and the keyword map is only the fallback if the model
- * fails. The plan is recorded write-once here so `work` executes against a
- * stated plan rather than an implicit one, which is why `ask` and the standing
- * firings both come back through this file to record theirs.
+ * fails. Inside an ambient host session, this verb does not consult the
+ * keyword map and does not create a run: the session infers, or the turn is
+ * a host request / inbox item. The plan is recorded write-once here so `work`
+ * executes against a stated plan rather than an implicit one, which is why
+ * `ask` and the standing firings both come back through this file to record
+ * theirs.
  */
 
 import type { Store } from '../kernel/store/open.ts';
@@ -35,6 +38,26 @@ import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.
 const OUTCOME_USAGE =
   'usage: construct outcome [--host=<opencode|claude|codex|cursor> [--model=…] [--binary=…]] ' +
   '[--domains=<name,…>] [--workspace=<name>] [--timeout=<minutes>] "<what you want to happen>"\n';
+
+/**
+ * What an in-session first-run prints when a host already has the words.
+ * No run is created: a hollow or keyword-staffed record would look like
+ * staffing happened. The session names, or the turn is a host request / inbox
+ * item. The keyword map is not consulted.
+ */
+export function sessionOutcomeHandoff(
+  session: { readonly host: string; readonly marker: string },
+  words: string,
+): string {
+  return (
+    `Running inside ${session.host} (detected via ${session.marker}).\n` +
+    'This session infers the intent — the keyword map is not consulted.\n' +
+    (words.length > 0 ? `Words just heard: ${JSON.stringify(words)}\n` : '') +
+    'Name the concerns through the host (MCP record_outcome with namings), ' +
+    'or file this as a host request / inbox item.\n' +
+    'An empty namings array is a real answer that this implicates nothing.\n'
+  );
+}
 
 export interface OutcomeArgs {
   readonly text: string;
@@ -256,9 +279,10 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
  * Record an outcome.
  *
  * Without --host the path is deterministic, does no I/O beyond the store, and
- * costs nothing — the keyword map answers or it does not. With --host, that
- * host's model reads every outcome as the primary namer and the map is only
- * the fallback if the model fails (adopted 2026-08-05 on the
+ * costs nothing — the keyword map answers or it does not, except inside an
+ * ambient host session, where the map is not consulted and no run is created.
+ * With --host, that host's model reads every outcome as the primary namer and
+ * the map is only the fallback if the model fails (adopted 2026-08-05 on the
  * RESEARCH-DECISIONS.md §10 figures: on wording the catalog's authors never
  * wrote, the map missed 0.634 where the namer missed 0.301).
  *
@@ -286,6 +310,17 @@ export async function outcome(
   if (!args.text) {
     process.stderr.write(OUTCOME_USAGE);
     return 2;
+  }
+
+  // In-session: this host already has the words. The keyword map is not
+  // consulted. Creating a hollow or keyword-staffed run here looks like
+  // staffing happened. Named --domains and a typed --host still go through.
+  if (args.domains === undefined && args.host === undefined && hostOverride === undefined) {
+    const ambient = detectAmbientHost(env);
+    if (ambient !== null) {
+      process.stdout.write(sessionOutcomeHandoff(ambient, args.text));
+      return 0;
+    }
   }
 
   return withStoreAsync(async (store) => {
