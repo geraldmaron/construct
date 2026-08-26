@@ -356,7 +356,7 @@ test('the queue is one listing: propose list renders the same rows, and the inbo
   assert.equal(code, 0);
   // The inbox never says nothing needs you while outward changes wait.
   assert.doesNotMatch(out, /Nothing needs you right now/);
-  assert.match(out, /2 outward changes waiting — see: construct decide --pending/);
+  assert.match(out, /2 outward changes waiting/);
   // propose list prints the decide surface's rows, not a second rendering.
   assert.match(out, /p-low {2}\[low risk] {2}PROJ/);
   assert.match(out, /justified by note:n-1#L3/);

@@ -17,7 +17,7 @@
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
-import { skills } from './skills.ts';
+import { plantShippedSkills } from './skills.ts';
 import { wire } from './wire.ts';
 
 const SPINE =
@@ -31,7 +31,17 @@ const SPINE =
 
 function plantMethodSkills(host: SkillsHostName, env: NodeJS.ProcessEnv): number {
   const dir = resolveHostSkillsDir(host, env);
-  return skills(['install', '--all', `--dir=${dir}`]);
+  const planted = plantShippedSkills(dir);
+  if (planted.error !== undefined) {
+    process.stderr.write(`init: method skills did not plant — ${planted.error}\n`);
+    return 1;
+  }
+  process.stdout.write(
+    planted.written > 0
+      ? `Method skills planted in ${dir} (${String(planted.written)} written).\n`
+      : `Method skills already in ${dir}.\n`,
+  );
+  return 0;
 }
 
 /**

@@ -133,7 +133,7 @@ export const PROJECTION_TOOLS = [
       'outcome text was already consulted once before, by any host in any ' +
       'prior session: that first answer is served from a cache instead, ' +
       'your namings are not evaluated against the catalog at all, ' +
-      '`inferredBy` reads "cache", and any of your proposed domains missing ' +
+      '`inferredBy` reads "cache" (how) and `ranIn` stays "session" (where), and any of your proposed domains missing ' +
       'from the cached answer land in `notAdmitted` with ' +
       '`notAdmittedBecause` saying why. Optionally state your own ' +
       '`confidence` (0 to 1) on a naming when you are unsure it truly ' +
@@ -194,11 +194,18 @@ export const PROJECTION_TOOLS = [
     name: 'inbox',
     description:
       'The open decisions — the calls that are genuinely the user\'s to make, ' +
-      'each with the disagreeing positions cited. Show these to the user; they ' +
-      'are not yours to resolve. A role\'s question to the user sits in this ' +
+      'each with the disagreeing positions cited. Show these to the user. To ' +
+      'record their call, pass `id` and `resolution` on this same tool — one ' +
+      'action, not a second verb. A role\'s question to the user sits in this ' +
       'list too; `asks` is the same items read as questions, each with the ' +
       'default the work already proceeded on.',
-    inputSchema: { type: 'object', properties: {} },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'The card id, when recording the user\'s call.' },
+        resolution: { type: 'string', description: "The user's call, in the user's words." },
+      },
+    },
   },
   {
     name: 'decide',
@@ -421,6 +428,8 @@ function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): 
       reason: i.signals.join(' '),
     })),
     inferredBy: started.inferredBy,
+    ranIn: started.ranIn,
+    ...(started.host !== undefined ? { host: started.host } : {}),
     tasksQueued: started.tasks.length,
     ...(started.namerFailure !== undefined ? { namerFailure: started.namerFailure } : {}),
     // Proposals the kernel did not admit, named so the model hears the gate
@@ -606,8 +615,18 @@ async function callTool(
       }
       case 'run_status':
         return toolResult(id, runStatus(core, run));
-      case 'inbox':
+      case 'inbox': {
+        const decisionId = typeof input.id === 'string' ? input.id.trim() : '';
+        const resolution = typeof input.resolution === 'string' ? input.resolution.trim() : '';
+        if (decisionId && resolution) {
+          resolveDecision(core.store, decisionId, resolution, core.clock(), `mcp:${client}`);
+          return toolResult(id, { decided: decisionId, resolution: escapeForTerminal(resolution) });
+        }
+        if (decisionId || resolution) {
+          throw new RangeError('inbox resolve needs both id and resolution — one action');
+        }
         return toolResult(id, { decisions: openDecisions(core.store).map(escapeDecision) });
+      }
       case 'asks':
         return toolResult(id, {
           open: openAsksFor(core.store, run).map(escapeOpenAsk),

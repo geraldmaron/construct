@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "3.0.0-alpha.18",
+  "version": "3.0.0-alpha.19",
   "description": "Outcome engine: state an outcome, a learning staff of roles fills in the rest — decisions in, deliverables out. Portable method skills ship inside the package, installable into any agent host.",
   "type": "module",
   "license": "Apache-2.0",
@@ -32,7 +32,9 @@
   "files": [
     "bin",
     "dist",
-    "skills"
+    "skills",
+    "docs/first-run.md",
+    "docs/start.md"
   ],
   "exports": {
     ".": "./dist/kernel/index.js",

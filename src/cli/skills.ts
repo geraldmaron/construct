@@ -335,6 +335,107 @@ function skillLibrary(sub: string, argv: string[]): number {
   return skillUninstall(sources, dir, rest);
 }
 
+/** What a first-run plant attempt actually did, so talk can say so honestly. */
+export interface PlantReport {
+  readonly attempted: boolean;
+  readonly planted: boolean;
+  readonly dir?: string;
+  readonly written: number;
+  readonly already: number;
+  readonly error?: string;
+  readonly reason?: string;
+}
+
+/**
+ * Copy every shipped method skill into a host directory. First-run talk uses
+ * this so a stranger does not have to learn `skills install`. A diverged copy
+ * is left alone and named in the error — overwriting a hand edit is not a
+ * first-run courtesy.
+ */
+export function plantShippedSkills(dir: string): PlantReport {
+  const sourceDir = sourceSkillsDir();
+  if (!existsSync(sourceDir)) {
+    return {
+      attempted: true,
+      planted: false,
+      dir,
+      written: 0,
+      already: 0,
+      error: 'this install carries no skill files',
+    };
+  }
+  const sources = readSkillSources(sourceDir);
+  for (const source of sources) {
+    const planted = symlinkToward(symlinkGuardRoot(dir), join(dir, source.name, SKILL_FILENAME));
+    if (planted) {
+      return {
+        attempted: true,
+        planted: false,
+        dir,
+        written: 0,
+        already: 0,
+        error: `${planted} is a symbolic link`,
+      };
+    }
+  }
+  const diverged: string[] = [];
+  for (const source of sources) {
+    const target = join(dir, source.name, SKILL_FILENAME);
+    const existing = existsSync(target) ? readFileSync(target) : null;
+    if (existing !== null && !sameSkillBytes(existing, source.bytes)) diverged.push(source.name);
+  }
+  if (diverged.length > 0) {
+    return {
+      attempted: true,
+      planted: false,
+      dir,
+      written: 0,
+      already: 0,
+      error: `${diverged.join(', ')} differ from this install`,
+    };
+  }
+  let written = 0;
+  let already = 0;
+  for (const source of sources) {
+    const target = join(dir, source.name, SKILL_FILENAME);
+    const existing = existsSync(target) ? readFileSync(target) : null;
+    if (existing !== null && sameSkillBytes(existing, source.bytes)) {
+      already += 1;
+      continue;
+    }
+    mkdirSync(dirname(target), { recursive: true });
+    let fd: number;
+    try {
+      fd = openSync(target, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
+        return {
+          attempted: true,
+          planted: false,
+          dir,
+          written,
+          already,
+          error: `${target} is a symbolic link`,
+        };
+      }
+      throw error;
+    }
+    try {
+      writeSync(fd, source.bytes);
+    } finally {
+      closeSync(fd);
+    }
+    written += 1;
+  }
+  return {
+    attempted: true,
+    planted: written > 0 || already === sources.length,
+    dir,
+    written,
+    already,
+  };
+}
+
 function skillInstall(
   sources: readonly SkillSource[],
   dir: string,

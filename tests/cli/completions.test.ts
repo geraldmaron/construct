@@ -107,9 +107,7 @@ test('completions is registered in VERBS array', () => {
 });
 
 test('completions verb is discoverable via help', async () => {
-  // The USAGE line is built from VERBS, so if completions is in VERBS,
-  // it will appear in the help output when an unknown command is given.
-  const result = await capture(['nonexistent']);
+  const result = await capture(['help']);
   assert.match(
     result.out,
     /completions/,
