@@ -1,8 +1,8 @@
-# Ordinary push and pull request run lint and typecheck only.
-# The full gate (unit suite, read-only HOME, packaged-install smoke) stays
-# in this file and runs on workflow_dispatch. Release tags still run the
-# full gate in release.yml before publish. Tracker-only commits under
-# .beads/ do not start a run.
+# Ordinary push and pull request run lint, typecheck, and the first-run
+# staffing/surface subset. The full gate (unit suite, read-only HOME,
+# packaged-install smoke) stays in this file and runs on workflow_dispatch.
+# Release tags still run the full gate in release.yml before publish.
+# Tracker-only commits under .beads/ do not start a run.
 
 name: ci
 
@@ -17,14 +17,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  lint:
+  default:
     if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +35,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test:first-run
 
   test:
     if: github.event_name == 'workflow_dispatch'
