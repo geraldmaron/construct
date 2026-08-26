@@ -1,15 +1,43 @@
+# Ordinary push and pull request run lint and typecheck only.
+# The full gate (unit suite, read-only HOME, packaged-install smoke) stays
+# in this file and runs on workflow_dispatch. Release tags still run the
+# full gate in release.yml before publish. Tracker-only commits under
+# .beads/ do not start a run.
+
 name: ci
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '.beads/**'
   pull_request:
+    paths-ignore:
+      - '.beads/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  lint:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.18'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
   test:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -22,6 +50,7 @@ jobs:
       - run: npm test
 
   sterile-readonly-home:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -36,6 +65,7 @@ jobs:
           HOME=/tmp/readonly-home npm test
 
   packaged-install-smoke:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
