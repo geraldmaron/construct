@@ -82,10 +82,12 @@ a spawn that will fail.
   (`npm test`, read-only HOME, packaged-install smoke) stays on
   `workflow_dispatch` and on the release-tag workflow. Tracker-only
   commits under `.beads/` do not start a run.
-- **Host-supplied namings are this session, not the namer.** When this
-  session passes namings into `record_outcome`, `inferredBy` is
-  `session`. `namer` is leftover for Construct's namer seam. The
-  keyword map is not that path.
+- **`record_outcome` prints how, where, and staff.** The reply carries
+  `how` (inferredBy) and `where` (ranIn) as two facts, plus `staff` —
+  the lenses the admitted domains equip. Empty staff after the host
+  named nothing is a real answer. Empty or engineering-only staff after
+  the host named real catalog domains is a miss. The keyword map is not
+  that path.
 - **Doctor reports spawnable separately from in-session.** Bob is surveyed
   and never spawnable. A missing `cursor-agent` is `spawnable: no` even
   when this process is inside Cursor.

@@ -141,6 +141,9 @@ test('caller-as-namer: proposals pass the admission gate, and the reply names wh
       implicated: Array<{ domain: string; reason: string }>;
       inferredBy: string;
       ranIn: string;
+      how: string;
+      where: string;
+      staff: string[];
       notAdmitted: string[];
       tasksQueued: number;
     };
@@ -150,6 +153,10 @@ test('caller-as-namer: proposals pass the admission gate, and the reply names wh
     assert.equal(started.implicated[0].reason, 'EU users means GDPR obligations before launch.');
     assert.equal(started.inferredBy, 'namer');
     assert.equal(started.ranIn, 'session');
+    assert.equal(started.how, 'namer');
+    assert.equal(started.where, 'session');
+    assert.notEqual(started.how, started.where);
+    assert.deepEqual(started.staff, ['legal']);
     // The invented domain and the reasonless one are named back to the caller.
     assert.deepEqual(started.notAdmitted.sort(), ['astrology', 'commerce-tax']);
     assert.equal(started.tasksQueued, 1);
@@ -170,9 +177,19 @@ test('an empty namings array is an answer, not a failure', async () => {
       call('record_outcome', { outcome: 'Water the office plants', namings: [] }),
     );
     const { body } = payload(reply);
-    const started = body as { inferredBy: string; implicated: unknown[]; namerFailure?: string };
+    const started = body as {
+      inferredBy: string;
+      implicated: unknown[];
+      namerFailure?: string;
+      how?: string;
+      where?: string;
+      staff?: string[];
+    };
     assert.equal(started.inferredBy, 'none');
     assert.equal(started.implicated.length, 0);
+    assert.equal(started.how, 'none');
+    assert.equal(started.where, 'session');
+    assert.deepEqual(started.staff, []);
     assert.equal(started.namerFailure, undefined, 'naming nothing is not a failure');
   } finally {
     f.cleanup();
