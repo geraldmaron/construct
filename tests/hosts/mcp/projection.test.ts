@@ -43,7 +43,7 @@ import { addRecord, updateRecordField } from '../../../src/kernel/store/records.
 import { recordCatalogSighting } from '../../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
-import type { JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
+import type { JsonRpcRequest, JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -187,7 +187,7 @@ test('on a host-pull serve, omitting namings is an error — this session is the
     secret: 'test-secret-not-a-real-key',
   });
   try {
-    const reply = await handle(call('record_outcome', { outcome: 'is this ready' }));
+    const reply = await handle(call('record_outcome', { outcome: 'is this ready' }) as JsonRpcRequest);
     const { body, isError } = payload(reply);
     assert.equal(isError, true);
     assert.match(String((body as { error?: string }).error), /requires namings/);
