@@ -25,6 +25,7 @@ import { pathToFileURL } from 'node:url';
 const FILES = [
   'tests/cli/first-run-surface.test.ts',
   'tests/cli/first-run.test.ts',
+  'tests/hosts/session-attach.test.ts',
   'tests/cli/session-dispatch.test.ts',
   'tests/cli/ambient-dispatch.test.ts',
   'tests/cli/init.test.ts',

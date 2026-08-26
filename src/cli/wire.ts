@@ -28,9 +28,9 @@
  * bare invocation someone runs to see what would happen must not be the
  * thing that edits their project config.
  *
- * First-run talk is the other writer: it calls `ensureAmbientServeWired`
- * with no preview and no verb, because a planted skill with no recording
- * socket on this session is not follow-through.
+ * First-run talk is not a writer. A file this session will not load is
+ * not a wire. `wire --yes` remains the operator command that writes the
+ * project entry for a later session; talk never teaches that verb.
  */
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -107,9 +107,9 @@ export type ServeWire =
   | { readonly status: 'malformed'; readonly path: string };
 
 /**
- * Put `construct serve` on the ambient host's project MCP socket.
- * First-run talk calls this with no preview and no verb on stdout.
- * The `wire` command remains the preview/apply CLI around the same write.
+ * Put `construct serve` on the ambient host's project MCP config.
+ * That file is loaded on the next session. First-run talk does not call
+ * this: a file this session will not load is not a wire.
  */
 export function ensureAmbientServeWired(
   cwd: string = process.cwd(),

@@ -3,11 +3,10 @@
  *
  * Bare `construct` and a sentence that is not a verb start here. The host
  * names and records. Two surfaces: this conversation continues, or one
- * inbox card. talk() plants the host instruction and rule, remembers the
- * words, and silent-wires serve so this session can record. talk() creates
- * no run — a hollow record would steal the next work. Callable is the
- * wire; called, with host namings, is the gate. A socket you never call
- * is still a miss.
+ * inbox card. talk() plants the host instruction, remembers the words, and
+ * asks whether serve is already on this session's socket. A file this
+ * session will not load is not a wire. talk() creates no run, prints no
+ * catalog, teaches no verb.
  */
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
@@ -15,11 +14,11 @@ import { plantFirstRunInstruction, type InstructionPlant } from '../hosts/first-
 import { plantFirstRunRule } from '../hosts/first-run-rule.ts';
 import { writeHeard } from '../kernel/store/heard.ts';
 import { sessionNamingPacket, type AmbientDetection } from '../hosts/session.ts';
+import { sessionServeAttach, type SessionAttach } from '../hosts/session-attach.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { plantShippedSkills, type PlantReport } from './skills.ts';
 import { packageVersion } from './runtime.ts';
 import { resolveStoreLocation } from './local-state.ts';
-import { ensureAmbientServeWired, type ServeWire } from './wire.ts';
 
 const HOSTS_THEY_HAVE =
   'Talk in the host you already use — Cursor, Claude Code, Codex, OpenCode, or IBM Bob.\n';
@@ -74,15 +73,12 @@ function plantForSession(session: AmbientDetection, env: NodeJS.ProcessEnv): Pla
   return plantShippedSkills(dir);
 }
 
-function wireLine(wired: ServeWire | undefined): string {
-  if (wired === undefined) return '';
-  if (wired.status === 'wired' || wired.status === 'already') {
+function attachLine(attach: SessionAttach | undefined): string {
+  if (attach === undefined) return '';
+  if (attach.status === 'attached') {
     return 'Recording is on this session.\n';
   }
-  if (wired.status === 'unsupported' || wired.status === 'malformed') {
-    return 'Recording could not attach here. This conversation continues, or one inbox card.\n';
-  }
-  return '';
+  return 'Recording could not attach here. This conversation continues, or one inbox card.\n';
 }
 
 /** In-session first-run: the host names and records; this process does not staff. */
@@ -91,10 +87,10 @@ export function sessionTalkPacket(
   words: string | undefined,
   plant: PlantReport,
   instruction?: InstructionPlant,
-  wired?: ServeWire,
+  attach?: SessionAttach,
 ): string {
   return (
-    sessionNamingPacket(session, words) + plantLine(plant) + instructionLine(instruction) + wireLine(wired)
+    sessionNamingPacket(session, words) + plantLine(plant) + instructionLine(instruction) + attachLine(attach)
   );
 }
 
@@ -107,7 +103,7 @@ function plantInstructionForSession(
   return plantFirstRunInstruction(dir, packageVersion());
 }
 
-/** Wire, remember the words, plant the host rule. Creates no run. */
+/** Remember the words, plant the host rule, ask the live socket. Creates no run. */
 export function prepareInSessionTalk(
   session: AmbientDetection,
   words: string | undefined,
@@ -116,22 +112,23 @@ export function prepareInSessionTalk(
 ): {
   readonly plant: PlantReport;
   readonly instruction: InstructionPlant | undefined;
-  readonly wired: ServeWire;
+  readonly attach: SessionAttach;
 } {
   const plant = plantForSession(session, env);
   const instruction = plantInstructionForSession(session, env);
   plantFirstRunRule(session.host, cwd);
-  const wired = ensureAmbientServeWired(cwd, env);
+  const attach = sessionServeAttach(session.host, env);
   if (words !== undefined && words.length > 0) {
     writeHeard(resolveStoreLocation(cwd, { ...process.env, ...env }).path, words, new Date().toISOString());
   }
-  return { plant, instruction, wired };
+  return { plant, instruction, attach };
 }
 
 /**
- * First-run talk. In a host session this prints the naming packet, plants
- * the host instruction, and silent-wires serve onto this host so the host
- * can record. With no host it bounces: no run. talk() itself creates no run.
+ * First-run talk. In a host session this prints the naming packet and asks
+ * whether serve is already on this session's socket. It does not write a
+ * file the host will only load later. With no host it bounces: no run.
+ * talk() itself creates no run.
  */
 export function talk(
   argv: string[] = [],
@@ -151,7 +148,7 @@ export function talk(
       words.length > 0 ? words : undefined,
       prepared.plant,
       prepared.instruction,
-      prepared.wired,
+      prepared.attach,
     ),
   );
   return 0;

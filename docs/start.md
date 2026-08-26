@@ -20,10 +20,12 @@ The methods in play are investigative-research, decision-framing, and
 intake — how the work is done, not job-title seats.
 
 A first-run talk plants those method skills and the first-run instruction
-into this host, or says they did not, and wires recording onto this
-session when the host can take it. The talk line remembers the words
-and creates no run. The host records namings. A socket that is never
-called is still a miss.
+into this host, or says they did not. Recording attaches only when this
+session already has the recording tool. A file this session will not
+load is not a wire. The talk line remembers the words and creates no
+run. If recording could not attach, this conversation continues, or one
+inbox card. The host records namings on this turn when the tool is
+already there. A socket that is never called is still a miss.
 
 ## When the call is yours
 

@@ -165,7 +165,7 @@ test('an in-session outcome does not staff from the keyword map and creates no h
     );
     assert.equal(result, 0);
     assert.match(out, /Talk here\. Staff shows up/);
-    assert.match(out, /Recording is on this session/);
+    assert.match(out, /Recording could not attach here/);
     assert.doesNotMatch(out, /Catalog \(name only these/);
     assert.doesNotMatch(out, /Name the concerns these words implicate/);
     assert.doesNotMatch(out, /construct serve/);
