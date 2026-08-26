@@ -247,9 +247,12 @@ test('in-session words without a host naming do not fake keyword staff', async (
     const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
-    assert.match(out, /This session is the namer/);
-    assert.match(out, /keyword map is not first-run/);
-    assert.match(out, /record_outcome/);
+    assert.match(out, /This session infers the intent/);
+    assert.match(out, /keyword map is not consulted/);
+    assert.match(out, /this session dispatches/);
+    assert.match(out, /inbox/);
+    assert.doesNotMatch(out, /record_outcome/);
+    assert.doesNotMatch(out, /\bnamer\b/i);
     assert.doesNotMatch(out, /implicated domains/);
     const store = openStore(storePath(resolvePaths()));
     try {

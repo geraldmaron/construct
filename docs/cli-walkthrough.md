@@ -32,9 +32,9 @@ Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
 
 An in-session `construct outcome` without `--domains` does **not** create a
-run and does **not** staff from the keyword map. It tells this session it is
-the namer: call MCP `record_outcome` with namings. Empty namings is a real
-"implicates nothing" answer.
+run and does **not** consult the keyword map. This session infers the intent.
+Two surfaces: this session dispatches, or the turn goes to inbox. Empty
+namings is a real "implicates nothing" answer.
 
 From a plain terminal with no host wrapping the command:
 

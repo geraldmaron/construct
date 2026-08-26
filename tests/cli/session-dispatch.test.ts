@@ -159,9 +159,12 @@ test('an in-session outcome does not staff from the keyword map and creates no h
       outcome(['is this ready'], undefined, CURSOR_ENV),
     );
     assert.equal(result, 0);
-    assert.match(out, /This session is the namer/);
-    assert.match(out, /keyword map is not first-run/);
-    assert.match(out, /record_outcome/);
+    assert.match(out, /This session infers the intent/);
+    assert.match(out, /keyword map is not consulted/);
+    assert.match(out, /this session dispatches/);
+    assert.match(out, /inbox/);
+    assert.doesNotMatch(out, /record_outcome/);
+    assert.doesNotMatch(out, /\bnamer\b/i);
     assert.doesNotMatch(out, /implicated domains/);
     assert.doesNotMatch(out, /run run-/);
     const store = openStore(storePath(resolvePaths()));

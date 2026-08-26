@@ -21,12 +21,13 @@ a spawn that will fail.
   `claim_task` / `submit_work` once a capability secret exists. No promote.
   The flagged `host-pull-serve` prototype remains behind its gate.
 - **In-session `outcome` does not staff from the keyword map, and does not
-  create a hollow run.** First-run inside a host tells this session it is
-  the namer: call MCP `record_outcome` with namings. No run is written until
-  those namings exist. Empty `namings: []` is a real "implicates nothing"
-  answer. On `construct serve`, omitting namings is an error, not a
-  fall-through to the keyword map. The keyword map is the zero-model
-  fallback when no session is wrapping the command.
+  create a hollow run.** First-run inside a host prints the two surfaces:
+  this session dispatches, or the turn goes to inbox. Construct does not
+  classify. No run is written until the host names concerns. Empty
+  `namings: []` is a real "implicates nothing" answer. On `construct
+  serve`, omitting namings is an error, not a fall-through to the keyword
+  map. The keyword map is the zero-model fallback when no session is
+  wrapping the command.
 - **Bare `work` and `status` stay on the latest outcome.** The most recently
   recorded outcome is the default, even when it queued no tasks and an
   older run still has pending work. `--all` remains the fleet door. A
@@ -48,6 +49,11 @@ a spawn that will fail.
 - **`init --yes` plants method skills** (investigative-research,
   decision-framing, intake, and the rest) into the ambient host's skills
   directory, then wires MCP. Not the generated job-title lens pack.
+- **Ordinary CI is the first-run mechanism lock.** Push and pull request
+  run `lint`, `typecheck`, and `npm run test:first-run`. The full gate
+  (`npm test`, read-only HOME, packaged-install smoke) stays on
+  `workflow_dispatch` and on the release-tag workflow. Tracker-only
+  commits under `.beads/` do not start a run.
 - **Doctor reports spawnable separately from in-session.** Bob is surveyed
   and never spawnable. A missing `cursor-agent` is `spawnable: no` even
   when this process is inside Cursor.

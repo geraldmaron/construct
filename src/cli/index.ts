@@ -56,7 +56,7 @@ export type { HostName } from './runtime.ts';
 export { backup, cleanup, doctor, parseCleanupArgs } from './maintenance.ts';
 export { hostPullServe, roleServe, serve } from './serve.ts';
 export { skills } from './skills.ts';
-export { outcome, parseOutcomeArgs } from './outcome.ts';
+export { outcome, parseOutcomeArgs, sessionOutcomeHandoff } from './outcome.ts';
 export type { OutcomeArgs } from './outcome.ts';
 export { ask, parseAskArgs } from './ask.ts';
 export type { AskArgs } from './ask.ts';
