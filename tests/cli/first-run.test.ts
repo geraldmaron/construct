@@ -83,9 +83,7 @@ function assertSameFirstRunStory(page: string, label: string): void {
   assert.match(lead, /The host infers/);
   assert.match(lead, /does\s+not classify intent/);
   assert.match(lead, /Two surfaces only/);
-  assert.match(lead, /record_outcome/);
-  assert.match(lead, /claim_task/);
-  assert.match(lead, /submit_work/);
+  assert.match(lead, /one button/);
   assert.match(lead, /investigative-research/);
   assert.match(lead, /decision-framing/);
   assert.match(lead, /intake/);
@@ -95,8 +93,9 @@ function assertSameFirstRunStory(page: string, label: string): void {
   assert.doesNotMatch(page, /construct doctor/);
   assert.doesNotMatch(page, /Starting work/);
   assert.doesNotMatch(page, /construct decide/);
+  assert.doesNotMatch(page, /construct serve/);
   assert.doesNotMatch(lead, /```(?:bash|sh|shell|zsh)?/);
-  assert.doesNotMatch(lead, /construct serve/);
+  assert.doesNotMatch(lead, /record_outcome/);
   assertNoPhraseTable(page, label);
 }
 
@@ -178,7 +177,8 @@ test('the shipped /start story matches first-run', () => {
 test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
-  assert.match(page, /Say your call on this card/);
+  assert.match(page, /one button/);
+  assert.match(page, /Your call is the button/);
   assert.doesNotMatch(page, /construct decide/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
@@ -198,22 +198,24 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
   assert.match(serve, /submit_work/);
 });
 
-test('README short version opens with talk, not a phrase table or verb wall', () => {
+test('README first-run opens with talk, not a phrase table or verb wall', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  const from = readme.indexOf('**[docs/first-run.md]');
-  const until = readme.indexOf('From a plain terminal');
+  const from = readme.indexOf('## First run');
+  const until = readme.indexOf('## Status');
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
   assert.match(short, /Staff shows up/);
   assert.match(short, /The host infers/);
   assert.match(short, /Two surfaces only/);
+  assert.match(short, /one button/);
   assert.doesNotMatch(short, /verdict, or log/);
-  assert.match(short, /They are not beat two/);
-  assertNoPhraseTable(short, 'README short version');
+  assert.match(short, /are not beat two/);
+  assertNoPhraseTable(short, 'README first-run');
   assert.doesNotMatch(short, /```(?:bash|sh|shell|zsh)?/);
   assert.doesNotMatch(short, /construct serve/);
   assert.doesNotMatch(short, /construct init/);
   assert.doesNotMatch(short, /construct doctor/);
+  assert.doesNotMatch(short, /construct decide/);
 });
 
 test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
@@ -229,9 +231,9 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.equal(recorded.isError, undefined);
     assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
     assert.deepEqual(recorded.implicated, ['privacy', 'security']);
-    assert.equal(recorded.inferredBy, 'session', 'how: this session named the concerns');
+    assert.equal(recorded.inferredBy, 'namer', 'how: a host model named the concerns');
     assert.equal(recorded.ranIn, 'session', 'where: this session ran');
-    assert.notEqual(recorded.inferredBy, 'namer');
+    assert.notEqual(recorded.inferredBy, 'session');
     assert.notEqual(recorded.inferredBy, 'keywords');
     assertNotDoctorStatusVerbWall(recorded.out, 'record_outcome');
 
@@ -247,6 +249,75 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
     assert.doesNotMatch(out, /cursor-agent/);
     assert.doesNotMatch(out, /Record an outcome first/i);
   });
+});
+
+/**
+ * Host-inference proof. These lines are not a phrase table and must not
+ * appear in the keyword catalog. The map scoring 0 is correct. Empty or
+ * engineering-only staff after a host read is a fail.
+ */
+const HOST_INFERENCE_CASES: readonly {
+  readonly line: string;
+  readonly must: readonly string[];
+}[] = [
+  {
+    line:
+      'I want someone to be able to tell Terraform, from the chat they already have open, to add a machine — and I want them to see exactly what it would change, with nothing happening until they say yes.',
+    must: ['user-experience', 'security', 'system-design', 'product-scoping'],
+  },
+  {
+    line:
+      'I want someone using Bob to see which model wrote the change sitting in front of them, and to be able to send it back if they do not trust it.',
+    must: ['user-experience', 'evidence-provenance', 'product-scoping', 'security'],
+  },
+  {
+    line:
+      'I want a teacher to send a letter home about a kid who has been out a lot, using what we already have on them, and I want the family to see exactly which pieces we used.',
+    must: ['privacy', 'user-experience', 'product-scoping', 'evidence-provenance'],
+  },
+  {
+    line:
+      'I want a person who just unboxed a Spark to get a model they already have answering them tonight, and to know if the speed printed on the page is the speed they actually got.',
+    must: ['user-experience', 'product-scoping', 'measurement', 'marketing-claims'],
+  },
+];
+
+test('the keyword map stays silent on the host-inference lines', () => {
+  const mapSrc = readFileSync(join(ROOT, 'src/kernel/implication/map.ts'), 'utf8');
+  const domainsSrc = readFileSync(join(ROOT, 'src/kernel/implication/domains.ts'), 'utf8');
+  for (const { line } of HOST_INFERENCE_CASES) {
+    const mapped = mapImplications({ outcome: line });
+    assert.equal(
+      mapped.implicated.length,
+      0,
+      `keyword map staffed ${mapped.implicated.map((row) => row.domain).join(',')} — do not paper over with a phrase map`,
+    );
+    assert.doesNotMatch(mapSrc, new RegExp(line.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.doesNotMatch(domainsSrc, new RegExp(line.slice(0, 40).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+});
+
+test('host inference staffs the required domains; empty or engineering-only is a fail', async () => {
+  let t = 0;
+  for (const { line, must } of HOST_INFERENCE_CASES) {
+    t += 1;
+    await isolated(async () => {
+      const recorded = await hostNamedRecord(
+        line,
+        must.map((domain) => ({ domain, why: 'the host named this after reading the words' })),
+        `2026-08-26T15:00:0${String(t)}.000Z`,
+      );
+      assert.equal(recorded.isError, undefined, recorded.out);
+      assert.ok(recorded.tasksQueued > 0, 'empty staff after a host read');
+      assert.deepEqual([...recorded.implicated].sort(), [...must].sort());
+      assert.equal(recorded.inferredBy, 'namer');
+      assert.equal(recorded.ranIn, 'session');
+      assert.ok(
+        recorded.implicated.some((domain) => domain !== 'system-design'),
+        'engineering-only staff after a host read',
+      );
+    });
+  }
 });
 
 test('omitting namings on serve is need-the-host, not keyword staff', async () => {
@@ -268,12 +339,12 @@ test('in-session words without a host naming do not fake keyword staff', async (
     const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
-    assert.match(out, /This session infers the intent/);
-    assert.match(out, /keyword map is not consulted/);
-    assert.match(out, /this session dispatches/);
+    assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /how: namer/);
+    assert.match(out, /where: session/);
+    assert.match(out, /one button/);
     assert.match(out, /inbox/);
     assert.doesNotMatch(out, /record_outcome/);
-    assert.doesNotMatch(out, /\bnamer\b/i);
     assert.doesNotMatch(out, /implicated domains/);
     const store = openStore(storePath(resolvePaths()));
     try {
@@ -363,9 +434,9 @@ test('bare construct is talk, not the verb catalog', async () => {
     const { result, out } = await capture(() => main([], CURSOR_ENV));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
-    assert.match(out, /This session infers the intent/);
-    assert.match(out, /How: this session names/);
-    assert.match(out, /Where: this session runs/);
+    assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /how: namer/);
+    assert.match(out, /where: session/);
     assert.doesNotMatch(out, /Starting work/);
     assert.doesNotMatch(out, /Those six are the spine/);
     const store = openStore(storePath(resolvePaths()));

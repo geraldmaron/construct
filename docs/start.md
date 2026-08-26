@@ -10,13 +10,10 @@ no phrase table and no Construct-side namer.
 
 Two surfaces only:
 
-1. Dispatch through this session. The host calls `record_outcome` with
-   namings it chose, then `claim_task` / `submit_work`. You never leave
-   the conversation to type a verb. Construct will not spawn a second
-   CLI. Empty staff after a host read is a miss, not a success.
-2. An inbox call, when the decision is actually yours.
-
-The keyword map is not first-run.
+1. This conversation continues. You never leave to type a verb. Empty
+   staff after the host read the words is a miss, not a success.
+2. A decision that is actually yours. One card: what happened, what you
+   decide, one button.
 
 The methods in play are investigative-research, decision-framing, and
 intake — how the work is done, not job-title seats.
@@ -24,42 +21,38 @@ intake — how the work is done, not job-title seats.
 A first-run talk plants those method skills into this host, or says
 they did not.
 
-How the domains were reached and where the naming ran are two facts.
-When this session supplies namings, both read `session`. Construct's
-namer seam is a different path.
-
 ## When the call is yours
 
 The only Construct-shaped surface is an inbox card, and only when the
-decision is actually yours: what happened, what you decide, one action.
+decision is actually yours: what happened, what you decide, one button.
 
 ```
-decision inbox (1):
+Should the public claim stay up?
 
-  dec-…  Should the public claim stay up?
+  What happened
+    evidence-provenance: hold
+    coverage-gaps: challenge
 
-      evidence-provenance: hold [deliverable:…]
-      coverage-gaps: challenge [deliverable:…]
-
-Say your call on this card. The session records it.
+  Your call is the button.
 ```
+
+Not a second verb. The session records it.
 
 An empty inbox is a real answer: nothing needs you right now. Everything
 else stays in the conversation you are already having.
 
 ## This session can dispatch
 
-The surface can dispatch work. When a secret is set, `claim_task` and
-`submit_work` are on the same socket: the session that just named the
-outcome is the session that pulls the next task. Construct does not
-spawn a second agent to do the work.
+The surface can dispatch work. The host that is already running names
+the concerns, pulls the next task (`claim_task`), and submits the draft
+(`submit_work`). Construct does not spawn a second agent.
 
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
-Omitting namings is an error: the host has to name. It is not a
-fall-through to the keyword map. An empty namings array is a real answer
-that this implicates nothing.
+Omitting namings on `record_outcome` is an error: the host has to name.
+It is not a fall-through to the keyword map. An empty namings array is a
+real answer that this implicates nothing.
 
 The keyword map is the zero-model fallback for a plain terminal with no
 host wrapping the command — it is not first-run. The terminal command

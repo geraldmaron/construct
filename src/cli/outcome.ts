@@ -253,21 +253,11 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
     process.stdout.write(
       started.inferredBy === 'cache'
         ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
-        : started.inferredBy === 'session'
-          ? '\nThese came from this session reading the outcome; each reason above is its stated evidence.\n'
-          : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
+        : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
     );
   }
-  process.stdout.write(
-    `how: ${started.inferredBy}` +
-      (started.inferredBy === 'session'
-        ? ' — this session named the concerns'
-        : started.inferredBy === 'namer'
-          ? ' — Construct\'s namer seam'
-          : '') +
-      `\nwhere: ${started.ranIn}` +
-      (started.ranIn === 'session' ? ' — this session ran\n' : ' — the terminal path\n'),
-  );
+  // Two facts, one print. Do not alias namer to session.
+  process.stdout.write(`how: ${started.inferredBy}\nwhere: ${started.ranIn}\n`);
   if (started.namerFailure !== undefined) {
     // A keyword answer standing in for a model's is a degradation, and the
     // user hears it here as well as in the log.

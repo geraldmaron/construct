@@ -494,8 +494,8 @@ async function recordOutcome(
     at,
     host,
     // This session already read the words. The proposals pass the same
-    // admission gate a Construct namer's would, and the run is tagged
-    // session — not namer, not the keyword map.
+    // admission gate a Construct namer's would. How is namer; where is
+    // session. The two facts are not one word.
     namer: () => Promise.resolve(namings),
     cache: storeNamingCache(core.store, { host, at }),
     source: 'session',

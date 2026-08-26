@@ -21,13 +21,8 @@ import { plantShippedSkills } from './skills.ts';
 import { wire } from './wire.ts';
 
 const SPINE =
-  'Talk in this host. Ordinary language is enough — this session names the concerns.\n' +
-  'The spine: outcome -> work -> show -> inbox -> verdict\n' +
-  '  outcome  this session records via MCP record_outcome with namings\n' +
-  '  work     this session claims via construct serve (claim_task)\n' +
-  '  show     reads a run\'s deliverables back\n' +
-  '  inbox    holds the decisions only you can make\n' +
-  '  verdict  says whether a run was right about what it surfaced\n';
+  'Talk in this host. Ordinary language is enough.\n' +
+  'Two surfaces: this conversation continues, or one inbox card — what happened, what you decide, one button.\n';
 
 function plantMethodSkills(host: SkillsHostName, env: NodeJS.ProcessEnv): number {
   const dir = resolveHostSkillsDir(host, env);

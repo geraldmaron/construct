@@ -47,7 +47,8 @@ test('bare init confirms the ambient host, prints the spine, and writes nothing'
     const { code, out } = capture(() => init([], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
     assert.match(out, /Detected host: claude \(via CLAUDECODE\)/);
-    assert.match(out, /outcome -> work -> show -> inbox -> verdict/);
+    assert.match(out, /Talk in this host/);
+    assert.match(out, /one button/);
     assert.match(out, /construct wire --yes/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false, 'init never writes the MCP entry on its own');
   });
@@ -58,7 +59,8 @@ test('init with no ambient host says so plainly and still prints the spine', () 
     const { code, out } = capture(() => init([], cwd, {}));
     assert.equal(code, 0);
     assert.match(out, /No ambient host detected/);
-    assert.match(out, /outcome -> work -> show -> inbox -> verdict/);
+    assert.match(out, /Talk in this host/);
+    assert.match(out, /one button/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false);
   });
 });

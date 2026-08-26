@@ -98,9 +98,10 @@ async function captureOutcome(
 test('host in session does not consult the keyword map — keyword-rich text staffs nothing', async () => {
   const { code, out } = await captureOutcome([KEYWORD_RICH], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /This session infers the intent/);
-  assert.match(out, /keyword map is not consulted/);
-  assert.match(out, /this session dispatches/);
+  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /how: namer/);
+  assert.match(out, /where: session/);
+  assert.match(out, /one button/);
   assert.match(out, /inbox/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
@@ -108,20 +109,19 @@ test('host in session does not consult the keyword map — keyword-rich text sta
   assert.doesNotMatch(out, /\bcontracts\b/);
   assert.doesNotMatch(out, /no domains implicated/);
   assert.doesNotMatch(out, /record_outcome/);
-  assert.doesNotMatch(out, /\bnamer\b/i);
 });
 
 test('host in session does not invent a hollow run when the keyword map would be silent', async () => {
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
-  assert.match(out, /keyword map is not consulted/);
-  assert.match(out, /this session dispatches/);
+  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /how: namer/);
+  assert.match(out, /where: session/);
   assert.match(out, /inbox/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
   assert.doesNotMatch(out, /no domains implicated/);
   assert.doesNotMatch(out, /record_outcome/);
-  assert.doesNotMatch(out, /\bnamer\b/i);
 });
 
 test('a terminal with no host session still uses the keyword map', async () => {
@@ -189,10 +189,10 @@ test('an ordinary sentence with no host is a bounce, not the verb catalog', asyn
 test('bare construct in a host session is talk, not the verb catalog', async () => {
   const { code, out } = await captureMain([], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /This session infers the intent/);
-  assert.match(out, /How: this session names/);
-  assert.match(out, /Where: this session runs/);
+  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /how: namer/);
+  assert.match(out, /where: session/);
   assert.doesNotMatch(out, /Starting work/);
-  assert.doesNotMatch(out, /--host/);
+  assert.doesNotMatch(out, /--host=/);
   assert.doesNotMatch(out, /run run-/);
 });

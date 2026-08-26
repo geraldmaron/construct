@@ -2,8 +2,9 @@
  * cli/talk.ts — first-run: ordinary language in, no verb lesson.
  *
  * Bare `construct` and a sentence that is not a verb start here. The host
- * infers. Two surfaces: this session dispatches, or inbox. No run is created
- * from this path — a hollow record would steal the next work.
+ * infers. Two surfaces: this conversation continues, or one inbox card.
+ * First-run must not look like Construct. No run is created from this
+ * path — a hollow record would steal the next work.
  */
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
@@ -60,11 +61,7 @@ export function sessionTalkPacket(
   words: string | undefined,
   plant: PlantReport,
 ): string {
-  return (
-    sessionNamingPacket(session, words) +
-    'How: this session names. Where: this session runs.\n' +
-    plantLine(plant)
-  );
+  return sessionNamingPacket(session, words) + plantLine(plant);
 }
 
 /**

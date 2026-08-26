@@ -178,10 +178,12 @@ export type InferredBy =
 
 export interface NamedMap extends ImplicationMap {
   /**
-   * 'namer'    — Construct's namer seam named these (a host model consulted
-   *              as a namer, not this session handing namings in).
-   * 'session'  — this session already had the words and supplied the namings
-   *              to record_outcome. Not Construct's namer. Not the keyword map.
+   * 'namer'    — a host model named these. Where that naming ran is `ranIn`,
+   *              a second fact: `session` when this conversation handed the
+   *              namings in, `cli` when Construct's namer seam was consulted.
+   *              Do not alias namer to session — they are not one print.
+   * 'session'  — kept so an older record that stored this as how can still
+   *              be read. New writes use `namer` plus `ranIn: session`.
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
@@ -227,9 +229,9 @@ export interface NameInput {
   readonly namer?: DomainNamer;
   readonly cache?: NamingCache;
   /**
-   * When the namings are already in hand from this session, the result is
-   * tagged `session`, not `namer`. Construct's namer seam is the leftover
-   * `namer` path.
+   * When the namings are already in hand from this session, `ranIn` is
+   * `session`. How stays `namer` — a host model named the domains. The two
+   * facts print separately.
    */
   readonly source?: 'session';
 }
@@ -385,9 +387,7 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
   const isCoverageGap = limited.length === 0 && allUnmet.some((u) => u.reason === 'low-confidence');
   const inferredBy: InferredBy =
     limited.length > 0
-      ? input.source === 'session'
-        ? 'session'
-        : 'namer'
+      ? 'namer'
       : isCoverageGap
         ? 'coverage-gap'
         : 'none';

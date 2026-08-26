@@ -2,11 +2,21 @@
 
 An outcome engine. Point at an outcome; a learning staff of roles fills in the rest. Work happens in the background; only genuine decisions surface; deliverables arrive finished and traceable.
 
+## First run
+
+You talk. Staff shows up.
+
+You are already in Cursor, Claude Code, Codex, OpenCode, or IBM Bob. Say what you are looking at, in ordinary language. No catalog words. No `--host`. The host infers.
+
+Two surfaces only: this conversation continues, or one inbox card — what happened, what you decide, one button.
+
+That is first run. The page is [docs/first-run.md](docs/first-run.md). `init`, `doctor`, the verb catalog, and any bash fence are not beat two.
+
+## Status
+
 This is a ground-up rebirth — see [STRATEGY.md](STRATEGY.md) for the full direction, [GLOSSARY.md](GLOSSARY.md) for the vocabulary every surface uses, and [CHANGELOG.md](CHANGELOG.md) for what shipped. The code shares nothing with the predecessor (1.x/2.x), which lives on archived and read-only at `construct-legacy`, but the package is the same one: `@geraldmaron/construct`, continuing past `2.1.1` on the `3.0.0` alpha line. The `construct` CLI command name is the same one it always was.
 
 An existing install does not change under you. Alphas publish under the `alpha` tag, so `latest` stays on the predecessor's `2.1.1` until the Phase 5 stakeholder-acceptance gate passes and `3.0.0` is promoted deliberately — an existing `npm install @geraldmaron/construct` cannot wander into the rewrite.
-
-## Status
 
 The spine runs end to end: outcome → implicated domains → dispatch → deliverable, with an append-only work log, a decision inbox, and a verdict surface. The role packs ship as committed data rather than prompt text, challenges are checked rather than declared, and the model matrix states which families have actually been validated instead of implying all of them.
 
@@ -26,11 +36,9 @@ What that leaves is smaller, and it is the part that was always doing the work: 
 
 Three limits are load-bearing rather than fine print. **Legal and compliance output is research, never advice**: the legal lens locates and cites the governing text from the primary source, says where it is genuinely unsettled, labels every deliverable as research rather than legal advice, and routes what genuinely requires licensed counsel (representation, filings, sign-off where real liability turns on an unsettled question) to a licensed human with a concrete referral. **One model family is tuned** (Claude); every other family runs labeled best-effort and writes a degradation note on each dispatch. And **nothing here claims to work for anyone other than its author**: the gates that would have sampled external users are removed, so the project makes no cross-user success-rate claim at all (STRATEGY.md, Phase 5). Treat it as an alpha you can drive, not a product. No stability is promised until the Phase 5 stakeholder-acceptance gate passes, and the `alpha` tag rather than the version number is what enforces that.
 
-**[docs/first-run.md](docs/first-run.md) is first run**: talk in the host you already have; staff shows up. The terminal command list is [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
+## Terminal surface (not first-run)
 
-Talk there. Staff shows up. Ordinary language, no catalog words, no `--host`. The host infers. Two surfaces only: dispatch through this session (`record_outcome`, then `claim_task` / `submit_work`), or an inbox call when the decision is yours. Construct does not classify, name, or route. No phrase table. Then the work happens here. Construct will not spawn a second CLI.
-
-That is first run. `init`, `doctor`, and the verb catalog are later on this page. They are not beat two.
+First-run is talk, above. The terminal command list is [docs/cli-walkthrough.md](docs/cli-walkthrough.md).
 
 From a plain terminal with no host wrapping the command, the keyword map is the zero-model fallback:
 
