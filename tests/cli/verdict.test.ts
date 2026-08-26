@@ -10,6 +10,10 @@ import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { main } from '../../src/cli/index.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
+
+sterileHome();
+sterileAmbientEnv();
 
 interface Capture {
   readonly code: number;
