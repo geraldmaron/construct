@@ -20,6 +20,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
 
 const execFileAsync = promisify(execFile);
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
@@ -30,6 +31,10 @@ test('a reader that closes the pipe early ends the command quietly', async () =>
   try {
     // `head -1` takes the first line and closes: the command is still writing
     // its implicated domains, its work-log summary and its plan at that point.
+    // This is the terminal-first keyword path; an ambient marker from the
+    // runner would make outcome print a naming packet instead of `run …`.
+    const env = { ...process.env };
+    for (const key of AMBIENT_ENV_KEYS) delete env[key];
     const { stdout, stderr } = await execFileAsync(
       '/bin/sh',
       [
@@ -39,7 +44,7 @@ test('a reader that closes the pipe early ends the command quietly', async () =>
       ],
       {
         env: {
-          ...process.env,
+          ...env,
           HOME: home,
           XDG_STATE_HOME: join(home, '.local', 'state'),
           XDG_DATA_HOME: join(home, '.local', 'share'),
