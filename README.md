@@ -4,9 +4,9 @@ An outcome engine. Point at an outcome; a learning staff of roles fills in the r
 
 ## First run
 
-You talk. Staff shows up.
+You talk. This session names and records. Staff shows up. A talk packet without a seat is a miss.
 
-You are already in Cursor, Claude Code, Codex, OpenCode, or IBM Bob. Say what you are looking at, in ordinary language. No catalog words. No `--host`. The host infers.
+You are already in Cursor, Claude Code, Codex, OpenCode, or IBM Bob. Say what you are looking at, in ordinary language. No catalog words from you. No `--host`. The host infers.
 
 Two surfaces only: this conversation continues, or one inbox card — what happened, what you decide, one button.
 

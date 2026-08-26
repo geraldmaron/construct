@@ -98,23 +98,25 @@ async function captureOutcome(
 test('host in session does not consult the keyword map — keyword-rich text staffs nothing', async () => {
   const { code, out } = await captureOutcome([KEYWORD_RICH], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Talk here/);
+  assert.match(out, /A packet is not a seat/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /one button/);
   assert.match(out, /inbox/);
   assert.doesNotMatch(out, /implicated domains/);
   assert.doesNotMatch(out, /run run-/);
-  assert.doesNotMatch(out, /\bemployment\b/);
-  assert.doesNotMatch(out, /\bcontracts\b/);
   assert.doesNotMatch(out, /no domains implicated/);
   assert.doesNotMatch(out, /record_outcome/);
+  assert.match(out, /Catalog \(name only these, exactly\)/);
+  assert.match(out, /- privacy:/);
 });
 
 test('host in session does not invent a hollow run when the keyword map would be silent', async () => {
   const { code, out } = await captureOutcome(['a sentence with no catalog keywords'], CLAUDE_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Talk here/);
+  assert.match(out, /A packet is not a seat/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.match(out, /inbox/);
@@ -137,12 +139,14 @@ test('the implication map has no hardcoded sentence-to-domain table', () => {
   const mapSrc = readFileSync(join(ROOT, 'src/kernel/implication/map.ts'), 'utf8');
   const domainsSrc = readFileSync(join(ROOT, 'src/kernel/implication/domains.ts'), 'utf8');
   const namerSrc = readFileSync(join(ROOT, 'src/hosts/namer.ts'), 'utf8');
+  const instructionSrc = readFileSync(join(ROOT, 'src/hosts/first-run-instruction.ts'), 'utf8');
   const firstRun = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   const start = readFileSync(join(ROOT, 'docs/start.md'), 'utf8');
   for (const [label, src] of [
     ['map.ts', mapSrc],
     ['domains.ts', domainsSrc],
     ['namer.ts', namerSrc],
+    ['first-run-instruction.ts', instructionSrc],
     ['docs/first-run.md', firstRun],
     ['docs/start.md', start],
   ] as const) {
@@ -198,7 +202,8 @@ test('an ordinary sentence with no host is a bounce, not the verb catalog', asyn
 test('bare construct in a host session is talk, not the verb catalog', async () => {
   const { code, out } = await captureMain([], CURSOR_ENV);
   assert.equal(code, 0);
-  assert.match(out, /Talk here\. Staff shows up/);
+  assert.match(out, /Talk here/);
+  assert.match(out, /A packet is not a seat/);
   assert.match(out, /how: namer/);
   assert.match(out, /where: session/);
   assert.doesNotMatch(out, /Starting work/);

@@ -34,7 +34,9 @@ import type { HostName } from './runtime.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
 import { hostlessTalkBounce, sessionTalkPacket } from './talk.ts';
+import { plantFirstRunInstruction } from '../hosts/first-run-instruction.ts';
 import { plantShippedSkills } from './skills.ts';
+import { packageVersion } from './runtime.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { mapImplications } from '../kernel/implication/map.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
@@ -56,17 +58,20 @@ export function sessionOutcomeHandoff(
   env: NodeJS.ProcessEnv = process.env,
 ): string {
   const host = session.host;
-  const plant =
-    (SKILLS_HOST_NAMES as readonly string[]).includes(host)
-      ? plantShippedSkills(resolveHostSkillsDir(host as SkillsHostName, env))
-      : {
-          attempted: true,
-          planted: false,
-          written: 0,
-          already: 0,
-          error: `${host} has no skills directory Construct knows`,
-        };
-  return sessionTalkPacket(session, words, plant);
+  const canPlant = (SKILLS_HOST_NAMES as readonly string[]).includes(host);
+  const dir = canPlant ? resolveHostSkillsDir(host as SkillsHostName, env) : undefined;
+  const plant = canPlant && dir !== undefined
+    ? plantShippedSkills(dir)
+    : {
+        attempted: true,
+        planted: false,
+        written: 0,
+        already: 0,
+        error: `${host} has no skills directory Construct knows`,
+      };
+  const instruction =
+    dir !== undefined ? plantFirstRunInstruction(dir, packageVersion()) : undefined;
+  return sessionTalkPacket(session, words, plant, instruction);
 }
 
 export interface OutcomeArgs {

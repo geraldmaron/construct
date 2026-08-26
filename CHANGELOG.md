@@ -2,9 +2,10 @@
 
 ## 3.0.0-alpha.19 — 2026-08-26
 
-A stranger already in a host talks ordinary language. Staff shows up. The
-first ten seconds are talk, not the verb catalog. A host-less line does not
-record a hollow run.
+A stranger already in a host talks ordinary language. This session names
+and records. Staff shows up. The first ten seconds are talk, not the verb
+catalog. A talk packet without a seat is a miss. A host-less line does not
+record a hollow run. talk() still creates no run.
 
 In-session dispatch through the host that is already there. When the user is
 already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob, `construct
@@ -13,6 +14,10 @@ Construct owns completion, the log, and the inbox. Doctor honesty is a
 consequence: a host that is present and in-session is used, not advertised as
 a spawn that will fail.
 
+- **A talk packet is not a seat.** In-session ordinary language is
+  unfinished until the host names concerns and records them. `talk`
+  plants a first-run instruction and the catalog; it creates no run.
+  Beat two is still talk. The stranger is not taught a verb.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,
   not the grouped verb catalog. An ordinary sentence that is not a verb
   does the same. `construct help` still prints the rest of the surface.
