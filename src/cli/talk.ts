@@ -3,9 +3,9 @@
  *
  * Bare `construct` and a sentence that is not a verb start here. The host
  * names and records. Two surfaces: this conversation continues, or one
- * inbox card. talk() plants the host instruction and creates no run — a
- * hollow record would steal the next work. A packet without a seat is a
- * miss.
+ * inbox card. talk() plants the host instruction, silent-wires serve so
+ * this session can record, and creates no run — a hollow record would
+ * steal the next work. A packet without a seat is a miss.
  */
 
 import { detectAmbientHost } from '../hosts/ambient.ts';
@@ -14,6 +14,7 @@ import { sessionNamingPacket, type AmbientDetection } from '../hosts/session.ts'
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { plantShippedSkills, type PlantReport } from './skills.ts';
 import { packageVersion } from './runtime.ts';
+import { ensureAmbientServeWired, type ServeWire } from './wire.ts';
 
 const HOSTS_THEY_HAVE =
   'Talk in the host you already use — Cursor, Claude Code, Codex, OpenCode, or IBM Bob.\n';
@@ -68,14 +69,28 @@ function plantForSession(session: AmbientDetection, env: NodeJS.ProcessEnv): Pla
   return plantShippedSkills(dir);
 }
 
+function wireLine(wired: ServeWire | undefined): string {
+  if (wired === undefined) return '';
+  if (wired.status === 'wired' || wired.status === 'already') {
+    return 'Recording is on this session.\n';
+  }
+  if (wired.status === 'unsupported' || wired.status === 'malformed') {
+    return 'Recording could not attach here. This conversation continues, or one inbox card.\n';
+  }
+  return '';
+}
+
 /** In-session first-run: the host names and records; this process does not staff. */
 export function sessionTalkPacket(
   session: AmbientDetection,
   words: string | undefined,
   plant: PlantReport,
   instruction?: InstructionPlant,
+  wired?: ServeWire,
 ): string {
-  return sessionNamingPacket(session, words) + plantLine(plant) + instructionLine(instruction);
+  return (
+    sessionNamingPacket(session, words) + plantLine(plant) + instructionLine(instruction) + wireLine(wired)
+  );
 }
 
 function plantInstructionForSession(
@@ -88,10 +103,15 @@ function plantInstructionForSession(
 }
 
 /**
- * First-run talk. In a host session this prints the naming packet and plants
- * the host instruction (or says they did not). With no host it bounces: no run.
+ * First-run talk. In a host session this prints the naming packet, plants
+ * the host instruction, and silent-wires serve onto this host so the host
+ * can record. With no host it bounces: no run. talk() itself creates no run.
  */
-export function talk(argv: string[] = [], env: NodeJS.ProcessEnv = process.env): number {
+export function talk(
+  argv: string[] = [],
+  env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
+): number {
   const words = argv.join(' ').trim();
   const session = detectAmbientHost(env);
   if (session === null) {
@@ -100,8 +120,9 @@ export function talk(argv: string[] = [], env: NodeJS.ProcessEnv = process.env):
   }
   const plant = plantForSession(session, env);
   const instruction = plantInstructionForSession(session, env);
+  const wired = ensureAmbientServeWired(cwd, env);
   process.stdout.write(
-    sessionTalkPacket(session, words.length > 0 ? words : undefined, plant, instruction),
+    sessionTalkPacket(session, words.length > 0 ? words : undefined, plant, instruction, wired),
   );
   return 0;
 }

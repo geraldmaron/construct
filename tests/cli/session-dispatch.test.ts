@@ -55,13 +55,13 @@ async function capture<T>(fn: () => T | Promise<T>): Promise<{ result: T; out: s
   }
 }
 
-async function isolated<T>(fn: () => Promise<T> | T): Promise<T> {
+async function isolated<T>(fn: (root: string) => Promise<T> | T): Promise<T> {
   const root = mkdtempSync(join(tmpdir(), 'construct-session-'));
   const previous = { data: process.env.XDG_DATA_HOME, state: process.env.XDG_STATE_HOME };
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
-    return await fn();
+    return await fn(root);
   } finally {
     if (previous.data === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previous.data;
@@ -159,14 +159,17 @@ test('work finds the run it just recorded when no --run is typed', async () => {
 });
 
 test('an in-session outcome does not staff from the keyword map and creates no hollow run', async () => {
-  await isolated(async () => {
+  await isolated(async (root) => {
     const { result, out } = await capture(() =>
-      outcome(['is this ready'], undefined, CURSOR_ENV),
+      outcome(['is this ready'], undefined, CURSOR_ENV, root),
     );
     assert.equal(result, 0);
     assert.match(out, /Talk here\. Staff shows up/);
+    assert.match(out, /Recording is on this session/);
     assert.doesNotMatch(out, /Catalog \(name only these/);
     assert.doesNotMatch(out, /Name the concerns these words implicate/);
+    assert.doesNotMatch(out, /construct serve/);
+    assert.doesNotMatch(out, /construct wire/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);

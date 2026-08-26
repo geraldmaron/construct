@@ -27,6 +27,10 @@
  * `construct cleanup` uses for its own writes. Only `--yes` commits it — a
  * bare invocation someone runs to see what would happen must not be the
  * thing that edits their project config.
+ *
+ * First-run talk is the other writer: it calls `ensureAmbientServeWired`
+ * with no preview and no verb, because a planted skill with no recording
+ * socket on this session is not follow-through.
  */
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -96,6 +100,44 @@ function writeConfig(path: string, config: Record<string, unknown>): void {
   chmodSync(path, 0o600);
 }
 
+export type ServeWire =
+  | { readonly status: 'wired' | 'already'; readonly host: AmbientHostName; readonly path: string }
+  | { readonly status: 'unsupported'; readonly host: AmbientHostName }
+  | { readonly status: 'no-host' }
+  | { readonly status: 'malformed'; readonly path: string };
+
+/**
+ * Put `construct serve` on the ambient host's project MCP socket.
+ * First-run talk calls this with no preview and no verb on stdout.
+ * The `wire` command remains the preview/apply CLI around the same write.
+ */
+export function ensureAmbientServeWired(
+  cwd: string = process.cwd(),
+  env: NodeJS.ProcessEnv = process.env,
+): ServeWire {
+  const ambient = detectAmbientHost(env);
+  if (ambient === null) return { status: 'no-host' };
+  const target = WIRE_TARGETS[ambient.host];
+  if (!target) return { status: 'unsupported', host: ambient.host };
+
+  const path = target.configPath(cwd);
+  const existing = readConfigOrNull(path);
+  if (existing === 'malformed') return { status: 'malformed', path };
+
+  const mcpServers = (existing.mcpServers as Record<string, unknown> | undefined) ?? {};
+  const entry = target.entry();
+  const current = mcpServers[target.serverName];
+  if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) {
+    return { status: 'already', host: ambient.host, path };
+  }
+
+  writeConfig(path, {
+    ...existing,
+    mcpServers: { ...mcpServers, [target.serverName]: entry },
+  });
+  return { status: 'wired', host: ambient.host, path };
+}
+
 export function wire(
   argv: string[] = [],
   cwd: string = process.cwd(),
@@ -126,6 +168,7 @@ export function wire(
   const entry = target.entry();
   const current = mcpServers[target.serverName];
   const displayPath = relative(cwd, path) || path;
+  const commandLine = `${String((entry as { command: string }).command)} ${(entry as { args: readonly string[] }).args.join(' ')}`;
 
   if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) {
     process.stdout.write(
@@ -134,7 +177,6 @@ export function wire(
     return 0;
   }
 
-  const commandLine = `${String((entry as { command: string }).command)} ${(entry as { args: readonly string[] }).args.join(' ')}`;
   if (!confirmed) {
     process.stdout.write(
       `construct wire: would wire ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n` +
@@ -143,14 +185,18 @@ export function wire(
     return 0;
   }
 
-  const config: Record<string, unknown> = {
-    ...existing,
-    mcpServers: { ...mcpServers, [target.serverName]: entry },
-  };
-  writeConfig(path, config);
-
-  process.stdout.write(
-    `wired ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n`,
-  );
-  return 0;
+  const applied = ensureAmbientServeWired(cwd, env);
+  if (applied.status === 'wired') {
+    process.stdout.write(
+      `wired ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n`,
+    );
+    return 0;
+  }
+  if (applied.status === 'already') {
+    process.stdout.write(
+      `${target.serverName} is already wired into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}); nothing to change.\n`,
+    );
+    return 0;
+  }
+  return refuse(`${displayPath} exists but is not valid JSON — left untouched.`);
 }

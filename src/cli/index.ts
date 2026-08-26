@@ -273,6 +273,7 @@ export function groupedHelp(): string {
 export async function main(
   argv: string[] = process.argv.slice(2),
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ): Promise<number> {
   // `construct outcome … | head -1` closes the pipe while the command is still
   // writing, and an unhandled write to a closed stdout throws an 'error' event
@@ -288,7 +289,7 @@ export async function main(
   process.stderr.on('error', quitOnClosedOutput);
 
   try {
-    return await run(argv, env);
+    return await run(argv, env, cwd);
   } catch (error) {
     // Only this class. Every other throw keeps its stack, because a defect that
     // reads as a tidy one-liner is a defect nobody reports.
@@ -298,12 +299,16 @@ export async function main(
   }
 }
 
-async function run(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
+async function run(
+  argv: string[],
+  env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
+): Promise<number> {
   // Bare `construct` is first-run talk, not the verb catalog. A stranger's
   // first ten seconds must not open on thirty-seven verbs. `help` / `--help`
   // / `-h` still print the grouped surface — that is a request for it.
   if (argv.length === 0) {
-    return talk([], env);
+    return talk([], env, cwd);
   }
 
   const command = argv[0] ?? 'help';
@@ -350,7 +355,7 @@ async function run(argv: string[], env: NodeJS.ProcessEnv = process.env): Promis
     case 'notes':
       return notes(argv.slice(1));
     case 'outcome':
-      return outcome(argv.slice(1), undefined, env);
+      return outcome(argv.slice(1), undefined, env, cwd);
     case 'ask':
       return ask(argv.slice(1));
     case 'work':
@@ -432,6 +437,6 @@ async function run(argv: string[], env: NodeJS.ProcessEnv = process.env): Promis
     default:
       // An ordinary sentence is talk, not a typo against the verb table.
       // `construct help` still prints the catalog. This path does not.
-      return talk(argv, env);
+      return talk(argv, env, cwd);
   }
 }

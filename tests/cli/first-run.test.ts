@@ -55,13 +55,13 @@ async function capture<T>(fn: () => T | Promise<T>): Promise<{ result: T; out: s
   }
 }
 
-async function isolated<T>(fn: () => Promise<T> | T): Promise<T> {
+async function isolated<T>(fn: (root: string) => Promise<T> | T): Promise<T> {
   const root = mkdtempSync(join(tmpdir(), 'construct-first-run-'));
   const previous = { data: process.env.XDG_DATA_HOME, state: process.env.XDG_STATE_HOME };
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
   try {
-    return await fn();
+    return await fn(root);
   } finally {
     if (previous.data === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previous.data;
@@ -111,6 +111,9 @@ function assertTalkReprintsNoCatalog(text: string, words?: string): void {
   assert.doesNotMatch(text, /name the concerns/i);
   assert.doesNotMatch(text, /^- [a-z-]+:/m);
   assert.doesNotMatch(text, /program-sequencing:/);
+  assert.doesNotMatch(text, /construct serve/);
+  assert.doesNotMatch(text, /construct wire/);
+  assert.doesNotMatch(text, /construct outcome/);
 }
 
 function assertNotDoctorStatusVerbWall(text: string, label: string): void {
@@ -328,11 +331,12 @@ test('omitting namings on serve is need-the-host, not keyword staff', async () =
 });
 
 test('in-session words without a host naming do not fake keyword staff', async () => {
-  await isolated(async () => {
-    const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV));
+  await isolated(async (cwd) => {
+    const { result, out } = await capture(() => outcome(['look at this'], undefined, CURSOR_ENV, cwd));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'in-session outcome');
     assertTalkReprintsNoCatalog(out, 'look at this');
+    assert.match(out, /Recording is on this session/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.match(out, /one button/);
@@ -423,11 +427,12 @@ test('product serve lists host-pull dispatch tools', () => {
 });
 
 test('bare construct is talk, not the verb catalog', async () => {
-  await isolated(async () => {
-    const { result, out } = await capture(() => main([], CURSOR_ENV));
+  await isolated(async (cwd) => {
+    const { result, out } = await capture(() => main([], CURSOR_ENV, cwd));
     assert.equal(result, 0);
     assertNotDoctorStatusVerbWall(out, 'bare construct in-session');
     assertTalkReprintsNoCatalog(out);
+    assert.match(out, /Recording is on this session/);
     assert.match(out, /how: namer/);
     assert.match(out, /where: session/);
     assert.doesNotMatch(out, /Starting work/);
@@ -527,13 +532,25 @@ test('in-session talk plants method skills or says they did not', async () => {
     const previous = process.env.HOME;
     process.env.HOME = home;
     try {
-      const { result, out } = await capture(() => main(['look at this'], { ...CURSOR_ENV, HOME: home }));
+      const { result, out } = await capture(() =>
+        main(['look at this'], { ...CURSOR_ENV, HOME: home }, home),
+      );
       assert.equal(result, 0);
       assertTalkReprintsNoCatalog(out, 'look at this');
+      assert.match(out, /Recording is on this session/);
       assert.doesNotMatch(out, /record_outcome/);
       assert.doesNotMatch(out, /construct outcome/);
+      assert.doesNotMatch(out, /construct serve/);
+      assert.doesNotMatch(out, /construct wire/);
       const planted = existsSync(join(home, '.cursor', 'skills', 'investigative-research', 'SKILL.md'));
       const instruction = join(home, '.cursor', 'skills', 'first-run', 'SKILL.md');
+      const mcpPath = join(home, '.cursor', 'mcp.json');
+      assert.equal(existsSync(mcpPath), true, 'talk must silent-wire serve onto this session');
+      const mcp = JSON.parse(readFileSync(mcpPath, 'utf8')) as {
+        mcpServers: Record<string, { args?: string[] }>;
+      };
+      assert.ok(mcp.mcpServers['construct-mcp'], 'construct-mcp is on the socket');
+      assert.deepEqual(mcp.mcpServers['construct-mcp'].args?.slice(-1), ['serve']);
       if (planted) {
         assert.match(out, /Method skills (planted|already)/);
         assert.equal(existsSync(join(home, '.cursor', 'skills', 'construct-analyst', 'SKILL.md')), false);
@@ -543,11 +560,13 @@ test('in-session talk plants method skills or says they did not', async () => {
       assert.equal(existsSync(instruction), true, 'first-run instruction must plant');
       const body = readFileSync(instruction, 'utf8');
       assert.match(body, /A packet is not a seat/);
-      assert.match(body, /recording tool already on this session/);
+      assert.match(body, /record_outcome/);
+      assert.match(body, /just wired/);
       assert.doesNotMatch(body, /## Catalog/);
       assert.doesNotMatch(body, /^- privacy:/m);
-      assert.doesNotMatch(body, /record_outcome/);
       assert.doesNotMatch(body, /construct outcome/);
+      assert.doesNotMatch(body, /construct serve/);
+      assert.doesNotMatch(body, /construct wire/);
       const store = openStore(storePath(resolvePaths()));
       try {
         assert.equal(listTasks(store).length, 0, 'talk itself creates no run');
@@ -558,6 +577,66 @@ test('in-session talk plants method skills or says they did not', async () => {
       if (previous === undefined) delete process.env.HOME;
       else process.env.HOME = previous;
       rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+test('in-session talk wires recording; host follow-through seats staff', async () => {
+  await isolated(async (cwd) => {
+    const { result, out } = await capture(() => main(['look at this'], CURSOR_ENV, cwd));
+    assert.equal(result, 0);
+    assertTalkReprintsNoCatalog(out, 'look at this');
+    assert.match(out, /Recording is on this session/);
+    const mcp = JSON.parse(readFileSync(join(cwd, '.cursor', 'mcp.json'), 'utf8')) as {
+      mcpServers: Record<string, { args?: string[] }>;
+    };
+    assert.deepEqual(mcp.mcpServers['construct-mcp']?.args?.slice(-1), ['serve']);
+    const empty = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(empty).length, 0, 'talk itself creates no run');
+    } finally {
+      empty.close();
+    }
+
+    const before = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(before.result, 0);
+    assert.match(before.out, /Nothing is seated yet/);
+    assert.doesNotMatch(before.out, /construct outcome/);
+    assert.doesNotMatch(before.out, /record_outcome/);
+
+    const recorded = await hostNamedRecord(
+      'look at this',
+      [
+        { domain: 'privacy', why: 'the host named privacy after reading the words' },
+        { domain: 'security', why: 'the host named security after reading the words' },
+      ],
+      '2026-08-26T16:30:00.000Z',
+    );
+    assert.equal(recorded.isError, undefined);
+    assert.ok((recorded.tasksQueued ?? 0) > 0, 'empty staff after a host read');
+    assert.deepEqual(recorded.staff, ['legal', 'security']);
+    assert.equal(recorded.how, 'namer');
+    assert.equal(recorded.where, 'session');
+  });
+});
+
+test('bob in-session talk does not invent an MCP writer or a run', async () => {
+  await isolated(async (cwd) => {
+    const { result, out } = await capture(() =>
+      main(['look at this'], { BOB_SHELL_CLI_IDE_SERVER_PORT: '42991' }, cwd),
+    );
+    assert.equal(result, 0);
+    assertTalkReprintsNoCatalog(out, 'look at this');
+    assert.match(out, /Recording could not attach here/);
+    assert.doesNotMatch(out, /construct wire/);
+    assert.doesNotMatch(out, /construct serve/);
+    assert.equal(existsSync(join(cwd, '.mcp.json')), false);
+    assert.equal(existsSync(join(cwd, '.cursor', 'mcp.json')), false);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.equal(listTasks(store).length, 0);
+    } finally {
+      store.close();
     }
   });
 });

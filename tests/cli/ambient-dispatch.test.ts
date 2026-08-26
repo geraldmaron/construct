@@ -189,12 +189,15 @@ test('in-session outcome does not staff from the keyword map or name a run to wo
   const realOut = process.stdout.write.bind(process.stdout);
   (process.stdout as { write: unknown }).write = (c: string) => (out.push(String(c)), true);
   try {
-    const code = await outcome([OUTCOME], undefined, CLAUDE_ENV);
+    const code = await outcome([OUTCOME], undefined, CLAUDE_ENV, root);
     assert.equal(code, 0);
     const text = out.join('');
     assert.match(text, /Talk here\. Staff shows up/);
+    assert.match(text, /Recording is on this session/);
     assert.doesNotMatch(text, /Catalog \(name only these/);
     assert.doesNotMatch(text, /Name the concerns these words implicate/);
+    assert.doesNotMatch(text, /construct serve/);
+    assert.doesNotMatch(text, /construct wire/);
     assert.match(text, /how: namer/);
     assert.match(text, /where: session/);
     assert.match(text, /inbox/);

@@ -15,10 +15,13 @@ consequence: a host that is present and in-session is used, not advertised as
 a spawn that will fail.
 
 - **Talk reprints what they said. Then staff shows up.** The host
-  names and records. `talk` creates no run and prints no catalog and
-  no naming lesson — catalog ids live on the recording tool. A list
-  of domains is not staff. If the stranger is needed, that is one
-  inbox card, not a menu. Beat two is still talk.
+  names and records. `talk` creates no run, prints no catalog, and
+  silent-wires recording onto this session when the host can take
+  it — a planted skill with no socket is not follow-through. Catalog
+  ids live on the recording tool, not stdout. If the stranger is
+  needed, that is one inbox card, not a menu. Beat two is still talk.
+  In-session `work` with nothing seated reprints the surfaces; it
+  does not teach a verb.
 - **Bare `construct` is talk.** No subcommand starts the host talk path,
   not the grouped verb catalog. An ordinary sentence that is not a verb
   does the same. `construct help` still prints the rest of the surface.

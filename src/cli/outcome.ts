@@ -38,6 +38,7 @@ import { plantFirstRunInstruction } from '../hosts/first-run-instruction.ts';
 import { plantShippedSkills } from './skills.ts';
 import { packageVersion } from './runtime.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import { ensureAmbientServeWired } from './wire.ts';
 import { mapImplications } from '../kernel/implication/map.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
@@ -56,6 +57,7 @@ export function sessionOutcomeHandoff(
   session: AmbientDetection,
   words: string,
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ): string {
   const host = session.host;
   const canPlant = (SKILLS_HOST_NAMES as readonly string[]).includes(host);
@@ -71,7 +73,8 @@ export function sessionOutcomeHandoff(
       };
   const instruction =
     dir !== undefined ? plantFirstRunInstruction(dir, packageVersion()) : undefined;
-  return sessionTalkPacket(session, words, plant, instruction);
+  const wired = ensureAmbientServeWired(cwd, env);
+  return sessionTalkPacket(session, words, plant, instruction, wired);
 }
 
 export interface OutcomeArgs {
@@ -311,6 +314,7 @@ export async function outcome(
   argv: string[],
   hostOverride?: HostAdapter,
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ): Promise<number> {
   // Answered before the text is read, so no run is recorded for a request for
   // help.
@@ -343,7 +347,7 @@ export async function outcome(
   // A typed --host that names this session is still this session.
   // hostOverride / --binary is the spawn-path / namer test seam.
   if (args.domains === undefined && session !== null && hostOverride === undefined) {
-    process.stdout.write(sessionOutcomeHandoff(session, args.text, env));
+    process.stdout.write(sessionOutcomeHandoff(session, args.text, env, cwd));
     return 0;
   }
   // Host-less and the keyword map is silent: no hollow run, no `--host`
