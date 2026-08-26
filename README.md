@@ -223,7 +223,7 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 
 That line is the whole gate; nothing is done without it. `npm run lint` is a chain of small checks rather than a linter: no absolute paths, glossary parity, no tracker ids in code, skill-spec conformance, reader-rubric parity, the connector gate, terminal-escape safety, a check that every command printed in the documentation names a verb and subcommand the CLI actually accepts (asked of the CLI, not of a table beside it), and a regeneration of `docs/org-map.md` compared against the committed copy, so a catalog edit that would quietly falsify that page fails here instead. `npm test` is the sterile suite through `node --test`. `npm run smoke` packs the package, installs it into a scratch project, and runs the spine as a consumer would.
 
-Ordinary GitHub Actions on push and pull request run `lint` and `typecheck` only. The full gate — that line, plus the suite under a read-only `HOME` — is the `ci` workflow's `workflow_dispatch` and the release-tag workflow before publish. Tracker-only commits under `.beads/` do not start a run.
+Ordinary GitHub Actions on push and pull request run `lint`, `typecheck`, and the first-run staffing/surface subset (`npm run test:first-run`). The full gate — that line, plus the suite under a read-only `HOME` — is the `ci` workflow's `workflow_dispatch` and the release-tag workflow before publish. Tracker-only commits under `.beads/` do not start a run.
 
 Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it runs natively via Node's type-stripping in development, with no build step for `npm test`. `npm run build` produces the published `dist/` for packaging.
 
