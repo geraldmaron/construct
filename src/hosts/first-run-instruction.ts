@@ -61,7 +61,7 @@ export function firstRunInstructionText(version: string): string {
     '5. Reply in this conversation with what was seated. Inbox only if a',
     '   call is actually theirs.',
     '',
-    'One surface for every stranger. Persona-as-capability is dead.',
+    'One surface for every stranger. A role is not a capability.',
     '',
     '## Catalog',
     '',
