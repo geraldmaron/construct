@@ -5,10 +5,12 @@ A seat you did not name can show up from the ground Construct can see
 — the repos, directories, and sources in reach, plus the words you
 said.
 
-That is first run. You never type a catalog word, a CLI verb, or
-`record_outcome`. You do not have to know a keyword map or a catalog
-exists. Construct is the brain: it may add seats the host or you did
-not name. That is the contract, not what the binary does.
+That is first run. You never type a catalog word or a CLI verb. You do
+not have to know a keyword map or a catalog exists. If this session is
+already pointed at Construct, you just talk. The host hears that first
+message. You do not type a verb to attach, to record, or to start.
+
+That is the contract, not what the binary does.
 
 ```bash
 construct serve
@@ -19,8 +21,8 @@ If this box has no host session: First-run is talk in a host you already have
 This box has no host session.
 
 The shipped binary does not meet that bar. Ordinary talk that leaves
-an empty work log is still a miss, and `record_outcome` still errors
-when namings are omitted. Do not expect staff to appear from talk
+an empty work log is still a miss. Empty staff after that talk is the
+honest miss on the third beat. Do not expect staff to appear from talk
 alone, and do not expect Construct to add dark-corner seats from
 ground it can see.
 
@@ -64,16 +66,17 @@ else stays in the conversation you are already having.
 ## This session can dispatch
 
 The surface can dispatch work. When a secret is set, the session
-that is already talking to you pulls the next task. Product `serve`
-creates that secret. Construct does not spawn a second agent to do
-the work.
+that is already talking to you pulls the next task. Pointing the
+session at Construct creates that secret. Construct does not spawn
+a second agent to do the work.
 
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
-On the shipped `construct serve`, omitting namings is still an error.
-That is the old host-namer rule, not first-run success. An empty
-namings array is a real answer that this implicates nothing.
+Empty staff after a host read is the miss on the third beat. That is
+not first-run success, and it is not a second keyword map doing the
+job. An empty namings list is a real answer that this implicates
+nothing.
 
 The keyword map is the zero-model fallback for a plain terminal with no
 host wrapping the command — it is not first-run and it is not the

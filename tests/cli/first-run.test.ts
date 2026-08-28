@@ -7,7 +7,9 @@
  * is not first-run. Empty staff after a host read is a fail. First
  * output is not doctor or a verb wall. The first-run page does not
  * teach a CLI verb, a catalog concern name, or a host tool name as
- * the thing the user types.
+ * the thing the user types. After the hook is planted, first-run
+ * does not teach construct wire, construct hear, or record_outcome
+ * as something the person types.
  */
 
 import { test } from 'node:test';
@@ -99,6 +101,21 @@ function assertNoPhraseTable(body: string, label: string): void {
   assert.doesNotMatch(body, /product shape/i, `${label} still encodes a sacred first-run phrase`);
 }
 
+function assertFirstRunDoesNotTeachPersonVerbs(body: string, label: string): void {
+  assert.doesNotMatch(body, /\bconstruct wire\b/, `${label} still teaches construct wire`);
+  assert.doesNotMatch(body, /\bconstruct hear\b/, `${label} still teaches construct hear`);
+  assert.doesNotMatch(body, /\brecord_outcome\b/, `${label} still teaches record_outcome`);
+}
+
+function readmeFirstRunSlice(readme: string): string {
+  const from = readme.indexOf('docs/first-run.md');
+  const machine = readme.indexOf('## On the machine');
+  const seat = readme.indexOf('## Which seat');
+  const until = machine > from ? machine : seat;
+  assert.ok(from >= 0 && until > from, 'README first-run slice is missing');
+  return readme.slice(from, until);
+}
+
 async function hostNamedRecord(
   words: string,
   namings: Array<{ domain: string; why: string }> | undefined,
@@ -158,7 +175,8 @@ test('first-run lead is talk, a run, and an unnamed seat — not host-namer succ
   assert.doesNotMatch(lead, /You talk\. Staff shows up/);
   assert.doesNotMatch(lead, /Staff shows up/);
   assert.match(lead, /Two surfaces only/);
-  assert.match(lead, /record_outcome/);
+  assert.match(lead, /empty staff after that talk is the\s+honest miss on the third beat/i);
+  assertFirstRunDoesNotTeachPersonVerbs(page, 'docs/first-run.md');
   assert.doesNotMatch(page, /claim_task/);
   assert.doesNotMatch(page, /submit_work/);
   assert.doesNotMatch(page, /verdict, or log/);
@@ -207,24 +225,25 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
 
 test('README short version opens with serve, not a phrase table or verb wall', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  const from = readme.indexOf('docs/first-run.md');
-  const until = readme.indexOf('## Which seat');
-  assert.ok(from >= 0 && until > from);
-  const short = readme.slice(from, until);
+  const short = readmeFirstRunSlice(readme);
   assert.match(short, /a run exists/);
   assert.match(short, /seat you did not name/);
   assert.match(short, /from the\s+ground/);
   assert.match(short, /does not meet that bar/);
   assert.match(short, /old first-run rule/);
   assert.match(short, /not the product/);
+  assert.match(short, /empty staff after that talk is the honest miss on the third beat/i);
   assert.doesNotMatch(short, /Staff shows up/);
   assert.match(short, /Two surfaces only/);
   assert.match(short, /host relays/);
+  assert.match(short, /you just talk/);
+  assert.match(short, /host\s+hears that first message/);
   assert.doesNotMatch(short, /claim_task/);
   assert.doesNotMatch(short, /submit_work/);
   assert.doesNotMatch(short, /construct decide/);
   assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
+  assertFirstRunDoesNotTeachPersonVerbs(short, 'README first-run');
   assertNoPhraseTable(short, 'README short version');
   const fence = firstShellFence(short);
   assert.match(fence, /construct serve/);
@@ -253,15 +272,19 @@ test('user-facing first-run copy does not say staff already shows up', () => {
 
 test('tarball first-run skill keeps the contract and the honesty line', () => {
   const skill = readFileSync(join(ROOT, 'skills/first-run/SKILL.md'), 'utf8');
+  assert.match(skill, /This file is for the host/);
+  assert.match(skill, /hear it and record it this\s+turn|hear that first message and record/i);
+  assert.match(skill, /Do not ask them to type a (command|verb)/);
   assert.match(skill, /a run exists/i);
   assert.match(skill, /seat they did not name|seat you did not name/i);
   assert.match(skill, /does not meet that bar/);
   assert.match(skill, /empty work log|empty log/);
-  assert.match(skill, /record_outcome/);
-  assert.match(skill, /omitting namings is still an error|still requires namings|omitting namings is still an error/);
+  assert.match(skill, /empty staff after that talk is the\s+honest miss on the third beat/i);
+  assert.match(skill, /Do not describe a run with empty staff as 1\+3/);
   assert.match(skill, /This box has no host session/);
   assert.match(skill, /What happened|what happened/);
   assert.match(skill, /host relays/);
+  assertFirstRunDoesNotTeachPersonVerbs(skill, 'skills/first-run/SKILL.md');
   assert.doesNotMatch(skill, /construct decide/);
   assert.doesNotMatch(skill, /evidence-provenance/);
   assert.doesNotMatch(skill, /coverage-gaps/);
@@ -272,9 +295,7 @@ test('tarball first-run skill keeps the contract and the honesty line', () => {
 
 test('README first-run names the hostless box without construct outcome', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  const from = readme.indexOf('docs/first-run.md');
-  const until = readme.indexOf('## Which seat');
-  const short = readme.slice(from, until);
+  const short = readmeFirstRunSlice(readme);
   assert.match(short, /This box has no host session/);
   assert.match(short, /First-run is talk in a host you already have/);
   assert.doesNotMatch(short, /construct outcome/);

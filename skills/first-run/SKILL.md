@@ -2,35 +2,42 @@
 name: first-run
 description: >-
   When someone talks in a host they already have, in ordinary language,
-  first-run is talk, a run, and a seat they did not name from ground that
-  is actually visible. The shipped binary does not meet that bar. Do not
-  tell them staff showed up. Do not treat talk as a created run. Stand
-  down when they are already inside a run, or when they asked for a
-  terminal verb walkthrough.
+  hear that first message and record it this turn. Do not ask them to
+  type a verb to attach, to record, or to start. First-run is talk, a
+  run, and a seat they did not name. The shipped binary does not meet
+  that bar. Empty staff after the talk is the miss on the third beat.
+  Do not tell them staff showed up. Stand down when they are already
+  inside a run, or when they asked for a terminal verb walkthrough.
 license: Apache-2.0
 metadata:
-  version: 0.1.0
+  version: 0.1.1
   source: geraldmaron/construct
 ---
 
 # First run
 
-This file is for the host, not a verb the person types.
+This file is for the host, not a lesson for the person.
+
+On their first ordinary-language message, hear it and record it this
+turn. Do not ask them to type a command. Do not ask them to attach,
+to record, or to start. If a recording tool is already on your list,
+use it silently this turn. Never print that tool's name. Never ask
+them to type it.
 
 First-run is 1+3: they talk in the host they already have, in ordinary
 language; a run exists; a seat they did not name can show up from ground
 Construct can see (repos, directories, and sources in reach, plus the
-words they said). They never type a catalog word, a CLI verb, or
-`record_outcome`. Keyword `construct outcome` is not first-run.
+words they said). They never type a catalog word or a CLI verb.
+Keyword outcome-on-the-terminal is not first-run.
 
 That is the contract. It is not what the shipped binary does. Ordinary
-talk still leaves an empty work log. The host must still call
-`record_outcome`, and omitting namings is still an error. Do not say
-staff showed up. Do not say talk already created a run. Do not say
-namings are optional, or that Construct already adds unnamed seats.
+talk still leaves an empty work log. Empty staff after that talk is the
+honest miss on the third beat. Do not say staff showed up. Do not say
+talk already created a run. Do not say namings are optional. Do not
+describe a run with empty staff as 1+3.
 
-`construct serve` is how this session is pointed at Construct. It is not
-beat two and not a verb lesson.
+Pointing this session at Construct is already done when this file is
+planted. It is not beat two and not a verb lesson.
 
 ## 1. Scope - and when to stand down
 
@@ -43,21 +50,22 @@ a designed outcome.
 
 Stay in this conversation. Do not ask them to type a command.
 
-If `record_outcome` is on your tool list, call it this turn with namings
-for the words they said. An empty namings list means this implicates
-nothing; say that. Do not invent a seat. Do not print the catalog.
+If a recording tool is on your tool list, call it this turn with
+namings for the words they said. An empty namings list means this
+implicates nothing; say that. Do not invent a seat. Do not print the
+catalog. Do not print the tool name.
 
-If `record_outcome` is not on your tool list, recording did not attach.
+If no recording tool is on your tool list, recording did not attach.
 Stay here. Do not restart. Do not ask them to type a verb. A file for
 later is a miss.
 
 If they are on a box with no host session, first-run is still talk in a
 host they already have (Cursor, Claude Code, Codex, OpenCode, or IBM
-Bob). This box has no host session. Do not send them to
-`construct outcome`.
+Bob). This box has no host session. Do not send them to a terminal
+outcome verb.
 
-Empty staff after a host read is a miss, not a success. Do not cover
-that miss by saying staff showed up.
+Empty staff after a host read is the miss on the third beat, not a
+success. Do not cover that miss by saying staff showed up.
 
 ## 3. When the call is theirs
 
@@ -75,12 +83,13 @@ answered or marked undone:
 ```
 FIRST-RUN RECORD
 Talk heard: <their words, or undone>
-record_outcome called this turn: yes / no / not on the tool list
+Recording called this turn: yes / no / not on the tool list
 Namings sent: <domains, or empty, or omitted>
 Run on the log: yes / no
-Unnamed seat from visible ground: no — the shipped binary does not
-  add one
+Staff seated: empty / named
+Unnamed seat from visible ground: no — empty staff is the miss on 3
 Staff-showed-up claimed: no
+Person asked to type a verb: no
 ```
 
 A missing line is the miss. Do not fill a no by narrating success.
