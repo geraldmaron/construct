@@ -27,18 +27,20 @@ The terminal command list is
 are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
 Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
-Point the session at Construct. That is the contract: a run exists, and a
-seat you did not name can show up from the words plus repos, directories,
-and sources Construct can actually see. Two surfaces only: dispatch
-through this session once a run exists, or an inbox call when the
-decision is yours. The host relays that call. You stay in the
-conversation. No phrase table. Construct will not spawn a second CLI.
+If this session is already pointed at Construct, you just talk. The host
+hears that first message. You do not type a verb to attach, to record,
+or to start. That is the contract: a run exists, and a seat you did not
+name can show up from the words plus repos, directories, and sources
+Construct can actually see. Two surfaces only: dispatch through this
+session once a run exists, or an inbox call when the decision is yours.
+The host relays that call. You stay in the conversation. No phrase table.
+Construct will not spawn a second CLI.
 
 The shipped binary does not meet that bar. Talk still leaves an empty
-log, and `record_outcome` still requires namings. Do not expect staff to
-appear from talk alone. The old first-run rule — the host infers;
-Construct does not classify, name, or route — is what ships.
-It is not the product.
+log. Empty staff after that talk is the honest miss on the third beat.
+Do not expect staff to appear from talk alone. The old first-run rule —
+the host infers; Construct does not classify, name, or route — is what
+ships. It is not the product.
 
 If this box has no host session: First-run is talk in a host you already have
 (Cursor, Claude Code, Codex, OpenCode, or IBM Bob).
@@ -53,6 +55,15 @@ That is first run. `init`, `doctor`, and the verb catalog live in
 They are not beat two. The keyword map is not first-run; the walkthrough
 is the terminal reference.
 
+Three limits are load-bearing rather than fine print. **Legal and compliance
+output is research, never advice.** **One model family is tuned** (Claude);
+every other family runs labeled best-effort. **Nothing here claims to work
+for anyone other than its author** — treat it as an alpha you can drive, not
+a product. No stability is promised until the Phase 5 stakeholder-acceptance
+gate passes.
+
+## On the machine
+
 Install the alpha when you want the CLI and the method skills on the machine:
 
 ```bash
@@ -64,24 +75,18 @@ Cursor CLI. Only OpenCode and Claude Code declare `outward-write`. Codex
 dispatches read-only and Cursor dispatches in plan mode, both probed, so
 `decide --apply` is an OpenCode-or-Claude command. IBM Bob is a talk-in-host
 target (ambient detection exists; skills can plant there) and is not an
-execution adapter. `construct wire` writes the MCP entry for Claude Code and
-Cursor only; every other host takes the same `construct serve` entry by hand.
-The walkthrough shows that form.
-
-Three limits are load-bearing rather than fine print. **Legal and compliance
-output is research, never advice.** **One model family is tuned** (Claude);
-every other family runs labeled best-effort. **Nothing here claims to work
-for anyone other than its author** — treat it as an alpha you can drive, not
-a product. No stability is promised until the Phase 5 stakeholder-acceptance
-gate passes.
+execution adapter. Pointing a host at Construct is how an in-session
+session attaches; the walkthrough shows the form. That attachment is not
+first-run and not beat two.
 
 Seven portable method skills ship inside the npm package (`bin`, `dist`,
 `skills`): `adversarial-review`, `context-mapping`, `decision-framing`,
 `intake`, `investigative-research`, `requirements-structuring`,
 `written-voice`. A first-run instruction ships beside them and is planted
-with them. It states the 1+3 contract and that the binary misses it. It
-does not say staff showed up. `construct skills install <name> --host=<host>`
-plants one in the directory that host documents reading.
+with them. It is for the host: on an ordinary first message, hear and
+record without asking the person to type a verb. It states the 1+3
+contract and that empty staff is the miss on the third beat. It does
+not say staff showed up.
 
 ## Which seat it fills
 
