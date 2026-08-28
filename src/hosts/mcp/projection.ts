@@ -56,12 +56,13 @@
  * it replaced is a fact with no way to be wrong.
  *
  * The inversion, inside a host: the model calling these tools has already read
- * the user's words, so `record_outcome` lets it propose domain namings
- * directly — the same namer seam the CLI drives with a subprocess, minus the
- * subprocess. Proposals pass the kernel's admission gate unchanged
- * (implication/naming.ts admissible()): catalog membership, a stated reason,
- * dedup. The host model proposes; it never certifies. Host-model text arriving
- * here is untrusted input exactly as CLI input is.
+ * the user's words, so `record_outcome` accepts those words without namings
+ * and still records a run. The host may propose domain namings; Construct
+ * may add seats the host did not name from visible ground. Proposals pass
+ * the kernel's admission gate unchanged (implication/naming.ts
+ * admissible()): catalog membership, a stated reason, dedup. The host
+ * model proposes; it never certifies. Host-model text arriving here is
+ * untrusted input exactly as CLI input is.
  */
 
 import { getDecision, openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
@@ -72,12 +73,15 @@ import { readWorkLog } from '../../kernel/store/worklog.ts';
 import { storeNamingCache } from '../../kernel/store/namings.ts';
 import { catalogHighWater, sightingAhead } from '../../kernel/store/catalog.ts';
 import { recordNote } from '../../kernel/store/notes.ts';
-import { startRun, startRunNamed } from '../../kernel/run/outcome.ts';
+import { startRunSeated } from '../../kernel/run/outcome.ts';
 import type { StartedRun } from '../../kernel/run/outcome.ts';
 import { DOMAINS } from '../../kernel/implication/domains.ts';
 import { recordVerdict } from '../../kernel/implication/verdict.ts';
 import { validateBrief } from '../../kernel/brief/schema.ts';
-import type { DomainNaming } from '../../kernel/implication/naming.ts';
+import { mapImplicationsNamed, type DomainNaming } from '../../kernel/implication/naming.ts';
+import { mergeSeats, seatFromVisibleGround } from '../../kernel/implication/ground.ts';
+import { listVisibleGround } from './visible-ground.ts';
+import { sourcesFor } from '../../kernel/store/sources.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
@@ -96,6 +100,14 @@ export interface ProjectionCore {
    * unit tests that prove record/read/relay do not need a secret.
    */
   readonly secret?: string;
+  /**
+   * Working directory used to resolve declared source locators and to
+   * scan `<cwd>/docs`. Absent, only absolute declared locators are walked —
+   * tests stay isolated from the checkout's own docs/.
+   */
+  readonly cwd?: string;
+  /** Workspace whose declared sources are visible ground. Default `default`. */
+  readonly workspace?: string;
 }
 
 /**
@@ -120,26 +132,22 @@ export const PROJECTION_TOOLS = [
     name: 'record_outcome',
     description:
       'Record an outcome — what the user wants to happen, in their words. ' +
-      'You have already read those words. This session infers: read the ' +
-      'catalog first, then pass `namings`, the catalog domains this outcome ' +
-      'implicates, each with the reason in `why`. Passing an empty namings ' +
-      'array is a real answer ("this implicates nothing"). On construct ' +
-      'serve (the product path) namings are required — omitting them is an ' +
-      'error, not a fall-through to the keyword map. A projection without a ' +
-      'host-pull secret still accepts an omitted namings field as the ' +
-      'deterministic keyword path. Your namings are proposals: anything ' +
-      'outside the catalog or without a reason is discarded by the kernel, ' +
-      'and the reply says what was admitted — except when this exact ' +
-      'outcome text was already consulted once before, by any host in any ' +
-      'prior session: that first answer is served from a cache instead, ' +
-      'your namings are not evaluated against the catalog at all, ' +
-      '`inferredBy` reads "cache", and any of your proposed domains missing ' +
-      'from the cached answer land in `notAdmitted` with ' +
-      '`notAdmittedBecause` saying why. Optionally state your own ' +
-      '`confidence` (0 to 1) on a naming when you are unsure it truly ' +
-      'applies — below 0.5 it is kept as a named coverage gap rather than ' +
-      'routed, so a weak read does not silently become a match. Leave it ' +
-      'out when you are simply sure.',
+      'You have already read those words. Namings are optional: omit them ' +
+      'or pass []. A run is still created. You may name catalog domains ' +
+      'with a reason in `why`; Construct may add seats you did not name ' +
+      'from visible ground (declared sources and local docs), not from a ' +
+      'keyword map. Empty staff after you read the words and ground exists ' +
+      'is a miss. Your namings are proposals: anything outside the catalog ' +
+      'or without a reason is discarded by the kernel, and the reply says ' +
+      'what was admitted — except when this exact outcome text was already ' +
+      'consulted once before, by any host in any prior session: that first ' +
+      'answer is served from a cache instead, your namings are not ' +
+      'evaluated against the catalog at all, `inferredBy` reads "cache", ' +
+      'and any of your proposed domains missing from the cached answer ' +
+      'land in `notAdmitted` with `notAdmittedBecause` saying why. ' +
+      'Optionally state your own `confidence` (0 to 1) on a naming when ' +
+      'you are unsure it truly applies — below 0.5 it is kept as a named ' +
+      'coverage gap rather than routed. Leave it out when you are simply sure.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -454,42 +462,59 @@ async function recordOutcome(
   const text = typeof input.outcome === 'string' ? input.outcome.trim() : '';
   if (!text) throw new RangeError('record_outcome requires a non-empty string "outcome"');
 
-  const at = core.clock();
-  const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
-
-  if (input.namings === undefined) {
-    // Product serve always carries a secret. That means this session already
-    // read the words. Falling through to the keyword map is how ordinary
-    // language implicates nothing. Empty namings [] remains a real
-    // "this implicates nothing" answer.
-    if (core.secret !== undefined) {
-      throw new RangeError(
-        'record_outcome requires namings — this session already read the words. ' +
-        'Read the catalog, then pass namings: [{domain, why}, …]. ' +
-        'An empty array means this implicates nothing. ' +
-        'The keyword map is not first-run inside a host.',
-      );
-    }
-    // No secret: a presence-only projection, same as the CLI's host-less form.
-    return startedReply(startRun(core.store, { runId, outcome: text, at }));
-  }
-
-  if (!Array.isArray(input.namings)) {
+  if (input.namings !== undefined && !Array.isArray(input.namings)) {
     throw new RangeError('record_outcome "namings" must be an array of {domain, why}');
   }
-  const namings = input.namings as readonly DomainNaming[];
+
+  const at = core.clock();
+  const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
   const host = `mcp:${client}`;
-  const started = await startRunNamed(core.store, {
-    runId,
+  const workspace = core.workspace ?? 'default';
+  const ground = seatFromVisibleGround({
+    documents: listVisibleGround({
+      sources: sourcesFor(core.store, workspace),
+      cwd: core.cwd,
+    }),
+    catalog: DOMAINS,
+  });
+
+  // Omitted namings is not an error and not the keyword map. The run is
+  // recorded; seats come from visible ground when any is there.
+  if (input.namings === undefined) {
+    const implicated = mergeSeats([], ground);
+    const started = startRunSeated(core.store, {
+      runId,
+      outcome: text,
+      at,
+      implicated,
+      inferredBy: implicated.length > 0 ? 'ground' : 'none',
+      host,
+    });
+    return startedReply(started);
+  }
+
+  const namings = input.namings as readonly DomainNaming[];
+  const named = await mapImplicationsNamed({
     outcome: text,
-    at,
-    host,
-    // This session already read the words. The proposals pass the same
-    // admission gate a Construct namer's would, and the run is tagged
-    // session — not namer, not the keyword map.
+    catalog: DOMAINS,
     namer: () => Promise.resolve(namings),
     cache: storeNamingCache(core.store, { host, at }),
     source: 'session',
+  });
+  const implicated = mergeSeats(named.implicated, ground);
+  const inferredBy =
+    named.implicated.length > 0
+      ? named.inferredBy
+      : implicated.length > 0
+        ? 'ground'
+        : named.inferredBy;
+  const started = startRunSeated(core.store, {
+    runId,
+    outcome: text,
+    at,
+    implicated,
+    inferredBy,
+    host,
   });
   return startedReply(started, namings);
 }

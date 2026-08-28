@@ -177,7 +177,7 @@ test('an empty namings array is an answer, not a failure', async () => {
   }
 });
 
-test('on a host-pull serve, omitting namings is an error — this session already read the words', async () => {
+test('on a host-pull serve, omitting namings records a run — not an error, not the keyword map', async () => {
   const sterileFixture = sterile();
   const store = openStore(join(sterileFixture.paths.dataDir, 'construct.db'));
   const handle = createProjectionHandler({
@@ -189,27 +189,26 @@ test('on a host-pull serve, omitting namings is an error — this session alread
   try {
     const reply = await handle(call('record_outcome', { outcome: 'is this ready' }) as JsonRpcRequest);
     const { body, isError } = payload(reply);
-    assert.equal(isError, true);
-    assert.match(String((body as { error?: string }).error), /requires namings/);
-    assert.equal(listTasks(store).length, 0);
+    assert.equal(isError, false);
+    const started = body as { inferredBy: string; run: string };
+    assert.notEqual(started.inferredBy, 'keywords');
+    assert.match(started.run, /^run-/);
   } finally {
     store.close();
     sterileFixture.cleanup();
   }
 });
 
-test('omitting namings is the deterministic keyword path — no model is claimed', async () => {
+test('omitting namings is not the keyword path — a run is recorded either way', async () => {
   const f = fixture();
   try {
     const reply = await f.handle(
       call('record_outcome', { outcome: 'Handle GDPR data subject requests for EU customers' }),
     );
     const { body } = payload(reply);
-    const started = body as { inferredBy: string };
-    assert.ok(
-      started.inferredBy === 'keywords' || started.inferredBy === 'none',
-      `keyword path only, got ${started.inferredBy}`,
-    );
+    const started = body as { inferredBy: string; run: string };
+    assert.notEqual(started.inferredBy, 'keywords');
+    assert.match(started.run, /^run-/);
   } finally {
     f.cleanup();
   }

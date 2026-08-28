@@ -20,25 +20,23 @@ a spawn that will fail.
 - **`construct serve` carries host-pull.** The product MCP surface lists
   `claim_task` / `submit_work` once a capability secret exists. No promote.
   The flagged `host-pull-serve` prototype remains behind its gate.
-- **In-session `outcome` does not staff from the keyword map, and does not
-  create a hollow run.** First-run inside a host prints the two surfaces:
-  this session dispatches, or the turn goes to inbox. Construct does not
-  classify. No run is written until the host names concerns. Empty
-  `namings: []` is a real "implicates nothing" answer. On `construct
-  serve`, omitting namings is an error, not a fall-through to the keyword
-  map. The keyword map is the zero-model fallback when no session is
-  wrapping the command.
+- **In-session `outcome` does not staff from the keyword map.** First-run
+  inside a host is talk, then staff. `record_outcome` records a run when
+  namings are omitted; Construct may add seats from visible ground
+  (declared sources, local docs). Empty `namings: []` is not a veto of
+  those seats. The keyword map is the zero-model fallback when no session
+  is wrapping the command, and is not first-run.
 - **Bare `work` and `status` stay on the latest outcome.** The most recently
   recorded outcome is the default, even when it queued no tasks and an
   older run still has pending work. `--all` remains the fleet door. A
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
 - **First-run hears ordinary language.** Talk in the host, no catalog
-  words, no `--host`. The host infers. Two surfaces only: dispatch
-  through this session, or an inbox call. No Construct-side classifier,
-  namer, or third router. The keyword map is not first-run: omitting
-  namings on `construct serve` is an error, not a fall-through. Empty
-  staff after a host read is a miss.
+  words, no `--host`. Talk creates a run. Construct may add seats the
+  host did not name, from visible ground. Two surfaces only: dispatch
+  through this session, or an inbox call. The keyword map is not
+  first-run. Empty staff after a host read, when ground implied a
+  seat, is a miss.
   README and `docs/first-run.md` lead with talk, then staff. `init`,
   `doctor`, and the verb catalog are not on that page. The only
   Construct-shaped surface there is an inbox card when the call is

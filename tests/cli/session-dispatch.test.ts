@@ -348,7 +348,7 @@ test('a second host naming staffs a different concern, not a phrase table', asyn
   });
 });
 
-test('on construct serve, omitting namings is refused rather than falling to the keyword map', async () => {
+test('on construct serve, omitting namings records a run rather than falling to the keyword map', async () => {
   await isolated(async () => {
     const store = openStore(storePath(resolvePaths()));
     try {
@@ -365,10 +365,10 @@ test('on construct serve, omitting namings is refused rather than falling to the
         params: { name: 'record_outcome', arguments: { outcome: 'is this ready' } },
       });
       const result = reply?.result as { content: Array<{ text: string }>; isError?: boolean };
-      assert.equal(result.isError, true);
-      assert.match(result.content[0]!.text, /requires namings/);
-      assert.match(result.content[0]!.text, /keyword map is not first-run/);
-      assert.equal(listTasks(store).length, 0);
+      assert.notEqual(result.isError, true);
+      const body = JSON.parse(result.content[0]!.text) as { inferredBy: string; run: string };
+      assert.notEqual(body.inferredBy, 'keywords');
+      assert.match(body.run, /^run-/);
     } finally {
       store.close();
     }

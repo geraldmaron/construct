@@ -170,6 +170,7 @@ export interface NamingCache {
 export type InferredBy =
   | 'namer'
   | 'session'
+  | 'ground'
   | 'keywords'
   | 'cache'
   | 'none'
@@ -182,6 +183,9 @@ export interface NamedMap extends ImplicationMap {
    *              as a namer, not this session handing namings in).
    * 'session'  — this session already had the words and supplied the namings
    *              to record_outcome. Not Construct's namer. Not the keyword map.
+   * 'ground'   — seats came from visible documents (declared sources, local
+   *              docs) whose path or title names a catalog domain. Not the
+   *              keyword map. Not a namer.
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
@@ -251,6 +255,17 @@ const NO_KEYWORD_SCORE = 0;
  * the catalog rather than about the namer, and a caller that cannot see it
  * cannot tell a covered outcome from an uncovered one.
  */
+/**
+ * Keep only namings the catalog actually contains. Exported so record_outcome
+ * can admit host proposals and then merge ground seats without recording twice.
+ */
+export function admitNamings(
+  namings: readonly DomainNaming[],
+  catalog: readonly Domain[] = DOMAINS,
+): { readonly kept: Implication[]; readonly unmet: UnmetConcern[] } {
+  return admissible(namings, catalog);
+}
+
 function admissible(
   namings: readonly DomainNaming[],
   catalog: readonly Domain[],
