@@ -29,9 +29,14 @@ const POLAND = 'We want to hire a contractor in Poland';
 
 async function isolated<T>(fn: (cwd: string) => Promise<T> | T): Promise<T> {
   const root = mkdtempSync(join(tmpdir(), 'construct-first-run-ground-'));
-  const previous = { data: process.env.XDG_DATA_HOME, state: process.env.XDG_STATE_HOME };
+  const previous = {
+    data: process.env.XDG_DATA_HOME,
+    state: process.env.XDG_STATE_HOME,
+    cursorKey: process.env.CURSOR_API_KEY,
+  };
   process.env.XDG_DATA_HOME = join(root, 'share');
   process.env.XDG_STATE_HOME = join(root, 'state');
+  delete process.env.CURSOR_API_KEY;
   try {
     return await fn(root);
   } finally {
@@ -39,14 +44,19 @@ async function isolated<T>(fn: (cwd: string) => Promise<T> | T): Promise<T> {
     else process.env.XDG_DATA_HOME = previous.data;
     if (previous.state === undefined) delete process.env.XDG_STATE_HOME;
     else process.env.XDG_STATE_HOME = previous.state;
+    if (previous.cursorKey === undefined) delete process.env.CURSOR_API_KEY;
+    else process.env.CURSOR_API_KEY = previous.cursorKey;
     rmSync(root, { recursive: true, force: true });
   }
 }
 
-function captureHear(argv: string[], opts: { stdinText?: string; now?: () => string } = {}): {
+async function captureHear(
+  argv: string[],
+  opts: { stdinText?: string; now?: () => string } = {},
+): Promise<{
   code: number;
   out: string;
-} {
+}> {
   const realOut = process.stdout.write.bind(process.stdout);
   let out = '';
   process.stdout.write = ((chunk: string) => {
@@ -54,7 +64,7 @@ function captureHear(argv: string[], opts: { stdinText?: string; now?: () => str
     return true;
   }) as typeof process.stdout.write;
   try {
-    return { code: hear(argv, opts), out };
+    return { code: await hear(argv, opts), out };
   } finally {
     process.stdout.write = realOut;
   }
@@ -128,7 +138,7 @@ test('omitting namings on serve is not an error and creates a run', async () => 
 
 test('Cursor beforeSubmitPrompt stdin creates a run without record_outcome', async () => {
   await isolated(async () => {
-    const { code, out } = captureHear([], {
+    const { code, out } = await captureHear([], {
       stdinText: JSON.stringify({ prompt: POLAND, hook_event_name: 'beforeSubmitPrompt' }),
       now: () => '2026-08-28T16:00:00.000Z',
     });
@@ -154,7 +164,7 @@ test('Cursor beforeSubmitPrompt stdin creates a run without record_outcome', asy
 
 test('Claude UserPromptSubmit stdin creates a run without record_outcome', async () => {
   await isolated(async () => {
-    const { code, out } = captureHear([], {
+    const { code, out } = await captureHear([], {
       stdinText: JSON.stringify({
         hook_event_name: 'UserPromptSubmit',
         prompt: POLAND,
@@ -179,7 +189,7 @@ test('the same spoken words do not write inferredBy namer or staff from a phrase
     const keywordOnly = mapImplications({ outcome: POLAND }).implicated.map((row) => row.domain);
     assert.deepEqual(keywordOnly, ['employment'], 'the keyword map still misses the dark corners');
 
-    captureHear([POLAND], { now: () => '2026-08-28T16:02:00.000Z' });
+    await captureHear([POLAND], { now: () => '2026-08-28T16:02:00.000Z' });
     const store = openStore(storePath(resolvePaths()));
     try {
       const log = readWorkLog(store);

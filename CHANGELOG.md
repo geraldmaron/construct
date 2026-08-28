@@ -34,9 +34,12 @@ a spawn that will fail.
 - **First-run hears ordinary language.** After init, Send in the host
   creates a run. The prompt-submit hook records the words; the user
   does not type `construct hear`, `record_outcome`, `construct
-  outcome`, or a catalog word. Staff from dark corners is not this
-  patch. Two surfaces only: dispatch through this session, or
-  an inbox call. The keyword map is not first-run.
+  outcome`, or a catalog word. When a logged-in host CLI can be
+  consulted, that host's model reads the outcome as the namer and
+  may add unnamed seats (`inferredBy: namer`). A missing or failed
+  namer stays empty (`inferredBy: none`). The keyword map does not
+  catch this path. A regex is not a namer. Two surfaces only:
+  dispatch through this session, or an inbox call.
   README and `docs/first-run.md` say the binary does not meet the 1+3
   bar. `init`, `doctor`, and the verb catalog are not on that page. The
   only Construct-shaped surface there is an inbox card when the call is

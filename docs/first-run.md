@@ -16,10 +16,10 @@ construct serve
 
 The shipped binary does not meet that bar. After init, ordinary
 Send in this host creates a run — the prompt-submit hook records
-the words; you do not type a verb. Do not expect staff to appear
-from talk alone, and do not expect Construct to add dark-corner
-seats from the words or from a folder name. Those seats are still
-a miss.
+the words; you do not type a verb. Seats appear only when a model
+actually read the outcome. Do not expect a regex, a catalog word
+in a folder name, or talk alone to staff the run. Without a
+logged-in host namer, staff stays empty. That empty is honest.
 
 The old first-run rule said the host infers and Construct does
 not classify, name, or route — omitted namings were an error on

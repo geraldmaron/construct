@@ -7,4 +7,4 @@
 
 import { hear } from '../../src/cli/hear.ts';
 
-process.exitCode = hear([]);
+process.exitCode = await hear([]);

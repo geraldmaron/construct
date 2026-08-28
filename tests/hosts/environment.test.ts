@@ -15,6 +15,7 @@ import {
   hostEnvironment,
   INHERIT_XDG_VAR,
   SHARED_XDG_VARS,
+  SKIP_HEAR_VAR,
 } from '../../src/hosts/environment.ts';
 
 const ISOLATED = {
@@ -47,9 +48,9 @@ test('credentials are the reason DATA is dropped too, not only CONFIG', () => {
   assert.equal(env.XDG_DATA_HOME, undefined);
 });
 
-test('an un-isolated run is handed exactly what it always was', () => {
+test('an un-isolated run is handed what it always was, plus the hear skip', () => {
   const ambient = { HOME: '/home/real', PATH: '/usr/bin' };
-  assert.deepEqual(hostEnvironment(ambient), ambient);
+  assert.deepEqual(hostEnvironment(ambient), { ...ambient, [SKIP_HEAR_VAR]: '1' });
   assert.deepEqual(droppedForHost(ambient), [], 'nothing to report when nothing was isolated');
 });
 
