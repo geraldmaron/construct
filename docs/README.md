@@ -11,9 +11,10 @@ documentation rather than a record.
 
 ## Start here
 
-- [`first-run.md`](first-run.md) — talk in the host you already have; staff
-  shows up. The only Construct-shaped surface is an inbox card when the
-  call is yours.
+- [`first-run.md`](first-run.md) — talk in the host you already have; a
+  run exists; a seat you did not name can show up from the ground. The
+  shipped binary does not meet that bar. The only Construct-shaped
+  surface is an inbox card when the call is yours.
 - [`cli-walkthrough.md`](cli-walkthrough.md) — the terminal command
   walkthrough. Not first-run.
 - [`consumer-install.md`](consumer-install.md) — putting Construct inside a

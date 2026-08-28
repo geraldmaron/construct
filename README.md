@@ -21,15 +21,23 @@ this page is not that paper.
 ## First run
 
 [docs/first-run.md](docs/first-run.md) is first run: talk in the host you
-already have; staff shows up. The terminal command list is
+already have; a run exists; a seat you did not name can show up from the ground.
+The terminal command list is
 [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you
 are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
-Talk there. Staff shows up. Ordinary language, no catalog words, no `--host`.
-The host infers. Two surfaces only: dispatch through this session
-(`record_outcome`, then `claim_task` / `submit_work`), or an inbox call when
-the decision is yours. Construct does not classify, name, or route. No phrase
-table. Then the work happens here. Construct will not spawn a second CLI.
+Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
+Point the session at Construct. Construct is the brain: it may add seats
+the host or you did not name, from the words plus repos, directories, and
+sources it can actually see. Two surfaces only: dispatch through this
+session (`claim_task` / `submit_work`) once a run exists, or an inbox call
+when the decision is yours. No phrase table. Construct will not spawn a
+second CLI.
+
+The shipped binary does not meet that bar. Talk still leaves an empty
+log, and `record_outcome` still requires namings. The old first-run rule — the
+host infers; Construct does not classify, name, or route — is what
+ships. It is not the product.
 
 ```bash
 construct serve

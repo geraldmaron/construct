@@ -109,6 +109,8 @@ test('construct help is task-grouped with first-run named up front', async () =>
   const result = await capture(['help']);
   assert.strictEqual(result.code, 0);
   assert.match(result.out, /Start here: construct serve/, 'names first-run');
+  assert.match(result.out, /old host-namer rule/, 'does not sell host-namer as success');
+  assert.doesNotMatch(result.out, /staff shows up/i);
   assert.match(result.out, /From a plain terminal: outcome → work → show → inbox → verdict/, 'names the terminal spine');
   for (const group of ['Starting work', 'Running it', 'Reading back', 'Outward changes and decisions']) {
     assert.ok(result.out.includes(group), `groups by "${group}"`);
