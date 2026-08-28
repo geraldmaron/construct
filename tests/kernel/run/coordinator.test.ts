@@ -40,7 +40,7 @@ import { assignmentFor, frameConflicts, spendOf, workRun } from '../../../src/ke
 import { deliverableConcerns, licensedReviewFor } from '../../../src/kernel/run/accountability.ts';
 import { ROLE_OWNERSHIP_BOUND } from '../../../src/kernel/run/grounding.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
-import type { HostAdapter, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
+import type { HostAdapter, HostCapability, HostContext, HostResult } from '../../../src/kernel/hosts/interface.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 
 /** The checkout this test runs from, so the prompt script is invoked where it lives. */
@@ -101,6 +101,10 @@ interface FakeOptions {
   readonly emptyText?: (role: string) => boolean;
   readonly answer?: (role: string) => string;
   readonly onInvoke?: (role: string) => void | Promise<void>;
+  /** Override the host's declared capabilities; default is a host that fully
+   * supports a write surface, since that is the common case every other test
+   * here assumes. */
+  readonly capabilities?: readonly HostCapability[];
 }
 
 interface FakeHost extends HostAdapter {
@@ -120,7 +124,7 @@ function fakeHost(options: FakeOptions = {}): FakeHost {
   const host = {
     name: 'fake',
     kind: 'general',
-    capabilities: ['concurrent'] as const,
+    capabilities: options.capabilities ?? (['concurrent', 'role-write'] as const),
     seen,
     assignments,
     get maxInFlight(): number {
@@ -617,6 +621,36 @@ test('what the assignment claims matches what the dispatch actually minted', () 
     seed(store, ['security']);
     await workRun(store, recording, { owner: 'w1', clock: frozen(AT), spendCeiling: 100 });
     assert.ok(!seen[0].includes('submit_draft'), 'no secret, no token, no claim of tools');
+    assert.match(seen[0], /no write surface/);
+  });
+});
+
+test('a secret alone does not claim a surface the host never wires up', () => {
+  // A roleEnv secret is a kernel-side decision made before the host is even
+  // chosen; whether submit_draft actually gets registered with the invoked
+  // process is a fact about the adapter. A host that never wires the tools up
+  // (cursor and codex, measured on a real dispatch) must not be told it has
+  // them just because a secret happened to be configured for the run — a role
+  // that believes a tool exists and spends its reply chasing it comes back
+  // with nothing readable.
+  const seen: string[] = [];
+  const noWriteSurfaceHost = {
+    ...fakeHost({ capabilities: ['concurrent'] }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      seen.push((request as { task: string }).task);
+      return { id: 'x', status: 'ok', output: { text: 'ok', usage: { cost: 0 } }, error: null };
+    },
+  } as unknown as HostAdapter;
+
+  return withStoreAsync(async (store) => {
+    seed(store, ['privacy']);
+    await workRun(store, noWriteSurfaceHost, {
+      owner: 'w1',
+      clock: frozen(AT),
+      spendCeiling: 100,
+      capabilitySecret: 'a-secret',
+    });
+    assert.ok(!seen[0].includes('submit_draft'), "a secret is not enough without the host's own capability");
     assert.match(seen[0], /no write surface/);
   });
 });

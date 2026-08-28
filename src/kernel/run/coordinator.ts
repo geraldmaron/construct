@@ -46,6 +46,7 @@ import type { DeclaredRelation, DeclaredSource, Material } from './grounding.ts'
 import { partitionMaterial } from './partition.ts';
 import { relationPhrase, sourceEdgesAmong } from '../store/source-edges.ts';
 import type { Store } from '../store/open.ts';
+import { hasCapability } from '../hosts/interface.ts';
 import type { HostAdapter, HostResult } from '../hosts/interface.ts';
 import type { Brief } from '../brief/schema.ts';
 import { meetsFloor } from '../brief/tiers.ts';
@@ -1203,11 +1204,19 @@ export async function workRun(
       result = await host.invoke(
         {
           role: task.role,
-          // The assignment must agree with what was actually minted: roleEnv is
-          // the same value that decides whether the host registers a surface at
-          // all, so the two cannot drift apart.
+          // The assignment must agree with what was actually minted AND with
+          // what this host actually wires up: a roleEnv alone is not enough,
+          // because minting one is a kernel-side decision made before the
+          // dispatched host is even chosen (see roleEnv above), while whether
+          // submit_draft et al. get registered with the invoked process is a
+          // fact about this adapter (the 'role-write' capability). Telling a
+          // role it can call a tool the host never wires up is not a smaller
+          // error than telling it nothing: measured on a real dispatch, a
+          // role that believed it had a write surface it did not have spent
+          // its whole reply chasing that belief and returned nothing readable
+          // (see the capability's doc comment in hosts/interface.ts).
           task: assignmentFor(brief, catalog, {
-            writeSurface: roleEnv !== undefined,
+            writeSurface: roleEnv !== undefined && hasCapability(host, 'role-write'),
             voice: options.voice,
             locale: options.locale,
             // What the run read is a fact the store already holds, so the
@@ -1241,6 +1250,65 @@ export async function workRun(
       if (result.status === 'ok') {
         const cost = spendOf(result);
         if (!cost.reported) costSilent += 1;
+
+        // Commitment 13's free half, run at the one moment the deliverable and
+        // its brief are both in hand. A structural pass says the work was
+        // shown, never that it is good, and a challenge with no structural
+        // form is left unanswered rather than passed — recorded as such, so a
+        // brief's declared control is never satisfied by nobody looking.
+        const deliverableText = deliverableTextOf(store, task.id, result.output);
+        const declaredChallenges = brief.challenges ?? [];
+
+        // Two different silences, and only one of them is a dispatch failure.
+        // A role that submitted a draft the citation check cannot read (an
+        // object where prose was expected) produced SOMETHING attributed to
+        // it — that is "challenge-unanswered", handled below, and the
+        // promotion stays 'draft' rather than being judged. A role that
+        // submitted no draft AND replied with nothing readable produced
+        // NOTHING — the host reported its own status 'ok', with a real
+        // finishReason and real token spend, and still handed back no
+        // deliverable at all. Measured on a real dispatch: two of three tasks
+        // on a host with no write surface came back this way, and the
+        // top-line summary read "3 done, 0 failed" until someone read the raw
+        // work log. That is a failure of the dispatch, not a pass with a
+        // caveat attached after the fact.
+        const submittedNothing = latestDraft(store, task.id) === null && replyTextOf(result.output) === null;
+        if (submittedNothing && declaredChallenges.length > 0) {
+          failTask(store, {
+            id: task.id,
+            owner: task.leaseOwner,
+            token: task.token,
+            error: {
+              // A message the default (non-JSON) failure line can print —
+              // failureLine() reads messages[0], and a task that fails with no
+              // readable message renders as the bare word "failed", which is
+              // the exact opacity the audit run's own findings named.
+              messages: ['the host reported success but the deliverable came back empty'],
+              reason: 'empty-deliverable',
+              notices: (result.output as { notices?: unknown } | null)?.notices ?? null,
+            },
+            spend: cost.spend,
+            spendReported: cost.reported,
+            at: settledAt,
+          });
+          failed += 1;
+          settled.push(task.id);
+          appendWorkLog(store, {
+            run: task.run,
+            task: task.id,
+            role: task.role,
+            action: 'role-failed',
+            detail: {
+              status: result.status,
+              error: { reason: 'empty-deliverable' },
+              spend: cost.spend,
+              spendReported: cost.reported,
+            },
+            at: settledAt,
+          });
+          return;
+        }
+
         completeTask(store, {
           id: task.id,
           owner: task.leaseOwner,
@@ -1261,17 +1329,13 @@ export async function workRun(
           at: settledAt,
         });
 
-        // Commitment 13's free half, run at the one moment the deliverable and
-        // its brief are both in hand. A structural pass says the work was
-        // shown, never that it is good, and a challenge with no structural
-        // form is left unanswered rather than passed — recorded as such, so a
-        // brief's declared control is never satisfied by nobody looking.
-        const deliverableText = deliverableTextOf(store, task.id, result.output);
-        const declaredChallenges = brief.challenges ?? [];
         if (deliverableText === null && declaredChallenges.length > 0) {
-          // Nothing readable to check. Recorded as unanswered — a check that
-          // cannot see its subject must never report a pass, whatever the
-          // cause, or the promotion state becomes an assurance nobody made.
+          // Something was submitted (the submittedNothing branch above would
+          // have caught the alternative) and it is not readable as text — a
+          // draft that coerced to an object, say. Recorded as unanswered — a
+          // check that cannot see its subject must never report a pass,
+          // whatever the cause, or the promotion state becomes an assurance
+          // nobody made.
           appendWorkLog(store, {
             run: task.run,
             task: task.id,

@@ -108,6 +108,14 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
     keywords: [
       'security', 'authentication', 'login', 'password', 'credentials',
       'encryption', 'encrypt', 'breach', 'access control', 'permissions', 'vulnerability',
+      // "network access" is the phrasing a platform team actually uses for a
+      // gating decision ("before allowing network access") — "access
+      // control" alone missed it (see labeled-outcomes.json o21, added from a
+      // real dispatch measured 2026-08-28). Checked against every corpus
+      // fixture: the phrase appears in none of the other labeled, held-out,
+      // fresh, or unspent outcomes, so this closes the one confirmed miss
+      // without a measured over-rate cost.
+      'network access',
       // "two factor" not "two-factor": keywords split on whitespace but
       // outcomes tokenize on non-alphanumeric, so a hyphenated keyword can
       // never match anything (found dead during corpus measurement).

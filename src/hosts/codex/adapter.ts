@@ -55,6 +55,13 @@ const HOST_FAMILY_PROBE = 'gpt-';
 /**
  * No `outward-write`: dispatch runs `-s read-only`, a probed expectation, so a
  * model here cannot act on anything outside the process however it is asked.
+ *
+ * No `role-write`: this adapter never registers submit_draft /
+ * append_work_log / record_external_read with the spawned process — the same
+ * "no role write surface yet" notice cursor's adapter carries fires here for
+ * the same reason. Declaring the absence is what lets the coordinator tell
+ * the role the truth instead of sending it hunting for a tool this process
+ * never wires up.
  */
 export const CODEX_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
 
