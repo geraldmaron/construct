@@ -272,18 +272,19 @@ test('user-facing first-run copy does not say staff already shows up', () => {
 
 test('tarball first-run skill keeps the contract and the honesty line', () => {
   const skill = readFileSync(join(ROOT, 'skills/first-run/SKILL.md'), 'utf8');
-  assert.match(skill, /This file is for the host/);
-  assert.match(skill, /hear it and record it this\s+turn|hear that first message and record/i);
-  assert.match(skill, /Do not ask them to type a (command|verb)/);
-  assert.match(skill, /a run exists/i);
-  assert.match(skill, /seat they did not name|seat you did not name/i);
-  assert.match(skill, /does not meet that bar/);
-  assert.match(skill, /empty work log|empty log/);
-  assert.match(skill, /empty staff after that talk is the\s+honest miss on the third beat/i);
-  assert.match(skill, /Do not describe a run with empty staff as 1\+3/);
-  assert.match(skill, /This box has no host session/);
-  assert.match(skill, /What happened|what happened/);
-  assert.match(skill, /host relays/);
+  const flat = skill.replace(/\s+/g, ' ');
+  assert.match(flat, /This file is for the host/);
+  assert.match(flat, /hear it and record it this turn|hear that first message and record/i);
+  assert.match(flat, /Do not ask them to type a (command|verb)/);
+  assert.match(flat, /a run exists/i);
+  assert.match(flat, /seat they did not name|seat you did not name/i);
+  assert.match(flat, /does not meet that bar/);
+  assert.match(flat, /empty work log|empty log/);
+  assert.match(flat, /empty staff after that talk is the honest miss on the third beat/i);
+  assert.match(flat, /Do not describe a run with empty staff as 1\+3/);
+  assert.match(flat, /This box has no host session/);
+  assert.match(flat, /What happened|what happened/);
+  assert.match(flat, /host relays/);
   assertFirstRunDoesNotTeachPersonVerbs(skill, 'skills/first-run/SKILL.md');
   assert.doesNotMatch(skill, /construct decide/);
   assert.doesNotMatch(skill, /evidence-provenance/);
