@@ -55,9 +55,11 @@ test('bare wire (no --yes) previews the write and touches nothing on disk', () =
   withRepo((cwd) => {
     const { code, out } = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
-    assert.match(out, /would wire construct-mcp into \.mcp\.json for claude/);
+    assert.match(out, /would wire construct-mcp into \.mcp\.json/);
+    assert.match(out, /would plant a prompt hook/);
     assert.match(out, /Pass --yes to write it/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false, 'a preview writes nothing');
+    assert.equal(existsSync(join(cwd, '.claude', 'settings.json')), false, 'a preview writes no hook');
   });
 });
 
@@ -77,6 +79,14 @@ test('claude: wire --yes writes .mcp.json with the construct-mcp entry', () => {
     assert.match(entry.command, /node/);
     assert.ok(entry.args.some((a) => a.endsWith('bin/construct.mjs')), 'points at this binary');
     assert.deepEqual(entry.args.slice(-1), ['serve'], 'the projection, never dispatch');
+
+    const settings = JSON.parse(readFileSync(join(cwd, '.claude', 'settings.json'), 'utf8')) as {
+      hooks: { UserPromptSubmit: Array<{ hooks: Array<{ command: string }> }> };
+    };
+    const hear = settings.hooks.UserPromptSubmit.flatMap((row) => row.hooks).find((hook) =>
+      / hear(?:\s|$)/.test(hook.command),
+    );
+    assert.ok(hear, 'Claude UserPromptSubmit must launch hear');
   });
 });
 
@@ -94,6 +104,14 @@ test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => 
     const entry = config.mcpServers['construct-mcp'];
     assert.ok(entry);
     assert.deepEqual(entry.args.slice(-1), ['serve']);
+
+    const hooks = JSON.parse(readFileSync(join(cwd, '.cursor', 'hooks.json'), 'utf8')) as {
+      hooks: { beforeSubmitPrompt: Array<{ command: string }> };
+    };
+    assert.ok(
+      hooks.hooks.beforeSubmitPrompt.some((row) => / hear(?:\s|$)/.test(row.command)),
+      'Cursor beforeSubmitPrompt must launch hear',
+    );
   });
 });
 
@@ -112,6 +130,36 @@ test('wiring twice is idempotent: no duplicate entry, second run reports nothing
 
     const config = JSON.parse(secondBody) as { mcpServers: Record<string, unknown> };
     assert.equal(Object.keys(config.mcpServers).length, 1, 'no duplicate key from running twice');
+  });
+});
+
+test('an existing Claude settings.json keeps other hooks; only the hear hook is added', () => {
+  withRepo((cwd) => {
+    mkdirSync(join(cwd, '.claude'), { recursive: true });
+    writeFileSync(
+      join(cwd, '.claude', 'settings.json'),
+      `${JSON.stringify({
+        hooks: {
+          SessionStart: [{ hooks: [{ command: 'bd prime', type: 'command' }] }],
+        },
+      }, null, 2)}\n`,
+    );
+
+    const { code } = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+    assert.equal(code, 0);
+
+    const settings = JSON.parse(readFileSync(join(cwd, '.claude', 'settings.json'), 'utf8')) as {
+      hooks: {
+        SessionStart: unknown[];
+        UserPromptSubmit: Array<{ hooks: Array<{ command: string }> }>;
+      };
+    };
+    assert.ok(settings.hooks.SessionStart, 'a pre-existing hook event survives');
+    assert.ok(
+      settings.hooks.UserPromptSubmit.flatMap((row) => row.hooks).some((hook) =>
+        / hear(?:\s|$)/.test(hook.command),
+      ),
+    );
   });
 });
 

@@ -42,6 +42,7 @@ import { resolveScheduleContext, schedule } from './schedule.ts';
 import { staff } from './staff.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
+import { hear } from './hear.ts';
 import { init } from './init.ts';
 import { daemon, daemonLiveHere } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
@@ -86,6 +87,7 @@ export { resolveScheduleContext, schedule, scheduleStatusLine } from './schedule
 export { staff } from './staff.ts';
 export { completions } from './completions.ts';
 export { wire } from './wire.ts';
+export { hear, wordsFromHookInput } from './hear.ts';
 export { init } from './init.ts';
 export { daemon } from './daemon.ts';
 
@@ -109,7 +111,7 @@ export const VERBS: readonly string[] = Object.freeze([
  * Dispatched to by the coordinator, never typed by a person, so it stays out
  * of the usage line while remaining a real verb the docs may name.
  */
-export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve', 'host-pull-serve']);
+export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve', 'host-pull-serve', 'hear']);
 
 /** The long flags a verb accepts, plus its one-line gloss — the material both
  * the grouped help and a single verb's `--help` are rendered from. The host
@@ -403,6 +405,8 @@ async function run(argv: string[]): Promise<number> {
       return serve();
     case 'wire':
       return wire(argv.slice(1));
+    case 'hear':
+      return hear(argv.slice(1));
     case 'init':
       return init(argv.slice(1));
     case 'role-serve':

@@ -269,15 +269,11 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
     if (ambient !== null) {
       process.stdout.write(
         `Ready. You are in ${ambient.host}. Talk here. Ordinary language is enough. ` +
-          'This session records what you said and seats staff. ' +
+          'This session names via MCP record_outcome with namings, then claim_task / submit_work. ' +
           'Construct will not spawn a second CLI.\n',
       );
     } else {
-      process.stdout.write(
-        'Ready. First-run is talk in a host you already have ' +
-          '(Cursor, Claude Code, Codex, OpenCode, or IBM Bob). ' +
-          'This box has no host session.\n',
-      );
+      process.stdout.write('Ready. Record your first outcome:  construct outcome "<what you want>"\n');
     }
   }
   return failed === 0 ? 0 : 1;

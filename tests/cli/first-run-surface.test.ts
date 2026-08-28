@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,6 +110,11 @@ test('the implication map has no hardcoded sentence-to-domain table', () => {
   assert.doesNotMatch(domainsSrc, /FIRST_RUN_PHRASES/);
   assert.doesNotMatch(mapSrc, /phrase:\s*['"][^'"]+['"]\s*,\s*domain:/);
   assert.doesNotMatch(domainsSrc, /phrase:\s*['"][^'"]+['"]\s*,\s*domain:/);
+  assert.equal(
+    existsSync(join(ROOT, 'src/kernel/implication/concern-namer.ts')),
+    false,
+    'the regex namer is a phrase table and must stay gone',
+  );
 });
 
 function firstConstructCommand(markdown: string): string | null {

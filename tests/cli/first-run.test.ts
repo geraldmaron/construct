@@ -275,11 +275,13 @@ test('a host naming staffs those domains; empty staff after that read is a fail'
   });
 });
 
-test('omitting namings on serve is need-the-host, not keyword staff', async () => {
+test('omitting namings on serve is not an error and does not fall to the keyword map', async () => {
   await isolated(async () => {
     const recorded = await hostNamedRecord('look at this', undefined, '2026-08-26T14:01:00.000Z');
-    assert.equal(recorded.isError, true);
-    assert.match(recorded.out, /requires namings|keyword map is not first-run/);
+    assert.equal(recorded.isError, undefined);
+    assert.notEqual(recorded.inferredBy, 'keywords');
+    assert.notEqual(recorded.inferredBy, 'namer');
+    assert.doesNotMatch(recorded.out, /requires namings/);
     const store = openStore(storePath(resolvePaths()));
     try {
       assert.equal(listTasks(store).length, 0);
