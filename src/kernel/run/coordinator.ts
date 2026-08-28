@@ -231,6 +231,8 @@ function howEngaged(inferredBy: string): string {
       return 'a model read the outcome and gave that as its reason';
     case 'session':
       return 'this session read the outcome and named your domain';
+    case 'ground':
+      return 'a visible document named your domain; that is not a keyword match';
     case 'cache':
       return 'a model gave that reason for this same outcome earlier';
     case 'user':

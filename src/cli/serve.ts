@@ -109,7 +109,7 @@ export async function serve(): Promise<number> {
   return withStoreAsync(async (store) => {
     const secret = loadOrCreateSecret(secretFile());
     await serveProjection(
-      { store, clock: now, serverVersion: packageVersion(), secret },
+      { store, clock: now, serverVersion: packageVersion(), secret, cwd: process.cwd() },
       process.stdin,
       process.stdout,
     );

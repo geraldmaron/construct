@@ -47,11 +47,14 @@ function routedByFrom(inferredBy: InferredBy): RoutedBy {
       return 'namer';
     case 'session':
       return 'session';
+    case 'ground':
+      return 'ground';
     case 'user':
       return 'user';
     default:
       // 'keywords' and 'none' both mean the namer did not decide: the frozen
-      // lexical dispatcher did, or nothing fired at all.
+      // lexical dispatcher did, or nothing fired at all. 'ground' is not
+      // this path — visible documents are not a keyword map.
       return 'lexical-fallback';
   }
 }

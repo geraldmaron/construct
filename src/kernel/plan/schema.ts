@@ -93,11 +93,11 @@ export interface PlanStep {
 }
 
 /**
- * How a step's routing was reached. The namer is primary; the keyword
- * dispatcher is the frozen lexical fallback and is labeled as exactly that
- * wherever it decided.
+ * How a step's routing was reached. The namer is primary; session and
+ * ground are named as themselves; the keyword dispatcher is the frozen
+ * lexical fallback and is labeled as exactly that wherever it decided.
  */
-export type RoutedBy = 'namer' | 'session' | 'lexical-fallback' | 'user';
+export type RoutedBy = 'namer' | 'session' | 'ground' | 'lexical-fallback' | 'user';
 
 export interface PlanRouting {
   readonly step: string;

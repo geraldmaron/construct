@@ -274,6 +274,24 @@ export const USER_NAMED_SIGNAL = 'named by the user';
  * The provenance is its own value ('user'), because a user's own choice is not
  * an inference and the work log must not show it as one.
  */
+export interface StartRunSeatedInput extends StartRunInput {
+  readonly implicated: readonly Implication[];
+  readonly inferredBy: InferredBy;
+  readonly host?: string;
+}
+
+/**
+ * Record a run whose seats are already in hand: host namings, visible
+ * ground, or both. Skips the keyword map and the namer. Used by
+ * record_outcome so omitted namings still create a run.
+ */
+export function startRunSeated(store: Store, input: StartRunSeatedInput): StartedRun {
+  return record(store, input, input.implicated, {
+    inferredBy: input.inferredBy,
+    host: input.host,
+  });
+}
+
 export function startRunSelected(store: Store, input: StartRunSelectedInput): StartedRun {
   const catalog = domainsByName(input.catalog);
   const seen = new Set<string>();
@@ -385,7 +403,12 @@ function record(
     // A consulted model is logged whether or not it named anything. A
     // consultation that cost money and produced silence is exactly the entry a
     // user needs to see, and the one a "log it if it worked" rule would drop.
-    if (inferredBy === 'namer' || inferredBy === 'cache' || inferredBy === 'session') {
+    if (
+      inferredBy === 'namer' ||
+      inferredBy === 'cache' ||
+      inferredBy === 'session' ||
+      inferredBy === 'ground'
+    ) {
       logged.push(
         appendWorkLog(store, {
           run: input.runId,

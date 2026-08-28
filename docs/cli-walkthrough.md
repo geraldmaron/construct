@@ -33,9 +33,10 @@ Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
 
 An in-session `construct outcome` without `--domains` does **not** create a
-run and does **not** consult the keyword map. This session infers the intent.
-Two surfaces: this session dispatches, or the turn goes to inbox. Empty
-namings is a real "implicates nothing" answer.
+run and does **not** consult the keyword map. First-run is this session
+calling `record_outcome` (namings optional); Construct may add seats from
+visible ground. Two surfaces: this session dispatches, or the turn goes
+to inbox.
 
 From a plain terminal with no host wrapping the command:
 
@@ -506,13 +507,13 @@ answering it, record an outcome, read the work log and where a run's tasks
 stand, show the inbox and the questions roles have put to you, relay a decision
 or an answer you gave, record a verdict, drop a note verbatim, and read the
 subjects the workspace keeps facts about. Because the model in that host has
-already read your words, it **must** name the implicated domains itself —
-`record_outcome` on `construct serve` requires namings — and those namings
+already read your words, it may name implicated domains — namings are
+optional. `record_outcome` on `construct serve` records a run either way,
+and Construct may add seats from visible ground. Those namings
 pass exactly the same gate a subprocess model's would: a domain outside
 the catalog or without a stated reason is discarded, and the reply says what
-was not admitted. Omitting namings is an error, not a fall-through to the
-keyword map. An empty namings array is a real answer that this implicates
-nothing.
+was not admitted. Omitting namings is not an error and is not a fall-through
+to the keyword map.
 
 The surface can dispatch work. When a secret is set, `claim_task` and
 `submit_work` are on the same socket: the session that just named the

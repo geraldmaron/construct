@@ -2811,26 +2811,46 @@ and submits a draft.
    ambient marker (upstream declined; §26 gap stands). OpenCode has no
    documented session marker either. Bob is surveyed, never spawnable, and
    in-session via serve.
-4. In-session `outcome` without `--host` / `--domains` creates **no run**.
-   A hollow record was poisoning the next `work` (latest outcome, no tasks)
-   and looking like staffing happened. This session names via MCP
-   `record_outcome` with namings. On `construct serve` (secret present),
-   omitting namings is an error, not a keyword-map fall-through. Empty
-   `namings: []` remains a real "implicates nothing" answer. The keyword
-   map is the zero-model fallback when no session is wrapping the command
-   — not first-run.
-5. Bare `work` and `status` scope to the latest `outcome-received` run, not
-   the last pending task. An older pending run is `--run` / `--all`, never
-   the silent default.
-6. Doctor honesty is a consequence: found / version / auth / spawnable, plus
-   an ambient line that matches what `work` will do. First-run copy leads
-   with talking in the host, not doctor or the verb catalog.
+4. In-session `outcome` without `--host` / `--domains` creates **no run**
+   on that CLI door (a hollow or keyword-staffed record would look like
+   staffing happened). First-run is the host calling MCP `record_outcome`.
+   Superseded for the serve path by §31: omitting namings is not an error.
 
-**What this is not.** A Construct-only chat UI (commitment 1). A Grok Bot
-face. A Construct-side run started because the host was helpful.
+## 31. First-run is 1+3: talk creates a run; Construct adds unnamed seats from visible ground (2026-08-28)
+
+Gerald: first-run is 1+3, not host-namer-only and not keyword `construct
+outcome`. Ordinary-language talk in a host-backed session must leave a run
+(talk-plus-empty-log is a miss). Construct may add seats the host did not
+name, from the words plus ground it can actually see (declared sources,
+local docs/repos/directories). The user never types a catalog word, a
+verb, `record_outcome`, or `construct outcome`. No new phrase table.
+
+**What was failing.** On `construct serve`, omitted namings threw. A host
+that recorded the words without naming created no run. The keyword map on
+"We want to hire a contractor in Poland" seated only `employment`
+(`contractor`/`hire`); it missed `contracts` and `privacy` because
+`contractor` does not stem-match `contract` and `Poland` is not a keyword.
+Doctor on a hostless box advertised `construct outcome` as first-run.
+
+**Decision (session, under decide-by-default).**
+
+1. `record_outcome` accepts omitted namings and empty `namings: []`. A run
+   is recorded either way. The keyword map is not consulted on this path.
+2. Host-supplied namings still pass the admission gate (`inferredBy:
+   session`). Construct may add further seats from visible ground:
+   declared directory/git sources and `<cwd>/docs`, when a document's
+   path, filename, or first heading names a catalog domain. Identity, not
+   stemming: `contractor-agreement.md` does not seat `contracts`.
+3. `inferredBy: ground` when those document seats are the only staff.
+4. Doctor on a hostless box names the host-backed door. It does not send
+   anyone to `construct outcome`.
+
+**What this is not.** A rebuilt phrase table. A vector DB. Slack-and-repos
+as memory (longer product). Making `construct outcome` on a bare terminal
+into first-run.
 
 **Close gate.** `npm run lint && npm run typecheck && npm test && npm run smoke`.
-Tests cover the doctor/work lie, in-session work without spawn, keyword-map
-refuse, no hollow in-session run, ordinary-language namings → staff →
-session work, bare work not spending an older run, adapter no-spawn, and
-serve listing host-pull tools.
+Tests cover omitted namings recording a run, an artifact-only seat from
+`<cwd>/docs`, Verity Case 1 (Poland talk plus contracts/privacy ground is
+not employment-only), and doctor on a hostless box not sending anyone to
+`construct outcome`.
