@@ -118,7 +118,7 @@ export function staff(argv: string[]): number {
           `  ${outcome.admitted.tierReason}\n\n` +
           'This staffs nothing yet. The catalog changes only when you resolve the decision, and\n' +
           `its default position is: ${NOT_STAFFED}.\n` +
-          `  construct inbox\n  construct decide --id=${id} --resolution="..."\n`,
+          `  construct inbox\n  construct decide ${id} "<your call>"\n`,
       );
       return 0;
     });

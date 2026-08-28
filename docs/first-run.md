@@ -1,28 +1,40 @@
 # Your first run
 
-You talk. Staff shows up. That is first run.
+Talk in the host you already have, in ordinary language. A run exists.
+A seat you did not name can show up from the ground Construct can see
+— the repos, directories, and sources in reach, plus the words you
+said.
 
-You are already in a session that can call tools — Cursor, Claude Code,
-Codex, OpenCode, or IBM Bob. Say what you are looking at, in ordinary
-language. No catalog words. No `--host`. Point that session at Construct:
+That is first run. You never type a catalog word, a CLI verb, or
+`record_outcome`. You do not have to know a keyword map or a catalog
+exists. Construct is the brain: it may add seats the host or you did
+not name.
 
 ```bash
 construct serve
 ```
 
-The host infers. Construct does not classify intent, does not name
-concerns, and does not route. There is no phrase table and no
-Construct-side namer.
+The shipped binary does not meet that bar. Ordinary talk that leaves
+an empty work log is still a miss, and `record_outcome` still errors
+when namings are omitted. Do not expect staff to appear from talk
+alone, and do not expect Construct to add dark-corner seats from
+ground it can see.
+
+The old first-run rule said the host infers and Construct does
+not classify, name, or route — omitted namings were an error on
+purpose. That is what the binary still does. It is not the product.
 
 Two surfaces only:
 
-1. Dispatch through this session. The host calls `record_outcome` with
-   namings it chose, then `claim_task` / `submit_work`. You never leave
+1. Dispatch through this session. Once a run exists, this session
+   claims work through `claim_task` / `submit_work`. You never leave
    the conversation to type a verb. Construct will not spawn a second
    CLI. Empty staff after a host read is a miss, not a success.
 2. An inbox call, when the decision is actually yours.
 
-The keyword map is not first-run.
+The keyword map is not first-run and is not the inferrer. The
+terminal command list lives in [cli-walkthrough.md](cli-walkthrough.md).
+Construct never ships its own agent runtime.
 
 The methods in play are investigative-research, decision-framing, and
 intake — how the work is done, not job-title seats.
@@ -43,8 +55,10 @@ decision inbox (1):
 Resolve with: construct decide <id> "<your call>"
 ```
 
-An empty inbox is a real answer: nothing needs you right now. Everything
-else stays in the conversation you are already having.
+The host can relay that same call (`decide`). You do not have to leave
+the conversation to type the verb. An empty inbox is a real answer:
+nothing needs you right now. Everything else stays in the conversation
+you are already having.
 
 ## This session can dispatch
 
@@ -56,11 +70,11 @@ that secret. Construct does not spawn a second agent to do the work.
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
-On `construct serve`, omitting namings is an error: the host has to
-name. It is not a fall-through to the keyword map. An empty namings
-array is a real answer that this implicates nothing.
+On the shipped `construct serve`, omitting namings is still an error.
+That is the old host-namer rule, not first-run success. An empty
+namings array is a real answer that this implicates nothing.
 
 The keyword map is the zero-model fallback for a plain terminal with no
-host wrapping the command — it is not first-run. The terminal command
-list lives in [cli-walkthrough.md](cli-walkthrough.md). Construct never
-ships its own agent runtime.
+host wrapping the command — it is not first-run and it is not the
+inferrer. The terminal command list lives in
+[cli-walkthrough.md](cli-walkthrough.md).
