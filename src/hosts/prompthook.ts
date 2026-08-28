@@ -35,7 +35,10 @@ export function hearCommandLine(launch: HearLaunch = {}): string {
 /** Whether this hook command is the hear recorder this module plants. */
 export function isHearCommand(command: unknown): boolean {
   if (typeof command !== 'string') return false;
-  return /(?:^|[\s"'/])construct(?:\.mjs)?\s+hear(?:\s|"|'|$)/.test(command);
+  return (
+    /(?:^|[\s"'/])construct(?:\.mjs)?\s+hear(?:\s|"|'|$)/.test(command) ||
+    /hear-talk\.mjs/.test(command)
+  );
 }
 
 export function cursorHooksPath(cwd: string): string {

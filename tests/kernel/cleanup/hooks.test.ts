@@ -40,6 +40,7 @@ const OWN_HOOKS = {
   ],
   PreCompact: [{ hooks: [{ command: 'bd prime', type: 'command' }], matcher: '' }],
   SessionStart: [{ hooks: [{ command: 'bd prime', type: 'command' }], matcher: '' }],
+  UserPromptSubmit: [{ hooks: [{ command: 'node scripts/hooks/hear-talk.mjs', type: 'command' }] }],
 };
 
 function fixture(settings: unknown): { dir: string; file: string; cleanup: () => void } {

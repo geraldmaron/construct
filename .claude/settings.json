@@ -32,6 +32,16 @@
         ],
         "matcher": ""
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "node scripts/hooks/hear-talk.mjs",
+            "type": "command"
+          }
+        ]
+      }
     ]
   }
 }

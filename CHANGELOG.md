@@ -31,11 +31,11 @@ a spawn that will fail.
   older run still has pending work. `--all` remains the fleet door. A
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
-- **First-run hears ordinary language.** Talk in a host `construct wire`
-  has pointed at Construct creates a run. The host's prompt-submit hook
-  launches `construct hear`; the user does not type `record_outcome`,
-  `construct outcome`, or a catalog word. Staff from dark corners is
-  not this patch. Two surfaces only: dispatch through this session, or
+- **First-run hears ordinary language.** After init, Send in the host
+  creates a run. The prompt-submit hook records the words; the user
+  does not type `construct hear`, `record_outcome`, `construct
+  outcome`, or a catalog word. Staff from dark corners is not this
+  patch. Two surfaces only: dispatch through this session, or
   an inbox call. The keyword map is not first-run.
   README and `docs/first-run.md` say the binary does not meet the 1+3
   bar. `init`, `doctor`, and the verb catalog are not on that page. The

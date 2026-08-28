@@ -34,11 +34,11 @@ session (`claim_task` / `submit_work`) once a run exists, or an inbox call
 when the decision is yours. No phrase table. Construct will not spawn a
 second CLI.
 
-The shipped binary does not meet that bar. Talk in a host
-`construct wire` has pointed at Construct creates a run; you do not
-type `record_outcome`. Do not expect staff to appear from talk alone.
-The old first-run rule — the host infers; Construct does not
-classify, name, or route — is not the product.
+The shipped binary does not meet that bar. After init, ordinary
+Send in this host creates a run; you do not type a verb. Do not
+expect staff to appear from talk alone. The old first-run rule —
+the host infers; Construct does not classify, name, or route — is
+not the product.
 
 ```bash
 construct serve

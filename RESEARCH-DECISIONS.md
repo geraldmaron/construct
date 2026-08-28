@@ -2837,13 +2837,17 @@ Verity / Nova rejected the first landing.**
 
 1. `record_outcome` accepts omitted namings and empty `namings: []`. A run
    is recorded either way. The keyword map is not consulted on this path.
-2. Ordinary talk in a wired host creates that run without the user typing
-   a tool name. `construct wire` plants a prompt-submit hook (Cursor
-   `beforeSubmitPrompt`, Claude `UserPromptSubmit`) that launches
-   `construct hear`. The host fires the hook; the model does not choose
-   `record_outcome`. `inferredBy` on that path is `none` — nobody named
-   seats. `namer` means a model read the outcome; a regex must not write
-   it.
+2. Ordinary Send in a host where init already ran creates that run.
+   Init plants the prompt-submit hook by calling wire (Cursor
+   `beforeSubmitPrompt`, Claude `UserPromptSubmit`): `node` plus this
+   binary's `hear`. First-run is not a second `construct wire`. This
+   checkout also commits the same events to `scripts/hooks/hear-talk.mjs`
+   so a session in this tree does not need wire. The user types only the
+   words and hits send. They do not type `construct hear`,
+   `record_outcome`, `construct outcome`, or `construct wire`.
+   `inferredBy` on that path is `none`. `namer` means a model read the
+   outcome; a regex must not write it. Dark-corner seating is still a
+   miss.
 3. Host-supplied namings still pass the admission gate (`inferredBy:
    session`).
 4. Dark-corner seating is not shipped. A regex pair (outside-party →
@@ -2857,6 +2861,8 @@ into first-run. Treating omitted namings, folder-name seating, or a
 regex namer as the third beat.
 
 **Close gate.** `npm run lint && npm run typecheck && npm test && npm run smoke`.
-Tests cover omitted namings recording a run, hook-shaped stdin creating
-a run without `record_outcome`, the same words not writing `inferredBy:
-namer`, and no `concern-namer` phrase table in the tree.
+Tests cover omitted namings recording a run, the host submit path
+(reading the committed or init-planted hook command and feeding it
+Cursor/Claude stdin — not a test that constructs `construct hear`),
+the same words not writing `inferredBy: namer`, and no `concern-namer`
+phrase table in the tree. 3 is still a miss.
