@@ -22,11 +22,12 @@
  * than declared beside it (`lib/cli-surface.mjs`). `construct lessons list`
  * fails here, which is the line that shipped in a walkthrough and started this.
  *
- * What this still does not catch, stated so nobody reads a pass as more than it
- * is: flags. A verb's usage names them, but a documented command legitimately
- * carries flags the usage abbreviates, and failing those would train people to
- * silence the check. Verb and subcommand are checked; the argument after them
- * is not.
+ * Flags are checked against the same table `construct <verb> --help` prints
+ * (`acceptedFlags` in src/cli/index.ts). A documented `--id` on a verb that
+ * never accepted `--id` is the class that shipped as a live recipe in CLI
+ * output. Short aliases (`-h`, `-y`, `-v`) map to the long names. `--help` is
+ * always accepted. The argument after a verb is still not judged as a
+ * positional value — only as a subcommand or a flag name.
  */
 
 import { readFileSync } from 'node:fs';
@@ -34,7 +35,7 @@ import { execFileSync } from 'node:child_process';
 import process from 'node:process';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { INTERNAL_VERBS, VERBS } from '../src/cli/index.ts';
+import { acceptedFlags, INTERNAL_VERBS, VERBS } from '../src/cli/index.ts';
 import { probeSurface } from './lib/cli-surface.mjs';
 
 /**
@@ -86,6 +87,25 @@ function docFiles() {
  */
 const COMMAND = /(?:[$>][ \t]*)?(?:npx[ \t]+\S+[ \t]+)?construct[ \t]+([A-Za-z][\w-]*)(?:[ \t]+([a-z][a-z-]*))?/;
 const COMMAND_LINE = new RegExp(`^[ \\t]*${COMMAND.source}`);
+const FLAG = /--([a-z][a-z0-9-]*)/g;
+const SHORT = /(?:^|[\s`])-([hyv])(?:[\s`=]|$)/g;
+const SHORT_TO_LONG = { h: 'help', y: 'yes', v: 'version' };
+
+function flagsNamedIn(text) {
+  const names = new Set();
+  for (const match of text.matchAll(FLAG)) names.add(match[1]);
+  for (const match of text.matchAll(SHORT)) {
+    const long = SHORT_TO_LONG[match[1]];
+    if (long) names.add(long);
+  }
+  return names;
+}
+
+function flagsAllowed(verb) {
+  const allowed = new Set(acceptedFlags(verb));
+  allowed.add('help');
+  return allowed;
+}
 
 function hitsInShellFences(text) {
   const hits = [];
@@ -178,6 +198,70 @@ for (const use of cited) {
   });
 }
 
+/**
+ * Historical records may name a flag a later release dropped. Checking them
+ * as if they were a user guide would force a rewrite of the paper, which is
+ * the opposite of what this lint is for. User-facing guides, the CLI's own
+ * recipes, and any other page a reader would copy today are in scope.
+ */
+function flagCheckable(file) {
+  const rel = relative(ROOT, file).replaceAll('\\', '/');
+  if (
+    rel === 'CHANGELOG.md' ||
+    rel === 'RESEARCH-DECISIONS.md' ||
+    rel === 'STRATEGY.md' ||
+    rel === 'GLOSSARY.md'
+  ) {
+    return false;
+  }
+  if (rel.startsWith('docs/internal/') || rel.startsWith('fixtures/')) return false;
+  return true;
+}
+
+function checkFlags(file, line, verb, text) {
+  if (!flagCheckable(file)) return;
+  if (!known.has(verb) || RETIRED_VERBS.has(verb)) return;
+  const allowed = flagsAllowed(verb);
+  for (const flag of flagsNamedIn(text)) {
+    if (allowed.has(flag)) continue;
+    problems.push({
+      file,
+      line,
+      text,
+      why: `'${verb}' does not accept --${flag} (it accepts: ${[...allowed].sort().join(', ') || 'none'})`,
+    });
+  }
+}
+
+for (const use of cited) {
+  checkFlags(use.file, use.line, use.verb, use.text);
+}
+
+function cliFiles() {
+  const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', 'src/cli/*.ts'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  return out.split('\n').filter(Boolean).map((path) => join(ROOT, path));
+}
+
+for (const file of cliFiles()) {
+  let text;
+  try {
+    text = readFileSync(file, 'utf8');
+  } catch {
+    continue;
+  }
+  if (!text.includes('construct ')) continue;
+  let cursor = 0;
+  for (const line of text.split('\n')) {
+    cursor += 1;
+    const found = new RegExp(COMMAND.source).exec(line);
+    if (!found) continue;
+    checkFlags(file, cursor, found[1], line.trim());
+  }
+}
+
 if (problems.length > 0) {
   for (const p of problems) {
     process.stderr.write(`${relative(ROOT, p.file)}:${p.line}: '${p.text}' — ${p.why}\n`);
@@ -191,5 +275,6 @@ if (problems.length > 0) {
 const judged = [...surface.values()].filter((s) => s.shape !== "unknown" && s.shape !== "positional").length;
 process.stdout.write(
   `lint-doc-commands: clean — ${String(cited.length)} documented command(s) against ` +
-    `${String(known.size)} verbs, ${String(judged)} of them with a surface the CLI could state\n`,
+    `${String(known.size)} verbs, ${String(judged)} of them with a surface the CLI could state, ` +
+    `flags checked against each verb's own --help table\n`,
 );

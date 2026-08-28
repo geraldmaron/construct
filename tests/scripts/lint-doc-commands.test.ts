@@ -162,6 +162,16 @@ test('a documented verb that does not exist fails the lint', async () => {
   });
 });
 
+test('a documented flag the verb does not accept fails the lint', async () => {
+  // Live CLI: `construct decide --id=… --resolution=…` exits 2 (unknown flag).
+  // The same spelling used to ship as a recipe in CLI output.
+  await withPage('# fixture\n\n```bash\nconstruct decide --id=dec-1 --resolution=yes\n```\n', (r) => {
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /does not accept --id/);
+    assert.match(r.stderr, /does not accept --resolution/);
+  });
+});
+
 test('real commands pass: a subcommand, a positional, and flags', async () => {
   const page = [
     '# fixture',

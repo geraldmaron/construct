@@ -183,8 +183,8 @@ export const PROJECTION_TOOLS = [
     name: 'run_status',
     description:
       'Where tasks stand (pending, leased, done, failed), optionally for one ' +
-      'run. Read-only: dispatching tasks costs money and stays on the CLI ' +
-      '(`construct work`), behind its explicit spend ceiling.',
+      'run. Read-only. In-session dispatch is claim_task / submit_work on this ' +
+      'same socket. Spawning a host CLI is construct work, and that path spends.',
     inputSchema: {
       type: 'object',
       properties: { run: { type: 'string', description: 'A run id, to scope the read.' } },

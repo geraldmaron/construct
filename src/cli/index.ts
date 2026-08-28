@@ -137,7 +137,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
     flags: [...HOST_FLAGS, 'run', 'all', 'concurrency', 'ceiling', 'lease-minutes', 'allow-distant-ground', 'voice'],
   },
   notes: { gloss: 'drop after-call notes in and reason over each', flags: [...HOST_FLAGS, 'workspace', 'run', 'max-notes'] },
-  review: { gloss: 'review the workspace’s open drafts', flags: [...HOST_FLAGS, 'workspace', 'length'] },
+  review: { gloss: 'review declared ground for contradictions', flags: [...HOST_FLAGS, 'workspace'] },
   show: { gloss: 'show a run’s deliverables as a reader sees them', flags: ['run', 'record', 'json'] },
   status: { gloss: 'summarize where the workspace stands right now', flags: ['json'] },
   compose: { gloss: 'assemble a run’s work into one deliverable', flags: [...HOST_FLAGS, 'run', 'shape', 'record', 'no-close'] },
@@ -154,7 +154,10 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
     ],
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
-  standing: { gloss: 'set and fire standing outcomes on a schedule', flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace'] },
+  standing: {
+    gloss: 'set and fire standing outcomes on a schedule',
+    flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace', 'ceiling', 'concurrency', 'lease-minutes'],
+  },
   schedule: { gloss: 'install the platform timer that fires what is due', flags: ['every', 'at', 'always-on', 'dry-run'] },
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
@@ -174,7 +177,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: [] },
-  wire: { gloss: 'wire the MCP entry into your host’s config', flags: ['yes'] },
+  wire: { gloss: 'wire the MCP entry into Claude Code or Cursor', flags: ['yes'] },
   init: { gloss: 'confirm your host and see the spine, right after install', flags: ['yes'] },
   doctor: { gloss: 'report host presence and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
@@ -186,10 +189,8 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
 });
 
 /**
- * The grouped help surface, mirroring README's own task grouping. The first
- * groups are the spine's stages in order, so the mental model — say what you
- * want, run it, read it back, decide, judge — is legible from `construct help`
- * itself rather than only from the prose around it. Every verb in VERBS lives
+ * The grouped help surface. First-run is talk in the host you already have;
+ * the terminal spine is the fallback, not beat two. Every verb in VERBS lives
  * in exactly one group; a verb added to the table and to no group here is
  * caught by the help-coverage test.
  */
@@ -240,13 +241,22 @@ export function verbHelp(verb: string): string {
   return `construct ${verb} — ${spec.gloss}${flags}\n  the whole surface: construct help\n`;
 }
 
-/** The whole help surface, grouped, with the spine named up front. */
+/** Flags a verb accepts, from the same table `construct <verb> --help` prints. */
+export function acceptedFlags(verb: string): readonly string[] {
+  return HELP[verb]?.flags ?? [];
+}
+
+/** The whole help surface, grouped, with first-run named up front. */
 export function groupedHelp(): string {
   const width = Math.max(...VERBS.map((v) => v.length));
   const lines: string[] = [
-    'construct — one place to say what you want, run it, and read back the work.',
+    'construct — an outcome engine. Talk in the host you already have; staff shows up.',
     '',
-    'Start here: outcome → work → show → inbox → verdict',
+    'Start here: construct serve',
+    '  Point this session at Construct. Ordinary language. The host infers.',
+    '  Two surfaces: this session dispatches, or an inbox call when the decision is yours.',
+    '',
+    'From a plain terminal: outcome → work → show → inbox → verdict',
     '  outcome records what you want, work runs it, show reads it back,',
     '  inbox holds what only you can decide, verdict says whether it was right.',
     '',
