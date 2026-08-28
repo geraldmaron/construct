@@ -437,7 +437,7 @@ export function watch(argv: string[]): number {
       // read as a sweep that found nothing.
       process.stdout.write(
         '\nEverything found is already in the inbox, unresolved. A standing finding is\n' +
-          'not raised twice; resolve it with: construct decide --id=<id> --resolution="..."\n',
+          'not raised twice; resolve it with: construct decide <id> "<your call>"\n',
       );
     }
     return 0;

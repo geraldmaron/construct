@@ -43,8 +43,10 @@ decision inbox (1):
 Resolve with: construct decide <id> "<your call>"
 ```
 
-An empty inbox is a real answer: nothing needs you right now. Everything
-else stays in the conversation you are already having.
+The host can relay that same call (`decide`). You do not have to leave
+the conversation to type the verb. An empty inbox is a real answer:
+nothing needs you right now. Everything else stays in the conversation
+you are already having.
 
 ## This session can dispatch
 

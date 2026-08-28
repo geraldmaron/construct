@@ -6,7 +6,7 @@
  * the reason `outcome --help` must not file `--help` as an outcome into an
  * append-only log. An unknown flag on a verb that takes no free text fails
  * closed rather than running something other than what was typed. And
- * `construct help` is a task-grouped surface with the spine named up front,
+ * `construct help` is a task-grouped surface with first-run named up front,
  * not a flat wall of verbs.
  */
 
@@ -105,10 +105,11 @@ test('a free-text verb refuses a leading unknown flag but keeps its words', asyn
   assert.doesNotMatch(ok.err, /unknown flag/);
 });
 
-test('construct help is task-grouped with a start-here spine', async () => {
+test('construct help is task-grouped with first-run named up front', async () => {
   const result = await capture(['help']);
   assert.strictEqual(result.code, 0);
-  assert.match(result.out, /Start here: outcome → work → show → inbox → verdict/, 'names the spine');
+  assert.match(result.out, /Start here: construct serve/, 'names first-run');
+  assert.match(result.out, /From a plain terminal: outcome → work → show → inbox → verdict/, 'names the terminal spine');
   for (const group of ['Starting work', 'Running it', 'Reading back', 'Outward changes and decisions']) {
     assert.ok(result.out.includes(group), `groups by "${group}"`);
   }
@@ -129,4 +130,13 @@ test('the top-level help flag spellings all reach the grouped surface', async ()
     assert.strictEqual(result.code, 0, `${argv.join(' ') || '(no args)'} exits 0`);
     assert.match(result.out, /Start here:/, 'shows the grouped help');
   }
+});
+
+test('standing --due accepts the work flags its usage names', async () => {
+  // The usage line and the schedule doc both carry --ceiling. The dispatcher
+  // used to reject it as unknown because the help table omitted the flags
+  // standingDue passes through to work.
+  const result = await capture(['standing', '--due', '--ceiling=5']);
+  assert.notStrictEqual(result.code, 2, 'the flag is known');
+  assert.doesNotMatch(result.err, /unknown flag/);
 });

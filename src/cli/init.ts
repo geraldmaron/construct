@@ -22,6 +22,7 @@ import { wire } from './wire.ts';
 
 const SPINE =
   'Talk in this host. Ordinary language is enough — this session names the concerns.\n' +
+  'Point the host at Construct with construct serve.\n' +
   'The spine: outcome -> work -> show -> inbox -> verdict\n' +
   '  outcome  this session records via MCP record_outcome with namings\n' +
   '  work     this session claims via construct serve (claim_task)\n' +

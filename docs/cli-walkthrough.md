@@ -476,9 +476,11 @@ notice its own silence.
 
 If you already work inside Claude Code, Codex, Cursor, VS Code agent mode, or
 OpenCode, you do not have to learn this CLI at all. Construct can appear inside
-the host you already use. Run from inside a host, `construct wire` detects which
-one and registers the `construct serve` entry for you. A host with its own
-MCP-add helper takes the same entry in a line — Claude Code, for example:
+the host you already use. Run from inside Claude Code or Cursor, `construct wire`
+detects which one and registers the `construct serve` entry for you. OpenCode,
+Codex, Bob, and any host that only reads a config file take the entry by hand —
+wire does not write those. A host with its own MCP-add helper takes the same
+entry in a line — Claude Code, for example:
 
 ```bash
 claude mcp add construct construct serve
