@@ -27,9 +27,9 @@ purpose. That is what the binary still does. It is not the product.
 Two surfaces only:
 
 1. Dispatch through this session. Once a run exists, this session
-   claims work through `claim_task` / `submit_work`. You never leave
-   the conversation to type a verb. Construct will not spawn a second
-   CLI. Empty staff after a host read is a miss, not a success.
+   does the work. You never leave the conversation to type a verb.
+   Construct will not spawn a second CLI. Empty staff after a host
+   read is a miss, not a success.
 2. An inbox call, when the decision is actually yours.
 
 The keyword map is not first-run and is not the inferrer. The
@@ -45,27 +45,24 @@ The only Construct-shaped surface is an inbox card, and only when the
 decision is actually yours: what happened, what you decide, one action.
 
 ```
-decision inbox (1):
+Should the public claim stay up?
 
-  dec-…  Should the public claim stay up?
-
-      evidence-provenance: hold [deliverable:…]
-      coverage-gaps: challenge [deliverable:…]
-
-Resolve with: construct decide <id> "<your call>"
+What happened: one read would leave it; another says the source
+cannot be checked.
+What you decide: leave it, take it down, or wait for a cited source.
+One action: say which, here.
 ```
 
-The host can relay that same call (`decide`). You do not have to leave
-the conversation to type the verb. An empty inbox is a real answer:
-nothing needs you right now. Everything else stays in the conversation
-you are already having.
+The host relays the call. You stay in the conversation. An empty
+inbox is a real answer: nothing needs you right now. Everything
+else stays in the conversation you are already having.
 
 ## This session can dispatch
 
-The surface can dispatch work. When a secret is set, `claim_task` and
-`submit_work` are on the same socket: the session that just named the
-outcome is the session that pulls the next task. Product `serve` creates
-that secret. Construct does not spawn a second agent to do the work.
+The surface can dispatch work. When a secret is set, the session
+that is already talking to you pulls the next task. Product `serve`
+creates that secret. Construct does not spawn a second agent to do
+the work.
 
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.

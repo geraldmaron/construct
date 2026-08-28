@@ -122,9 +122,11 @@ only where the host expects to find the file changes.
 `construct outcome` (or any other first command) creates whatever state it
 needs the moment it runs — a workspace named `default` if you don't name
 one, the store itself if it doesn't exist yet. There is nothing to
-provision first. `docs/first-run.md` is talk, then staff; the terminal
-commands live in `docs/cli-walkthrough.md`. This recipe stops at doctor
-because doctor is what proves the wiring, not the workspace.
+provision first. `docs/first-run.md` is first run: talk in the host, a
+run exists, a seat you did not name can show up. The shipped binary
+does not meet that bar. The terminal commands live in
+`docs/cli-walkthrough.md`. This recipe stops at doctor because doctor
+is what proves the wiring, not the workspace.
 
 ## Step 4: Verify with doctor
 

@@ -30,9 +30,9 @@ Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
 Point the session at Construct. Construct is the brain: it may add seats
 the host or you did not name, from the words plus repos, directories, and
 sources it can actually see. Two surfaces only: dispatch through this
-session (`claim_task` / `submit_work`) once a run exists, or an inbox call
-when the decision is yours. No phrase table. Construct will not spawn a
-second CLI.
+session once a run exists, or an inbox call when the decision is yours.
+The host relays that call. You stay in the conversation. No phrase table.
+Construct will not spawn a second CLI.
 
 The shipped binary does not meet that bar. Talk still leaves an empty
 log, and `record_outcome` still requires namings. The old first-run rule — the
