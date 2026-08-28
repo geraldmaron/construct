@@ -5,7 +5,9 @@
  * a run exists, and a seat nobody named can show up from the ground —
  * and the page must not claim the binary already does that. Keyword map
  * is not first-run. Empty staff after a host read is a fail. First
- * output is not doctor or a verb wall.
+ * output is not doctor or a verb wall. The first-run page does not
+ * teach a CLI verb, a catalog concern name, or a host tool name as
+ * the thing the user types.
  */
 
 import { test } from 'node:test';
@@ -157,8 +159,8 @@ test('first-run lead is talk, a run, and an unnamed seat — not host-namer succ
   assert.doesNotMatch(lead, /Staff shows up/);
   assert.match(lead, /Two surfaces only/);
   assert.match(lead, /record_outcome/);
-  assert.match(lead, /claim_task/);
-  assert.match(lead, /submit_work/);
+  assert.doesNotMatch(page, /claim_task/);
+  assert.doesNotMatch(page, /submit_work/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /host decides the path/);
   assert.match(lead, /investigative-research/);
@@ -177,7 +179,14 @@ test('first-run lead is talk, a run, and an unnamed seat — not host-namer succ
 test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
-  assert.match(page, /construct decide/);
+  assert.match(page, /What happened/);
+  assert.match(page, /What you decide/);
+  assert.match(page, /One action/);
+  assert.match(page, /host relays/);
+  assert.doesNotMatch(page, /Resolve with:\s*construct decide/);
+  assert.doesNotMatch(page, /construct decide/);
+  assert.doesNotMatch(page, /evidence-provenance/);
+  assert.doesNotMatch(page, /coverage-gaps/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
   assert.doesNotMatch(page, /construct work/);
@@ -192,8 +201,8 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
   }
   const serve = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(serve, /The surface can dispatch work/);
-  assert.match(serve, /claim_task/);
-  assert.match(serve, /submit_work/);
+  assert.doesNotMatch(serve, /claim_task/);
+  assert.doesNotMatch(serve, /submit_work/);
 });
 
 test('README short version opens with serve, not a phrase table or verb wall', () => {
@@ -210,6 +219,10 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.match(short, /not the product/);
   assert.doesNotMatch(short, /Staff shows up/);
   assert.match(short, /Two surfaces only/);
+  assert.match(short, /host relays/);
+  assert.doesNotMatch(short, /claim_task/);
+  assert.doesNotMatch(short, /submit_work/);
+  assert.doesNotMatch(short, /construct decide/);
   assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
   assertNoPhraseTable(short, 'README short version');
@@ -218,6 +231,14 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.doesNotMatch(fence, /construct init/);
   assert.doesNotMatch(fence, /construct doctor/);
   assert.doesNotMatch(short, /construct outcome/, 'keyword-map outcome is not on the first-run door');
+});
+
+test('user-facing first-run copy does not say staff already shows up', () => {
+  for (const rel of ['docs/first-run.md', 'docs/README.md', 'docs/consumer-install.md', 'README.md']) {
+    const body = readFileSync(join(ROOT, rel), 'utf8');
+    assert.doesNotMatch(body, /Staff shows up/, `${rel} still says staff shows up`);
+    assert.doesNotMatch(body, /talk, then staff/, `${rel} still teaches talk-then-staff as first-run`);
+  }
 });
 
 test('walkthrough Poland sample is not the stale two-domain capture', () => {
