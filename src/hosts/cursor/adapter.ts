@@ -45,6 +45,15 @@ export const HOST_NAME = 'cursor';
 /**
  * No `outward-write`: dispatch runs `--mode plan`, probed read-only, so a
  * model here cannot act on anything outside the process however it is asked.
+ *
+ * No `role-write`: this adapter never registers submit_draft /
+ * append_work_log / record_external_read with the spawned `cursor-agent`
+ * process — the notice below ("this host has no role write surface yet")
+ * fires on every invocation that carries a roleEnv, precisely because the
+ * tools it announces do not exist here. Declaring the absence is what lets
+ * the coordinator tell the role the truth (rolewrite.ts's
+ * NO_WRITE_SURFACE_NOTE) instead of sending it hunting for a tool this
+ * process never wires up.
  */
 export const CURSOR_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent'];
 

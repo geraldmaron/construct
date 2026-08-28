@@ -27,7 +27,19 @@
  *                 read-only posture is what makes a review role safe, and it
  *                 is the reason a host that cannot carry out an approved
  *                 change is told so before a model call is spent rather than
- *                 after one comes back saying it could not.
+ *                 after one comes back saying it could not. 'role-write' means
+ *                 this adapter actually registers the submit_draft /
+ *                 append_work_log / record_external_read tools with the
+ *                 invoked process — not merely that a capability token was
+ *                 minted for the dispatch. Its absence is the reason the
+ *                 coordinator must tell a role it holds no write surface
+ *                 (rolewrite.ts's NO_WRITE_SURFACE_NOTE) rather than the
+ *                 opposite (WRITE_SURFACE_PROTOCOL): a role told it can call a
+ *                 tool the host never wires up will spend its whole reply
+ *                 chasing that tool and hand back nothing readable — measured
+ *                 on a real dispatch, 2026-08-28: two tasks on a host without
+ *                 this capability reported real token spend and an empty
+ *                 deliverable.
  *   init(config)  async setup; must run before invoke()/health() are valid
  *   invoke(req, ctx) async; runs one unit of work and resolves a HostResult.
  *                 ctx may carry an invocationId chosen by the caller — an
@@ -51,6 +63,7 @@ export const CAPABILITIES = [
   'sandbox',
   'concurrent',
   'outward-write',
+  'role-write',
 ] as const;
 
 export type HostCapability = (typeof CAPABILITIES)[number];

@@ -20,6 +20,7 @@
     { "id": "o17", "category": "non-engineering", "outcome": "Onboard a reseller partner in Germany", "expect": ["contracts"] },
     { "id": "o18", "category": "engineering", "outcome": "Encrypt customer data at rest before the enterprise deal closes", "expect": ["security", "privacy"] },
     { "id": "o19", "category": "non-engineering", "outcome": "Write a newsletter to announce the beta", "expect": ["marketing-claims", "product-scoping"] },
-    { "id": "o20", "category": "engineering", "outcome": "Ship the mobile app redesign by Friday", "expect": ["program-sequencing", "product-scoping"] }
+    { "id": "o20", "category": "engineering", "outcome": "Ship the mobile app redesign by Friday", "expect": ["program-sequencing", "product-scoping"] },
+    { "id": "o21", "category": "legal", "outcome": "We want to add device posture checking that shares telemetry with a customer's third-party EDR vendor before allowing network access", "expect": ["security", "privacy", "compliance", "contracts"] }
   ]
 }

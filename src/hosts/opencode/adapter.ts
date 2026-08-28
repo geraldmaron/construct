@@ -51,8 +51,18 @@ export const HOST_NAME = 'opencode';
  * has no equivalent to the strict confinement the cursor and codex adapters
  * get — the same finding the MCP pin records about tool reach, applied to what
  * a dispatched model can do to the world.
+ *
+ * `role-write` because this is one of the two adapters that actually writes
+ * the role's MCP config (mcpconfig.ts) when a roleEnv is supplied — the
+ * coordinator only tells a role it can call submit_draft when the dispatched
+ * host both received a roleEnv and declares this.
  */
-export const OPENCODE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent', 'outward-write'];
+export const OPENCODE_CAPABILITIES: readonly HostCapability[] = [
+  'interrupt',
+  'concurrent',
+  'outward-write',
+  'role-write',
+];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 

@@ -61,8 +61,19 @@ const HOST_FAMILY_PROBE = 'claude-';
  * outward change, and it is equally the reason a dispatch here is not
  * confined the way the cursor and codex ones are. Declared rather than
  * assumed, so a surface that needs the distinction can ask instead of guess.
+ *
+ * `role-write` because this is one of the two adapters that actually
+ * registers `construct role-serve` as an MCP server for the invocation when a
+ * roleEnv is supplied (see the module note above and mcpconfig.ts) — the
+ * coordinator only tells a role it can call submit_draft when the dispatched
+ * host both received a roleEnv and declares this.
  */
-export const CLAUDE_CAPABILITIES: readonly HostCapability[] = ['interrupt', 'concurrent', 'outward-write'];
+export const CLAUDE_CAPABILITIES: readonly HostCapability[] = [
+  'interrupt',
+  'concurrent',
+  'outward-write',
+  'role-write',
+];
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 

@@ -103,6 +103,15 @@ export interface CompleteTask extends SettleTask {
 
 export interface FailTask extends SettleTask {
   readonly error: unknown;
+  /**
+   * Real cost the host reported before this task was judged a failure. A
+   * dispatch that spends real tokens and then returns nothing checkable did
+   * not spend nothing — recording 0 here would make that spend invisible to
+   * the run's cost ceiling. Optional and defaults to 0/false: most failures
+   * (an auth error, a timeout) settle before any model call completes.
+   */
+  readonly spend?: number;
+  readonly spendReported?: boolean;
 }
 
 /**
@@ -263,11 +272,13 @@ export function failTask(store: Store, failed: FailTask): void {
   settle(
     store,
     `UPDATE tasks
-        SET state = 'failed', error = ?, settled_at = ?,
+        SET state = 'failed', error = ?, spend = ?, spend_reported = ?, settled_at = ?,
             lease_owner = NULL, lease_until = NULL
       WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ?`,
     [
       JSON.stringify(failed.error ?? null),
+      failed.spend ?? 0,
+      failed.spendReported ? 1 : 0,
       failed.at,
       failed.id,
       failed.owner,

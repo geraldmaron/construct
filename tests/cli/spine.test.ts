@@ -609,9 +609,14 @@ test('work says which deliverables need a licensed human, and what is wrong with
     () => work(['--all'], emptyAnswer),
   ]);
 
-  assert.match(out, /needs review by a licensed attorney/, 'privacy output must not read as advice');
-  assert.match(out, /needs review by a licensed tax professional/, 'commerce-tax too');
-  assert.match(out, /⚑ the run succeeded but produced no text/);
+  // Privacy's brief declares real challenges, so a host that reports success
+  // with nothing readable settles as a failure, not a completed deliverable
+  // carrying an advisory nobody could act on — "needs review by a licensed
+  // attorney" about a document that does not exist is not useful. The failure
+  // line is the CLI's one shared writer (present.ts's failureLine), not a
+  // silent "failed" a reader has to dig into JSON to explain.
+  assert.match(out, /✗ privacy\s+the host reported success but the deliverable came back empty/);
+  assert.match(out, /needs review by a licensed tax professional/, 'commerce-tax still completed');
 
   // product-scoping needs no licensed review, and must not be labeled as if it
   // did. Read the notes attached to its own line, not the whole output.
