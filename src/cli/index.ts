@@ -250,11 +250,12 @@ export function acceptedFlags(verb: string): readonly string[] {
 export function groupedHelp(): string {
   const width = Math.max(...VERBS.map((v) => v.length));
   const lines: string[] = [
-    'construct — an outcome engine. Talk in the host you already have; staff shows up.',
+    'construct — an outcome engine. Talk in the host you already have.',
     '',
     'Start here: construct serve',
-    '  Point this session at Construct. Ordinary language. The host infers.',
-    '  Two surfaces: this session dispatches, or an inbox call when the decision is yours.',
+    '  Ordinary language. A run should exist. A seat you did not name',
+    '  should be able to show up from the ground. The shipped binary still',
+    '  requires namings; that is the old host-namer rule, not success.',
     '',
     'From a plain terminal: outcome → work → show → inbox → verdict',
     '  outcome records what you want, work runs it, show reads it back,',

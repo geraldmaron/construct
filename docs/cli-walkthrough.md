@@ -2,7 +2,8 @@
 
 First-run is talk in the host you already have
 ([first-run.md](first-run.md)). This page is the CLI reference for a
-plain terminal. It is not beat two.
+plain terminal. It is not first-run. Keyword `construct outcome` is
+not the product door.
 
 ## Install, then the same conversation
 
