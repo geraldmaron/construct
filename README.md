@@ -35,8 +35,9 @@ when the decision is yours. No phrase table. Construct will not spawn a
 second CLI.
 
 The shipped binary does not meet that bar. After init, ordinary
-Send in this host creates a run; you do not type a verb. Do not
-expect staff to appear from talk alone. The old first-run rule —
+Send in this host creates a run; you do not type a verb. Seats
+appear only when a model actually read the outcome. Without a
+logged-in host namer, staff stays empty. The old first-run rule —
 the host infers; Construct does not classify, name, or route — is
 not the product.
 

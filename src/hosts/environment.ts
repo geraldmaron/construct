@@ -50,6 +50,13 @@ export const SHARED_XDG_VARS = [
 /** Set this to keep the host under construct's isolation deliberately. */
 export const INHERIT_XDG_VAR = 'CONSTRUCT_HOST_INHERIT_XDG';
 
+/**
+ * Set on every host Construct itself spawns. The prompt-submit hook must
+ * not treat a namer or work dispatch as the user's Send — that would
+ * recurse and record the namer prompt as a run.
+ */
+export const SKIP_HEAR_VAR = 'CONSTRUCT_SKIP_HEAR';
+
 export type Environment = Record<string, string | undefined>;
 
 /** Unset, empty, "0", and "false" all mean "do not inherit". */
@@ -71,9 +78,14 @@ function wantsInheritance(value: string | undefined): boolean {
  * asks for.
  */
 export function hostEnvironment(ambient: Environment = process.env): Environment {
-  if (wantsInheritance(ambient[INHERIT_XDG_VAR])) return { ...ambient };
-  const chosen: Environment = { ...ambient };
-  for (const variable of SHARED_XDG_VARS) delete chosen[variable];
+  const chosen: Environment = wantsInheritance(ambient[INHERIT_XDG_VAR])
+    ? { ...ambient }
+    : (() => {
+        const next: Environment = { ...ambient };
+        for (const variable of SHARED_XDG_VARS) delete next[variable];
+        return next;
+      })();
+  chosen[SKIP_HEAR_VAR] = '1';
   return chosen;
 }
 

@@ -61,6 +61,7 @@ function isolatedEnv(): { env: NodeJS.ProcessEnv; cleanup: () => void } {
   };
   delete env.CURSOR_AGENT;
   delete env.CLAUDECODE;
+  delete env.CURSOR_API_KEY;
   return {
     env,
     cleanup: () => rmSync(root, { recursive: true, force: true }),

@@ -406,7 +406,7 @@ async function run(argv: string[]): Promise<number> {
     case 'wire':
       return wire(argv.slice(1));
     case 'hear':
-      return hear(argv.slice(1));
+      return await hear(argv.slice(1));
     case 'init':
       return init(argv.slice(1));
     case 'role-serve':

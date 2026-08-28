@@ -2845,15 +2845,20 @@ Verity / Nova rejected the first landing.**
    so a session in this tree does not need wire. The user types only the
    words and hits send. They do not type `construct hear`,
    `record_outcome`, `construct outcome`, or `construct wire`.
-   `inferredBy` on that path is `none`. `namer` means a model read the
-   outcome; a regex must not write it. Dark-corner seating is still a
-   miss.
+   The hook then consults the existing host namer (`createHostNamer`)
+   when `cursor-agent` or `claude` is logged in. `inferredBy` is
+   `namer` only when that model answered. A missing or failed namer
+   stays `none`. Keywords do not catch this path. A regex must not
+   write `namer`. Declared sources in the store are shown to the
+   namer as text; a folder name is not a seat. Construct-spawned
+   host CLIs set `CONSTRUCT_SKIP_HEAR` so a namer dispatch does not
+   re-enter the hook.
 3. Host-supplied namings still pass the admission gate (`inferredBy:
    session`).
-4. Dark-corner seating is not shipped. A regex pair (outside-party →
-   contracts; party + `in CapitalizedPlace` → privacy) is a phrase table
-   and was torn out. A folder or filename that is already a catalog word
-   is not a dark corner and is not a seat.
+4. Dark-corner seating is not a phrase table. A regex pair
+   (outside-party → contracts; party + `in CapitalizedPlace` →
+   privacy) was torn out. A folder or filename that is already a
+   catalog word is not a dark corner and is not a seat.
 
 **What this is not.** A rebuilt phrase table. A vector DB. Slack-and-repos
 as memory (longer product). Making `construct outcome` on a bare terminal
@@ -2864,5 +2869,9 @@ regex namer as the third beat.
 Tests cover omitted namings recording a run, the host submit path
 (reading the committed or init-planted hook command and feeding it
 Cursor/Claude stdin — not a test that constructs `construct hear`),
-the same words not writing `inferredBy: namer`, and no `concern-namer`
-phrase table in the tree. 3 is still a miss.
+an injected namer writing `inferredBy: namer`, a thrown namer staying
+`none` (not keywords), `CONSTRUCT_SKIP_HEAR` recording nothing, and no
+`concern-namer` phrase table in the tree. A live host-CLI Send of the
+Poland sentence still needs a logged-in `cursor-agent` or `claude`
+(`CURSOR_API_KEY` or `agent login`). Without that, 3 is empty on the
+chair.
