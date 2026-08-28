@@ -1,7 +1,7 @@
 # Installing Construct into another repo
 
-`docs/first-run.md` walks you through Construct against its own checkout.
-This is the other case: you already have a working Construct checkout
+`docs/first-run.md` is first run: talk in the host you already have. This
+page is a different case: you already have a working Construct checkout
 somewhere on the machine, and you want a *different* repo — an app you're
 building, not Construct itself — to have Construct present inside its agent
 hosts. Every command below was run from inside two real app repos before

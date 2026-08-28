@@ -2,7 +2,8 @@
 
 First-run is talk in the host you already have
 ([first-run.md](first-run.md)). This page is the CLI reference for a
-plain terminal. It is not beat two.
+plain terminal. It is not first-run. Keyword `construct outcome` is
+not the product door.
 
 ## Install, then the same conversation
 
@@ -42,34 +43,34 @@ From a plain terminal with no host wrapping the command:
 construct outcome "We want to hire a contractor in Poland"
 ```
 
-Construct reads that sentence and works out which concerns it touches:
+Construct reads that sentence and works out which concerns it touches. A
+hostless capture on 2026-08-28 printed:
 
 ```
-run run-20260805134446726
+outcome: this lands in the shared 'default' workspace, visible to every repo on this machine; scope it with --workspace=<name> or bind one in .construct/settings.json
+run run-20260828143401920
   outcome: We want to hire a contractor in Poland
 
-implicated domains (2):
+implicated domains (1):
   employment  — people you engage and how you engage them
       signals: contractor, contractors, hire (score 30)
-  contracts  — agreements with other parties and what they bind you to
-      signals: contract (score 10)
 
-filed 3 work log entries and queued 2 task(s).
-Run them:  construct work --run run-20260805134446726 --host=<detected host>
-Read back: construct log --run run-20260805134446726
+filed 2 work log entries and queued 1 task(s).
+Run them:  construct work --run run-20260828143401920
+Read back: construct log --run run-20260828143401920
 
-plan plan-run-20260805134446726: 2 steps, risk high, no sources declared
-  construct plan run-20260805134446726
+plan plan-run-20260828143401920: 1 step, risk high, no sources declared
+  construct plan run-20260828143401920
 ```
 
 The last two lines point at the run's recorded plan. Reading it shows which
 concern each step is routed to, on what evidence, and what the deliverable
 owes. `construct plan` takes the run id as a plain word, not a flag.
 
-Nobody typed "employment" or "contracts." That inference is the whole point:
-the obvious concerns are obvious to a team that has done this before, and
-Construct's job is to make them obvious to you. The `signals` line is the
-evidence for each one, so you can disagree with it on sight.
+Nobody typed "employment." That inference is the whole point: the obvious
+concern is obvious to a team that has done this before, and Construct's job
+is to make it obvious to you. The `signals` line is the evidence, so you can
+disagree with it on sight.
 
 That run happened without a model and without spending anything. If you would
 rather have a model read your sentence instead of the keyword map, name a host.
@@ -476,9 +477,11 @@ notice its own silence.
 
 If you already work inside Claude Code, Codex, Cursor, VS Code agent mode, or
 OpenCode, you do not have to learn this CLI at all. Construct can appear inside
-the host you already use. Run from inside a host, `construct wire` detects which
-one and registers the `construct serve` entry for you. A host with its own
-MCP-add helper takes the same entry in a line — Claude Code, for example:
+the host you already use. Run from inside Claude Code or Cursor, `construct wire`
+detects which one and registers the `construct serve` entry for you. OpenCode,
+Codex, Bob, and any host that only reads a config file take the entry by hand —
+wire does not write those. A host with its own MCP-add helper takes the same
+entry in a line — Claude Code, for example:
 
 ```bash
 claude mcp add construct construct serve

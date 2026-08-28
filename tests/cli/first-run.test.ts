@@ -1,9 +1,11 @@
 /**
  * tests/cli/first-run.test.ts — cheap first-run checks that stay on ordinary CI.
  *
- * Locks the mechanism, not a phrase table. The host names concerns or we
- * say we need the host. Keyword map is not first-run. Empty staff after a
- * host read is a fail. First output is not doctor or a verb wall.
+ * Locks the mechanism, not a phrase table. Published first-run is talk,
+ * a run exists, and a seat nobody named can show up from the ground —
+ * and the page must not claim the binary already does that. Keyword map
+ * is not first-run. Empty staff after a host read is a fail. First
+ * output is not doctor or a verb wall.
  */
 
 import { test } from 'node:test';
@@ -141,13 +143,18 @@ async function hostNamedRecord(
   };
 }
 
-test('first-run lead is talk then staff, not init plus doctor', () => {
+test('first-run lead is talk, a run, and an unnamed seat — not host-namer success', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   const lead = firstHeadingLead(page);
-  assert.match(lead, /You talk\. Staff shows up/);
-  assert.match(lead, /ordinary\s+language/);
-  assert.match(lead, /The host infers/);
-  assert.match(lead, /does not classify intent/);
+  assert.match(lead, /Talk in the host you already have/);
+  assert.match(lead, /A run exists/);
+  assert.match(lead, /seat you did not\s+name/);
+  assert.match(lead, /from the ground/);
+  assert.match(lead, /does not meet that bar/);
+  assert.match(lead, /old first-run rule/);
+  assert.match(lead, /not the product/);
+  assert.doesNotMatch(lead, /You talk\. Staff shows up/);
+  assert.doesNotMatch(lead, /Staff shows up/);
   assert.match(lead, /Two surfaces only/);
   assert.match(lead, /record_outcome/);
   assert.match(lead, /claim_task/);
@@ -195,8 +202,13 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   const until = readme.indexOf('## Which seat');
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
-  assert.match(short, /Staff shows up/);
-  assert.match(short, /The host infers/);
+  assert.match(short, /a run exists/);
+  assert.match(short, /seat you did not name/);
+  assert.match(short, /from the\s+ground/);
+  assert.match(short, /does not meet that bar/);
+  assert.match(short, /old first-run rule/);
+  assert.match(short, /not the product/);
+  assert.doesNotMatch(short, /Staff shows up/);
   assert.match(short, /Two surfaces only/);
   assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
@@ -205,6 +217,30 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.match(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct init/);
   assert.doesNotMatch(fence, /construct doctor/);
+  assert.doesNotMatch(short, /construct outcome/, 'keyword-map outcome is not on the first-run door');
+});
+
+test('walkthrough Poland sample is not the stale two-domain capture', () => {
+  const page = readFileSync(join(ROOT, 'docs/cli-walkthrough.md'), 'utf8');
+  assert.doesNotMatch(page, /run-20260805134446726/);
+  assert.doesNotMatch(page, /implicated domains \(2\):/);
+  assert.doesNotMatch(page, /queued 2 task\(s\)/);
+  assert.doesNotMatch(page, /plan plan-run-\S+: 2 steps/);
+  assert.match(page, /implicated domains \(1\):/);
+  assert.match(page, /queued 1 task\(s\)/);
+});
+
+test('published install fences name the alpha tag', () => {
+  for (const rel of ['README.md', 'docs/cli-walkthrough.md', 'docs/first-run.md', 'skills/README.md']) {
+    const body = readFileSync(join(ROOT, rel), 'utf8');
+    for (const fence of body.matchAll(/```(?:bash|sh|shell|zsh)?\n([\s\S]*?)```/g)) {
+      for (const line of fence[1]!.split('\n')) {
+        const install = line.match(/npm i(?:nstall)?(?:\s+-g)?\s+@geraldmaron\/construct(\S*)/);
+        if (!install) continue;
+        assert.match(install[1] ?? '', /^@alpha/, `${rel} install fence omits @alpha: ${line}`);
+      }
+    }
+  }
 });
 
 test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
