@@ -20,26 +20,26 @@ a spawn that will fail.
 - **`construct serve` carries host-pull.** The product MCP surface lists
   `claim_task` / `submit_work` once a capability secret exists. No promote.
   The flagged `host-pull-serve` prototype remains behind its gate.
-- **In-session `outcome` does not staff from the keyword map.** First-run
-  inside a host is talk, then staff. `record_outcome` records a run when
-  namings are omitted; Construct may add seats from visible ground
-  (declared sources, local docs). Empty `namings: []` is not a veto of
-  those seats. The keyword map is the zero-model fallback when no session
-  is wrapping the command, and is not first-run.
+- **In-session `outcome` does not staff from the keyword map.**
+  `record_outcome` records a run when namings are omitted. Empty
+  `namings: []` records a run with no seats. The keyword map is the
+  zero-model fallback when no session is wrapping the command, and is
+  not first-run. A folder name that matches a catalog word is not a
+  seat. A regex over the spoken sentence is not a namer.
 - **Bare `work` and `status` stay on the latest outcome.** The most recently
   recorded outcome is the default, even when it queued no tasks and an
   older run still has pending work. `--all` remains the fleet door. A
   recorded run that has no named work says so, and does not say "record an
   outcome first" or spend someone else's run.
-- **First-run hears ordinary language.** Talk in the host, no catalog
-  words, no `--host`. Talk creates a run. Construct may add seats the
-  host did not name, from visible ground. Two surfaces only: dispatch
-  through this session, or an inbox call. The keyword map is not
-  first-run. Empty staff after a host read, when ground implied a
-  seat, is a miss.
-  README and `docs/first-run.md` lead with talk, then staff. `init`,
-  `doctor`, and the verb catalog are not on that page. The only
-  Construct-shaped surface there is an inbox card when the call is
+- **First-run hears ordinary language.** Talk in a host `construct wire`
+  has pointed at Construct creates a run. The host's prompt-submit hook
+  launches `construct hear`; the user does not type `record_outcome`,
+  `construct outcome`, or a catalog word. Staff from dark corners is
+  not this patch. Two surfaces only: dispatch through this session, or
+  an inbox call. The keyword map is not first-run.
+  README and `docs/first-run.md` say the binary does not meet the 1+3
+  bar. `init`, `doctor`, and the verb catalog are not on that page. The
+  only Construct-shaped surface there is an inbox card when the call is
   yours. The terminal command list lives in `docs/cli-walkthrough.md`.
   `construct serve` can dispatch; the cannot-dispatch claim is gone.
   Prefix matching only accepts simple inflections, so Node's

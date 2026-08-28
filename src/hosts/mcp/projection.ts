@@ -57,12 +57,13 @@
  *
  * The inversion, inside a host: the model calling these tools has already read
  * the user's words, so `record_outcome` accepts those words without namings
- * and still records a run. The host may propose domain namings; Construct
- * may add seats the host did not name from visible ground. Proposals pass
- * the kernel's admission gate unchanged (implication/naming.ts
- * admissible()): catalog membership, a stated reason, dedup. The host
- * model proposes; it never certifies. Host-model text arriving here is
- * untrusted input exactly as CLI input is.
+ * and still records a run. First-run talk itself is recorded by the
+ * prompt-submit hook (`construct hear`), not by waiting for this tool.
+ * The host may propose domain namings. Proposals pass the kernel's
+ * admission gate unchanged (implication/naming.ts admissible()): catalog
+ * membership, a stated reason, dedup. The host model proposes; it never
+ * certifies. Host-model text arriving here is untrusted input exactly as
+ * CLI input is.
  */
 
 import { getDecision, openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
@@ -79,9 +80,6 @@ import { DOMAINS } from '../../kernel/implication/domains.ts';
 import { recordVerdict } from '../../kernel/implication/verdict.ts';
 import { validateBrief } from '../../kernel/brief/schema.ts';
 import { mapImplicationsNamed, type DomainNaming } from '../../kernel/implication/naming.ts';
-import { mergeSeats, seatFromVisibleGround } from '../../kernel/implication/ground.ts';
-import { listVisibleGround } from './visible-ground.ts';
-import { sourcesFor } from '../../kernel/store/sources.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
@@ -134,10 +132,8 @@ export const PROJECTION_TOOLS = [
       'Record an outcome — what the user wants to happen, in their words. ' +
       'You have already read those words. Namings are optional: omit them ' +
       'or pass []. A run is still created. You may name catalog domains ' +
-      'with a reason in `why`; Construct may add seats you did not name ' +
-      'from visible ground (declared sources and local docs), not from a ' +
-      'keyword map. Empty staff after you read the words and ground exists ' +
-      'is a miss. Your namings are proposals: anything outside the catalog ' +
+      'with a reason in `why`. A folder name that matches a catalog word ' +
+      'is not a seat. Your namings are proposals: anything outside the catalog ' +
       'or without a reason is discarded by the kernel, and the reply says ' +
       'what was admitted — except when this exact outcome text was already ' +
       'consulted once before, by any host in any prior session: that first ' +
@@ -469,25 +465,17 @@ async function recordOutcome(
   const at = core.clock();
   const runId = `run-${at.replace(/[-:.TZ]/g, '')}`;
   const host = `mcp:${client}`;
-  const workspace = core.workspace ?? 'default';
-  const ground = seatFromVisibleGround({
-    documents: listVisibleGround({
-      sources: sourcesFor(core.store, workspace),
-      cwd: core.cwd,
-    }),
-    catalog: DOMAINS,
-  });
 
-  // Omitted namings is not an error and not the keyword map. The run is
-  // recorded; seats come from visible ground when any is there.
+  // Omitted namings is not an error and not the keyword map. A run is
+  // recorded. Folder names are not seats. inferredBy is namer only when
+  // a model actually named domains.
   if (input.namings === undefined) {
-    const implicated = mergeSeats([], ground);
     const started = startRunSeated(core.store, {
       runId,
       outcome: text,
       at,
-      implicated,
-      inferredBy: implicated.length > 0 ? 'ground' : 'none',
+      implicated: [],
+      inferredBy: 'none',
       host,
     });
     return startedReply(started);
@@ -501,19 +489,12 @@ async function recordOutcome(
     cache: storeNamingCache(core.store, { host, at }),
     source: 'session',
   });
-  const implicated = mergeSeats(named.implicated, ground);
-  const inferredBy =
-    named.implicated.length > 0
-      ? named.inferredBy
-      : implicated.length > 0
-        ? 'ground'
-        : named.inferredBy;
   const started = startRunSeated(core.store, {
     runId,
     outcome: text,
     at,
-    implicated,
-    inferredBy,
+    implicated: named.implicated,
+    inferredBy: named.inferredBy,
     host,
   });
   return startedReply(started, namings);

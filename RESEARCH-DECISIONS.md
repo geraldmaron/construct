@@ -2832,25 +2832,31 @@ that recorded the words without naming created no run. The keyword map on
 `contractor` does not stem-match `contract` and `Poland` is not a keyword.
 Doctor on a hostless box advertised `construct outcome` as first-run.
 
-**Decision (session, under decide-by-default).**
+**Decision (session, under decide-by-default), restated after Atlas /
+Verity / Nova rejected the first landing.**
 
 1. `record_outcome` accepts omitted namings and empty `namings: []`. A run
    is recorded either way. The keyword map is not consulted on this path.
-2. Host-supplied namings still pass the admission gate (`inferredBy:
-   session`). Construct may add further seats from visible ground:
-   declared directory/git sources and `<cwd>/docs`, when a document's
-   path, filename, or first heading names a catalog domain. Identity, not
-   stemming: `contractor-agreement.md` does not seat `contracts`.
-3. `inferredBy: ground` when those document seats are the only staff.
-4. Doctor on a hostless box names the host-backed door. It does not send
-   anyone to `construct outcome`.
+2. Ordinary talk in a wired host creates that run without the user typing
+   a tool name. `construct wire` plants a prompt-submit hook (Cursor
+   `beforeSubmitPrompt`, Claude `UserPromptSubmit`) that launches
+   `construct hear`. The host fires the hook; the model does not choose
+   `record_outcome`. `inferredBy` on that path is `none` — nobody named
+   seats. `namer` means a model read the outcome; a regex must not write
+   it.
+3. Host-supplied namings still pass the admission gate (`inferredBy:
+   session`).
+4. Dark-corner seating is not shipped. A regex pair (outside-party →
+   contracts; party + `in CapitalizedPlace` → privacy) is a phrase table
+   and was torn out. A folder or filename that is already a catalog word
+   is not a dark corner and is not a seat.
 
 **What this is not.** A rebuilt phrase table. A vector DB. Slack-and-repos
 as memory (longer product). Making `construct outcome` on a bare terminal
-into first-run.
+into first-run. Treating omitted namings, folder-name seating, or a
+regex namer as the third beat.
 
 **Close gate.** `npm run lint && npm run typecheck && npm test && npm run smoke`.
-Tests cover omitted namings recording a run, an artifact-only seat from
-`<cwd>/docs`, Verity Case 1 (Poland talk plus contracts/privacy ground is
-not employment-only), and doctor on a hostless box not sending anyone to
-`construct outcome`.
+Tests cover omitted namings recording a run, hook-shaped stdin creating
+a run without `record_outcome`, the same words not writing `inferredBy:
+namer`, and no `concern-namer` phrase table in the tree.

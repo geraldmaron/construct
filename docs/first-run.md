@@ -14,15 +14,17 @@ not name.
 construct serve
 ```
 
-The shipped binary does not meet that bar. Ordinary talk that leaves
-an empty work log is still a miss, and `record_outcome` still errors
-when namings are omitted. Do not expect staff to appear from talk
-alone, and do not expect Construct to add dark-corner seats from
-ground it can see.
+The shipped binary does not meet that bar. Talk in a host
+`construct wire` has pointed at Construct creates a run — a
+prompt-submit hook records the words; you do not type
+`record_outcome`. Do not expect staff to appear from talk alone,
+and do not expect Construct to add dark-corner seats from the
+words or from a folder name. Those seats are still a miss.
 
 The old first-run rule said the host infers and Construct does
 not classify, name, or route — omitted namings were an error on
-purpose. That is what the binary still does. It is not the product.
+purpose. Omitting namings on `record_outcome` is no longer an
+error; a run is recorded. That is not the third beat. It is not the product.
 
 Two surfaces only:
 
@@ -70,9 +72,8 @@ that secret. Construct does not spawn a second agent to do the work.
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
-On the shipped `construct serve`, omitting namings is still an error.
-That is the old host-namer rule, not first-run success. An empty
-namings array is a real answer that this implicates nothing.
+On the shipped `construct serve`, omitting namings is no longer an
+error. A run is recorded. That is not dark-corner seating.
 
 The keyword map is the zero-model fallback for a plain terminal with no
 host wrapping the command — it is not first-run and it is not the

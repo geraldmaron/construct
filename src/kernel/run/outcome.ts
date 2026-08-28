@@ -281,9 +281,9 @@ export interface StartRunSeatedInput extends StartRunInput {
 }
 
 /**
- * Record a run whose seats are already in hand: host namings, visible
- * ground, or both. Skips the keyword map and the namer. Used by
- * record_outcome so omitted namings still create a run.
+ * Record a run whose seats are already in hand. Skips the keyword map
+ * and the namer. Used by record_outcome so omitted namings still create
+ * a run, and by hear so ordinary talk does the same.
  */
 export function startRunSeated(store: Store, input: StartRunSeatedInput): StartedRun {
   return record(store, input, input.implicated, {

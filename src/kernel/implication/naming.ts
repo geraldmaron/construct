@@ -183,9 +183,9 @@ export interface NamedMap extends ImplicationMap {
    *              as a namer, not this session handing namings in).
    * 'session'  — this session already had the words and supplied the namings
    *              to record_outcome. Not Construct's namer. Not the keyword map.
-   * 'ground'   — seats came from visible documents (declared sources, local
-   *              docs) whose path or title names a catalog domain. Not the
-   *              keyword map. Not a namer.
+ * 'ground'   — leftover label for seats that once came from a document
+ *              path or title. Folder-name seating is not shipped; new
+ *              writes do not use this value.
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
    * 'cache'    — a previous consultation for this exact outcome answered.
