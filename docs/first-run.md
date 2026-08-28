@@ -8,11 +8,15 @@ said.
 That is first run. You never type a catalog word, a CLI verb, or
 `record_outcome`. You do not have to know a keyword map or a catalog
 exists. Construct is the brain: it may add seats the host or you did
-not name.
+not name. That is the contract, not what the binary does.
 
 ```bash
 construct serve
 ```
+
+If this box has no host session: First-run is talk in a host you already have
+(Cursor, Claude Code, Codex, OpenCode, or IBM Bob).
+This box has no host session.
 
 The shipped binary does not meet that bar. Ordinary talk that leaves
 an empty work log is still a miss, and `record_outcome` still errors

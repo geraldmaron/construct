@@ -27,17 +27,22 @@ The terminal command list is
 are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
 Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
-Point the session at Construct. Construct is the brain: it may add seats
-the host or you did not name, from the words plus repos, directories, and
-sources it can actually see. Two surfaces only: dispatch through this
-session once a run exists, or an inbox call when the decision is yours.
-The host relays that call. You stay in the conversation. No phrase table.
-Construct will not spawn a second CLI.
+Point the session at Construct. That is the contract: a run exists, and a
+seat you did not name can show up from the words plus repos, directories,
+and sources Construct can actually see. Two surfaces only: dispatch
+through this session once a run exists, or an inbox call when the
+decision is yours. The host relays that call. You stay in the
+conversation. No phrase table. Construct will not spawn a second CLI.
 
 The shipped binary does not meet that bar. Talk still leaves an empty
-log, and `record_outcome` still requires namings. The old first-run rule — the
-host infers; Construct does not classify, name, or route — is what
-ships. It is not the product.
+log, and `record_outcome` still requires namings. Do not expect staff to
+appear from talk alone. The old first-run rule — the host infers;
+Construct does not classify, name, or route — is what ships.
+It is not the product.
+
+If this box has no host session: First-run is talk in a host you already have
+(Cursor, Claude Code, Codex, OpenCode, or IBM Bob).
+This box has no host session.
 
 ```bash
 construct serve
@@ -73,8 +78,10 @@ gate passes.
 Seven portable method skills ship inside the npm package (`bin`, `dist`,
 `skills`): `adversarial-review`, `context-mapping`, `decision-framing`,
 `intake`, `investigative-research`, `requirements-structuring`,
-`written-voice`. `construct skills install <name> --host=<host>` plants one
-in the directory that host documents reading.
+`written-voice`. A first-run instruction ships beside them and is planted
+with them. It states the 1+3 contract and that the binary misses it. It
+does not say staff showed up. `construct skills install <name> --host=<host>`
+plants one in the directory that host documents reading.
 
 ## Which seat it fills
 

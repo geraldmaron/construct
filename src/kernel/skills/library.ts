@@ -42,6 +42,7 @@ export const SHIPPED_SKILLS: readonly string[] = Object.freeze([
   'adversarial-review',
   'context-mapping',
   'decision-framing',
+  'first-run',
   'intake',
   'investigative-research',
   'requirements-structuring',

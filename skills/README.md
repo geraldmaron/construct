@@ -4,8 +4,9 @@ Portable method skills for AI agents: one self-contained `SKILL.md` file per ski
 
 ## What's here
 
-Seven skills ship, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed. Together they cover a working lifecycle — intake → context → evidence → decision → specification → prose → challenge — and each also works entirely alone:
+Eight skills ship, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed. Seven cover a working lifecycle — intake → context → evidence → decision → specification → prose → challenge — and each also works entirely alone. The eighth is the first-run instruction the host plants: talk in a host you already have, a run, a seat you did not name. The shipped binary does not meet that bar. It is not a research or decision method.
 
+- **first-run** — host-facing first-run contract. Does not claim staff showed up or that talk already created a run.
 - **intake** — a messy, multi-concern request becomes an execution plan without asking the requester to restate it.
 - **context-mapping** — an unfamiliar system's entities, typed relationships, and unknowns are mapped before anyone acts inside it. The method only: persistence belongs to whatever memory store the host has.
 - **investigative-research** — multi-source research whose conclusions have to survive a hostile reader.
@@ -50,4 +51,4 @@ Each skill is self-contained: no other file in this repository, and no checkout 
 
 ## Status
 
-Early and actively developed. All seven ship only after a recorded real-work run, not on completed drafting alone; each carries at least one. The use ledger names the falsification test this claim is held to and records, run by run, whether a gate changed the outcome: `docs/internal/skill-use-ledger.md`, with full records under `docs/internal/skill-runs/`.
+Early and actively developed. The seven lifecycle skills ship only after a recorded real-work run, not on completed drafting alone; each carries at least one. `first-run` is the planted contract instruction, not a method run. The use ledger names the falsification test the method claim is held to and records, run by run, whether a gate changed the outcome: `docs/internal/skill-use-ledger.md`, with full records under `docs/internal/skill-runs/`.

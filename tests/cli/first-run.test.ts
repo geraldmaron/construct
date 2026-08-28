@@ -234,11 +234,50 @@ test('README short version opens with serve, not a phrase table or verb wall', (
 });
 
 test('user-facing first-run copy does not say staff already shows up', () => {
-  for (const rel of ['docs/first-run.md', 'docs/README.md', 'docs/consumer-install.md', 'README.md']) {
+  for (const rel of [
+    'docs/first-run.md',
+    'docs/README.md',
+    'docs/consumer-install.md',
+    'README.md',
+    'skills/README.md',
+    'skills/first-run/SKILL.md',
+  ]) {
     const body = readFileSync(join(ROOT, rel), 'utf8');
-    assert.doesNotMatch(body, /Staff shows up/, `${rel} still says staff shows up`);
+    assert.doesNotMatch(body, /You talk\. Staff shows up/, `${rel} still opens with staff-shows-up`);
+    assert.doesNotMatch(body, /Staff shows up\./, `${rel} still says staff shows up`);
+    assert.doesNotMatch(body, /This session names and records\. Staff shows up/, `${rel} still sells host-namer success`);
     assert.doesNotMatch(body, /talk, then staff/, `${rel} still teaches talk-then-staff as first-run`);
+    assert.doesNotMatch(body, /namings optional/i, `${rel} still sells namings-optional as the inferrer`);
   }
+});
+
+test('tarball first-run skill keeps the contract and the honesty line', () => {
+  const skill = readFileSync(join(ROOT, 'skills/first-run/SKILL.md'), 'utf8');
+  assert.match(skill, /a run exists/i);
+  assert.match(skill, /seat they did not name|seat you did not name/i);
+  assert.match(skill, /does not meet that bar/);
+  assert.match(skill, /empty work log|empty log/);
+  assert.match(skill, /record_outcome/);
+  assert.match(skill, /omitting namings is still an error|still requires namings|omitting namings is still an error/);
+  assert.match(skill, /This box has no host session/);
+  assert.match(skill, /What happened|what happened/);
+  assert.match(skill, /host relays/);
+  assert.doesNotMatch(skill, /construct decide/);
+  assert.doesNotMatch(skill, /evidence-provenance/);
+  assert.doesNotMatch(skill, /coverage-gaps/);
+  assert.doesNotMatch(skill, /claim_task/);
+  assert.doesNotMatch(skill, /submit_work/);
+  assert.doesNotMatch(skill, /You talk\. This session names/);
+});
+
+test('README first-run names the hostless box without construct outcome', () => {
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  const from = readme.indexOf('docs/first-run.md');
+  const until = readme.indexOf('## Which seat');
+  const short = readme.slice(from, until);
+  assert.match(short, /This box has no host session/);
+  assert.match(short, /First-run is talk in a host you already have/);
+  assert.doesNotMatch(short, /construct outcome/);
 });
 
 test('walkthrough Poland sample is not the stale two-domain capture', () => {
