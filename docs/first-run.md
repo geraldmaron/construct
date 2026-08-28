@@ -14,12 +14,12 @@ not name.
 construct serve
 ```
 
-The shipped binary does not meet that bar. Talk in a host
-`construct wire` has pointed at Construct creates a run — a
-prompt-submit hook records the words; you do not type
-`record_outcome`. Do not expect staff to appear from talk alone,
-and do not expect Construct to add dark-corner seats from the
-words or from a folder name. Those seats are still a miss.
+The shipped binary does not meet that bar. After init, ordinary
+Send in this host creates a run — the prompt-submit hook records
+the words; you do not type a verb. Do not expect staff to appear
+from talk alone, and do not expect Construct to add dark-corner
+seats from the words or from a folder name. Those seats are still
+a miss.
 
 The old first-run rule said the host infers and Construct does
 not classify, name, or route — omitted namings were an error on

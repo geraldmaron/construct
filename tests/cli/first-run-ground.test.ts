@@ -211,4 +211,6 @@ test('first-run docs keep the honesty line and do not claim staff from talk', ()
   assert.doesNotMatch(page, /omitting namings is an error/);
   assert.doesNotMatch(page, /empty namings array is a real answer that this implicates nothing/i);
   assert.doesNotMatch(page, /construct outcome/);
+  assert.doesNotMatch(page, /construct hear/);
+  assert.doesNotMatch(page, /construct wire/);
 });

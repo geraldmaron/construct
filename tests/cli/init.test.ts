@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { init } from '../../src/cli/init.ts';
@@ -71,6 +71,15 @@ test('init --yes plants method skills and wires the MCP entry', () => {
       assert.equal(code, 0);
       assert.match(out, /wired construct-mcp into \.mcp\.json for claude/);
       assert.ok(existsSync(join(cwd, '.mcp.json')), 'explicit consent writes through wire');
+      const settings = JSON.parse(readFileSync(join(cwd, '.claude', 'settings.json'), 'utf8')) as {
+        hooks: { UserPromptSubmit: Array<{ hooks: Array<{ command: string }> }> };
+      };
+      assert.ok(
+        settings.hooks.UserPromptSubmit.flatMap((row) => row.hooks).some((hook) =>
+          /hear-talk\.mjs| hear(?:\s|$)/.test(hook.command),
+        ),
+        'init plants the prompt-submit hook; first-run is not construct wire',
+      );
       assert.ok(
         existsSync(join(home, '.claude', 'skills', 'investigative-research', 'SKILL.md')),
         'method skills plant into the host directory, not job-title personas',
