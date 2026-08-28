@@ -59,6 +59,8 @@ Standing decisions this PRD builds on, not reopened here:
 - Skills stay out of the npm tarball; distribution is copy-paste and the
   git installer (decided and accepted 2026-08-21, decision record in
   `skill-runs/2026-08-20-decision-framing-run-2.md`).
+  **Superseded 2026-08-24:** the package ships skills; `files` is `bin`,
+  `dist`, `skills` (alpha.19).
 - No runtime of its own, ever: hosts execute, construct routes and records
   (standing commitment 1).
 - Roles are views and routing, never personas; deliverable skills stay

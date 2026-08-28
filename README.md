@@ -37,14 +37,8 @@ construct serve
 
 That is first run. `init`, `doctor`, and the verb catalog live in
 `construct help` and [docs/cli-walkthrough.md](docs/cli-walkthrough.md).
-They are not beat two.
-
-From a plain terminal with no host wrapping the command, the keyword map is
-the zero-model fallback:
-
-```bash
-construct outcome "We want to hire a contractor in Poland"
-```
+They are not beat two. The keyword map is not first-run; the walkthrough
+is the terminal reference.
 
 Install the alpha when you want the CLI and the method skills on the machine:
 

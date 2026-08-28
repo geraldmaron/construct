@@ -205,6 +205,30 @@ test('README short version opens with serve, not a phrase table or verb wall', (
   assert.match(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct init/);
   assert.doesNotMatch(fence, /construct doctor/);
+  assert.doesNotMatch(short, /construct outcome/, 'keyword-map outcome is not on the first-run door');
+});
+
+test('walkthrough Poland sample is not the stale two-domain capture', () => {
+  const page = readFileSync(join(ROOT, 'docs/cli-walkthrough.md'), 'utf8');
+  assert.doesNotMatch(page, /run-20260805134446726/);
+  assert.doesNotMatch(page, /implicated domains \(2\):/);
+  assert.doesNotMatch(page, /queued 2 task\(s\)/);
+  assert.doesNotMatch(page, /plan plan-run-\S+: 2 steps/);
+  assert.match(page, /implicated domains \(1\):/);
+  assert.match(page, /queued 1 task\(s\)/);
+});
+
+test('published install fences name the alpha tag', () => {
+  for (const rel of ['README.md', 'docs/cli-walkthrough.md', 'docs/first-run.md', 'skills/README.md']) {
+    const body = readFileSync(join(ROOT, rel), 'utf8');
+    for (const fence of body.matchAll(/```(?:bash|sh|shell|zsh)?\n([\s\S]*?)```/g)) {
+      for (const line of fence[1]!.split('\n')) {
+        const install = line.match(/npm i(?:nstall)?(?:\s+-g)?\s+@geraldmaron\/construct(\S*)/);
+        if (!install) continue;
+        assert.match(install[1] ?? '', /^@alpha/, `${rel} install fence omits @alpha: ${line}`);
+      }
+    }
+  }
 });
 
 test('a host naming staffs those domains; empty staff after that read is a fail', async () => {
