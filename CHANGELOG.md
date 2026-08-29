@@ -22,10 +22,13 @@ a spawn that will fail.
   The flagged `host-pull-serve` prototype remains behind its gate.
 - **In-session `outcome` does not staff from the keyword map.**
   `record_outcome` records a run when namings are omitted. Empty
-  `namings: []` records a run with no seats. The keyword map is the
-  zero-model fallback when no session is wrapping the command, and is
-  not first-run. A folder name that matches a catalog word is not a
-  seat. A regex over the spoken sentence is not a namer.
+  `namings: []` records a run with no seats. When namings are omitted,
+  Construct's namer reads the words against the catalog
+  (`inferredBy: namer` when it names). A missing or failed namer
+  stays empty. The keyword map is the zero-model fallback when no
+  session is wrapping the command, and is not first-run. A folder
+  name that matches a catalog word is not a seat. A regex over the
+  spoken sentence is not a namer.
 - **Bare `work` and `status` stay on the latest outcome.** The most recently
   recorded outcome is the default, even when it queued no tasks and an
   older run still has pending work. `--all` remains the fleet door. A

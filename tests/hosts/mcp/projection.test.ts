@@ -42,8 +42,11 @@ import {
 import { addRecord, updateRecordField } from '../../../src/kernel/store/records.ts';
 import { recordCatalogSighting } from '../../../src/kernel/store/catalog.ts';
 import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
+import type { DomainNamer } from '../../../src/kernel/implication/naming.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
 import type { JsonRpcRequest, JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
+import { createHostNamer } from '../../../src/hosts/namer.ts';
+import type { HostAdapter, HostResult } from '../../../src/kernel/hosts/interface.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -53,10 +56,10 @@ interface Fixture {
   cleanup(): void;
 }
 
-function fixture(): Fixture {
+function fixture(namer?: DomainNamer): Fixture {
   const sterileFixture = sterile();
   const store = openStore(join(sterileFixture.paths.dataDir, 'construct.db'));
-  const core: ProjectionCore = { store, clock: () => AT, serverVersion: 'test' };
+  const core: ProjectionCore = { store, clock: () => AT, serverVersion: 'test', namer };
   const handle = createProjectionHandler(core) as Fixture['handle'];
   return {
     store,
@@ -66,6 +69,69 @@ function fixture(): Fixture {
       sterileFixture.cleanup();
     },
   };
+}
+
+const WARSAW =
+  'We need to bring on a freelancer in Warsaw who will get our customer list and a production login.';
+
+/**
+ * A recorded host-namer consultation: the real createHostNamer path
+ * against a stub that saw the catalog and the Warsaw words. Not a
+ * product phrase table and not a jurisdiction hardcode.
+ */
+function warsawHostNamer(): DomainNamer {
+  const host: HostAdapter = {
+    name: 'fixture',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const task = typeof (request as { task?: unknown }).task === 'string'
+        ? (request as { task: string }).task
+        : '';
+      if (!task.includes('Warsaw') || !task.includes('customer list')) {
+        return { id: 'x', status: 'ok', output: { text: '{"domains":[]}' }, error: null };
+      }
+      if (!task.includes('contracts:') || !task.includes('privacy:')) {
+        return {
+          id: 'x',
+          status: 'error',
+          output: null,
+          error: 'namer prompt must carry the catalog',
+        };
+      }
+      return {
+        id: 'x',
+        status: 'ok',
+        output: {
+          text: JSON.stringify({
+            domains: [
+              {
+                domain: 'contracts',
+                why: 'bringing on a freelancer is an agreement with an outside party',
+              },
+              {
+                domain: 'privacy',
+                why: 'the freelancer will get the customer list',
+              },
+              {
+                domain: 'security',
+                why: 'a production login is who can reach production',
+              },
+              {
+                domain: 'employment',
+                why: 'bringing on a freelancer is engaging a person',
+              },
+            ],
+          }),
+        },
+        error: null,
+      };
+    },
+  };
+  return createHostNamer(host);
 }
 
 let nextId = 0;
@@ -209,6 +275,73 @@ test('omitting namings is not the keyword path — a run is recorded either way'
     const started = body as { inferredBy: string; run: string };
     assert.notEqual(started.inferredBy, 'keywords');
     assert.match(started.run, /^run-/);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('omitted namings seat from Construct\'s namer reading the Warsaw words', async () => {
+  const f = fixture(warsawHostNamer());
+  try {
+    const reply = await f.handle(call('record_outcome', { outcome: WARSAW }));
+    const { body, isError } = payload(reply);
+    assert.equal(isError, false);
+    const started = body as {
+      run: string;
+      implicated: Array<{ domain: string }>;
+      inferredBy: string;
+    };
+    const domains = started.implicated.map((row) => row.domain);
+    assert.ok(domains.length > 0, 'the namer must seat from the words');
+    assert.ok(domains.includes('contracts'), `contracts missing from ${domains.join(',')}`);
+    assert.ok(domains.includes('privacy'), `privacy missing from ${domains.join(',')}`);
+    assert.equal(started.inferredBy, 'namer');
+    assert.notEqual(started.inferredBy, 'none');
+    assert.notEqual(started.inferredBy, 'session');
+    assert.notEqual(started.inferredBy, 'keywords');
+
+    const log = readWorkLog(f.store, started.run);
+    const actions = log.map((entry) => entry.action);
+    assert.ok(actions.includes('outcome-received'));
+    assert.ok(actions.includes('implication-named'), 'no-domains-implicated must not be the only follow-up');
+    assert.ok(actions.includes('domain-implicated'));
+    assert.ok(!actions.includes('no-domains-implicated'));
+    assert.ok(
+      log.some((entry) => (entry.detail as { inferredBy?: string } | null)?.inferredBy === 'namer'),
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('an empty namings array does not consult the namer', async () => {
+  const f = fixture(warsawHostNamer());
+  try {
+    const reply = await f.handle(call('record_outcome', { outcome: WARSAW, namings: [] }));
+    const started = payload(reply).body as { inferredBy: string; implicated: unknown[] };
+    assert.equal(started.inferredBy, 'none');
+    assert.equal(started.implicated.length, 0);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test('a thrown namer on omitted namings stays empty and is not the keyword map', async () => {
+  const f = fixture(async () => {
+    throw new Error('host not logged in');
+  });
+  try {
+    const reply = await f.handle(call('record_outcome', { outcome: WARSAW }));
+    const started = payload(reply).body as { inferredBy: string; implicated: unknown[]; run: string };
+    assert.equal(started.inferredBy, 'none');
+    assert.equal(started.implicated.length, 0);
+    const unnamed = readWorkLog(f.store, started.run).find((entry) => entry.action === 'no-domains-implicated');
+    assert.equal((unnamed?.detail as { inferredBy?: string }).inferredBy, 'none');
+    assert.ok(
+      !readWorkLog(f.store, started.run).some(
+        (entry) => (entry.detail as { inferredBy?: string } | null)?.inferredBy === 'keywords',
+      ),
+    );
   } finally {
     f.cleanup();
   }

@@ -13,11 +13,8 @@
  * stays `none` — keywords do not catch this path.
  */
 
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { detectAmbientHost } from '../hosts/ambient.ts';
-import { hostEnvironment, SKIP_HEAR_VAR } from '../hosts/environment.ts';
-import { createHostNamer } from '../hosts/namer.ts';
+import { SKIP_HEAR_VAR } from '../hosts/environment.ts';
 import type { DomainNamer } from '../kernel/implication/naming.ts';
 import { mapImplicationsNamed } from '../kernel/implication/naming.ts';
 import { startRunSeated } from '../kernel/run/outcome.ts';
@@ -25,7 +22,8 @@ import { sourcesFor } from '../kernel/store/sources.ts';
 import { storeNamingCache } from '../kernel/store/namings.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import type { Store } from '../kernel/store/open.ts';
-import { adapterForHost, now, withStoreAsync } from './runtime.ts';
+import { hookHostName, resolveLiveNamer } from './live-namer.ts';
+import { now, withStoreAsync } from './runtime.ts';
 
 export interface HearOpts {
   /** Hook payload or raw words. Tests inject this; the CLI reads fd 0. */
@@ -106,49 +104,11 @@ function skipHear(env: NodeJS.ProcessEnv): boolean {
   return value !== undefined && value !== '' && value !== '0' && value.toLowerCase() !== 'false';
 }
 
-function hostLoggedIn(binary: string, env: NodeJS.ProcessEnv): boolean {
-  const run = spawnSync(binary, ['status'], {
-    encoding: 'utf8',
-    timeout: 5000,
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: hostEnvironment(env) as NodeJS.ProcessEnv,
-  });
-  if (run.error || run.status !== 0) return false;
-  return !/not logged in/i.test(`${run.stdout}\n${run.stderr}`);
-}
-
-function namerSpawnEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const chosen = hostEnvironment(env) as NodeJS.ProcessEnv;
-  // A hook inherited CURSOR_AGENT / CLAUDECODE. The namer must actually
-  // spawn, and must not re-enter this hook.
-  delete chosen.CURSOR_AGENT;
-  delete chosen.CURSOR_CLI;
-  delete chosen.CLAUDECODE;
-  delete chosen.CLAUDE_CODE_ENTRYPOINT;
-  chosen[SKIP_HEAR_VAR] = '1';
-  return chosen;
-}
-
 function declaredGround(store: Store): string {
   const sources = sourcesFor(store, 'default');
   if (sources.length === 0) return '';
   const lines = sources.map((source) => `- ${source.kind} ${source.locator}`);
   return `\n\nDeclared sources in reach:\n${lines.join('\n')}`;
-}
-
-async function liveNamer(env: NodeJS.ProcessEnv): Promise<{ namer: DomainNamer; host: string } | null> {
-  const spawnEnv = namerSpawnEnv(env);
-  if (hostLoggedIn('cursor-agent', env)) {
-    const host = adapterForHost('cursor', { env: spawnEnv, timeoutMs: 60_000 });
-    await host.init();
-    return { namer: createHostNamer(host), host: 'cursor' };
-  }
-  if (hostLoggedIn('claude', env)) {
-    const host = adapterForHost('claude', { env: spawnEnv, timeoutMs: 60_000 });
-    await host.init();
-    return { namer: createHostNamer(host), host: 'claude' };
-  }
-  return null;
 }
 
 /**
@@ -179,14 +139,13 @@ export async function hear(argv: readonly string[] = [], opts: HearOpts = {}): P
     }
 
     const at = (opts.now ?? now)();
-    const ambient = detectAmbientHost(env);
-    const hookHost = ambient === null ? 'hook' : `hook:${ambient.host}`;
+    const hookHost = hookHostName(env);
 
     let namer = opts.namer;
     let namerHost = hookHost;
     if (namer === undefined) {
       try {
-        const live = await liveNamer(env);
+        const live = await resolveLiveNamer(env);
         if (live !== null) {
           namer = live.namer;
           namerHost = `hook:${live.host}`;

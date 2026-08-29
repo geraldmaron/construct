@@ -2836,7 +2836,12 @@ Doctor on a hostless box advertised `construct outcome` as first-run.
 Verity / Nova rejected the first landing.**
 
 1. `record_outcome` accepts omitted namings and empty `namings: []`. A run
-   is recorded either way. The keyword map is not consulted on this path.
+   is recorded either way. Omitted namings consult Construct's namer
+   (the same `createHostNamer` / `mapImplicationsNamed` path hear uses)
+   against the catalog and the outcome words. `inferredBy` is `namer`
+   when that model named domains. Empty `namings: []` is an explicit
+   empty answer and does not consult the namer. The keyword map is not
+   consulted on this path.
 2. Ordinary Send in a host where init already ran creates that run.
    Init plants the prompt-submit hook by calling wire (Cursor
    `beforeSubmitPrompt`, Claude `UserPromptSubmit`): `node` plus this

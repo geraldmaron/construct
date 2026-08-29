@@ -23,8 +23,10 @@ logged-in host namer, staff stays empty. That empty is honest.
 
 The old first-run rule said the host infers and Construct does
 not classify, name, or route — omitted namings were an error on
-purpose. Omitting namings on `record_outcome` is no longer an
-error; a run is recorded. That is not the third beat. It is not the product.
+purpose. That old rule is not the product. Omitting namings on
+`record_outcome` is no longer an error; a run is recorded, and
+Construct's namer may seat from the words when a model actually
+reads them.
 
 Two surfaces only:
 
@@ -73,7 +75,9 @@ What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
 On the shipped `construct serve`, omitting namings is no longer an
-error. A run is recorded. That is not dark-corner seating.
+error. A run is recorded. When a logged-in host namer can read the
+words, Construct seats from the catalog. That is not a phrase table
+and not dark-corner seating. Without that namer, staff stays empty.
 
 The keyword map is the zero-model fallback for a plain terminal with no
 host wrapping the command — it is not first-run and it is not the
