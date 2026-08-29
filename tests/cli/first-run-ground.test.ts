@@ -6,7 +6,8 @@
  * Cursor/Claude hook payload, record a run without `record_outcome` or
  * `construct outcome`. A hook without a logged-in namer stays empty.
  * Omitted namings on serve consult Construct's namer when one is
- * injected; the Warsaw sentence then seats from the words.
+ * injected; Warsaw and Poland then seat contracts and privacy from
+ * the words. no-domains-implicated against those sentences is a miss.
  */
 
 import { test } from 'node:test';
@@ -17,10 +18,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hear } from '../../src/cli/index.ts';
 import { createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
-import { createHostNamer } from '../../src/hosts/namer.ts';
 import type { DomainNamer } from '../../src/kernel/implication/naming.ts';
-import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { mapImplications } from '../../src/kernel/implication/map.ts';
+import { POLAND, WARSAW, recordedHostNamer } from '../harness/recorded-namer.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { readWorkLog } from '../../src/kernel/store/worklog.ts';
@@ -30,9 +30,6 @@ sterileHome();
 sterileAmbientEnv();
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
-const POLAND = 'We want to hire a contractor in Poland';
-const WARSAW =
-  'We need to bring on a freelancer in Warsaw who will get our customer list and a production login.';
 
 async function isolated<T>(fn: (cwd: string) => Promise<T> | T): Promise<T> {
   const root = mkdtempSync(join(tmpdir(), 'construct-first-run-ground-'));
@@ -75,39 +72,6 @@ async function captureHear(
   } finally {
     process.stdout.write = realOut;
   }
-}
-
-function warsawHostNamer(): DomainNamer {
-  const host: HostAdapter = {
-    name: 'fixture',
-    kind: 'general',
-    capabilities: [],
-    init: async (): Promise<void> => {},
-    health: async () => ({ live: true }),
-    cancel: async () => ({ cancelled: false }),
-    invoke: async (request: unknown): Promise<HostResult> => {
-      const task = typeof (request as { task?: unknown }).task === 'string'
-        ? (request as { task: string }).task
-        : '';
-      if (!task.includes('Warsaw') || !task.includes('contracts:') || !task.includes('privacy:')) {
-        return { id: 'x', status: 'ok', output: { text: '{"domains":[]}' }, error: null };
-      }
-      return {
-        id: 'x',
-        status: 'ok',
-        output: {
-          text: JSON.stringify({
-            domains: [
-              { domain: 'contracts', why: 'bringing on a freelancer is an agreement with an outside party' },
-              { domain: 'privacy', why: 'the freelancer will get the customer list' },
-            ],
-          }),
-        },
-        error: null,
-      };
-    },
-  };
-  return createHostNamer(host);
 }
 
 async function recordOnServe(
@@ -178,9 +142,9 @@ test('omitting namings on serve is not an error and creates a run', async () => 
   });
 });
 
-test('Warsaw omitted namings seat contracts and privacy from the namer, not none or session', async () => {
+async function assertDoor3OnServe(words: string, at: string): Promise<void> {
   await isolated(async () => {
-    const recorded = await recordOnServe(WARSAW, undefined, '2026-08-29T03:00:00.000Z', warsawHostNamer());
+    const recorded = await recordOnServe(words, undefined, at, recordedHostNamer());
     assert.equal(recorded.isError, undefined);
     assert.ok(recorded.run, 'talk must create a run');
     assert.ok(recorded.implicated.includes('contracts'), `seats were ${recorded.implicated.join(',')}`);
@@ -190,8 +154,19 @@ test('Warsaw omitted namings seat contracts and privacy from the namer, not none
     assert.notEqual(recorded.inferredBy, 'session');
     assert.ok(recorded.logActions.includes('outcome-received'));
     assert.ok(recorded.logActions.includes('implication-named'));
-    assert.ok(!recorded.logActions.includes('no-domains-implicated'));
+    assert.ok(
+      !recorded.logActions.includes('no-domains-implicated'),
+      'no-domains-implicated is a miss against these words, not an open question',
+    );
   });
+}
+
+test('Warsaw omitted namings seat contracts and privacy from the namer, not none or session', async () => {
+  await assertDoor3OnServe(WARSAW, '2026-08-29T03:00:00.000Z');
+});
+
+test('Poland omitted namings seat contracts and privacy from the namer, not none or session', async () => {
+  await assertDoor3OnServe(POLAND, '2026-08-29T03:01:00.000Z');
 });
 
 test('construct serve injects the live host namer into omitted record_outcome', () => {
@@ -280,6 +255,10 @@ test('the phrase-table namer is not in the tree', () => {
   const projection = readFileSync(join(ROOT, 'src/hosts/mcp/projection.ts'), 'utf8');
   assert.doesNotMatch(projection, /OUTSIDE_PARTY|nameFromCatalogConcerns|in CapitalizedPlace/);
   assert.doesNotMatch(projection, /seatFromVisibleGround/);
+  for (const rel of ['src/hosts/mcp/projection.ts', 'src/cli/live-namer.ts', 'src/cli/serve.ts']) {
+    const body = readFileSync(join(ROOT, rel), 'utf8');
+    assert.doesNotMatch(body, /Warsaw|Poland/, `${rel} hardcodes a first-run city`);
+  }
 });
 
 test('first-run docs keep the honesty line and do not claim staff from talk', () => {

@@ -45,8 +45,7 @@ import { DOMAINS } from '../../../src/kernel/implication/domains.ts';
 import type { DomainNamer } from '../../../src/kernel/implication/naming.ts';
 import type { ProjectionCore } from '../../../src/hosts/mcp/projection.ts';
 import type { JsonRpcRequest, JsonRpcResponse } from '../../../src/hosts/mcp/jsonrpc.ts';
-import { createHostNamer } from '../../../src/hosts/namer.ts';
-import type { HostAdapter, HostResult } from '../../../src/kernel/hosts/interface.ts';
+import { POLAND, WARSAW, recordedHostNamer } from '../../harness/recorded-namer.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 
@@ -69,69 +68,6 @@ function fixture(namer?: DomainNamer): Fixture {
       sterileFixture.cleanup();
     },
   };
-}
-
-const WARSAW =
-  'We need to bring on a freelancer in Warsaw who will get our customer list and a production login.';
-
-/**
- * A recorded host-namer consultation: the real createHostNamer path
- * against a stub that saw the catalog and the Warsaw words. Not a
- * product phrase table and not a jurisdiction hardcode.
- */
-function warsawHostNamer(): DomainNamer {
-  const host: HostAdapter = {
-    name: 'fixture',
-    kind: 'general',
-    capabilities: [],
-    init: async (): Promise<void> => {},
-    health: async () => ({ live: true }),
-    cancel: async () => ({ cancelled: false }),
-    invoke: async (request: unknown): Promise<HostResult> => {
-      const task = typeof (request as { task?: unknown }).task === 'string'
-        ? (request as { task: string }).task
-        : '';
-      if (!task.includes('Warsaw') || !task.includes('customer list')) {
-        return { id: 'x', status: 'ok', output: { text: '{"domains":[]}' }, error: null };
-      }
-      if (!task.includes('contracts:') || !task.includes('privacy:')) {
-        return {
-          id: 'x',
-          status: 'error',
-          output: null,
-          error: 'namer prompt must carry the catalog',
-        };
-      }
-      return {
-        id: 'x',
-        status: 'ok',
-        output: {
-          text: JSON.stringify({
-            domains: [
-              {
-                domain: 'contracts',
-                why: 'bringing on a freelancer is an agreement with an outside party',
-              },
-              {
-                domain: 'privacy',
-                why: 'the freelancer will get the customer list',
-              },
-              {
-                domain: 'security',
-                why: 'a production login is who can reach production',
-              },
-              {
-                domain: 'employment',
-                why: 'bringing on a freelancer is engaging a person',
-              },
-            ],
-          }),
-        },
-        error: null,
-      };
-    },
-  };
-  return createHostNamer(host);
 }
 
 let nextId = 0;
@@ -280,10 +216,10 @@ test('omitting namings is not the keyword path — a run is recorded either way'
   }
 });
 
-test('omitted namings seat from Construct\'s namer reading the Warsaw words', async () => {
-  const f = fixture(warsawHostNamer());
+async function assertDoor3FromWords(words: string): Promise<void> {
+  const f = fixture(recordedHostNamer());
   try {
-    const reply = await f.handle(call('record_outcome', { outcome: WARSAW }));
+    const reply = await f.handle(call('record_outcome', { outcome: words }));
     const { body, isError } = payload(reply);
     assert.equal(isError, false);
     const started = body as {
@@ -303,19 +239,27 @@ test('omitted namings seat from Construct\'s namer reading the Warsaw words', as
     const log = readWorkLog(f.store, started.run);
     const actions = log.map((entry) => entry.action);
     assert.ok(actions.includes('outcome-received'));
-    assert.ok(actions.includes('implication-named'), 'no-domains-implicated must not be the only follow-up');
+    assert.ok(actions.includes('implication-named'), 'no-domains-implicated is a miss against these words');
     assert.ok(actions.includes('domain-implicated'));
-    assert.ok(!actions.includes('no-domains-implicated'));
+    assert.ok(!actions.includes('no-domains-implicated'), 'no-domains-implicated is a miss, not an open question');
     assert.ok(
       log.some((entry) => (entry.detail as { inferredBy?: string } | null)?.inferredBy === 'namer'),
     );
   } finally {
     f.cleanup();
   }
+}
+
+test('omitted namings seat from Construct\'s namer reading the Warsaw words', async () => {
+  await assertDoor3FromWords(WARSAW);
+});
+
+test('omitted namings seat from Construct\'s namer reading the Poland words', async () => {
+  await assertDoor3FromWords(POLAND);
 });
 
 test('an empty namings array does not consult the namer', async () => {
-  const f = fixture(warsawHostNamer());
+  const f = fixture(recordedHostNamer());
   try {
     const reply = await f.handle(call('record_outcome', { outcome: WARSAW, namings: [] }));
     const started = payload(reply).body as { inferredBy: string; implicated: unknown[] };
