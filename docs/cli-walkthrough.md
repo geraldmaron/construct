@@ -34,9 +34,9 @@ prompt: the thing you want to be true.
 
 An in-session `construct outcome` without `--domains` does **not** create a
 run and does **not** consult the keyword map. First-run is this session
-calling `record_outcome` (namings optional); Construct may add seats from
-visible ground. Two surfaces: this session dispatches, or the turn goes
-to inbox.
+calling `record_outcome` (namings optional); Construct's namer may seat
+from the words when namings are omitted. Two surfaces: this session
+dispatches, or the turn goes to inbox.
 
 From a plain terminal with no host wrapping the command:
 
@@ -508,12 +508,13 @@ stand, show the inbox and the questions roles have put to you, relay a decision
 or an answer you gave, record a verdict, drop a note verbatim, and read the
 subjects the workspace keeps facts about. Because the model in that host has
 already read your words, it may name implicated domains — namings are
-optional. `record_outcome` on `construct serve` records a run either way,
-and Construct may add seats from visible ground. Those namings
-pass exactly the same gate a subprocess model's would: a domain outside
-the catalog or without a stated reason is discarded, and the reply says what
-was not admitted. Omitting namings is not an error and is not a fall-through
-to the keyword map.
+optional. `record_outcome` on `construct serve` records a run either way.
+When namings are omitted, Construct's namer reads the words against the
+catalog and may add seats. Those namings pass exactly the same gate a
+subprocess model's would: a domain outside the catalog or without a
+stated reason is discarded, and the reply says what was not admitted.
+Omitting namings is not an error and is not a fall-through to the
+keyword map.
 
 The surface can dispatch work. When a secret is set, `claim_task` and
 `submit_work` are on the same socket: the session that just named the

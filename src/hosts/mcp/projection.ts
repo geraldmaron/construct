@@ -57,13 +57,14 @@
  *
  * The inversion, inside a host: the model calling these tools has already read
  * the user's words, so `record_outcome` accepts those words without namings
- * and still records a run. First-run talk itself is recorded by the
- * prompt-submit hook (`construct hear`), not by waiting for this tool.
- * The host may propose domain namings. Proposals pass the kernel's
- * admission gate unchanged (implication/naming.ts admissible()): catalog
- * membership, a stated reason, dedup. The host model proposes; it never
- * certifies. Host-model text arriving here is untrusted input exactly as
- * CLI input is.
+ * and still records a run. When namings are omitted, Construct's namer
+ * (injected; this file never constructs a host) reads those words against
+ * the catalog. First-run talk itself is recorded by the prompt-submit hook
+ * (`construct hear`), not by waiting for this tool. The host may still
+ * propose domain namings. Proposals pass the kernel's admission gate
+ * unchanged (implication/naming.ts admissible()): catalog membership, a
+ * stated reason, dedup. The host model proposes; it never certifies.
+ * Host-model text arriving here is untrusted input exactly as CLI input is.
  */
 
 import { getDecision, openDecisions, resolveDecision } from '../../kernel/store/decisions.ts';
@@ -79,7 +80,8 @@ import type { StartedRun } from '../../kernel/run/outcome.ts';
 import { DOMAINS } from '../../kernel/implication/domains.ts';
 import { recordVerdict } from '../../kernel/implication/verdict.ts';
 import { validateBrief } from '../../kernel/brief/schema.ts';
-import { mapImplicationsNamed, type DomainNaming } from '../../kernel/implication/naming.ts';
+import { mapImplicationsNamed, type DomainNamer, type DomainNaming } from '../../kernel/implication/naming.ts';
+import { sourcesFor } from '../../kernel/store/sources.ts';
 import type { Store } from '../../kernel/store/open.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import { currentFields, fieldHistory, getRecord, recordsFor } from '../../kernel/store/records.ts';
@@ -106,6 +108,13 @@ export interface ProjectionCore {
   readonly cwd?: string;
   /** Workspace whose declared sources are visible ground. Default `default`. */
   readonly workspace?: string;
+  /**
+   * Construct's namer seam. When present and namings are omitted,
+   * record_outcome consults it against the catalog and the outcome
+   * words. Absent or thrown stays empty; keywords do not catch this
+   * path. Injected so this module never constructs a host.
+   */
+  readonly namer?: DomainNamer;
 }
 
 /**
@@ -131,17 +140,19 @@ export const PROJECTION_TOOLS = [
     description:
       'Record an outcome — what the user wants to happen, in their words. ' +
       'You have already read those words. Namings are optional: omit them ' +
-      'or pass []. A run is still created. You may name catalog domains ' +
-      'with a reason in `why`. A folder name that matches a catalog word ' +
-      'is not a seat. Your namings are proposals: anything outside the catalog ' +
-      'or without a reason is discarded by the kernel, and the reply says ' +
-      'what was admitted — except when this exact outcome text was already ' +
-      'consulted once before, by any host in any prior session: that first ' +
-      'answer is served from a cache instead, your namings are not ' +
-      'evaluated against the catalog at all, `inferredBy` reads "cache", ' +
-      'and any of your proposed domains missing from the cached answer ' +
-      'land in `notAdmitted` with `notAdmittedBecause` saying why. ' +
-      'Optionally state your own `confidence` (0 to 1) on a naming when ' +
+      'or pass []. A run is still created. When you omit namings, Construct ' +
+      'consults its namer against the catalog and the outcome words. Pass [] ' +
+      'only when you have considered the catalog and this implicates nothing. ' +
+      'You may name catalog domains with a reason in `why`. A folder name ' +
+      'that matches a catalog word is not a seat. Your namings are proposals: ' +
+      'anything outside the catalog or without a reason is discarded by the ' +
+      'kernel, and the reply says what was admitted — except when this exact ' +
+      'outcome text was already consulted once before, by any host in any ' +
+      'prior session: that first answer is served from a cache instead, your ' +
+      'namings are not evaluated against the catalog at all, `inferredBy` ' +
+      'reads "cache", and any of your proposed domains missing from the ' +
+      'cached answer land in `notAdmitted` with `notAdmittedBecause` saying ' +
+      'why. Optionally state your own `confidence` (0 to 1) on a naming when ' +
       'you are unsure it truly applies — below 0.5 it is kept as a named ' +
       'coverage gap rather than routed. Leave it out when you are simply sure.',
     inputSchema: {
@@ -410,6 +421,13 @@ function toolResult(id: unknown, payload: unknown, isError = false): JsonRpcResp
   });
 }
 
+function declaredSourcesText(store: Store, workspace: string): string {
+  const sources = sourcesFor(store, workspace);
+  if (sources.length === 0) return '';
+  const lines = sources.map((source) => `- ${source.kind} ${source.locator}`);
+  return `\n\nDeclared sources in reach:\n${lines.join('\n')}`;
+}
+
 /** The reply `record_outcome` sends back: what was admitted, and how. */
 function startedReply(started: StartedRun, proposed?: readonly DomainNaming[]): unknown {
   const admitted = new Set(started.implicated.map((i) => i.domain));
@@ -467,9 +485,34 @@ async function recordOutcome(
   const host = `mcp:${client}`;
 
   // Omitted namings is not an error and not the keyword map. A run is
-  // recorded. Folder names are not seats. inferredBy is namer only when
-  // a model actually named domains.
+  // recorded. When a namer is injected it reads the words against the
+  // catalog; inferredBy is namer only when that model named domains.
+  // A missing or thrown namer stays empty. Folder names are not seats.
+  // Empty namings: [] is an explicit "nothing implicated" and does not
+  // consult the namer.
   if (input.namings === undefined) {
+    if (core.namer !== undefined) {
+      const namer = core.namer;
+      const reading = `${text}${declaredSourcesText(core.store, core.workspace ?? 'default')}`;
+      const named = await mapImplicationsNamed({
+        outcome: text,
+        catalog: DOMAINS,
+        namer: async (_outcome, catalog) => namer(reading, catalog),
+        cache: storeNamingCache(core.store, { host, at }),
+      });
+      // Keywords catching a failed namer is not first-run. Stay empty.
+      if (named.namerFailure === undefined && named.inferredBy !== 'keywords') {
+        const started = startRunSeated(core.store, {
+          runId,
+          outcome: text,
+          at,
+          implicated: named.implicated,
+          inferredBy: named.inferredBy,
+          host,
+        });
+        return startedReply(started);
+      }
+    }
     const started = startRunSeated(core.store, {
       runId,
       outcome: text,

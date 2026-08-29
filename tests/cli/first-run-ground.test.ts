@@ -3,8 +3,10 @@
  *
  * The phrase-table namer is gone. Folder names that match a catalog word
  * are not seats. What this file locks: ordinary words, including a
- * Cursor/Claude hook payload, record a run without `record_outcome`,
- * without `construct outcome`, and without writing `inferredBy: namer`.
+ * Cursor/Claude hook payload, record a run without `record_outcome` or
+ * `construct outcome`. A hook without a logged-in namer stays empty.
+ * Omitted namings on serve consult Construct's namer when one is
+ * injected; the Warsaw sentence then seats from the words.
  */
 
 import { test } from 'node:test';
@@ -15,6 +17,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hear } from '../../src/cli/index.ts';
 import { createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
+import { createHostNamer } from '../../src/hosts/namer.ts';
+import type { DomainNamer } from '../../src/kernel/implication/naming.ts';
+import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { mapImplications } from '../../src/kernel/implication/map.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
@@ -26,6 +31,8 @@ sterileAmbientEnv();
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const POLAND = 'We want to hire a contractor in Poland';
+const WARSAW =
+  'We need to bring on a freelancer in Warsaw who will get our customer list and a production login.';
 
 async function isolated<T>(fn: (cwd: string) => Promise<T> | T): Promise<T> {
   const root = mkdtempSync(join(tmpdir(), 'construct-first-run-ground-'));
@@ -70,10 +77,44 @@ async function captureHear(
   }
 }
 
+function warsawHostNamer(): DomainNamer {
+  const host: HostAdapter = {
+    name: 'fixture',
+    kind: 'general',
+    capabilities: [],
+    init: async (): Promise<void> => {},
+    health: async () => ({ live: true }),
+    cancel: async () => ({ cancelled: false }),
+    invoke: async (request: unknown): Promise<HostResult> => {
+      const task = typeof (request as { task?: unknown }).task === 'string'
+        ? (request as { task: string }).task
+        : '';
+      if (!task.includes('Warsaw') || !task.includes('contracts:') || !task.includes('privacy:')) {
+        return { id: 'x', status: 'ok', output: { text: '{"domains":[]}' }, error: null };
+      }
+      return {
+        id: 'x',
+        status: 'ok',
+        output: {
+          text: JSON.stringify({
+            domains: [
+              { domain: 'contracts', why: 'bringing on a freelancer is an agreement with an outside party' },
+              { domain: 'privacy', why: 'the freelancer will get the customer list' },
+            ],
+          }),
+        },
+        error: null,
+      };
+    },
+  };
+  return createHostNamer(host);
+}
+
 async function recordOnServe(
   words: string,
   namings: Array<{ domain: string; why: string }> | undefined,
   at: string,
+  namer?: DomainNamer,
 ): Promise<{
   implicated: string[];
   inferredBy?: string;
@@ -88,6 +129,7 @@ async function recordOnServe(
     clock: () => at,
     serverVersion: 'test',
     secret: 'test-secret-not-a-real-key',
+    namer,
   });
   const named = await handle({
     jsonrpc: '2.0',
@@ -134,6 +176,33 @@ test('omitting namings on serve is not an error and creates a run', async () => 
     assert.notEqual(recorded.inferredBy, 'namer');
     assert.doesNotMatch(recorded.out, /requires namings/);
   });
+});
+
+test('Warsaw omitted namings seat contracts and privacy from the namer, not none or session', async () => {
+  await isolated(async () => {
+    const recorded = await recordOnServe(WARSAW, undefined, '2026-08-29T03:00:00.000Z', warsawHostNamer());
+    assert.equal(recorded.isError, undefined);
+    assert.ok(recorded.run, 'talk must create a run');
+    assert.ok(recorded.implicated.includes('contracts'), `seats were ${recorded.implicated.join(',')}`);
+    assert.ok(recorded.implicated.includes('privacy'), `seats were ${recorded.implicated.join(',')}`);
+    assert.equal(recorded.inferredBy, 'namer');
+    assert.notEqual(recorded.inferredBy, 'none');
+    assert.notEqual(recorded.inferredBy, 'session');
+    assert.ok(recorded.logActions.includes('outcome-received'));
+    assert.ok(recorded.logActions.includes('implication-named'));
+    assert.ok(!recorded.logActions.includes('no-domains-implicated'));
+  });
+});
+
+test('construct serve injects the live host namer into omitted record_outcome', () => {
+  const serve = readFileSync(join(ROOT, 'src/cli/serve.ts'), 'utf8');
+  assert.match(serve, /liveHostNamer/);
+  assert.match(serve, /namer:\s*liveHostNamer/);
+  const projection = readFileSync(join(ROOT, 'src/hosts/mcp/projection.ts'), 'utf8');
+  assert.match(projection, /core\.namer/);
+  assert.match(projection, /mapImplicationsNamed/);
+  assert.doesNotMatch(projection, /createHostNamer/);
+  assert.doesNotMatch(projection, /from 'node:child_process'/);
 });
 
 test('Cursor beforeSubmitPrompt stdin creates a run without record_outcome', async () => {

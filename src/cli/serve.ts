@@ -12,6 +12,7 @@ import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfil
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
 import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
+import { liveHostNamer } from './live-namer.ts';
 import { serveRole } from './roleserve.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import { now, packageVersion, secretFile, withStoreAsync } from './runtime.ts';
@@ -109,7 +110,18 @@ export async function serve(): Promise<number> {
   return withStoreAsync(async (store) => {
     const secret = loadOrCreateSecret(secretFile());
     await serveProjection(
-      { store, clock: now, serverVersion: packageVersion(), secret, cwd: process.cwd() },
+      {
+        store,
+        clock: now,
+        serverVersion: packageVersion(),
+        secret,
+        cwd: process.cwd(),
+        // Omitted namings consult Construct's namer (a logged-in host
+        // model against the catalog). Injected so the projection never
+        // constructs a host. A missing login throws; the projection
+        // stays empty rather than falling to keywords.
+        namer: liveHostNamer(process.env),
+      },
       process.stdin,
       process.stdout,
     );
