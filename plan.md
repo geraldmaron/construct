@@ -38,7 +38,7 @@ Epic: `construct-cki1`. Phase A: `construct-uedv` (in progress).
 | Phase | Bead | Status |
 |-------|------|--------|
 | A Freeze and map | construct-uedv | **done** |
-| B New foundations | construct-9xva | **in progress** (open until serve uses v1) |
+| B New foundations | construct-9xva | **done** |
 | C Execution architecture | construct-dx84 | **done** |
 | D MCP | construct-vhuw | **in progress** |
 | E Native integrations | | pending |
@@ -58,36 +58,27 @@ See `docs/internal/clean-slate-inventory.md` for PR evidence table and full disp
 
 ## Phase B progress
 
-**Substantially complete** (old store still in tree until cutover):
+**Closed into Phase D handoff** — foundations live; `construct serve` opens v1 interactive MCP when `.construct` is initialized.
 
-- `src/kernel/project/` — ProjectContext, layout, initialize, reset
-- `src/kernel/state/` — format v1 schema (runs, tasks, deliverables, staff, sources, routines, decisions, integrations, activity)
-- `src/kernel/services/` — Project/Run/Task/Staff/Source/Routine/Decision + Interactive/Headless run services
-- `construct init` / `construct reset --yes`
-- Architecture tests: interactive isolation from resource selection
-- 21 focused tests green
+## Phase C (`construct-dx84`) — **done**
 
-**Residual before closing construct-9xva:** point MCP/serve at InteractiveRunService (handoff into Phase D).
+Session binding, integration/execution seams, HostAdapter bridge, Cursor/Claude writers.
 
-## Phase C (`construct-dx84`) — in progress
+## Phase D (`construct-vhuw`) — in progress
 
 Landed:
 
-- `src/kernel/integration/types.ts` — HostIntegrationAdapter
-- `src/kernel/execution/types.ts` — ExecutionAdapter
-- `src/kernel/execution/precedence.ts` — explicit executor order (interactive never falls to selection)
-- `src/kernel/execution/from-host.ts` — HostAdapter → ExecutionAdapter bridge
-- `src/kernel/session/binding.ts` — `serve --client=… --project=…`
-- Cursor + Claude Code HostIntegrationAdapters (session-bound MCP merge)
-- Unsupported stubs for opencode/bob/vscode/codex/goose/pi
-- Architecture + precedence + wire/mcpconfig tests
-- Docs: consumer-install + walkthrough show session-bound serve args
+- `src/hosts/mcp/interactive.ts` — semantic tools: `project_status`, `start_run`, `next_work`, `submit_work`, `list_inbox`
+- `construct serve` prefers this plane when project has format-v1 state; legacy projection remains for uninitialized trees until Phase G
+- Claim → submit settles task done + deliverable draft (no promotion)
+- Isolation test: interactive MCP cannot import selection/census
 
-Still open for Phase C close:
+Still open:
 
-- Serve still opens legacy store (`withStoreAsync`); project flag is identity only until Phase D cutover
-- Broader host matrix writers (Phase E)
-- Semantic MCP over InteractiveRunService (Phase D)
+- Replace remaining legacy projection tools for init'd projects (already gated)
+- Delete host-pull as product path
+- Operational skill + fuller inbox/decide surface
+- Close Phase B residual checklist once D acceptance holds
 
 ## Invariants (release contract excerpt)
 

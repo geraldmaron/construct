@@ -49,6 +49,12 @@ test('no interactive service module imports selection or census', () => {
   }
 });
 
+test('interactive MCP module does not import resource selection or census', () => {
+  const src = readFileSync(join(ROOT, 'src/hosts/mcp/interactive.ts'), 'utf8');
+  assert.doesNotMatch(src, /resource\/selection|resource\/census|hosts\/compose/);
+  assert.match(src, /InteractiveRunService|createInteractiveRunService/);
+});
+
 test('kernel state modules do not import host config writers', () => {
   for (const file of listTs('src/kernel/state')) {
     const src = read(file);
