@@ -1,37 +1,15 @@
 # Clean-slate alpha reconciliation — living plan
 
-Epic: `construct-cki1`. Phase A: `construct-uedv` (in progress).
+Epic: `construct-cki1`.
 
-## Baseline (revalidated 2026-08-31)
+## Baseline
 
-| Fact | Value | Verified |
-|------|-------|----------|
-| Default branch | `main` | `git status` after pull |
-| Main HEAD | `e9745325bc8786c0625d12888626a45f51de7696` | matches prompt |
-| `package.json` | `3.0.0-alpha.18` | node read |
-| npm `alpha` dist-tag | `3.0.0-alpha.19` | `npm view` |
-| npm `.19` gitHead | **missing** | provenance broken |
-| npm `.18` gitHead | `32067b81…` | ancestor of main |
-| Git tag `v3.0.0-alpha.19` | **absent** | `git tag -l` |
-| Compatibility entitlement | **none** | product decision |
-
-**Release note:** do not treat npm `3.0.0-alpha.19` as a trusted artifact until provenance is rebuilt. Next publish is a new intentional alpha after this architecture lands.
-
-## Scale snapshot
-
-| Bucket | Count |
-|--------|------:|
-| `src/**/*.ts` | 219 files / 55,288 LOC |
-| `tests/**/*.ts` | 236 files / 53,322 LOC |
-| Public CLI verbs | 41 (+ 2 internal) |
-| MCP servers | 3 |
-| Unique MCP tool names | 18 |
-| SQLite schema version | 23 |
-| SQLite tables | 37 |
-| Full HostAdapters | 4 (claude, cursor, opencode, codex) |
-| Pin-only hosts | 3 (bob, goose, pi) |
-| Portable skills | 7 |
-| Generated lens packs | 15 |
+| Fact | Value |
+|------|-------|
+| package.json | `3.0.0-alpha.18` |
+| npm `alpha` | `3.0.0-alpha.19` (**no gitHead**, no git tag) |
+| Compatibility | **none** |
+| Release | **DO NOT PUBLISH** until Phase J |
 
 ## Phase status
 
@@ -41,45 +19,43 @@ Epic: `construct-cki1`. Phase A: `construct-uedv` (in progress).
 | B New foundations | construct-9xva | **done** |
 | C Execution architecture | construct-dx84 | **done** |
 | D MCP | construct-vhuw | **in progress** |
-| E Native integrations | | pending |
-| F Product consolidation | | pending |
-| G Delete old surfaces | | pending |
-| H Skills | | pending |
-| I External interfaces | | pending |
-| J Package/release | | pending |
-
-## Open experiment branches / PRs
-
-`gh` auth token invalid in this environment; PR bodies pulled via public GitHub API.
-
-See `docs/internal/clean-slate-inventory.md` for PR evidence table and full disposition ledger.
-
-**Policy:** close (do not merge wholesale) first-run experiment PRs once replacement lands. Harvest tests/concepts only.
-
-## Phase B progress
-
-**Closed into Phase D handoff** — foundations live; `construct serve` opens v1 interactive MCP when `.construct` is initialized.
-
-## Phase C (`construct-dx84`) — **done**
-
-Session binding, integration/execution seams, HostAdapter bridge, Cursor/Claude writers.
+| E Native integrations | construct-vv6l | open |
+| F Product consolidation | construct-pxw2 | open |
+| G Delete old surfaces | construct-fgxn | open |
+| H Skills | construct-blvu | open |
+| I External interfaces | construct-dz27 | open |
+| J Package/release | construct-umx9 | open |
 
 ## Phase D (`construct-vhuw`) — in progress
 
 Landed:
 
-- `src/hosts/mcp/interactive.ts` — semantic tools: `project_status`, `start_run`, `next_work`, `submit_work`, `list_inbox`
-- `construct serve` prefers this plane when project has format-v1 state; legacy projection remains for uninitialized trees until Phase G
-- Claim → submit settles task done + deliverable draft (no promotion)
-- Isolation test: interactive MCP cannot import selection/census
+- Semantic interactive MCP: `project_status`, `start_run`, `next_work`, `submit_work`, `list_inbox`, `raise_decision`, `decide`
+- Serve prefers v1 plane when project initialized
+- `host-pull-serve` permanently refused (module delete is Phase G)
+- Isolation: interactive path cannot import selection/census
 
-Still open:
+Still for D close:
 
-- Replace remaining legacy projection tools for init'd projects (already gated)
-- Delete host-pull as product path
-- Operational skill + fuller inbox/decide surface
-- Close Phase B residual checklist once D acceptance holds
+- `run_status` / activity read on interactive plane
+- Operational construct skill (or hand to H)
+- Enough coverage that Phase G can delete legacy projection without a hole
 
-## Invariants (release contract excerpt)
+## What remains overall (ordered)
+
+```
+D  finish semantic MCP + refuse D
+E  opencode/vscode (+assess) HostIntegrationAdapters; init-as-reconciler; demote wire
+F  Staff + Routine product surface; merge judgment verbs; shrink CLI
+G  Delete ledger: schema23, naming_cache, keyword routing, hostpull, legacy projection,
+   cleanup, beads-in-product, interactive work.ts, lens auto-install, …
+H  Skill scorecards; only operational skill auto-installs
+I  Docs/help/first-run truth; close PRs #9/#11/#12/#13; lock package exports
+J  Full gate; complexity vs baseline; provenance rebuild; release verdict
+```
+
+Inventory detail: `docs/internal/clean-slate-inventory.md`.
+
+## Invariants
 
 Current session executes by default. Cross-host requires explicit reason. Client ≠ host ≠ executor. MCP is interactive control plane. Project state is project-local. Dead architecture is deleted, not deprecated.

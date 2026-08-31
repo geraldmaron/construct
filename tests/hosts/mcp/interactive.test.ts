@@ -114,6 +114,39 @@ test('interactive MCP start_run → next_work → submit_work leaves draft', asy
     assert.equal(submitBody.taskState, 'done');
     assert.equal(submitBody.deliverable?.trustState, 'draft');
 
+    const raised = await handle({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: {
+        name: 'raise_decision',
+        arguments: {
+          kind: 'requires_decision',
+          question: 'Ship this week?',
+          run: startBody.run,
+        },
+      },
+    } as JsonRpcRequest);
+    const raiseBody = JSON.parse(
+      (raised as { result: { content: Array<{ text: string }> } }).result.content[0]!.text,
+    ) as { id: string };
+    assert.ok(raiseBody.id);
+
+    const decided = await handle({
+      jsonrpc: '2.0',
+      id: 7,
+      method: 'tools/call',
+      params: {
+        name: 'decide',
+        arguments: { id: raiseBody.id, resolution: 'Yes, ship.' },
+      },
+    } as JsonRpcRequest);
+    const decideBody = JSON.parse(
+      (decided as { result: { content: Array<{ text: string }> } }).result.content[0]!.text,
+    ) as { decided: string; state: string };
+    assert.equal(decideBody.decided, raiseBody.id);
+    assert.equal(decideBody.state, 'resolved');
+
     init.store.close();
   } finally {
     rmSync(root, { recursive: true, force: true });
