@@ -50,6 +50,7 @@ export interface InteractiveRunService {
     readonly at: string;
     readonly deliverable?: unknown;
     readonly note?: string;
+    readonly settleNoteAsDone?: boolean;
   }): SubmitCompletedWorkResult;
   /** Effective executor for this turn — session unless explicit override. */
   effectiveExecutor(): { readonly executor: string; readonly source: string };

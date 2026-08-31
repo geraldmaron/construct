@@ -23,6 +23,7 @@ export interface TaskService {
     readonly at: string;
     readonly deliverable?: unknown;
     readonly note?: string;
+    readonly settleNoteAsDone?: boolean;
   }): SubmitCompletedWorkResult;
   fail(input: {
     readonly leased: LeasedTask;

@@ -9,6 +9,12 @@ import { openStore } from '../kernel/store/open.ts';
 import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
+import {
+  openInteractiveProject,
+  projectHasV1State,
+  serveInteractive,
+  sessionFromBinding,
+} from '../hosts/mcp/interactive.ts';
 import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
 import { parseSessionBinding } from '../kernel/session/binding.ts';
 import { resolveProjectContext } from '../kernel/project/context.ts';
@@ -102,6 +108,10 @@ export async function hostPullServe(): Promise<number> {
  *
  * Prefer `--client` / `--project` from the host MCP launch config over ambient
  * env detection for interactive routing identity.
+ *
+ * When the project has been `construct init`'d (format-v1 state present),
+ * serve the semantic interactive control plane. Otherwise keep the legacy
+ * projection until Phase G deletes it.
  */
 export async function serve(argv: string[] = []): Promise<number> {
   const binding = parseSessionBinding(argv, process.cwd());
@@ -112,6 +122,30 @@ export async function serve(argv: string[] = []): Promise<number> {
     cwd: process.cwd(),
     allowCwdFallback: true,
   });
+
+  if (projectHasV1State(ctx.root)) {
+    const state = openInteractiveProject(ctx.root);
+    try {
+      await serveInteractive(
+        {
+          store: state,
+          projectRoot: ctx.root,
+          clock: now,
+          serverVersion: packageVersion(),
+          session: sessionFromBinding({
+            client: binding.client,
+            projectRoot: ctx.root,
+            host: binding.client,
+          }),
+        },
+        process.stdin,
+        process.stdout,
+      );
+      return 0;
+    } finally {
+      state.close();
+    }
+  }
 
   return withStoreAsync(async (store) => {
     const secret = loadOrCreateSecret(secretFile());
