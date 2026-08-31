@@ -1,85 +1,122 @@
 /**
- * cli/init.ts — the bridge from `npm install -g` to a first outcome.
+ * cli/init.ts — initialize a Construct project in place.
  *
- * `construct doctor` answers whether the install is sound; nothing before
- * this answered what to do with a sound install. `construct init` assembles
- * detection (`hosts/ambient.ts`), wiring (`cli/wire.ts`), and the portable
- * method skills (`cli/skills.ts`) into the one screen a person reads right
- * after the install finishes: which host this process is already running
- * inside, the spine, and the skills that host should hold.
- *
- * It writes nothing by itself unless `--yes`. Wiring the MCP entry is
- * `construct wire`'s job; planting method skills is `construct skills
- * install`'s. Init only ever forwards to those commands, so each write lives
- * in one place. Job-title lens packs are not planted: those roles were
- * measured and withdrawn. The method skills are the ones that travel.
+ * Creates project-local config and format-v1 state. Safe initialization does
+ * not require `--yes`. `--dry-run` previews without writing. When an ambient
+ * client is detected, reconciles that host's MCP entry with session binding.
  */
 
+import { existsSync } from 'node:fs';
+import { UnsupportedAlphaStoreError } from '../kernel/state/format.ts';
+import {
+  initializeProject,
+  STATE_GITIGNORE_PATTERN,
+} from '../kernel/project/initialize.ts';
+import { resolveProjectContext } from '../kernel/project/context.ts';
+import { projectConfigPath, projectDbPath } from '../kernel/project/layout.ts';
+import { upsertIntegration } from '../kernel/state/integrations.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
-import { skills } from './skills.ts';
-import { wire } from './wire.ts';
+import { integrationAdapterFor } from '../hosts/integrations/registry.ts';
+import { gitRoot } from './settings-file.ts';
+import { packageVersion } from './runtime.ts';
 
-const SPINE =
-  'Talk in this host. Ordinary language is enough — this session names the concerns.\n' +
-  'Point the host at Construct with construct serve.\n' +
-  'The spine: outcome -> work -> show -> inbox -> verdict\n' +
-  '  outcome  this session records via MCP record_outcome with namings\n' +
-  '  work     this session claims via construct serve (claim_task)\n' +
-  '  show     reads a run\'s deliverables back\n' +
-  '  inbox    holds the decisions only you can make\n' +
-  '  verdict  says whether a run was right about what it surfaced\n';
-
-function plantMethodSkills(host: SkillsHostName, env: NodeJS.ProcessEnv): number {
-  const dir = resolveHostSkillsDir(host, env);
-  return skills(['install', '--all', `--dir=${dir}`]);
+function flag(argv: string[], name: string): boolean {
+  return argv.includes(name);
 }
 
 /**
- * `construct init [--yes]`.
- *
- * Confirms the ambient host, prints the spine, offers to plant the portable
- * method skills into that host's skills directory, and offers to wire the
- * MCP entry — with consent required either way.
+ * `construct init [--dry-run]`
  */
-export function init(
+export async function init(
   argv: string[] = [],
   cwd: string = process.cwd(),
   env: NodeJS.ProcessEnv = process.env,
-): number {
-  const confirmed = argv.includes('--yes') || argv.includes('-y');
+): Promise<number> {
+  const dryRun = flag(argv, '--dry-run');
+  const ctx = resolveProjectContext({
+    gitRoot: gitRoot(cwd) ?? undefined,
+    cwd,
+    allowCwdFallback: true,
+  });
+
+  const configPath = projectConfigPath(ctx.root);
+  const dbPath = projectDbPath(ctx.root);
   const ambient = detectAmbientHost(env);
-  const skillsHost =
-    ambient !== null && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)
-      ? (ambient.host as SkillsHostName)
-      : null;
+  const adapter = ambient ? integrationAdapterFor(ambient.host) : null;
 
-  process.stdout.write(
-    ambient === null
-      ? 'No ambient host detected — this process is not running inside a host Construct recognizes.\n'
-      : `Detected host: ${ambient.host} (via ${ambient.marker})\n`,
-  );
-
-  process.stdout.write(`\n${SPINE}\n`);
-
-  if (skillsHost !== null) {
+  if (dryRun) {
+    process.stdout.write(`construct init (dry-run)\n`);
+    process.stdout.write(`  project root: ${ctx.root} (${ctx.rootSource})\n`);
     process.stdout.write(
-      `Method skills plant into this host with:  construct skills install --all --host=${skillsHost}\n` +
-        '(investigative-research, decision-framing, intake, and the rest — not job-title personas)\n',
+      `  config: ${configPath}${existsSync(configPath) ? ' (exists)' : ' (would create)'}\n`,
     );
-  }
-
-  if (confirmed) {
-    if (skillsHost !== null) {
-      const planted = plantMethodSkills(skillsHost, env);
-      if (planted !== 0) return planted;
+    process.stdout.write(
+      `  state:  ${dbPath}${existsSync(dbPath) ? ' (exists)' : ' (would create)'}\n`,
+    );
+    process.stdout.write(`  gitignore: ensure ${STATE_GITIGNORE_PATTERN}\n`);
+    if (adapter) {
+      const plan = await adapter.plan(ctx.root);
+      for (const action of plan.actions) {
+        process.stdout.write(`  would ${action.kind}: ${action.path} (${action.reason})\n`);
+      }
+    } else if (ambient) {
+      process.stdout.write(
+        `  client: ${ambient.host} detected — no HostIntegrationAdapter yet\n`,
+      );
     }
-    return wire(['--yes'], cwd, env);
+    return 0;
   }
 
-  process.stdout.write(
-    'MCP entry not wired. Review it first, then run:  construct wire --yes\n' +
-      '(or re-run this command as  construct init --yes  to plant skills and wire it now)\n',
-  );
-  return 0;
+  try {
+    const result = initializeProject(ctx);
+    process.stdout.write(`Initialized Construct project at ${result.root}\n`);
+    process.stdout.write(
+      `  config: ${result.configPath}${result.createdConfig ? ' (created)' : ' (kept)'}\n`,
+    );
+    process.stdout.write(
+      `  state:  ${result.dbPath}${result.createdState ? ' (created)' : ' (opened)'}\n`,
+    );
+    if (result.ensuredGitignore) {
+      process.stdout.write(`  gitignore: added ${STATE_GITIGNORE_PATTERN}\n`);
+    }
+
+    if (adapter) {
+      await adapter.install(ctx.root);
+      const verification = await adapter.verify(ctx.root);
+      upsertIntegration(result.store, {
+        hostId: adapter.id,
+        status: verification.ok ? 'installed' : 'broken',
+        constructVersion: packageVersion(),
+        generationVersion: '1',
+        path: verification.checks[0]?.detail,
+        kind: 'mcp-project',
+        at: new Date().toISOString(),
+      });
+      process.stdout.write(
+        verification.ok
+          ? `  integration: ${adapter.id} installed (session-bound MCP)\n`
+          : `  integration: ${adapter.id} wrote but verify failed\n`,
+      );
+    } else if (ambient) {
+      process.stdout.write(
+        `  client: ${ambient.host} (via ${ambient.marker}) — no integration adapter yet\n`,
+      );
+    } else {
+      process.stdout.write(
+        '  client: none detected — open from a supported host to reconcile MCP\n',
+      );
+    }
+
+    result.store.close();
+    process.stdout.write(
+      'Use Construct from your agent session. Do not run construct work as an interactive protocol.\n',
+    );
+    return 0;
+  } catch (error) {
+    if (error instanceof UnsupportedAlphaStoreError) {
+      process.stderr.write(`${error.message}\n`);
+      return 1;
+    }
+    throw error;
+  }
 }

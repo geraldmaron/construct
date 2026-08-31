@@ -96,6 +96,16 @@ export interface ProjectionCore {
    * unit tests that prove record/read/relay do not need a secret.
    */
   readonly secret?: string;
+  /**
+   * Structural session binding from `construct serve --client --project`.
+   * When present, interactive identity prefers this over ambient env and over
+   * weak initialize clientInfo names for routing attribution.
+   */
+  readonly session?: {
+    readonly interactive: true;
+    readonly client: string;
+    readonly projectRoot: string | null;
+  };
 }
 
 /**
@@ -721,7 +731,9 @@ async function callTool(
 export function createProjectionHandler(
   core: ProjectionCore,
 ): (message: JsonRpcRequest) => Promise<JsonRpcResponse | null> {
-  let client = 'unknown-client';
+  // Structural binding wins over initialize clientInfo for routing identity.
+  // Unknown client from a bound interactive serve still stays interactive.
+  let client = core.session?.client ?? 'unknown-client';
   const pull =
     core.secret !== undefined
       ? createHostPullHandler({
@@ -742,14 +754,33 @@ export function createProjectionHandler(
           | { protocolVersion?: unknown; clientInfo?: { name?: unknown } }
           | null;
         const declared = params?.clientInfo?.name;
-        if (typeof declared === 'string' && declared) client = declared;
+        // Only adopt initialize name when serve did not bind a client flag.
+        if (
+          core.session === undefined &&
+          typeof declared === 'string' &&
+          declared
+        ) {
+          client = declared;
+        }
         const asked = params?.protocolVersion;
         return response(message.id, {
           // Echo a client's version when it names one; a mismatch is the
           // client's to judge, exactly as on the role server.
           protocolVersion: typeof asked === 'string' && asked ? asked : PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
-          serverInfo: { name: 'construct', version: core.serverVersion },
+          serverInfo: {
+            name: 'construct',
+            version: core.serverVersion,
+            ...(core.session
+              ? {
+                  session: {
+                    interactive: true,
+                    client: core.session.client,
+                    project: core.session.projectRoot,
+                  },
+                }
+              : {}),
+          },
         });
       }
       case 'ping':

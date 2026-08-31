@@ -29,9 +29,14 @@ test('the entry is bare command+args, matching docs/consumer-install.md\'s verif
   assert.deepEqual(entry, { command: 'node', args: ['/path/to/bin/construct.mjs', 'serve'] });
 });
 
-test('with no launch override, the entry resolves this Node binary and this checkout\'s bin/construct.mjs, ending in serve', () => {
-  const entry = buildProjectMcpServerEntry() as { command: string; args: readonly string[] };
+test('with no launch override, the entry is session-bound serve for cursor', () => {
+  const entry = buildProjectMcpServerEntry({}, '/repo') as {
+    command: string;
+    args: readonly string[];
+  };
   assert.equal(entry.command, process.execPath);
   assert.ok(entry.args[0]?.endsWith(`${sep}bin${sep}construct.mjs`));
-  assert.deepEqual(entry.args.slice(-1), ['serve']);
+  assert.ok(entry.args.includes('serve'));
+  assert.ok(entry.args.includes('--client=cursor'));
+  assert.ok(entry.args.includes('--project=/repo'));
 });

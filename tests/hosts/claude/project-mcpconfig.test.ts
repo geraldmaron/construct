@@ -32,9 +32,14 @@ test('the entry is bare command+args — no type, no env, matching docs/consumer
   assert.equal('env' in entry, false);
 });
 
-test('with no launch override, the entry resolves this Node binary and this checkout\'s bin/construct.mjs, ending in serve', () => {
-  const entry = buildProjectMcpServerEntry() as { command: string; args: readonly string[] };
+test('with no launch override, the entry is session-bound serve for claude-code', () => {
+  const entry = buildProjectMcpServerEntry({}, '/repo') as {
+    command: string;
+    args: readonly string[];
+  };
   assert.equal(entry.command, process.execPath);
   assert.ok(entry.args[0]?.endsWith(`${sep}bin${sep}construct.mjs`), 'points at this checkout\'s launcher');
-  assert.deepEqual(entry.args.slice(-1), ['serve'], 'the projection, never role-serve or dispatch');
+  assert.ok(entry.args.includes('serve'), 'the projection, never role-serve or dispatch');
+  assert.ok(entry.args.includes('--client=claude-code'));
+  assert.ok(entry.args.includes('--project=/repo'));
 });

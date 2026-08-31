@@ -43,6 +43,7 @@ import { staff } from './staff.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
 import { init } from './init.ts';
+import { reset } from './reset.ts';
 import { daemon, daemonLiveHere } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
 
@@ -87,6 +88,7 @@ export { staff } from './staff.ts';
 export { completions } from './completions.ts';
 export { wire } from './wire.ts';
 export { init } from './init.ts';
+export { reset } from './reset.ts';
 export { daemon } from './daemon.ts';
 
 /**
@@ -101,7 +103,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
-  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'doctor', 'backup',
+  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'reset', 'doctor', 'backup',
   'cleanup', 'completions', 'daemon', 'status', 'version', 'help',
 ]);
 
@@ -176,9 +178,10 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   inbox: { gloss: 'hold the decisions that are genuinely yours', flags: ['json'] },
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
-  serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: [] },
+  serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
   wire: { gloss: 'wire the MCP entry into Claude Code or Cursor', flags: ['yes'] },
-  init: { gloss: 'confirm your host and see the spine, right after install', flags: ['yes'] },
+  init: { gloss: 'initialize project-local Construct config and state', flags: ['dry-run'] },
+  reset: { gloss: 'wipe project runtime state and recreate format v1', flags: ['yes', 'wipe-config'] },
   doctor: { gloss: 'report host presence and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
@@ -203,7 +206,7 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Learning and governance', ['lessons', 'verdict', 'staff']],
   ['Workspace settings', ['mode', 'consent', 'record', 'settings', 'trust']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
-  ['Presence and hosts', ['serve', 'wire', 'init']],
+  ['Presence and hosts', ['serve', 'wire', 'init', 'reset']],
   ['Maintenance', ['doctor', 'backup', 'cleanup', 'daemon', 'skills', 'completions', 'version', 'help']],
 ]);
 
@@ -400,11 +403,13 @@ async function run(argv: string[]): Promise<number> {
     case 'lessons':
       return lessons(argv.slice(1));
     case 'serve':
-      return serve();
+      return serve(argv.slice(1));
     case 'wire':
       return wire(argv.slice(1));
     case 'init':
       return init(argv.slice(1));
+    case 'reset':
+      return reset(argv.slice(1));
     case 'role-serve':
       return roleServe();
     case 'host-pull-serve':

@@ -49,7 +49,7 @@ const MANUAL_RECIPE = 'docs/consumer-install.md (Step 2: Wire the MCP entry)';
 interface WireTarget {
   readonly serverName: string;
   readonly configPath: (cwd: string) => string;
-  readonly entry: () => Record<string, unknown>;
+  readonly entry: (cwd: string) => Record<string, unknown>;
 }
 
 /**
@@ -58,8 +58,16 @@ interface WireTarget {
  * a guess: adding a host here is the only way it becomes wirable.
  */
 const WIRE_TARGETS: Partial<Record<AmbientHostName, WireTarget>> = {
-  claude: { serverName: CLAUDE_SERVER_NAME, configPath: claudeConfigPath, entry: buildClaudeEntry },
-  cursor: { serverName: CURSOR_SERVER_NAME, configPath: cursorConfigPath, entry: buildCursorEntry },
+  claude: {
+    serverName: CLAUDE_SERVER_NAME,
+    configPath: claudeConfigPath,
+    entry: (cwd) => buildClaudeEntry({ client: 'claude-code', projectRoot: cwd }, cwd),
+  },
+  cursor: {
+    serverName: CURSOR_SERVER_NAME,
+    configPath: cursorConfigPath,
+    entry: (cwd) => buildCursorEntry({ client: 'cursor', projectRoot: cwd }, cwd),
+  },
 };
 
 function refuse(message: string): number {
@@ -123,7 +131,7 @@ export function wire(
   }
 
   const mcpServers = (existing.mcpServers as Record<string, unknown> | undefined) ?? {};
-  const entry = target.entry();
+  const entry = target.entry(cwd);
   const current = mcpServers[target.serverName];
   const displayPath = relative(cwd, path) || path;
 

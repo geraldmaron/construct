@@ -9,12 +9,17 @@ not the product door.
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
-construct init --yes
+construct init
 ```
 
-That copies investigative-research, decision-framing, intake, and the rest
-into the host's skills directory — not job-title personas — and writes the
-`construct serve` entry so this session can claim_task / submit_work.
+That creates project-local Construct config and format-v1 state under
+`.construct/` (runtime state is gitignored). Preview with
+`construct init --dry-run`. If an unsupported alpha store is already at the
+project path, run `construct reset --yes` instead of expecting a migration.
+
+Native host MCP and operational-skill reconcile is part of init's job and is
+still being rebuilt; until that lands, point a supported host at
+`construct serve` only as a temporary operator step — not the product door.
 
 You need Node 22.18 or newer. `construct doctor` is recovery and a health
 check, not onboarding. It reports Node, the store, which hosts are present
@@ -484,18 +489,18 @@ wire does not write those. A host with its own MCP-add helper takes the same
 entry in a line — Claude Code, for example:
 
 ```bash
-claude mcp add construct construct serve
+claude mcp add construct -- node "$(which construct 2>/dev/null || echo construct)" serve --client=claude-code --project="$(pwd)"
 ```
 
-Or, for any host that reads a config file, write the entry yourself — the
-`command`/`args` pair is identical for every host:
+Or, for any host that reads a config file, write the entry yourself — bind
+`--client` and `--project` so the session identity is structural, not guessed:
 
 ```json
 {
   "mcpServers": {
     "construct": {
       "command": "construct",
-      "args": ["serve"]
+      "args": ["serve", "--client=claude-code", "--project=/absolute/path/to/repo"]
     }
   }
 }
