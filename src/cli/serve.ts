@@ -15,7 +15,7 @@ import {
   serveInteractive,
   sessionFromBinding,
 } from '../hosts/mcp/interactive.ts';
-import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
+import { HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
 import { parseSessionBinding } from '../kernel/session/binding.ts';
 import { resolveProjectContext } from '../kernel/project/context.ts';
 import { normalizeProjectRoot } from '../kernel/project/context.ts';
@@ -69,38 +69,20 @@ export async function roleServe(): Promise<number> {
 }
 
 /**
- * Serve the flagged host-pull execution surface over MCP stdio: an ambient host
- * (Bob, goose, nanobot) claims a ready task and submits a draft for it on its
- * own capacity. Off unless a deployment set the flag, refusing plainly when it
- * did not — a prototype behind a gate is not reachable by accident. It loads the
- * capability secret to mint task-scoped tokens, exactly as role-serve does and
- * unlike the presence projection, which holds no secret and is left untouched.
+ * Serve the flagged host-pull execution surface over MCP stdio.
+ *
+ * Clean-slate: permanently refused. Interactive claim/submit lives on
+ * `construct serve` (semantic next_work / submit_work) after `construct init`.
+ * The module remains until Phase G deletes it; this verb must not resurrect it.
  */
 export async function hostPullServe(): Promise<number> {
-  if (!hostPullEnabled(process.env)) {
-    process.stderr.write(
-      `host-pull-serve: the host-pull execution prototype is off. Set ${HOST_PULL_FLAG_ENV}=1 to enable it.\n`,
-    );
-    return 2;
-  }
-  const secret = loadSecret(secretFile());
-  if (secret === null) {
-    process.stderr.write(
-      'host-pull-serve: no capability secret exists yet — it is established the first time "construct work" dispatches.\n',
-    );
-    return 1;
-  }
-  const store = openStore(resolveStoreLocation(process.cwd(), process.env).path);
-  try {
-    await serveHostPull(
-      { store, secret, clock: now, serverVersion: packageVersion() },
-      process.stdin,
-      process.stdout,
-    );
-  } finally {
-    store.close();
-  }
-  return 0;
+  process.stderr.write(
+    'host-pull-serve: removed from the product path. ' +
+      'Initialize the project (`construct init`) and use construct serve ' +
+      '--client=… --project=… tools next_work / submit_work.\n' +
+      `(The ${HOST_PULL_FLAG_ENV} flag no longer enables this verb.)\n`,
+  );
+  return 2;
 }
 
 /**

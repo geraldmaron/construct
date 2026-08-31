@@ -17,6 +17,7 @@ import {
   type InteractiveSession,
 } from '../../kernel/services/interactive-run.ts';
 import { createDecisionService } from '../../kernel/services/decision.ts';
+import type { DecisionKind } from '../../kernel/state/decisions.ts';
 import type { LeasedTask } from '../../kernel/state/tasks.ts';
 import { StaleLeaseError } from '../../kernel/state/tasks.ts';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../../kernel/state/format.ts';
@@ -111,8 +112,41 @@ export const INTERACTIVE_TOOLS = [
   },
   {
     name: 'list_inbox',
-    description: 'Open decisions waiting on the user for this project.',
+    description:
+      'Open decisions waiting on the user for this project. Show these; do not resolve them yourself.',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'raise_decision',
+    description:
+      'Put a typed decision in the project inbox for the user. Kinds: requires_decision, ' +
+      'requires_action_approval, requires_trust, blocked.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        kind: {
+          type: 'string',
+          description: 'requires_decision | requires_action_approval | requires_trust | blocked',
+        },
+        question: { type: 'string', description: 'What the user must decide, in plain language.' },
+        run: { type: 'string', description: 'Optional run id this decision belongs to.' },
+      },
+      required: ['kind', 'question'],
+    },
+  },
+  {
+    name: 'decide',
+    description:
+      "Record the user's resolution of an inbox decision, in the user's own words. " +
+      'Only relay a call the user explicitly made.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Decision id from list_inbox.' },
+        resolution: { type: 'string', description: "The user's call, in the user's words." },
+      },
+      required: ['id', 'resolution'],
+    },
   },
 ] as const;
 
@@ -280,6 +314,57 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
             run: d.runId,
             raisedAt: d.raisedAt,
           })),
+        };
+      }
+      case 'raise_decision': {
+        const kindRaw = typeof args.kind === 'string' ? args.kind.trim() : '';
+        const kinds = new Set<DecisionKind>([
+          'requires_decision',
+          'requires_action_approval',
+          'requires_trust',
+          'blocked',
+        ]);
+        if (!kinds.has(kindRaw as DecisionKind)) {
+          throw new RangeError(
+            'raise_decision kind must be requires_decision | requires_action_approval | requires_trust | blocked',
+          );
+        }
+        const question = typeof args.question === 'string' ? args.question.trim() : '';
+        if (!question) throw new RangeError('raise_decision requires a non-empty question');
+        const at = core.clock();
+        const id = `dec-${at.replace(/[-:.TZ]/g, '')}-${randomUUID().slice(0, 8)}`;
+        const runId = typeof args.run === 'string' && args.run.trim() ? args.run.trim() : undefined;
+        const raised = decisions.raise({
+          id,
+          kind: kindRaw as DecisionKind,
+          question,
+          at,
+          ...(runId ? { runId } : {}),
+        });
+        return {
+          id: raised.id,
+          kind: raised.kind,
+          question: raised.question,
+          run: raised.runId,
+          state: raised.state,
+        };
+      }
+      case 'decide': {
+        const id = typeof args.id === 'string' ? args.id.trim() : '';
+        if (!id) throw new RangeError('decide requires id');
+        const resolution = typeof args.resolution === 'string' ? args.resolution.trim() : '';
+        if (!resolution) throw new RangeError('decide requires a non-empty resolution');
+        const resolved = decisions.resolve({
+          id,
+          resolution,
+          resolvedBy: `session:${core.session.client}`,
+          at: core.clock(),
+        });
+        return {
+          decided: resolved.id,
+          resolution: resolved.resolution,
+          state: resolved.state,
+          resolvedBy: resolved.resolvedBy,
         };
       }
       default:

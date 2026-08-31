@@ -259,14 +259,14 @@ test('with the flag off, the presence projection is untouched — it carries no 
   assert.equal(hostPullEnabled({ [HOST_PULL_FLAG_ENV]: '1' }), true);
 });
 
-test('the CLI verb refuses to serve when the flag is off', async () => {
+test('the CLI verb refuses permanently (clean-slate; flag cannot revive it)', async () => {
   const s = sterile();
   try {
     const code = await new Promise<number>((resolve) => {
       const child = spawn(process.execPath, [BIN, 'host-pull-serve'], {
         env: {
           ...process.env,
-          [HOST_PULL_FLAG_ENV]: '',
+          [HOST_PULL_FLAG_ENV]: '1',
           XDG_DATA_HOME: s.paths.dataDir,
         },
         stdio: ['ignore', 'ignore', 'pipe'],
@@ -274,11 +274,12 @@ test('the CLI verb refuses to serve when the flag is off', async () => {
       let err = '';
       child.stderr.on('data', (d) => { err += String(d); });
       child.on('close', (c) => {
-        assert.match(err, /host-pull execution prototype is off/);
+        assert.match(err, /removed from the product path/);
+        assert.match(err, /next_work/);
         resolve(c ?? -1);
       });
     });
-    assert.equal(code, 2, 'refusing the disabled prototype exits 2');
+    assert.equal(code, 2, 'refusing the retired prototype exits 2');
   } finally {
     s.cleanup();
   }
