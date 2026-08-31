@@ -92,15 +92,19 @@ wiring, not something either app's policy commits:
       "command": "node",
       "args": [
         "/path/to/your/construct/checkout/bin/construct.mjs",
-        "serve"
+        "serve",
+        "--client=cursor",
+        "--project=/path/to/your/target/repo"
       ]
     }
   }
 }
 ```
 
-`construct serve` is the projection: presence inside whatever MCP host
-reads this file. Per `docs/first-run.md`, it can read the catalog, record
+`construct serve --client=… --project=…` is the projection with structural
+session binding: presence inside whatever MCP host reads this file, keyed to
+that client and project root. Prefer `construct wire` (or `construct init`)
+inside the host so those flags are written for you. Per `docs/first-run.md`, it can read the catalog, record
 an outcome, dispatch work through `claim_task` / `submit_work` once a
 capability secret exists (product `serve` creates one), read the work log
 and where a run's tasks stand, show the inbox and the questions roles have

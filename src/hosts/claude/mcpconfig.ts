@@ -27,6 +27,7 @@ import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildServeEntry } from '../serve-launch.ts';
 
 /**
  * The MCP server name. Tools reach the model as `mcp__<server>__<tool>`, so
@@ -150,18 +151,29 @@ export interface ProjectServeLaunch {
   /** Executable that starts `construct serve`. Defaults to this Node binary. */
   readonly command?: string;
   readonly args?: readonly string[];
+  readonly client?: string;
+  readonly projectRoot?: string;
 }
 
-/** The dev-checkout `construct serve` launcher; a packaged install resolves the same relative path inside its own tree. */
-const DEFAULT_SERVE_ARGS: readonly string[] = [
+/** The entry `construct wire` / HostIntegrationAdapter places at mcpServers["construct-mcp"]. */
+export function buildProjectMcpServerEntry(
+  launch: ProjectServeLaunch = {},
+  projectRoot: string = process.cwd(),
+): Record<string, unknown> {
+  const client = launch.client ?? 'claude-code';
+  const root = launch.projectRoot ?? projectRoot;
+  if (launch.args) {
+    return {
+      command: launch.command ?? process.execPath,
+      args: [...launch.args],
+    };
+  }
+  return buildServeEntry({ client, projectRoot: root }, { command: launch.command });
+}
+
+/** @deprecated Prefer buildProjectMcpServerEntry with projectRoot. */
+export const DEFAULT_SERVE_ARGS: readonly string[] = [
   fileURLToPath(new URL('../../../bin/construct.mjs', import.meta.url)),
   'serve',
 ];
 
-/** The entry `construct wire` places at `mcpServers["construct-mcp"]`. */
-export function buildProjectMcpServerEntry(launch: ProjectServeLaunch = {}): Record<string, unknown> {
-  return {
-    command: launch.command ?? process.execPath,
-    args: [...(launch.args ?? DEFAULT_SERVE_ARGS)],
-  };
-}

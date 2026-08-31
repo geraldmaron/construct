@@ -1,10 +1,8 @@
 /**
- * cli/serve.ts — the two stdio servers, neither of which a person types.
+ * cli/serve.ts — MCP stdio servers launched by host configuration.
  *
- * An MCP configuration launches them: `serve` for the spine's projection,
- * `role-serve` for one dispatched role's write surface, with the role
- * environment the dispatcher set. They are plumbing, so they are not in USAGE,
- * and a misconfiguration has to read as one plain line rather than as a stack.
+ * `serve --client=… --project=…` binds interactive session identity structurally.
+ * Missing client still remains interactive with client=unknown — never headless.
  */
 
 import { openStore } from '../kernel/store/open.ts';
@@ -12,6 +10,9 @@ import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfil
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
 import { serveProjection } from '../hosts/mcp/projection.ts';
 import { serveHostPull, hostPullEnabled, HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
+import { parseSessionBinding } from '../kernel/session/binding.ts';
+import { resolveProjectContext } from '../kernel/project/context.ts';
+import { normalizeProjectRoot } from '../kernel/project/context.ts';
 import { serveRole } from './roleserve.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import { now, packageVersion, secretFile, withStoreAsync } from './runtime.ts';
@@ -97,19 +98,34 @@ export async function hostPullServe(): Promise<number> {
 }
 
 /**
- * Serve the spine over MCP stdio: presence plus in-session dispatch. An MCP
- * configuration launches this (`{"command": "construct", "args": ["serve"]}`).
- * Host-pull tools (claim_task / submit_work) let the host that is already
- * running execute queued work on its own capacity. Completion stays
- * kernel-owned: a draft lands, a verdict promotes, no tool here marks work
- * final. The secret is created on first serve if needed, the same way `work`
- * establishes it before a spawned dispatch.
+ * Serve the spine over MCP stdio with structural session binding.
+ *
+ * Prefer `--client` / `--project` from the host MCP launch config over ambient
+ * env detection for interactive routing identity.
  */
-export async function serve(): Promise<number> {
+export async function serve(argv: string[] = []): Promise<number> {
+  const binding = parseSessionBinding(argv, process.cwd());
+  const projectRoot =
+    binding.projectRoot !== null ? normalizeProjectRoot(binding.projectRoot) : process.cwd();
+  const ctx = resolveProjectContext({
+    hostProjectRoot: binding.projectSource === 'flag' ? projectRoot : undefined,
+    cwd: process.cwd(),
+    allowCwdFallback: true,
+  });
+
   return withStoreAsync(async (store) => {
     const secret = loadOrCreateSecret(secretFile());
     await serveProjection(
-      { store, clock: now, serverVersion: packageVersion(), secret },
+      {
+        store,
+        clock: now,
+        serverVersion: packageVersion(),
+        secret,
+        session: {
+          ...binding,
+          projectRoot: ctx.root,
+        },
+      },
       process.stdin,
       process.stdout,
     );

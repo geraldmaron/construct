@@ -35,3 +35,6 @@ __probe__/
 
 # Local MCP wiring written by `construct wire`; never committed
 .mcp.json
+
+# Ephemeral test fixtures created inside the workspace (sandbox-safe)
+.tmp-*/

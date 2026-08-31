@@ -9,7 +9,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { wire } from '../../src/cli/wire.ts';
 
@@ -20,7 +19,9 @@ interface Capture {
 }
 
 function withRepo<T>(fn: (cwd: string) => T): T {
-  const cwd = mkdtempSync(join(tmpdir(), 'construct-wire-'));
+  // Keep fixtures inside the workspace: some environments refuse creating
+  // `.cursor/` under the system tmpdir.
+  const cwd = mkdtempSync(join(process.cwd(), '.tmp-wire-'));
   try {
     return fn(cwd);
   } finally {
@@ -76,7 +77,9 @@ test('claude: wire --yes writes .mcp.json with the construct-mcp entry', () => {
     assert.ok(entry, 'the server is registered under the shared project id');
     assert.match(entry.command, /node/);
     assert.ok(entry.args.some((a) => a.endsWith('bin/construct.mjs')), 'points at this binary');
-    assert.deepEqual(entry.args.slice(-1), ['serve'], 'the projection, never dispatch');
+    assert.ok(entry.args.includes('serve'), 'the projection, never dispatch');
+    assert.ok(entry.args.includes('--client=claude-code'), 'session-bound client');
+    assert.ok(entry.args.some((a) => a.startsWith('--project=')), 'session-bound project');
   });
 });
 
@@ -93,7 +96,9 @@ test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => 
     };
     const entry = config.mcpServers['construct-mcp'];
     assert.ok(entry);
-    assert.deepEqual(entry.args.slice(-1), ['serve']);
+    assert.ok(entry.args.includes('serve'));
+    assert.ok(entry.args.includes('--client=cursor'));
+    assert.ok(entry.args.some((a) => a.startsWith('--project=')));
   });
 });
 
@@ -180,7 +185,7 @@ test('a malformed existing .mcp.json is refused rather than clobbered', () => {
 
 test('construct wire is reachable through main() and listed in help', async () => {
   const { main } = await import('../../src/cli/index.ts');
-  const cwd = mkdtempSync(join(tmpdir(), 'construct-wire-main-'));
+  const cwd = mkdtempSync(join(process.cwd(), '.tmp-wire-main-'));
   const previousCwd = process.cwd();
   const previousMarker = process.env.CLAUDECODE;
   process.chdir(cwd);
