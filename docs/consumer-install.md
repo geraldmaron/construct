@@ -1,13 +1,13 @@
 # Installing Construct into another repo
 
-`docs/first-run.md` is first run: talk in the host you already have. This
-page is a different case: you already have a working Construct checkout
-somewhere on the machine, and you want a *different* repo — an app you're
-building, not Construct itself — to have Construct present inside its agent
-hosts. Every command below was run from inside two real app repos before
-this file was published, verified with `construct doctor` run from inside
-each. If a step behaves differently for you, that's the most useful thing
-you can report back, same as first-run.md.
+`docs/first-run.md` is first run: `construct init`, then talk in the host you
+already have. This page is a different case: you already have a working
+Construct checkout somewhere on the machine, and you want a *different* repo —
+an app you're building, not Construct itself — to have Construct present
+inside its agent hosts. Every command below was run from inside two real app
+repos before this file was published, verified with `construct doctor` run
+from inside each. If a step behaves differently for you, that's the most
+useful thing you can report back, same as first-run.md.
 
 Nothing here builds or publishes Construct. It assumes a checkout already
 exists and already passes its own gate.
@@ -18,8 +18,10 @@ Less than you'd expect. Construct's state — the sqlite store, run history,
 work log — resolves under your home directory
 (`~/.local/share/construct`, `~/.local/state/construct`, XDG-overridable) by
 default, never inside the target repo unless you deliberately ask for it. The
-thing the target repo always gains is one MCP entry telling its agent host
-where to find the `construct` binary.
+thing the target repo always gains is project-local format-v1 state from
+`construct init`, plus one MCP entry telling its agent host where to find the
+`construct` binary (written by init for supported clients, or by hand as
+fallback).
 
 A repo may also carry one optional file this build does read:
 `.construct/settings.json`, a project-scoped statement of *preferences* — which
@@ -52,7 +54,7 @@ that can drift from what the checkout actually contains:
 node /path/to/your/construct/checkout/bin/construct.mjs doctor
 ```
 
-This is what the MCP wiring in Step 2 already uses, so reaching for it in
+This is what the MCP wiring already uses after init, so reaching for it in
 your own shell too keeps one pattern instead of two.
 
 **Global install (`construct` on PATH).** From the checkout:
@@ -61,11 +63,11 @@ your own shell too keeps one pattern instead of two.
 npm install -g .
 ```
 
-Convenient for typing `construct outcome …` directly, but it's a second
-copy of the binary that can go stale after the checkout moves —
-`docs/internal/host-interaction.md` records a real instance of PATH lagging behind a
-release on this machine. Re-run `npm install -g .` after any change you
-need reflected, or prefer direct invocation and skip the problem entirely.
+Convenient for typing `construct …` directly, but it's a second copy of the
+binary that can go stale after the checkout moves —
+`docs/internal/host-interaction.md` records a real instance of PATH lagging
+behind a release on this machine. Re-run `npm install -g .` after any change
+you need reflected, or prefer direct invocation and skip the problem entirely.
 
 **`npx` against the checkout path.** Works — verified against a real app
 repo — but it goes through npm's own resolution machinery on every call,
@@ -78,12 +80,31 @@ pnpm). Use it only if the other two aren't available:
 npx --yes /path/to/your/construct/checkout doctor
 ```
 
-## Step 2: Wire the MCP entry
+## Step 2: Initialize the project
 
-This is the part that actually changes something in the target repo. The
-pattern already deployed in both apps this recipe was verified against is
-one entry in `.cursor/mcp.json`, gitignored in both — this file is local
-wiring, not something either app's policy commits:
+From inside the target repo:
+
+```bash
+construct init --client=cursor   # or claude-code / vscode / opencode
+```
+
+`construct init` creates project-local format-v1 state, plants the operational
+`construct` skill into the host skills directory when one resolves, and
+reconciles session-bound MCP where an adapter exists. `construct serve`
+refuses without that state. Preview with `construct init --dry-run`.
+
+For Claude Code, Cursor, VS Code, and OpenCode, init writes the serve entry
+for you. Bob and Codex stay manual fallback — see Step 3. Per
+`docs/first-run.md`, after init you talk in the host: the session can start a
+run, claim work through `next_work` / `submit_work`, show the inbox, and relay
+a decision. Construct does not spawn a second agent to do that work.
+
+## Step 3: Manual serve (fallback only)
+
+When init cannot reconcile MCP (Bob, Codex, or an unsupported client), write
+the entry yourself. The pattern already deployed in both apps this recipe was
+verified against is one entry in `.cursor/mcp.json`, gitignored in both —
+this file is local wiring, not something either app's policy commits:
 
 ```json
 {
@@ -103,12 +124,8 @@ wiring, not something either app's policy commits:
 
 `construct serve --client=… --project=…` is the interactive MCP plane with
 structural session binding: presence inside whatever MCP host reads this file,
-keyed to that client and project root. Run `construct init` (optionally
-`--client=…`) so those flags and format-v1 state are written for you. Per
-`docs/first-run.md`, the session can start a run, claim work through
-`next_work` / `submit_work`, show the inbox, and relay a decision. Construct
-does not spawn a second agent to do that work. What stays off the socket is
-destructive or human-gated practice that belongs in the terminal.
+keyed to that client and project root. What stays off the socket is destructive
+or human-gated practice that belongs in the terminal.
 
 If `.cursor/mcp.json` doesn't exist yet in the target repo, create it with
 just this. If it exists with other servers already in it, add
@@ -118,17 +135,6 @@ For a host that isn't Cursor, `docs/cli-walkthrough.md`'s "other way in"
 section covers the same entry for Claude Code, Codex, and any host that
 reads a plain MCP config file — the `command`/`args` pair is identical;
 only where the host expects to find the file changes.
-
-## Step 3: Initialize the project
-
-```bash
-construct init --client=cursor   # or claude-code / vscode / opencode
-```
-
-`construct init` creates project-local format-v1 state and reconciles host MCP.
-`construct serve` refuses without it. `docs/first-run.md` is talk, then staff;
-the terminal commands live in `docs/cli-walkthrough.md`. This recipe stops at
-doctor because doctor is what proves the wiring, not the workspace.
 
 ## Step 4: Verify with doctor
 

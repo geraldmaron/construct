@@ -114,10 +114,14 @@ test('a free-text verb refuses a leading unknown flag but keeps its words', asyn
 test('construct help is task-grouped with first-run named up front', async () => {
   const result = await capture(['help']);
   assert.strictEqual(result.code, 0);
-  assert.match(result.out, /Start here: construct serve/, 'names first-run');
-  assert.match(result.out, /old host-namer rule/, 'does not sell host-namer as success');
+  assert.match(result.out, /Start here: construct init/, 'names first-run door');
+  assert.match(result.out, /operational construct skill/, 'names what init reconciles');
   assert.doesNotMatch(result.out, /staff shows up/i);
-  assert.match(result.out, /From a plain terminal: init → outcome → work → show → inbox/, 'names the terminal spine');
+  assert.match(
+    result.out,
+    /From a plain terminal: init → outcome \(--domains or --host\) → show → inbox/,
+    'names the terminal spine',
+  );
   for (const group of ['Starting work', 'Running it', 'Reading back', 'Outward changes', 'Legacy aliases']) {
     assert.ok(result.out.includes(group), `groups by "${group}"`);
   }

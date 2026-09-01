@@ -20,50 +20,40 @@ this page is not that paper.
 
 ## First run
 
-[docs/first-run.md](docs/first-run.md) is first run: talk in the host you
-already have; a run exists; a seat you did not name can show up from the ground.
-The terminal command list is
+[docs/first-run.md](docs/first-run.md) is first run: `construct init`, then
+talk in the host you already have. The terminal command list is
 [docs/cli-walkthrough.md](docs/cli-walkthrough.md). The short version, if you
 are already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob:
 
-Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
-Point the session at Construct. Construct is the brain: it may add seats
-the host or you did not name, from the words plus repos, directories, and
-sources it can actually see. Two surfaces only: dispatch through this
-session (`next_work` / `submit_work`) once a run exists, or an inbox call
-when the decision is yours. No phrase table. Construct will not spawn a
-second CLI.
-
-The shipped binary does not meet that bar. Talk still leaves an empty
-log, and staffing still needs this session to name concerns. The old first-run rule — the
-host infers; Construct does not classify, name, or route — is what an older
-surface did. It is not the product.
-
-```bash
-construct init
-construct serve --client=<host> --project=<root>
-```
-
-That is first run. `doctor` and the verb catalog live in
-`construct help` and [docs/cli-walkthrough.md](docs/cli-walkthrough.md).
-They are not beat two. The keyword map is not first-run; the walkthrough
-is the terminal reference.
-
-Install the alpha when you want the CLI and the method skills on the machine:
-
 ```bash
 npm install -g @geraldmaron/construct@alpha
+construct init
+# optional: construct init --client=cursor   # claude-code / vscode / opencode
 ```
+
+Talk there. Ordinary language, no catalog words, no CLI verb wall. Init
+creates format-v1 project state, plants the operational `construct` skill,
+and reconciles session-bound MCP where an adapter exists. Two surfaces only:
+dispatch through this session (`start_run`, then `next_work` /
+`submit_work`) once a run exists, or an inbox call when the decision is
+yours (`construct inbox decide`, or the host's MCP `decide` relay). No
+phrase table. Construct will not spawn a second CLI for that path.
+
+`doctor` and the verb catalog live in `construct help` and
+[docs/cli-walkthrough.md](docs/cli-walkthrough.md). They are not beat two.
+The keyword map is measurement history only — not first-run, not the
+product inferrer.
 
 Four execution adapters ship: OpenCode, Claude Code, the Codex CLI, and the
 Cursor CLI. Only OpenCode and Claude Code declare `outward-write`. Codex
 dispatches read-only and Cursor dispatches in plan mode, both probed, so
-`decide --apply` is an OpenCode-or-Claude command. IBM Bob is a talk-in-host
-target (ambient detection exists; skills can plant there) and is not an
-execution adapter. `construct init` creates project-local state and reconciles
-MCP for Claude Code, Cursor, VS Code (`--client=vscode`), and OpenCode
-(`--client=opencode`). Bob and Codex stay manual (`construct serve
---client=… --project=…`).
+carrying an approved change out with `construct decide --apply` is an
+OpenCode-or-Claude command. IBM Bob is a talk-in-host target (ambient
+detection exists; skills can plant there) and is not an execution adapter.
+`construct init` reconciles MCP for Claude Code, Cursor, VS Code
+(`--client=vscode`), and OpenCode (`--client=opencode`). Bob and Codex stay
+manual fallback (`construct serve --client=… --project=…`) — not the product
+door.
 
 Three limits are load-bearing rather than fine print. **Legal and compliance
 output is research, never advice.** **One model family is tuned** (Claude);
@@ -78,7 +68,8 @@ and seven method skills — `adversarial-review`, `context-mapping`,
 `decision-framing`, `intake`, `investigative-research`,
 `requirements-structuring`, and opt-in `written-voice` (not in
 `skills install --all`). `construct skills install <name> --host=<host>`
-plants one in the directory that host documents reading.
+plants one in the directory that host documents reading. The package export
+is `"."` only — there is no deep import path for kernel or hosts.
 
 ## Which seat it fills
 

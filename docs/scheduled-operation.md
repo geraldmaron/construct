@@ -31,7 +31,7 @@ construct doctor
 
 ## Ceiling and audit
 
-When you drive work through `construct work` (or a routine run that claims
-through a pin), `--ceiling` still bounds spend across recorded runs, inbox
-decisions still do not block the schedule you wired yourself, and
-`construct log --run <id>` remains the auditable record.
+When you drive work through headless `construct work claim --pin=…` (or a
+routine run that claims through a pin), inbox decisions still do not block
+the schedule you wired yourself, and `construct log --run <id>` remains the
+auditable record.

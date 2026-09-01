@@ -1,11 +1,10 @@
 /**
  * tests/cli/first-run.test.ts — cheap first-run checks that stay on ordinary CI.
  *
- * Locks the mechanism, not a phrase table. Published first-run is talk,
- * a run exists, and a seat nobody named can show up from the ground —
- * and the page must not claim the binary already does that. Keyword map
- * is not first-run. Empty staff after a named domain is a fail. First
- * output is not doctor or a verb wall.
+ * Locks the mechanism, not a phrase table. Published first-run is
+ * `construct init`, then talk in the host — session-bound MCP and the
+ * operational skill. Keyword map is not first-run. Empty staff after a
+ * named domain is a fail. First output is not doctor or a verb wall.
  *
  * Product path: construct init, then interactive MCP (next_work / submit_work).
  * claim_task and construct wire are not the product door.
@@ -128,43 +127,42 @@ async function staffViaDomains(
   }
 }
 
-test('first-run lead is talk, a run, and an unnamed seat — not host-namer success', () => {
+test('first-run lead is init then talk — not bare serve or a verb wall', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   const lead = firstHeadingLead(page);
   assert.match(lead, /Talk in the host you already have/);
-  assert.match(lead, /A run exists/);
-  assert.match(lead, /seat you did not\s+name/);
-  assert.match(lead, /from the ground/);
-  assert.match(lead, /does not meet that bar/);
-  assert.match(lead, /old first-run rule/);
-  assert.match(lead, /not the product/);
-  assert.doesNotMatch(lead, /You talk\. Staff shows up/);
-  assert.doesNotMatch(lead, /Staff shows up/);
+  assert.match(lead, /construct init/);
+  assert.match(lead, /A run starts/);
   assert.match(lead, /Two surfaces only/);
   assert.match(lead, /next_work/);
   assert.match(lead, /submit_work/);
+  assert.match(lead, /start_run/);
+  assert.doesNotMatch(lead, /You talk\. Staff shows up/);
+  assert.doesNotMatch(lead, /Staff shows up/);
   assert.doesNotMatch(lead, /\bclaim_task\b/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /host decides the path/);
   assert.match(lead, /investigative-research/);
   assert.match(lead, /decision-framing/);
   assert.match(lead, /intake/);
-  assert.match(lead, /construct init/);
   assert.doesNotMatch(page, /\bconstruct wire\b/);
   assert.doesNotMatch(page, /construct doctor/);
   assert.doesNotMatch(page, /Starting work/);
+  assert.doesNotMatch(page, /record_outcome/);
   assertNoPhraseTable(page, 'docs/first-run.md');
   const fence = firstShellFence(lead);
   assert.match(fence, /construct init/);
-  assert.match(fence, /construct serve/);
+  assert.doesNotMatch(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct doctor/);
   assert.doesNotMatch(fence, /\bconstruct wire\b/);
+  // Manual serve may appear as Bob/Codex fallback prose, not the product door.
+  assert.match(page, /fallback/);
 });
 
 test('first-run inbox is the only Construct-shaped surface', () => {
   const page = readFileSync(join(ROOT, 'docs/first-run.md'), 'utf8');
   assert.match(page, /only Construct-shaped surface is an inbox card/);
-  assert.match(page, /construct decide/);
+  assert.match(page, /construct inbox decide/);
   assert.doesNotMatch(page, /verdict, or log/);
   assert.doesNotMatch(page, /construct outcome/);
   assert.doesNotMatch(page, /construct work/);
@@ -184,42 +182,42 @@ test('user-facing docs do not claim construct serve cannot dispatch', () => {
   assert.doesNotMatch(serve, /\bclaim_task\b/);
 });
 
-test('README short version opens with init and serve, not a phrase table or verb wall', () => {
+test('README short version opens with init, not bare serve or a verb wall', () => {
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
   const from = readme.indexOf('docs/first-run.md');
   const until = readme.indexOf('## Which seat');
   assert.ok(from >= 0 && until > from);
   const short = readme.slice(from, until);
-  assert.match(short, /a run exists/);
-  assert.match(short, /seat you did not name/);
-  assert.match(short, /from the\s+ground/);
-  assert.match(short, /does not meet that bar/);
-  assert.match(short, /old first-run rule/);
-  assert.match(short, /not the product/);
-  assert.doesNotMatch(short, /Staff shows up/);
+  assert.match(short, /construct init/);
   assert.match(short, /Two surfaces only/);
   assert.match(short, /next_work/);
   assert.match(short, /submit_work/);
+  assert.match(short, /start_run/);
+  assert.doesNotMatch(short, /Staff shows up/);
   assert.doesNotMatch(short, /\bclaim_task\b/);
   assert.doesNotMatch(short, /verdict, or log/);
   assert.match(short, /They are not beat two/);
   assertNoPhraseTable(short, 'README short version');
   const fence = firstShellFence(short);
   assert.match(fence, /construct init/);
-  assert.match(fence, /construct serve/);
+  assert.doesNotMatch(fence, /construct serve/);
   assert.doesNotMatch(fence, /construct doctor/);
   assert.doesNotMatch(fence, /\bconstruct wire\b/);
   assert.doesNotMatch(short, /construct outcome/, 'keyword-map outcome is not on the first-run door');
 });
 
-test('walkthrough Poland sample is not the stale two-domain capture', () => {
+test('walkthrough Poland sample is named domains, not keyword fallthrough', () => {
   const page = readFileSync(join(ROOT, 'docs/cli-walkthrough.md'), 'utf8');
   assert.doesNotMatch(page, /run-20260805134446726/);
   assert.doesNotMatch(page, /implicated domains \(2\):/);
   assert.doesNotMatch(page, /queued 2 task\(s\)/);
   assert.doesNotMatch(page, /plan plan-run-\S+: 2 steps/);
+  assert.doesNotMatch(page, /signals: contractor/);
   assert.match(page, /implicated domains \(1\):/);
   assert.match(page, /queued 1 task\(s\)/);
+  assert.match(page, /reason: named by the user/);
+  assert.match(page, /exit 2/);
+  assert.match(page, /construct work claim --pin=/);
 });
 
 test('published install fences name the alpha tag', () => {
