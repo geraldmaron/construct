@@ -9,6 +9,11 @@
   reconcile, and docs say the adapter code exists but no shipped path
   constructs a transport yet; prefer host MCP / `--live=` until a recorded
   probe wires them.
+- **`shares telemetry` reaches privacy** on the device-posture/EDR outcome
+  pattern; compliance for that class stays a namer/embedding problem
+  (RESEARCH-DECISIONS §31).
+- **`source relate --as=supersedes` states the withhold**, and
+  `source relations` prints each edge's ground-assembly effect.
 
 ## 3.0.0-alpha.20 — 2026-09-01
 
