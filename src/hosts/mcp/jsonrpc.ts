@@ -3,7 +3,7 @@
  * stdio server in this project speaks.
  *
  * Extracted from the role write server rather than written twice: the role
- * surface (cli/roleserve.ts) and the spine projection (hosts/mcp/projection.ts)
+ * surface (cli/roleserve.ts) and the interactive MCP plane (hosts/mcp/interactive.ts)
  * are different trust boundaries with different tools, but the wire framing is
  * the same protocol law, and two copies of protocol law drift.
  *

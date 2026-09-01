@@ -33,7 +33,7 @@ const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.ur
  * Servers, not commands: they hold stdin open and would hang a probe. Their
  * surface is "no arguments", which is what they are recorded as.
  */
-const NEVER_PROBE = new Set(['serve', 'role-serve', 'host-pull-serve']);
+const NEVER_PROBE = new Set(['serve', 'role-serve']);
 
 /** A token no verb could mistake for one of its own subcommands. */
 const SENTINEL = '__construct_surface_probe__';

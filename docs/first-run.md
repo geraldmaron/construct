@@ -11,25 +11,27 @@ exists. Construct is the brain: it may add seats the host or you did
 not name.
 
 ```bash
-construct serve
+construct init
+construct serve --client=<host> --project=<root>
 ```
 
 The shipped binary does not meet that bar. Ordinary talk that leaves
-an empty work log is still a miss, and `record_outcome` still errors
-when namings are omitted. Do not expect staff to appear from talk
+an empty work log is still a miss, and `start_run` without concerns still
+leaves staffing to this session. Do not expect staff to appear from talk
 alone, and do not expect Construct to add dark-corner seats from
 ground it can see.
 
 The old first-run rule said the host infers and Construct does
 not classify, name, or route — omitted namings were an error on
-purpose. That is what the binary still does. It is not the product.
+purpose. That is what an older surface still did. It is not the product.
 
 Two surfaces only:
 
 1. Dispatch through this session. Once a run exists, this session
-   claims work through `claim_task` / `submit_work`. You never leave
-   the conversation to type a verb. Construct will not spawn a second
-   CLI. Empty staff after a host read is a miss, not a success.
+   claims work through `next_work` / `submit_work` on interactive MCP.
+   You never leave the conversation to type a verb. Construct will not
+   spawn a second CLI. Empty staff after a host read is a miss, not a
+   success.
 2. An inbox call, when the decision is actually yours.
 
 The keyword map is not first-run and is not the inferrer. The
@@ -62,17 +64,17 @@ you are already having.
 
 ## This session can dispatch
 
-The surface can dispatch work. When a secret is set, `claim_task` and
-`submit_work` are on the same socket: the session that just named the
-outcome is the session that pulls the next task. Product `serve` creates
-that secret. Construct does not spawn a second agent to do the work.
+The surface can dispatch work. After `construct init`, interactive MCP
+exposes `next_work` and `submit_work` on the same socket: the session
+that just started the run is the session that pulls the next task.
+Construct does not spawn a second agent to do the work.
 
 What stays off the socket is `promote`, `review`, `compose`, a CLI `ask`,
 and erasure — human-gated or destructive.
 
-On the shipped `construct serve`, omitting namings is still an error.
-That is the old host-namer rule, not first-run success. An empty
-namings array is a real answer that this implicates nothing.
+On interactive `construct serve`, empty concerns on `start_run` means
+none — that is a real answer that this implicates nothing, not a fall
+through to the keyword map.
 
 The keyword map is the zero-model fallback for a plain terminal with no
 host wrapping the command — it is not first-run and it is not the

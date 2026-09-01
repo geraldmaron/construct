@@ -37,9 +37,7 @@
     "skills"
   ],
   "exports": {
-    ".": "./dist/kernel/index.js",
-    "./kernel/*": "./dist/kernel/*",
-    "./hosts/*": "./dist/hosts/*"
+    ".": "./dist/kernel/index.js"
   },
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",

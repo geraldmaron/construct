@@ -32,7 +32,7 @@ const FILES = [
   'tests/cli/staff.test.ts',
   'tests/cli/work-dispatch-scope.test.ts',
   'tests/cli/help-and-flags.test.ts',
-  'tests/hosts/mcp/projection.test.ts',
+  'tests/hosts/mcp/interactive.test.ts',
   'tests/kernel/staffing/profile.test.ts',
 ];
 

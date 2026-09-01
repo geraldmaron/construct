@@ -30,20 +30,21 @@ Talk there. Ordinary language, no catalog words, no `--host`, no CLI verb.
 Point the session at Construct. Construct is the brain: it may add seats
 the host or you did not name, from the words plus repos, directories, and
 sources it can actually see. Two surfaces only: dispatch through this
-session (`claim_task` / `submit_work`) once a run exists, or an inbox call
+session (`next_work` / `submit_work`) once a run exists, or an inbox call
 when the decision is yours. No phrase table. Construct will not spawn a
 second CLI.
 
 The shipped binary does not meet that bar. Talk still leaves an empty
-log, and `record_outcome` still requires namings. The old first-run rule — the
-host infers; Construct does not classify, name, or route — is what
-ships. It is not the product.
+log, and staffing still needs this session to name concerns. The old first-run rule — the
+host infers; Construct does not classify, name, or route — is what an older
+surface did. It is not the product.
 
 ```bash
-construct serve
+construct init
+construct serve --client=<host> --project=<root>
 ```
 
-That is first run. `init`, `doctor`, and the verb catalog live in
+That is first run. `doctor` and the verb catalog live in
 `construct help` and [docs/cli-walkthrough.md](docs/cli-walkthrough.md).
 They are not beat two. The keyword map is not first-run; the walkthrough
 is the terminal reference.
@@ -62,7 +63,7 @@ target (ambient detection exists; skills can plant there) and is not an
 execution adapter. `construct init` creates project-local state and reconciles
 MCP for Claude Code, Cursor, VS Code (`--client=vscode`), and OpenCode
 (`--client=opencode`). Bob and Codex stay manual (`construct serve
---client=… --project=…`). `construct wire` is a legacy ambient-only alias.
+--client=… --project=…`).
 
 Three limits are load-bearing rather than fine print. **Legal and compliance
 output is research, never advice.** **One model family is tuned** (Claude);

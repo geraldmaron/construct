@@ -16,7 +16,7 @@ import { StoreUnavailableError } from '../kernel/store/open.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { packageVersion } from './runtime.ts';
 import { backup, cleanup, doctor } from './maintenance.ts';
-import { hostPullServe, roleServe, serve } from './serve.ts';
+import { roleServe, serve } from './serve.ts';
 import { skills } from './skills.ts';
 import { outcome } from './outcome.ts';
 import { ask } from './ask.ts';
@@ -42,7 +42,6 @@ import { resolveScheduleContext, schedule } from './schedule.ts';
 import { staff } from './staff.ts';
 import { routine } from './routine.ts';
 import { completions } from './completions.ts';
-import { wire } from './wire.ts';
 import { init } from './init.ts';
 import { reset } from './reset.ts';
 import { daemon, daemonLiveHere } from './daemon.ts';
@@ -56,7 +55,7 @@ import { firstUnknownFlag, wantsHelp } from './flags.ts';
 export { HOST_NAMES } from './runtime.ts';
 export type { HostName } from './runtime.ts';
 export { backup, cleanup, doctor, parseCleanupArgs } from './maintenance.ts';
-export { hostPullServe, roleServe, serve } from './serve.ts';
+export { roleServe, serve } from './serve.ts';
 export { skills } from './skills.ts';
 export { outcome, parseOutcomeArgs, sessionOutcomeHandoff } from './outcome.ts';
 export type { OutcomeArgs } from './outcome.ts';
@@ -88,7 +87,6 @@ export { resolveScheduleContext, schedule, scheduleStatusLine } from './schedule
 export { staff } from './staff.ts';
 export { routine } from './routine.ts';
 export { completions } from './completions.ts';
-export { wire } from './wire.ts';
 export { init } from './init.ts';
 export { reset } from './reset.ts';
 export { daemon } from './daemon.ts';
@@ -105,7 +103,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'routine', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
-  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'reset', 'doctor', 'backup',
+  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'init', 'reset', 'doctor', 'backup',
   'cleanup', 'completions', 'daemon', 'status', 'version', 'help',
 ]);
 
@@ -113,7 +111,7 @@ export const VERBS: readonly string[] = Object.freeze([
  * Dispatched to by the coordinator, never typed by a person, so it stays out
  * of the usage line while remaining a real verb the docs may name.
  */
-export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve', 'host-pull-serve']);
+export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve']);
 
 /** The long flags a verb accepts, plus its one-line gloss — the material both
  * the grouped help and a single verb's `--help` are rendered from. The host
@@ -138,7 +136,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   ask: { gloss: 'ask the staff one question and read the answer here', flags: [...HOST_FLAGS, 'workspace', 'ceiling'] },
   work: {
     gloss:
-      'headless claim/submit/status on init’d projects (requires --pin); legacy spawn path otherwise',
+      'headless claim/submit/status on init’d projects (requires --pin); legacy host dispatch otherwise',
     flags: [
       ...HOST_FLAGS,
       'run',
@@ -212,7 +210,6 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   decide: { gloss: 'legacy decide verb — prefer construct inbox decide', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
-  wire: { gloss: 'legacy alias for ambient MCP write — prefer construct init', flags: ['yes'] },
   init: {
     gloss: 'initialize project-local Construct config, state, and host MCP',
     flags: ['dry-run', 'client'],
@@ -257,7 +254,6 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
       'watch',
       'schedule',
       'daemon',
-      'wire',
     ],
   ],
 ]);
@@ -458,16 +454,12 @@ async function run(argv: string[]): Promise<number> {
       return lessons(argv.slice(1));
     case 'serve':
       return serve(argv.slice(1));
-    case 'wire':
-      return await wire(argv.slice(1));
     case 'init':
       return await init(argv.slice(1));
     case 'reset':
       return reset(argv.slice(1));
     case 'role-serve':
       return roleServe();
-    case 'host-pull-serve':
-      return hostPullServe();
     case 'revoke':
       return revoke(argv.slice(1));
     case 'doctor':
