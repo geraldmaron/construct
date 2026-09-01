@@ -28,7 +28,6 @@ import { status } from './status.ts';
 import { lessons } from './lessons.ts';
 import { decide } from './decide.ts';
 import { corpus, verdict } from './verdict.ts';
-import { watch } from './watch.ts';
 import { reconcile } from './reconcile.ts';
 import { revoke, waive } from './controls.ts';
 import { source } from './source.ts';
@@ -37,14 +36,11 @@ import { compose } from './compose.ts';
 import { plan } from './plan.ts';
 import { audit, propose } from './propose.ts';
 import { consent, mode, settings, trust } from './settings.ts';
-import { standing } from './standing.ts';
-import { resolveScheduleContext, schedule } from './schedule.ts';
 import { staff } from './staff.ts';
 import { routine } from './routine.ts';
 import { completions } from './completions.ts';
 import { init } from './init.ts';
 import { reset } from './reset.ts';
-import { daemon, daemonLiveHere } from './daemon.ts';
 import { firstUnknownFlag, wantsHelp } from './flags.ts';
 
 /**
@@ -65,15 +61,14 @@ export { DEFAULT_MAX_NOTES, notes, parseNotesArgs } from './notes.ts';
 export type { NotesArgs } from './notes.ts';
 export { parseReviewArgs, review } from './review.ts';
 export type { ReviewArgs } from './review.ts';
-export { DEFAULT_SPEND_CEILING, parseWorkArgs, work } from './work.ts';
-export type { WorkArgs } from './work.ts';
+export { work } from './work.ts';
+export { DEFAULT_SPEND_CEILING } from './spend.ts';
 export { inbox, log, reasonClause, show } from './show.ts';
 export { status } from './status.ts';
 export { lessons } from './lessons.ts';
 export { decide } from './decide.ts';
 export { corpus, corpusExport, parseVerdictArgs, verdict } from './verdict.ts';
 export type { VerdictArgs } from './verdict.ts';
-export { watch } from './watch.ts';
 export { reconcile } from './reconcile.ts';
 export { revoke, waive } from './controls.ts';
 export { source } from './source.ts';
@@ -82,14 +77,11 @@ export { compose } from './compose.ts';
 export { plan } from './plan.ts';
 export { audit, propose } from './propose.ts';
 export { consent, mode, settings, trust } from './settings.ts';
-export { standing } from './standing.ts';
-export { resolveScheduleContext, schedule, scheduleStatusLine } from './schedule.ts';
 export { staff } from './staff.ts';
 export { routine } from './routine.ts';
 export { completions } from './completions.ts';
 export { init } from './init.ts';
 export { reset } from './reset.ts';
-export { daemon } from './daemon.ts';
 
 /**
  * Every verb a user may type, and the one source that answers the question.
@@ -101,10 +93,10 @@ export { daemon } from './daemon.ts';
  */
 export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
-  'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
-  'settings', 'trust', 'staff', 'routine', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
+  'source', 'propose', 'audit', 'record', 'mode', 'consent',
+  'settings', 'trust', 'staff', 'routine', 'skills', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'init', 'reset', 'doctor', 'backup',
-  'completions', 'daemon', 'status', 'version', 'help',
+  'completions', 'status', 'version', 'help',
 ]);
 
 /**
@@ -171,11 +163,6 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
     ],
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
-  standing: {
-    gloss: 'legacy scheduled outcomes — prefer construct routine',
-    flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace', 'ceiling', 'concurrency', 'lease-minutes'],
-  },
-  schedule: { gloss: 'legacy platform timer — prefer construct routine', flags: ['every', 'at', 'always-on', 'dry-run'] },
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
   consent: { gloss: 'legacy consent verb — prefer construct inbox', flags: ['workspace', 'set'] },
@@ -190,10 +177,6 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
     flags: ['id', 'output', 'pin', 'skill'],
   },
   skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
-  watch: {
-    gloss: 'legacy ground watch — prefer construct routine',
-    flags: [...HOST_FLAGS, 'all', 'due', 'every', 'source', 'workspace'],
-  },
   reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
   waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
   revoke: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'reason'] },
@@ -218,7 +201,6 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   doctor: { gloss: 'report host presence, integration matrix, and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
-  daemon: { gloss: 'legacy resident sweeper — prefer construct routine', flags: ['every', 'foreground', 'idle-exit'] },
   version: { gloss: 'print the version and tuning stamp', flags: [] },
   help: { gloss: 'show this help', flags: [] },
 });
@@ -241,19 +223,8 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Presence and hosts', ['serve', 'init', 'reset']],
   ['Maintenance', ['doctor', 'backup', 'skills', 'completions', 'version', 'help']],
   [
-    'Legacy aliases (prefer inbox / routine / init)',
-    [
-      'decide',
-      'waive',
-      'revoke',
-      'verdict',
-      'consent',
-      'trust',
-      'standing',
-      'watch',
-      'schedule',
-      'daemon',
-    ],
+    'Legacy aliases (prefer inbox / init)',
+    ['decide', 'waive', 'revoke', 'verdict', 'consent', 'trust'],
   ],
 ]);
 
@@ -264,7 +235,7 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
  * verbs are here because a leading `--flag` on them is a per-verb judgment
  * (is it a flag, or part of the sentence?) that belongs in the verb.
  */
-const SELF_HANDLED_HELP: ReadonlySet<string> = new Set(['outcome', 'ask', 'notes', 'completions', 'reconcile', 'watch']);
+const SELF_HANDLED_HELP: ReadonlySet<string> = new Set(['outcome', 'ask', 'notes', 'completions', 'reconcile']);
 
 /**
  * Verbs the dispatcher does not fail-closed on for unknown flags: the free-text
@@ -309,7 +280,7 @@ export function groupedHelp(): string {
     '',
     'From a plain terminal: init → outcome → work → show → inbox',
     '  StaffMember owns mission; Routine owns recurring work; Inbox owns judgment.',
-    '  Legacy verbs (decide/waive/standing/…) still run — prefer the new nouns.',
+    '  Legacy verbs (decide/waive/…) still run — prefer the new nouns.',
     '',
   ];
   for (const [title, verbs] of HELP_GROUPS) {
@@ -403,8 +374,6 @@ async function run(argv: string[]): Promise<number> {
       return ask(argv.slice(1));
     case 'work':
       return work(argv.slice(1));
-    case 'watch':
-      return watch(argv.slice(1));
     case 'reconcile':
       return reconcile(argv.slice(1));
     case 'waive':
@@ -427,10 +396,6 @@ async function run(argv: string[]): Promise<number> {
       return propose(argv.slice(1));
     case 'audit':
       return audit(argv.slice(1));
-    case 'standing':
-      return standing(argv.slice(1));
-    case 'schedule':
-      return schedule(argv.slice(1), resolveScheduleContext(), await daemonLiveHere());
     case 'mode':
       return mode(argv.slice(1));
     case 'consent':
@@ -467,8 +432,6 @@ async function run(argv: string[]): Promise<number> {
       return backup(argv.slice(1));
     case 'completions':
       return completions(argv.slice(1));
-    case 'daemon':
-      return daemon(argv.slice(1));
     case 'version':
     case '--version':
     case '-v':

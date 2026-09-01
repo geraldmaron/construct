@@ -85,11 +85,16 @@ test('an unknown flag on a verb that takes no free text exits non-zero', async (
     ['log', '--invalid-flag'],
     ['show', '--bogus'],
     ['plan', 'run-x', '--nope'],
-    ['work', '--drt-run'],
   ]) {
     const result = await capture(argv);
     assert.notStrictEqual(result.code, 0, `${argv.join(' ')} fails closed`);
     assert.match(result.err, /unknown flag/, `${argv.join(' ')} says what was wrong`);
+  }
+  // work without init refuses before flag parse; with init, unknown flags fail closed.
+  {
+    const result = await capture(['work', '--drt-run']);
+    assert.notStrictEqual(result.code, 0);
+    assert.match(result.err, /unknown flag|requires an initialized project/);
   }
 });
 
@@ -98,10 +103,11 @@ test('a free-text verb refuses a leading unknown flag but keeps its words', asyn
   assert.strictEqual(bad.code, 2, 'a leading unknown flag is refused');
   assert.match(bad.err, /unknown flag --bogus/);
 
-  // Plain words are the outcome, not flags: this records a run rather than
-  // refusing, which is the whole point of a free-text verb.
+  // Plain words are still the outcome text — not unknown flags — but product
+  // staffing now requires --domains or --host outside a host session.
   const ok = await capture(['outcome', 'ship the thing']);
-  assert.notStrictEqual(ok.code, 2, 'arbitrary words are accepted');
+  assert.strictEqual(ok.code, 2, 'unstaffed terminal outcome needs --domains or --host');
+  assert.match(ok.err, /--domains|--host/);
   assert.doesNotMatch(ok.err, /unknown flag/);
 });
 
@@ -132,13 +138,4 @@ test('the top-level help flag spellings all reach the grouped surface', async ()
     assert.strictEqual(result.code, 0, `${argv.join(' ') || '(no args)'} exits 0`);
     assert.match(result.out, /Start here:/, 'shows the grouped help');
   }
-});
-
-test('standing --due accepts the work flags its usage names', async () => {
-  // The usage line and the schedule doc both carry --ceiling. The dispatcher
-  // used to reject it as unknown because the help table omitted the flags
-  // standingDue passes through to work.
-  const result = await capture(['standing', '--due', '--ceiling=5']);
-  assert.notStrictEqual(result.code, 2, 'the flag is known');
-  assert.doesNotMatch(result.err, /unknown flag/);
 });

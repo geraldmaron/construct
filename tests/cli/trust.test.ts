@@ -534,7 +534,7 @@ test('outcome in the shared default with nothing binding it warns before it reco
   const r = repo();
   const xdg = mkdtempSync(join(tmpdir(), 'construct-trust-xdg-'));
   try {
-    const recorded = await runCli(['outcome', 'tidy the documentation'], r.cwd, xdg);
+    const recorded = await runCli(['outcome', '--domains=product-scoping', 'tidy the documentation'], r.cwd, xdg);
     assert.equal(recorded.code, 0);
     assert.match(recorded.err, /shared 'default' workspace, visible to every repo/);
     assert.match(recorded.out, /^run /m);
@@ -550,7 +550,7 @@ test('outcome under a ratified binding plans on that workspace and does not warn
   try {
     r.writeFile('{"workspace":"acme"}');
     assert.equal((await runCli(['trust', '--ratify'], r.cwd, xdg)).code, 0);
-    const recorded = await runCli(['outcome', 'tidy the documentation'], r.cwd, xdg);
+    const recorded = await runCli(['outcome', '--domains=product-scoping', 'tidy the documentation'], r.cwd, xdg);
     assert.equal(recorded.code, 0);
     assert.doesNotMatch(recorded.err, /shared 'default' workspace/);
     assert.match(recorded.out, /workspace "acme"/);

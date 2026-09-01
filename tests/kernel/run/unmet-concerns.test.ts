@@ -111,14 +111,14 @@ test('a run whose catalog covered the outcome records no unmet concern', async (
   });
 });
 
-test('the zero-model path records no unmet concern, because keywords cannot propose outside the catalog', async () => {
+test('the zero-model path records no unmet concern, because nothing is inferred without a namer', async () => {
   await withStoreAsync(async (store) => {
     startRun(store, {
-      runId: 'run-keywords',
+      runId: 'run-none',
       outcome: 'Handle GDPR data subject requests for EU customers',
       at: AT,
     });
-    assert.deepEqual(unmetEntries(store, 'run-keywords'), []);
+    assert.deepEqual(unmetEntries(store, 'run-none'), []);
   });
 });
 

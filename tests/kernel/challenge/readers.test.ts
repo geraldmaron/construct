@@ -26,7 +26,7 @@ import {
   structuralRubricFor,
 } from '../../../src/kernel/challenge/readers.ts';
 import { challengeById } from '../../../src/kernel/challenge/catalog.ts';
-import { startRun } from '../../../src/kernel/run/outcome.ts';
+import { startRunSelected } from '../../../src/kernel/run/outcome.ts';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { listTasks } from '../../../src/kernel/store/tasks.ts';
@@ -307,10 +307,11 @@ test("a strategy brief declares its reader's acceptance lines, and another conce
   const fixture = sterile();
   try {
     const store = openStore(join(fixture.root, 'store.db'));
-    const run = startRun(store, {
+    const run = startRunSelected(store, {
       runId: 'run-rubric',
       outcome: 'Decide the strategy for the next two releases: which bet we invest in and what we stop doing to pay for it',
       at: AT,
+      domains: ['strategy-alignment'],
     });
     assert.ok(run.implicated.some((i) => i.domain === 'strategy-alignment'));
 

@@ -1,13 +1,10 @@
 /**
  * tests/kernel/implication/naming.test.ts — the model-primary naming seam.
  *
- * The properties under test are the ones that make the inversion safe to
- * ship: with a namer supplied it reads every outcome (including ones keywords
- * would have answered), it cannot invent a domain, an empty answer from it
- * stands as an answer, and only a namer that throws falls back to keywords —
- * with the failure stated, never silent. A namer is a stub here on purpose:
- * the kernel must be provably host-ignorant, and a test that reached for a
- * real host would be testing the host.
+ * With a namer supplied it reads every outcome; an empty answer stands; a
+ * throw leaves nothing inferred and states the failure. Keywords never
+ * staff this path. A namer is a stub here on purpose: the kernel must be
+ * host-ignorant.
  */
 
 import { test } from 'node:test';
@@ -79,10 +76,10 @@ test('the reason travels with the answer', async () => {
   );
 });
 
-test('with no namer the keyword map answers exactly as it always has', async () => {
+test('with no namer nothing is inferred — keywords do not staff the product path', async () => {
   const answered = await mapImplicationsNamed({ catalog: CATALOG, outcome: ANSWERED });
-  assert.equal(answered.inferredBy, 'keywords');
-  assert.ok(answered.implicated.length > 0);
+  assert.equal(answered.inferredBy, 'none');
+  assert.deepEqual(answered.implicated, []);
 
   const silent = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT });
   assert.equal(silent.inferredBy, 'none');
@@ -109,14 +106,14 @@ test('a naming with no stated reason does not surface', async () => {
   assert.deepEqual(result.implicated.map((i) => i.domain), ['privacy']);
 });
 
-test('a namer that throws falls back to keywords, and the failure is stated', async () => {
+test('a namer that throws leaves nothing inferred, and the failure is stated', async () => {
   const exploding: DomainNamer = async () => {
     throw new Error('host unreachable');
   };
   const result = await mapImplicationsNamed({ catalog: CATALOG, outcome: ANSWERED, namer: exploding });
-  assert.equal(result.inferredBy, 'keywords', 'a broken host must not take routing with it');
-  assert.ok(result.implicated.length > 0);
-  assert.equal(result.namerFailure, 'host unreachable', 'a keyword answer standing in for a model must say so');
+  assert.equal(result.inferredBy, 'none', 'a broken host must not hand routing to keywords');
+  assert.deepEqual(result.implicated, []);
+  assert.equal(result.namerFailure, 'host unreachable');
 });
 
 test('a namer that throws on an outcome keywords cannot answer reports none, still stating the failure', async () => {
@@ -314,7 +311,7 @@ test('one confident naming beside one low-confidence one still routes the confid
   assert.deepEqual(result.unmet.map((u) => u.reason), ['low-confidence']);
 });
 
-test('the keyword fallback reports no unmet concerns, because it cannot propose outside the catalog', async () => {
+test('a thrown namer and a zero-model call both report no unmet concerns', async () => {
   const exploding: DomainNamer = async () => {
     throw new Error('host unreachable');
   };

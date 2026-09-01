@@ -1,12 +1,12 @@
 /**
  * tests/kernel/run/engagement.test.ts — a role is told why it was engaged.
  *
- * Every implication already carries its evidence: keyword signals on the
- * deterministic path, a stated reason on the named one. Dispatch used to drop
+ * Every implication already carries its evidence: the user's naming signal on
+ * the selected path, a stated reason on the named one. Dispatch used to drop
  * it, so a role began work knowing neither which concern fired nor what was
  * cited for it — and then had to guess at its own remit. These tests hold both
  * variants to the same rule: the evidence reaches the assignment verbatim, and
- * the provenance travels with it, because a keyword match and a model's stated
+ * the provenance travels with it, because a user naming and a model's stated
  * reason are not the same quality of evidence.
  */
 
@@ -16,7 +16,11 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { getTask } from '../../../src/kernel/store/tasks.ts';
-import { startRun, startRunNamed, startRunSelected } from '../../../src/kernel/run/outcome.ts';
+import {
+  startRunNamed,
+  startRunSelected,
+  USER_NAMED_SIGNAL,
+} from '../../../src/kernel/run/outcome.ts';
 import { assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import { validateBrief } from '../../../src/kernel/brief/schema.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
@@ -55,26 +59,27 @@ function briefOf(store: ReturnType<typeof openStore>, taskId: string): Brief {
   return task.brief as Brief;
 }
 
-test('keyword signals travel into the assignment, labelled as keyword signals', () => {
+test('user-named domains travel into the assignment, labelled as the user\'s choice', () => {
   withStore((store) => {
-    const started = startRun(store, {
-      runId: 'run-kw',
+    const started = startRunSelected(store, {
+      runId: 'run-user',
       outcome: 'Handle GDPR data subject requests for EU customers',
       at: AT,
+      domains: ['privacy'],
     });
-    assert.ok(started.tasks.length > 0, 'the keyword map must implicate something here');
+    assert.ok(started.tasks.length > 0, 'selected privacy must staff a task');
 
     const brief = briefOf(store, started.tasks[0]);
     assert.ok(brief.engagement, 'the brief carries why the role was engaged');
-    assert.equal(brief.engagement.inferredBy, 'keywords');
-    assert.ok(brief.engagement.evidence.length > 0);
+    assert.equal(brief.engagement.inferredBy, 'user');
+    assert.deepEqual(brief.engagement.evidence, [USER_NAMED_SIGNAL]);
 
     const assignment = assignmentFor(brief);
     assert.match(assignment, /You were engaged because:/);
     for (const signal of brief.engagement.evidence) {
       assert.ok(assignment.includes(signal), `assignment must cite ${signal} verbatim`);
     }
-    assert.match(assignment, /keyword signals matched in the outcome, not a judgment/);
+    assert.match(assignment, /the user named your domain themselves/);
     // The concern is stated as the role's own, not merely as evidence.
     assert.ok(assignment.includes(brief.engagement.concern));
   });
@@ -108,10 +113,11 @@ test("a namer's stated reason travels the same way, labelled as a model's reason
 
 test('the assignment warns that engagement evidence is not the outcome and may not be cited as one', () => {
   withStore((store) => {
-    const started = startRun(store, {
-      runId: 'run-kw-2',
+    const started = startRunSelected(store, {
+      runId: 'run-user-2',
       outcome: 'Handle GDPR data subject requests for EU customers',
       at: AT,
+      domains: ['privacy'],
     });
     const brief = briefOf(store, started.tasks[0]);
     const assignment = assignmentFor(brief);

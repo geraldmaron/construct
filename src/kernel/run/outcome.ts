@@ -16,7 +16,6 @@
  * same reason: recording the same run twice must enqueue the work once.
  */
 
-import { mapImplications } from '../implication/map.ts';
 import { mapImplicationsNamed } from '../implication/naming.ts';
 import type { DomainNamer, InferredBy, UnmetConcern } from '../implication/naming.ts';
 import { domainsByName } from '../implication/domains.ts';
@@ -55,9 +54,9 @@ export interface StartedRun {
    */
   readonly inferredBy: InferredBy;
   /**
-   * Present when a supplied namer threw and the keyword map answered in its
-   * place. Travels out for the same reason `inferredBy` does: a fallback the
-   * user cannot see is a keyword answer impersonating a model's.
+   * Present when a supplied namer threw and nothing was inferred. Travels out
+   * so the work log and the user can see the failure; product staffing does
+   * not substitute keywords.
    */
   readonly namerFailure?: string;
   /**
@@ -197,36 +196,26 @@ function briefFor(
 }
 
 /**
- * Record a new outcome: infer its implicated domains, write the inference — and
- * its evidence — to the work log, and enqueue one task per implicated role.
+ * Record an outcome with no inference. Free and pure: no keywords, no model.
  *
- * The whole thing is one transaction. A half-recorded run whose log lists three
- * of five inferred domains is indistinguishable from a run that only inferred
- * three, and the work log is the record the user is asked to trust. Enqueuing
- * joins that transaction for the same reason: a run whose log claims five roles
- * but whose queue holds three would have the accountability record and the work
- * disagreeing.
- *
- * An outcome that implicates nothing is still recorded, with that fact stated.
- * Silence would be indistinguishable from the run never happening.
+ * Keyword matching is measurement-only and never staffs a product run. A
+ * caller that wants domains must supply a namer (`startRunNamed`), name them
+ * (`startRunSelected`), or pass session namings. Empty implication is a
+ * recorded fact, not a silent drop.
  */
 export function startRun(store: Store, input: StartRunInput): StartedRun {
-  const map = mapImplications({ outcome: input.outcome, catalog: input.catalog });
-  return record(store, input, map.implicated, {
-    inferredBy: map.implicated.length > 0 ? 'keywords' : 'none',
-  });
+  return record(store, input, [], { inferredBy: 'none' });
 }
 
 /**
- * The same run, with the namer primary: when one is supplied it reads every
- * outcome, and the keyword map only answers if the namer fails
- * (adopted 2026-08-05 on the §10 figures).
+ * The same run, with the namer primary when supplied.
  *
  * Async and separate from `startRun` on purpose. Recording an outcome is the
  * one spine operation that is pure and free, and a caller must not be able to
  * reach the paid path by accident — it takes a different function and an
- * explicitly supplied namer. Without a namer this is `startRun` with an extra
- * await: the deterministic path still does no I/O and costs nothing.
+ * explicitly supplied namer. Without a namer this matches `startRun`: nothing
+ * is inferred. A namer that throws leaves the run empty with the failure
+ * stated — keywords never substitute.
  *
  * The model call happens OUTSIDE the transaction, and must: a transaction held
  * open across a network round trip blocks every other writer of this store for
@@ -399,9 +388,9 @@ function record(
       );
     }
 
-    // The degradation note: when the namer threw and keywords
-    // caught the run, the log says so, because a keyword answer standing in
-    // for a model's must never read identically to the model answering.
+    // The degradation note: when the namer threw, the failure is logged so a
+    // broken host never reads as a clean empty naming. Keywords do not staff
+    // after a namer failure; inferredBy stays whatever the named path produced.
     if (namerFailure !== undefined) {
       logged.push(
         appendWorkLog(store, {

@@ -31,15 +31,16 @@ test('a reader that closes the pipe early ends the command quietly', async () =>
   try {
     // `head -1` takes the first line and closes: the command is still writing
     // its implicated domains, its work-log summary and its plan at that point.
-    // This is the terminal-first keyword path; an ambient marker from the
-    // runner would make outcome print a naming packet instead of `run …`.
+    // Named staff (--domains) so the product path still prints `run …`
+    // without consulting a host. An ambient marker would still divert to a
+    // session handoff, so strip ambient env either way.
     const env = { ...process.env };
     for (const key of AMBIENT_ENV_KEYS) delete env[key];
     const { stdout, stderr } = await execFileAsync(
       '/bin/sh',
       [
         '-c',
-        `"$0" outcome "We want to hire a contractor in Poland and pay them in euros" | head -1`,
+        `"$0" outcome --domains=employment,commerce-tax "We want to hire a contractor in Poland and pay them in euros" | head -1`,
         LAUNCHER,
       ],
       {

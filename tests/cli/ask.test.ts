@@ -244,39 +244,23 @@ test('a question landing in a high-risk concern says so before it answers', asyn
   }
 });
 
-test('a question with no host is recorded and routed, and says nobody answered it', async () => {
-  const { code, out, dataHome } = await runAsk(['launch a paid beta to EU users next month']);
+test('a question with no host refuses keyword staffing', async () => {
+  const { code, err, dataHome } = await runAsk(['launch a paid beta to EU users next month']);
   try {
-    assert.equal(code, 0);
-    assert.match(out, /answering: /);
-    assert.match(out, /Nobody was dispatched/);
-    assert.match(out, /construct ask --host=/);
-    const store = storeIn(dataHome);
-    try {
-      // Routed and planned, with nothing claiming an answer was produced.
-      assert.equal(listTasks(store).length, 1);
-      assert.equal(listTasks(store)[0].state, 'pending');
-    } finally {
-      store.close();
-    }
+    assert.equal(code, 2);
+    assert.match(err, /--host=/);
+    assert.match(err, /name a host|Keyword routing|--host/);
   } finally {
     rmSync(dataHome, { recursive: true, force: true });
   }
 });
 
-test('a question nothing in the catalog owns is recorded rather than dropped', async () => {
-  const { code, out, dataHome } = await runAsk(['xyzzy plugh frobnicate']);
+test('a question with no host is refused even when the catalog would be silent', async () => {
+  const { code, err, dataHome } = await runAsk(['xyzzy plugh frobnicate']);
   try {
-    assert.equal(code, 0);
-    assert.match(out, /no concern in the catalog owns this question/);
-    assert.match(out, /Nothing was inferred/);
-    const store = storeIn(dataHome);
-    try {
-      assert.equal(listTasks(store).length, 0);
-      assert.ok(readWorkLog(store).some((e) => e.action === 'no-domains-implicated'));
-    } finally {
-      store.close();
-    }
+    assert.equal(code, 2);
+    assert.match(err, /--host=/);
+    assert.match(err, /name a host|Keyword routing|--host/);
   } finally {
     rmSync(dataHome, { recursive: true, force: true });
   }

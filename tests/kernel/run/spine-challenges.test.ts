@@ -10,7 +10,7 @@
  * made the cost concrete, returning confident statutory claims from a small
  * local model with nothing asking for a source.
  *
- * So these tests go through `startRun` and `workRun` rather than constructing a
+ * So these tests go through `startRunSelected` and `workRun` rather than constructing a
  * brief, because a brief written by a test is exactly the thing that passed
  * while the real path did not.
  */
@@ -25,7 +25,7 @@ import { addSource, recordSourceRead } from '../../../src/kernel/store/sources.t
 import { enqueueTask } from '../../../src/kernel/store/tasks.ts';
 import { openDecisions, resolveDecision } from '../../../src/kernel/store/decisions.ts';
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
-import { concernChallenges, startRun } from '../../../src/kernel/run/outcome.ts';
+import { concernChallenges, startRunSelected } from '../../../src/kernel/run/outcome.ts';
 import { workRun, assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import { promotionOf } from '../../../src/kernel/run/promotion.ts';
 import { SPINE_CHALLENGES, challengeById } from '../../../src/kernel/challenge/catalog.ts';
@@ -39,6 +39,17 @@ const AT = '2026-08-05T00:00:00.000Z';
 // mechanics, and a high-tier run also declares challenges with no structural
 // form, which hold promotion at draft regardless of what the checks find.
 const OUTCOME = 'Add single sign-on login for the admin portal';
+
+/** Staff the SSO fixture without keyword routing — product path is user-named domains. */
+function staffSso(store: Parameters<typeof startRunSelected>[0], runId: string) {
+  return startRunSelected(store, {
+    runId,
+    outcome: OUTCOME,
+    at: AT,
+    domains: ['security'],
+  });
+}
+
 
 /** What the simulation actually produced: sourced-sounding, sourced by nothing. */
 const UNSOURCED = [
@@ -92,8 +103,8 @@ function hostReturning(text: string): HostAdapter {
 test('a brief the spine produced declares the free challenges, and says so to the role', () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
-    assert.ok(started.tasks.length > 0, 'the keyword map must implicate something here');
+    const started = staffSso(store, 'run-1');
+    assert.ok(started.tasks.length > 0, 'staffed security role expected');
 
     for (const id of started.tasks) {
       const brief = getTask(store, id)?.brief as Brief;
@@ -122,7 +133,7 @@ test('a brief the spine produced declares the free challenges, and says so to th
 test('an unsourced deliverable is held at draft by the run itself, not by a hand-written brief', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
     await workRun(store, hostReturning(UNSOURCED), {
       owner: 'w1',
       clock: () => AT,
@@ -152,7 +163,7 @@ test('an unsourced deliverable is held at draft by the run itself, not by a hand
 test('a cited deliverable that names its gaps clears both, on the same path', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
     await workRun(store, hostReturning(SOURCED), {
       owner: 'w1',
       clock: () => AT,
@@ -172,7 +183,7 @@ test('a cited deliverable that names its gaps clears both, on the same path', as
 test('the challenges read the submitted draft, not the reply that summarizes it', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
     const task = started.tasks[0];
 
     // What a role with a write surface actually does, and is told to do: the
@@ -230,7 +241,7 @@ function hostSubmitting(store: ReturnType<typeof openStore>, deliverable: unknow
 test('a draft that is not text is reported unreadable, and never passes a challenge', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
 
     // What the role actually sent on a real run: the challenge ids read as a
     // response schema. Coerced, this is the string "[object Object]", which the
@@ -267,7 +278,7 @@ test('a draft that is not text is reported unreadable, and never passes a challe
 test('a deliverable wearing a JSON envelope is unwrapped, not judged as a wrapper', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
     // Observed on a real run: a string whose whole content is {"deliverable": "..."}.
     await workRun(store, hostSubmitting(store, JSON.stringify({ deliverable: SOURCED })), {
       owner: 'w1',
@@ -287,7 +298,7 @@ test('a deliverable wearing a JSON envelope is unwrapped, not judged as a wrappe
 test('prose that merely opens with a brace is left alone', async () => {
   const { store, done } = fixtureStore();
   try {
-    startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    staffSso(store, 'run-1');
     const prose = `{not json at all}\n${SOURCED}`;
     await workRun(store, hostSubmitting(store, prose), {
       owner: 'w1',
@@ -308,7 +319,7 @@ test('prose that merely opens with a brace is left alone', async () => {
 test('a high-tier run declares the conditional challenges; a low-tier run declares only the spine two', () => {
   const { store, done } = fixtureStore();
   try {
-    const low = startRun(store, { runId: 'run-low', outcome: OUTCOME, at: AT });
+    const low = staffSso(store, 'run-low');
     for (const id of low.tasks) {
       const brief = getTask(store, id)?.brief as Brief;
       // A low-tier run declares what the concern owes and nothing the run
@@ -324,12 +335,13 @@ test('a high-tier run declares the conditional challenges; a low-tier run declar
       );
     }
 
-    const high = startRun(store, {
+    const high = startRunSelected(store, {
       runId: 'run-high',
       outcome: 'Handle GDPR data subject requests for EU customers',
       at: AT,
+      domains: ['privacy'],
     });
-    assert.ok(high.tasks.length > 0, 'the keyword map must implicate something here');
+    assert.ok(high.tasks.length > 0, 'staffed security role expected');
     for (const id of high.tasks) {
       const brief = getTask(store, id)?.brief as Brief;
       // Every brief in a high-tier run carries the pre-mortem; the legal
@@ -349,10 +361,11 @@ test('a decision-class brief must state the strongest case against itself before
   const { store, done } = fixtureStore();
   try {
     // "Decide" phrasing routes to the concerns whose deliverable IS a choice.
-    const run = startRun(store, {
+    const run = startRunSelected(store, {
       runId: 'run-decide',
       outcome: 'Decide whether the product roadmap bets on depth or breadth next quarter',
       at: AT,
+      domains: ['product-scoping', 'strategy-alignment', 'system-design'],
     });
     const decisionRoles = run.tasks
       .map((id) => getTask(store, id)?.brief as Brief)
@@ -372,7 +385,7 @@ test('a decision-class brief must state the strongest case against itself before
 test('a grounded run cites its own ground and the citation gate accepts exactly that', async () => {
   const { store, done } = fixtureStore();
   try {
-    const started = startRun(store, { runId: 'run-1', outcome: OUTCOME, at: AT });
+    const started = staffSso(store, 'run-1');
     addSource(store, {
       id: 'src-1',
       workspace: 'default',
@@ -426,10 +439,11 @@ test('a role that lacks a user-held fact asks once through the inbox, and a late
   try {
     // The EU-beta outcome on purpose: this scenario needs several roles so the
     // one-open-ask rule has something to suppress.
-    const started = startRun(store, {
+    const started = startRunSelected(store, {
       runId: 'run-1',
       outcome: 'launch a paid beta to EU users next month',
       at: AT,
+      domains: ['privacy', 'product-scoping', 'program-sequencing', 'commerce-tax'],
     });
     assert.ok(started.tasks.length >= 2, 'this scenario needs at least two roles');
 

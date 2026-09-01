@@ -103,6 +103,7 @@ expect_contains "construct doctor" "$doctor_out" "node"
 
 echo "== recording an outcome from the packaged install =="
 outcome_out="$(npx --no-install construct outcome \
+  --domains=privacy,commerce-tax,program-sequencing,product-scoping \
   'launch a paid beta to EU users next month')" \
   || fail "construct outcome exited non-zero" "$outcome_out"
 printf '%s\n' "$outcome_out"

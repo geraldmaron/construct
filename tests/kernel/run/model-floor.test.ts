@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
 import { openStore } from '../../../src/kernel/store/open.ts';
 import { getTask } from '../../../src/kernel/store/tasks.ts';
-import { startRun, startAskNamed } from '../../../src/kernel/run/outcome.ts';
+import { startRunSelected, startAskNamed } from '../../../src/kernel/run/outcome.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 
 const AT = '2026-08-21T00:00:00.000Z';
@@ -57,10 +57,11 @@ function briefsFor(store: ReturnType<typeof openStore>, taskIds: readonly string
 
 test('an outcome brief for a licensed-review domain declares frontier, not any', () => {
   withStore((store) => {
-    const started = startRun(store, {
+    const started = startRunSelected(store, {
       runId: 'run-privacy-floor',
       outcome: 'Handle GDPR data subject requests for EU customers',
       at: AT,
+      domains: ['privacy'],
     });
     const briefs = briefsFor(store, started.tasks);
     const privacy = briefs.find((b) => b.role === 'privacy');
@@ -71,10 +72,11 @@ test('an outcome brief for a licensed-review domain declares frontier, not any',
 
 test('an outcome brief for a domain with no licensed-review obligation declares capable, not any', () => {
   withStore((store) => {
-    const started = startRun(store, {
+    const started = startRunSelected(store, {
       runId: 'run-accessibility-floor',
       outcome: 'Add screen reader support and WCAG contrast fixes to the settings page',
       at: AT,
+      domains: ['accessibility'],
     });
     const briefs = briefsFor(store, started.tasks);
     assert.ok(briefs.length > 0, 'this outcome must implicate something');
