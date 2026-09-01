@@ -16,24 +16,24 @@ Machine inventories that fed this ledger: [Inventory CLI MCP storage](dee647f2-a
 | main head `e9745325…` | Confirmed after `git pull` | Match |
 | package `3.0.0-alpha.18` | Confirmed | Match |
 | npm may disagree | `alpha` → `3.0.0-alpha.19`; no `gitHead`; no git tag | **Provenance drift** |
-| open PRs #9 #11 #12 #13 | All open; plus #6 release audit | Match (+1) |
+| open PRs #9 #11 #12 #13 | Closed 2026-09-01 (superseded); #6 draft audit remains | Match (closed) |
 | no compatibility entitlement | Product decision | Confirmed |
 
 ---
 
 ## 2. Open PRs (close, do not merge wholesale)
 
-| PR | Branch | Useful evidence | Reusable concept | Obsolete implementation |
-|----|--------|-----------------|------------------|-------------------------|
-| [#9](https://github.com/geraldmaron/construct/pull/9) | `first-run-stranger-80db` | Silent wire so session can seat staff; talk reprints words | Host must call MCP this turn; no typed verb | Prompt-submit / talk-as-wire; teaches recording protocol |
-| [#11](https://github.com/geraldmaron/construct/pull/11) | `first-run-one-plus-three-5af9` | “Send records a run”; regex namer removed in branch | Ordinary talk → run | Logged-in host namer as Door 3; alternate-agent inference |
-| [#12](https://github.com/geraldmaron/construct/pull/12) | `first-run-door-1-leak-b839` | PARKED: first-run skill must not teach verbs/catalog seats | Operational skill must stay short and non-tutorial | Skill copy that sells staff-showed-up |
-| [#13](https://github.com/geraldmaron/construct/pull/13) | `warsaw-namer-seats-a1e1` | Omitted-namings seating tests (Warsaw/Poland) | Need seating without keyword fallthrough | Construct namer as authority; opportunistic namers |
-| [#6](https://github.com/geraldmaron/construct/pull/6) | `release-readiness-audit-6655` | “Not ready for a tester to trust” audit | Honesty about readiness | N/A — keep as evidence, not merge |
+| PR | Branch | Status |
+|----|--------|--------|
+| [#9](https://github.com/geraldmaron/construct/pull/9) | `first-run-stranger-80db` | **closed** 2026-09-01 — superseded (clean-slate interactive architecture) |
+| [#11](https://github.com/geraldmaron/construct/pull/11) | `first-run-one-plus-three-5af9` | **closed** 2026-09-01 — superseded |
+| [#12](https://github.com/geraldmaron/construct/pull/12) | `first-run-door-1-leak-b839` | **closed** 2026-09-01 — superseded |
+| [#13](https://github.com/geraldmaron/construct/pull/13) | `warsaw-namer-seats-a1e1` | **closed** 2026-09-01 — superseded |
+| [#6](https://github.com/geraldmaron/construct/pull/6) | `release-readiness-audit-6655` | Draft audit — keep as evidence, not merge |
 
 Related remotes not open as numbered PRs above: `in-session-dispatch-dd4f` (0 commits ahead of main — already landed shape), `slim-ci-default-cfbf` (documents slim CI — **delete that policy**).
 
-**Close policy:** when operational skill + semantic MCP + init reconciler land, close #9/#11/#12/#13 with one sentence: superseded by clean-slate interactive architecture (session-bound MCP, no RPC-in-prose, no opportunistic namers).
+**Close policy:** when operational skill + semantic MCP + init reconciler land, close #9/#11/#12/#13 with one sentence: superseded by clean-slate interactive architecture (session-bound MCP, no RPC-in-prose, no opportunistic namers). **Done 2026-09-01** on construct-dz27.
 
 ---
 

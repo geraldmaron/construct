@@ -11,12 +11,13 @@ documentation rather than a record.
 
 ## Start here
 
-- [`first-run.md`](first-run.md) — talk in the host you already have; a
-  run exists; a seat you did not name can show up from the ground. The
-  shipped binary does not meet that bar. The only Construct-shaped
-  surface is an inbox card when the call is yours.
+- [`first-run.md`](first-run.md) — `construct init`, then talk in the host
+  you already have. Session-bound MCP (`start_run`, `next_work`,
+  `submit_work`) and the operational skill are what init reconciles. The
+  only Construct-shaped surface for you is an inbox card when the call is
+  yours.
 - [`cli-walkthrough.md`](cli-walkthrough.md) — the terminal command
-  walkthrough. Not first-run.
+  walkthrough. Not first-run. Hostless keyword staffing is not a product path.
 - [`consumer-install.md`](consumer-install.md) — putting Construct inside a
   different repo, an app you are building rather than Construct itself.
 

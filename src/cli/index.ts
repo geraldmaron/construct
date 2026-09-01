@@ -127,8 +127,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   outcome: { gloss: 'record what you want to happen and queue the work', flags: [...HOST_FLAGS, 'domains', 'workspace'] },
   ask: { gloss: 'ask the staff one question and read the answer here', flags: [...HOST_FLAGS, 'workspace', 'ceiling'] },
   work: {
-    gloss:
-      'headless claim/submit/status on init’d projects (requires --pin); legacy host dispatch otherwise',
+    gloss: 'headless claim/submit/status on init’d projects (requires --pin)',
     flags: [
       ...HOST_FLAGS,
       'run',
@@ -273,14 +272,14 @@ export function groupedHelp(): string {
   const lines: string[] = [
     'construct — an outcome engine. Talk in the host you already have.',
     '',
-    'Start here: construct serve',
-    '  Ordinary language. A run should exist. A seat you did not name',
-    '  should be able to show up from the ground. The shipped binary still',
-    '  requires namings; that is the old host-namer rule, not success.',
+    'Start here: construct init',
+    '  Then talk in the host you already have. Session-bound MCP and the',
+    '  operational construct skill are what init reconciles when it can.',
     '',
-    'From a plain terminal: init → outcome → work → show → inbox',
-    '  StaffMember owns mission; Routine owns recurring work; Inbox owns judgment.',
-    '  Legacy verbs (decide/waive/…) still run — prefer the new nouns.',
+    'From a plain terminal: init → outcome (--domains or --host) → show → inbox',
+    '  Interactive work is MCP next_work / submit_work in the host session.',
+    '  Headless work needs an initialized project and --pin.',
+    '  Legacy verbs (decide/waive/…) still run — prefer inbox.',
     '',
   ];
   for (const [title, verbs] of HELP_GROUPS) {

@@ -15,30 +15,30 @@ Epic: `construct-cki1`.
 
 | Phase | Bead | Status |
 |-------|------|--------|
-| A–G | … | **done** |
-| H Skills | construct-blvu | **done** |
-| I External interfaces | construct-dz27 | open |
+| A–H | … | **done** |
+| I External interfaces | construct-dz27 | **done** |
 | J Package/release | construct-umx9 | open |
 
-## Phase H ledger
+## Phase I ledger
 
 | Target | Status |
 |--------|--------|
-| Operational `construct` skill; only init auto-install | **done** |
-| written-voice off `--all` / never auto | **done** |
-| Lens packs never product auto-install | **done** (pack stays explicit) |
-| Scorecards KEEP/REWRITE/MERGE/DELETE | **done** (`docs/internal/skill-scorecards.md`) |
-| Agent Skills lint vs Construct policy | **done** |
-| Progressive disclosure (SKILL.md + references/) | **done** |
-| Eval harness (structural/size) | **done** (`scripts/skill-scorecard.mjs`) |
-| A/B qualification / observed cross-host load | **named gap** (unmet; not faked) |
+| first-run / README / walkthrough / consumer-install truth | **done** |
+| Close PRs #9/#11/#12/#13 supersession | **done** |
+| Package exports locked (`.` only) + regression test | **done** |
+| Help text: init-first, thin work gloss | **done** |
+| Doc lint agrees with shipped verbs | **done** |
 
 ## What remains overall
 
 ```
-DONE   A–H
-OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
+DONE   A–I
 OPEN   J  full gate; provenance rebuild; release verdict
+         (CI full test/smoke, package provenance, publish decision)
 ```
+
+Also still open outside this epic (ready queue): install-to-first-value
+epics, consumer-app packets, staff operation, PRD→tracker packet, pack
+breadth, privacy/EDR miss-pattern bug (`construct-hn41`).
 
 Detail: `docs/internal/clean-slate-inventory.md`.

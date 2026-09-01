@@ -1,11 +1,11 @@
 # Terminal walkthrough
 
-First-run is talk in the host you already have
+First-run is talk in the host you already have after `construct init`
 ([first-run.md](first-run.md)). This page is the CLI reference for a
-plain terminal. It is not first-run. Keyword `construct outcome` is
-not the product door.
+plain terminal. It is not first-run. Hostless keyword staffing is not a
+product success path.
 
-## Install, then the same conversation
+## Install, then initialize
 
 ```bash
 npm install -g @geraldmaron/construct@alpha
@@ -20,7 +20,9 @@ project path, run `construct reset --yes` instead of expecting a migration.
 Native host MCP and operational-skill reconcile is part of init's job for
 supported clients. `construct init` plants the short operational `construct`
 skill into the ambient (or `--client`) host skills directory and reconciles
-session-bound MCP where an adapter exists.
+session-bound MCP where an adapter exists. Bob and Codex may still need a
+manual `construct serve --client=… --project=…` entry — fallback wiring, not
+the product door.
 
 You need Node 22.18 or newer. `construct doctor` is recovery and a health
 check, not onboarding. It reports Node, the store, which hosts are present
@@ -29,104 +31,92 @@ pack is present. Inside a host, an `ambient` line names in-session dispatch
 through MCP. Only Node and store checks gate the exit code. The full check
 table is in [consumer-install.md](consumer-install.md).
 
-The rest of this page is the terminal-first walkthrough — every command
-below is a real verb, and commands that would spawn a host and spend money
-are checked against the CLI's own usage line rather than dispatched.
+The rest of this page is the terminal walkthrough — every command below is a
+real verb. Interactive control stays on MCP after init; headless `work` is
+the operator claim/submit path, not ambient host spawn.
 
-## Record an outcome (terminal, no host)
+## Record an outcome (terminal)
 
 Say what you want to happen, in your own words. Not a task, not a role, not a
 prompt: the thing you want to be true.
 
-An in-session `construct outcome` without `--domains` does **not** create a
-run and does **not** consult the keyword map. This session infers the intent.
-Two surfaces: this session dispatches, or the turn goes to inbox. Empty
-namings is a real "implicates nothing" answer.
+Product staffing on the terminal needs `--domains=…` and/or `--host=…` (or
+you are already in a host session and use MCP). A hostless
+`construct outcome` without those refuses with exit 2 — keyword routing is
+not a product staffing path. Inside an ambient host session, the same command
+without `--domains` creates no run and does not consult the keyword map;
+this session infers via MCP (`start_run` / `next_work`).
 
-From a plain terminal with no host wrapping the command:
-
-```bash
-construct outcome "We want to hire a contractor in Poland"
-```
-
-Construct reads that sentence and works out which concerns it touches. A
-hostless capture on 2026-08-28 printed:
-
-```
-outcome: this lands in the shared 'default' workspace, visible to every repo on this machine; scope it with --workspace=<name> or bind one in .construct/settings.json
-run run-20260828143401920
-  outcome: We want to hire a contractor in Poland
-
-implicated domains (1):
-  employment  — people you engage and how you engage them
-      signals: contractor, contractors, hire (score 30)
-
-filed 2 work log entries and queued 1 task(s).
-Run them:  construct work --run run-20260828143401920
-Read back: construct log --run run-20260828143401920
-
-plan plan-run-20260828143401920: 1 step, risk high, no sources declared
-  construct plan run-20260828143401920
-```
-
-The last two lines point at the run's recorded plan. Reading it shows which
-concern each step is routed to, on what evidence, and what the deliverable
-owes. `construct plan` takes the run id as a plain word, not a flag.
-
-Nobody typed "employment." That inference is the whole point: the obvious
-concern is obvious to a team that has done this before, and Construct's job
-is to make it obvious to you. The `signals` line is the evidence, so you can
-disagree with it on sight.
-
-That run happened without a model and without spending anything. If you would
-rather have a model read your sentence instead of the keyword map, name a host.
-Any of the four works the same way here — pick whichever `construct doctor`
-shows you have (`opencode`, `claude`, `codex`, or `cursor`); the examples below
-use `<your host>` to stand for your choice, because Construct depends on none of
-them in particular:
-
-```bash
-construct outcome --host=<your host> "We want to hire a contractor in Poland"
-```
-
-Then each domain cites a stated reason rather than matched keywords, and the
-output says which of the two you got. If you already know which concerns apply,
-you can say so and skip inference entirely:
+Name the concerns yourself when you already know them:
 
 ```bash
 construct outcome --domains=employment,contracts "We want to hire a contractor in Poland"
 ```
 
-Naming a domain nobody defined is an error that lists the catalog rather than
-inventing a role, and the record shows your choice as your choice rather than
-as something the system inferred.
+A named-domain capture prints roughly:
+
+```
+run run-…
+  outcome: We want to hire a contractor in Poland
+
+implicated domains (1):
+  employment  — people you engage and how you engage them
+      reason: named by the user
+
+You named these; nothing was inferred and no model was consulted.
+
+filed 2 work log entries and queued 1 task(s).
+Interactive: next_work / submit_work in the host session (MCP).
+Headless:   construct work claim --pin=<executor>  (requires construct init)
+Read back:  construct log --run run-…
+
+plan plan-run-…: 1 step, risk high, no sources declared
+  construct plan run-…
+```
+
+The plan lines point at the run's recorded plan. Reading it shows which
+concern each step is routed to, on what evidence, and what the deliverable
+owes. `construct plan` takes the run id as a plain word, not a flag.
+
+Or let a host model read the sentence and name the staff. Pick whichever
+`construct doctor` shows you have (`opencode`, `claude`, `codex`, or
+`cursor`); the examples below use `<your host>`:
+
+```bash
+construct outcome --host=<your host> "We want to hire a contractor in Poland"
+```
+
+Then each domain cites a stated reason from the model. Naming a domain nobody
+defined is an error that lists the catalog rather than inventing a role, and
+the record shows your choice as your choice rather than as something the
+system inferred.
+
+The keyword map remains for measurement and fallback history only. It is not
+first-run and not the product inferrer.
 
 ## Run the work
 
+Without project init, `construct work` refuses and points at init / MCP:
+
 ```bash
 construct work
+# → requires an initialized project (`construct init`)
+#   Interactive work is MCP next_work / submit_work in the host session.
 ```
 
-Inside a host session, that does not spawn `cursor-agent`, `claude`, or any
-other CLI. On an initialized project, headless `work` claims through an
-explicit `--pin`; interactive dispatch is MCP `next_work` / `submit_work` in
-this session. Construct keeps the log, the inbox, and verdicts. A typed
-`--binary` is the one request to spawn that executable anyway. An older run
-that still has pending tasks is `--run` or `--all`, never the silent default.
+With init, `work` is the headless operator path — claim, submit, status —
+not interactive control and not ambient home-store spawn of host CLIs:
 
-From a plain terminal without project init, `work` finds the most recently
-recorded outcome (or takes `--run=<id>` / `--all`) and dispatches through a
-spawnable host CLI. Name one yourself when doctor shows none in-session
-(`--host=<opencode|claude|codex|cursor>`).
+```bash
+construct work claim --pin=<executor> [--run=<id>]
+construct work submit --pin=<executor> --task=<id> --token=<n> --deliverable='…'
+construct work status [--run=<id>]
+```
 
-A spawned dispatch is the step that costs money: each implicated role gets its
-own assignment, works the outcome from its own concern, and reports back. The
-spend ceiling (10 by default, in your host's cost units, raised with
-`--ceiling=`) binds on that path. In-session dispatch spends the host's own
-already-present capacity; Construct does not start a second paid run.
-
-If a spawned host is not installed or not authenticated, this is where you
-find out, and the error says which it was.
+Interactive dispatch stays on MCP `next_work` / `submit_work` in the host
+session that already has Construct wired. Construct keeps the log and the
+inbox. In-session dispatch spends the host's own already-present capacity;
+Construct does not start a second paid run for that path.
 
 ## Read the deliverable
 
@@ -161,9 +151,8 @@ risk — privacy, contracts, employment, compliance — it says so before it
 answers, because one grounded pass is not a review and an answer shaped like an
 answer invites more trust than it has earned.
 
-Without `--host` the question is still recorded and routed, and nothing is
-answered: reading a question costs a model call, and Construct does not spend
-without being told to.
+Without `--host` (and not in-session), `ask` refuses with exit 2. Keyword
+routing is not a product staffing path.
 
 ## Tell it what you work from
 
@@ -178,28 +167,23 @@ construct source list
 ```
 
 Declaring a source builds no connection and reads nothing by itself. When
-work runs, local ground (a directory, a git checkout) is surveyed first: the
-run records which documents it found and how completely, the roles receive
-them by name, and they may read further inside those roots and cite what they
-read by path. A document the walk cannot read as text — a PDF, a deck — is
-put into words through the extraction ladder if a rung on this machine can,
-and recorded with the reason if none can. A remote source (`jira`, `github`,
-`docs`) is recorded as unreachable until a host can reach it — an answer, not
-an omission.
+work runs — in-session via MCP, or headless via `construct work claim` on an
+initialized project — local ground (a directory, a git checkout) is surveyed
+first: the run records which documents it found and how completely, the roles
+receive them by name, and they may read further inside those roots and cite
+what they read by path. A document the walk cannot read as text — a PDF, a
+deck — is put into words through the extraction ladder if a rung on this
+machine can, and recorded with the reason if none can. A remote source
+(`jira`, `github`, `docs`) is recorded as unreachable until a host can reach
+it — an answer, not an omission.
 
-Dispatch where the ground is. A run is refused if a declared root sits outside
-the directory its roles will run in, because a role dispatched somewhere else
-cannot open the material it is about to be graded on — and the failure is
+Point the project at the ground you mean. Declared roots that sit outside the
+directory roles will work in are refused, because a role dispatched somewhere
+else cannot open the material it is about to be graded on — and the failure is
 silent from the inside, arriving as a finished deliverable with nothing behind
-it:
-
-```bash
-construct work --run=<id> --host=<your host> --dir=/path/to/your/repo
-```
-
-By default the survey ranks prose ahead of code and lists forty documents,
-which is right for understanding what a system promises and wrong for
-understanding what it does. Say which you meant:
+it. Bind ground with `construct source add` (and `--workspace=` when you need
+more than one), then drive work in-session or with headless `work claim`
+`--pin=` on that initialized project.
 
 ```bash
 construct source add --kind=git --locator=/path/to/repo --emphasis=code --cap=200
@@ -257,13 +241,19 @@ between "a file changed" and "the plan no longer follows the strategy it is
 held to".
 
 A model can propose a relationship it noticed, and a proposal is all it ever
-is until you decide:
+is until you decide. Outward and source-relationship proposals still use the
+legacy `decide` verb for approve / reject / apply; typed inbox decisions
+prefer `construct inbox` / `construct inbox decide`:
 
 ```bash
 construct propose relation --from=<source-id> --to=<source-id> --as=supersedes --because="the newer plan names the older one as replaced"
 construct decide --approve=<proposal-id> "<why>"
 construct decide --apply=<proposal-id>
 ```
+
+(`decide --approve` / `--apply` remain the proposal verbs; judgment inbox
+cards use `construct inbox decide`. Prefer the surface that matches the
+artifact.)
 
 Standing consent never covers one of these, whatever else it covers: a
 relationship reshapes what every later run is assembled from, so it waits for
@@ -443,9 +433,13 @@ The inbox holds decisions that are genuinely yours to make, which usually means
 two roles disagreed and neither should win by default. An empty inbox is a real
 answer and says so.
 
-When you resolve a decision with `construct decide`, Construct may distill it
-into a held run-derived lesson. Those never auto-admit — familiarity with the
-system's own operation is not verification. List and admit them on the spine:
+```bash
+construct inbox decide <id> "<your call>"
+```
+
+When you resolve a decision that way, Construct may distill it into a held
+run-derived lesson. Those never auto-admit — familiarity with the system's own
+operation is not verification. List and admit them on the spine:
 
 ```bash
 construct lessons --workspace=<name>
@@ -481,11 +475,12 @@ notice its own silence.
 ## The other way in: your own agent host
 
 If you already work inside Claude Code, Codex, Cursor, VS Code agent mode, or
-OpenCode, you do not have to learn this CLI at all. Construct can appear inside
-the host you already use. Run `construct init --client=…` so format-v1 state and
-the `construct serve` MCP entry are written for you. OpenCode, Claude Code,
-Cursor, and VS Code are covered; Bob and Codex stay manual. A host with its own
-MCP-add helper takes the same entry in a line — Claude Code, for example:
+OpenCode, you do not have to learn this CLI as first-run. Run
+`construct init --client=…` so format-v1 state, the operational skill, and the
+`construct serve` MCP entry are written for you. OpenCode, Claude Code,
+Cursor, and VS Code are covered; Bob and Codex stay manual fallback. A host
+with its own MCP-add helper takes the same entry in a line — Claude Code, for
+example:
 
 ```bash
 claude mcp add construct -- node "$(which construct 2>/dev/null || echo construct)" serve --client=claude-code --project="$(pwd)"
