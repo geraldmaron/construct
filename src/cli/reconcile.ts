@@ -2,7 +2,7 @@
  * cli/reconcile.ts — whether a projected proposal still agrees with the
  * tracker it was mirrored into.
  *
- * The kernel holds no tracker connectors and this command imports no host
+ * Live Jira/GitHub connectors are not wired yet, and this command imports no host
  * adapter, so freshness has to arrive from outside: `--live` names a file of
  * the issues the caller can currently see. Without one there is no live state
  * to compare against, and this declines to guess at one.
@@ -28,7 +28,7 @@ const RECONCILE_USAGE =
  * with the tracker it was mirrored into.
  *
  * Comparison model, stated plainly because the substrate alone does not say
- * how a CLI should use it: the kernel holds no tracker connectors, this
+ * how a CLI should use it: live Jira/GitHub connectors are not wired yet, this
  * command imports no host adapter, and it never fetches a live issue on its
  * own. Freshness has to arrive from outside. `--tracker=<name>
  * --live=<file>` names a JSON array of the issues the caller can currently
@@ -124,7 +124,7 @@ export function reconcile(argv: string[]): number {
         process.stdout.write(`  ${projection.state.padEnd(11)} ${projection.id}  (recorded ${recordedAt})\n`);
       }
       process.stdout.write(
-        '\nConstruct holds no tracker connectors, so it cannot read live state on its own.\n' +
+        '\nLive Jira/GitHub connectors are not wired yet, so Construct cannot read live tracker state on its own.\n' +
           "Supply one: construct reconcile --tracker=<name> --live=<file of that tracker's current issues>\n",
       );
       return 0;

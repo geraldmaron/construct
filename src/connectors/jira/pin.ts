@@ -14,11 +14,13 @@
  * read from Atlassian's own published OpenAPI description of the v3 API,
  * at the build recorded in `PINNED_SPEC_BUILD`. None of them has been run
  * against a live Jira site: no site, no credential, and no scratch project
- * exists for this connector yet. So the honest status of this pin is
- * "declared from the vendor's published description, unmeasured against a
- * running instance" — `probe.ts` is the instrument that settles the
- * difference, and until it runs against a real site nothing here may be
- * quoted as verified behavior.
+ * exists for this connector yet. Live transport helpers exist in `api.ts`,
+ * but no shipped path constructs them — remotes stay unreachable from
+ * Construct itself until that wiring ships with a recorded probe. So the
+ * honest status of this pin is "declared from the vendor's published
+ * description, unmeasured against a running instance" — `probe.ts` is the
+ * instrument that settles the difference, and until it runs against a real
+ * site nothing here may be quoted as verified behavior.
  *
  * When a probe fails: re-verify against the live API, fix whatever moved,
  * and update the expectation — do not widen it to silence the failure. The

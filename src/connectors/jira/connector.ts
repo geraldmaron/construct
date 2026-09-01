@@ -12,6 +12,12 @@
  * by this code from a response it received, and the write comes back with a
  * key and a URL a person can open.
  *
+ * LIVE PATH DEFERRED. `readJiraCredentials` / `createTransport` in api.ts are
+ * the only construction of a real transport; nothing shipped calls them yet.
+ * Until a recorded probe against a real site lands, declare-only jira sources
+ * stay unreachable from Construct itself (reach via host MCP). Do not delete
+ * the transport helpers — they are the only path to a live call.
+ *
  * Two structural properties, both load-bearing:
  *
  *   1. NO WRITE WITHOUT A DECISION, BY CONSTRUCTION. The function that puts

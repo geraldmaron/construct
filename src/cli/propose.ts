@@ -512,8 +512,8 @@ function proposeRelation(flags: Record<string, string>): number {
 
 /**
  * One tracker's current issues, read from a file the caller supplies — the
- * same reason cli/reconcile.ts's --live works this way: Construct holds no
- * tracker connectors, so it never fetches a live issue on its own.
+ * same reason cli/reconcile.ts's --live works this way: live Jira/GitHub
+ * connectors are not wired yet, so it never fetches a live issue on its own.
  */
 function readTrackerIssues(file: string): readonly TrackerIssue[] | string {
   let parsed: unknown;

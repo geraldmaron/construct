@@ -126,10 +126,11 @@ function readDeclarationFlags(
 
 /**
  * Declare, list, describe, and retire the sources a workspace works from.
- * Declaring builds no connector and reads nothing: it names where
- * organizational context lives so a run can be held to what it actually read
+ * Declaring builds no connection and reads nothing: it names where
+ * organizational material lives so a run can be held to what it actually read
  * from there (the provenance rows), and so an outward write can name its
- * target.
+ * target. Live jira/github connectors are not wired yet; remotes stay
+ * unreachable from Construct until a host reaches them.
  *
  * Describing is the user saying what a source is — whether it holds the record
  * or an aspiration, why it is here, whether it is sensitive. It is stated

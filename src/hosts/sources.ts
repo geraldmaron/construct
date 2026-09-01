@@ -9,8 +9,9 @@
  *
  * Only local ground is walked: a directory, or a git checkout that is one. A
  * remote kind comes back unreachable with its reason, never silently skipped —
- * Construct builds no connectors, and a declared source nobody could read must
- * say so in the record rather than vanish from it.
+ * adapter code for jira/github exists under connectors/ but no shipped path
+ * constructs a live transport yet, so remotes stay unreachable from Construct
+ * itself until a host (or a later wired connector) can reach them.
  *
  * A document the walk cannot read as text is put into words here, through the
  * same extraction ladder a dropped note goes through, rather than being listed
@@ -296,8 +297,8 @@ export function surveySource(
       ...base,
       outcome: 'unreachable',
       reason:
-        `no ${source.kind} connector — a remote source is read through the host, ` +
-        'and this dispatch had no way to reach it',
+        `live ${source.kind} connector is not wired — declare is fine; reach it ` +
+        'through the host (vendor MCP) until a Construct transport is constructed',
     };
   }
   if (source.kind === 'git' && isRemoteGitLocator(source.locator)) {
