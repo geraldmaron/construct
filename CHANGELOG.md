@@ -1,68 +1,26 @@
 # Changelog
 
+## 3.0.0-alpha.20 — 2026-09-01
+
+Clean-slate reconciliation complete through Phase J (`construct-cki1`). No
+compatibility entitlement with prior alphas. Project-local format-v1 state;
+interactive work is session-bound MCP after `construct init`; headless `work`
+is claim/submit/`--pin` only. Keyword staffing, wire, cleanup, naming_cache,
+standing/watch/schedule/daemon product verbs, and deep package exports are
+gone. Operational `construct` skill is the only auto-install; method skills
+use progressive disclosure; lens packs stay explicit.
+
+- **Provenance rebuild.** This release is tagged `v3.0.0-alpha.20` and
+  published with npm provenance (`gitHead`). Do not trust registry
+  `3.0.0-alpha.19` (no gitHead, no matching git tag).
+- **CI runs the real gate on every PR/push:** lint, typecheck, full `npm
+  test`, sterile read-only HOME, packaged-install smoke.
+- **Release verdict:** READY FOR NEW ALPHA (recorded on the epic and in
+  `docs/internal/clean-slate-release-verdict.md`).
+
 ## Unreleased
 
-In-session dispatch through the host that is already there. When the user is
-already inside Cursor, Claude Code, Codex, OpenCode, or IBM Bob, `construct
-work` hands that session the queued tasks and does not spawn a second CLI.
-Construct owns completion, the log, and the inbox. Doctor honesty is a
-consequence: a host that is present and in-session is used, not advertised as
-a spawn that will fail.
-
-- **`work` uses this session.** `CURSOR_AGENT` / `CLAUDECODE` / Bob's marker
-  mean in-session host-pull through `construct serve` (`claim_task` /
-  `submit_work`). A typed `--binary` is the one request to spawn that
-  executable. Typed `--host` that names the ambient session is still the
-  session, not a second process.
-- **The Cursor (and Claude) adapters refuse to spawn when already inside that
-  host.** Probing `cursor-agent --version` from a Cursor session was a second
-  runtime, and on machines without the CLI on PATH it failed the whole run.
-- **`construct serve` carries host-pull.** The product MCP surface lists
-  `claim_task` / `submit_work` once a capability secret exists. No promote.
-  The flagged `host-pull-serve` prototype remains behind its gate.
-- **In-session `outcome` does not staff from the keyword map, and does not
-  create a hollow run.** First-run inside a host prints the two surfaces:
-  this session dispatches, or the turn goes to inbox. Construct does not
-  classify. No run is written until the host names concerns. Empty
-  `namings: []` is a real "implicates nothing" answer. On `construct
-  serve`, omitting namings is an error, not a fall-through to the keyword
-  map. The keyword map is the zero-model fallback when no session is
-  wrapping the command.
-- **Bare `work` and `status` stay on the latest outcome.** The most recently
-  recorded outcome is the default, even when it queued no tasks and an
-  older run still has pending work. `--all` remains the fleet door. A
-  recorded run that has no named work says so, and does not say "record an
-  outcome first" or spend someone else's run.
-- **First-run hears ordinary language.** Talk in the host, no catalog
-  words, no `--host`. The host infers. Two surfaces only: dispatch
-  through this session, or an inbox call. No Construct-side classifier,
-  namer, or third router. The keyword map is not first-run: omitting
-  namings on `construct serve` is an error, not a fall-through. Empty
-  staff after a host read is a miss.
-  README and `docs/first-run.md` lead with talk, then staff. `init`,
-  `doctor`, and the verb catalog are not on that page. The only
-  Construct-shaped surface there is an inbox card when the call is
-  yours. The terminal command list lives in `docs/cli-walkthrough.md`.
-  `construct serve` can dispatch; the cannot-dispatch claim is gone.
-  Prefix matching only accepts simple inflections, so Node's
-  `ExperimentalWarning` does not staff measurement.
-- **`init --yes` plants method skills** (investigative-research,
-  decision-framing, intake, and the rest) into the ambient host's skills
-  directory, then wires MCP. Not the generated job-title lens pack.
-- **Ordinary CI is the first-run mechanism lock.** Push and pull request
-  run `lint`, `typecheck`, and `npm run test:first-run`. The full gate
-  (`npm test`, read-only HOME, packaged-install smoke) stays on
-  `workflow_dispatch` and on the release-tag workflow. Tracker-only
-  commits under `.beads/` do not start a run.
-- **Host-supplied namings are this session, not the namer.** When this
-  session passes namings into `record_outcome`, `inferredBy` is
-  `session`. `namer` is leftover for Construct's namer seam. The
-  keyword map is not that path.
-- **Doctor reports spawnable separately from in-session.** Bob is surveyed
-  and never spawnable. A missing `cursor-agent` is `spawnable: no` even
-  when this process is inside Cursor.
-- **Node major < 22 refuses before `node:sqlite`.** A readable sentence,
-  not a stack. 22.14 still runs; doctor still reports the 22.18 floor.
+(empty — folded into 3.0.0-alpha.20)
 
 ## 3.0.0-alpha.18 — 2026-08-25
 

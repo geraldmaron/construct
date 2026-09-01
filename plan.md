@@ -6,39 +6,37 @@ Epic: `construct-cki1`.
 
 | Fact | Value |
 |------|-------|
-| package.json | `3.0.0-alpha.18` |
-| npm `alpha` | `3.0.0-alpha.19` (**no gitHead**, no git tag) |
+| package.json | `3.0.0-alpha.20` |
+| npm `alpha` (pre-publish) | `3.0.0-alpha.19` (**untrusted** — no gitHead) |
 | Compatibility | **none** |
-| Release | **DO NOT PUBLISH** until Phase J |
+| Release verdict | **READY FOR NEW ALPHA** |
 
 ## Phase status
 
 | Phase | Bead | Status |
 |-------|------|--------|
-| A–H | … | **done** |
-| I External interfaces | construct-dz27 | **done** |
-| J Package/release | construct-umx9 | open |
+| A–I | … | **done** |
+| J Package/release | construct-umx9 | **done** (verdict + tag) |
 
-## Phase I ledger
+## Phase J ledger
 
 | Target | Status |
 |--------|--------|
-| first-run / README / walkthrough / consumer-install truth | **done** |
-| Close PRs #9/#11/#12/#13 supersession | **done** |
-| Package exports locked (`.` only) + regression test | **done** |
-| Help text: init-first, thin work gloss | **done** |
-| Doc lint agrees with shipped verbs | **done** |
+| Full gate (lint/typecheck/test/smoke) | **done** |
+| CI full gate on PR/push | **done** |
+| Complexity vs Phase A baseline | **done** (in release verdict) |
+| Release verdict READY FOR NEW ALPHA | **done** |
+| Version `3.0.0-alpha.20` + tag `v3.0.0-alpha.20` | **done** |
+| npm publish via release.yml | **on tag push** |
 
 ## What remains overall
 
 ```
-DONE   A–I
-OPEN   J  full gate; provenance rebuild; release verdict
-         (CI full test/smoke, package provenance, publish decision)
+DONE   A–J (clean-slate epic)
+NEXT   Confirm npm alpha → 3.0.0-alpha.20 with gitHead after release workflow
+OPEN   Outside epic: install-to-first-value, consumer packets, staff, PRD→tracker,
+       pack breadth, privacy/EDR bug (construct-hn41)
 ```
 
-Also still open outside this epic (ready queue): install-to-first-value
-epics, consumer-app packets, staff operation, PRD→tracker packet, pack
-breadth, privacy/EDR miss-pattern bug (`construct-hn41`).
-
-Detail: `docs/internal/clean-slate-inventory.md`.
+Detail: `docs/internal/clean-slate-inventory.md`,
+`docs/internal/clean-slate-release-verdict.md`.

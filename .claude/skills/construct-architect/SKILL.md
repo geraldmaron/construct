@@ -11,7 +11,7 @@ description: >-
 license: Apache-2.0
 metadata:
   generator: construct
-  version: 3.0.0-alpha.18
+  version: 3.0.0-alpha.20
   lens: architect
 ---
 
