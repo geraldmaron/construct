@@ -15,9 +15,10 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, show, source, work } from '../../src/cli/index.ts';
+import { main, show, source } from '../../src/cli/index.ts';
 import { openStore } from '../../src/kernel/store/open.ts';
-import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
+import { appendWorkLog } from '../../src/kernel/store/worklog.ts';
+import { plantCompletedDeliverables } from '../harness/plant-deliverables.ts';
 import { sterileHome } from '../harness/sterile.ts';
 
 sterileHome();
@@ -68,25 +69,26 @@ function ground(): string {
   return dir;
 }
 
-/** A host that answers with one cited claim, so the citation is the thing under test. */
-function citingHost(document: string): HostAdapter {
-  return {
-    name: 'stand-in',
-    kind: 'general',
-    capabilities: [],
-    init: async (): Promise<void> => {},
-    health: async () => ({ live: true }),
-    cancel: async () => ({ cancelled: false }),
-    invoke: async (request: unknown): Promise<HostResult> => ({
-      id: (request as { role: string }).role,
-      status: 'ok',
-      output: {
-        text: `## finding\n\n- Two regions ship in Q3 [cite:${document}].`,
-        usage: { cost: 0.01 },
-      },
-      error: null,
+/** Plant a finished deliverable that cites `document`, with grounding so show can tier it. */
+function plantCited(document: string): number {
+  return plantCompletedDeliverables({
+    ground: true,
+    bodyFor: () => ({
+      text: `## finding\n\n- Two regions ship in Q3 [cite:${document}].`,
     }),
-  };
+    afterSettle: (store, task) => {
+      appendWorkLog(store, {
+        run: task.run,
+        task: task.id,
+        role: task.role,
+        action: 'role-dispatched',
+        detail: {
+          declared: [{ source: 'planted', authority: 'aspirational', sensitive: false }],
+        },
+        at: '2026-08-31T12:00:00.000Z',
+      });
+    },
+  });
 }
 
 test('a source is declared with what it is, and construct source list reads it back', async () => {
@@ -181,7 +183,7 @@ test('a deliverable citing an aspirational source shows that label where it cite
         ]);
       },
       () => main(['outcome', '--domains=strategy-alignment', 'decide what ships next']),
-      () => work(['--all', `--dir=${dir}`], citingHost(document)),
+      () => (plantCited(document), 0),
       () => {
         const run = inStore(
           (store) => (store.db.prepare('SELECT run FROM tasks LIMIT 1').get() as { run: string }).run,
@@ -218,7 +220,7 @@ test('re-describing a source changes what show renders for a deliverable already
       () => source(['add', '--kind=directory', `--locator=${dir}`]),
       () => source(['describe', `--id=${sourceId()}`, '--authority=aspirational']),
       () => main(['outcome', '--domains=strategy-alignment', 'decide what ships next']),
-      () => work(['--all', `--dir=${dir}`], citingHost(document)),
+      () => (plantCited(document), 0),
       () => {
         const before = show(['--run', runId()]);
         // Splits the capture into the two renderings, so each is asserted on

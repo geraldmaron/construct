@@ -17,8 +17,8 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { main, work } from '../../src/cli/index.ts';
-import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
+import { main } from '../../src/cli/index.ts';
+import { plantCompletedDeliverables } from '../harness/plant-deliverables.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
@@ -496,31 +496,17 @@ test('a source the workspace never declared, and one it retired, are both refuse
   assert.match(retired.err, /it is not somewhere to send changes/);
 });
 
-/** A host answering each dispatched role with a document that has findings in it. */
-function workHost(): HostAdapter {
-  return {
-    name: 'stand-in',
-    kind: 'general',
-    capabilities: [],
-    init: async (): Promise<void> => {},
-    health: async () => ({ live: true }),
-    cancel: async () => ({ cancelled: false }),
-    invoke: async (request: unknown): Promise<HostResult> => {
-      const { role } = request as { role: string };
-      return {
-        id: role,
-        status: 'ok',
-        output: {
-          text: [
-            '## Issues',
-            '',
-            `1. The storage note says the store opens read-only, which the coordinator contradicts, per ${role}.`,
-          ].join('\n'),
-        },
-        error: null,
-      };
-    },
-  };
+/** Plant findings that match the former stand-in workHost body. */
+function plantDocFindings(): number {
+  return plantCompletedDeliverables({
+    bodyFor: (role) => ({
+      text: [
+        '## Issues',
+        '',
+        `1. The storage note says the store opens read-only, which the coordinator contradicts, per ${role}.`,
+      ].join('\n'),
+    }),
+  });
 }
 
 function latestRun(): string {
@@ -535,7 +521,7 @@ test('a citation claiming a deliverable line must resolve to one before anything
   const { code, err } = await run([
     ['outcome', '--domains=strategy-alignment', 'Report what the storage documents disagree about'],
     declareDocs(),
-    () => work(['--all'], workHost()),
+    () => (plantDocFindings(), 0),
     // The findings become proposals first, so the citation used below is one a
     // reader can actually follow rather than one invented for the test.
     () => main(['propose', `--run=${latestRun()}`, '--source=docs-1']),

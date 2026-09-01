@@ -129,7 +129,8 @@ test('an admitted profile staffs nothing: it becomes a decision defaulting to NO
     assert.equal(await s.cli(['staff', 'propose', '--run=run-unmet', `--file=${file}`]), 0);
     assert.match(s.out(), /admitted to the gate as "archival-appraisal" \(grounded\)/);
     assert.match(s.out(), /This staffs nothing yet/);
-    assert.match(s.out(), /not staffed: the catalog stays as it is/);
+    assert.match(s.out(), /construct inbox/);
+    assert.match(s.out(), /inbox decide staffing:run-unmet:archival-appraisal/);
 
     const raised = openDecisions(openStore(storePath(resolvePaths()))).find(
       (d) => d.id === 'staffing:run-unmet:archival-appraisal',
@@ -187,6 +188,8 @@ test('a file that is not a profile is reported as unreadable rather than crashin
 test('the verb refuses to guess what you meant', async () => {
   await session(async (s) => {
     assert.equal(await s.cli(['staff']), 2);
-    assert.match(s.err(), /usage: construct staff list/);
+    assert.match(s.out(), /usage: construct staff list/);
+    assert.match(s.out(), /construct staff create/);
+    assert.match(s.out(), /construct staff propose/);
   });
 });

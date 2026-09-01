@@ -242,16 +242,12 @@ test('named domains staff those roles; empty staff after that naming is a fail',
     assert.deepEqual(recorded.implicated.sort(), ['privacy', 'security']);
     assertNotDoctorStatusVerbWall(recorded.out, 'outcome --domains');
 
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assertNotDoctorStatusVerbWall(out, 'work after named domains');
-    assert.match(out, /In-session dispatch through cursor/);
-    assert.match(out, /will not spawn a second cursor CLI/);
-    assert.match(out, /submit_work/);
-    assert.match(out, /privacy/);
-    assert.match(out, /security/);
-    assert.doesNotMatch(out, /cursor-agent/);
-    assert.doesNotMatch(out, /Record an outcome first/i);
+    // Home-store ambient work is gone: without init the verb refuses and
+    // points at MCP / headless claim on an initialized project.
+    const { result, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
+    assert.match(err, /next_work|submit_work|MCP/);
   });
 });
 
@@ -282,19 +278,16 @@ test('Node ExperimentalWarning does not staff measurement', () => {
   assert.ok(!domains.includes('measurement'), `warning staffed ${domains.join(',')}`);
 });
 
-test('engineer ask does not staff measurement from ExperimentalWarning', async () => {
+test('engineer ask without a host refuses keyword staffing rather than staffing from a warning', async () => {
   await isolated(async () => {
     const leaked = `${ENGINEER_ASK}\n${NODE_WARNING}`;
     for (const question of [ENGINEER_ASK, leaked]) {
-      const { result, out } = await capture(() => ask([question]));
-      assert.equal(result, 0);
-      assert.doesNotMatch(out, /measurement/);
+      const { result, err } = await capture(() => ask([question]));
+      assert.equal(result, 2);
+      assert.match(err, /Keyword routing is not a product staffing path/);
       const store = openStore(storePath(resolvePaths()));
       try {
-        assert.ok(
-          listTasks(store).every((task) => task.role !== 'measurement'),
-          `ask staffed measurement from ${JSON.stringify(question)}`,
-        );
+        assert.equal(listTasks(store).length, 0, `ask queued work from ${JSON.stringify(question)}`);
       } finally {
         store.close();
       }
@@ -302,17 +295,22 @@ test('engineer ask does not staff measurement from ExperimentalWarning', async (
   });
 });
 
-test('work finds the run just staffed by named domains', async () => {
+test('named-domain outcome queues tasks; work without init still refuses', async () => {
   await isolated(async () => {
     await staffViaDomains('look at this', ['privacy']);
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /privacy/);
-    assert.doesNotMatch(out, /Record an outcome first/i);
+    const store = openStore(storePath(resolvePaths()));
+    try {
+      assert.ok(listTasks(store).some((task) => task.role === 'privacy'));
+    } finally {
+      store.close();
+    }
+    const { result, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
-test('in-session Cursor work does not spawn cursor-agent', async () => {
+test('in-session Cursor adapter refuses a second runtime; work without init refuses too', async () => {
   await isolated(async () => {
     await staffViaDomains('look at this', ['privacy']);
     let spawned = 0;
@@ -328,11 +326,10 @@ test('in-session Cursor work does not spawn cursor-agent', async () => {
     await assert.rejects(() => adapter.invoke({ role: 'privacy', task: 'look' }), /second runtime|construct serve/);
     assert.equal(spawned, 0);
 
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
+    const { result, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
     assert.equal(spawned, 0);
-    assert.match(out, /will not spawn a second cursor CLI/);
-    assert.doesNotMatch(out, /cursor-agent/);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
