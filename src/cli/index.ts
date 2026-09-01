@@ -186,7 +186,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   corpus: { gloss: 'export the verdict corpus', flags: [] },
   log: { gloss: 'read back what a run did, in whose name', flags: ['run', 'json'] },
   inbox: {
-    gloss: 'typed decisions waiting on you (approve, trust, waive, …)',
+    gloss: 'typed decisions waiting on you (approve, trust, waive, judgments, …)',
     flags: ['json'],
   },
   decide: { gloss: 'legacy decide verb — prefer construct inbox decide', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },

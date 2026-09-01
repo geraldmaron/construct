@@ -14,6 +14,10 @@
   (RESEARCH-DECISIONS §31).
 - **`source relate --as=supersedes` states the withhold**, and
   `source relations` prints each edge's ground-assembly effect.
+- **Estimative judgments resolve once** (`happened` / `did_not_happen` /
+  `unresolvable`); overdue horizons nudge via `inbox`; calibration prints
+  counts and refuses a Brier rate below the §1 n-floor
+  (`construct inbox judgments|resolve-judgment|calibration`).
 
 ## 3.0.0-alpha.20 — 2026-09-01
 
