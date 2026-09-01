@@ -1,8 +1,7 @@
-# Ordinary push and pull request run lint, typecheck, and the first-run
-# mechanism/surface subset. The full gate (unit suite, read-only HOME,
-# packaged-install smoke) stays in this file and runs on workflow_dispatch.
-# Release tags still run the full gate in release.yml before publish.
-# Tracker-only commits under .beads/ do not start a run.
+# Ordinary push and pull request run the real gate: lint, typecheck, full
+# unit suite, sterile read-only HOME, and packaged-install smoke. Live host
+# conformance stays out of PR (credentials); release.yml still records that
+# evidence before publish. Tracker-only commits under .beads/ do not start a run.
 
 name: ci
 
@@ -24,8 +23,7 @@ permissions:
   contents: read
 
 jobs:
-  default:
-    if: github.event_name != 'workflow_dispatch'
+  lint-typecheck:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -35,10 +33,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm run test:first-run
 
   test:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -46,12 +42,9 @@ jobs:
         with:
           node-version: '22.18'
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
       - run: npm test
 
   sterile-readonly-home:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -66,7 +59,6 @@ jobs:
           HOME=/tmp/readonly-home npm test
 
   packaged-install-smoke:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
