@@ -26,6 +26,7 @@ import type {
 import {
   declareSourceEdge,
   getSourceEdge,
+  groundAssemblyEffect,
   relationPhrase,
   retireSourceEdge,
   SOURCE_RELATIONS,
@@ -363,6 +364,13 @@ export function source(argv: string[]): number {
           retiredAt: null,
         })}\n`,
       );
+      // Supersedes withholds the replaced source from dispatches that carry
+      // the replacement — say so at declare time, or the silence is the bug.
+      if (relation === 'supersedes') {
+        process.stdout.write(
+          '  the replaced source will be withheld from dispatches that carry its replacement\n',
+        );
+      }
       return 0;
     });
   }
@@ -381,6 +389,9 @@ export function source(argv: string[]): number {
             (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
             '\n',
         );
+        if (row.retiredAt === null) {
+          process.stdout.write(`  ground: ${groundAssemblyEffect(row.relation)}\n`);
+        }
       }
       return 0;
     });
