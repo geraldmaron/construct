@@ -139,3 +139,43 @@ export function listRoutines(store: StateStore): Routine[] {
     .all() as unknown as Row[];
   return rows.map(toRoutine);
 }
+
+export function setRoutineEnabled(
+  store: StateStore,
+  input: { readonly id: string; readonly enabled: boolean; readonly at: string },
+): Routine {
+  const existing = getRoutine(store, input.id);
+  if (!existing) throw new Error(`routine ${input.id} not found`);
+  store.db
+    .prepare(`UPDATE routines SET enabled = ?, updated_at = ? WHERE id = ?`)
+    .run(input.enabled ? 1 : 0, input.at, input.id);
+  appendActivity(store, {
+    at: input.at,
+    kind: input.enabled ? 'routine.enabled' : 'routine.disabled',
+    payload: { routineId: input.id },
+  });
+  return getRoutine(store, input.id)!;
+}
+
+export function markRoutineRun(
+  store: StateStore,
+  input: {
+    readonly id: string;
+    readonly at: string;
+    readonly nextRunAt?: string | null;
+  },
+): Routine {
+  const existing = getRoutine(store, input.id);
+  if (!existing) throw new Error(`routine ${input.id} not found`);
+  store.db
+    .prepare(
+      `UPDATE routines SET last_run_at = ?, next_run_at = COALESCE(?, next_run_at), updated_at = ? WHERE id = ?`,
+    )
+    .run(input.at, input.nextRunAt ?? null, input.at, input.id);
+  appendActivity(store, {
+    at: input.at,
+    kind: 'routine.ran',
+    payload: { routineId: input.id },
+  });
+  return getRoutine(store, input.id)!;
+}

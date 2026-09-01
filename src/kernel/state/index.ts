@@ -51,6 +51,7 @@ export {
   createStaffMember,
   getStaffMember,
   listStaffMembers,
+  setStaffStatus,
   type StaffMember,
   type StaffStatus,
 } from './staff.ts';
@@ -59,6 +60,8 @@ export {
   createRoutine,
   getRoutine,
   listRoutines,
+  setRoutineEnabled,
+  markRoutineRun,
   type Routine,
   type RoutineTriggerKind,
 } from './routines.ts';

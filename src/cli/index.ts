@@ -40,6 +40,7 @@ import { consent, mode, settings, trust } from './settings.ts';
 import { standing } from './standing.ts';
 import { resolveScheduleContext, schedule } from './schedule.ts';
 import { staff } from './staff.ts';
+import { routine } from './routine.ts';
 import { completions } from './completions.ts';
 import { wire } from './wire.ts';
 import { init } from './init.ts';
@@ -85,6 +86,7 @@ export { consent, mode, settings, trust } from './settings.ts';
 export { standing } from './standing.ts';
 export { resolveScheduleContext, schedule, scheduleStatusLine } from './schedule.ts';
 export { staff } from './staff.ts';
+export { routine } from './routine.ts';
 export { completions } from './completions.ts';
 export { wire } from './wire.ts';
 export { init } from './init.ts';
@@ -102,7 +104,7 @@ export { daemon } from './daemon.ts';
 export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
-  'settings', 'trust', 'staff', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
+  'settings', 'trust', 'staff', 'routine', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'wire', 'init', 'reset', 'doctor', 'backup',
   'cleanup', 'completions', 'daemon', 'status', 'version', 'help',
 ]);
@@ -157,26 +159,39 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   },
   audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
   standing: {
-    gloss: 'set and fire standing outcomes on a schedule',
+    gloss: 'legacy scheduled outcomes — prefer construct routine',
     flags: [...HOST_FLAGS, 'all', 'domains', 'due', 'every', 'workspace', 'ceiling', 'concurrency', 'lease-minutes'],
   },
-  schedule: { gloss: 'install the platform timer that fires what is due', flags: ['every', 'at', 'always-on', 'dry-run'] },
+  schedule: { gloss: 'legacy platform timer — prefer construct routine', flags: ['every', 'at', 'always-on', 'dry-run'] },
   record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
-  consent: { gloss: 'show or set standing consent for low-risk changes', flags: ['workspace', 'set'] },
+  consent: { gloss: 'legacy consent verb — prefer construct inbox', flags: ['workspace', 'set'] },
   settings: { gloss: 'show every setting and where it lives, or set one', flags: ['scope', 'workspace'] },
-  trust: { gloss: 'trust or withdraw a project settings file', flags: ['ratify', 'revoke'] },
-  staff: { gloss: 'list the staff, or the staff a run drew', flags: ['file', 'run'] },
+  trust: { gloss: 'legacy trust verb — prefer construct inbox', flags: ['ratify', 'revoke'] },
+  staff: {
+    gloss: 'StaffMember CRUD on init’d projects; unmet/propose for the staffing gate',
+    flags: ['file', 'run', 'id', 'name', 'title', 'mission'],
+  },
+  routine: {
+    gloss: 'create, list, enable, and run a Routine (headless pin required to run)',
+    flags: ['id', 'output', 'pin', 'skill'],
+  },
   skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
-  watch: { gloss: 'watch ground and fire an outcome on change', flags: [...HOST_FLAGS, 'all', 'due', 'every', 'root', 'source', 'workspace'] },
+  watch: {
+    gloss: 'legacy ground watch — prefer construct routine',
+    flags: [...HOST_FLAGS, 'all', 'due', 'every', 'root', 'source', 'workspace'],
+  },
   reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
-  waive: { gloss: 'waive a task’s challenge with a reason', flags: ['task', 'challenge', 'reason'] },
-  revoke: { gloss: 'revoke a task’s authority with a reason', flags: ['task', 'reason'] },
-  verdict: { gloss: 'say whether a run was right to surface what it did', flags: ['run', 'confirm', 'dismiss', 'missed', 'source'] },
+  waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
+  revoke: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'reason'] },
+  verdict: { gloss: 'legacy — prefer construct inbox decide', flags: ['run', 'confirm', 'dismiss', 'missed', 'source'] },
   corpus: { gloss: 'export the verdict corpus', flags: [] },
   log: { gloss: 'read back what a run did, in whose name', flags: ['run', 'json'] },
-  inbox: { gloss: 'hold the decisions that are genuinely yours', flags: ['json'] },
-  decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
+  inbox: {
+    gloss: 'typed decisions waiting on you (approve, trust, waive, …)',
+    flags: ['json'],
+  },
+  decide: { gloss: 'legacy decide verb — prefer construct inbox decide', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
   wire: { gloss: 'legacy alias for ambient MCP write — prefer construct init', flags: ['yes'] },
@@ -189,7 +204,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
-  daemon: { gloss: 'run, inspect, and stop the opt-in resident sweeper', flags: ['every', 'foreground', 'idle-exit'] },
+  daemon: { gloss: 'legacy resident sweeper — prefer construct routine', flags: ['every', 'foreground', 'idle-exit'] },
   version: { gloss: 'print the version and tuning stamp', flags: [] },
   help: { gloss: 'show this help', flags: [] },
 });
@@ -201,16 +216,32 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
  * caught by the help-coverage test.
  */
 const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.freeze([
-  ['Starting work', ['outcome', 'ask', 'standing', 'watch', 'schedule']],
+  ['Starting work', ['outcome', 'ask', 'routine']],
   ['Running it', ['work', 'notes']],
   ['Reading back', ['status', 'show', 'log', 'plan', 'inbox', 'corpus']],
-  ['Outward changes and decisions', ['propose', 'audit', 'decide', 'waive', 'revoke']],
+  ['Outward changes', ['propose', 'audit']],
   ['Ground', ['source', 'review']],
-  ['Learning and governance', ['lessons', 'verdict', 'staff']],
-  ['Workspace settings', ['mode', 'consent', 'record', 'settings', 'trust']],
+  ['Staff and learning', ['staff', 'lessons']],
+  ['Workspace settings', ['mode', 'record', 'settings']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
   ['Presence and hosts', ['serve', 'init', 'reset']],
-  ['Maintenance', ['doctor', 'backup', 'cleanup', 'daemon', 'skills', 'completions', 'version', 'help', 'wire']],
+  ['Maintenance', ['doctor', 'backup', 'cleanup', 'skills', 'completions', 'version', 'help']],
+  [
+    'Legacy aliases (prefer inbox / routine / init)',
+    [
+      'decide',
+      'waive',
+      'revoke',
+      'verdict',
+      'consent',
+      'trust',
+      'standing',
+      'watch',
+      'schedule',
+      'daemon',
+      'wire',
+    ],
+  ],
 ]);
 
 /**
@@ -263,9 +294,9 @@ export function groupedHelp(): string {
     '  should be able to show up from the ground. The shipped binary still',
     '  requires namings; that is the old host-namer rule, not success.',
     '',
-    'From a plain terminal: outcome → work → show → inbox → verdict',
-    '  outcome records what you want, work runs it, show reads it back,',
-    '  inbox holds what only you can decide, verdict says whether it was right.',
+    'From a plain terminal: init → outcome → work → show → inbox',
+    '  StaffMember owns mission; Routine owns recurring work; Inbox owns judgment.',
+    '  Legacy verbs (decide/waive/standing/…) still run — prefer the new nouns.',
     '',
   ];
   for (const [title, verbs] of HELP_GROUPS) {
@@ -397,6 +428,8 @@ async function run(argv: string[]): Promise<number> {
       return trust(argv.slice(1));
     case 'staff':
       return staff(argv.slice(1));
+    case 'routine':
+      return routine(argv.slice(1));
     case 'skills':
       return skills(argv.slice(1));
     case 'inbox':

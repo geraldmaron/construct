@@ -29,6 +29,8 @@ import { withStore } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
 import { runFlag } from './flags.ts';
 import { jsonFlag, writeJson } from './json.ts';
+import { tryOpenProjectStore } from './project-store.ts';
+import { createDecisionService } from '../kernel/services/decision.ts';
 
 /**
  * Whether a run id names a run this store actually recorded, as opposed to
@@ -376,7 +378,15 @@ function writeRunState(store: Store, run?: string): void {
   }
 }
 
-export function inbox(argv: string[] = []): number {
+export function inbox(argv: string[] = [], cwd: string = process.cwd()): number {
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      return inboxV1(opened.store, argv);
+    } finally {
+      opened.store.close();
+    }
+  }
   return withStore((store) => {
     const open = openDecisions(store);
     // Waiting outward changes are calls on the user exactly as decisions are,
@@ -411,4 +421,57 @@ export function inbox(argv: string[] = []): number {
     process.stdout.write(`Resolve with: construct decide <id> "<your call>"\n${waitingLine}`);
     return 0;
   });
+}
+
+function inboxV1(store: import('../kernel/state/open.ts').StateStore, argv: string[]): number {
+  const decisions = createDecisionService(store);
+  const sub = argv[0];
+  if (sub === 'decide') {
+    const id = (argv[1] ?? '').trim();
+    const text = argv.slice(2).join(' ').trim().replace(/^["']|["']$/g, '');
+    if (!id || !text) {
+      process.stderr.write(
+        'usage: construct inbox decide <id> "<your call>"\n',
+      );
+      return 2;
+    }
+    try {
+      const resolved = decisions.resolve({
+        id,
+        resolution: { text },
+        resolvedBy: 'operator',
+        at: new Date().toISOString(),
+      });
+      process.stdout.write(
+        `resolved ${resolved.id} (${resolved.kind}): ${escapeForTerminal(text)}\n`,
+      );
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `construct inbox: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    }
+  }
+
+  const open = decisions.inbox();
+  if (jsonFlag(argv)) {
+    writeJson({ openDecisions: open });
+    return 0;
+  }
+  if (open.length === 0) {
+    process.stdout.write('inbox: empty. Nothing needs you right now.\n');
+    return 0;
+  }
+  process.stdout.write(`inbox (${open.length}):\n\n`);
+  for (const decision of open) {
+    process.stdout.write(
+      `  ${decision.id}  [${decision.kind}]  ${escapeForTerminal(decision.question)}\n`,
+    );
+  }
+  process.stdout.write(
+    `\nResolve with: construct inbox decide <id> "<your call>"\n` +
+      '(waive / revoke / verdict / consent / trust are typed kinds on this inbox, not separate verbs)\n',
+  );
+  return 0;
 }
