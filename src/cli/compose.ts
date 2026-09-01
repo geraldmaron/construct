@@ -49,7 +49,7 @@ import {
 } from '../kernel/run/publish.ts';
 import { groundRootsFor } from '../kernel/run/sourcereads.ts';
 import { voiceOverrideFor } from '../kernel/run/voicerecord.ts';
-import { attributionLine } from '../kernel/voice/voice.ts';
+import { attributionLine, voiceOverrideLine } from '../kernel/voice/voice.ts';
 import { resolvedLocale } from './locale.ts';
 import type { HostAdapter } from '../kernel/hosts/interface.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
@@ -405,13 +405,15 @@ export async function compose(argv: string[], hostOverride?: HostAdapter): Promi
     // that needs to check the text rather than read it.
     const asRecord = flags.record !== undefined;
     process.stdout.write(`\n# ${plan.outcome}\n`);
-    // Who framed this, in whose name, before anything they framed. A document
-    // that names its concerns only claim by claim leaves the reader to work out
-    // at the end who was in the room, and a reader who does not know that
-    // cannot weigh what is missing from it.
-    process.stdout.write(
-      `\n${attributionLine(sources.map((s) => (asRecord ? s.role : renderAttribution(s.role))))}\n`,
-    );
+    // Who framed this, in whose name, before anything they framed. A voice
+    // override replaces the house-voice claim rather than contradicting it.
+    if (voice) {
+      process.stdout.write(`\n${voiceOverrideLine(voice)}\n`);
+    } else {
+      process.stdout.write(
+        `\n${attributionLine(sources.map((s) => (asRecord ? s.role : renderAttribution(s.role))))}\n`,
+      );
+    }
 
     // Before the claims, not after them. A reader who reaches the end of a
     // document and only then learns that none of its sources passed their own

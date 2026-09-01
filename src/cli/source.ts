@@ -33,6 +33,11 @@ import {
   sourceEdgesFor,
 } from '../kernel/store/source-edges.ts';
 import type { SourceEdge, SourceRelation } from '../kernel/store/source-edges.ts';
+import { activeWatchForSource } from '../kernel/store/source-watches.ts';
+import {
+  divergenceInertNotice,
+  divergenceInertUnwatchedEnd,
+} from '../kernel/watch/source-ground.ts';
 import type { Store } from '../kernel/store/open.ts';
 import { existsSync } from 'node:fs';
 import { DOCUMENT_CAP } from '../hosts/sources.ts';
@@ -82,6 +87,18 @@ function relationLine(store: Store, edge: SourceEdge): string {
     `${where(edge.from)} ${relationPhrase(edge.relation)} ${where(edge.to)}` +
     (edge.note.trim() === '' ? '' : `  — ${edge.note.trim()}`)
   );
+}
+
+function divergenceInertLine(store: Store, edge: SourceEdge): string | null {
+  if (edge.retiredAt !== null) return null;
+  const unwatchedId = divergenceInertUnwatchedEnd(
+    edge,
+    activeWatchForSource(store, edge.from) !== null,
+    activeWatchForSource(store, edge.to) !== null,
+  );
+  if (unwatchedId === null) return null;
+  const unwatched = getSource(store, unwatchedId);
+  return unwatched ? divergenceInertNotice(unwatched) : null;
 }
 
 /**
@@ -391,6 +408,8 @@ export function source(argv: string[]): number {
         );
         if (row.retiredAt === null) {
           process.stdout.write(`  ground: ${groundAssemblyEffect(row.relation)}\n`);
+          const inert = divergenceInertLine(store, row);
+          if (inert !== null) process.stdout.write(`  ${inert}\n`);
         }
       }
       return 0;

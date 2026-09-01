@@ -782,6 +782,11 @@ test('a run worked under a voice override composes under it, without the user re
   // Construct is a thing the user should see themselves having chosen.
   assert.match(out, /voice: this run was worked under an override \(cli --voice\)/);
   assert.match(out, /Write every line of it as a limerick\./);
+  assert.match(
+    out,
+    /\*Written under a voice override \(cli --voice\): Write every line of it as a limerick\.\*/,
+    'the composed document states the override for its reader',
+  );
 });
 
 /** The house voice is the case that needs no flag and no record, and keeps it. */

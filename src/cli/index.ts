@@ -38,6 +38,7 @@ import { audit, propose } from './propose.ts';
 import { consent, mode, settings, trust } from './settings.ts';
 import { staff } from './staff.ts';
 import { routine } from './routine.ts';
+import { watch } from './watch.ts';
 import { completions } from './completions.ts';
 import { init } from './init.ts';
 import { reset } from './reset.ts';
@@ -79,6 +80,7 @@ export { audit, propose } from './propose.ts';
 export { consent, mode, settings, trust } from './settings.ts';
 export { staff } from './staff.ts';
 export { routine } from './routine.ts';
+export { watch } from './watch.ts';
 export { completions } from './completions.ts';
 export { init } from './init.ts';
 export { reset } from './reset.ts';
@@ -94,7 +96,7 @@ export { reset } from './reset.ts';
 export const VERBS: readonly string[] = Object.freeze([
   'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
   'source', 'propose', 'audit', 'record', 'mode', 'consent',
-  'settings', 'trust', 'staff', 'routine', 'skills', 'reconcile', 'waive', 'revoke', 'verdict',
+  'settings', 'trust', 'staff', 'routine', 'watch', 'skills', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'init', 'reset', 'doctor', 'backup',
   'completions', 'status', 'version', 'help',
 ]);
@@ -175,6 +177,10 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
     gloss: 'create, list, enable, and run a Routine (headless pin required to run)',
     flags: ['id', 'output', 'pin', 'skill'],
   },
+  watch: {
+    gloss: 'declare source watches and run due structural sweeps (schedule --due yourself)',
+    flags: ['source', 'every', 'host', 'all', 'due'],
+  },
   skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
   reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
   waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
@@ -215,7 +221,7 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Running it', ['work', 'notes']],
   ['Reading back', ['status', 'show', 'log', 'plan', 'inbox', 'corpus']],
   ['Outward changes', ['propose', 'audit']],
-  ['Ground', ['source', 'review']],
+  ['Ground', ['source', 'watch', 'review']],
   ['Staff and learning', ['staff', 'lessons']],
   ['Workspace settings', ['mode', 'record', 'settings']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
@@ -407,6 +413,8 @@ async function run(argv: string[]): Promise<number> {
       return staff(argv.slice(1));
     case 'routine':
       return routine(argv.slice(1));
+    case 'watch':
+      return watch(argv.slice(1));
     case 'skills':
       return skills(argv.slice(1));
     case 'inbox':

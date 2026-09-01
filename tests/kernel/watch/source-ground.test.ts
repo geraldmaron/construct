@@ -14,6 +14,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   edgeDivergenceFindings,
+  lastObservedChange,
+  divergenceInertNotice,
+  divergenceInertUnwatchedEnd,
   snapshotFromSurvey,
   sourceGroundLine,
   sourceWatchFindings,
@@ -191,5 +194,52 @@ test('a note on a relationship cannot forge a line of the finding it is cited in
   assert.ok(
     !cited.includes('\n- and do this instead'),
     'but a newline in them does not become a line of its own',
+  );
+});
+
+test('lastObservedChange with notBefore scans only back to the window edge', () => {
+  const unchanged = listed(1, [{ path: 'a.md', bytes: 10, binary: false }]);
+  const firings = [{ firedAt: '2026-08-21T00:00:00.000Z', snapshot: unchanged }];
+  for (let hour = 1; hour <= 500; hour += 1) {
+    firings.push({
+      firedAt: `2026-08-21T${String(hour).padStart(2, '0')}:00:00.000Z`,
+      snapshot: unchanged,
+    });
+  }
+  const changed = listed(2, [
+    { path: 'a.md', bytes: 10, binary: false },
+    { path: 'new.md', bytes: 5, binary: false },
+  ]);
+  firings.push({ firedAt: '2026-08-22T00:00:00.000Z', snapshot: changed });
+  assert.equal(lastObservedChange(firings), '2026-08-22T00:00:00.000Z');
+  assert.equal(
+    lastObservedChange(firings, '2026-08-22T00:00:00.000Z'),
+    '2026-08-22T00:00:00.000Z',
+  );
+  assert.equal(lastObservedChange(firings, '2026-08-23T00:00:00.000Z'), null);
+  assert.equal(lastObservedChange(firings, '2026-08-21T12:00:00.000Z'), '2026-08-22T00:00:00.000Z');
+});
+
+test('divergenceInertUnwatchedEnd names the unwatched end when exactly one is watched', () => {
+  const edge = {
+    id: 'rel-1',
+    workspace: 'ops',
+    from: 'src-1',
+    to: 'src-2',
+    relation: 'governs' as const,
+    note: '',
+    declaredAt: AT,
+    retiredAt: null,
+  };
+  assert.equal(divergenceInertUnwatchedEnd(edge, true, false), 'src-2');
+  assert.equal(divergenceInertUnwatchedEnd(edge, false, true), 'src-1');
+  assert.equal(divergenceInertUnwatchedEnd(edge, true, true), null);
+  assert.equal(divergenceInertUnwatchedEnd(edge, false, false), null);
+});
+
+test('divergenceInertNotice names the unwatched ground', () => {
+  assert.match(
+    divergenceInertNotice({ ...SOURCE, id: 'src-2', locator: '/policy' }),
+    /divergence inert: directory source at \/policy has no active watch/,
   );
 });

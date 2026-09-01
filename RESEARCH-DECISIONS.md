@@ -2882,3 +2882,26 @@ boundary).
 **What this does not license.** Shipping embedding-as-implicator code; claiming
 compliance is covered for o21 by keywords; treating labeled-set tuning as the
 general fix for inference-shaped misses.
+
+## 32. Open-weight org-harness promotion runs on subscription hosts only (2026-09-01)
+
+**Question.** `construct-fdl` closes when a recorded open-weight family passes
+all four org-harness rungs and lands in `TUNED_FAMILIES`. The bead's dispatch
+note still names `scripts/run-org-harness-ollama.mjs` and local Ollama pulls.
+
+**Decision.** Development verification for this repository runs on Gerald's
+subscription-backed hosts (Claude Code, Cursor, Codex) — not on local Ollama or
+other local model servers. That rule governs probes, harness runs, trials, and
+measurement arms that *build or verify Construct*.
+
+The local Ollama path named in `construct-fdl` is **withdrawn as a close gate**
+for this repo. A family may still be promoted when a **subscription-reachable**
+hosted open-weight model passes the committed lens prompt under the org-harness
+scorecard, with the run recorded the same way other harness arms are. Until
+such a run exists, the family stays out of `TUNED_FAMILIES` and keeps the
+best-effort degradation note — an honest partial (for example `qwen3.6:35b`'s
+2026-08-10 run) is not a promotion.
+
+**What this does not change.** User choice: someone configuring Construct with a
+local model still gets that choice. This section governs **development**
+measurement only.
