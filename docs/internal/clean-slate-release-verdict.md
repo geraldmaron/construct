@@ -21,8 +21,11 @@ intentional provenance rebuild. Registry `3.0.0-alpha.19` remains untrusted
 | npm `alpha` (pre-publish) | `3.0.0-alpha.19` — **do not trust** |
 | Publish path | `release.yml` on tag push (OIDC trusted publisher, `--tag alpha`) |
 
-After the tag workflow succeeds, re-check: `npm view @geraldmaron/construct@alpha
-version gitHead` must equal `3.0.0-alpha.20` and the tagged commit.
+First tag push of `v3.0.0-alpha.20` failed release smoke (unknown verb printed
+help without saying `unknown`). Fixed on main; tag moved to the fix commit
+before npm publish. After the workflow succeeds, re-check: `npm view
+@geraldmaron/construct@alpha version gitHead` must equal `3.0.0-alpha.20` and
+the tagged commit.
 
 ## Gate (local, 2026-09-01)
 

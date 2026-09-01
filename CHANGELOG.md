@@ -17,6 +17,9 @@ use progressive disclosure; lens packs stay explicit.
   test`, sterile read-only HOME, packaged-install smoke.
 - **Release verdict:** READY FOR NEW ALPHA (recorded on the epic and in
   `docs/internal/clean-slate-release-verdict.md`).
+- **Unknown verbs name themselves.** `construct cleanup` (and any other
+  retired or mistyped verb) prints `unknown command` and exits 2 instead of
+  only dumping the grouped help — the packaged smoke proves the refusal.
 
 ## Unreleased
 

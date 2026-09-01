@@ -438,7 +438,10 @@ async function run(argv: string[]): Promise<number> {
       process.stdout.write(`${tuningStamp()}\n`);
       return 0;
     default:
+      // Say the word was refused, then show the surface. Help alone looked like
+      // success (and the packaged smoke needs the refusal to name itself).
+      process.stderr.write(`construct: unknown command ${JSON.stringify(command)}\n`);
       process.stdout.write(groupedHelp());
-      return 1;
+      return 2;
   }
 }
