@@ -50,6 +50,14 @@ export const DOMAINS: readonly Domain[] = Object.freeze([
       'hospital', 'patient', 'clinic', 'school', 'students', 'ids',
       'customer list', 'mailing list', 'subscribers', 'signed up',
       'delete everything', 'another customer',
+      // "shares telemetry" is the phrasing a platform team uses when device
+      // or product signals leave to someone else's system ("shares telemetry
+      // with a customer's third-party EDR vendor") — privacy's personal-data
+      // list alone missed it (labeled-outcomes.json o21, measured 2026-08-28).
+      // Checked against every corpus fixture: the phrase appears in none of
+      // the other labeled, held-out, fresh, or unspent outcomes. Bare
+      // "telemetry" stays measurement's keyword; this phrase is the sharing.
+      'shares telemetry',
     ],
     licensedReview: 'attorney',
   },

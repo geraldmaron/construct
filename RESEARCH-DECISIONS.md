@@ -2834,3 +2834,51 @@ Tests cover the doctor/work lie, in-session work without spawn, keyword-map
 refuse, no hollow in-session run, ordinary-language namings → staff →
 session work, bare work not spending an older run, adapter no-spawn, and
 serve listing host-pull tools.
+
+## 31. Multi-label inference misses are not dictionary patches (2026-09-01)
+
+**Question.** Labeled outcome o21 (device posture checking that shares telemetry
+with a customer's third-party EDR vendor before allowing network access)
+expects `security`, `privacy`, `compliance`, and `contracts`. After
+`network access` → security (2026-08-28), privacy and compliance still missed.
+Is another keyword the fix, or is this miss class outside the dictionary?
+
+**Corpus check (same four fixtures the implication gate uses).** Measured
+2026-09-01 by scanning labeled / held-out / fresh / unspent outcome text:
+
+| Candidate phrase | Hits across corpora | Domain fit if forced |
+|------------------|--------------------:|----------------------|
+| `shares telemetry` | 1 (o21 only) | privacy (data leaving to a third party) |
+| `device posture` / `edr` / `posture checking` | 1 (o21 only) | security vocabulary, not compliance |
+| bare `telemetry` | already measurement's keyword | would blur concerns |
+
+No word in o21 is compliance vocabulary (certifications, audits,
+regulator-facing). Expecting compliance is an inference from the enterprise
+control pattern, not a dictionary hit. A compound/co-occurrence matcher for
+this class was designed and rejected 2026-08-28 (one-outcome no-op, false
+positives on ordinary engineering language, crosses `map.ts`'s single-matcher
+boundary).
+
+**Side-by-side (keyword path vs semantic direction).**
+
+| Arm | o21 privacy | o21 compliance | Notes |
+|-----|:-----------:|:--------------:|-------|
+| Keyword catalog alone (pre-fix) | miss | miss | security + contracts + measurement/program overs fire |
+| Keyword + `shares telemetry` → privacy | hit | miss | Privacy closes under the same standard as `network access` |
+| Keyword + EDR/posture → compliance | — | rejected | Expert jargon; fails non-expert catalog rule; wrong concern |
+| Compound co-occurrence matcher | — | rejected 2026-08-28 | Do not reintroduce |
+| Namer / embedding shortlist (direction) | reachable | reachable | Same miss class as STRATEGY risk 1 / §5 / §10; silence-gated escalation does not run because o21 is non-silent |
+
+**Decision.**
+
+1. Add `shares telemetry` to privacy (catalog edit). Closes the privacy miss
+   without measured over-rate cost on the four corpora.
+2. Do **not** stretch compliance with posture/EDR jargon. Further recall for
+   this multi-label inference class is semantic/namer (or embedding shortlist
+   under existing admission rules in `similarity.ts`), not more dictionary
+   patches. Embeddings must not become implicators by themselves (commitment 15).
+3. Do not reintroduce a compound matcher in `map.ts`.
+
+**What this does not license.** Shipping embedding-as-implicator code; claiming
+compliance is covered for o21 by keywords; treating labeled-set tuning as the
+general fix for inference-shaped misses.
