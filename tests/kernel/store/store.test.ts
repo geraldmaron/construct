@@ -40,6 +40,7 @@ import { declareSourceEdge, sourceEdgesFor } from '../../../src/kernel/store/sou
 import {
   estimativeJudgmentsFor,
   recordEstimativeJudgment,
+  resolveEstimativeJudgment,
 } from '../../../src/kernel/store/estimative.ts';
 import { assessRisk } from '../../../src/kernel/run/estimative.ts';
 import { DatabaseSync } from 'node:sqlite';
@@ -752,6 +753,7 @@ test('a store written before judgments were logged keeps its rows and its trigge
       assert.equal(logged.length, 1);
       // The integer is what is kept: the band is a rendering of it, and a
       // calibration curve is drawn over the numbers.
+      assert.ok(logged[0].seq >= 1);
       assert.equal(logged[0].percent, 60);
       assert.equal(logged[0].confidence, 'moderate');
       assert.equal(logged[0].horizon, 'within 30 days');
@@ -759,11 +761,21 @@ test('a store written before judgments were logged keeps its rows and its trigge
       assert.equal(logged[0].recordedAt, AT);
       assert.equal(readWorkLog(store, 'run-old').length, 1);
 
+      resolveEstimativeJudgment(store, logged[0].seq, 'did_not_happen', AT);
+      assert.throws(
+        () => resolveEstimativeJudgment(store, logged[0].seq, 'happened', AT),
+        /already resolved/,
+      );
+
       assert.throws(
         () => store.db.prepare('UPDATE estimative_judgments SET percent = 90').run(),
         /append-only/,
       );
       assert.throws(() => store.db.prepare('DELETE FROM estimative_judgments').run(), /append-only/);
+      assert.throws(
+        () => store.db.prepare('UPDATE estimative_resolutions SET outcome = ?').run('happened'),
+        /append-only/,
+      );
     } finally {
       store.close();
     }

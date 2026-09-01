@@ -25,12 +25,23 @@ import { citedAuthorityFor } from '../kernel/run/sourcereads.ts';
 import { playbookFor } from '../kernel/plan/playbooks.ts';
 import { unheadedSlots } from '../kernel/plan/ladder.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
-import { withStore } from './runtime.ts';
+import { withStore, now } from './runtime.ts';
 import { writeTotalFailureRecourse } from './present.ts';
 import { runFlag } from './flags.ts';
 import { jsonFlag, writeJson } from './json.ts';
 import { tryOpenProjectStore } from './project-store.ts';
 import { createDecisionService } from '../kernel/services/decision.ts';
+import {
+  estimativeCalibrationReport,
+  estimativeJudgmentBySeq,
+  raiseOverdueJudgmentDecisions,
+  renderCalibrationReport,
+  RESOLUTION_OUTCOMES,
+  resolveEstimativeJudgment,
+  unresolvedEstimativeJudgments,
+  type ResolutionOutcome,
+} from '../kernel/store/estimative.ts';
+import { messageOf } from './errors.ts';
 
 /**
  * Whether a run id names a run this store actually recorded, as opposed to
@@ -387,6 +398,70 @@ export function inbox(argv: string[] = [], cwd: string = process.cwd()): number 
     }
   }
   return withStore((store) => {
+    const at = now();
+    const sub = argv[0];
+
+    if (sub === 'calibration') {
+      raiseOverdueJudgmentDecisions(store, at);
+      if (jsonFlag(argv.slice(1))) {
+        writeJson(estimativeCalibrationReport(store, at));
+        return 0;
+      }
+      process.stdout.write(renderCalibrationReport(estimativeCalibrationReport(store, at)));
+      return 0;
+    }
+
+    if (sub === 'judgments') {
+      raiseOverdueJudgmentDecisions(store, at);
+      const rows = unresolvedEstimativeJudgments(store, at);
+      if (jsonFlag(argv.slice(1))) {
+        writeJson({ unresolved: rows });
+        return 0;
+      }
+      if (rows.length === 0) {
+        process.stdout.write('no unresolved estimative judgments\n');
+        return 0;
+      }
+      process.stdout.write(`unresolved estimative judgments (${String(rows.length)}):\n`);
+      for (const row of rows) {
+        const flag = row.overdue ? ' overdue' : row.horizonUnparsed ? ' (horizon unparsed)' : '';
+        process.stdout.write(
+          `  #${String(row.seq)}${flag}  ${String(row.percent)}%  ${escapeForTerminal(row.claim)}\n` +
+            `    resolve by: ${escapeForTerminal(row.horizon)} — ${escapeForTerminal(row.resolution)}\n`,
+        );
+      }
+      process.stdout.write(
+        'Resolve with: construct inbox resolve-judgment <seq> happened|did_not_happen|unresolvable\n',
+      );
+      return 0;
+    }
+
+    if (sub === 'resolve-judgment') {
+      const seqRaw = (argv[1] ?? '').trim();
+      const outcomeRaw = (argv[2] ?? '').trim();
+      const seq = Number(seqRaw);
+      if (!Number.isInteger(seq) || seq < 1 || !(RESOLUTION_OUTCOMES as readonly string[]).includes(outcomeRaw)) {
+        process.stderr.write(
+          'usage: construct inbox resolve-judgment <seq> happened|did_not_happen|unresolvable\n',
+        );
+        return 2;
+      }
+      try {
+        const resolved = resolveEstimativeJudgment(store, seq, outcomeRaw as ResolutionOutcome, at);
+        const judgment = estimativeJudgmentBySeq(store, seq);
+        process.stdout.write(
+          `resolved judgment #${String(resolved.judgment)} as ${resolved.outcome}` +
+            (judgment ? `: ${escapeForTerminal(judgment.claim)}` : '') +
+            '\n',
+        );
+        return 0;
+      } catch (error) {
+        process.stderr.write(`construct inbox: ${escapeForTerminal(messageOf(error))}\n`);
+        return 1;
+      }
+    }
+
+    raiseOverdueJudgmentDecisions(store, at);
     const open = openDecisions(store);
     // Waiting outward changes are calls on the user exactly as decisions are,
     // and an inbox that says "nothing needs you" while proposals wait is

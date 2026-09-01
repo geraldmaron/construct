@@ -183,6 +183,13 @@
  * plainly deletable, because a ratification is a trust grant a person may
  * withdraw, not evidence whose history must survive.
  *
+ * Schema version 24 adds `estimative_resolutions`, additive: whether a logged
+ * likelihood happened, did not happen, or was unresolvable, keyed to the
+ * judgment's `seq`. The judgment row stays append-only and untouched; a second
+ * resolution for the same seq is refused by the primary key. Until resolutions
+ * accumulate, calibration prints counts and refuses a rate (RESEARCH-DECISIONS
+ * §1 n-floor).
+ *
  * SQLite via `node:sqlite`, which ships with Node — no dependency is added to a
  * CLI users install. STRATEGY ("What carries over") commits the tracker model to
  * "a new SQLite-backed substrate rather than the predecessor's dolt-locked one".
@@ -206,7 +213,7 @@ import { accessSync, chmodSync, constants, existsSync, mkdirSync } from 'node:fs
 import { dirname, join } from 'node:path';
 import type { Paths } from '../paths.ts';
 
-export const SCHEMA_VERSION = 23;
+export const SCHEMA_VERSION = 24;
 
 export interface Store {
   readonly db: DatabaseSync;
@@ -852,6 +859,20 @@ CREATE TABLE IF NOT EXISTS settings_ratifications (
 
 CREATE INDEX IF NOT EXISTS settings_ratifications_repo
   ON settings_ratifications (repo_identity, ratified_at);
+
+CREATE TABLE IF NOT EXISTS estimative_resolutions (
+  judgment    INTEGER PRIMARY KEY REFERENCES estimative_judgments (seq),
+  outcome     TEXT NOT NULL CHECK (outcome IN ('happened', 'did_not_happen', 'unresolvable')),
+  resolved_at TEXT NOT NULL
+) STRICT;
+
+CREATE TRIGGER IF NOT EXISTS estimative_resolutions_no_update
+BEFORE UPDATE ON estimative_resolutions
+BEGIN SELECT RAISE(ABORT, 'estimative_resolutions is append-only'); END;
+
+CREATE TRIGGER IF NOT EXISTS estimative_resolutions_no_delete
+BEFORE DELETE ON estimative_resolutions
+BEGIN SELECT RAISE(ABORT, 'estimative_resolutions is append-only'); END;
 `;
 
 /** The substrate's file under an injected Paths. Callers do not build this path. */
