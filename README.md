@@ -59,9 +59,10 @@ Cursor CLI. Only OpenCode and Claude Code declare `outward-write`. Codex
 dispatches read-only and Cursor dispatches in plan mode, both probed, so
 `decide --apply` is an OpenCode-or-Claude command. IBM Bob is a talk-in-host
 target (ambient detection exists; skills can plant there) and is not an
-execution adapter. `construct wire` writes the MCP entry for Claude Code and
-Cursor only; every other host takes the same `construct serve` entry by hand.
-The walkthrough shows that form.
+execution adapter. `construct init` creates project-local state and reconciles
+MCP for Claude Code, Cursor, VS Code (`--client=vscode`), and OpenCode
+(`--client=opencode`). Bob and Codex stay manual (`construct serve
+--client=… --project=…`). `construct wire` is a legacy ambient-only alias.
 
 Three limits are load-bearing rather than fine print. **Legal and compliance
 output is research, never advice.** **One model family is tuned** (Claude);

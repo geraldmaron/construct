@@ -8,7 +8,7 @@ import { createUnsupportedIntegrationAdapter } from '../../../src/hosts/integrat
 import { integrationAdapterFor } from '../../../src/hosts/integrations/registry.ts';
 
 test('unsupported adapter refuses install and reports maturity', async () => {
-  const adapter = createUnsupportedIntegrationAdapter('opencode');
+  const adapter = createUnsupportedIntegrationAdapter('codex');
   assert.equal(adapter.capabilities().maturity, 'unsupported');
   const view = await adapter.inspect('/repo');
   assert.equal(view.status, 'absent');
@@ -17,10 +17,10 @@ test('unsupported adapter refuses install and reports maturity', async () => {
   assert.equal(verify.ok, false);
 });
 
-test('registry returns stubs for unwired clients; vscode has a writer', () => {
-  assert.equal(integrationAdapterFor('opencode')?.id, 'opencode');
-  assert.equal(integrationAdapterFor('bob')?.id, 'bob');
-  assert.equal(integrationAdapterFor('codex')?.id, 'codex');
+test('registry: writers for cursor/claude/vscode/opencode; stubs for bob/codex', () => {
+  assert.equal(integrationAdapterFor('opencode')?.capabilities().maturity, 'documented');
   assert.equal(integrationAdapterFor('vscode')?.capabilities().maturity, 'documented');
+  assert.equal(integrationAdapterFor('bob')?.capabilities().maturity, 'unsupported');
+  assert.equal(integrationAdapterFor('codex')?.capabilities().maturity, 'unsupported');
   assert.equal(integrationAdapterFor('nope'), null);
 });

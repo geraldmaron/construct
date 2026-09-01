@@ -6,7 +6,14 @@ import type { HostIntegrationAdapter } from '../../kernel/integration/types.ts';
 import { createCursorIntegrationAdapter } from './cursor.ts';
 import { createClaudeCodeIntegrationAdapter } from './claude-code.ts';
 import { createVscodeIntegrationAdapter } from './vscode.ts';
+import { createOpencodeIntegrationAdapter } from './opencode.ts';
 import { createUnsupportedIntegrationAdapter } from './unsupported.ts';
+
+/** True when install() is safe to call (not a report-only stub). */
+export function integrationIsInstallable(adapter: HostIntegrationAdapter): boolean {
+  const maturity = adapter.capabilities().maturity;
+  return maturity !== 'unsupported' && maturity !== 'unknown';
+}
 
 export function integrationAdapterFor(client: string): HostIntegrationAdapter | null {
   switch (client) {
@@ -19,6 +26,7 @@ export function integrationAdapterFor(client: string): HostIntegrationAdapter | 
     case 'vs-code':
       return createVscodeIntegrationAdapter();
     case 'opencode':
+      return createOpencodeIntegrationAdapter();
     case 'bob':
     case 'codex':
     case 'goose':
@@ -34,7 +42,7 @@ export function allIntegrationAdapters(): HostIntegrationAdapter[] {
     createCursorIntegrationAdapter(),
     createClaudeCodeIntegrationAdapter(),
     createVscodeIntegrationAdapter(),
-    createUnsupportedIntegrationAdapter('opencode'),
+    createOpencodeIntegrationAdapter(),
     createUnsupportedIntegrationAdapter('bob'),
     createUnsupportedIntegrationAdapter('codex'),
   ];

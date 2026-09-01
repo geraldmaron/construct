@@ -179,10 +179,13 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
-  wire: { gloss: 'legacy: write MCP config (prefer construct init)', flags: ['yes'] },
-  init: { gloss: 'initialize project-local Construct config and state', flags: ['dry-run'] },
+  wire: { gloss: 'legacy alias for ambient MCP write — prefer construct init', flags: ['yes'] },
+  init: {
+    gloss: 'initialize project-local Construct config, state, and host MCP',
+    flags: ['dry-run', 'client'],
+  },
   reset: { gloss: 'wipe project runtime state and recreate format v1', flags: ['yes', 'wipe-config'] },
-  doctor: { gloss: 'report host presence and store health', flags: [] },
+  doctor: { gloss: 'report host presence, integration matrix, and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
   cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
@@ -206,8 +209,8 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Learning and governance', ['lessons', 'verdict', 'staff']],
   ['Workspace settings', ['mode', 'consent', 'record', 'settings', 'trust']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
-  ['Presence and hosts', ['serve', 'wire', 'init', 'reset']],
-  ['Maintenance', ['doctor', 'backup', 'cleanup', 'daemon', 'skills', 'completions', 'version', 'help']],
+  ['Presence and hosts', ['serve', 'init', 'reset']],
+  ['Maintenance', ['doctor', 'backup', 'cleanup', 'daemon', 'skills', 'completions', 'version', 'help', 'wire']],
 ]);
 
 /**
@@ -405,9 +408,9 @@ async function run(argv: string[]): Promise<number> {
     case 'serve':
       return serve(argv.slice(1));
     case 'wire':
-      return wire(argv.slice(1));
+      return await wire(argv.slice(1));
     case 'init':
-      return init(argv.slice(1));
+      return await init(argv.slice(1));
     case 'reset':
       return reset(argv.slice(1));
     case 'role-serve':

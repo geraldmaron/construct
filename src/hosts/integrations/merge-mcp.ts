@@ -5,7 +5,8 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-export type McpServersKey = 'mcpServers' | 'servers';
+/** Root key holding named MCP servers: Claude/Cursor, VS Code, or OpenCode. */
+export type McpServersKey = 'mcpServers' | 'servers' | 'mcp';
 
 export type MergeResult =
   | { readonly ok: true; readonly created: boolean; readonly path: string }
@@ -15,10 +16,14 @@ export function mergeMcpServerEntry(
   configPath: string,
   serverName: string,
   entry: Record<string, unknown>,
-  opts: { readonly serversKey?: McpServersKey } = {},
+  opts: {
+    readonly serversKey?: McpServersKey;
+    /** Used only when the config file does not exist yet (e.g. OpenCode $schema). */
+    readonly seed?: Record<string, unknown>;
+  } = {},
 ): MergeResult {
   const serversKey = opts.serversKey ?? 'mcpServers';
-  let existing: Record<string, unknown> = {};
+  let existing: Record<string, unknown> = { ...(opts.seed ?? {}) };
   let created = true;
   if (existsSync(configPath)) {
     created = false;

@@ -2,8 +2,9 @@
  * cli/init.ts — initialize a Construct project in place.
  *
  * Creates project-local config and format-v1 state. Safe initialization does
- * not require `--yes`. `--dry-run` previews without writing. When an ambient
- * client is detected, reconciles that host's MCP entry with session binding.
+ * not require `--yes`. `--dry-run` previews without writing. Reconciles MCP for
+ * an ambient host or an explicit `--client=` when that client has an
+ * installable HostIntegrationAdapter.
  */
 
 import { existsSync } from 'node:fs';
@@ -16,7 +17,11 @@ import { resolveProjectContext } from '../kernel/project/context.ts';
 import { projectConfigPath, projectDbPath } from '../kernel/project/layout.ts';
 import { upsertIntegration } from '../kernel/state/integrations.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { integrationAdapterFor } from '../hosts/integrations/registry.ts';
+import {
+  integrationAdapterFor,
+  integrationIsInstallable,
+} from '../hosts/integrations/registry.ts';
+import type { HostIntegrationAdapter } from '../kernel/integration/types.ts';
 import { gitRoot } from './settings-file.ts';
 import { packageVersion } from './runtime.ts';
 
@@ -24,8 +29,49 @@ function flag(argv: string[], name: string): boolean {
   return argv.includes(name);
 }
 
+function parseClientFlag(argv: string[]): string | undefined {
+  for (const arg of argv) {
+    if (arg.startsWith('--client=')) {
+      const value = arg.slice('--client='.length).trim();
+      return value === '' ? undefined : value;
+    }
+  }
+  const idx = argv.indexOf('--client');
+  if (idx >= 0 && typeof argv[idx + 1] === 'string' && !argv[idx + 1]!.startsWith('--')) {
+    return argv[idx + 1]!.trim();
+  }
+  return undefined;
+}
+
+function resolveIntegrationAdapter(
+  argv: string[],
+  env: NodeJS.ProcessEnv,
+): {
+  readonly adapter: HostIntegrationAdapter | null;
+  readonly source: 'flag' | 'ambient' | 'none';
+  readonly requested: string | null;
+} {
+  const clientFlag = parseClientFlag(argv);
+  if (clientFlag !== undefined) {
+    return {
+      adapter: integrationAdapterFor(clientFlag),
+      source: 'flag',
+      requested: clientFlag,
+    };
+  }
+  const ambient = detectAmbientHost(env);
+  if (ambient) {
+    return {
+      adapter: integrationAdapterFor(ambient.host),
+      source: 'ambient',
+      requested: ambient.host,
+    };
+  }
+  return { adapter: null, source: 'none', requested: null };
+}
+
 /**
- * `construct init [--dry-run]`
+ * `construct init [--dry-run] [--client=<id>]`
  */
 export async function init(
   argv: string[] = [],
@@ -41,8 +87,7 @@ export async function init(
 
   const configPath = projectConfigPath(ctx.root);
   const dbPath = projectDbPath(ctx.root);
-  const ambient = detectAmbientHost(env);
-  const adapter = ambient ? integrationAdapterFor(ambient.host) : null;
+  const { adapter, source, requested } = resolveIntegrationAdapter(argv, env);
 
   if (dryRun) {
     process.stdout.write(`construct init (dry-run)\n`);
@@ -54,14 +99,20 @@ export async function init(
       `  state:  ${dbPath}${existsSync(dbPath) ? ' (exists)' : ' (would create)'}\n`,
     );
     process.stdout.write(`  gitignore: ensure ${STATE_GITIGNORE_PATTERN}\n`);
-    if (adapter) {
+    if (adapter && integrationIsInstallable(adapter)) {
       const plan = await adapter.plan(ctx.root);
       for (const action of plan.actions) {
         process.stdout.write(`  would ${action.kind}: ${action.path} (${action.reason})\n`);
       }
-    } else if (ambient) {
+    } else if (adapter) {
       process.stdout.write(
-        `  client: ${ambient.host} detected — no HostIntegrationAdapter yet\n`,
+        `  client: ${adapter.id} — native MCP install unsupported (maturity=${adapter.capabilities().maturity})\n`,
+      );
+    } else if (requested) {
+      process.stdout.write(`  client: ${requested} — no HostIntegrationAdapter\n`);
+    } else {
+      process.stdout.write(
+        '  client: none — pass --client=… or open from a supported host to reconcile MCP\n',
       );
     }
     return 0;
@@ -80,7 +131,7 @@ export async function init(
       process.stdout.write(`  gitignore: added ${STATE_GITIGNORE_PATTERN}\n`);
     }
 
-    if (adapter) {
+    if (adapter && integrationIsInstallable(adapter)) {
       await adapter.install(ctx.root);
       const verification = await adapter.verify(ctx.root);
       upsertIntegration(result.store, {
@@ -97,13 +148,15 @@ export async function init(
           ? `  integration: ${adapter.id} installed (session-bound MCP)\n`
           : `  integration: ${adapter.id} wrote but verify failed\n`,
       );
-    } else if (ambient) {
+    } else if (adapter) {
       process.stdout.write(
-        `  client: ${ambient.host} (via ${ambient.marker}) — no integration adapter yet\n`,
+        `  client: ${adapter.id} (${source}) — native MCP install unsupported; configure serve --client=${adapter.id} --project=<root> by hand\n`,
       );
+    } else if (requested) {
+      process.stdout.write(`  client: ${requested} — no integration adapter\n`);
     } else {
       process.stdout.write(
-        '  client: none detected — open from a supported host to reconcile MCP\n',
+        '  client: none detected — open from a supported host or pass --client=… to reconcile MCP\n',
       );
     }
 

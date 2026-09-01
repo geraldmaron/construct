@@ -1,114 +1,59 @@
 /**
- * cli/wire.ts — closing deficiency-map row 5: wiring the projection
- * (`construct serve`) into the ambient host's MCP config used to be a
- * hand-edit (docs/consumer-install.md), which the operator archetype who
- * must never see a shell command cannot cross unaided. `construct wire`
- * detects the host this process is already running inside
- * (`hosts/ambient.ts`) and writes that one entry for it.
+ * cli/wire.ts — legacy MCP config write.
  *
- * What this command is not: it never dispatches, never spends, never
- * guesses a host nobody detected. Detection is `hosts/ambient.ts`'s fact
- * alone — this module supplies no fallback and no `--host` override, because
- * a wrong guess here writes a wrong path into the user's project rather than
- * just answering a question wrong. A host with no wired config writer (bob
- * today) or no detected host at all both refuse the same way: name the
- * manual recipe and change nothing.
- *
- * The file this writes is local wiring, not something committed on the
- * user's behalf — the same discipline the project-settings trust program
- * established for `.mcp.json`/`.cursor/mcp.json` generally. This command
- * only ever touches the one key it owns (`construct-mcp`) inside whatever
- * file already exists there, so a project's own other MCP servers survive
- * untouched, the same restraint kernel/cleanup/catalog.ts's un-merge already
- * assumes on the way out.
- *
- * Bare `construct wire` never writes: it detects the host and previews the
- * entry and the file it would land in, the same preview/apply split
- * `construct cleanup` uses for its own writes. Only `--yes` commits it — a
- * bare invocation someone runs to see what would happen must not be the
- * thing that edits their project config.
+ * Prefer `construct init` (optionally `--client=`). This verb remains callable
+ * so older docs and scripts do not hard-break, but it always names the
+ * replacement and delegates to HostIntegrationAdapter rather than owning its
+ * own writers. Full deletion is Phase G.
  */
 
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, relative } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import type { AmbientHostName } from '../hosts/ambient.ts';
 import {
-  PROJECT_MCP_SERVER_NAME as CLAUDE_SERVER_NAME,
-  buildProjectMcpServerEntry as buildClaudeEntry,
-  projectMcpConfigPath as claudeConfigPath,
-} from '../hosts/claude/mcpconfig.ts';
-import {
-  PROJECT_MCP_SERVER_NAME as CURSOR_SERVER_NAME,
-  buildProjectMcpServerEntry as buildCursorEntry,
-  projectMcpConfigPath as cursorConfigPath,
-} from '../hosts/cursor/mcpconfig.ts';
+  integrationAdapterFor,
+  integrationIsInstallable,
+} from '../hosts/integrations/registry.ts';
 
-const MANUAL_RECIPE = 'docs/consumer-install.md (Step 2: Wire the MCP entry)';
-
-interface WireTarget {
-  readonly serverName: string;
-  readonly configPath: (cwd: string) => string;
-  readonly entry: (cwd: string) => Record<string, unknown>;
-}
-
-/**
- * One entry per host this command actually knows how to wire. A host absent
- * from this map — detected or not — takes the refusal path below rather than
- * a guess: adding a host here is the only way it becomes wirable.
- */
-const WIRE_TARGETS: Partial<Record<AmbientHostName, WireTarget>> = {
-  claude: {
-    serverName: CLAUDE_SERVER_NAME,
-    configPath: claudeConfigPath,
-    entry: (cwd) => buildClaudeEntry({ client: 'claude-code', projectRoot: cwd }, cwd),
-  },
-  cursor: {
-    serverName: CURSOR_SERVER_NAME,
-    configPath: cursorConfigPath,
-    entry: (cwd) => buildCursorEntry({ client: 'cursor', projectRoot: cwd }, cwd),
-  },
-};
+const INIT_HINT = 'construct init (or construct init --client=<id>)';
 
 function refuse(message: string): number {
   process.stderr.write(
-    `construct wire: ${message}\nWire the MCP entry by hand instead: see ${MANUAL_RECIPE}.\n`,
+    `construct wire: ${message}\nPrefer ${INIT_HINT}. Manual recipe: docs/consumer-install.md.\n`,
   );
   return 1;
 }
 
-/** Reads an existing JSON config, or {} for a file that does not exist yet. Malformed JSON is refused, not clobbered. */
-function readConfigOrNull(path: string): Record<string, unknown> | 'malformed' {
-  if (!existsSync(path)) return {};
+function refuseIfMalformed(configPath: string, cwd: string): number | null {
+  if (!existsSync(configPath)) return null;
   try {
-    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
-    return parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : 'malformed';
+    const parsed: unknown = JSON.parse(readFileSync(configPath, 'utf8'));
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return refuse(
+        `${relative(cwd, configPath) || configPath} exists but is not valid JSON — left untouched.`,
+      );
+    }
+    return null;
   } catch {
-    return 'malformed';
+    return refuse(
+      `${relative(cwd, configPath) || configPath} exists but is not valid JSON — left untouched.`,
+    );
   }
 }
 
 /**
- * Writes the config where only this user can read it, mirroring the 0600 /
- * umask-aware discipline hosts/claude/mcpconfig.ts and
- * hosts/opencode/mcpconfig.ts use for the role bearer's config — this file
- * carries no bearer, but a project's MCP registrations are still not
- * something a shared machine account should read by default.
+ * `construct wire [--yes]` — preview or write ambient-host MCP via the
+ * integration registry. Always prints a deprecation notice.
  */
-function writeConfig(path: string, config: Record<string, unknown>): void {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-  // writeFileSync's mode is masked by umask on creation, so state it outright.
-  chmodSync(path, 0o600);
-}
-
-export function wire(
+export async function wire(
   argv: string[] = [],
   cwd: string = process.cwd(),
   env: NodeJS.ProcessEnv = process.env,
-): number {
+): Promise<number> {
+  process.stderr.write(
+    `construct wire is legacy — prefer ${INIT_HINT} to create project state and reconcile MCP.\n`,
+  );
+
   const confirmed = argv.includes('--yes') || argv.includes('-y');
   const ambient = detectAmbientHost(env);
   if (ambient === null) {
@@ -117,48 +62,58 @@ export function wire(
     );
   }
 
-  const target = WIRE_TARGETS[ambient.host];
-  if (!target) {
+  const adapter = integrationAdapterFor(ambient.host);
+  if (!adapter || !integrationIsInstallable(adapter)) {
     return refuse(
-      `running inside ${ambient.host} (detected via ${ambient.marker}), which has no wired MCP config writer yet.`,
+      `running inside ${ambient.host} (detected via ${ambient.marker}), which has no native MCP install path yet.`,
     );
   }
 
-  const path = target.configPath(cwd);
-  const existing = readConfigOrNull(path);
-  if (existing === 'malformed') {
-    return refuse(`${relative(cwd, path)} exists but is not valid JSON — left untouched.`);
+  const plan = await adapter.plan(cwd);
+  const action = plan.actions[0];
+  const configPath = action?.path;
+  if (configPath) {
+    const malformed = refuseIfMalformed(configPath, cwd);
+    if (malformed !== null) return malformed;
   }
 
-  const mcpServers = (existing.mcpServers as Record<string, unknown> | undefined) ?? {};
-  const entry = target.entry(cwd);
-  const current = mcpServers[target.serverName];
-  const displayPath = relative(cwd, path) || path;
+  const view = await adapter.inspect(cwd);
+  const displayPath = configPath
+    ? relative(cwd, configPath) || configPath
+    : view.path
+      ? relative(cwd, view.path) || view.path
+      : '(unknown)';
 
-  if (current !== undefined && JSON.stringify(current) === JSON.stringify(entry)) {
+  if (view.status === 'installed') {
     process.stdout.write(
-      `${target.serverName} is already wired into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}); nothing to change.\n`,
+      `construct-mcp is already wired into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}); nothing to change.\n`,
     );
     return 0;
   }
 
-  const commandLine = `${String((entry as { command: string }).command)} ${(entry as { args: readonly string[] }).args.join(' ')}`;
   if (!confirmed) {
     process.stdout.write(
-      `construct wire: would wire ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n` +
-        'Nothing was written. Pass --yes to write it.\n',
+      `construct wire: would wire construct-mcp into ${displayPath} for ${ambient.host} (detected via ${ambient.marker})\n` +
+        'Nothing was written. Pass --yes to commit this legacy write.\n' +
+        `Prefer ${INIT_HINT}.\n`,
     );
     return 0;
   }
 
-  const config: Record<string, unknown> = {
-    ...existing,
-    mcpServers: { ...mcpServers, [target.serverName]: entry },
-  };
-  writeConfig(path, config);
+  try {
+    await adapter.install(cwd);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return refuse(message);
+  }
+
+  const verification = await adapter.verify(cwd);
+  if (!verification.ok) {
+    return refuse(`wrote ${displayPath} but verify failed`);
+  }
 
   process.stdout.write(
-    `wired ${target.serverName} into ${displayPath} for ${ambient.host} (detected via ${ambient.marker}): ${commandLine}\n`,
+    `wired construct-mcp into ${displayPath} for ${ambient.host} (detected via ${ambient.marker})\n`,
   );
   return 0;
 }
