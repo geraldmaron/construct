@@ -107,22 +107,21 @@ construct work
 ```
 
 Inside a host session, that does not spawn `cursor-agent`, `claude`, or any
-other CLI. It prepares the queued tasks on the most recently recorded
-outcome and tells this session to claim each one through `construct serve`
-(`claim_task`), execute it here, and `submit_work`. Construct keeps the log,
-the inbox, and verdicts. A typed `--binary` is the one request to spawn that
-executable anyway. An older run that still has pending tasks is `--run` or
-`--all`, never the silent default.
+other CLI. On an initialized project, headless `work` claims through an
+explicit `--pin`; interactive dispatch is MCP `next_work` / `submit_work` in
+this session. Construct keeps the log, the inbox, and verdicts. A typed
+`--binary` is the one request to spawn that executable anyway. An older run
+that still has pending tasks is `--run` or `--all`, never the silent default.
 
-From a plain terminal, `work` finds the most recently recorded outcome (or
-takes `--run=<id>` / `--all`) and dispatches through a spawnable host CLI.
-Name one yourself when doctor shows none in-session
+From a plain terminal without project init, `work` finds the most recently
+recorded outcome (or takes `--run=<id>` / `--all`) and dispatches through a
+spawnable host CLI. Name one yourself when doctor shows none in-session
 (`--host=<opencode|claude|codex|cursor>`).
 
 A spawned dispatch is the step that costs money: each implicated role gets its
 own assignment, works the outcome from its own concern, and reports back. The
 spend ceiling (10 by default, in your host's cost units, raised with
-`--ceiling=`) binds on that path. In-session host-pull spends the host's own
+`--ceiling=`) binds on that path. In-session dispatch spends the host's own
 already-present capacity; Construct does not start a second paid run.
 
 If a spawned host is not installed or not authenticated, this is where you
@@ -482,11 +481,10 @@ notice its own silence.
 
 If you already work inside Claude Code, Codex, Cursor, VS Code agent mode, or
 OpenCode, you do not have to learn this CLI at all. Construct can appear inside
-the host you already use. Run from inside Claude Code or Cursor, `construct wire`
-detects which one and registers the `construct serve` entry for you. OpenCode,
-Codex, Bob, and any host that only reads a config file take the entry by hand —
-wire does not write those. A host with its own MCP-add helper takes the same
-entry in a line — Claude Code, for example:
+the host you already use. Run `construct init --client=…` so format-v1 state and
+the `construct serve` MCP entry are written for you. OpenCode, Claude Code,
+Cursor, and VS Code are covered; Bob and Codex stay manual. A host with its own
+MCP-add helper takes the same entry in a line — Claude Code, for example:
 
 ```bash
 claude mcp add construct -- node "$(which construct 2>/dev/null || echo construct)" serve --client=claude-code --project="$(pwd)"
@@ -506,26 +504,12 @@ Or, for any host that reads a config file, write the entry yourself — bind
 }
 ```
 
-Then talk to your host normally. It can read the domain catalog and the version
-answering it, record an outcome, read the work log and where a run's tasks
-stand, show the inbox and the questions roles have put to you, relay a decision
-or an answer you gave, record a verdict, drop a note verbatim, and read the
-subjects the workspace keeps facts about. Because the model in that host has
-already read your words, it **must** name the implicated domains itself —
-`record_outcome` on `construct serve` requires namings — and those namings
-pass exactly the same gate a subprocess model's would: a domain outside
-the catalog or without a stated reason is discarded, and the reply says what
-was not admitted. Omitting namings is an error, not a fall-through to the
-keyword map. An empty namings array is a real answer that this implicates
-nothing.
-
-The surface can dispatch work. When a secret is set, `claim_task` and
-`submit_work` are on the same socket: the session that just named the
-outcome is the session that pulls the next task. Product `serve` creates
-that secret. Construct does not spawn a second agent to do the work. What
-stays off the socket is `promote`, `review`, `compose`, a CLI `ask`, and
-erasure — human-gated or destructive. A host that only sees this surface
-cannot skip the human and cannot unwrite the log.
+Then talk to your host normally. After `construct init`, the interactive plane
+exposes `start_run`, `next_work`, `submit_work`, inbox/decide, staff, and
+routines — the session that holds the conversation is the session that pulls
+the next task. Construct does not spawn a second agent to do that work. What
+stays off the socket is destructive or human-gated practice that belongs in
+the terminal.
 
 ## When something is wrong
 

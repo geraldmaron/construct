@@ -5,7 +5,8 @@
  * The failure this guards: `construct doctor` said Cursor in-session execution
  * was available, then `construct work --host=cursor` spawned cursor-agent and
  * died. Spawning the CLI you are already inside of is a second runtime.
- * In-session dispatch is host-pull through construct serve.
+ * In-session dispatch is interactive MCP through construct serve (after
+ * construct init): next_work / submit_work.
  */
 
 import { test } from 'node:test';
@@ -19,13 +20,19 @@ import { createCursorAdapter } from '../../src/hosts/cursor/adapter.ts';
 import { usesSessionDispatch } from '../../src/hosts/session.ts';
 import { presenceLines, surveyHosts } from '../../src/hosts/presence.ts';
 import type { ProbeExec } from '../../src/hosts/presence.ts';
-import { HOST_PULL_TOOLS } from '../../src/hosts/mcp/hostpull.ts';
-import { PROJECTION_TOOLS, createProjectionHandler } from '../../src/hosts/mcp/projection.ts';
+import {
+  createInteractiveHandler,
+  INTERACTIVE_TOOLS,
+  sessionFromBinding,
+} from '../../src/hosts/mcp/interactive.ts';
+import type { JsonRpcRequest } from '../../src/hosts/mcp/jsonrpc.ts';
+import { initializeProject } from '../../src/kernel/project/initialize.ts';
+import { resolveProjectContext } from '../../src/kernel/project/context.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { startRun, startRunSelected } from '../../src/kernel/run/outcome.ts';
-import { enqueueTask, listTasks } from '../../src/kernel/store/tasks.ts';
-import { sterile, sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
+import { listTasks } from '../../src/kernel/store/tasks.ts';
+import { sterileAmbientEnv, sterileHome } from '../harness/sterile.ts';
 
 sterileHome();
 sterileAmbientEnv();
@@ -119,7 +126,6 @@ test('work --host=cursor inside Cursor does not spawn and hands the session the 
     assert.equal(result, 0);
     assert.match(out, /In-session dispatch through cursor/);
     assert.match(out, /will not spawn a second cursor CLI/);
-    assert.match(out, /claim_task/);
     assert.match(out, /submit_work/);
     assert.doesNotMatch(err, /Could not start/);
     assert.doesNotMatch(out, /Record an outcome first/);
@@ -211,36 +217,40 @@ test('the Cursor adapter does not spawn cursor-agent when CURSOR_AGENT is set', 
   assert.equal(spawned, 0);
 });
 
-test('construct serve with a secret lists host-pull dispatch tools', async () => {
-  const s = sterile();
-  const store = openStore(join(s.paths.dataDir, 'construct.db'));
+test('initialized interactive MCP lists next_work and submit_work, not claim_task', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-session-mcp-'));
   try {
-    enqueueTask(store, {
-      id: 'task-1',
-      run: 'run-x',
-      role: 'evidence-provenance',
-      brief: { id: 'task-1', outcome: 'look', role: 'evidence-provenance', inputs: [], capabilities: [], postconditions: [] },
-      at: '2026-08-26T00:00:00.000Z',
-    });
-    const handle = createProjectionHandler({
-      store,
-      clock: () => '2026-08-26T00:00:00.000Z',
+    const init = initializeProject(resolveProjectContext({ cwd: root, allowCwdFallback: true }));
+    const handle = createInteractiveHandler({
+      store: init.store,
+      projectRoot: root,
+      clock: () => '2026-08-31T12:00:00.000Z',
       serverVersion: 'test',
-      secret: 'test-secret-not-a-real-key',
+      session: sessionFromBinding({ client: 'cursor', projectRoot: root }),
     });
-    const listed = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
-    const tools = (listed?.result as { tools: Array<{ name: string }> }).tools.map((t) => t.name);
-    for (const name of PROJECTION_TOOLS.map((t) => t.name)) {
-      assert.ok(tools.includes(name), `${name} stays on serve`);
+    const listed = await handle({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/list',
+      params: {},
+    } as JsonRpcRequest);
+    const tools = (listed as { result: { tools: Array<{ name: string }> } }).result.tools.map(
+      (t) => t.name,
+    );
+    for (const name of INTERACTIVE_TOOLS.map((t) => t.name)) {
+      assert.ok(tools.includes(name), `${name} stays on interactive serve`);
     }
-    for (const name of HOST_PULL_TOOLS.map((t) => t.name)) {
-      assert.ok(tools.includes(name), `${name} is how serve dispatches`);
-    }
+    assert.ok(tools.includes('next_work'));
+    assert.ok(tools.includes('submit_work'));
+    assert.ok(tools.includes('start_run'));
+    assert.ok(tools.includes('list_inbox'));
+    assert.ok(tools.includes('decide'));
+    assert.ok(!tools.includes('claim_task'));
     assert.ok(!tools.includes('promote'));
     assert.ok(!tools.includes('work'));
+    init.store.close();
   } finally {
-    store.close();
-    s.cleanup();
+    rmSync(root, { recursive: true, force: true });
   }
 });
 
@@ -254,53 +264,15 @@ test('Claude in-session is the same dispatch shape as Cursor', async () => {
   });
 });
 
-test('ordinary language via this session queues staff and work dispatches that run', async () => {
+test('named domains queue staff and in-session work hands them off without spawning', async () => {
   await isolated(async () => {
-    const store = openStore(storePath(resolvePaths()));
-    const handle = createProjectionHandler({
-      store,
-      clock: () => '2026-08-26T12:00:00.000Z',
-      serverVersion: 'test',
-      secret: 'test-secret-not-a-real-key',
-    });
-    await handle({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: { clientInfo: { name: 'cursor' } },
-    });
-    const named = await handle({
-      jsonrpc: '2.0',
-      id: 2,
-      method: 'tools/call',
-      params: {
-        name: 'record_outcome',
-        arguments: {
-          outcome: 'look at this',
-          namings: [
-            {
-              domain: 'privacy',
-              why: 'the host named privacy after reading the words',
-            },
-          ],
-        },
-      },
-    });
-    const body = JSON.parse(
-      ((named?.result as { content: Array<{ text: string }> }).content[0] as { text: string }).text,
-    ) as { tasksQueued: number; implicated: Array<{ domain: string }> };
-    assert.equal(body.tasksQueued, 1);
-    assert.deepEqual(
-      body.implicated.map((row) => row.domain),
-      ['privacy'],
+    await capture(() =>
+      outcome(['--domains=privacy', 'look at this'], undefined, CURSOR_ENV),
     );
-    store.close();
-
     const { result, out, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assert.match(out, /In-session dispatch through cursor/);
     assert.match(out, /will not spawn a second cursor CLI/);
-    assert.match(out, /claim_task/);
     assert.match(out, /submit_work/);
     assert.match(out, /privacy/);
     assert.doesNotMatch(err, /Could not start/);
@@ -309,69 +281,15 @@ test('ordinary language via this session queues staff and work dispatches that r
   });
 });
 
-test('a second host naming staffs a different concern, not a phrase table', async () => {
+test('a second named domain staffs a different concern, not a phrase table', async () => {
   await isolated(async () => {
-    const store = openStore(storePath(resolvePaths()));
-    const handle = createProjectionHandler({
-      store,
-      clock: () => '2026-08-26T12:01:00.000Z',
-      serverVersion: 'test',
-      secret: 'test-secret-not-a-real-key',
-    });
-    const named = await handle({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: 'record_outcome',
-        arguments: {
-          outcome: 'look at this too',
-          namings: [
-            {
-              domain: 'security',
-              why: 'the host named security after reading the words',
-            },
-          ],
-        },
-      },
-    });
-    const body = JSON.parse(
-      ((named?.result as { content: Array<{ text: string }> }).content[0] as { text: string }).text,
-    ) as { tasksQueued: number };
-    assert.equal(body.tasksQueued, 1);
-    store.close();
-
+    await capture(() =>
+      outcome(['--domains=security', 'look at this too'], undefined, CURSOR_ENV),
+    );
     const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
     assert.equal(result, 0);
     assert.match(out, /In-session dispatch through cursor/);
     assert.match(out, /security/);
-  });
-});
-
-test('on construct serve, omitting namings is refused rather than falling to the keyword map', async () => {
-  await isolated(async () => {
-    const store = openStore(storePath(resolvePaths()));
-    try {
-      const handle = createProjectionHandler({
-        store,
-        clock: () => '2026-08-26T12:02:00.000Z',
-        serverVersion: 'test',
-        secret: 'test-secret-not-a-real-key',
-      });
-      const reply = await handle({
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'tools/call',
-        params: { name: 'record_outcome', arguments: { outcome: 'is this ready' } },
-      });
-      const result = reply?.result as { content: Array<{ text: string }>; isError?: boolean };
-      assert.equal(result.isError, true);
-      assert.match(result.content[0]!.text, /requires namings/);
-      assert.match(result.content[0]!.text, /keyword map is not first-run/);
-      assert.equal(listTasks(store).length, 0);
-    } finally {
-      store.close();
-    }
   });
 });
 

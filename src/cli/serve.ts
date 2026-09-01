@@ -3,25 +3,24 @@
  *
  * `serve --client=… --project=…` binds interactive session identity structurally.
  * Missing client still remains interactive with client=unknown — never headless.
+ * Format-v1 project state is required; the legacy projection path is gone.
  */
 
 import { openStore } from '../kernel/store/open.ts';
-import { loadOrCreateSecret, loadSecret } from '../kernel/capabilities/secretfile.ts';
+import { loadSecret } from '../kernel/capabilities/secretfile.ts';
 import { readRoleEnv } from '../kernel/run/roleenv.ts';
-import { serveProjection } from '../hosts/mcp/projection.ts';
 import {
   openInteractiveProject,
   projectHasV1State,
   serveInteractive,
   sessionFromBinding,
 } from '../hosts/mcp/interactive.ts';
-import { HOST_PULL_FLAG_ENV } from '../hosts/mcp/hostpull.ts';
 import { parseSessionBinding } from '../kernel/session/binding.ts';
 import { resolveProjectContext } from '../kernel/project/context.ts';
 import { normalizeProjectRoot } from '../kernel/project/context.ts';
 import { serveRole } from './roleserve.ts';
 import { resolveStoreLocation } from './local-state.ts';
-import { now, packageVersion, secretFile, withStoreAsync } from './runtime.ts';
+import { now, packageVersion, secretFile } from './runtime.ts';
 
 /**
  * Serve one role's write surface over MCP stdio. Not in USAGE on purpose:
@@ -69,31 +68,10 @@ export async function roleServe(): Promise<number> {
 }
 
 /**
- * Serve the flagged host-pull execution surface over MCP stdio.
- *
- * Clean-slate: permanently refused. Interactive claim/submit lives on
- * `construct serve` (semantic next_work / submit_work) after `construct init`.
- * The module remains until Phase G deletes it; this verb must not resurrect it.
- */
-export async function hostPullServe(): Promise<number> {
-  process.stderr.write(
-    'host-pull-serve: removed from the product path. ' +
-      'Initialize the project (`construct init`) and use construct serve ' +
-      '--client=… --project=… tools next_work / submit_work.\n' +
-      `(The ${HOST_PULL_FLAG_ENV} flag no longer enables this verb.)\n`,
-  );
-  return 2;
-}
-
-/**
  * Serve the spine over MCP stdio with structural session binding.
  *
  * Prefer `--client` / `--project` from the host MCP launch config over ambient
- * env detection for interactive routing identity.
- *
- * When the project has been `construct init`'d (format-v1 state present),
- * serve the semantic interactive control plane. Otherwise keep the legacy
- * projection until Phase G deletes it.
+ * env detection for interactive routing identity. Requires `construct init`.
  */
 export async function serve(argv: string[] = []): Promise<number> {
   const binding = parseSessionBinding(argv, process.cwd());
@@ -105,46 +83,34 @@ export async function serve(argv: string[] = []): Promise<number> {
     allowCwdFallback: true,
   });
 
-  if (projectHasV1State(ctx.root)) {
-    const state = openInteractiveProject(ctx.root);
-    try {
-      await serveInteractive(
-        {
-          store: state,
-          projectRoot: ctx.root,
-          clock: now,
-          serverVersion: packageVersion(),
-          session: sessionFromBinding({
-            client: binding.client,
-            projectRoot: ctx.root,
-            host: binding.client,
-          }),
-        },
-        process.stdin,
-        process.stdout,
-      );
-      return 0;
-    } finally {
-      state.close();
-    }
+  if (!projectHasV1State(ctx.root)) {
+    process.stderr.write(
+      'construct serve requires an initialized project.\n' +
+        'Run `construct init` (optionally `--client=…`) so this directory has ' +
+        'format-v1 state, then relaunch serve with --client=… --project=….\n',
+    );
+    return 2;
   }
 
-  return withStoreAsync(async (store) => {
-    const secret = loadOrCreateSecret(secretFile());
-    await serveProjection(
+  const state = openInteractiveProject(ctx.root);
+  try {
+    await serveInteractive(
       {
-        store,
+        store: state,
+        projectRoot: ctx.root,
         clock: now,
         serverVersion: packageVersion(),
-        secret,
-        session: {
-          ...binding,
+        session: sessionFromBinding({
+          client: binding.client,
           projectRoot: ctx.root,
-        },
+          host: binding.client,
+        }),
       },
       process.stdin,
       process.stdout,
     );
     return 0;
-  });
+  } finally {
+    state.close();
+  }
 }

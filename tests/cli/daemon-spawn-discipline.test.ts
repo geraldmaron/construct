@@ -84,7 +84,7 @@ test('the verb table dispatches the daemon and spawns nothing', () => {
 test('init, install, and the kernel raise nothing', () => {
   // The three paths the leak actually came through, named so a future edit to
   // any of them trips this rather than a code review.
-  for (const path of [join('cli', 'init.ts'), join('cli', 'wire.ts'), join('cli', 'skills.ts')]) {
+  for (const path of [join('cli', 'init.ts'), join('cli', 'skills.ts')]) {
     const text = readFileSync(join(SRC, path), 'utf8');
     assert.doesNotMatch(text, /daemon/i, `${path} says nothing about a resident process`);
   }

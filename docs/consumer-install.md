@@ -101,18 +101,16 @@ wiring, not something either app's policy commits:
 }
 ```
 
-`construct serve --client=… --project=…` is the projection with structural
-session binding: presence inside whatever MCP host reads this file, keyed to
-that client and project root. Prefer `construct wire` (or `construct init`)
-inside the host so those flags are written for you. Per `docs/first-run.md`, it can read the catalog, record
-an outcome, dispatch work through `claim_task` / `submit_work` once a
-capability secret exists (product `serve` creates one), read the work log
-and where a run's tasks stand, show the inbox and the questions roles have
-put to you, relay a decision or an answer, record a verdict, drop a note,
-and read the workspace's subjects. Construct does not spawn a second
-agent to do that work. What stays off the socket is `promote`, `review`,
-`compose`, a CLI `ask`, and erasure — human-gated or destructive. If
-`.cursor/mcp.json` doesn't exist yet in the target repo, create it with
+`construct serve --client=… --project=…` is the interactive MCP plane with
+structural session binding: presence inside whatever MCP host reads this file,
+keyed to that client and project root. Run `construct init` (optionally
+`--client=…`) so those flags and format-v1 state are written for you. Per
+`docs/first-run.md`, the session can start a run, claim work through
+`next_work` / `submit_work`, show the inbox, and relay a decision. Construct
+does not spawn a second agent to do that work. What stays off the socket is
+destructive or human-gated practice that belongs in the terminal.
+
+If `.cursor/mcp.json` doesn't exist yet in the target repo, create it with
 just this. If it exists with other servers already in it, add
 `construct-mcp` as one more key under `mcpServers`.
 
@@ -121,14 +119,16 @@ section covers the same entry for Claude Code, Codex, and any host that
 reads a plain MCP config file — the `command`/`args` pair is identical;
 only where the host expects to find the file changes.
 
-## Step 3: There is no init step
+## Step 3: Initialize the project
 
-`construct outcome` (or any other first command) creates whatever state it
-needs the moment it runs — a workspace named `default` if you don't name
-one, the store itself if it doesn't exist yet. There is nothing to
-provision first. `docs/first-run.md` is talk, then staff; the terminal
-commands live in `docs/cli-walkthrough.md`. This recipe stops at doctor
-because doctor is what proves the wiring, not the workspace.
+```bash
+construct init --client=cursor   # or claude-code / vscode / opencode
+```
+
+`construct init` creates project-local format-v1 state and reconciles host MCP.
+`construct serve` refuses without it. `docs/first-run.md` is talk, then staff;
+the terminal commands live in `docs/cli-walkthrough.md`. This recipe stops at
+doctor because doctor is what proves the wiring, not the workspace.
 
 ## Step 4: Verify with doctor
 
