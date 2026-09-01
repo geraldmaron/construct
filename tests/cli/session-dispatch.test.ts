@@ -118,17 +118,13 @@ test('a missing cursor-agent binary is reported as not spawnable', () => {
   assert.match(bob, /spawnable: no/);
 });
 
-test('work --host=cursor inside Cursor does not spawn and hands the session the tasks', async () => {
+test('work --host=cursor without project init refuses rather than spawning', async () => {
   await isolated(async () => {
     const recorded = await capture(() => outcome(['--domains=evidence-provenance', 'investigate the launch'], undefined, CURSOR_ENV));
     assert.equal(recorded.result, 0);
-    const { result, out, err } = await capture(() => work(['--host=cursor'], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /In-session dispatch through cursor/);
-    assert.match(out, /will not spawn a second cursor CLI/);
-    assert.match(out, /submit_work/);
-    assert.doesNotMatch(err, /Could not start/);
-    assert.doesNotMatch(out, /Record an outcome first/);
+    const { result, err } = await capture(() => work(['--host=cursor'], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
@@ -149,13 +145,12 @@ function standInHost(): HostAdapter {
   };
 }
 
-test('work finds the run it just recorded when no --run is typed', async () => {
+test('work without project init refuses ambient home-store dispatch', async () => {
   await isolated(async () => {
     await capture(() => outcome(['--domains=evidence-provenance', 'investigate the launch'], undefined, {}));
-    const { result, out } = await capture(() => work([], standInHost(), undefined, {}));
-    assert.equal(result, 0);
-    assert.match(out, /worked \d+ task/);
-    assert.doesNotMatch(out, /Record an outcome first/);
+    const { result, err } = await capture(() => work([], standInHost(), undefined, {}));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
@@ -182,7 +177,7 @@ test('an in-session outcome does not staff from the keyword map and creates no h
   });
 });
 
-test('a recorded run with no tasks is not reported as "record an outcome first"', async () => {
+test('a recorded run with no tasks still needs project init before work can speak', async () => {
   await isolated(async () => {
     const store = openStore(storePath(resolvePaths()));
     startRun(store, {
@@ -192,10 +187,9 @@ test('a recorded run with no tasks is not reported as "record an outcome first"'
       catalog: [],
     });
     store.close();
-    const { out } = await capture(() => work(['--run=run-hollow'], undefined, undefined, CURSOR_ENV));
-    assert.match(out, /no named work/);
-    assert.doesNotMatch(out, /Record an outcome first/i);
-    assert.doesNotMatch(out, /record an outcome first/);
+    const { result, err } = await capture(() => work(['--run=run-hollow'], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
@@ -254,46 +248,40 @@ test('initialized interactive MCP lists next_work and submit_work, not claim_tas
   }
 });
 
-test('Claude in-session is the same dispatch shape as Cursor', async () => {
+test('Claude in-session work without init refuses the same as Cursor', async () => {
   await isolated(async () => {
     await capture(() => outcome(['--domains=evidence-provenance', 'investigate the launch'], undefined, CLAUDE_ENV));
-    const { result, out } = await capture(() => work([], undefined, undefined, CLAUDE_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /In-session dispatch through claude/);
-    assert.match(out, /will not spawn a second claude CLI/);
+    const { result, err } = await capture(() => work([], undefined, undefined, CLAUDE_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
-test('named domains queue staff and in-session work hands them off without spawning', async () => {
+test('named domains queue staff; work without init still refuses ambient dispatch', async () => {
   await isolated(async () => {
-    await capture(() =>
+    const recorded = await capture(() =>
       outcome(['--domains=privacy', 'look at this'], undefined, CURSOR_ENV),
     );
-    const { result, out, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /In-session dispatch through cursor/);
-    assert.match(out, /will not spawn a second cursor CLI/);
-    assert.match(out, /submit_work/);
-    assert.match(out, /privacy/);
-    assert.doesNotMatch(err, /Could not start/);
-    assert.doesNotMatch(out, /Record an outcome first/i);
-    assert.doesNotMatch(out, /implicated domains/);
+    assert.equal(recorded.result, 0);
+    assert.match(recorded.out, /privacy/);
+    const { result, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 
 test('a second named domain staffs a different concern, not a phrase table', async () => {
   await isolated(async () => {
-    await capture(() =>
+    const recorded = await capture(() =>
       outcome(['--domains=security', 'look at this too'], undefined, CURSOR_ENV),
     );
-    const { result, out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.equal(result, 0);
-    assert.match(out, /In-session dispatch through cursor/);
-    assert.match(out, /security/);
+    assert.equal(recorded.result, 0);
+    assert.match(recorded.out, /security/);
+    assert.doesNotMatch(recorded.out, /\bprivacy\b/);
   });
 });
 
-test('bare work after an unnamed latest record does not spend an older pending run', async () => {
+test('bare work after hollow records still requires project init', async () => {
   await isolated(async () => {
     const store = openStore(storePath(resolvePaths()));
     startRunSelected(store, {
@@ -309,13 +297,9 @@ test('bare work after an unnamed latest record does not spend an older pending r
       catalog: [],
     });
     store.close();
-
-    const { out } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
-    assert.match(out, /run-later-hollow/);
-    assert.match(out, /no named work/);
-    assert.doesNotMatch(out, /In-session dispatch/);
-    assert.doesNotMatch(out, /run-older/);
-    assert.doesNotMatch(out, /Record an outcome first/i);
+    const { result, err } = await capture(() => work([], undefined, undefined, CURSOR_ENV));
+    assert.equal(result, 1);
+    assert.match(err, /requires an initialized project/);
   });
 });
 

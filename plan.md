@@ -16,34 +16,21 @@ Epic: `construct-cki1`.
 | Phase | Bead | Status |
 |-------|------|--------|
 | A–F | … | **done** |
-| G Delete old surfaces | construct-fgxn | **in progress** |
+| G Delete old surfaces | construct-fgxn | **done** |
 | H Skills | construct-blvu | open |
 | I External interfaces | construct-dz27 | open |
 | J Package/release | construct-umx9 | open |
 
-## Phase G deletion ledger
+## Phase G — done
 
-| Target | Status |
-|--------|--------|
-| Deep package exports `./kernel/*` `./hosts/*` | **done** |
-| `wire` product verb | **done** |
-| `host-pull-serve` + hostpull module | **done** |
-| Legacy MCP `projection.ts` (serve requires v1) | **done** |
-| `cleanup` catalog + verb | **done** |
-| naming_cache wiring / table | **done** |
-| session-drift from package runtime | **done** (moved to `scripts/tracker/`) |
-| keyword routing on product path | **done** |
-| standing/watch/schedule/daemon modules | **done** (manual Routine only; kernel source-watch kept) |
-| interactive home-store `work.ts` path | pending (v1 headless via init; home-store legacy path still present) |
-| persona pack auto-install / pack verb | pending (H) |
+Ledger checked off. Persona pack auto-install belongs to Phase H (`construct-blvu`), not G.
 
 ## What remains overall
 
 ```
-DONE   A–F
-DONE   G  keyword routing, background verbs, cleanup, naming cache, session-drift
-NOW    G  home-store legacy work.ts path
-OPEN   H  skill scorecards; only operational skill auto-installs
+DONE   A–G
+NOW    H  skill scorecards; operational skill only auto-installs; written-voice off default;
+         lens packs out of product auto-install; Agent Skills lint vs Construct policy
 OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
 OPEN   J  full gate; provenance rebuild; release verdict
 ```
