@@ -2,13 +2,24 @@
 
 ## Unreleased
 
+(empty)
+
+## 3.0.0-alpha.21 — 2026-09-01
+
+Dogfood alpha for Gerald. No external-tester program and none planned;
+acceptance is recorded outcomes he runs and reads. Carries the post-clean-slate
+hardening that landed after `3.0.0-alpha.20`.
+
+- **No external-tester gate.** STRATEGY Phase 5 and the README state Gerald
+  dogfood as the only acceptance surface; recruited testers are not a
+  requirement and are not waiting in the wings.
 - **Release recipe names skill-pack regeneration.** Bumping the version without
-  `construct skills pack` fails `lint-skill-pack-skew` (now tested for
-  version-only skew); see `docs/internal/release.md`.
+  `construct skills pack` fails `lint-skill-pack-skew` (version-only skew
+  tested); see `docs/internal/release.md`.
 - **Live Jira/GitHub connectors are stated as deferred.** Survey, decide,
-  reconcile, and docs say the adapter code exists but no shipped path
-  constructs a transport yet; prefer host MCP / `--live=` until a recorded
-  probe wires them.
+  reconcile, and docs say adapter code exists but no shipped path constructs a
+  transport yet; prefer host MCP / `--live=` until a recorded probe wires them
+  (`construct-a9yx` tracks the live path).
 - **`shares telemetry` reaches privacy** on the device-posture/EDR outcome
   pattern; compliance for that class stays a namer/embedding problem
   (RESEARCH-DECISIONS §31).
