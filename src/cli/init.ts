@@ -24,6 +24,13 @@ import {
 import type { HostIntegrationAdapter } from '../kernel/integration/types.ts';
 import { gitRoot } from './settings-file.ts';
 import { packageVersion } from './runtime.ts';
+import { plantOperationalSkill } from './skills.ts';
+import {
+  resolveHostSkillsDir,
+  SKILLS_HOST_NAMES,
+  type SkillsHostName,
+} from '../kernel/paths.ts';
+import { OPERATIONAL_SKILL } from '../kernel/skills/library.ts';
 
 function flag(argv: string[], name: string): boolean {
   return argv.includes(name);
@@ -70,6 +77,21 @@ function resolveIntegrationAdapter(
   return { adapter: null, source: 'none', requested: null };
 }
 
+function resolveSkillsHost(
+  argv: string[],
+  env: NodeJS.ProcessEnv,
+): SkillsHostName | null {
+  const clientFlag = parseClientFlag(argv);
+  if (clientFlag !== undefined && (SKILLS_HOST_NAMES as readonly string[]).includes(clientFlag)) {
+    return clientFlag as SkillsHostName;
+  }
+  const ambient = detectAmbientHost(env);
+  if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
+    return ambient.host as SkillsHostName;
+  }
+  return null;
+}
+
 /**
  * `construct init [--dry-run] [--client=<id>]`
  */
@@ -88,6 +110,7 @@ export async function init(
   const configPath = projectConfigPath(ctx.root);
   const dbPath = projectDbPath(ctx.root);
   const { adapter, source, requested } = resolveIntegrationAdapter(argv, env);
+  const skillsHost = resolveSkillsHost(argv, env);
 
   if (dryRun) {
     process.stdout.write(`construct init (dry-run)\n`);
@@ -99,6 +122,15 @@ export async function init(
       `  state:  ${dbPath}${existsSync(dbPath) ? ' (exists)' : ' (would create)'}\n`,
     );
     process.stdout.write(`  gitignore: ensure ${STATE_GITIGNORE_PATTERN}\n`);
+    if (skillsHost) {
+      process.stdout.write(
+        `  would install operational skill ${OPERATIONAL_SKILL} → ${resolveHostSkillsDir(skillsHost, env)}\n`,
+      );
+    } else {
+      process.stdout.write(
+        '  operational skill: skipped (no ambient/--client host with a skills directory)\n',
+      );
+    }
     if (adapter && integrationIsInstallable(adapter)) {
       const plan = await adapter.plan(ctx.root);
       for (const action of plan.actions) {
@@ -129,6 +161,20 @@ export async function init(
     );
     if (result.ensuredGitignore) {
       process.stdout.write(`  gitignore: added ${STATE_GITIGNORE_PATTERN}\n`);
+    }
+
+    if (skillsHost) {
+      const skillsDir = resolveHostSkillsDir(skillsHost, env);
+      const planted = plantOperationalSkill(skillsDir);
+      process.stdout.write(
+        planted.ok
+          ? `  skill: ${planted.detail}\n`
+          : `  skill: skipped — ${planted.detail}\n`,
+      );
+    } else {
+      process.stdout.write(
+        '  skill: no host skills directory resolved — open from a supported host or pass --client=…\n',
+      );
     }
 
     if (adapter && integrationIsInstallable(adapter)) {

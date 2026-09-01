@@ -15,22 +15,28 @@ Epic: `construct-cki1`.
 
 | Phase | Bead | Status |
 |-------|------|--------|
-| A–F | … | **done** |
-| G Delete old surfaces | construct-fgxn | **done** |
-| H Skills | construct-blvu | open |
+| A–G | … | **done** |
+| H Skills | construct-blvu | **done** |
 | I External interfaces | construct-dz27 | open |
 | J Package/release | construct-umx9 | open |
 
-## Phase G — done
+## Phase H ledger
 
-Ledger checked off. Persona pack auto-install belongs to Phase H (`construct-blvu`), not G.
+| Target | Status |
+|--------|--------|
+| Operational `construct` skill; only init auto-install | **done** |
+| written-voice off `--all` / never auto | **done** |
+| Lens packs never product auto-install | **done** (pack stays explicit) |
+| Scorecards KEEP/REWRITE/MERGE/DELETE | **done** (`docs/internal/skill-scorecards.md`) |
+| Agent Skills lint vs Construct policy | **done** |
+| Progressive disclosure (SKILL.md + references/) | **done** |
+| Eval harness (structural/size) | **done** (`scripts/skill-scorecard.mjs`) |
+| A/B qualification / observed cross-host load | **named gap** (unmet; not faked) |
 
 ## What remains overall
 
 ```
-DONE   A–G
-NOW    H  skill scorecards; operational skill only auto-installs; written-voice off default;
-         lens packs out of product auto-install; Agent Skills lint vs Construct policy
+DONE   A–H
 OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
 OPEN   J  full gate; provenance rebuild; release verdict
 ```

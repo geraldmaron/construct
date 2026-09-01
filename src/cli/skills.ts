@@ -44,15 +44,22 @@ import {
   type SkillFolder,
 } from '../kernel/skills/projection.ts';
 import {
+  DEFAULT_METHOD_INSTALL,
   foreignFolders,
+  METHOD_SKILLS,
+  OPERATIONAL_SKILL,
+  OPT_IN_METHOD_SKILLS,
   planSkillRemoval,
   sameSkillBytes,
+  selectDefaultMethodInstall,
   selectSkills,
   skillDescription,
   skillStatuses,
   skillVersion,
   SHIPPED_SKILLS,
+  SKILL_BUNDLE_ENTRIES,
   type InstalledFolder,
+  type SkillBundleFile,
   type SkillSource,
 } from '../kernel/skills/library.ts';
 import { skillsReachable, type SkillsReachable } from '../kernel/skills/reach.ts';
@@ -82,16 +89,15 @@ const SKILLS_USAGE =
   '       construct skills installed [--dir=<dir>|--host=<host>]\n' +
   '       construct skills uninstall <name> [--dir=<dir>|--host=<host>]\n' +
   '       construct skills pack [--out=<dir>] [--uninstall]\n' +
-  '  Two disjoint skill families share this verb:\n' +
-  '  - PORTABLE METHOD SKILLS (list/install/installed/uninstall): the ones this\n' +
-  `    checkout ships, carried as exact copies into a host skills directory\n` +
-  `    (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>\n` +
-  '    for a documented host directory — --dir and --host are mutually exclusive).\n' +
-  '    install refuses a target that differs from this checkout\'s copy — edited\n' +
-  '    by hand, or installed from another version — unless --force is given.\n' +
-  '  - LENS SKILLS (pack): writes or removes the generated role pack (--out,\n' +
-  '    default ./.claude/skills) — output regenerated from the role catalog,\n' +
-  '    not a copy. Nothing writes without naming this subcommand.\n' +
+  '  Three skill families share this verb:\n' +
+  '  - OPERATIONAL skill (`construct`): the only skill init auto-installs.\n' +
+  '  - PORTABLE METHOD SKILLS (list/install/installed/uninstall): method skills\n' +
+  `    this checkout ships (--dir, default ~/.claude/skills; or --host=<${SKILLS_HOST_NAMES.join('|')}>).\n` +
+  `    --all installs the default method set (${DEFAULT_METHOD_INSTALL.join(', ')}),\n` +
+  `    not opt-in-only names (${OPT_IN_METHOD_SKILLS.join(', ')} — install those by name).\n` +
+  '    install refuses a target that differs from this checkout\'s copy unless --force.\n' +
+  '  - LENS SKILLS (pack): generated role pack (--out, default ./.claude/skills).\n' +
+  '    Never product auto-install; naming pack is the confirmation.\n' +
   '  A bare `construct skills`, with no subcommand, changes nothing — it only\n' +
   '  ever prints this usage.\n';
 
@@ -134,7 +140,7 @@ function symlinkGuardRoot(out: string): string {
   return rel !== '' && !rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel) ? cwd : out;
 }
 
-/** The subcommands that carry the portable method skills, as opposed to the lens pack. */
+/** The subcommands that carry the portable / operational skills, as opposed to the lens pack. */
 const SKILL_LIBRARY_SUBCOMMANDS = ['list', 'install', 'installed', 'uninstall'];
 
 /** The one subcommand that writes or removes the generated lens skills. */
@@ -160,17 +166,44 @@ const SKILLS_ABSENT =
   '  (not this project — it resolves at whatever version npx finds latest):\n' +
   '    npx skills add geraldmaron/construct\n';
 
-/** Every shipped skill, in name order, read whole so a copy of it is a copy of the bytes. */
+/** Recursively list files under `root`, paths relative to `root`, files only. */
+function listRelativeFiles(root: string, under = ''): readonly string[] {
+  const here = under === '' ? root : join(root, under);
+  if (!existsSync(here)) return [];
+  const out: string[] = [];
+  for (const entry of readdirSync(here, { withFileTypes: true })) {
+    const rel = under === '' ? entry.name : join(under, entry.name);
+    if (entry.isDirectory()) {
+      if (under === '' && !(SKILL_BUNDLE_ENTRIES as readonly string[]).includes(entry.name)) continue;
+      out.push(...listRelativeFiles(root, rel));
+    } else if (entry.isFile()) {
+      out.push(rel);
+    }
+  }
+  return out.sort();
+}
+
+/** Every shipped skill, in name order, with SKILL.md and progressive-disclosure companions. */
 function readSkillSources(dir: string): readonly SkillSource[] {
   return readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && existsSync(join(dir, entry.name, SKILL_FILENAME)))
     .map((entry) => {
-      const bytes = readFileSync(join(dir, entry.name, SKILL_FILENAME));
+      const skillRoot = join(dir, entry.name);
+      const skillBytes = readFileSync(join(skillRoot, SKILL_FILENAME));
+      const companions = listRelativeFiles(skillRoot).filter((rel) => rel !== SKILL_FILENAME);
+      const files: SkillBundleFile[] = [
+        { relativePath: SKILL_FILENAME, bytes: skillBytes },
+        ...companions.map((relativePath) => ({
+          relativePath,
+          bytes: readFileSync(join(skillRoot, relativePath)),
+        })),
+      ];
       return {
         name: entry.name,
-        description: skillDescription(bytes),
-        version: skillVersion(bytes),
-        bytes,
+        description: skillDescription(skillBytes),
+        version: skillVersion(skillBytes),
+        bytes: skillBytes,
+        files,
       };
     })
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -282,10 +315,23 @@ function skillLibrary(sub: string, argv: string[]): number {
     // The whole description, wrapped rather than cut: it is what decides
     // whether a host reaches for the skill, so a shortened one would be a
     // different skill's description.
-    process.stdout.write('portable method skills (this checkout ships these):\n');
+    process.stdout.write('skills this checkout ships:\n');
+    process.stdout.write(
+      `  operational (init auto-installs): ${OPERATIONAL_SKILL}\n` +
+        `  method default (--all): ${DEFAULT_METHOD_INSTALL.join(', ')}\n` +
+        `  method opt-in (by name): ${OPT_IN_METHOD_SKILLS.join(', ')}\n`,
+    );
     for (const source of sources) {
+      const kind =
+        source.name === OPERATIONAL_SKILL
+          ? 'operational'
+          : (OPT_IN_METHOD_SKILLS as readonly string[]).includes(source.name)
+            ? 'opt-in'
+            : (METHOD_SKILLS as readonly string[]).includes(source.name)
+              ? 'method'
+              : 'other';
       process.stdout.write(
-        `  ${source.name} ${source.version ?? '-'}\n${wrapSkillText(source.description, '    ')}\n`,
+        `  ${source.name} ${source.version ?? '-'} [${kind}]\n${wrapSkillText(source.description, '    ')}\n`,
       );
     }
     process.stdout.write(
@@ -342,14 +388,15 @@ function skillInstall(
   all: boolean,
   force: boolean,
 ): number {
-  // Either every skill or the ones named, never both and never neither: an
-  // install that guessed at its own subject would write files nobody asked for.
+  // Either the default method set or the ones named, never both and never
+  // neither: an install that guessed at its own subject would write files
+  // nobody asked for. --all deliberately skips opt-in-only method skills.
   if (all === named.length > 0) {
     process.stderr.write(SKILLS_USAGE);
     return 2;
   }
   const { selected, unknown } = all
-    ? { selected: sources, unknown: [] as readonly string[] }
+    ? { selected: selectDefaultMethodInstall(sources), unknown: [] as readonly string[] }
     : selectSkills(sources, named);
   if (unknown.length > 0) {
     process.stderr.write(
@@ -359,23 +406,22 @@ function skillInstall(
     return 2;
   }
 
-  // Every target is checked before anything is created, so a refusal never
-  // leaves a partial install behind.
   for (const source of selected) {
-    const planted = symlinkToward(symlinkGuardRoot(dir), join(dir, source.name, SKILL_FILENAME));
-    if (planted) {
-      process.stderr.write(
-        `skills: ${planted} is a symbolic link — writing through it would land outside ${dir}.\n` +
-          '  Remove the link, or point --dir at the real directory.\n',
+    for (const file of source.files) {
+      const planted = symlinkToward(
+        symlinkGuardRoot(dir),
+        join(dir, source.name, ...file.relativePath.split(/[/\\]/)),
       );
-      return 1;
+      if (planted) {
+        process.stderr.write(
+          `skills: ${planted} is a symbolic link — writing through it would land outside ${dir}.\n` +
+            '  Remove the link, or point --dir at the real directory.\n',
+        );
+        return 1;
+      }
     }
   }
 
-  // Same pass, before anything is written: a target that differs from this
-  // checkout's copy was either edited by hand or planted by another version,
-  // and an install that overwrote it without being told to would destroy
-  // whichever one it was silently. --force is the only way past this.
   if (!force) {
     const diverged: string[] = [];
     for (const source of selected) {
@@ -394,39 +440,45 @@ function skillInstall(
 
   let written = 0;
   for (const source of selected) {
-    const target = join(dir, source.name, SKILL_FILENAME);
-    const existing = existsSync(target) ? readFileSync(target) : null;
-    if (existing !== null && sameSkillBytes(existing, source.bytes)) {
+    const skillTarget = join(dir, source.name, SKILL_FILENAME);
+    const existingSkill = existsSync(skillTarget) ? readFileSync(skillTarget) : null;
+    const skillCurrent =
+      existingSkill !== null &&
+      sameSkillBytes(existingSkill, source.bytes) &&
+      source.files.every((file) => {
+        const path = join(dir, source.name, ...file.relativePath.split(/[/\\]/));
+        if (!existsSync(path)) return false;
+        return sameSkillBytes(readFileSync(path), file.bytes);
+      });
+    if (skillCurrent) {
       process.stdout.write(`  current   ${source.name} — already byte-identical, left alone\n`);
       continue;
     }
-    mkdirSync(dirname(target), { recursive: true });
-    // Opened with O_NOFOLLOW rather than written through writeFileSync, so a
-    // symlink planted at the target's final path component after the guard
-    // pass above (and after the divergence read just taken) is refused at
-    // the write itself — the guard pass checks the path once, and this is
-    // what keeps the promise made between that check and this write.
-    let fd: number;
-    try {
-      fd = openSync(target, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
-        process.stderr.write(
-          `skills: ${target} is a symbolic link — writing through it would land outside ${dir}.\n` +
-            '  Remove the link, or point --dir at the real directory.\n',
-        );
-        return 1;
+    for (const file of source.files) {
+      const target = join(dir, source.name, ...file.relativePath.split(/[/\\]/));
+      mkdirSync(dirname(target), { recursive: true });
+      let fd: number;
+      try {
+        fd = openSync(target, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ELOOP') {
+          process.stderr.write(
+            `skills: ${target} is a symbolic link — writing through it would land outside ${dir}.\n` +
+              '  Remove the link, or point --dir at the real directory.\n',
+          );
+          return 1;
+        }
+        throw error;
       }
-      throw error;
-    }
-    try {
-      writeSync(fd, source.bytes);
-    } finally {
-      closeSync(fd);
+      try {
+        writeSync(fd, file.bytes);
+      } finally {
+        closeSync(fd);
+      }
     }
     written += 1;
     process.stdout.write(
-      `  ${existing === null ? 'installed' : 'replaced '} ${source.name} ${source.version ?? '-'}\n`,
+      `  ${existingSkill === null ? 'installed' : 'replaced '} ${source.name} ${source.version ?? '-'}\n`,
     );
   }
   process.stdout.write(
@@ -434,6 +486,31 @@ function skillInstall(
       '  See them with: construct skills installed\n',
   );
   return 0;
+}
+
+/**
+ * Plant the operational `construct` skill into a host skills directory.
+ * Used by `construct init` — the only auto-install path. Returns a short
+ * status line for the caller to print, or null when the skill files are
+ * missing from this install.
+ */
+export function plantOperationalSkill(
+  dir: string,
+  force = false,
+): { readonly ok: boolean; readonly detail: string } {
+  const sourceDir = sourceSkillsDir();
+  if (!existsSync(sourceDir)) {
+    return { ok: false, detail: 'this install carries no skill files' };
+  }
+  const sources = readSkillSources(sourceDir);
+  const code = skillInstall(sources, resolve(dir), [OPERATIONAL_SKILL], false, force);
+  if (code !== 0) {
+    return { ok: false, detail: `operational skill install refused (exit ${String(code)})` };
+  }
+  return {
+    ok: true,
+    detail: `operational skill ${OPERATIONAL_SKILL} → ${dir}`,
+  };
 }
 
 function skillUninstall(

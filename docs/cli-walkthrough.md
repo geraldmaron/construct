@@ -17,16 +17,17 @@ That creates project-local Construct config and format-v1 state under
 `construct init --dry-run`. If an unsupported alpha store is already at the
 project path, run `construct reset --yes` instead of expecting a migration.
 
-Native host MCP and operational-skill reconcile is part of init's job and is
-still being rebuilt; until that lands, point a supported host at
-`construct serve` only as a temporary operator step — not the product door.
+Native host MCP and operational-skill reconcile is part of init's job for
+supported clients. `construct init` plants the short operational `construct`
+skill into the ambient (or `--client`) host skills directory and reconciles
+session-bound MCP where an adapter exists.
 
 You need Node 22.18 or newer. `construct doctor` is recovery and a health
 check, not onboarding. It reports Node, the store, which hosts are present
-(found, version, spawnable, auth), leftover 2.x litter, and the skills pack.
-Inside a host, an `ambient` line names in-session dispatch through
-`construct serve`. Only Node and store checks gate the exit code. The full
-check table is in [consumer-install.md](consumer-install.md).
+(found, version, spawnable, auth), and skill-pack skew when a generated lens
+pack is present. Inside a host, an `ambient` line names in-session dispatch
+through MCP. Only Node and store checks gate the exit code. The full check
+table is in [consumer-install.md](consumer-install.md).
 
 The rest of this page is the terminal-first walkthrough — every command
 below is a real verb, and commands that would spawn a host and spend money

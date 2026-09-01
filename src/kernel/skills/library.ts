@@ -28,17 +28,11 @@ import { SKILL_FILENAME, skillFrontmatterLines } from './projection.ts';
 export { SKILL_FILENAME };
 
 /**
- * The names this project ships a method skill under, in name order. It is a
- * list of names rather than a list of files because a skills directory holds
- * other people's skills too: without this list nothing could tell which folders
- * in it are this project's to name, describe, or remove. It also answers for an
- * install whose own skill files are missing, where reading the directory would
- * report nothing shipped rather than something broken.
- *
- * Kept equal to the `skills/` directory listing by the skill-spec lint, so a
- * skill added or removed there cannot silently disagree with this.
+ * Portable method skills — explicit install, never product auto-install.
+ * Kept equal to the method folders under `skills/` (excluding the operational
+ * skill) by the skill-spec lint.
  */
-export const SHIPPED_SKILLS: readonly string[] = Object.freeze([
+export const METHOD_SKILLS: readonly string[] = Object.freeze([
   'adversarial-review',
   'context-mapping',
   'decision-framing',
@@ -46,6 +40,43 @@ export const SHIPPED_SKILLS: readonly string[] = Object.freeze([
   'investigative-research',
   'requirements-structuring',
   'written-voice',
+]);
+
+/**
+ * Method skills that ship but stay out of `skills install --all`: house style
+ * is opt-in, not a default pack.
+ */
+export const OPT_IN_METHOD_SKILLS: readonly string[] = Object.freeze(['written-voice']);
+
+/** What `--all` installs: every method skill except opt-in-only names. */
+export const DEFAULT_METHOD_INSTALL: readonly string[] = Object.freeze(
+  METHOD_SKILLS.filter((name) => !(OPT_IN_METHOD_SKILLS as readonly string[]).includes(name)),
+);
+
+/**
+ * The only skill `construct init` plants automatically. Short operational
+ * posture for the host session — not a method skill and not a lens pack.
+ */
+export const OPERATIONAL_SKILL = 'construct';
+
+/**
+ * Every folder under `skills/` this checkout ships, method and operational.
+ * A skills directory holds other people's skills too: without this list
+ * nothing could tell which folders are this project's to name or remove.
+ */
+export const SHIPPED_SKILLS: readonly string[] = Object.freeze(
+  [...METHOD_SKILLS, OPERATIONAL_SKILL].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
+);
+
+/**
+ * Top-level entries an install may write beside SKILL.md (progressive
+ * disclosure). Anything else in an installed folder is treated as foreign
+ * and blocks uninstall.
+ */
+export const SKILL_BUNDLE_ENTRIES: readonly string[] = Object.freeze([
+  'references',
+  'scripts',
+  'assets',
 ]);
 
 /** One skill this checkout ships: its folder name, its frontmatter, its exact bytes. */
@@ -56,7 +87,19 @@ export interface SkillSource {
   readonly description: string;
   /** The frontmatter version, or null when the file carries none. */
   readonly version: string | null;
-  /** The file's content, exactly as it sits on disk. */
+  /** The SKILL.md content, exactly as it sits on disk. */
+  readonly bytes: Uint8Array;
+  /**
+   * Every file the install copies, relative to the skill folder (`SKILL.md`,
+   * `references/…`, …). SKILL.md is always included; progressive-disclosure
+   * companions ride alongside it.
+   */
+  readonly files: readonly SkillBundleFile[];
+}
+
+/** One file inside a shipped skill folder, path relative to that folder. */
+export interface SkillBundleFile {
+  readonly relativePath: string;
   readonly bytes: Uint8Array;
 }
 
@@ -207,6 +250,8 @@ export function selectSkills(
 /**
  * Whether the named skill's folder may be removed whole. The name having been
  * shipped is the caller's check; this decides what the folder on disk permits.
+ * Progressive-disclosure companions (`references`, `scripts`, `assets`) are
+ * install-owned; any other top-level entry is foreign and blocks removal.
  */
 export function planSkillRemoval(
   source: SkillSource,
@@ -216,13 +261,23 @@ export function planSkillRemoval(
   if (folder.skill === null) {
     return { outcome: 'keep', why: `no ${SKILL_FILENAME} — an install never wrote this folder` };
   }
-  if (folder.extras.length > 0) {
+  const allowed = new Set<string>([...SKILL_BUNDLE_ENTRIES]);
+  const foreign = folder.extras.filter((entry) => !allowed.has(entry));
+  if (foreign.length > 0) {
     return {
       outcome: 'keep',
-      why: `holds files an install never wrote: ${folder.extras.join(', ')}`,
+      why: `holds files an install never wrote: ${foreign.join(', ')}`,
     };
   }
   return sameSkillBytes(folder.skill, source.bytes)
     ? { outcome: 'remove', why: "the installed copy is byte-identical to this checkout's" }
     : { outcome: 'remove', why: "the installed copy differs from this checkout's — removed as it was" };
+}
+
+/** Sources named by `--all`: default method install set, never opt-in-only names. */
+export function selectDefaultMethodInstall(
+  sources: readonly SkillSource[],
+): readonly SkillSource[] {
+  const allowed = new Set(DEFAULT_METHOD_INSTALL);
+  return sources.filter((source) => allowed.has(source.name));
 }

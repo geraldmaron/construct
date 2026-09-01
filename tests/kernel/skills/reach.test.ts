@@ -17,11 +17,13 @@ import type { InstalledFolder, SkillSource } from '../../../src/kernel/skills/li
 const bytes = (text: string): Uint8Array => new TextEncoder().encode(text);
 
 function source(name: string, description = `what ${name} is for`): SkillSource {
+  const skillBytes = bytes(`---\nname: ${name}\ndescription: ${description}\n---\n\nbody\n`);
   return {
     name,
     description,
     version: '1.0.0',
-    bytes: bytes(`---\nname: ${name}\ndescription: ${description}\n---\n\nbody\n`),
+    bytes: skillBytes,
+    files: [{ relativePath: 'SKILL.md', bytes: skillBytes }],
   };
 }
 

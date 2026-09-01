@@ -1,24 +1,46 @@
 # Skills
 
-Portable method skills for AI agents: one self-contained `SKILL.md` file per skill, for anyone who wants expert-shaped method (intake, context, evidence, decision, specification, prose, challenge) without training in the underlying discipline.
+Portable method skills for AI agents in the Agent Skills format: a
+`SKILL.md` per skill, optionally with `references/` (and other progressive-
+disclosure companions) for long templates and examples.
 
 ## What's here
 
-Seven skills ship, each a single Markdown file in the Agent Skills format, Apache-2.0 licensed. Together they cover a working lifecycle — intake → context → evidence → decision → specification → prose → challenge — and each also works entirely alone:
+Seven method skills cover a working lifecycle - intake → context → evidence
+→ decision → specification → prose → challenge - and each also works alone:
 
-- **intake** — a messy, multi-concern request becomes an execution plan without asking the requester to restate it.
-- **context-mapping** — an unfamiliar system's entities, typed relationships, and unknowns are mapped before anyone acts inside it. The method only: persistence belongs to whatever memory store the host has.
-- **investigative-research** — multi-source research whose conclusions have to survive a hostile reader.
-- **decision-framing** — decisions that are expensive to revisit: options laid out, one recommendation, a decision record.
-- **requirements-structuring** — an intent becomes a requirements artifact a stranger could build from and verify against.
-- **written-voice** — one plain house voice for prose deliverables, with shapes for spec, proposal, status update, announcement, and README.
-- **adversarial-review** — a finished deliverable or decision is challenged before anyone commits to it, closing in one of four verdicts.
+- **intake** - a messy, multi-concern request becomes an execution plan
+  without asking the requester to restate it.
+- **context-mapping** - an unfamiliar system's entities, typed
+  relationships, and unknowns are mapped before anyone acts inside it. The
+  method only: persistence belongs to whatever memory store the host has.
+- **investigative-research** - multi-source research whose conclusions have
+  to survive a hostile reader.
+- **decision-framing** - decisions that are expensive to revisit: options
+  laid out, one recommendation, a decision record.
+- **requirements-structuring** - an intent becomes a requirements artifact a
+  stranger could build from and verify against.
+- **written-voice** - one plain house voice for prose deliverables, with
+  shapes for spec, proposal, status update, announcement, README, and more.
+  Opt-in: not included in `construct skills install --all`.
+- **adversarial-review** - a finished deliverable or decision is challenged
+  before anyone commits to it, closing in one of four verdicts.
+
+Method skills may ship a `references/` directory for record templates,
+document shapes, and genre examples; `SKILL.md` keeps the method rules and
+points at those files when needed.
+
+An operational **`construct`** skill (host posture for Construct MCP /
+coordination) is separate from this method set. When present in the package,
+`construct init` auto-installs it; method skills never auto-install that way.
+Lens / persona packs are not product auto-install either.
 
 More skills are planned. None are listed here until they ship.
 
 ## Operating as…
 
-The skills are shared and role-free — nobody owns a deliverable type. These views are only a reading guide for where to start:
+The skills are shared and role-free - nobody owns a deliverable type. These
+views are only a reading guide for where to start:
 
 | If you operate as | Start with | Then |
 |---|---|---|
@@ -29,25 +51,51 @@ The skills are shared and role-free — nobody owns a deliverable type. These vi
 
 ## Working example
 
-Copy `skills/investigative-research/SKILL.md` and paste its contents into any agent's system prompt or skill-loading mechanism, then ask it a research question you need a defensible answer to. The skill governs the agent's method from that point — sourcing, corroboration, how it flags an unverified claim — without anything else installed.
+Copy `skills/investigative-research/` (at least `SKILL.md`; follow links
+into `references/` when the skill says to) into any agent's skills
+location, then ask a research question you need a defensible answer to.
+The skill governs method from that point - sourcing, corroboration, how it
+flags an unverified claim - without anything else installed.
 
 ## Install
 
 Three ways to get a skill into your agent:
 
-1. **Copy the file.** Take the single `SKILL.md` for the skill you want and paste it into your agent's skills location. No dependency on this repository once it's copied — the skill has to work as a standalone file.
-2. **Use the installer.** `npx skills add geraldmaron/construct` pulls skills from this repo via git — this runs Vercel's third-party `skills` installer, not this project's own tooling, at whatever version npx resolves as latest.
-3. **Use the CLI.** `construct skills list` names what's shipped; `construct skills install <name>` (or `--all`) copies it into a host skills directory as an exact, byte-for-byte copy; `construct skills installed` reports what's there and whether it matches; `construct skills uninstall <name>` removes it. Name the destination by host with `--host=<claude|bob|opencode|cursor|codex>`, each resolving the directory that host's own documentation names, or give a path outright with `--dir`. The skills travel inside the npm package, so this works from `npm install @geraldmaron/construct@alpha` as well as from a checkout. `latest` is the predecessor (`2.1.1`) and does not carry this pack.
+1. **Copy the folder.** Take the skill directory you want (including
+   `references/` if present) and place it in your agent's skills location.
+2. **Use the installer.** `npx skills add geraldmaron/construct` pulls
+   skills from this repo via git - this runs Vercel's third-party `skills`
+   installer, not this project's own tooling, at whatever version npx
+   resolves as latest.
+3. **Use the CLI.** `construct skills list` names what's shipped;
+   `construct skills install <name>` (or `--all`) copies it into a host
+   skills directory as an exact copy; `construct skills installed` reports
+   what's there and whether it matches; `construct skills uninstall <name>`
+   removes it. `--all` installs the default method set and skips
+   opt-in-only skills (written-voice). Name the destination by host with
+   `--host=<claude|bob|opencode|cursor|codex>`, or give a path with
+   `--dir`. The skills travel inside the npm package.
 
-Each skill is self-contained: no other file in this repository, and no checkout of it, is required for the skill to run. That claim is checked per skill with what this project calls the naked-file test — the file is pasted into an agent with no repository present and run for real. `[unverified]` — the exact naked-file test procedure and its output are not reproduced here; see the repository's `docs/` directory for the use ledger and recorded runs.
+Each method skill is severable: no construct checkout is required for it to
+run. That claim is checked with the naked-folder / naked-file discipline  - 
+see `docs/` for the use ledger and recorded runs. `[unverified]` - the
+exact procedure and its output are not reproduced here.
 
 ## Limits
 
-- Each skill carries its own scope rules and is written to stand down — do nothing, or defer to a more specific skill — when the task in front of it doesn't match. A skill firing on the wrong task is a defect in that skill, not expected behavior.
-- The naked-file test proves a skill runs standalone across agent harnesses and model families. It does not prove the skill's judgment is good on every task; that's a separate, ongoing check (see Status).
-- The audience this project is built for has no formal training in the disciplines these skills encode (the lifecycle named above: intake, context, evidence, decision, specification, prose, challenge). The guardrails in each skill exist because of that — they are load-bearing, not optional ceremony, and removing them changes what the skill is safe to hand to.
-- Coverage is narrow by design: the working lifecycle above, not a general-purpose skill library. A need outside intake, context, evidence, decision, specification, prose, or challenge has nothing here yet.
+- Each skill carries its own scope rules and is written to stand down when
+  the task does not match. A skill firing on the wrong task is a defect in
+  that skill.
+- Portability proves a skill runs across harnesses; it does not prove
+  judgment is good on every task (see Status).
+- The audience these skills target has no formal training in the underlying
+  disciplines. Guardrails are load-bearing where present.
+- Coverage is narrow by design: the lifecycle above, not a general-purpose
+  skill library.
 
 ## Status
 
-Early and actively developed. All seven ship only after a recorded real-work run, not on completed drafting alone; each carries at least one. The use ledger names the falsification test this claim is held to and records, run by run, whether a gate changed the outcome: `docs/internal/skill-use-ledger.md`, with full records under `docs/internal/skill-runs/`.
+Early and actively developed. Method skills ship after a recorded real-work
+run; the use ledger names the falsification test and records whether a gate
+changed the outcome: `docs/internal/skill-use-ledger.md`, with full records
+under `docs/internal/skill-runs/`.
