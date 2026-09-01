@@ -3,7 +3,7 @@
  * lint-skill-pack-skew.mjs: the committed skill pack under .claude/skills/
  * matches what the current role catalog would generate right now.
  *
- * `construct skills --out=.claude/skills` projects src/kernel/plan/lenses.ts
+ * `construct skills pack --out=.claude/skills` projects src/kernel/plan/lenses.ts
  * (plus playbooks and standards) into one SKILL.md per lens and writes it.
  * The result is committed, but nothing regenerates it: an edit to lenses.ts
  * with no follow-up run leaves a stale pack sitting in the tree, agreeing
@@ -103,7 +103,7 @@ if (problems.length > 0) {
   }
   process.stderr.write(
     `\nlint-skill-pack-skew: ${String(problems.length)} folder(s) out of step with the catalog. ` +
-      'Regenerate with: construct skills --out=.claude/skills\n',
+      'Regenerate with: construct skills pack --out=.claude/skills\n',
   );
   process.exit(1);
 }

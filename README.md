@@ -135,15 +135,17 @@ regeneration of `docs/org-map.md` compared against the committed copy.
 the package, installs it into a scratch project, and runs the spine as a
 consumer would.
 
-Ordinary GitHub Actions on push and pull request run `lint`, `typecheck`,
-and the first-run staffing/surface subset (`npm run test:first-run`). The
-full gate — that line, plus the suite under a read-only `HOME` — is the `ci`
-workflow's `workflow_dispatch` and the release-tag workflow before publish.
-Tracker-only commits under `.beads/` do not start a run.
+Ordinary GitHub Actions on push and pull request run the full gate: `lint`,
+`typecheck`, `npm test`, sterile read-only `HOME`, and packaged-install
+smoke. Live host conformance stays on the release-tag workflow. Tracker-only
+commits under `.beads/` do not start a run.
 
 Requires Node ≥ 22.18. Source is TypeScript using erasable syntax only, so it
 runs natively via Node's type-stripping in development, with no build step
 for `npm test`. `npm run build` produces the published `dist/` for packaging.
+
+Cutting an alpha: see [docs/internal/release.md](docs/internal/release.md)
+(bump → `construct skills pack` → full gate → tag).
 
 ## License
 

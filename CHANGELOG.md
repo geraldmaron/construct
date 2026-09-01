@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Release recipe names skill-pack regeneration.** Bumping the version without
+  `construct skills pack` fails `lint-skill-pack-skew` (now tested for
+  version-only skew); see `docs/internal/release.md`.
+
 ## 3.0.0-alpha.20 — 2026-09-01
 
 Clean-slate reconciliation complete through Phase J (`construct-cki1`). No
@@ -20,10 +26,6 @@ use progressive disclosure; lens packs stay explicit.
 - **Unknown verbs name themselves.** `construct cleanup` (and any other
   retired or mistyped verb) prints `unknown command` and exits 2 instead of
   only dumping the grouped help — the packaged smoke proves the refusal.
-
-## Unreleased
-
-(empty — folded into 3.0.0-alpha.20)
 
 ## 3.0.0-alpha.18 — 2026-08-25
 
