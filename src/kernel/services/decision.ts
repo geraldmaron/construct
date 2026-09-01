@@ -1,5 +1,5 @@
 /**
- * kernel/services/decision.ts — inbox / approvals façade.
+ * kernel/services/decision.ts — inbox / approvals façade with kind side effects.
  */
 
 import type { StateStore } from '../state/open.ts';

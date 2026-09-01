@@ -41,6 +41,7 @@ export interface HeadlessRunService {
     readonly at: string;
     readonly deliverable?: unknown;
     readonly note?: string;
+    readonly settleNoteAsDone?: boolean;
   }): SubmitCompletedWorkResult;
   /**
    * Optional hook for resource selection. InteractiveRunService has no

@@ -19,7 +19,8 @@ import {
 import { createDecisionService } from '../../kernel/services/decision.ts';
 import { createStaffService } from '../../kernel/services/staff.ts';
 import { createRoutineService } from '../../kernel/services/routine.ts';
-import type { DecisionKind } from '../../kernel/state/decisions.ts';
+import type { DecisionKind, DecisionSubject } from '../../kernel/state/decisions.ts';
+import { DECISION_KINDS } from '../../kernel/state/decisions.ts';
 import type { LeasedTask } from '../../kernel/state/tasks.ts';
 import { StaleLeaseError, listTasks, countTasksByState } from '../../kernel/state/tasks.ts';
 import { listActivity } from '../../kernel/state/deliverables.ts';
@@ -124,16 +125,22 @@ export const INTERACTIVE_TOOLS = [
     name: 'raise_decision',
     description:
       'Put a typed decision in the project inbox for the user. Kinds: requires_decision, ' +
-      'requires_action_approval, requires_trust, blocked.',
+      'requires_action_approval, requires_trust, requires_waiver, requires_revocation, ' +
+      'requires_verdict, requires_consent, blocked.',
     inputSchema: {
       type: 'object',
       properties: {
         kind: {
           type: 'string',
-          description: 'requires_decision | requires_action_approval | requires_trust | blocked',
+          description: DECISION_KINDS.join(' | '),
         },
         question: { type: 'string', description: 'What the user must decide, in plain language.' },
         run: { type: 'string', description: 'Optional run id this decision belongs to.' },
+        subject: {
+          type: 'object',
+          description:
+            'Optional subject for working resolve paths (taskId, challengeId, workspace, …).',
+        },
       },
       required: ['kind', 'question'],
     },
@@ -364,6 +371,7 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
             id: d.id,
             kind: d.kind,
             question: d.question,
+            subject: d.subject,
             run: d.runId,
             raisedAt: d.raisedAt,
           })),
@@ -371,15 +379,10 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
       }
       case 'raise_decision': {
         const kindRaw = typeof args.kind === 'string' ? args.kind.trim() : '';
-        const kinds = new Set<DecisionKind>([
-          'requires_decision',
-          'requires_action_approval',
-          'requires_trust',
-          'blocked',
-        ]);
-        if (!kinds.has(kindRaw as DecisionKind)) {
+        const kinds = new Set<string>(DECISION_KINDS);
+        if (!kinds.has(kindRaw)) {
           throw new RangeError(
-            'raise_decision kind must be requires_decision | requires_action_approval | requires_trust | blocked',
+            `raise_decision kind must be ${DECISION_KINDS.join(' | ')}`,
           );
         }
         const question = typeof args.question === 'string' ? args.question.trim() : '';
@@ -387,17 +390,23 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
         const at = core.clock();
         const id = `dec-${at.replace(/[-:.TZ]/g, '')}-${randomUUID().slice(0, 8)}`;
         const runId = typeof args.run === 'string' && args.run.trim() ? args.run.trim() : undefined;
+        let subject: DecisionSubject | undefined;
+        if (args.subject !== null && typeof args.subject === 'object' && !Array.isArray(args.subject)) {
+          subject = args.subject as DecisionSubject;
+        }
         const raised = decisions.raise({
           id,
           kind: kindRaw as DecisionKind,
           question,
           at,
           ...(runId ? { runId } : {}),
+          ...(subject ? { subject } : {}),
         });
         return {
           id: raised.id,
           kind: raised.kind,
           question: raised.question,
+          subject: raised.subject,
           run: raised.runId,
           state: raised.state,
         };
@@ -405,8 +414,19 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
       case 'decide': {
         const id = typeof args.id === 'string' ? args.id.trim() : '';
         if (!id) throw new RangeError('decide requires id');
-        const resolution = typeof args.resolution === 'string' ? args.resolution.trim() : '';
-        if (!resolution) throw new RangeError('decide requires a non-empty resolution');
+        const resolutionRaw = args.resolution;
+        let resolution: unknown = resolutionRaw;
+        if (typeof resolutionRaw === 'string') {
+          const trimmed = resolutionRaw.trim();
+          if (!trimmed) throw new RangeError('decide requires a non-empty resolution');
+          try {
+            resolution = JSON.parse(trimmed) as unknown;
+          } catch {
+            resolution = trimmed;
+          }
+        } else if (resolutionRaw === undefined || resolutionRaw === null) {
+          throw new RangeError('decide requires a non-empty resolution');
+        }
         const resolved = decisions.resolve({
           id,
           resolution,
@@ -415,6 +435,7 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
         });
         return {
           decided: resolved.id,
+          kind: resolved.kind,
           resolution: resolved.resolution,
           state: resolved.state,
           resolvedBy: resolved.resolvedBy,

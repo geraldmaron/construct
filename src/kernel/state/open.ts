@@ -99,6 +99,7 @@ export function openStateStore(dbPath: string): StateStore {
     }
     // Additive v1 tables appear on reopen without a format bump.
     db.exec(SCHEMA_V1_SQL);
+    ensureDecisionsShape(db);
   } else {
     db.exec(SCHEMA_V1_SQL);
     writeMeta(db, 'format', STATE_FORMAT_ID);
@@ -110,4 +111,58 @@ export function openStateStore(dbPath: string): StateStore {
     path: dbPath,
     close: () => db.close(),
   };
+}
+
+/**
+ * Alpha cutover: early v1 decisions tables lacked subject_json and the
+ * judgment kinds (waiver/revocation/verdict/consent). Rebuild in place so
+ * reopen works without a format bump — still not a schema-23 migration.
+ */
+function ensureDecisionsShape(db: DatabaseSync): void {
+  const row = db
+    .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'decisions'`)
+    .get() as { sql: string } | undefined;
+  if (!row) return;
+  if (row.sql.includes('requires_waiver') && row.sql.includes('subject_json')) return;
+
+  db.exec('BEGIN');
+  try {
+    db.exec(`
+      CREATE TABLE decisions_new (
+        id              TEXT PRIMARY KEY,
+        run_id          TEXT REFERENCES runs(id),
+        kind            TEXT NOT NULL CHECK (kind IN (
+                          'requires_decision',
+                          'requires_action_approval',
+                          'requires_trust',
+                          'requires_waiver',
+                          'requires_revocation',
+                          'requires_verdict',
+                          'requires_consent',
+                          'blocked'
+                        )),
+        question        TEXT NOT NULL,
+        subject_json    TEXT,
+        state           TEXT NOT NULL CHECK (state IN ('open', 'resolved')),
+        resolution_json TEXT,
+        raised_at       TEXT NOT NULL,
+        resolved_at     TEXT,
+        resolved_by     TEXT
+      );
+      INSERT INTO decisions_new (
+        id, run_id, kind, question, subject_json, state,
+        resolution_json, raised_at, resolved_at, resolved_by
+      )
+      SELECT id, run_id, kind, question, NULL, state,
+             resolution_json, raised_at, resolved_at, resolved_by
+        FROM decisions;
+      DROP TABLE decisions;
+      ALTER TABLE decisions_new RENAME TO decisions;
+      CREATE INDEX IF NOT EXISTS decisions_open ON decisions (state, raised_at);
+    `);
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
 }

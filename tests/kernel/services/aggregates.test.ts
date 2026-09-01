@@ -17,6 +17,7 @@ import {
   createDecisionService,
   createInteractiveRunService,
   createHeadlessRunService,
+  createTaskService,
 } from '../../../src/kernel/services/index.ts';
 
 function withStore(fn: (store: ReturnType<typeof openStateStore>) => void): void {
@@ -142,7 +143,7 @@ test('routine requires expected output and pins headless executor', () => {
   });
 });
 
-test('inbox raises and resolves typed decisions', () => {
+test('inbox raises and resolves typed decisions with side effects', () => {
   withStore((store) => {
     const at = '2026-08-31T18:00:00.000Z';
     const decisions = createDecisionService(store);
@@ -161,6 +162,47 @@ test('inbox raises and resolves typed decisions', () => {
     });
     assert.equal(resolved.state, 'resolved');
     assert.equal(decisions.inbox().length, 0);
+
+    const interactive = createInteractiveRunService(store, {
+      client: 'cursor',
+      host: 'cursor',
+      owner: 'session:cursor',
+    });
+    interactive.startRun({
+      id: 'run-j',
+      outcome: 'judge',
+      at,
+      tasks: [{ id: 'task-j', role: 'security', brief: {} }],
+    });
+    const leased = interactive.nextWork({
+      now: at,
+      leaseUntil: '2026-08-31T19:00:00.000Z',
+      runId: 'run-j',
+    });
+    assert.ok(leased);
+    interactive.submitWork({
+      leased,
+      at: '2026-08-31T18:05:00.000Z',
+      deliverable: { body: 'draft' },
+    });
+
+    decisions.raise({
+      id: 'dec-trust',
+      kind: 'requires_trust',
+      question: 'Accept?',
+      subject: { taskId: 'task-j' },
+      at: '2026-08-31T18:06:00.000Z',
+    });
+    decisions.resolve({
+      id: 'dec-trust',
+      resolution: { call: 'accept' },
+      resolvedBy: 'gerald',
+      at: '2026-08-31T18:07:00.000Z',
+    });
+    assert.equal(
+      createTaskService(store).deliverableFor('task-j')?.trustState,
+      'accepted',
+    );
 
     const ctx = resolveProjectContext({ cwd: '/tmp/proj', allowCwdFallback: true });
     const status = createProjectService(store, ctx).status();

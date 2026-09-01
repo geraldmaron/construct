@@ -30,6 +30,8 @@ import { resolvePaths } from '../kernel/paths.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withHomeStore, withStore } from './runtime.ts';
 import { parseFlags, workspaceFlag } from './flags.ts';
+import { tryOpenProjectStore } from './project-store.ts';
+import { printJudgmentResult, raiseAndMaybeResolve } from './judgment-v1.ts';
 import {
   discoverProjectSettings,
   fileValuesToObject,
@@ -150,13 +152,43 @@ const CONSENT_USAGE = 'usage: construct consent [--workspace=<name>] [--set=<on|
  * limit from a refusal later. A blanket yes is the wrong shape for the class
  * of change nobody can take back.
  */
-export function consent(argv: string[]): number {
+export function consent(argv: string[], cwd: string = process.cwd()): number {
   const { flags } = parseFlags(argv);
   const workspace = workspaceFlag(flags);
   if (flags.set !== undefined && flags.set !== 'on' && flags.set !== 'off') {
     process.stderr.write(CONSENT_USAGE);
     return 2;
   }
+
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      if (flags.set === undefined) {
+        process.stdout.write(
+          `construct consent on init’d projects: set standing consent via the typed inbox\n` +
+            `  construct consent --set=on|off\n` +
+            `  (or raise requires_consent and resolve with construct inbox decide)\n`,
+        );
+        return 0;
+      }
+      const result = raiseAndMaybeResolve(opened.store, {
+        kind: 'requires_consent',
+        question: `Set standing consent for workspace ${workspace} to ${flags.set}?`,
+        subject: { workspace },
+        resolution: { set: flags.set, workspace },
+      });
+      printJudgmentResult('requires_consent', result, `set=${flags.set} workspace=${workspace}`);
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `consent: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    } finally {
+      opened.store.close();
+    }
+  }
+
   return withStore((store) => {
     if (flags.set !== undefined) setWriteConsent(store, workspace, flags.set === 'on', now());
     const allows = writeConsentAllowsLowRisk(store, workspace);
@@ -353,9 +385,9 @@ const TRUST_USAGE =
  * escaping the schema promises holds here too — and a whitespace-only edit is a
  * different hash, so trust never carries silently across a change.
  */
-export function trust(argv: string[]): number {
+export function trust(argv: string[], cwd: string = process.cwd()): number {
   const { flags, rest } = parseFlags(argv);
-  const known = new Set(['ratify', 'revoke']);
+  const known = new Set(['ratify', 'revoke', 'task']);
   const unknown = Object.keys(flags).filter((flag) => !known.has(flag));
   if (
     unknown.length > 0 ||
@@ -364,6 +396,56 @@ export function trust(argv: string[]): number {
   ) {
     process.stderr.write(TRUST_USAGE);
     return 2;
+  }
+
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      const taskId = (flags.task ?? '').trim();
+      if (flags.ratify !== undefined && taskId) {
+        const result = raiseAndMaybeResolve(opened.store, {
+          kind: 'requires_trust',
+          question: `Accept deliverable for task ${taskId}?`,
+          subject: { taskId },
+          resolution: { call: 'accept', taskId },
+        });
+        printJudgmentResult('requires_trust', result, `accept ${taskId}`);
+        return 0;
+      }
+      if (flags.ratify !== undefined || flags.revoke !== undefined) {
+        const result = raiseAndMaybeResolve(opened.store, {
+          kind: 'requires_trust',
+          question:
+            flags.ratify !== undefined
+              ? 'Ratify project settings trust?'
+              : 'Withdraw project settings trust?',
+          subject: { settingsPath: '.construct/settings.json' },
+          resolution: {
+            call: flags.ratify !== undefined ? 'ratify' : 'revoke',
+            text: flags.ratify !== undefined ? 'ratify' : 'revoke',
+          },
+        });
+        printJudgmentResult(
+          'requires_trust',
+          result,
+          flags.ratify !== undefined ? 'ratify settings' : 'revoke settings trust',
+        );
+        return 0;
+      }
+      process.stdout.write(
+        'construct trust on init’d projects: use --ratify[--task=<id>] or --revoke\n' +
+          '  deliverable trust: construct trust --ratify --task=<id>\n' +
+          '  settings trust record: construct trust --ratify\n',
+      );
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `trust: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    } finally {
+      opened.store.close();
+    }
   }
 
   let discovery: ProjectDiscovery;

@@ -66,6 +66,61 @@ export function getDeliverableByTask(store: StateStore, taskId: string): Deliver
   return row ? toDeliverable(row) : null;
 }
 
+const TRUST_TRANSITIONS: Readonly<Record<TrustState, readonly TrustState[]>> = {
+  none: ['draft'],
+  draft: ['reviewed', 'challenged', 'accepted'],
+  reviewed: ['accepted', 'challenged', 'final'],
+  challenged: ['draft', 'accepted', 'reviewed'],
+  accepted: ['final'],
+  final: [],
+};
+
+/**
+ * Move a deliverable's trust state. Submitting work never calls this —
+ * only an explicit human judgment (inbox decide / verdict / trust).
+ */
+export function setTrustState(
+  store: StateStore,
+  input: {
+    readonly taskId: string;
+    readonly trustState: TrustState;
+    readonly at: string;
+    readonly by: string;
+    readonly decisionId?: string;
+  },
+): Deliverable {
+  const existing = getDeliverableByTask(store, input.taskId);
+  if (!existing) {
+    throw new Error(`no deliverable for task ${input.taskId}`);
+  }
+  const allowed = TRUST_TRANSITIONS[existing.trustState];
+  if (!allowed.includes(input.trustState)) {
+    throw new Error(
+      `deliverable for task ${input.taskId} cannot move from ${existing.trustState} to ${input.trustState}`,
+    );
+  }
+  store.db
+    .prepare(
+      `UPDATE deliverables SET trust_state = ?, updated_at = ? WHERE task_id = ?`,
+    )
+    .run(input.trustState, input.at, input.taskId);
+  appendActivity(store, {
+    at: input.at,
+    kind: 'deliverable.trust',
+    runId: existing.runId,
+    taskId: input.taskId,
+    payload: {
+      from: existing.trustState,
+      to: input.trustState,
+      by: input.by,
+      decisionId: input.decisionId ?? null,
+    },
+  });
+  const updated = getDeliverableByTask(store, input.taskId);
+  if (!updated) throw new Error('trust update failed');
+  return updated;
+}
+
 /**
  * Upsert a draft body for a task. Trust stays draft; never jumps to accepted.
  */

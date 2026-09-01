@@ -18,6 +18,7 @@ export {
   completeTask,
   failTask,
   getTask,
+  operatorRevokeTask,
   listTasks,
   countTasksByState,
   type Task,
@@ -28,6 +29,7 @@ export {
   TRUST_STATES,
   upsertDraft,
   getDeliverableByTask,
+  setTrustState,
   appendActivity,
   listActivity,
   type Deliverable,
@@ -70,8 +72,11 @@ export {
   resolveDecision,
   listOpenDecisions,
   getDecision,
+  applyDecisionEffect,
+  DECISION_KINDS,
   type Decision,
   type DecisionKind,
+  type DecisionSubject,
 } from './decisions.ts';
 export {
   upsertIntegration,

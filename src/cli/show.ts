@@ -431,14 +431,23 @@ function inboxV1(store: import('../kernel/state/open.ts').StateStore, argv: stri
     const text = argv.slice(2).join(' ').trim().replace(/^["']|["']$/g, '');
     if (!id || !text) {
       process.stderr.write(
-        'usage: construct inbox decide <id> "<your call>"\n',
+        'usage: construct inbox decide <id> "<your call>"\n' +
+          '  (JSON resolution also accepted, e.g. {"call":"confirm"} or {"set":"on"})\n',
       );
       return 2;
+    }
+    let resolution: unknown = text;
+    if (text.startsWith('{') || text.startsWith('[')) {
+      try {
+        resolution = JSON.parse(text) as unknown;
+      } catch {
+        resolution = text;
+      }
     }
     try {
       const resolved = decisions.resolve({
         id,
-        resolution: { text },
+        resolution,
         resolvedBy: 'operator',
         at: new Date().toISOString(),
       });
@@ -465,8 +474,12 @@ function inboxV1(store: import('../kernel/state/open.ts').StateStore, argv: stri
   }
   process.stdout.write(`inbox (${open.length}):\n\n`);
   for (const decision of open) {
+    const subject =
+      decision.subject && Object.keys(decision.subject).length > 0
+        ? `  subject=${escapeForTerminal(JSON.stringify(decision.subject))}`
+        : '';
     process.stdout.write(
-      `  ${decision.id}  [${decision.kind}]  ${escapeForTerminal(decision.question)}\n`,
+      `  ${decision.id}  [${decision.kind}]  ${escapeForTerminal(decision.question)}${subject}\n`,
     );
   }
   process.stdout.write(
