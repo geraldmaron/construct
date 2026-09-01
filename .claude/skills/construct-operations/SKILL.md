@@ -7,7 +7,7 @@ description: >-
 license: Apache-2.0
 metadata:
   generator: construct
-  version: 3.0.0-alpha.21
+  version: 3.0.0-alpha.22
   lens: operations
 ---
 
