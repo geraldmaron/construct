@@ -1,9 +1,7 @@
 /**
  * tests/cli/wire.test.ts — `construct wire` through its real surface: an
- * ambient environment in, a project MCP config out. Every case hands
- * `wire()` a fabricated env object rather than touching `process.env`, the
- * same discipline tests/hosts/ambient.test.ts uses, so nothing here depends
- * on what actually launched the test runner.
+ * ambient environment in, a project MCP config out. Wire is legacy (prefer
+ * init); these tests keep the ambient write path honest until Phase G deletes it.
  */
 
 import { test } from 'node:test';
@@ -18,18 +16,14 @@ interface Capture {
   readonly err: string;
 }
 
-function withRepo<T>(fn: (cwd: string) => T): T {
-  // Keep fixtures inside the workspace: some environments refuse creating
-  // `.cursor/` under the system tmpdir.
+function withRepo<T>(fn: (cwd: string) => T | Promise<T>): Promise<T> {
   const cwd = mkdtempSync(join(process.cwd(), '.tmp-wire-'));
-  try {
-    return fn(cwd);
-  } finally {
+  return Promise.resolve(fn(cwd)).finally(() => {
     rmSync(cwd, { recursive: true, force: true });
-  }
+  });
 }
 
-function capture(fn: () => number): Capture {
+async function capture(fn: () => number | Promise<number>): Promise<Capture> {
   const out: string[] = [];
   const err: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
@@ -44,7 +38,7 @@ function capture(fn: () => number): Capture {
   };
   let code: number;
   try {
-    code = fn();
+    code = await fn();
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
     (process.stderr as { write: unknown }).write = realErr;
@@ -52,19 +46,21 @@ function capture(fn: () => number): Capture {
   return { code, out: out.join(''), err: err.join('') };
 }
 
-test('bare wire (no --yes) previews the write and touches nothing on disk', () => {
-  withRepo((cwd) => {
-    const { code, out } = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+test('bare wire (no --yes) previews the write and touches nothing on disk', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out, err } = await capture(() => wire([], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
+    assert.match(err, /legacy/);
     assert.match(out, /would wire construct-mcp into \.mcp\.json for claude/);
-    assert.match(out, /Pass --yes to write it/);
+    assert.match(out, /Pass --yes to commit this legacy write/);
+    assert.match(out, /Prefer construct init/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false, 'a preview writes nothing');
   });
 });
 
-test('claude: wire --yes writes .mcp.json with the construct-mcp entry', () => {
-  withRepo((cwd) => {
-    const { code, out } = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+test('claude: wire --yes writes .mcp.json with the construct-mcp entry', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out } = await capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
     assert.match(out, /wired construct-mcp into \.mcp\.json for claude/);
 
@@ -83,9 +79,9 @@ test('claude: wire --yes writes .mcp.json with the construct-mcp entry', () => {
   });
 });
 
-test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => {
-  withRepo((cwd) => {
-    const { code, out } = capture(() => wire(['--yes'], cwd, { CURSOR_AGENT: '1' }));
+test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out } = await capture(() => wire(['--yes'], cwd, { CURSOR_AGENT: '1' }));
     assert.equal(code, 0);
     assert.match(out, /wired construct-mcp into \.cursor\/mcp\.json for cursor/);
 
@@ -102,13 +98,13 @@ test('cursor: wire writes .cursor/mcp.json with the construct-mcp entry', () => 
   });
 });
 
-test('wiring twice is idempotent: no duplicate entry, second run reports nothing changed', () => {
-  withRepo((cwd) => {
-    const first = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+test('wiring twice is idempotent: no duplicate entry, second run reports nothing changed', async () => {
+  await withRepo(async (cwd) => {
+    const first = await capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(first.code, 0);
     const firstBody = readFileSync(join(cwd, '.mcp.json'), 'utf8');
 
-    const second = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+    const second = await capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(second.code, 0);
     assert.match(second.out, /already wired.*nothing to change/);
 
@@ -120,13 +116,13 @@ test('wiring twice is idempotent: no duplicate entry, second run reports nothing
   });
 });
 
-test('an existing .mcp.json with other servers keeps them; only construct-mcp is touched', () => {
-  withRepo((cwd) => {
+test('an existing .mcp.json with other servers keeps them; only construct-mcp is touched', async () => {
+  await withRepo(async (cwd) => {
     mkdirSync(cwd, { recursive: true });
     const existing = { mcpServers: { context7: { command: 'npx', args: ['-y', 'context7'] } } };
     writeFileSync(join(cwd, '.mcp.json'), JSON.stringify(existing, null, 2));
 
-    const { code } = capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+    const { code } = await capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 0);
 
     const config = JSON.parse(readFileSync(join(cwd, '.mcp.json'), 'utf8')) as {
@@ -138,44 +134,44 @@ test('an existing .mcp.json with other servers keeps them; only construct-mcp is
   });
 });
 
-test('the written file is 0600, umask-aware, mirroring the mcpconfig discipline', () => {
-  withRepo((cwd) => {
-    capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
+test('the written file is 0600, umask-aware, mirroring the mcpconfig discipline', async () => {
+  await withRepo(async (cwd) => {
+    await capture(() => wire(['--yes'], cwd, { CLAUDECODE: '1' }));
     const mode = statSync(join(cwd, '.mcp.json')).mode & 0o777;
     assert.equal(mode, 0o600);
   });
 });
 
-test('bob is detected but has no wired config writer: refuses cleanly, names the manual recipe', () => {
-  withRepo((cwd) => {
-    const { code, out, err } = capture(() =>
+test('bob is detected but has no native install: refuses cleanly', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out, err } = await capture(() =>
       wire([], cwd, { BOB_SHELL_CLI_IDE_SERVER_PORT: '42991' }),
     );
     assert.equal(code, 1);
     assert.equal(out, '', 'a refusal writes nothing to stdout');
     assert.match(err, /running inside bob/);
-    assert.match(err, /no wired MCP config writer/);
-    assert.match(err, /docs\/consumer-install\.md/);
+    assert.match(err, /no native MCP install path/);
+    assert.match(err, /construct init/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false, 'a refusal changes nothing on disk');
     assert.equal(existsSync(join(cwd, '.cursor')), false);
   });
 });
 
-test('an undetected ambient host refuses cleanly and names the manual recipe, guessing nothing', () => {
-  withRepo((cwd) => {
-    const { code, out, err } = capture(() => wire([], cwd, {}));
+test('an undetected ambient host refuses cleanly, guessing nothing', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out, err } = await capture(() => wire([], cwd, {}));
     assert.equal(code, 1);
     assert.equal(out, '');
     assert.match(err, /no ambient host detected/);
-    assert.match(err, /docs\/consumer-install\.md/);
+    assert.match(err, /construct init/);
     assert.equal(existsSync(join(cwd, '.mcp.json')), false);
   });
 });
 
-test('a malformed existing .mcp.json is refused rather than clobbered', () => {
-  withRepo((cwd) => {
+test('a malformed existing .mcp.json is refused rather than clobbered', async () => {
+  await withRepo(async (cwd) => {
     writeFileSync(join(cwd, '.mcp.json'), '{ not json');
-    const { code, err } = capture(() => wire([], cwd, { CLAUDECODE: '1' }));
+    const { code, err } = await capture(() => wire([], cwd, { CLAUDECODE: '1' }));
     assert.equal(code, 1);
     assert.match(err, /not valid JSON/);
     assert.match(err, /left untouched/);
@@ -183,7 +179,7 @@ test('a malformed existing .mcp.json is refused rather than clobbered', () => {
   });
 });
 
-test('construct wire is reachable through main() and listed in help', async () => {
+test('construct wire is reachable through main() and listed in help as legacy', async () => {
   const { main } = await import('../../src/cli/index.ts');
   const cwd = mkdtempSync(join(process.cwd(), '.tmp-wire-main-'));
   const previousCwd = process.cwd();
@@ -229,4 +225,5 @@ test('construct wire is reachable through main() and listed in help', async () =
   }
   assert.equal(helpCode, 0);
   assert.match(helpOut.join(''), /wire/);
+  assert.match(helpOut.join(''), /legacy alias|prefer construct init/);
 });

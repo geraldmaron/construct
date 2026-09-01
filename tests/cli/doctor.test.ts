@@ -74,6 +74,21 @@ function withIsolatedDirs<T>(root: string, fn: () => T): T {
   }
 }
 
+test('doctor reports one integration line per HostIntegrationAdapter', async () => {
+  const cwd = mkFixtureDir();
+  try {
+    const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
+    const lines = out.split('\n').filter((line) => line.includes(' integration '));
+    assert.ok(lines.length >= 6, `expected >=6 integration lines, got:\n${out}`);
+    assert.match(out, /opencode: maturity=documented/);
+    assert.match(out, /bob: maturity=unsupported/);
+    assert.match(out, /codex: maturity=unsupported/);
+    assert.equal(result, 0);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
 test('doctor reports each predecessor marker with the cleanup pointer', async () => {
   const cwd = mkFixtureDir();
   try {

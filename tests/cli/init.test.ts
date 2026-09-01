@@ -92,6 +92,31 @@ test('init with Claude ambient installs session-bound MCP entry', async () => {
   });
 });
 
+test('init --client=opencode installs without ambient detection', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out } = await capture(() => init(['--client=opencode'], cwd, {}));
+    assert.equal(code, 0);
+    assert.match(out, /integration: opencode installed/);
+    const raw = JSON.parse(readFileSync(join(cwd, 'opencode.json'), 'utf8')) as {
+      mcp: { 'construct-mcp': { type: string; command: string[] } };
+    };
+    assert.equal(raw.mcp['construct-mcp'].type, 'local');
+    assert.ok(raw.mcp['construct-mcp'].command.some((a) => a === '--client=opencode'));
+  });
+});
+
+test('init with bob ambient reports unsupported without throwing', async () => {
+  await withRepo(async (cwd) => {
+    const { code, out } = await capture(() =>
+      init([], cwd, { BOB_SHELL_CLI_IDE_SERVER_PORT: '42991' }),
+    );
+    assert.equal(code, 0);
+    assert.match(out, /native MCP install unsupported/);
+    assert.equal(existsSync(join(cwd, '.mcp.json')), false);
+    assert.equal(existsSync(join(cwd, 'opencode.json')), false);
+  });
+});
+
 test('init is idempotent on a second call', async () => {
   await withRepo(async (cwd) => {
     assert.equal((await capture(() => init([], cwd, {}))).code, 0);

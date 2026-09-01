@@ -38,6 +38,7 @@ import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { censusLines, surveyResources } from '../hosts/census.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
+import { allIntegrationAdapters } from '../hosts/integrations/registry.ts';
 import { now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
 import { scheduleReport } from './schedule.ts';
@@ -157,6 +158,23 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
         : `running inside ${ambient.host} (detected via ${ambient.marker}); in-session dispatch: this session via construct serve (will not spawn ${ambient.host})`,
   });
 
+  // HostIntegrationAdapter matrix: maturity and project MCP status. Reported,
+  // never gated — unsupported is honest, not a failed install. Broken measured
+  // entries are named so a false "Ready" cannot hide a bad wire.
+  for (const adapter of allIntegrationAdapters()) {
+    const caps = adapter.capabilities();
+    const view = await adapter.inspect(cwd);
+    const installable = caps.maturity !== 'unsupported' && caps.maturity !== 'unknown';
+    const ok = !installable || view.status !== 'broken';
+    const pathBit = view.path ? ` @ ${view.path}` : '';
+    const detailBit = view.detail ? ` — ${view.detail}` : '';
+    checks.push({
+      name: 'integration',
+      ok,
+      detail: `${adapter.id}: maturity=${caps.maturity} status=${view.status}${pathBit}${detailBit}`,
+    });
+  }
+
   // Whether a platform entry is installed to fire what has come due, read
   // from the entry's own text. Reported, never gated: a machine with no
   // schedule is not broken, it is one where somebody else owns the clock, and
@@ -269,11 +287,13 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
     if (ambient !== null) {
       process.stdout.write(
         `Ready. You are in ${ambient.host}. Talk here. Ordinary language is enough. ` +
-          'This session names via MCP record_outcome with namings, then claim_task / submit_work. ' +
+          'This session drives Construct over MCP (project_status / start_run / next_work). ' +
           'Construct will not spawn a second CLI.\n',
       );
     } else {
-      process.stdout.write('Ready. Record your first outcome:  construct outcome "<what you want>"\n');
+      process.stdout.write(
+        'Ready. From a supported host run construct init, then work in-session over MCP.\n',
+      );
     }
   }
   return failed === 0 ? 0 : 1;
