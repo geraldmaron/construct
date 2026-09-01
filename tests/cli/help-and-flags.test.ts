@@ -143,3 +143,11 @@ test('the top-level help flag spellings all reach the grouped surface', async ()
     assert.match(result.out, /Start here:/, 'shows the grouped help');
   }
 });
+
+test('an unknown verb is refused by name and still shows the grouped surface', async () => {
+  const result = await capture(['cleanup', '--dry-run']);
+  assert.strictEqual(result.code, 2, 'retired/unknown verb exits as usage error');
+  assert.match(result.err, /unknown command "cleanup"/);
+  assert.match(result.out, /Start here: construct init/);
+  assert.ok(!VERBS.includes('cleanup'), 'cleanup is not a product verb');
+});
