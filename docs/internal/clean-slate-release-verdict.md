@@ -17,15 +17,13 @@ intentional provenance rebuild. Registry `3.0.0-alpha.19` remains untrusted
 | Fact | Value |
 |------|-------|
 | package.json | `3.0.0-alpha.20` |
-| git tag | `v3.0.0-alpha.20` (pushed with this release) |
-| npm `alpha` (pre-publish) | `3.0.0-alpha.19` — **do not trust** |
-| Publish path | `release.yml` on tag push (OIDC trusted publisher, `--tag alpha`) |
+| git tag | `v3.0.0-alpha.20` → `139f9c3ff3e94e7bc73811d7a87db7d5598e8ccf` |
+| npm `alpha` | `3.0.0-alpha.20` · `gitHead` `139f9c3ff3e94e7bc73811d7a87db7d5598e8ccf` |
+| Publish | release run [33464280447](https://github.com/geraldmaron/construct/actions/runs/33464280447); sigstore logIndex 2670889001 |
 
-First tag push of `v3.0.0-alpha.20` failed release smoke (unknown verb printed
-help without saying `unknown`). Fixed on main; tag moved to the fix commit
-before npm publish. After the workflow succeeds, re-check: `npm view
-@geraldmaron/construct@alpha version gitHead` must equal `3.0.0-alpha.20` and
-the tagged commit.
+**Triple agreed** (2026-09-01): package version, git tag commit, and npm `gitHead` are the same SHA. Registry `3.0.0-alpha.19` remains untrusted history.
+
+First tag push of `v3.0.0-alpha.20` failed release smoke (unknown verb printed help without saying `unknown`). Fixed on main; tag moved to the fix commit before the successful publish.
 
 ## Gate (local, 2026-09-01)
 
