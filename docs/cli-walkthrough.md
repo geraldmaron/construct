@@ -175,7 +175,11 @@ what they read by path. A document the walk cannot read as text — a PDF, a
 deck — is put into words through the extraction ladder if a rung on this
 machine can, and recorded with the reason if none can. A remote source
 (`jira`, `github`, `docs`) is recorded as unreachable until a host can reach
-it — an answer, not an omission.
+it — adapter code under `src/connectors/` exists, but no shipped path
+constructs a live Construct transport yet, so remotes stay unreachable from
+Construct itself. Prefer vendor MCP in the host, or supply `--live=` files
+where the CLI asks for them. An unreachable remote is an answer, not an
+omission.
 
 Point the project at the ground you mean. Declared roots that sit outside the
 directory roles will work in are refused, because a role dispatched somewhere

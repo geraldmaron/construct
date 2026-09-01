@@ -95,7 +95,7 @@ test('what cannot be walked is unreachable with its reason, never a throw', () =
 
   const jira = surveySource(declared('jira', 'PROJ'));
   assert.equal(jira.outcome, 'unreachable');
-  if (jira.outcome === 'unreachable') assert.match(jira.reason, /through the host/);
+  if (jira.outcome === 'unreachable') assert.match(jira.reason, /live jira connector is not wired/i);
 });
 
 test('a binary document is surveyed and marked, not silently invisible', () => {

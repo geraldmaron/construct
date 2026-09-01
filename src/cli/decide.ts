@@ -153,8 +153,10 @@ async function applyApproved(
 ): Promise<number> {
   if (host.host === undefined && hostOverride === undefined) {
     process.stderr.write(
-      'decide: carrying out a change needs a host — Construct builds no connectors and ' +
-        "reaches nothing itself.\n  construct decide --apply=" + proposal +
+      'decide: carrying out a change needs a host — live Jira/GitHub connectors are ' +
+        'not wired yet, so Construct reaches trackers only through a host.\n' +
+        '  construct decide --apply=' +
+        proposal +
         ' --host=<opencode|claude>\n',
     );
     return 2;

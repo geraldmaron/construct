@@ -5,6 +5,10 @@
 - **Release recipe names skill-pack regeneration.** Bumping the version without
   `construct skills pack` fails `lint-skill-pack-skew` (now tested for
   version-only skew); see `docs/internal/release.md`.
+- **Live Jira/GitHub connectors are stated as deferred.** Survey, decide,
+  reconcile, and docs say the adapter code exists but no shipped path
+  constructs a transport yet; prefer host MCP / `--live=` until a recorded
+  probe wires them.
 
 ## 3.0.0-alpha.20 — 2026-09-01
 

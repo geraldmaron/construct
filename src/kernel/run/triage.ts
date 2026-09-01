@@ -3,7 +3,7 @@
  * as write proposals under the same two risk tiers every other proposal
  * carries (kernel/run/proposals.ts's WriteAction/riskOfAction).
  *
- * Construct holds no tracker connectors, so the issues triaged here arrive
+ * Construct holds no live tracker transport yet, so the issues triaged here arrive
  * the same way a live tracker read already does for reconcile
  * (cli/reconcile.ts's --live): handed in by the caller, never fetched by
  * this module. The reading itself is mechanical — no model call, and
