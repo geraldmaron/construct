@@ -17,6 +17,8 @@ import {
   type InteractiveSession,
 } from '../../kernel/services/interactive-run.ts';
 import { createDecisionService } from '../../kernel/services/decision.ts';
+import { createStaffService } from '../../kernel/services/staff.ts';
+import { createRoutineService } from '../../kernel/services/routine.ts';
 import type { DecisionKind } from '../../kernel/state/decisions.ts';
 import type { LeasedTask } from '../../kernel/state/tasks.ts';
 import { StaleLeaseError, listTasks, countTasksByState } from '../../kernel/state/tasks.ts';
@@ -173,6 +175,30 @@ export const INTERACTIVE_TOOLS = [
       },
     },
   },
+  {
+    name: 'list_staff',
+    description:
+      'StaffMembers for this project. Identity and mission only — never an executor pin.',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'list_routines',
+    description:
+      'Routines for this project (enabled flag, trigger, expected output, last run).',
+    inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'run_routine',
+    description:
+      'Start one headless run from a Routine. Requires executionPolicy.pin on the routine.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Routine id.' },
+      },
+      required: ['id'],
+    },
+  },
 ] as const;
 
 function toolText(payload: unknown): { content: Array<{ type: 'text'; text: string }> } {
@@ -208,6 +234,8 @@ export function sessionFromBinding(input: {
 export function createInteractiveHandler(core: InteractiveMcpCore) {
   const runs: InteractiveRunService = createInteractiveRunService(core.store, core.session);
   const decisions = createDecisionService(core.store);
+  const staff = createStaffService(core.store);
+  const routines = createRoutineService(core.store);
   const leases = new Map<string, LeasedTask>();
   const leaseMs = core.leaseMs ?? INTERACTIVE_LEASE_MS;
 
@@ -433,6 +461,41 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
             task: e.taskId,
             payload: e.payload,
           })),
+        };
+      }
+      case 'list_staff': {
+        return {
+          staff: staff.list().map((m) => ({
+            id: m.id,
+            name: m.name,
+            title: m.title,
+            mission: m.mission,
+            status: m.status,
+            concerns: m.concerns,
+          })),
+        };
+      }
+      case 'list_routines': {
+        return {
+          routines: routines.list().map((r) => ({
+            id: r.id,
+            enabled: r.enabled,
+            triggerKind: r.triggerKind,
+            expectedOutput: r.expectedOutput,
+            lastRunAt: r.lastRunAt,
+            executionPolicy: r.executionPolicy,
+          })),
+        };
+      }
+      case 'run_routine': {
+        const id = typeof args.id === 'string' ? args.id.trim() : '';
+        if (!id) throw new RangeError('run_routine requires id');
+        const result = routines.runOnce(id, core.clock());
+        return {
+          routine: result.routine.id,
+          run: result.run.id,
+          executorPin: result.executorPin,
+          outcome: result.routine.expectedOutput,
         };
       }
       default:
