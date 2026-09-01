@@ -179,7 +179,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   decide: { gloss: 'record your call on a decision a run raised', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
   lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
   serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
-  wire: { gloss: 'wire the MCP entry into Claude Code or Cursor', flags: ['yes'] },
+  wire: { gloss: 'legacy: write MCP config (prefer construct init)', flags: ['yes'] },
   init: { gloss: 'initialize project-local Construct config and state', flags: ['dry-run'] },
   reset: { gloss: 'wipe project runtime state and recreate format v1', flags: ['yes', 'wipe-config'] },
   doctor: { gloss: 'report host presence and store health', flags: [] },

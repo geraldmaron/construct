@@ -18,43 +18,38 @@ Epic: `construct-cki1`.
 | A Freeze and map | construct-uedv | **done** |
 | B New foundations | construct-9xva | **done** |
 | C Execution architecture | construct-dx84 | **done** |
-| D MCP | construct-vhuw | **in progress** |
-| E Native integrations | construct-vv6l | open |
+| D MCP | construct-vhuw | **done** |
+| E Native integrations | construct-vv6l | **in progress** |
 | F Product consolidation | construct-pxw2 | open |
 | G Delete old surfaces | construct-fgxn | open |
 | H Skills | construct-blvu | open |
 | I External interfaces | construct-dz27 | open |
 | J Package/release | construct-umx9 | open |
 
-## Phase D (`construct-vhuw`) — in progress
+## Phase D — done
 
-Landed:
+Semantic interactive MCP on init'd projects: `project_status`, `start_run`, `next_work`, `submit_work`, `list_inbox`, `raise_decision`, `decide`, `run_status`, `recent_activity`. Host-pull verb retired. Legacy projection remains for uninitialized trees until Phase G.
 
-- Semantic interactive MCP: `project_status`, `start_run`, `next_work`, `submit_work`, `list_inbox`, `raise_decision`, `decide`
-- Serve prefers v1 plane when project initialized
-- `host-pull-serve` permanently refused (module delete is Phase G)
-- Isolation: interactive path cannot import selection/census
+## Phase E (`construct-vv6l`) — in progress
 
-Still for D close:
+Landed: Cursor, Claude Code, **VS Code** (`.vscode/mcp.json` / `servers` key) writers.
 
-- `run_status` / activity read on interactive plane
-- Operational construct skill (or hand to H)
-- Enough coverage that Phase G can delete legacy projection without a hole
+Still: opencode project MCP (assess), demote/delete `wire` as product verb, doctor integration matrix.
 
-## What remains overall (ordered)
+## What remains overall
 
 ```
-D  finish semantic MCP + refuse D
-E  opencode/vscode (+assess) HostIntegrationAdapters; init-as-reconciler; demote wire
-F  Staff + Routine product surface; merge judgment verbs; shrink CLI
-G  Delete ledger: schema23, naming_cache, keyword routing, hostpull, legacy projection,
-   cleanup, beads-in-product, interactive work.ts, lens auto-install, …
-H  Skill scorecards; only operational skill auto-installs
-I  Docs/help/first-run truth; close PRs #9/#11/#12/#13; lock package exports
-J  Full gate; complexity vs baseline; provenance rebuild; release verdict
+DONE   A–D
+NOW    E  finish host matrix + init-as-reconciler; demote wire
+OPEN   F  Staff + Routine product; merge judgment verbs; shrink CLI
+OPEN   G  DELETE ledger (schema23, naming_cache, keyword routing, hostpull module,
+         legacy projection, cleanup, beads-in-product, interactive work.ts, …)
+OPEN   H  skill scorecards; only operational skill auto-installs
+OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
+OPEN   J  full gate; provenance rebuild; release verdict
 ```
 
-Inventory detail: `docs/internal/clean-slate-inventory.md`.
+Detail: `docs/internal/clean-slate-inventory.md`.
 
 ## Invariants
 

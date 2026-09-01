@@ -134,3 +134,65 @@ export function appendActivity(
       JSON.stringify(input.payload ?? null),
     );
 }
+
+export interface ActivityEvent {
+  readonly id: number;
+  readonly at: string;
+  readonly kind: string;
+  readonly runId: string | null;
+  readonly taskId: string | null;
+  readonly payload: unknown;
+}
+
+interface ActivityRow {
+  readonly id: number;
+  readonly at: string;
+  readonly kind: string;
+  readonly run_id: string | null;
+  readonly task_id: string | null;
+  readonly payload: string | null;
+}
+
+function toActivity(row: ActivityRow): ActivityEvent {
+  let payload: unknown = null;
+  if (row.payload !== null) {
+    try {
+      payload = JSON.parse(row.payload);
+    } catch {
+      payload = row.payload;
+    }
+  }
+  return {
+    id: row.id,
+    at: row.at,
+    kind: row.kind,
+    runId: row.run_id,
+    taskId: row.task_id,
+    payload,
+  };
+}
+
+/** Recent activity, newest last within the window (chronological for readers). */
+export function listActivity(
+  store: StateStore,
+  opts: { readonly runId?: string; readonly limit?: number } = {},
+): ActivityEvent[] {
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+  const rows =
+    opts.runId === undefined
+      ? (store.db
+          .prepare(
+            `SELECT * FROM (
+               SELECT * FROM activity_events ORDER BY id DESC LIMIT ?
+             ) ORDER BY id ASC`,
+          )
+          .all(limit) as unknown as ActivityRow[])
+      : (store.db
+          .prepare(
+            `SELECT * FROM (
+               SELECT * FROM activity_events WHERE run_id = ? ORDER BY id DESC LIMIT ?
+             ) ORDER BY id ASC`,
+          )
+          .all(opts.runId, limit) as unknown as ActivityRow[]);
+  return rows.map(toActivity);
+}

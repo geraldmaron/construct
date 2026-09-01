@@ -147,6 +147,30 @@ test('interactive MCP start_run → next_work → submit_work leaves draft', asy
     assert.equal(decideBody.decided, raiseBody.id);
     assert.equal(decideBody.state, 'resolved');
 
+    const status = await handle({
+      jsonrpc: '2.0',
+      id: 8,
+      method: 'tools/call',
+      params: { name: 'run_status', arguments: { run: startBody.run } },
+    } as JsonRpcRequest);
+    const statusBody = JSON.parse(
+      (status as { result: { content: Array<{ text: string }> } }).result.content[0]!.text,
+    ) as { counts: { done: number }; tasks: Array<{ state: string }> };
+    assert.equal(statusBody.counts.done, 1);
+    assert.equal(statusBody.tasks[0]?.state, 'done');
+
+    const activity = await handle({
+      jsonrpc: '2.0',
+      id: 9,
+      method: 'tools/call',
+      params: { name: 'recent_activity', arguments: { run: startBody.run, limit: 20 } },
+    } as JsonRpcRequest);
+    const activityBody = JSON.parse(
+      (activity as { result: { content: Array<{ text: string }> } }).result.content[0]!.text,
+    ) as { events: Array<{ kind: string }> };
+    assert.ok(activityBody.events.some((e) => e.kind === 'run.started'));
+    assert.ok(activityBody.events.some((e) => e.kind === 'decision.resolved'));
+
     init.store.close();
   } finally {
     rmSync(root, { recursive: true, force: true });

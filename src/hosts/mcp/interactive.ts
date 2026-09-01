@@ -19,7 +19,9 @@ import {
 import { createDecisionService } from '../../kernel/services/decision.ts';
 import type { DecisionKind } from '../../kernel/state/decisions.ts';
 import type { LeasedTask } from '../../kernel/state/tasks.ts';
-import { StaleLeaseError } from '../../kernel/state/tasks.ts';
+import { StaleLeaseError, listTasks, countTasksByState } from '../../kernel/state/tasks.ts';
+import { listActivity } from '../../kernel/state/deliverables.ts';
+import { getRun, listRunConcerns } from '../../kernel/state/runs.ts';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../../kernel/state/format.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import type { JsonRpcRequest, JsonRpcResponse } from './jsonrpc.ts';
@@ -146,6 +148,29 @@ export const INTERACTIVE_TOOLS = [
         resolution: { type: 'string', description: "The user's call, in the user's words." },
       },
       required: ['id', 'resolution'],
+    },
+  },
+  {
+    name: 'run_status',
+    description:
+      'Where a run\'s tasks stand: counts by state and the task list. Omit run for the whole project queue.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        run: { type: 'string', description: 'Optional run id to scope the read.' },
+      },
+    },
+  },
+  {
+    name: 'recent_activity',
+    description:
+      'Recent project activity events (run starts, claims, submits, decisions). Newest last.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        run: { type: 'string', description: 'Optional run id to scope the read.' },
+        limit: { type: 'number', description: 'Max events (default 50, max 200).' },
+      },
     },
   },
 ] as const;
@@ -365,6 +390,49 @@ export function createInteractiveHandler(core: InteractiveMcpCore) {
           resolution: resolved.resolution,
           state: resolved.state,
           resolvedBy: resolved.resolvedBy,
+        };
+      }
+      case 'run_status': {
+        const runId = typeof args.run === 'string' && args.run.trim() ? args.run.trim() : undefined;
+        const run = runId ? getRun(core.store, runId) : null;
+        if (runId && !run) throw new RangeError(`no run "${runId}"`);
+        const tasks = listTasks(core.store, runId);
+        return {
+          ...(run
+            ? {
+                run: {
+                  id: run.id,
+                  outcome: run.outcome,
+                  status: run.status,
+                  concerns: listRunConcerns(core.store, run.id),
+                },
+              }
+            : {}),
+          counts: countTasksByState(core.store, runId),
+          tasks: tasks.map((t) => ({
+            id: t.id,
+            run: t.runId,
+            role: t.role,
+            state: t.state,
+            ...(t.leaseUntil ? { leaseUntil: t.leaseUntil } : {}),
+          })),
+        };
+      }
+      case 'recent_activity': {
+        const runId = typeof args.run === 'string' && args.run.trim() ? args.run.trim() : undefined;
+        const limit =
+          typeof args.limit === 'number' && Number.isFinite(args.limit)
+            ? Math.floor(args.limit)
+            : undefined;
+        return {
+          events: listActivity(core.store, { runId, limit }).map((e) => ({
+            id: e.id,
+            at: e.at,
+            kind: e.kind,
+            run: e.runId,
+            task: e.taskId,
+            payload: e.payload,
+          })),
         };
       }
       default:

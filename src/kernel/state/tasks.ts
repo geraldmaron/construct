@@ -208,6 +208,38 @@ export function failTask(
 }
 
 export function getTask(store: StateStore, id: string): Task | null {
-  const row = store.db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as Row | undefined;
+  const row = store.db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as unknown as
+    | Row
+    | undefined;
   return row ? toTask(row) : null;
+}
+
+/** Tasks for a run, or all tasks when runId is omitted. */
+export function listTasks(store: StateStore, runId?: string): Task[] {
+  const rows =
+    runId === undefined
+      ? (store.db
+          .prepare('SELECT * FROM tasks ORDER BY enqueued_at, id')
+          .all() as unknown as Row[])
+      : (store.db
+          .prepare('SELECT * FROM tasks WHERE run_id = ? ORDER BY enqueued_at, id')
+          .all(runId) as unknown as Row[]);
+  return rows.map(toTask);
+}
+
+/** Count tasks by state, optionally scoped to a run. */
+export function countTasksByState(
+  store: StateStore,
+  runId?: string,
+): Record<TaskState, number> {
+  const counts: Record<TaskState, number> = {
+    pending: 0,
+    leased: 0,
+    done: 0,
+    failed: 0,
+  };
+  for (const task of listTasks(store, runId)) {
+    counts[task.state] += 1;
+  }
+  return counts;
 }

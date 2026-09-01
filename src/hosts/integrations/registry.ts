@@ -5,6 +5,7 @@
 import type { HostIntegrationAdapter } from '../../kernel/integration/types.ts';
 import { createCursorIntegrationAdapter } from './cursor.ts';
 import { createClaudeCodeIntegrationAdapter } from './claude-code.ts';
+import { createVscodeIntegrationAdapter } from './vscode.ts';
 import { createUnsupportedIntegrationAdapter } from './unsupported.ts';
 
 export function integrationAdapterFor(client: string): HostIntegrationAdapter | null {
@@ -14,9 +15,11 @@ export function integrationAdapterFor(client: string): HostIntegrationAdapter | 
     case 'claude':
     case 'claude-code':
       return createClaudeCodeIntegrationAdapter();
+    case 'vscode':
+    case 'vs-code':
+      return createVscodeIntegrationAdapter();
     case 'opencode':
     case 'bob':
-    case 'vscode':
     case 'codex':
     case 'goose':
     case 'pi':
@@ -30,9 +33,9 @@ export function allIntegrationAdapters(): HostIntegrationAdapter[] {
   return [
     createCursorIntegrationAdapter(),
     createClaudeCodeIntegrationAdapter(),
+    createVscodeIntegrationAdapter(),
     createUnsupportedIntegrationAdapter('opencode'),
     createUnsupportedIntegrationAdapter('bob'),
-    createUnsupportedIntegrationAdapter('vscode'),
     createUnsupportedIntegrationAdapter('codex'),
   ];
 }

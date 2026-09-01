@@ -18,6 +18,8 @@ export {
   completeTask,
   failTask,
   getTask,
+  listTasks,
+  countTasksByState,
   type Task,
   type TaskState,
   type LeasedTask,
@@ -27,8 +29,10 @@ export {
   upsertDraft,
   getDeliverableByTask,
   appendActivity,
+  listActivity,
   type Deliverable,
   type TrustState,
+  type ActivityEvent,
 } from './deliverables.ts';
 export {
   submitCompletedWork,
