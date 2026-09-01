@@ -165,3 +165,24 @@ test('no .claude/skills directory at all fails rather than passing on nothing to
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('a pack stamped with an older construct version fails as version skew', async () => {
+  const root = scratchRoot();
+  try {
+    const stale = FRESH.map((file) => ({
+      ...file,
+      content: file.content.replace(
+        new RegExp(`(version:\\s*)${VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+        '$10.0.0-stale',
+      ),
+    }));
+    writePack(join(root, '.claude', 'skills'), stale);
+    const r = await runLint(root);
+    assert.equal(r.code, 1, r.stderr);
+    assert.match(r.stderr, /stamped construct 0\.0\.0-stale/);
+    assert.match(r.stderr, new RegExp(`current construct is ${VERSION.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    assert.match(r.stderr, /construct skills pack --out=\.claude\/skills/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
