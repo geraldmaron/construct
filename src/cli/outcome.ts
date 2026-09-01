@@ -17,7 +17,6 @@ import type { Store } from '../kernel/store/open.ts';
 import { appendWorkLog } from '../kernel/store/worklog.ts';
 import { recordRunDispatch } from '../kernel/store/dispatch.ts';
 import { engagementMode, sourcesFor } from '../kernel/store/sources.ts';
-import { storeNamingCache } from '../kernel/store/namings.ts';
 import { recordPlan } from '../kernel/store/plans.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
 import { startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
@@ -230,13 +229,11 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
   if (started.inferredBy === 'user') {
     process.stdout.write('\nYou named these; nothing was inferred and no model was consulted.\n');
   }
-  if (started.inferredBy === 'namer' || started.inferredBy === 'cache' || started.inferredBy === 'session') {
+  if (started.inferredBy === 'namer' || started.inferredBy === 'session') {
     process.stdout.write(
-      started.inferredBy === 'cache'
-        ? '\nThese came from a model consulted for this outcome earlier, not from keywords.\n'
-        : started.inferredBy === 'session'
-          ? '\nThese came from this session reading the outcome; each reason above is its stated evidence.\n'
-          : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
+      started.inferredBy === 'session'
+        ? '\nThese came from this session reading the outcome; each reason above is its stated evidence.\n'
+        : '\nThese came from a model reading the outcome; each reason above is its stated evidence.\n',
     );
   }
   if (started.namerFailure !== undefined) {
@@ -419,7 +416,6 @@ export async function outcome(
       at,
       host: host.name,
       namer: createHostNamer(host),
-      cache: storeNamingCache(store, { host: host.name, at }),
       namerText: densified?.outcome,
     });
 

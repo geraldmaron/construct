@@ -1,23 +1,15 @@
 /**
  * cli/maintenance.ts — the install rather than the work: whether this one is
- * healthy, whether its store has ever been copied, and what a predecessor left
- * behind on the machine.
+ * healthy, and whether its store has ever been copied.
  *
- * Nothing here reads a run or dispatches anything. What they share is a
- * posture: they report, and they gate only on what they can actually show —
- * a missing host is information, litter is information, and an unwritable
- * store is the one failure doctor exits non-zero for.
+ * Nothing here reads a run or dispatches anything. Predecessor archaeology
+ * (`cleanup`) is gone: alpha clean break, not a migration path.
  */
 
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { homedir } from 'node:os';
 import { resolvePaths } from '../kernel/paths.ts';
-import { buildCleanupCatalog, projectTreeLitter } from '../kernel/cleanup/catalog.ts';
-import type { SpawnFn } from '../kernel/cleanup/catalog.ts';
 import { probeDaemon } from './daemon.ts';
-import { detectedItems, selectedItems, applyCleanup } from '../kernel/cleanup/run.ts';
-import type { CleanupOptions } from '../kernel/cleanup/run.ts';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import type { StoreLocation } from './local-state.ts';
@@ -185,7 +177,8 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
   // Whether the opt-in resident is up, and if not, whether that absence is the
   // designed state or a stale socket somebody left behind. All three states
   // are reported, never gated: "not running" is what a healthy install looks
-  // like by default, and a stale socket is residue for `construct cleanup` to
+  // like by default, and a stale socket is residue for `construct daemon start`
+  // to replace — not a doctor gate.
   // reap, not a broken install for doctor to fail on.
   const daemonProbe = await probeDaemon(paths);
   if (daemonProbe.state === 'absent') {
@@ -200,8 +193,8 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
       ok: true,
       detail:
         `STALE SOCKET at ${daemonProbe.socketPath} — nothing answers on it — ` +
-        'recover with: construct daemon start (or run construct cleanup to reap it)',
-    });
+        'recover with: construct daemon start',
+      });
   } else {
     checks.push({
       name: 'daemon',
@@ -210,17 +203,9 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
     });
   }
 
-  // Predecessor markers in the project tree: reported like host presence,
-  // not gated — finding one says nothing about whether this install is
-  // healthy, only that `construct cleanup` has something to look at. Doctor
-  // only names it; it never removes anything itself.
-  for (const finding of projectTreeLitter(cwd)) {
-    checks.push({ name: 'litter', ok: true, detail: finding.detail });
-  }
-
   // A generated skill pack left behind by an older or newer Construct: not
-  // unhealthy either, only worth naming, the same way litter is — the fix is
-  // `construct skills`, not a doctor exit code.
+  // unhealthy either, only worth naming — the fix is `construct skills`, not
+  // a doctor exit code.
   const skillsOut = join(cwd, '.claude', 'skills');
   if (existsSync(skillsOut)) {
     const installed = packageVersion();
@@ -237,7 +222,7 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
   // completion/promotion.ts on why "nobody challenged it" is a normal resting
   // state — but nothing else here ever notices when one has simply sat that
   // way a long time, and there is no other surface that says so either.
-  // Reported like litter and skills: informational, never gating, silent
+  // Reported like skills: informational, never gating, silent
   // when there is nothing to say. Gated on the store already existing and
   // passing the write-access probe above — this check has nothing to add
   // over the store check when the store is missing or unwritable, and it
@@ -297,114 +282,6 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
     }
   }
   return failed === 0 ? 0 : 1;
-}
-
-interface CleanupArgs extends CleanupOptions {
-  readonly dryRun: boolean;
-  readonly yes: boolean;
-  readonly withImages: boolean;
-  readonly cwd: string;
-  readonly home: string;
-}
-
-export function parseCleanupArgs(argv: string[]): CleanupArgs {
-  let scope: CleanupOptions['scope'] = 'all';
-  let dryRun = false;
-  let yes = false;
-  let all = false;
-  let keepState = false;
-  let withImages = false;
-  let cwd = process.cwd();
-  let home = homedir();
-  for (const arg of argv) {
-    if (arg === '--dry-run') dryRun = true;
-    else if (arg === '--yes' || arg === '-y') yes = true;
-    else if (arg === '--all') all = true;
-    else if (arg === '--keep-state') keepState = true;
-    else if (arg === '--with-images') withImages = true;
-    else if (arg.startsWith('--scope=')) scope = arg.slice('--scope='.length) as CleanupOptions['scope'];
-    else if (arg.startsWith('--cwd=')) cwd = arg.slice('--cwd='.length);
-    else if (arg.startsWith('--home=')) home = arg.slice('--home='.length);
-  }
-  if (!['project', 'machine', 'all'].includes(scope)) {
-    throw new Error(`Invalid --scope=${scope}; expected project|machine|all`);
-  }
-  return { scope, dryRun, yes, all, keepState, withImages, cwd, home };
-}
-
-// `spawnOverride` exists only so tests can fake out docker/launchctl instead
-// of depending on the real machine's ambient state; production callers never
-// pass it.
-//
-// Async because knowing whether a daemon is live means connecting to its
-// socket, and the catalog itself stays synchronous — every other item's
-// detect()/remove() is a plain filesystem or spawnSync check, and forcing
-// all of them through a Promise to accommodate this one connect would be a
-// much larger, riskier change than deciding liveness once, up front, and
-// handing the catalog the answer.
-export async function cleanup(argv: string[], spawnOverride?: SpawnFn): Promise<number> {
-  const args = parseCleanupArgs(argv);
-  const paths = resolvePaths(process.env, args.home);
-  const daemonLive = (await probeDaemon(paths)).state === 'live';
-  const catalog = buildCleanupCatalog({
-    cwd: args.cwd,
-    home: args.home,
-    paths,
-    withImages: args.withImages,
-    spawn: spawnOverride,
-    daemonLive,
-  });
-  const detected = detectedItems(catalog, args);
-
-  if (detected.length === 0) {
-    process.stdout.write('cleanup: no predecessor state detected in the selected scope.\n');
-    return 0;
-  }
-
-  if (args.dryRun) {
-    process.stdout.write(`cleanup: dry-run plan (scope=${args.scope}${args.keepState ? ', keep-state' : ''}):\n`);
-    let removable = 0;
-    for (const item of detected) {
-      // A kept item must not wear the mark that means "this will be removed".
-      // Saying KEPT beside a ✓ under "pass --yes to remove ✓ items" is a
-      // contradiction, and the mark is what gets read.
-      const keeping = item.keeps?.() ?? false;
-      if (!keeping) removable += 1;
-      const mark = keeping ? '•' : item.risk === 'auto' ? '✓' : '◐';
-      process.stdout.write(`  ${mark} ${item.label}\n      ${escapeForTerminal(item.describe())}\n`);
-    }
-    process.stdout.write(
-      removable === 0
-        ? '\nNothing to remove: every detected item belongs to the Construct that is running.\n'
-        : '\nPass --yes to remove ✓ items, --yes --all to also remove ◐ items. • items are kept either way.\n',
-    );
-    return 0;
-  }
-
-  if (!args.yes) {
-    process.stderr.write('cleanup: pass --dry-run to preview, or --yes (optionally --all) to apply.\n');
-    return 2;
-  }
-
-  const toRemove = selectedItems(detected, args.all);
-  const result = applyCleanup(detected, new Set(toRemove.map((item) => item.id)));
-  // An item that reports "kept" ran and deliberately removed nothing — the
-  // successor owns that directory. Counting it as removed would
-  // make the summary say a thing was deleted that is still there, which is the
-  // class of claim this project exists to not make.
-  const kept = result.removed.filter((o) => o.detail.startsWith('kept'));
-  const actuallyRemoved = result.removed.filter((o) => !o.detail.startsWith('kept'));
-  for (const outcome of actuallyRemoved) {
-    process.stdout.write(`  ✓ ${outcome.label} — ${escapeForTerminal(outcome.detail)}\n`);
-  }
-  for (const outcome of kept) {
-    process.stdout.write(`  • ${outcome.label} — ${escapeForTerminal(outcome.detail)}\n`);
-  }
-  process.stdout.write(
-    `\ncleanup: removed ${String(actuallyRemoved.length)}, ` +
-      `kept ${String(kept.length)}, skipped ${String(result.skipped.length)}.\n`,
-  );
-  return actuallyRemoved.some((o) => o.detail.startsWith('error:')) ? 1 : 0;
 }
 
 const BACKUP_USAGE =

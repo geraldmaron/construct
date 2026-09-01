@@ -279,7 +279,8 @@ function filesUnder(dir, extension) {
     ['ls-files', '--cached', '--others', '--exclude-standard', `${dir}/`],
     { encoding: 'utf8' },
   );
-  return out.split('\n').filter((f) => f.endsWith(extension));
+  // Cached deletes still appear in ls-files until staged; skip missing paths.
+  return out.split('\n').filter((f) => f.endsWith(extension) && existsSync(f));
 }
 
 /**

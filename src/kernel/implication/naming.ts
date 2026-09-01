@@ -156,22 +156,10 @@ export type DomainNamer = (
   catalog: readonly Domain[],
 ) => Promise<readonly DomainNaming[] | NamerReply>;
 
-/**
- * A namer consultation costs a model call, and the same outcome should not pay
- * twice. Deliberately an interface rather than a Map: the CLI backs it with
- * the store so the cost is not re-paid across processes, and tests can watch
- * it.
- */
-export interface NamingCache {
-  get(outcome: string): readonly Implication[] | undefined;
-  set(outcome: string, implications: readonly Implication[]): void;
-}
-
 export type InferredBy =
   | 'namer'
   | 'session'
   | 'keywords'
-  | 'cache'
   | 'none'
   | 'user'
   | 'coverage-gap';
@@ -184,7 +172,6 @@ export interface NamedMap extends ImplicationMap {
    *              to record_outcome. Not Construct's namer. Not the keyword map.
    * 'keywords' — the zero-model fallback answered: no namer was supplied, or
    *              the namer failed and the map caught the run.
-   * 'cache'    — a previous consultation for this exact outcome answered.
    * 'user'     — the user named the domains outright; nothing was inferred.
    * 'none'     — the catalog was considered and nothing was named.
    *              A genuine answer, not a gap.
@@ -210,10 +197,7 @@ export interface NamedMap extends ImplicationMap {
   readonly namerRetriedAfter?: string;
   /**
    * Concerns the namer raised that this run will not act on, each with the
-   * reason. Empty on every path where nothing was proposed, and empty on a
-   * cache hit — the consultation that filled the cache recorded its own unmet
-   * concerns against that outcome at the time, and repeating them here would
-   * claim a second reading that never happened.
+   * reason. Empty on every path where nothing was proposed.
    */
   readonly unmet: readonly UnmetConcern[];
 }
@@ -225,7 +209,6 @@ export interface NameInput {
   readonly limit?: number;
   /** Absent means the zero-model fallback: the keyword map alone answers. */
   readonly namer?: DomainNamer;
-  readonly cache?: NamingCache;
   /**
    * When the namings are already in hand from this session, the result is
    * tagged `session`, not `namer`. Construct's namer seam is the leftover
@@ -306,9 +289,9 @@ function admissible(
  * map as the zero-model fallback.
  *
  * Without a namer this does no I/O and costs nothing — the map answers or it
- * does not, exactly as it always has. With one, every outcome is a model
- * consultation (cached per outcome), because the measured alternative only
- * worked on wording its own authors had already imagined.
+ * does not, exactly as it always has. With one, every outcome is a fresh model
+ * consultation: an outcome-text cache is the wrong key under project, catalog,
+ * and context change, so the same words may be named again.
  */
 export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> {
   const catalog = input.catalog ?? DOMAINS;
@@ -326,16 +309,6 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
     // it has no unmet concerns to report. Its silence is a different thing
     // from a namer's silence and must not be dressed up as the same evidence.
     return { ...fallback, inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none', unmet: [] };
-  }
-
-  const cached = input.cache?.get(input.outcome);
-  if (cached) {
-    return {
-      outcome: input.outcome,
-      implicated: cached,
-      inferredBy: cached.length > 0 ? 'cache' : 'none',
-      unmet: [],
-    };
   }
 
   let namings: readonly DomainNaming[];
@@ -391,14 +364,6 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       : isCoverageGap
         ? 'coverage-gap'
         : 'none';
-  // A cached nothing is a real answer: the namer considered the catalog and
-  // named nothing, and the same outcome must not pay to hear it twice — but
-  // a coverage gap is not that. The cache stores only the implication list,
-  // with no room to carry which empty answer this was, and reading it back
-  // as a plain 'none' (below) is exactly the silent-misroute failure this
-  // state exists to prevent. So a coverage gap is not cached: the next ask
-  // pays for a fresh consultation rather than losing the distinction.
-  if (!isCoverageGap) input.cache?.set(input.outcome, limited);
   return {
     outcome: input.outcome,
     implicated: limited,

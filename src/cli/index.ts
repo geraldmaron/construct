@@ -15,7 +15,7 @@
 import { StoreUnavailableError } from '../kernel/store/open.ts';
 import { tuningStamp } from '../hosts/tuning.ts';
 import { packageVersion } from './runtime.ts';
-import { backup, cleanup, doctor } from './maintenance.ts';
+import { backup, doctor } from './maintenance.ts';
 import { roleServe, serve } from './serve.ts';
 import { skills } from './skills.ts';
 import { outcome } from './outcome.ts';
@@ -54,7 +54,7 @@ import { firstUnknownFlag, wantsHelp } from './flags.ts';
  */
 export { HOST_NAMES } from './runtime.ts';
 export type { HostName } from './runtime.ts';
-export { backup, cleanup, doctor, parseCleanupArgs } from './maintenance.ts';
+export { backup, doctor } from './maintenance.ts';
 export { roleServe, serve } from './serve.ts';
 export { skills } from './skills.ts';
 export { outcome, parseOutcomeArgs, sessionOutcomeHandoff } from './outcome.ts';
@@ -104,7 +104,7 @@ export const VERBS: readonly string[] = Object.freeze([
   'source', 'propose', 'audit', 'standing', 'schedule', 'record', 'mode', 'consent',
   'settings', 'trust', 'staff', 'routine', 'skills', 'watch', 'reconcile', 'waive', 'revoke', 'verdict',
   'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'init', 'reset', 'doctor', 'backup',
-  'cleanup', 'completions', 'daemon', 'status', 'version', 'help',
+  'completions', 'daemon', 'status', 'version', 'help',
 ]);
 
 /**
@@ -192,7 +192,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
   watch: {
     gloss: 'legacy ground watch — prefer construct routine',
-    flags: [...HOST_FLAGS, 'all', 'due', 'every', 'root', 'source', 'workspace'],
+    flags: [...HOST_FLAGS, 'all', 'due', 'every', 'source', 'workspace'],
   },
   reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
   waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
@@ -217,7 +217,6 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   reset: { gloss: 'wipe project runtime state and recreate format v1', flags: ['yes', 'wipe-config'] },
   doctor: { gloss: 'report host presence, integration matrix, and store health', flags: [] },
   backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
-  cleanup: { gloss: 'remove a predecessor install', flags: ['dry-run', 'yes', 'all', 'keep-state', 'with-images', 'scope'] },
   completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
   daemon: { gloss: 'legacy resident sweeper — prefer construct routine', flags: ['every', 'foreground', 'idle-exit'] },
   version: { gloss: 'print the version and tuning stamp', flags: [] },
@@ -240,7 +239,7 @@ const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.fr
   ['Workspace settings', ['mode', 'record', 'settings']],
   ['Composition and reconciliation', ['compose', 'reconcile']],
   ['Presence and hosts', ['serve', 'init', 'reset']],
-  ['Maintenance', ['doctor', 'backup', 'cleanup', 'skills', 'completions', 'version', 'help']],
+  ['Maintenance', ['doctor', 'backup', 'skills', 'completions', 'version', 'help']],
   [
     'Legacy aliases (prefer inbox / routine / init)',
     [
@@ -466,8 +465,6 @@ async function run(argv: string[]): Promise<number> {
       return await doctor();
     case 'backup':
       return backup(argv.slice(1));
-    case 'cleanup':
-      return await cleanup(argv.slice(1));
     case 'completions':
       return completions(argv.slice(1));
     case 'daemon':

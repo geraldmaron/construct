@@ -1,25 +1,19 @@
 /**
- * hosts/repo/evidence.ts — what a git repository says about its own tracker.
+ * scripts/tracker/evidence.ts — what a git repository says about its own
+ * tracker (IO half of the reconcile ritual).
  *
- * This is the IO half of the reconcile ritual. Every judgement lives in
- * kernel/tracker/session-drift.ts, which is pure and tested against fixtures
- * rather than against whatever this repo happens to look like today. All this
- * module does is gather evidence.
- *
- * It lives under hosts/ rather than kernel/ for the reason the kernel seam
- * exists: it spawns git and reads files from a path the caller supplies, and
- * the kernel is forbidden both. Two callers share it — the reconcile script a
- * session runs at its boundaries, and the standing watch that raises the same
- * drift as inbox decisions. They ask the same question and must not answer it
- * two different ways.
+ * Repo dogfood, not Construct product state. Lives under scripts/ so the
+ * published package does not ship beads session-drift. Pure judgments live in
+ * session-drift.ts beside this file; this module only gathers evidence
+ * (spawns git, reads the export). Caller: scripts/reconcile-tracker.mjs.
  */
 
 import { readFileSync, existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import type { BeadIssue, EvidenceBySlug } from '../../kernel/tracker/session-drift.ts';
+import type { BeadIssue, EvidenceBySlug } from './session-drift.ts';
 
-import type { RecordedHistory, Divergence } from '../../kernel/tracker/session-drift.ts';
+import type { RecordedHistory, Divergence } from './session-drift.ts';
 
 /** Where the tracker writes the export this repository version-controls. */
 const EXPORT_PATH = '.beads/issues.jsonl';

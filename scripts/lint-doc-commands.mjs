@@ -45,7 +45,7 @@ import { probeSurface } from './lib/cli-surface.mjs';
  * missing verb still fails, and a reader who greps this file learns which
  * commands are absent on purpose.
  */
-const RETIRED_VERBS = new Set(['sync', 'install', 'wire', 'host-pull-serve']);
+const RETIRED_VERBS = new Set(['sync', 'install', 'wire', 'host-pull-serve', 'cleanup']);
 
 /** Fences whose contents a reader would paste into a shell. */
 const SHELL_FENCE = /^(bash|sh|shell|zsh|console)$/i;

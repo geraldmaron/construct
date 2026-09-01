@@ -13,8 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mapImplicationsNamed } from '../../../src/kernel/implication/naming.ts';
-import type { DomainNamer, NamingCache } from '../../../src/kernel/implication/naming.ts';
-import type { Implication } from '../../../src/kernel/implication/map.ts';
+import type { DomainNamer } from '../../../src/kernel/implication/naming.ts';
 import type { Domain } from '../../../src/kernel/implication/domains.ts';
 
 /**
@@ -56,15 +55,6 @@ function namer(namings: Array<{ domain: string; why: string; confidence?: number
     return namings;
   };
   return { fn, calls, catalogs };
-}
-
-function memoryCache(): NamingCache & { entries: Map<string, readonly Implication[]> } {
-  const entries = new Map<string, readonly Implication[]>();
-  return {
-    entries,
-    get: (outcome) => entries.get(outcome),
-    set: (outcome, implications) => void entries.set(outcome, implications),
-  };
 }
 
 test('the namer reads every outcome, including ones keywords would answer', async () => {
@@ -160,26 +150,6 @@ test('the namer is shown the full catalog, never a narrowed one', async () => {
   const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
   await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn });
   assert.deepEqual(stub.catalogs, [CATALOG], 'the measured figures were taken on the full catalog');
-});
-
-test('the same outcome does not pay for a consultation twice', async () => {
-  const stub = namer([{ domain: 'marketing-claims', why: 'a raffle is a regulated promotion' }]);
-  const cache = memoryCache();
-  const first = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, cache });
-  const second = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, cache });
-  assert.equal(first.inferredBy, 'namer');
-  assert.equal(second.inferredBy, 'cache');
-  assert.deepEqual(stub.calls, [SILENT], 'the second call must not reach the namer');
-  assert.deepEqual(second.implicated, first.implicated);
-});
-
-test('a cached nothing is still nothing, and still does not re-consult', async () => {
-  const stub = namer([]);
-  const cache = memoryCache();
-  await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, cache });
-  const again = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: stub.fn, cache });
-  assert.equal(again.inferredBy, 'none');
-  assert.deepEqual(stub.calls, [SILENT]);
 });
 
 test('the limit applies to named implications exactly as it does to keyword ones', async () => {
@@ -324,42 +294,13 @@ test('coverage-gap is the low-confidence refusal specifically, not any empty res
   const outsideCatalog = namer([{ domain: 'astrology', why: 'the stars say so' }]);
   const outside = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: outsideCatalog.fn });
   assert.equal(outside.inferredBy, 'none');
-});
 
-test('a coverage gap is not cached — a second ask pays for a fresh consultation rather than reading back as none', async () => {
-  const cache = memoryCache();
   const gapStub = namer([
     { domain: 'privacy', why: 'the wording is closer to access control than to personal data', confidence: 0.3 },
   ]);
-  const first = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: gapStub.fn, cache });
-  assert.equal(first.inferredBy, 'coverage-gap');
-  assert.equal(cache.entries.has(SILENT), false, 'a coverage gap leaves nothing in the cache to mislead a later hit');
-
-  // A second ask, now confident, must be free to change the answer — proof
-  // the first result was never cached as a settled 'none'.
-  const confidentStub = namer([{ domain: 'privacy', why: 'a signup list is personal data', confidence: 0.9 }]);
-  const second = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: confidentStub.fn, cache });
-  assert.equal(confidentStub.calls.length, 1, 'the second ask really did re-consult the namer');
-  assert.equal(second.inferredBy, 'namer');
-  assert.deepEqual(second.implicated.map((i) => i.domain), ['privacy']);
-});
-
-test('a genuine "nothing here" answer is still cached, and a repeat still reads as cache', async () => {
-  const cache = memoryCache();
-  const namesNothing = namer([]);
-  const first = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: namesNothing.fn, cache });
-  assert.equal(first.inferredBy, 'none');
-  assert.equal(cache.entries.has(SILENT), true, 'a considered "nothing here" is a real answer worth caching');
-
-  const shouldNotBeCalled = namer([{ domain: 'privacy', why: 'would change the answer if consulted' }]);
-  const second = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: shouldNotBeCalled.fn, cache });
-  assert.equal(shouldNotBeCalled.calls.length, 0, 'the cache answered; the namer was never re-asked');
-  // An empty cached result reads as 'none' rather than 'cache', the same way
-  // a fresh empty answer does — provenance is not over-claimed for a result
-  // that carries nothing either way. This is pre-existing behavior; the
-  // point of this test is only that it still gets a real cache hit at all.
-  assert.equal(second.inferredBy, 'none');
-  assert.deepEqual(second.implicated, []);
+  const gap = await mapImplicationsNamed({ catalog: CATALOG, outcome: SILENT, namer: gapStub.fn });
+  assert.equal(gap.inferredBy, 'coverage-gap');
+  assert.deepEqual(gap.implicated, []);
 });
 
 test('one confident naming beside one low-confidence one still routes the confident one', async () => {

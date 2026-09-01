@@ -137,7 +137,7 @@ export const UNPROBED_EXPECTATIONS: readonly string[] = ['repo-lookup-404s-hones
 
 // ---------------------------------------------------------------------------
 // Client: running `gh` and turning its answers into typed results. No
-// kernel judgment here, mirroring the split hosts/repo/evidence.ts draws
+// kernel judgment here, mirroring the gather/judge split scripts/tracker uses
 // between spawning-and-reading and deciding what the answer means.
 // ---------------------------------------------------------------------------
 

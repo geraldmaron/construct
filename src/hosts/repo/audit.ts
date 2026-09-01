@@ -4,9 +4,8 @@
  *
  * This is the IO half of the enablement audit. Every judgement lives in
  * kernel/run/repoaudit.ts, which reasons over the RepoFacts this module
- * gathers and never touches a filesystem itself — the same split
- * hosts/repo/evidence.ts already draws for the tracker reconcile, kept here
- * for the same reason: the kernel seam forbids the kernel the filesystem, so
+ * gathers and never touches a filesystem itself — the same gather/judge split
+ * the kernel seam requires: the kernel is forbidden the filesystem, so
  * whatever stats and reads a path the caller supplies lives under hosts/.
  *
  * Reads are narrow and named rather than a general walk: package.json,

@@ -16,7 +16,7 @@ import {
   projectMcpConfigPath,
 } from '../../../src/hosts/claude/mcpconfig.ts';
 
-test('the project server name matches what kernel/cleanup/catalog.ts already knows to un-merge', () => {
+test('the project server name is construct-mcp', () => {
   assert.equal(PROJECT_MCP_SERVER_NAME, 'construct-mcp');
 });
 

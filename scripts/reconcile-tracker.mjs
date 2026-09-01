@@ -16,11 +16,10 @@
  * reported. Both are read from one branch's view, so the report opens by saying
  * where that branch stands and which beads already have commits it cannot see.
  *
- * Every judgement lives in src/kernel/tracker/session-drift.ts, which is pure
+ * Every judgement lives in scripts/tracker/session-drift.ts, which is pure
  * and tested against fixtures rather than against whatever this repo happens to
  * look like today, and the evidence gathering lives in
- * src/hosts/repo/evidence.ts, shared with the standing watch. All this file
- * does is print.
+ * scripts/tracker/evidence.ts. All this file does is print.
  *
  *   node scripts/reconcile-tracker.mjs            # human-readable
  *   node scripts/reconcile-tracker.mjs --json     # the report as data
@@ -40,13 +39,13 @@ import {
   describeDivergence,
   describeLostRecord,
   lostRecords,
-} from '../src/kernel/tracker/session-drift.ts';
+} from './tracker/session-drift.ts';
 import {
   gatherRepoEvidence,
   gatherDivergence,
   isFailure,
   recordedHistory,
-} from '../src/hosts/repo/evidence.ts';
+} from './tracker/evidence.ts';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MAIN_BRANCH = 'main';
@@ -55,9 +54,7 @@ const json = process.argv.includes('--json');
 const quiet = process.argv.includes('--quiet');
 const strict = process.argv.includes('--strict');
 
-// The gather lives in src/hosts/repo/evidence.ts because the standing watch
-// (construct watch) asks this repository the same question, and two callers
-// answering it differently is the drift this script exists to catch.
+// Evidence gathering lives beside the pure judgments under scripts/tracker/.
 const gathered = gatherRepoEvidence({ root: ROOT, mainBranch: MAIN_BRANCH });
 if (isFailure(gathered)) {
   process.stderr.write(`reconcile-tracker: ${gathered.problem} — skipped\n`);

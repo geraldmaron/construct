@@ -148,7 +148,6 @@ What each line means, and whether it can fail the exit code:
 | `store` | the sqlite store is writable | yes |
 | `backup` | whether a copy of the store has ever been taken; an uninsured store is not a broken one | no |
 | `host` (one line per host) | opencode/claude/codex/cursor found, version vs. the pin, auth state | no — report only |
-| `litter` (if present) | predecessor-version markers found in *this* repo's tree | no — points at `construct cleanup --scope=project`, changes nothing itself |
 | `skills` (if present) | a generated `.claude/skills` pack in *this* repo stamped by a different Construct version than the one running | no |
 | `stale-draft` (if present) | settled deliverables still sitting at draft with no recorded verdict, past the threshold | no |
 
@@ -162,11 +161,10 @@ doctor runs is a normal sequence, not a bug doctor should have caught.
 
 **Every command above runs with its working directory inside the target
 repo — never inside the Construct checkout, never inside a Construct
-worktree.** `doctor`'s `litter` and `skills` checks read whichever repo
-you're standing in, so running from the wrong place makes them report on
-the wrong tree. Treat "`cd` into the target repo first" as the default for
-every Construct command you run against a consumer app, not something to
-remember case by case.
+worktree.** `doctor`'s `skills` check reads whichever repo you're standing in,
+so running from the wrong place makes it report on the wrong tree. Treat
+"`cd` into the target repo first" as the default for every Construct command
+you run against a consumer app, not something to remember case by case.
 
 ## Verified runs (2026-08-21)
 
@@ -203,7 +201,6 @@ ok   host  opencode: 1.15.4 (pinned: 1.15.4); auth: not probed — auth lives in
 ok   host  claude: 2.1.238 (Claude Code) (pinned: 2.1.216 (Claude Code)); auth: not probed — auth lives in the host's own config
 ok   host  codex: codex-cli 0.145.0 (pinned: codex-cli 0.145.0); auth: Logged in using ChatGPT
 ok   host  cursor: 2026.08.11-e8db854 (pinned: 2026.08.11-e8db854); auth: ✓ Logged in as geraldmdagher@outlook.com
-ok   litter  AGENTS.md and plan.md — run `construct cleanup --scope=project` to review
 doctor: healthy
 ```
 

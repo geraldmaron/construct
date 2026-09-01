@@ -234,7 +234,7 @@ export type DaemonProbe =
  * residue it exists to report. Absent (no socket file) and stale (a socket
  * file nothing answers on) are both "not live" but are named differently
  * because they call for different action — nothing, versus
- * `construct daemon start` or `construct cleanup` reaping the file.
+ * `construct daemon start` reaping the file.
  */
 export async function probeDaemon(paths: Paths): Promise<DaemonProbe> {
   const socketPath = daemonSocketPath(paths);

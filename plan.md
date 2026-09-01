@@ -29,19 +29,19 @@ Epic: `construct-cki1`.
 | `wire` product verb | **done** |
 | `host-pull-serve` + hostpull module | **done** |
 | Legacy MCP `projection.ts` (serve requires v1) | **done** |
-| `cleanup` catalog + verb | pending |
-| naming_cache wiring / table | pending |
+| `cleanup` catalog + verb | **done** (this session, with smoke fix) |
+| naming_cache wiring / table | **done** (this session) |
+| session-drift from package runtime | **done** (moved to `scripts/tracker/`; bare `watch` points at `npm run reconcile`) |
 | keyword routing on product path | pending |
-| standing/watch/schedule/daemon modules | pending |
+| standing/watch/schedule/daemon modules | pending (Routine due-runner first, or accept manual-only) |
 | interactive home-store `work.ts` path | pending |
-| session-drift from package runtime | pending |
 | persona pack auto-install / pack verb | pending (H) |
 
 ## What remains overall
 
 ```
 DONE   A–F
-NOW    G  cleanup, naming_cache, keyword routing, background verbs, legacy work, session-drift
+NOW    G  keyword routing, background verbs, legacy work.ts
 OPEN   H  skill scorecards; only operational skill auto-installs
 OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
 OPEN   J  full gate; provenance rebuild; release verdict

@@ -59,7 +59,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 const SCOPE = 'src/cli/';
@@ -309,7 +309,9 @@ function lintableFiles() {
     ['ls-files', '--cached', '--others', '--exclude-standard', SCOPE],
     { encoding: 'utf8' },
   );
-  return [...new Set(out.split('\n').filter(Boolean))].filter((f) => f.endsWith('.ts'));
+  return [...new Set(out.split('\n').filter(Boolean))]
+    .filter((f) => f.endsWith('.ts'))
+    .filter((f) => existsSync(f));
 }
 
 function main() {

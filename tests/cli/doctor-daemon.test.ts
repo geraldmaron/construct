@@ -174,7 +174,7 @@ test('doctor names a stale socket and the fix, and still stays ok', async () => 
     const out = await withIsolatedDirs(root, () => captureDoctorOut(root));
     assert.match(
       out,
-      /ok {3}daemon {2}STALE SOCKET at .*daemon\.sock — nothing answers on it — recover with: construct daemon start \(or run construct cleanup to reap it\)/,
+      /ok {3}daemon {2}STALE SOCKET at .*daemon\.sock — nothing answers on it — recover with: construct daemon start/,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

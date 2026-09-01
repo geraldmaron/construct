@@ -14,17 +14,10 @@
  * renders on the domains a run surfaced (or felt the absence of), append-only
  * like the work log and for the same reason — a corpus whose labels can be
  * quietly edited after the fact is how the last one died. Schema version 4
- * adds the model-consultation cache, additive again: what a
- * model said about an outcome, so the same outcome does not pay for the same
- * call twice across processes. Write-once rather than append-only — it holds
- * one row per outcome, not a history — but guarded by the same reasoning: a
- * record of a model's stated reason that can be quietly rewritten is not
- * evidence, and named implications cite exactly that reason. The table was
- * born `escalation_cache` and became `naming_cache` when the namer turned
- * primary (2026-08-05) — an alpha carries no schema
- * compatibility (STRATEGY preamble), so the rename is a rename, not a
- * migration; a store created before it simply carries an unused table.
- * Schema version 5 adds `lessons` and `workspace_consent`, additive again:
+ * once added a model-consultation cache keyed on outcome text; that table is
+ * gone from new stores (clean-slate: outcome text is the wrong cache key under
+ * project/catalog/context). Schema version 5 adds `lessons` and
+ * `workspace_consent`, additive again:
  * the lesson store's scope column is the confidentiality property — a lesson
  * row cannot exist without a workspace, and immutability is a trigger, not a
  * caller convention, because a lesson that can be edited after admission is
@@ -413,17 +406,6 @@ BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
 CREATE TRIGGER IF NOT EXISTS implication_feedback_no_delete
 BEFORE DELETE ON implication_feedback
 BEGIN SELECT RAISE(ABORT, 'implication_feedback is append-only'); END;
-
-CREATE TABLE IF NOT EXISTS naming_cache (
-  outcome      TEXT PRIMARY KEY,
-  implications TEXT NOT NULL,
-  host         TEXT NOT NULL,
-  recorded_at  TEXT NOT NULL
-) STRICT;
-
-CREATE TRIGGER IF NOT EXISTS naming_cache_no_update
-BEFORE UPDATE ON naming_cache
-BEGIN SELECT RAISE(ABORT, 'naming_cache is write-once'); END;
 
 CREATE TABLE IF NOT EXISTS lessons (
   id            TEXT PRIMARY KEY,

@@ -125,20 +125,17 @@ export function mcpArgsFor(configPath: string): readonly string[] {
 }
 
 /**
- * The persistent project-level registration `construct wire` writes — distinct
+ * The persistent project-level registration `construct init` writes — distinct
  * from the per-invocation role config above it in this file. That config is a
  * bearer's write surface, minted per dispatch and disposed the moment the
- * invocation ends. This one names the read-only projection (`construct
- * serve`: no dispatch, no spend, no bearer to protect), lives at a fixed path
- * inside the target repo, and is meant to outlive any single invocation.
+ * invocation ends. This one names the interactive MCP plane (`construct
+ * serve`), lives at a fixed path inside the target repo, and is meant to
+ * outlive any single invocation.
  *
  * Claude Code reads project-scoped MCP servers from `.mcp.json` at the repo
- * root. `kernel/cleanup/catalog.ts` already knows how to un-merge a server
- * under this exact key from that exact file (KNOWN_PROJECT_MCP_IDS), so this
- * writer uses the name cleanup already expects rather than inventing a second
- * one — and the shape below (bare `command`/`args`, no `type`, no `env`) is
- * the one docs/consumer-install.md documents and verifies against two real
- * app repos, not a variant invented here.
+ * root. The server id is `construct-mcp` (same key Cursor writes). The shape
+ * below (bare `command`/`args`, no `type`, no `env`) is the one
+ * docs/consumer-install.md documents.
  */
 export const PROJECT_MCP_SERVER_NAME = 'construct-mcp';
 

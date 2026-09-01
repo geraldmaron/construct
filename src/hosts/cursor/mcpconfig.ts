@@ -1,17 +1,14 @@
 /**
- * hosts/cursor/mcpconfig.ts — where `construct wire` registers the projection
+ * hosts/cursor/mcpconfig.ts — where `construct init` registers interactive MCP
  * (`construct serve`) in Cursor's own project MCP config.
  *
  * Cursor has no per-invocation role write surface yet — adapter.ts's own
  * header records that gap — so this file carries none of the ephemeral,
  * 0700-temp-dir, dispose-on-exit machinery hosts/claude/mcpconfig.ts and
  * hosts/opencode/mcpconfig.ts use to keep a role's bearer off disk between
- * invocations. There is no bearer here to protect: `construct serve` is
- * read-only (no dispatch, no spend), and what this file writes is a
- * persistent entry naming where the `construct` binary lives, at
- * `.cursor/mcp.json` — the exact path and shape docs/consumer-install.md
- * documents and verifies against two real app repos, not a variant invented
- * here.
+ * invocations. What this file writes is a persistent entry naming where the
+ * `construct` binary lives, at `.cursor/mcp.json` — the path and shape
+ * docs/consumer-install.md documents.
  */
 
 import { fileURLToPath } from 'node:url';
@@ -19,10 +16,8 @@ import { join } from 'node:path';
 import { buildServeArgs, buildServeEntry } from '../serve-launch.ts';
 
 /**
- * Matches KNOWN_PROJECT_MCP_IDS in kernel/cleanup/catalog.ts and the same key
- * hosts/claude/mcpconfig.ts writes into `.mcp.json`: one server name across
- * every host a project entry is written for, so an uninstall never has to
- * know which host wired it.
+ * Same server id Claude writes into `.mcp.json`: one name across every host
+ * a project entry is written for.
  */
 export const PROJECT_MCP_SERVER_NAME = 'construct-mcp';
 

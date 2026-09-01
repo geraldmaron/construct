@@ -1,5 +1,5 @@
 /**
- * tests/kernel/tracker/session-drift.test.ts.
+ * tests/scripts/tracker/session-drift.test.ts — pure reconcile judgments.
  *
  * Every case here is a hand-built bead-and-evidence pair, never this repo's real
  * tracker. The module's whole job is to notice when the repo and the tracker
@@ -19,7 +19,7 @@ import {
   repoAnswers,
   ritualContradictions,
   trackerClaims,
-} from '../../../src/kernel/tracker/session-drift.ts';
+} from '../../../scripts/tracker/session-drift.ts';
 
 const AT = '2026-08-04T00:00:00.000Z';
 

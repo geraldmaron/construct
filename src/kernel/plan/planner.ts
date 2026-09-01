@@ -43,7 +43,6 @@ export interface PlanInput {
 function routedByFrom(inferredBy: InferredBy): RoutedBy {
   switch (inferredBy) {
     case 'namer':
-    case 'cache':
       return 'namer';
     case 'session':
       return 'session';
