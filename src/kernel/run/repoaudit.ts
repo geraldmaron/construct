@@ -13,10 +13,9 @@
  *
  * This is judgment only. hosts/repo/gates.ts is the IO half — it is the one
  * side allowed to touch a filesystem — and hands back RepoFacts, already
- * gathered, for this module to reason over. The split is the one
- * hosts/repo/evidence.ts already draws for the tracker reconcile: gathering
- * in hosts/, deciding here, so the decision is testable against a fixture
- * without a filesystem in sight.
+ * gathered, for this module to reason over. Gathering in hosts/, deciding
+ * here, so the decision is testable against a fixture without a filesystem
+ * in sight.
  *
  * Findings become write proposals through the same primitive every other
  * outward change uses (store/sources.ts's proposeWrite), not through

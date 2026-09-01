@@ -11,7 +11,6 @@
  */
 
 import { recordRunDispatch } from '../kernel/store/dispatch.ts';
-import { storeNamingCache } from '../kernel/store/namings.ts';
 import { getTask } from '../kernel/store/tasks.ts';
 import { startAskNamed } from '../kernel/run/outcome.ts';
 import { highRiskNotice, primaryImplication } from '../kernel/run/ask.ts';
@@ -149,7 +148,6 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
           at,
           host: host.name,
           namer: createHostNamer(host),
-          cache: storeNamingCache(store, { host: host.name, at }),
         })
       : await startAskNamed(store, { runId, outcome: args.question, at });
 

@@ -67,7 +67,6 @@ test('an all-low-tier run is low risk, and nothing implicated is high, not safe'
 test('routing is labeled by how the inference was reached, fallback named as fallback', () => {
   assert.equal(buildPlan(input()).routing[0]?.routedBy, 'lexical-fallback');
   assert.equal(buildPlan(input({ inferredBy: 'namer' })).routing[0]?.routedBy, 'namer');
-  assert.equal(buildPlan(input({ inferredBy: 'cache' })).routing[0]?.routedBy, 'namer');
   assert.equal(buildPlan(input({ inferredBy: 'user' })).routing[0]?.routedBy, 'user');
   assert.equal(buildPlan(input({ inferredBy: 'session' })).routing[0]?.routedBy, 'session');
 });

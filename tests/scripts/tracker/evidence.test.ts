@@ -1,8 +1,8 @@
 /**
- * tests/hosts/repo/evidence.test.ts — the gatherer, asked its questions of a
- * real repository built for the occasion.
+ * tests/scripts/tracker/evidence.test.ts — the gatherer, asked its questions of
+ * a real repository built for the occasion.
  *
- * Never this checkout. The judgements live in kernel/tracker/session-drift and
+ * Never this checkout. The judgements live in scripts/tracker/session-drift and
  * are tested against hand-built data there; what is left to prove here is that
  * git is being asked the right question and its answer read correctly, and that
  * is only provable against a repository whose whole history the test wrote.
@@ -10,8 +10,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { gatherDivergence, recordedHistory } from '../../../src/hosts/repo/evidence.ts';
-import { describeDivergence, lostRecords } from '../../../src/kernel/tracker/session-drift.ts';
+import { gatherDivergence, recordedHistory } from '../../../scripts/tracker/evidence.ts';
+import { describeDivergence, lostRecords } from '../../../scripts/tracker/session-drift.ts';
 import { DEFAULT_COMMIT_DATE, fixtureRepo } from './fixture-repo.ts';
 
 // `recordedHistory` windows its walk relative to `now`, and every fixture

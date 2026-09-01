@@ -18,7 +18,7 @@
 
 import { mapImplications } from '../implication/map.ts';
 import { mapImplicationsNamed } from '../implication/naming.ts';
-import type { DomainNamer, NamingCache, InferredBy, UnmetConcern } from '../implication/naming.ts';
+import type { DomainNamer, InferredBy, UnmetConcern } from '../implication/naming.ts';
 import { domainsByName } from '../implication/domains.ts';
 import type { Domain } from '../implication/domains.ts';
 import type { Implication } from '../implication/map.ts';
@@ -71,7 +71,6 @@ export interface StartedRun {
 export interface StartRunNamedInput extends StartRunInput {
   /** Absent means the zero-model fallback: behaves exactly like `startRun`. */
   readonly namer?: DomainNamer;
-  readonly cache?: NamingCache;
   /** Named in the work log when a model is consulted, so the cost has a source. */
   readonly host?: string;
   /**
@@ -241,7 +240,6 @@ export async function startRunNamed(
     outcome: input.namerText ?? input.outcome,
     catalog: input.catalog,
     namer: input.namer,
-    cache: input.cache,
     ...(input.source === undefined ? {} : { source: input.source }),
   });
   return record(store, input, map.implicated, {
@@ -320,7 +318,6 @@ export async function startAskNamed(
     outcome: input.namerText ?? input.outcome,
     catalog: input.catalog,
     namer: input.namer,
-    cache: input.cache,
     ...(input.source === undefined ? {} : { source: input.source }),
   });
   return record(
@@ -385,7 +382,7 @@ function record(
     // A consulted model is logged whether or not it named anything. A
     // consultation that cost money and produced silence is exactly the entry a
     // user needs to see, and the one a "log it if it worked" rule would drop.
-    if (inferredBy === 'namer' || inferredBy === 'cache' || inferredBy === 'session') {
+    if (inferredBy === 'namer' || inferredBy === 'session') {
       logged.push(
         appendWorkLog(store, {
           run: input.runId,

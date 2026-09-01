@@ -1,13 +1,14 @@
 /**
- * kernel/tracker/session-drift.ts — reconcile the repo's own bead set against
- * the repo itself.
+ * scripts/tracker/session-drift.ts — reconcile this repo's bead set against
+ * the repo itself (dogfood ritual, not Construct product state).
  *
  * CLAUDE.md carries the reconciliation ritual as a manual practice, run at the
  * session boundaries. A manual practice is exactly the thing a session that ends
  * abnormally never runs — a crash, a lost context, or an agent that simply
  * stopped, and the tracker keeps asserting something the repo stopped agreeing
  * with. This module is the practice as a behavior, so it happens without being
- * remembered.
+ * remembered. It lives under scripts/ so the published package does not ship
+ * beads IO; run it via `npm run reconcile`.
  *
  * The framing is the one kernel/tracker/reconcile.ts already established, and
  * the point of reusing it rather than writing a bespoke checker is that the
@@ -47,15 +48,16 @@
  * view and a session that cannot see main's commits will judge the work in them
  * missing.
  *
- * Pure, like the rest of kernel/tracker: the evidence is gathered by a caller
- * that may run git, and arrives here as data.
+ * Pure judgments: evidence is gathered by a caller that may run git, and
+ * arrives here as data. Reuses the general tracker reconcile primitives under
+ * src/kernel/tracker/ (authority, projection, reconcileAll).
  */
 
-import { AUTHORITY } from './authority.ts';
-import { projectionId } from './projection.ts';
-import type { Projection } from './projection.ts';
-import { reconcileAll } from './reconcile.ts';
-import type { DriftReport } from './reconcile.ts';
+import { AUTHORITY } from '../../src/kernel/tracker/authority.ts';
+import { projectionId } from '../../src/kernel/tracker/projection.ts';
+import type { Projection } from '../../src/kernel/tracker/projection.ts';
+import { reconcileAll } from '../../src/kernel/tracker/reconcile.ts';
+import type { DriftReport } from '../../src/kernel/tracker/reconcile.ts';
 
 /** The propositions this projection reconciles. Both are repo-owned. */
 const SESSION_FIELD_AUTHORITY = Object.freeze({

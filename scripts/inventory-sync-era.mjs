@@ -5,8 +5,8 @@
  * skill trees, and agent/prompt files planted into a project's own checkout
  * rather than authored by it.
  *
- * This is NOT `construct cleanup`'s predecessor-litter catalog
- * (src/kernel/cleanup/catalog.ts). That catalog inspects ONE project (the cwd)
+ * This is NOT predecessor-litter archaeology (removed in the clean-slate cut).
+ * That catalog inspected ONE project (the cwd)
  * for a different predecessor's traces, by a different set of signatures, and
  * it can remove what it finds. This script only looks, across MANY projects
  * under one root, for a narrower and different set of markers, and never

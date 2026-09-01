@@ -1,15 +1,12 @@
 /**
- * cli/watch.ts — an outcome that never closes.
+ * cli/watch.ts — an outcome that never closes over declared external ground.
  *
  * There is no "start" to run and nothing to schedule: something outside
- * decides when to look, exactly as something outside decides when to `work`.
- * The bare form's only ground is Construct itself, which is why it takes a
- * repo root and nothing else; external ground is declared with `source add`
- * and followed with `watch add`, never with `--root`.
+ * decides when to look. Declared sources are followed with `watch add`;
+ * Construct's own beads/repo reconcile is repo dogfood (`npm run reconcile`),
+ * not a product verb.
  */
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { getSource, sourceShape } from '../kernel/store/sources.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import {
@@ -23,12 +20,6 @@ import {
   retireSourceWatch,
 } from '../kernel/store/source-watches.ts';
 import { sourceEdgesTouching } from '../kernel/store/source-edges.ts';
-import {
-  constructFindings,
-  divergenceFindings,
-  lostRecordFindings,
-  CONSTRUCT_GROUND,
-} from '../kernel/watch/construct-ground.ts';
 import { startWatch, sweepWatch, watchRun } from '../kernel/watch/watch.ts';
 import type { Watch } from '../kernel/watch/watch.ts';
 import {
@@ -43,39 +34,19 @@ import type { SourceSnapshot } from '../kernel/watch/source-ground.ts';
 import type { Store } from '../kernel/store/open.ts';
 import type { Finding } from '../kernel/watch/watch.ts';
 import type { Source } from '../kernel/store/sources.ts';
-import { describeDivergence, lostRecords, reconcileSession } from '../kernel/tracker/session-drift.ts';
 import { surveySource } from '../hosts/sources.ts';
-import { gatherDivergence, gatherRepoEvidence, isFailure, recordedHistory } from '../hosts/repo/evidence.ts';
 import { HOST_NAMES, now, withStore } from './runtime.ts';
 import { splitFlags } from './flags.ts';
 import { parseCadence, renderCadence } from './cadence.ts';
 
 const WATCH_USAGE =
-  'usage: construct watch [--root=<repo>]\n' +
-  '       construct watch add --source=<source-id> --every=<N>m|<N>h|<N>d ' +
+  'usage: construct watch add --source=<source-id> --every=<N>m|<N>h|<N>d ' +
   '[--host=<opencode|claude|codex|cursor>]\n' +
   '       construct watch list [--all]\n' +
   '       construct watch retire <id>\n' +
   '       construct watch --due\n' +
-  '         (schedule `construct watch --due` with cron or launchd; nothing here waits or wakes)\n';
-
-/**
- * Whether a root is a checkout of Construct itself, decided from the package
- * identity rather than from the presence of a tracker: any repository can carry
- * beads, and only this one is what the watch's findings are about.
- */
-function isConstructCheckout(root: string): boolean {
-  try {
-    const manifest: unknown = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-    return (
-      typeof manifest === 'object' &&
-      manifest !== null &&
-      (manifest as { name?: unknown }).name === '@geraldmaron/construct'
-    );
-  } catch {
-    return false;
-  }
-}
+  '         (schedule `construct watch --due` with cron or launchd; nothing here waits or wakes)\n' +
+  '       Construct checkout drift: npm run reconcile (repo dogfood, not this verb)\n';
 
 /**
  * Declare a watch over an already-declared source. Cadence and an optional
@@ -345,23 +316,8 @@ function watchDue(): number {
 
 
 /**
- * The standing watch, swept once when the bare form runs; `add`/`list`/
- * `retire`/`--due` manage watches pointed at declared external sources.
- *
- * A watch is an outcome that never closes, so there is no "start" to run and
- * nothing to schedule: something outside decides when to look, exactly as
- * something outside decides when to `work`. The bare form's only ground is
- * Construct itself (commitment 16 made operational), which is why it takes a
- * repo root and nothing else — external ground is declared with `source add`
- * and followed with `watch add`, never with `--root`.
- *
- * `--root` therefore selects WHICH CHECKOUT of Construct to inspect, and never
- * which project to watch. The findings are drift between this project's
- * strategy, tracker, and repo; pointed at an unrelated repository they would be
- * meaningless, and reporting them under Construct's own watch identity — which
- * is what happened while the flag was half-wired — is worse than meaningless,
- * because the record would name a ground the evidence did not come from. A root
- * that is not a Construct checkout is refused by name rather than swept.
+ * Source watches: `add`/`list`/`retire`/`--due`. Construct checkout drift is
+ * repo dogfood (`npm run reconcile`), not a product watch over beads.
  */
 export function watch(argv: string[]): number {
   const { flags, words } = splitFlags(argv);
@@ -376,70 +332,11 @@ export function watch(argv: string[]): number {
   if (sub === 'retire') return watchRetire(words[1]);
   if (flags.due !== undefined) return watchDue();
 
-  const root = flags.root || process.cwd();
-  if (!isConstructCheckout(root)) {
-    process.stderr.write(
-      `watch: ${root} is not a Construct checkout.\n` +
-        'The bare form reports drift between this project\'s strategy, tracker, and\n' +
-        'repo, so --root selects which checkout of Construct to inspect, not which\n' +
-        'project to watch. To watch other ground, declare it first:\n' +
-        '  construct source add --kind=directory --locator=<path>\n' +
-        '  construct watch add --source=<source-id> --every=<N>m|<N>h|<N>d\n',
-    );
-    return 1;
-  }
-
-  const gathered = gatherRepoEvidence({ root });
-  if (isFailure(gathered)) {
-    // Nothing to watch is not a failure of the watch; it is a fact about the
-    // ground, and saying which is the difference between a broken tool and an
-    // unwatched repository.
-    process.stderr.write(`watch: ${gathered.problem}\n`);
-    return 1;
-  }
-
-  const at = now();
-  const report = reconcileSession(gathered.issues, gathered.evidence, at);
-  // Two more witnesses beyond the tracker-vs-commits reconcile above, read the
-  // same way scripts/reconcile-tracker.mjs reads them, so the standing watch
-  // and the script never disagree about what they found: a close or filing
-  // the export's own history remembers and the export no longer does, and
-  // beads with commits on main that this checkout cannot see at all.
-  const lost = lostRecords(gathered.issues, recordedHistory(root, undefined, at) ?? undefined);
-  const divergence = describeDivergence(gatherDivergence({ root }) ?? undefined);
-  const findings = [
-    ...constructFindings(report),
-    ...lostRecordFindings(lost),
-    ...divergenceFindings(divergence),
-  ];
-  const target: Watch = { id: 'construct', ground: CONSTRUCT_GROUND };
-
-  return withStore((store) => {
-    if (readWorkLog(store, watchRun(target)).length === 0) startWatch(store, target, at);
-    const result = sweepWatch(store, { watch: target, findings, at });
-
-    process.stdout.write(`watch ${target.id}\n  ground: ${target.ground}\n\n`);
-    if (findings.length === 0) {
-      process.stdout.write('nothing diverged. The tracker and the repo agree.\n');
-      return 0;
-    }
-    process.stdout.write(
-      `${String(findings.length)} finding(s): ` +
-        `${String(result.raised.length)} raised as new decisions, ` +
-        `${String(result.standing.length)} already standing.\n`,
-    );
-    for (const key of result.raised) process.stdout.write(`  new       ${key}\n`);
-    for (const key of result.standing) process.stdout.write(`  standing  ${key}\n`);
-    if (result.raised.length > 0) {
-      process.stdout.write('\nRead them:  construct inbox\n');
-    } else {
-      // A sweep that raises nothing new is the common case, and it must not
-      // read as a sweep that found nothing.
-      process.stdout.write(
-        '\nEverything found is already in the inbox, unresolved. A standing finding is\n' +
-          'not raised twice; resolve it with: construct decide <id> "<your call>"\n',
-      );
-    }
-    return 0;
-  });
+  process.stderr.write(
+    'watch: declare source watches with `construct watch add`, or run due sweeps with `--due`.\n' +
+      'Construct checkout drift (tracker vs repo) is repo dogfood:\n' +
+      '  npm run reconcile\n',
+  );
+  process.stderr.write(WATCH_USAGE);
+  return 2;
 }

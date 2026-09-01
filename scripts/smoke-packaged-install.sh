@@ -11,8 +11,8 @@
 # tarball missing dist/kernel/store could pass the old script comfortably.
 #
 # Every command below runs under an isolated HOME. That is not tidiness: `doctor`
-# and `cleanup` inspect the user's real state directory, so before the isolation
-# was added this script's own runs were reading the developer's ~/.construct.
+# inspects the user's real state directory, so before the isolation was added
+# this script's own runs were reading the developer's ~/.construct.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -95,8 +95,11 @@ installed_out="$(npx --no-install construct skills installed --dir="$host_skills
   || fail "skills installed exited non-zero" "$installed_out"
 expect_contains "skills installed" "$installed_out" "current"
 
-echo "== running construct cleanup --dry-run from the packaged install =="
-npx --no-install construct cleanup --dry-run
+echo "== doctor from the packaged install =="
+doctor_out="$(npx --no-install construct doctor 2>&1)" \
+  || fail "construct doctor exited non-zero" "$doctor_out"
+printf '%s\n' "$doctor_out"
+expect_contains "construct doctor" "$doctor_out" "node"
 
 echo "== recording an outcome from the packaged install =="
 outcome_out="$(npx --no-install construct outcome \
@@ -180,28 +183,15 @@ else
   trap 'rm -rf "$scratch"' EXIT
 fi
 
-# The successor must survive its own uninstaller. v3 resolves its
-# directories from the same XDG variables under the same app name as the
-# predecessor, so `~/.local/share/construct` is at once "a v2 trace" and the
-# running Construct's home. Before the fix, `construct cleanup --yes` deleted the
-# store holding every work log entry, task row and raised decision, plus the
-# capability secret — and the append-only triggers do not help, because the file
-# is unlinked rather than written to.
-#
-# This runs LAST on purpose: by now the spine has written a real store through
-# the packaged install, which is the only state in which the bug is reachable.
-echo "== cleanup must not eat the store it is standing in =="
-[ -f "$store" ] || fail "the store should exist by now — the earlier spine steps write it"
-store_before="$(wc -c < "$store")"
-
-cleanup_out="$(npx --no-install construct cleanup --yes --all 2>&1)" \
-  || fail "cleanup exited non-zero" "$cleanup_out"
-printf '%s\n' "$cleanup_out"
-
-[ -f "$store" ] || fail "cleanup deleted the running Construct's store" "$cleanup_out"
-store_after="$(wc -c < "$store")"
-[ "$store_before" = "$store_after" ] \
-  || fail "cleanup altered the store ($store_before -> $store_after bytes)" "$cleanup_out"
-expect_contains "cleanup" "$cleanup_out" "kept"
+# Cleanup (predecessor archaeology) is gone from the product. Prove the
+# packaged CLI refuses the retired verb rather than silently doing nothing.
+echo "== retired cleanup verb is refused =="
+set +e
+retired_out="$(npx --no-install construct cleanup --dry-run 2>&1)"
+retired_status=$?
+set -e
+printf '%s\n' "$retired_out"
+[ "$retired_status" -ne 0 ] || fail "construct cleanup should be unknown after the clean-slate cut"
+expect_contains "cleanup" "$retired_out" "unknown"
 
 echo "smoke-packaged-install: pass"

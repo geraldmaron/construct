@@ -2,20 +2,18 @@
  * kernel/watch/source-ground.ts — turning two structural snapshots of a
  * declared source into watch findings.
  *
- * construct-ground.ts turns a tracker/repo reconcile report into findings;
- * this is the same shape of translation for ground outside Construct's own
- * repository. What changed is read structurally — which documents exist, how
- * large they are, whether the source can be reached at all — never by asking
- * a model to characterize the change, so a watch with no host named never
- * pays for one. Naming a host on the declaration is recorded for whatever
- * reviews the finding next; this module always compares structurally and
- * never calls a host itself.
+ * What changed is read structurally — which documents exist, how large they
+ * are, whether the source can be reached at all — never by asking a model to
+ * characterize the change, so a watch with no host named never pays for one.
+ * Naming a host on the declaration is recorded for whatever reviews the
+ * finding next; this module always compares structurally and never calls a
+ * host itself.
  *
- * A finding here is not framed the way a drift finding is, because there is
- * no tracker asserting anything to be right or wrong — the source simply
- * moved. What a person needs is the same regardless: what changed, named
- * rather than summarized as "something changed", and a reversible default
- * stated as plainly as every other watch's.
+ * A finding here is not framed the way a tracker-drift finding once was,
+ * because there is no tracker asserting anything to be right or wrong — the
+ * source simply moved. What a person needs is the same regardless: what
+ * changed, named rather than summarized as "something changed", and a
+ * reversible default stated as plainly as every other watch's.
  */
 
 import { escapeForPrompt } from '../run/sourcereads.ts';

@@ -1,13 +1,11 @@
 /**
- * tests/cli/doctor.test.ts — CLI-surface coverage for three of `construct
- * doctor`'s reported-not-gated checks: project-tree litter (a fixture tree
- * carrying predecessor markers is reported one line per marker, each pointing
- * at `construct cleanup`), skill pack version skew, and settled deliverables
- * stuck at draft past the staleness threshold. Doctor's other checks (node,
- * paths, matrix, host) read the real environment regardless of `cwd` — that
- * is pre-existing doctor behavior this feature does not change — so these
- * tests only assert on the lines each check owns and on doctor's exit code,
- * not on the whole transcript.
+ * tests/cli/doctor.test.ts — CLI-surface coverage for doctor's reported-not-gated
+ * checks: skill pack version skew and settled deliverables stuck at draft past
+ * the staleness threshold. Litter/cleanup reporting is gone (alpha clean break).
+ * Doctor's other checks (node, paths, matrix, host) read the real environment
+ * regardless of `cwd` — that is pre-existing doctor behavior — so these tests
+ * only assert on the lines each check owns and on doctor's exit code, not on
+ * the whole transcript.
  */
 
 import { test } from 'node:test';
@@ -89,7 +87,7 @@ test('doctor reports one integration line per HostIntegrationAdapter', async () 
   }
 });
 
-test('doctor reports each predecessor marker with the cleanup pointer', async () => {
+test('doctor does not report predecessor litter (cleanup is gone)', async () => {
   const cwd = mkFixtureDir();
   try {
     fs.mkdirSync(path.join(cwd, '.construct', 'launcher'), { recursive: true });
@@ -103,19 +101,11 @@ test('doctor reports each predecessor marker with the cleanup pointer', async ()
         2,
       ),
     );
-    execFileSync('git', ['init', '-q'], { cwd });
-    execFileSync('git', ['config', 'core.hooksPath', '.beads/hooks'], { cwd });
 
     const { result, out } = await captureStdio(() => withIsolatedDirs(cwd, () => doctor(cwd)));
 
-    const litterLines = out.split('\n').filter((line) => line.startsWith('ok   litter'));
-    // .construct/launcher/ existing implies .construct/ itself exists too, so
-    // that one fixture trips both project-launcher and project-state.
-    assert.equal(litterLines.length, 4, `expected 4 litter lines, got:\n${out}`);
-    assert.match(out, /launcher directory — run `construct cleanup --scope=project` to review/);
-    assert.match(out, /settings\.json.*— run `construct cleanup --scope=project` to review/);
-    assert.match(out, /core\.hooksPath.*— run `construct cleanup --scope=project` to review/);
-    assert.equal(result, 0, 'litter is reported, not gated — doctor still reports healthy');
+    assert.ok(!out.includes(' litter '), `expected no litter lines after cleanup deletion, got:\n${out}`);
+    assert.equal(result, 0, 'doctor still reports healthy without litter checks');
   } finally {
     fs.rmSync(cwd, { recursive: true, force: true });
   }

@@ -132,7 +132,7 @@ test('the stance is read from the deliverable of record, not from the reply', as
     seed(
       'security',
       'Summary of what I found.\n\nSTANCE: proceed — bounded exposures, worth filing as follow-up.',
-      'FINDING\nthe store is deletable\n\nSTANCE: proceed\nBECAUSE: the exposures are bounded\nCITE: src/kernel/cleanup/catalog.ts',
+      'FINDING\nthe store is deletable\n\nSTANCE: proceed\nBECAUSE: the exposures are bounded\nCITE: src/kernel/store/open.ts',
     );
     seed(
       'operations',
@@ -145,7 +145,7 @@ test('the stance is read from the deliverable of record, not from the reply', as
     const security = decision.positions.find((p) => p.role === 'security');
     assert.equal(
       security?.citation,
-      'src/kernel/cleanup/catalog.ts',
+      'src/kernel/store/open.ts',
       'the citation lives in the deliverable, so the framing has to read the deliverable',
     );
     assert.match(security!.stance, /the exposures are bounded/);

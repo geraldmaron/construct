@@ -24,7 +24,7 @@
  */
 
 import { execSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const BEAD = /construct-(?!mcp|role|repo|sync)[a-z0-9]{3,4}(?:\.\d+)?(?![a-z0-9_-])/;
 
@@ -43,7 +43,10 @@ const files = execSync("git ls-files 'src/' 'tests/' 'scripts/' 'skills/'", { en
       !f.includes('repo-gate') &&
       !f.includes('labeling-kit') &&
       !f.includes('lint-doc-bead-refs'),
-  );
+  )
+  // git ls-files still lists a path after a working-tree delete until the
+  // deletion is staged; skip those so a mid-edit tree does not crash the lint.
+  .filter((f) => existsSync(f));
 
 let violations = 0;
 for (const file of files) {

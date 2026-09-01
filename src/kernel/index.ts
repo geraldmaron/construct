@@ -7,11 +7,6 @@ export { resolvePaths } from './paths.ts';
 export type { Paths, PathsEnv } from './paths.ts';
 export { findUntaggedClaims } from './verify/claims.ts';
 export type { UntaggedClaim } from './verify/claims.ts';
-export { buildCleanupCatalog } from './cleanup/catalog.ts';
-export type { CleanupItem, CleanupScope, CleanupRisk, CleanupTarget } from './cleanup/catalog.ts';
-export { detectedItems, selectedItems, applyCleanup } from './cleanup/run.ts';
-export type { CleanupOptions, CleanupOutcome, CleanupResult } from './cleanup/run.ts';
-
 
 export { matchingKeywords, suggestRoutes } from './routing/dispatcher.ts';
 export type { Route, SuggestInput, SuggestResult, Suggestion } from './routing/dispatcher.ts';
@@ -153,8 +148,8 @@ export type {
   ReconcileResult,
 } from './tracker/reconcile.ts';
 
-// The storage substrate. Like cleanup/run.ts it does filesystem IO, but never
-// ambiently: the path is injected, so the sterile test discipline still holds.
+// The storage substrate. It does filesystem IO, but never ambiently: the path
+// is injected, so the sterile test discipline still holds.
 export { SCHEMA_VERSION, openStore, storePath, transact } from './store/open.ts';
 export type { Store } from './store/open.ts';
 export {
