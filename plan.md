@@ -20,7 +20,7 @@ Epic: `construct-cki1`.
 | C Execution architecture | construct-dx84 | **done** |
 | D MCP | construct-vhuw | **done** |
 | E Native integrations | construct-vv6l | **done** |
-| F Product consolidation | construct-pxw2 | open |
+| F Product consolidation | construct-pxw2 | **in progress** |
 | G Delete old surfaces | construct-fgxn | open |
 | H Skills | construct-blvu | open |
 | I External interfaces | construct-dz27 | open |
@@ -32,11 +32,21 @@ Writers: Cursor, Claude Code, VS Code, OpenCode (`opencode.json` / `mcp` / type:
 Bob + Codex: unsupported maturity (honest stubs). Init ambient + `--client=`; skips unsupported.
 Wire demoted to legacy adapter alias. Doctor prints integration matrix.
 
+## Phase F (`construct-pxw2`) — in progress
+
+Landed:
+- StaffMember CLI create/list/show/pause/retire on v1 projects
+- Routine CLI create/list/enable/disable/run (headless pin → HeadlessRunService)
+- Inbox CLI on DecisionService (`inbox` / `inbox decide`) when project is v1
+- Help: judgment + background verbs demoted to Legacy aliases group
+
+Still: explicit headless `work` path; deeper waive/revoke/verdict/consent/trust → inbox kinds; MCP staff/routine tools; delete legacy modules (Phase G)
+
 ## What remains overall
 
 ```
 DONE   A–E
-NOW    F  Staff + Routine product; merge judgment verbs; shrink CLI
+NOW    F  finish headless work + judgment merge depth; then G deletes aliases
 OPEN   G  DELETE ledger (schema23, naming_cache, keyword routing, hostpull module,
          legacy projection, cleanup, beads-in-product, interactive work.ts, …)
 OPEN   H  skill scorecards; only operational skill auto-installs

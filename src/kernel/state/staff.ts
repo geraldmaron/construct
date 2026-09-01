@@ -118,3 +118,20 @@ export function listStaffMembers(store: StateStore): StaffMember[] {
     .all() as unknown as Row[];
   return rows.map(toStaff);
 }
+
+export function setStaffStatus(
+  store: StateStore,
+  input: { readonly id: string; readonly status: StaffStatus; readonly at: string },
+): StaffMember {
+  const existing = getStaffMember(store, input.id);
+  if (!existing) throw new Error(`staff member ${input.id} not found`);
+  store.db
+    .prepare(`UPDATE staff_members SET status = ?, updated_at = ? WHERE id = ?`)
+    .run(input.status, input.at, input.id);
+  appendActivity(store, {
+    at: input.at,
+    kind: 'staff.status',
+    payload: { staffId: input.id, status: input.status },
+  });
+  return getStaffMember(store, input.id)!;
+}

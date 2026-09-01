@@ -131,6 +131,14 @@ test('routine requires expected output and pins headless executor', () => {
       () => headless.selectExecutorIfAllowed(() => 'should-not-run'),
       /resource selection is disabled/,
     );
+
+    const ran = routines.runOnce('r-1', '2026-08-31T18:10:00.000Z');
+    assert.equal(ran.executorPin, 'claude');
+    assert.ok(ran.run.id.startsWith('run-routine-r-1-'));
+    assert.equal(ran.routine.lastRunAt, '2026-08-31T18:10:00.000Z');
+
+    routines.disable('r-1', '2026-08-31T18:11:00.000Z');
+    assert.throws(() => routines.runOnce('r-1', '2026-08-31T18:12:00.000Z'), /disabled/);
   });
 });
 

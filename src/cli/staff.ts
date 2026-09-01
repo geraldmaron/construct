@@ -1,48 +1,145 @@
 /**
- * cli/staff.ts — the surface on the staffing gate.
+ * cli/staff.ts — StaffMember product surface + legacy staffing-gate helpers.
  *
- * A run that meets a concern the catalog cannot carry records it and moves on,
- * which is right — routing must not widen itself as a side effect of one
- * outcome. What was missing is the other half: the record sat in the work log
- * with no way to act on it. No judgement lives here; `evaluateProfile`
- * decides, and an admitted profile becomes an inbox decision whose default
- * position is NOT STAFFED.
+ * StaffMember is identity and mission, never an executor. On an initialized
+ * project, create/list/show/pause/retire speak format-v1. The unmet-concern
+ * gate (`list` without members / `propose`) remains for legacy store runs.
  */
 
 import { readFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { openDecisions } from '../kernel/store/decisions.ts';
 import { readWorkLog } from '../kernel/store/worklog.ts';
 import { evaluateProfile, NOT_STAFFED, proposeStaffing } from '../kernel/staffing/profile.ts';
 import type { StaffingProposal } from '../kernel/staffing/profile.ts';
+import { createStaffService } from '../kernel/services/staff.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now, withStore } from './runtime.ts';
 import { parseFlags } from './flags.ts';
+import { tryOpenProjectStore } from './project-store.ts';
 
-const STAFF_USAGE =
-  'usage: construct staff list [--run=<id>]\n' +
+const USAGE =
+  'usage: construct staff list\n' +
+  '       construct staff create --name=<name> --title=<title> --mission="<mission>" [--id=<id>]\n' +
+  '       construct staff show --id=<id>\n' +
+  '       construct staff pause --id=<id>\n' +
+  '       construct staff retire --id=<id>\n' +
+  '       construct staff unmet [--run=<id>]   (legacy staffing gate)\n' +
   '       construct staff propose --run=<id> --file=<profile.json>\n';
 
-/**
- * The surface on the staffing gate.
- *
- * A run that meets a concern the catalog cannot carry records it and moves on,
- * which is the right behavior — routing must not widen itself as a side effect
- * of one outcome. What was missing is the other half: the record sat in the work
- * log with no way to act on it, so staffing the concern meant writing code. This
- * lists what a run could not carry, and puts a drafted profile through the gate
- * that already exists.
- *
- * No judgement lives here. `evaluateProfile` decides, its refusal is printed in
- * its own words rather than summarized, and an admitted profile becomes an inbox
- * decision whose default position is NOT STAFFED. Nothing on this path admits a
- * domain; a person does, by resolving that decision.
- */
-export function staff(argv: string[]): number {
+function membersPath(argv: string[], cwd: string): number | null {
   const sub = argv[0];
+  const opened = tryOpenProjectStore(cwd);
+  if (!opened) return null;
+  const { flags } = parseFlags(argv.slice(1));
+  const { store } = opened;
+  try {
+    const staff = createStaffService(store);
+    const at = now();
+
+    if (sub === 'list' || sub === undefined) {
+      const rows = staff.list();
+      if (rows.length === 0) {
+        process.stdout.write('no staff members.\n');
+        return 0;
+      }
+      for (const row of rows) {
+        process.stdout.write(
+          `${row.status.padEnd(8)}  ${row.id}  ${escapeForTerminal(row.name)}  ` +
+            `${escapeForTerminal(row.title)}\n`,
+        );
+      }
+      return 0;
+    }
+
+    if (sub === 'create') {
+      const name = (flags.name ?? '').trim();
+      const title = (flags.title ?? '').trim();
+      const mission = (flags.mission ?? '').trim();
+      if (!name || !title || !mission) {
+        process.stderr.write(USAGE);
+        return 2;
+      }
+      const id = (flags.id ?? `staff-${randomUUID().slice(0, 8)}`).trim();
+      const member = staff.create({ id, name, title, mission, at });
+      process.stdout.write(
+        `staff ${member.id} created — identity is not an executor; pin executors on routines/runs.\n`,
+      );
+      return 0;
+    }
+
+    const id = (flags.id ?? '').trim();
+    if (!id && (sub === 'show' || sub === 'pause' || sub === 'retire')) {
+      process.stderr.write(USAGE);
+      return 2;
+    }
+
+    if (sub === 'show') {
+      const member = staff.get(id);
+      if (!member) {
+        process.stderr.write(`staff ${id} not found\n`);
+        return 1;
+      }
+      process.stdout.write(
+        `${member.id}\n  name: ${escapeForTerminal(member.name)}\n` +
+          `  title: ${escapeForTerminal(member.title)}\n` +
+          `  mission: ${escapeForTerminal(member.mission)}\n` +
+          `  status: ${member.status}\n` +
+          `  concerns: ${member.concerns.join(', ') || '(none)'}\n`,
+      );
+      return 0;
+    }
+    if (sub === 'pause') {
+      staff.pause(id, at);
+      process.stdout.write(`staff ${id} paused\n`);
+      return 0;
+    }
+    if (sub === 'retire') {
+      staff.retire(id, at);
+      process.stdout.write(`staff ${id} retired\n`);
+      return 0;
+    }
+
+    return null;
+  } catch (error) {
+    process.stderr.write(
+      `construct staff: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    return 1;
+  } finally {
+    store.close();
+  }
+}
+
+/**
+ * StaffMember CRUD on v1 projects; unmet/propose remain the staffing gate.
+ */
+export function staff(argv: string[], cwd: string = process.cwd()): number {
+  const sub = argv[0];
+  if (!sub || sub === '--help' || sub === '-h') {
+    process.stdout.write(USAGE);
+    return sub ? 0 : 2;
+  }
+
+  // Prefer product StaffMember surface when the project is initialized.
+  if (['list', 'create', 'show', 'pause', 'retire'].includes(sub)) {
+    const handled = membersPath(argv, cwd);
+    if (handled !== null) return handled;
+    if (sub !== 'list') {
+      process.stderr.write(
+        'construct staff create/show/pause/retire require construct init first.\n',
+      );
+      return 1;
+    }
+    // Bare list without v1 falls through to legacy unmet listing historically
+    // named `staff list`.
+  }
+
+  const gateSub = sub === 'unmet' ? 'list' : sub;
   const { flags } = parseFlags(argv.slice(1));
   const run = (flags.run ?? '').trim();
 
-  if (sub === 'list') {
+  if (gateSub === 'list') {
     return withStore((store) => {
       const unmet = readWorkLog(store, run || undefined).filter((e) => e.action === 'concern-unmet');
       if (unmet.length === 0) {
@@ -62,19 +159,17 @@ export function staff(argv: string[]): number {
         );
       }
       process.stdout.write(
-        `\n${String(unmet.length)} unmet concern(s). A concern is staffed by drafting a profile and\n` +
-          'putting it through the gate:  construct staff propose --run=<id> --file=<profile.json>\n' +
-          'The profile must name its slots, rebut every domain that claims its words, and cite the\n' +
-          'practice its method descends from (or say why none could be named).\n',
+        `\n${String(unmet.length)} unmet concern(s). Draft a profile:\n` +
+          '  construct staff propose --run=<id> --file=<profile.json>\n',
       );
       return 0;
     });
   }
 
-  if (sub === 'propose') {
+  if (gateSub === 'propose') {
     const file = (flags.file ?? '').trim();
     if (run === '' || file === '') {
-      process.stderr.write(STAFF_USAGE);
+      process.stderr.write(USAGE);
       return 2;
     }
     let proposal: StaffingProposal;
@@ -84,9 +179,6 @@ export function staff(argv: string[]): number {
       process.stderr.write(`staff: cannot read a profile from ${file}: ${(error as Error).message}\n`);
       return 1;
     }
-    // A hand-written profile that omits a list would crash the gate on a
-    // property access, and a stack trace is a worse answer than the refusal the
-    // gate was going to give anyway.
     const outcome = evaluateProfile({
       ...proposal,
       rebuttals: proposal.rebuttals ?? [],
@@ -116,14 +208,13 @@ export function staff(argv: string[]): number {
       process.stdout.write(
         `admitted to the gate as "${outcome.admitted.proposed}" (${outcome.admitted.evidenceTier}).\n` +
           `  ${outcome.admitted.tierReason}\n\n` +
-          'This staffs nothing yet. The catalog changes only when you resolve the decision, and\n' +
-          `its default position is: ${NOT_STAFFED}.\n` +
-          `  construct inbox\n  construct decide ${id} "<your call>"\n`,
+          'This staffs nothing yet. Resolve via the inbox:\n' +
+          `  construct inbox\n  construct inbox decide ${id} "<your call>"\n`,
       );
       return 0;
     });
   }
 
-  process.stderr.write(STAFF_USAGE);
+  process.stderr.write(USAGE);
   return 2;
 }
