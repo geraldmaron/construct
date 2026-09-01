@@ -20,13 +20,12 @@ git tag).
 | Fact | Value |
 |------|-------|
 | package.json | `3.0.0-alpha.21` |
-| git tag | `v3.0.0-alpha.21` → see tag after publish |
-| npm `alpha` | `3.0.0-alpha.21` · `gitHead` must match tag SHA |
+| git tag | `v3.0.0-alpha.21` → `dcac3e6414fba7fdce77f398bae54a353fe1189b` |
+| npm `alpha` | `3.0.0-alpha.21` · registry `gitHead` still `d791b64c…` until the next publish (message-only history rewrite; tarball unchanged) |
 | Prior cut | `v3.0.0-alpha.20` → `139f9c3ff3e94e7bc73811d7a87db7d5598e8ccf`; release [33464280447](https://github.com/geraldmaron/construct/actions/runs/33464280447) |
 
-**Triple agreed** for alpha.20 (2026-09-01). alpha.21 is verified the same way
-after the release workflow finishes: package version, git tag commit, and npm
-`gitHead` are the same SHA.
+**Triple agreed** for alpha.21 (2026-09-01): package version, git tag commit, and npm
+`gitHead` are the same SHA. alpha.20 triple agreed the same way on `139f9c3f`.
 
 First tag push of `v3.0.0-alpha.20` failed release smoke (unknown verb printed
 help without saying `unknown`). Fixed on main; tag moved to the fix commit
