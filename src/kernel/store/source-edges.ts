@@ -93,6 +93,29 @@ export function reverseRelationPhrase(relation: SourceRelation): string {
   return PHRASES[relation].backward;
 }
 
+/**
+ * What an active relationship does to ground assembly, in one sentence a
+ * person can read beside the edge itself. Partition (kernel/run/partition.ts)
+ * is the behavior; this is the same rules said out loud so a declare is not
+ * silent about withholding.
+ */
+export function groundAssemblyEffect(relation: SourceRelation): string {
+  switch (relation) {
+    case 'governs':
+    case 'depends-on':
+    case 'feeds':
+    case 'contradicts':
+      return 'Both ends travel together into every dispatch that carries either.';
+    case 'covers-same-initiative':
+      return 'The two ends are spread across dispatches rather than both handed to every one.';
+    case 'supersedes':
+      return (
+        'The replacement and the replaced are spread across dispatches; ' +
+        'the replaced source is withheld from any dispatch that carries its replacement.'
+      );
+  }
+}
+
 interface Row {
   readonly id: string;
   readonly workspace: string;

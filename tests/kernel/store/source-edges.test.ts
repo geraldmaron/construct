@@ -30,6 +30,7 @@ import {
   relationPhrase,
   retireSourceEdge,
   reverseRelationPhrase,
+  groundAssemblyEffect,
   sourceEdgesAmong,
   sourceEdgesFor,
   sourceEdgesTouching,
@@ -151,6 +152,12 @@ test('a relationship reads out loud from either end', () => {
   assert.equal(relationPhrase('supersedes'), 'supersedes');
   assert.equal(reverseRelationPhrase('supersedes'), 'is superseded by');
   assert.equal(relationPhrase('contradicts'), reverseRelationPhrase('contradicts'));
+});
+
+test('every relationship names what it does to ground assembly', () => {
+  assert.match(groundAssemblyEffect('supersedes'), /withheld from any dispatch that carries its replacement/);
+  assert.match(groundAssemblyEffect('governs'), /travel together/);
+  assert.match(groundAssemblyEffect('covers-same-initiative'), /spread across dispatches/);
 });
 
 const PROPOSAL = {

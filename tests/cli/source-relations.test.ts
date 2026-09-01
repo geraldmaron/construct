@@ -112,6 +112,7 @@ test('a relationship is stated, listed back in the user\'s own words, and retire
     ]);
     assert.equal(code, 0);
     assert.match(out, new RegExp(`${strategy} governs ${repo} {2}— the strategy sets what the repo`));
+    assert.match(out, /ground: Both ends travel together into every dispatch that carries either/);
     assert.match(out, /no relationships declared for workspace ops/);
     assert.match(out, /\(retired 20/, 'a retired relationship stays readable');
   } finally {
@@ -438,6 +439,7 @@ test('a relationship the user declared directly is not proposable at all', async
       },
     ]);
     assert.equal(code, 0);
+    assert.match(out, /the replaced source will be withheld from dispatches that carry its replacement/);
     assert.match(out, /this relationship already stands as rel-\d/);
   } finally {
     rmSync(strategy, { recursive: true, force: true });
