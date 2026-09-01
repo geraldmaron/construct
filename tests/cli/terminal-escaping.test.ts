@@ -20,9 +20,10 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { compose, doctor, main, review, work } from '../../src/cli/index.ts';
+import { compose, doctor, main, review } from '../../src/cli/index.ts';
 import type { HostAdapter, HostResult } from '../../src/kernel/hosts/interface.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
+import { plantCompletedDeliverables } from '../harness/plant-deliverables.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { addSource } from '../../src/kernel/store/sources.ts';
 import { listTasks } from '../../src/kernel/store/tasks.ts';
@@ -176,7 +177,7 @@ const OUTCOME = 'Decide whether the pilot ships in Q4';
 test('a composed claim and its support verdict reach the reader as text, not as terminal commands', async () => {
   const { out } = await run([
     ['outcome', '--domains=strategy-alignment,product-scoping', OUTCOME],
-    () => work(['--all'], workHost()),
+    () => (plantCompletedDeliverables(), 0),
     () => compose([`--run=${latestRun()}`], forgingComposeHost()),
   ]);
   assertNoRawControls(out, 'compose');
