@@ -5,22 +5,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 // @ts-expect-error — hook helper is plain .mjs outside src/
-import {
-  stripAttributionTrailers,
-  findAttributionTrailers,
-} from '../../scripts/hooks/commit-trailers.mjs';
+import { stripAttributionTrailers, findAttributionTrailers } from '../../scripts/hooks/commit-trailers.mjs';
 
 test('Co-authored-by and Signed-off-by lines are stripped', () => {
   const message = [
-    'Fix the thing (construct-abcd)',
+    'Fix the thing',
     '',
     'Co-authored-by: Cursor <cursoragent@cursor.com>',
     'Signed-off-by: Someone <someone@example.com>',
   ].join('\n');
-  assert.equal(
-    stripAttributionTrailers(message),
-    'Fix the thing (construct-abcd)\n',
-  );
+  assert.equal(stripAttributionTrailers(message), 'Fix the thing\n');
 });
 
 test('findAttributionTrailers names what is still present', () => {
@@ -31,7 +25,7 @@ test('findAttributionTrailers names what is still present', () => {
 });
 
 test('ordinary body text is untouched', () => {
-  const message = 'Subject (construct-abcd)\n\nBody mentions co-authored work in prose.\n';
+  const message = 'Subject\n\nBody mentions co-authored work in prose.\n';
   assert.equal(stripAttributionTrailers(message), message);
   assert.deepEqual(findAttributionTrailers(message), []);
 });
