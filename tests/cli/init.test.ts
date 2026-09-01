@@ -21,8 +21,14 @@ interface Capture {
 
 function withRepo(fn: (cwd: string) => Promise<void> | void): Promise<void> {
   const cwd = mkdtempSync(join(tmpdir(), 'construct-init-'));
+  const home = mkdtempSync(join(tmpdir(), 'construct-init-home-'));
+  const previousHome = process.env.HOME;
+  process.env.HOME = home;
   return Promise.resolve(fn(cwd)).finally(() => {
+    if (previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME = previousHome;
     rmSync(cwd, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true });
   });
 }
 
@@ -73,6 +79,7 @@ test('init --dry-run writes nothing', async () => {
     assert.equal(code, 0);
     assert.match(out, /dry-run/);
     assert.match(out, /write-mcp|claude/);
+    assert.match(out, /would install operational skill construct/);
     assert.equal(existsSync(projectConfigPath(cwd)), false);
     assert.equal(existsSync(projectDbPath(cwd)), false);
   });
@@ -80,9 +87,14 @@ test('init --dry-run writes nothing', async () => {
 
 test('init with Claude ambient installs session-bound MCP entry', async () => {
   await withRepo(async (cwd) => {
-    const { code, out } = await capture(() => init([], cwd, { CLAUDECODE: '1' }));
+    const home = process.env.HOME!;
+    const { code, out } = await capture(() =>
+      init([], cwd, { CLAUDECODE: '1', HOME: home }),
+    );
     assert.equal(code, 0);
     assert.match(out, /integration: claude-code installed/);
+    assert.match(out, /operational skill construct/);
+    assert.ok(existsSync(join(home, '.claude', 'skills', 'construct', 'SKILL.md')));
     const mcp = JSON.parse(readFileSync(join(cwd, '.mcp.json'), 'utf8')) as {
       mcpServers: { 'construct-mcp': { args: string[] } };
     };
@@ -94,9 +106,14 @@ test('init with Claude ambient installs session-bound MCP entry', async () => {
 
 test('init --client=opencode installs without ambient detection', async () => {
   await withRepo(async (cwd) => {
-    const { code, out } = await capture(() => init(['--client=opencode'], cwd, {}));
+    const home = process.env.HOME!;
+    const { code, out } = await capture(() =>
+      init(['--client=opencode'], cwd, { HOME: home }),
+    );
     assert.equal(code, 0);
     assert.match(out, /integration: opencode installed/);
+    assert.match(out, /operational skill construct/);
+    assert.ok(existsSync(join(home, '.config', 'opencode', 'skills', 'construct', 'SKILL.md')));
     const raw = JSON.parse(readFileSync(join(cwd, 'opencode.json'), 'utf8')) as {
       mcp: { 'construct-mcp': { type: string; command: string[] } };
     };
@@ -107,11 +124,14 @@ test('init --client=opencode installs without ambient detection', async () => {
 
 test('init with bob ambient reports unsupported without throwing', async () => {
   await withRepo(async (cwd) => {
+    const home = process.env.HOME!;
     const { code, out } = await capture(() =>
-      init([], cwd, { BOB_SHELL_CLI_IDE_SERVER_PORT: '42991' }),
+      init([], cwd, { BOB_SHELL_CLI_IDE_SERVER_PORT: '42991', HOME: home }),
     );
     assert.equal(code, 0);
     assert.match(out, /native MCP install unsupported/);
+    assert.match(out, /operational skill construct/);
+    assert.ok(existsSync(join(home, '.bob', 'skills', 'construct', 'SKILL.md')));
     assert.equal(existsSync(join(cwd, '.mcp.json')), false);
     assert.equal(existsSync(join(cwd, 'opencode.json')), false);
   });

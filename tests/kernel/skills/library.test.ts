@@ -23,7 +23,14 @@ const bytes = (text: string): Uint8Array => new TextEncoder().encode(text);
 
 function source(name: string, version: string, body = 'body'): SkillSource {
   const text = `---\nname: ${name}\ndescription: does a thing\nlicense: Apache-2.0\nmetadata:\n  version: ${version}\n---\n\n${body}\n`;
-  return { name, description: 'does a thing', version, bytes: bytes(text) };
+  const skillBytes = bytes(text);
+  return {
+    name,
+    description: 'does a thing',
+    version,
+    bytes: skillBytes,
+    files: [{ relativePath: 'SKILL.md', bytes: skillBytes }],
+  };
 }
 
 test('a description reads the same whether it is inline, continued, or folded', () => {
@@ -107,10 +114,17 @@ test('removal keeps a folder holding anything an install did not write, and says
   const withNotes = planSkillRemoval(skill, {
     name: 'one',
     skill: skill.bytes,
-    extras: ['NOTES.md', 'scripts'],
+    extras: ['NOTES.md'],
   });
   assert.equal(withNotes.outcome, 'keep');
-  assert.match(withNotes.why, /NOTES\.md, scripts/);
+  assert.match(withNotes.why, /NOTES\.md/);
+
+  const withBundle = planSkillRemoval(skill, {
+    name: 'one',
+    skill: skill.bytes,
+    extras: ['references', 'scripts', 'assets'],
+  });
+  assert.equal(withBundle.outcome, 'remove');
 
   const noSkill = planSkillRemoval(skill, { name: 'one', skill: null, extras: ['README.md'] });
   assert.equal(noSkill.outcome, 'keep');

@@ -170,19 +170,53 @@ test('with no --dir the copy lands in the personal Agent Skills directory', asyn
   }
 });
 
-test('--all carries every shipped skill, each one byte-identical', async () => {
-  const names = shipped();
+test('--all carries the default method set, not opt-in-only skills', async () => {
+  const { DEFAULT_METHOD_INSTALL, OPT_IN_METHOD_SKILLS, OPERATIONAL_SKILL } = await import(
+    '../../src/kernel/skills/library.ts'
+  );
   const result = await run((root) => [['skills', 'install', '--all', `--dir=${join(root, 'host')}`]]);
   try {
     assert.equal(result.code, 0);
-    for (const name of names) {
+    for (const name of DEFAULT_METHOD_INSTALL) {
       assert.equal(
         checksum(join(result.root, 'host', name, 'SKILL.md')),
         checksum(join(SOURCE_DIR, name, 'SKILL.md')),
         `${name} was copied whole`,
       );
     }
-    assert.match(result.out, new RegExp(`${String(names.length)} of ${String(names.length)} written`));
+    for (const name of OPT_IN_METHOD_SKILLS) {
+      assert.equal(existsSync(join(result.root, 'host', name)), false, `${name} stays opt-in`);
+    }
+    assert.equal(
+      existsSync(join(result.root, 'host', OPERATIONAL_SKILL)),
+      false,
+      'operational skill is init-only, not --all',
+    );
+    assert.match(
+      result.out,
+      new RegExp(`${String(DEFAULT_METHOD_INSTALL.length)} of ${String(DEFAULT_METHOD_INSTALL.length)} written`),
+    );
+  } finally {
+    rmSync(result.root, { recursive: true, force: true });
+  }
+});
+
+test('install copies progressive-disclosure references beside SKILL.md', async () => {
+  const name = 'investigative-research';
+  const result = await run((root) => [['skills', 'install', name, `--dir=${join(root, 'host')}`]]);
+  try {
+    assert.equal(result.code, 0);
+    const planted = join(result.root, 'host', name, 'references');
+    assert.ok(existsSync(planted), 'references/ landed with the skill');
+    const sourceRefs = readdirSync(join(SOURCE_DIR, name, 'references')).sort();
+    const installedRefs = readdirSync(planted).sort();
+    assert.deepEqual(installedRefs, sourceRefs);
+    for (const file of sourceRefs) {
+      assert.equal(
+        checksum(join(planted, file)),
+        checksum(join(SOURCE_DIR, name, 'references', file)),
+      );
+    }
   } finally {
     rmSync(result.root, { recursive: true, force: true });
   }

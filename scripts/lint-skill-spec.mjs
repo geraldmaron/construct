@@ -1,43 +1,29 @@
 /**
- * lint-skill-spec.mjs — a shipped skill is portable, or it does not ship.
+ * lint-skill-spec.mjs - shipped skills must stay portable under the Agent
+ * Skills format, or they do not ship.
  *
- * Every skills/<dir>/SKILL.md is checked against the things portability
- * actually turns on. The frontmatter carries only the six fields the Agent
- * Skills format defines — a vendor extension travels nowhere and is refused
- * at upload by stricter implementations. The name equals its directory and
- * uses the format's character set, so any client that resolves skills by
- * path can install it. The description fits the format's 1024-character cap,
- * because the description is what triggers the skill at all. The shipped
- * descriptions are also summed and held under a host's list budget: a host
- * offers every skill it can see by description before any of them load, and
- * the one published budget for that list is Codex's, at 2% of the context
- * window or 8000 characters when the window is unknown, with descriptions
- * shortened and then skills dropped once it is exceeded. That failure is
- * silent on the host side, which is what makes it worth catching here.
- * Passing proves the case that number comes from; a host that publishes no
- * budget stays unmeasured, and only a recorded load upgrades any of this
- * from documented to observed. The whole file
- * stays under 500 lines so it loads whole, without a progressive-disclosure
- * tier it does not have.
+ * Agent Skills (format) checks - hard failures:
+ * - Frontmatter only the six fields the format defines
+ * - name equals directory; character set and length
+ * - description present and ≤1024 characters
+ * - Shipped descriptions held under the one published list budget (Codex:
+ *   8000 chars when the window is unknown)
+ * - SKILL.md under 500 lines (progressive-disclosure companion: long
+ *   material belongs in references/)
+ * - Severability: no tracker bead ids, no repo-relative source paths, no
+ *   absolute machine paths
+ * - Directory set matches METHOD_SKILLS + OPERATIONAL_SKILL in
+ *   src/kernel/skills/library.ts
  *
- * Then the severability tripwires: no tracker bead ids, no paths into this
- * repository's source, no absolute paths. A skill that references the kernel
- * has silently recoupled to it, and the naked-file test this lint backstops
- * — the single file, pasted into a host that has never seen this repo, still
- * works — would fail on every machine but this one.
+ * Construct quality policy (AUTHORING.md layer 2) - presence hints, not
+ * format requirements:
+ * - A stand-down rule is expected for method skills (always-on method
+ *   teaches readers to ignore it). Checked as a warning-shaped failure for
+ *   method skills only; the operational skill may use a short stand-down.
  *
- * The kernel's list of shipped names is checked against the directories
- * themselves. A skills directory holds other people's skills alongside these,
- * so the spine tells its own apart by carrying the names; a list that drifted
- * from the directories would have it offering a skill nobody ships or missing
- * one everybody has.
- *
- * Last, the shape checks from skills/AUTHORING.md, presence only: a
- * stand-down rule (a skill that always interposes teaches readers to ignore
- * it), a closing record block (enforcement travels as visible output shape,
- * not harness machinery), and an enforcement statement (the file says what
- * enforces it). Presence is all a lint can see; whether the stand-down is
- * honest or the record honest is judgment, and stays on the checklist.
+ * Historical Construct ceremony (in-file verification record + enforcement
+ * statement) is NOT required by this lint. Those templates may live under
+ * references/ with a one-line pointer from SKILL.md. See skills/AUTHORING.md.
  */
 
 import { execSync } from 'node:child_process';
@@ -85,17 +71,17 @@ for (const file of files) {
   const lines = text.split('\n');
 
   if (lines.length > MAX_LINES) {
-    fail(file, `${lines.length} lines — the whole file must stay under ${MAX_LINES}`);
+    fail(file, `${lines.length} lines - SKILL.md must stay under ${MAX_LINES} (move detail to references/)`);
   }
 
   const isFence = (line) => line.trim() === '---';
   if (!isFence(lines[0])) {
-    fail(file, 'no frontmatter — the file must open with a --- fence');
+    fail(file, 'no frontmatter - the file must open with a --- fence');
     continue;
   }
   const close = lines.findIndex((line, i) => i > 0 && isFence(line));
   if (close === -1) {
-    fail(file, 'frontmatter never closes — no second --- fence');
+    fail(file, 'frontmatter never closes - no second --- fence');
     continue;
   }
   const front = lines.slice(1, close);
@@ -132,25 +118,20 @@ for (const file of files) {
     descriptionBudgetUsed += description.length;
     if (!description) fail(file, 'description is empty');
     else if (description.length > MAX_DESCRIPTION) {
-      fail(file, `description is ${description.length} chars — the format caps it at ${MAX_DESCRIPTION}`);
+      fail(file, `description is ${description.length} chars - the format caps it at ${MAX_DESCRIPTION}`);
     }
   }
 
+  // Construct quality policy: method skills name when they stand down.
   if (!/stand[- ]down|stand[s]? down/i.test(body)) {
-    fail(file, 'no stand-down rule — the skill must say when it does not engage (AUTHORING.md rule 5)');
-  }
-  if (!/^#{2,3}[^\n]*record/im.test(body)) {
-    fail(file, 'no closing record section — enforcement travels as a visible output shape (AUTHORING.md rule 3)');
-  }
-  if (!/enforce/i.test(body)) {
-    fail(file, 'no enforcement statement — the skill must say what enforces it and what does not (AUTHORING.md rule 3)');
+    fail(file, 'no stand-down rule - Construct policy: say when the skill does not engage (AUTHORING.md)');
   }
 
   body.split('\n').forEach((line, i) => {
     const at = close + 2 + i;
-    if (BEAD.test(line)) fail(file, `line ${at}: tracker bead id — lineage lives in the tracker, never in a shipped skill`);
-    if (SRC_PATH.test(line)) fail(file, `line ${at}: repository path — a severable skill cannot point into this repo`);
-    if (ABSOLUTE_PATH.test(line)) fail(file, `line ${at}: absolute path — the file must work on a machine that is not this one`);
+    if (BEAD.test(line)) fail(file, `line ${at}: tracker bead id - lineage lives in the tracker, never in a shipped skill`);
+    if (SRC_PATH.test(line)) fail(file, `line ${at}: repository path - a severable skill cannot point into this repo`);
+    if (ABSOLUTE_PATH.test(line)) fail(file, `line ${at}: absolute path - the file must work on a machine that is not this one`);
   });
 }
 
@@ -158,28 +139,42 @@ if (descriptionBudgetUsed > MAX_DESCRIPTION_BUDGET) {
   violations += 1;
   console.error(
     `skill spec: the shipped descriptions total ${descriptionBudgetUsed} chars, over the ` +
-      `${MAX_DESCRIPTION_BUDGET}-char list budget — a host at that budget shortens descriptions, then drops ` +
+      `${MAX_DESCRIPTION_BUDGET}-char list budget - a host at that budget shortens descriptions, then drops ` +
       'skills, and says nothing about either',
   );
 }
 
 const shippedDirs = [...new Set(files.map((file) => basename(dirname(file))))].sort();
 const declared = readFileSync('src/kernel/skills/library.ts', 'utf8');
-const listed = /export const SHIPPED_SKILLS[\s\S]*?Object\.freeze\(\[([\s\S]*?)\]\)/.exec(declared);
-if (!listed) {
+
+const listNames = (constName) => {
+  const match = new RegExp(
+    `export const ${constName}[\\s\\S]*?Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\)`,
+  ).exec(declared);
+  if (!match) return null;
+  return [...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+};
+
+const methodNames = listNames('METHOD_SKILLS');
+const operationalMatch = /export const OPERATIONAL_SKILL\s*=\s*'([^']+)'/.exec(declared);
+const operationalName = operationalMatch?.[1] ?? null;
+
+if (!methodNames || !operationalName) {
   violations += 1;
-  console.error('skill spec: src/kernel/skills/library.ts: no SHIPPED_SKILLS list to check the directories against');
+  console.error(
+    'skill spec: src/kernel/skills/library.ts: need METHOD_SKILLS array and OPERATIONAL_SKILL string to check directories',
+  );
 } else {
-  const names = [...listed[1].matchAll(/'([^']+)'/g)].map((match) => match[1]).sort();
+  const names = [...new Set([...methodNames, operationalName])].sort();
   const missing = shippedDirs.filter((dir) => !names.includes(dir));
   const extra = names.filter((name) => !shippedDirs.includes(name));
   for (const dir of missing) {
     violations += 1;
-    console.error(`skill spec: skills/${dir}: shipped on disk but absent from SHIPPED_SKILLS`);
+    console.error(`skill spec: skills/${dir}: shipped on disk but absent from METHOD_SKILLS / OPERATIONAL_SKILL`);
   }
   for (const name of extra) {
     violations += 1;
-    console.error(`skill spec: SHIPPED_SKILLS names "${name}", which no skills/ directory ships`);
+    console.error(`skill spec: library declares "${name}", which no skills/ directory ships`);
   }
 }
 
@@ -190,7 +185,7 @@ if (violations > 0) {
 console.log(
   files.length === 0
     ? 'lint-skill-spec: clean (no skills yet)'
-    : `lint-skill-spec: clean — ${files.length} skill(s) conform, descriptions ${descriptionBudgetUsed}/` +
-      `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Every check here reads host ` +
-      'documentation, so a skill that passes is documented to load, not observed to.',
+    : `lint-skill-spec: clean - ${files.length} skill(s) conform, descriptions ${descriptionBudgetUsed}/` +
+      `${MAX_DESCRIPTION_BUDGET} chars of the one published list budget. Format checks only; ` +
+      'Construct record/enforcement ceremony is optional under references/.',
 );

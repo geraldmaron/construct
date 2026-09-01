@@ -72,11 +72,13 @@ for anyone other than its author** — treat it as an alpha you can drive, not
 a product. No stability is promised until the Phase 5 stakeholder-acceptance
 gate passes.
 
-Seven portable method skills ship inside the npm package (`bin`, `dist`,
-`skills`): `adversarial-review`, `context-mapping`, `decision-framing`,
-`intake`, `investigative-research`, `requirements-structuring`,
-`written-voice`. `construct skills install <name> --host=<host>` plants one
-in the directory that host documents reading.
+Eight skills ship inside the npm package (`bin`, `dist`, `skills`): the
+operational `construct` skill (the only one `construct init` auto-installs)
+and seven method skills — `adversarial-review`, `context-mapping`,
+`decision-framing`, `intake`, `investigative-research`,
+`requirements-structuring`, and opt-in `written-voice` (not in
+`skills install --all`). `construct skills install <name> --host=<host>`
+plants one in the directory that host documents reading.
 
 ## Which seat it fills
 
