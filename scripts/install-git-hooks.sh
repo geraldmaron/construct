@@ -120,7 +120,83 @@ esac
 } > "$hook"
 chmod +x "$hook"
 
+commit_hook="$hooks_dir/commit-msg"
+commit_begin="# --- BEGIN CONSTRUCT COMMIT MSG CHECK ---"
+commit_end="# --- END CONSTRUCT COMMIT MSG CHECK ---"
+
+read -r -d '' commit_block <<'COMMIT_BLOCK' || true
+# --- BEGIN CONSTRUCT COMMIT MSG CHECK ---
+# Managed by scripts/install-git-hooks.sh
+_construct_root="$(git rev-parse --show-toplevel)"
+node "$_construct_root/scripts/hooks/commit-trailers.mjs" check "$1" || exit 1
+# --- END CONSTRUCT COMMIT MSG CHECK ---
+COMMIT_BLOCK
+
+commit_existing=""
+if [ -f "$commit_hook" ]; then
+  commit_existing="$(awk -v b="$commit_begin" -v e="$commit_end" '
+    $0 == b { skip = 1 }
+    skip != 1 { print }
+    $0 == e { skip = 0 }
+  ' "$commit_hook")"
+fi
+
+commit_shebang="#!/usr/bin/env bash"
+commit_body="$commit_existing"
+case "$(printf '%s\n' "$commit_existing" | head -1)" in
+  '#!'*)
+    commit_shebang="$(printf '%s\n' "$commit_existing" | head -1)"
+    commit_body="$(printf '%s\n' "$commit_existing" | tail -n +2)"
+    ;;
+esac
+
+{
+  printf '%s\n' "$commit_shebang"
+  printf '%s\n' "$commit_block"
+  printf '%s\n' "$commit_body"
+} > "$commit_hook"
+chmod +x "$commit_hook"
+
+prepare_hook="$hooks_dir/prepare-commit-msg"
+prepare_begin="# --- BEGIN CONSTRUCT COMMIT MSG STRIP ---"
+prepare_end="# --- END CONSTRUCT COMMIT MSG STRIP ---"
+
+read -r -d '' prepare_block <<'PREPARE_BLOCK' || true
+# --- BEGIN CONSTRUCT COMMIT MSG STRIP ---
+# Managed by scripts/install-git-hooks.sh
+_construct_root="$(git rev-parse --show-toplevel)"
+node "$_construct_root/scripts/hooks/commit-trailers.mjs" strip "$1"
+# --- END CONSTRUCT COMMIT MSG STRIP ---
+PREPARE_BLOCK
+
+prepare_existing=""
+if [ -f "$prepare_hook" ]; then
+  prepare_existing="$(awk -v b="$prepare_begin" -v e="$prepare_end" '
+    $0 == b { skip = 1 }
+    skip != 1 { print }
+    $0 == e { skip = 0 }
+  ' "$prepare_hook")"
+fi
+
+prepare_shebang="#!/usr/bin/env sh"
+prepare_body="$prepare_existing"
+case "$(printf '%s\n' "$prepare_existing" | head -1)" in
+  '#!'*)
+    prepare_shebang="$(printf '%s\n' "$prepare_existing" | head -1)"
+    prepare_body="$(printf '%s\n' "$prepare_existing" | tail -n +2)"
+    ;;
+esac
+
+{
+  printf '%s\n' "$prepare_shebang"
+  printf '%s\n' "$prepare_body"
+  printf '%s\n' "$prepare_block"
+} > "$prepare_hook"
+chmod +x "$prepare_hook"
+
 echo "installed pre-commit hook -> $hook"
+echo "installed commit-msg hook -> $commit_hook"
+echo "installed prepare-commit-msg strip -> $prepare_hook"
 if [ "$hooks_dir" != "$repo_root/.git/hooks" ]; then
   echo "note: core.hooksPath points here, so this file is tracked — the change will show in git status"
 fi

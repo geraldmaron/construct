@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# --- BEGIN CONSTRUCT COMMIT MSG CHECK ---
+# Managed by scripts/install-git-hooks.sh
+_construct_root="$(git rev-parse --show-toplevel)"
+node "$_construct_root/scripts/hooks/commit-trailers.mjs" check "$1" || exit 1
+# --- END CONSTRUCT COMMIT MSG CHECK ---
+
