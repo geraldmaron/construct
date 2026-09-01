@@ -57,10 +57,10 @@ door.
 
 Three limits are load-bearing rather than fine print. **Legal and compliance
 output is research, never advice.** **One model family is tuned** (Claude);
-every other family runs labeled best-effort. **Nothing here claims to work
-for anyone other than its author** — treat it as an alpha you can drive, not
-a product. No stability is promised until the Phase 5 stakeholder-acceptance
-gate passes.
+every other family runs labeled best-effort. **This alpha is Gerald's dogfood
+— there is no external-tester gate and none is planned.** Nothing here claims
+to work for anyone else. No stability is promised until Gerald's Phase 5
+stakeholder-acceptance packets pass and `latest` is promoted deliberately.
 
 Eight skills ship inside the npm package (`bin`, `dist`, `skills`): the
 operational `construct` skill (the only one `construct init` auto-installs)
