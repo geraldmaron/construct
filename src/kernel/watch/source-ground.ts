@@ -212,17 +212,40 @@ export function sourceWatchFindings(input: {
  * which is why this can be derived rather than stored: a "last changed" column
  * would be a second copy of what the snapshots already say, free to disagree
  * with them.
+ *
+ * Newest-first: the answer is the most recent change, so the walk stops at the
+ * first pair that differs rather than scanning every pair in history.
  */
 export function lastObservedChange(
   firings: readonly { readonly firedAt: string; readonly snapshot: unknown }[],
+  notBefore?: string,
 ): string | null {
-  let last: string | null = null;
-  for (let index = 1; index < firings.length; index += 1) {
+  for (let index = firings.length - 1; index >= 1; index -= 1) {
+    const firedAt = firings[index]!.firedAt;
+    if (notBefore !== undefined && firedAt < notBefore) break;
     const before = firings[index - 1]!.snapshot as SourceSnapshot;
     const seen = firings[index]!.snapshot as SourceSnapshot;
-    if (sourceChangeSummary(before, seen) !== null) last = firings[index]!.firedAt;
+    if (sourceChangeSummary(before, seen) !== null) return firedAt;
   }
-  return last;
+  return null;
+}
+
+/**
+ * When exactly one end of a relationship carries an active watch, names the
+ * unwatched end. Both watched or neither watched is not "exactly one".
+ */
+export function divergenceInertUnwatchedEnd(
+  edge: SourceEdge,
+  fromWatched: boolean,
+  toWatched: boolean,
+): string | null {
+  if (fromWatched === toWatched) return null;
+  return fromWatched ? edge.to : edge.from;
+}
+
+/** How a divergence-inert relationship reads on listing surfaces. */
+export function divergenceInertNotice(unwatched: Source): string {
+  return `divergence inert: ${sourceGroundLine(unwatched)} has no active watch`;
 }
 
 /** What is at stake when one end of each kind of relationship moves alone. */

@@ -244,6 +244,14 @@ export function attributionLine(framedBy: readonly string[]): string {
   );
 }
 
+/**
+ * What a reader of a composed document sees when the run carried a voice
+ * override. Stated at the top beside attribution, before any claims.
+ */
+export function voiceOverrideLine(override: VoiceOverride): string {
+  return `*Written under a voice override (${override.source}): ${override.instruction}*`;
+}
+
 /** A list of names as a sentence reads it, rather than as a comma-joined array. */
 function joinNames(names: readonly string[]): string {
   if (names.length <= 1) return names[0] ?? '';

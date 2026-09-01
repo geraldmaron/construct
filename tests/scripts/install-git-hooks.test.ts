@@ -74,7 +74,7 @@ function scratch(beadsStub: string = BEADS_STUB): Scratch {
   // The gate's own checks are not what this test is about, and running the real
   // ones would drag the whole repository in. They are replaced by scripts that
   // pass, so the only behavior left to observe is the staging.
-  for (const name of ['secret-scan.mjs', 'repo-gate.mjs']) {
+  for (const name of ['secret-scan.mjs', 'repo-gate.mjs', 'commit-trailers.mjs']) {
     writeFileSync(join(root, 'scripts', 'hooks', name), 'process.exit(0);\n');
   }
   writeFileSync(join(root, '.beads', 'issues.jsonl'), 'first\n');

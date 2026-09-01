@@ -17,8 +17,9 @@ not install or supervise that clock.
 - **No `construct standing`.** Recurring intentions live as Routines.
 - **No `construct schedule`.** Platform unit generation is gone.
 - **No `construct daemon`.** Nothing resident sweeps due work.
-- **No `construct watch` CLI.** Kernel source-watch code remains for ground
-  comparison; there is no product verb that declares or fires watches.
+- **`construct watch --due` is manual.** Declare watches with `construct watch add`;
+  schedule `--due` with cron or launchd the same way you schedule a Routine run.
+  Construct checkout drift stays repo dogfood (`npm run reconcile`), not a watch.
 
 ## Checking on it
 
