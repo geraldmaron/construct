@@ -137,8 +137,23 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   outcome: { gloss: 'record what you want to happen and queue the work', flags: [...HOST_FLAGS, 'domains', 'workspace'] },
   ask: { gloss: 'ask the staff one question and read the answer here', flags: [...HOST_FLAGS, 'workspace', 'ceiling'] },
   work: {
-    gloss: 'run a recorded outcome’s queued work',
-    flags: [...HOST_FLAGS, 'run', 'all', 'concurrency', 'ceiling', 'lease-minutes', 'allow-distant-ground', 'voice'],
+    gloss:
+      'headless claim/submit/status on init’d projects (requires --pin); legacy spawn path otherwise',
+    flags: [
+      ...HOST_FLAGS,
+      'run',
+      'all',
+      'concurrency',
+      'ceiling',
+      'lease-minutes',
+      'allow-distant-ground',
+      'voice',
+      'pin',
+      'task',
+      'token',
+      'deliverable',
+      'note',
+    ],
   },
   notes: { gloss: 'drop after-call notes in and reason over each', flags: [...HOST_FLAGS, 'workspace', 'run', 'max-notes'] },
   review: { gloss: 'review declared ground for contradictions', flags: [...HOST_FLAGS, 'workspace'] },
@@ -167,7 +182,7 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
   consent: { gloss: 'legacy consent verb — prefer construct inbox', flags: ['workspace', 'set'] },
   settings: { gloss: 'show every setting and where it lives, or set one', flags: ['scope', 'workspace'] },
-  trust: { gloss: 'legacy trust verb — prefer construct inbox', flags: ['ratify', 'revoke'] },
+  trust: { gloss: 'legacy trust verb — prefer construct inbox', flags: ['ratify', 'revoke', 'task'] },
   staff: {
     gloss: 'StaffMember CRUD on init’d projects; unmet/propose for the staffing gate',
     flags: ['file', 'run', 'id', 'name', 'title', 'mission'],
@@ -184,7 +199,10 @@ const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
   reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
   waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
   revoke: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'reason'] },
-  verdict: { gloss: 'legacy — prefer construct inbox decide', flags: ['run', 'confirm', 'dismiss', 'missed', 'source'] },
+  verdict: {
+    gloss: 'legacy — prefer construct inbox decide',
+    flags: ['run', 'confirm', 'dismiss', 'missed', 'source', 'task'],
+  },
   corpus: { gloss: 'export the verdict corpus', flags: [] },
   log: { gloss: 'read back what a run did, in whose name', flags: ['run', 'json'] },
   inbox: {

@@ -15,6 +15,8 @@ import {
 import type { RecordedVerdict } from '../kernel/implication/verdict.ts';
 import { now, withStore } from './runtime.ts';
 import { runFlag, splitList } from './flags.ts';
+import { tryOpenProjectStore } from './project-store.ts';
+import { printJudgmentResult, raiseAndMaybeResolve } from './judgment-v1.ts';
 
 export interface VerdictArgs {
   readonly run?: string;
@@ -49,7 +51,7 @@ export function parseVerdictArgs(argv: string[]): VerdictArgs {
  * surfaced, let the user confirm or dismiss it, and give the ambush (a domain
  * that never surfaced but should have) a way to be recorded too.
  */
-export function verdict(argv: string[]): number {
+export function verdict(argv: string[], cwd: string = process.cwd()): number {
   let args: VerdictArgs;
   try {
     args = parseVerdictArgs(argv);
@@ -57,6 +59,56 @@ export function verdict(argv: string[]): number {
     process.stderr.write(`verdict: ${(error as Error).message}\n`);
     return 2;
   }
+
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      const task = (() => {
+        for (const arg of argv) {
+          const m = /^--task=(.*)$/.exec(arg);
+          if (m) return m[1].trim();
+        }
+        return '';
+      })();
+      if (!task) {
+        process.stderr.write(
+          'usage: construct verdict --task=<id> --confirm|--dismiss\n' +
+            '(on init’d projects verdict is a deliverable trust call via the typed inbox)\n',
+        );
+        return 2;
+      }
+      const call =
+        args.confirm.length > 0 || argv.includes('--confirm')
+          ? 'confirm'
+          : args.dismiss.length > 0 ||
+              args.missed.length > 0 ||
+              argv.includes('--dismiss') ||
+              argv.includes('--missed')
+            ? 'dismiss'
+            : '';
+      if (!call) {
+        process.stderr.write('verdict: pass --confirm or --dismiss on init’d projects\n');
+        return 2;
+      }
+      const result = raiseAndMaybeResolve(opened.store, {
+        kind: 'requires_verdict',
+        question: `Verdict on deliverable for task ${task}?`,
+        subject: { taskId: task, runId: args.run },
+        runId: args.run,
+        resolution: { call, taskId: task },
+      });
+      printJudgmentResult('requires_verdict', result, `${call} ${task}`);
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `verdict: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    } finally {
+      opened.store.close();
+    }
+  }
+
   if (!args.run) {
     process.stderr.write('usage: construct verdict --run=<id> [--confirm=d1,d2] [--dismiss=d3] [--missed=d4] [--source=<name>]\n');
     return 2;

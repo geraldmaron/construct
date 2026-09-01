@@ -47,6 +47,8 @@ import { adapterForHost, HOST_NAMES, now, secretFile, withStoreAsync } from './r
 import { runFlag, timeoutFlag } from './flags.ts';
 import { surveyor } from './survey.ts';
 import { failureLine, money, writeTotalFailureRecourse } from './present.ts';
+import { tryOpenProjectStore } from './project-store.ts';
+import { workV1 } from './work-v1.ts';
 
 /**
  * The flag that dispatches anyway when ground sits outside the working
@@ -268,7 +270,19 @@ export async function work(
   hostOverride?: HostAdapter,
   probe?: ProbeExec,
   env: NodeJS.ProcessEnv = process.env,
+  cwd: string = process.cwd(),
 ): Promise<number> {
+  // Format-v1 projects: explicit headless operator path only. Interactive
+  // dispatch is MCP; never ambient census here.
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      return workV1(opened.store, argv);
+    } finally {
+      opened.store.close();
+    }
+  }
+
   let args: WorkArgs;
   try {
     args = parseWorkArgs(argv, env);

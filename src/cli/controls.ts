@@ -6,6 +6,9 @@
  * dispatched role's write surface away before its lease expires. The record of
  * a control being used is the only thing that distinguishes an operator
  * stopping a runaway from work quietly disappearing.
+ *
+ * On format-v1 projects these raise typed inbox entries (and resolve when the
+ * call is complete) rather than writing the legacy home store.
  */
 
 import { getTask } from '../kernel/store/tasks.ts';
@@ -13,6 +16,8 @@ import { revocationOf, revokeRoleCapability } from '../kernel/run/rolewrite.ts';
 import { promotionOf, waiveChallenge } from '../kernel/run/promotion.ts';
 import { now, withStore } from './runtime.ts';
 import { splitFlags } from './flags.ts';
+import { tryOpenProjectStore } from './project-store.ts';
+import { printJudgmentResult, raiseAndMaybeResolve } from './judgment-v1.ts';
 
 const WAIVE_USAGE =
   'usage: construct waive --task=<id> --challenge=<id> --reason="<why>"\n';
@@ -25,7 +30,7 @@ const WAIVE_USAGE =
  * per deliverable and per challenge, and a waiver that outlives the deliverable
  * it was granted for is the global off-switch that commitment forbids.
  */
-export function waive(argv: string[]): number {
+export function waive(argv: string[], cwd: string = process.cwd()): number {
   const flags: Record<string, string> = {};
   for (const arg of argv) {
     const match = /^--([a-z-]+)=(.*)$/.exec(arg);
@@ -37,6 +42,33 @@ export function waive(argv: string[]): number {
   if (!task || !challenge) {
     process.stderr.write(WAIVE_USAGE);
     return 2;
+  }
+
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      const result = raiseAndMaybeResolve(opened.store, {
+        kind: 'requires_waiver',
+        question: `Waive challenge ${challenge} on task ${task}?`,
+        subject: { taskId: task, challengeId: challenge },
+        ...(reason.trim() !== ''
+          ? { resolution: { reason: reason.trim(), challengeId: challenge, taskId: task } }
+          : {}),
+      });
+      printJudgmentResult(
+        'requires_waiver',
+        result,
+        reason.trim() !== '' ? reason.trim() : `challenge ${challenge} on ${task}`,
+      );
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `waive: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    } finally {
+      opened.store.close();
+    }
   }
 
   return withStore((store) => {
@@ -82,7 +114,7 @@ const REVOKE_USAGE =
  * distinguishes an operator stopping a runaway from work quietly disappearing,
  * and the role is told what the reason was when its next write is refused.
  */
-export function revoke(argv: string[]): number {
+export function revoke(argv: string[], cwd: string = process.cwd()): number {
   const { flags } = splitFlags(argv);
   const task = flags.task;
   const reason = flags.reason?.trim();
@@ -90,6 +122,28 @@ export function revoke(argv: string[]): number {
     process.stderr.write(REVOKE_USAGE);
     return 2;
   }
+
+  const opened = tryOpenProjectStore(cwd);
+  if (opened) {
+    try {
+      const result = raiseAndMaybeResolve(opened.store, {
+        kind: 'requires_revocation',
+        question: `Revoke write surface for task ${task}?`,
+        subject: { taskId: task },
+        resolution: { reason, taskId: task },
+      });
+      printJudgmentResult('requires_revocation', result, reason);
+      return 0;
+    } catch (error) {
+      process.stderr.write(
+        `revoke: ${error instanceof Error ? error.message : String(error)}\n`,
+      );
+      return 1;
+    } finally {
+      opened.store.close();
+    }
+  }
+
   return withStore((store) => {
     const row = getTask(store, task);
     if (!row) {

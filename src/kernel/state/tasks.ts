@@ -214,6 +214,50 @@ export function getTask(store: StateStore, id: string): Task | null {
   return row ? toTask(row) : null;
 }
 
+/**
+ * Operator revocation: take a pending or leased task out of flight with a
+ * recorded reason. Done/failed tasks are left alone (already settled).
+ */
+export function operatorRevokeTask(
+  store: StateStore,
+  input: {
+    readonly id: string;
+    readonly reason: string;
+    readonly at: string;
+    readonly by: string;
+  },
+): Task {
+  const row = getTask(store, input.id);
+  if (!row) throw new Error(`no task ${input.id}`);
+  if (row.state === 'done' || row.state === 'failed') {
+    throw new Error(`task ${input.id} is already ${row.state}; cannot revoke`);
+  }
+  store.db
+    .prepare(
+      `UPDATE tasks
+          SET state = 'failed',
+              error_json = ?,
+              settled_at = ?,
+              lease_owner = NULL,
+              lease_until = NULL
+        WHERE id = ? AND state IN ('pending', 'leased')`,
+    )
+    .run(
+      JSON.stringify({
+        revoked: true,
+        reason: input.reason,
+        by: input.by,
+      }),
+      input.at,
+      input.id,
+    );
+  const updated = getTask(store, input.id);
+  if (!updated || updated.state !== 'failed') {
+    throw new Error(`revoke failed for task ${input.id}`);
+  }
+  return updated;
+}
+
 /** Tasks for a run, or all tasks when runId is omitted. */
 export function listTasks(store: StateStore, runId?: string): Task[] {
   const rows =
