@@ -5,6 +5,8 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+export type McpServersKey = 'mcpServers' | 'servers';
+
 export type MergeResult =
   | { readonly ok: true; readonly created: boolean; readonly path: string }
   | { readonly ok: false; readonly reason: string; readonly path: string };
@@ -13,7 +15,9 @@ export function mergeMcpServerEntry(
   configPath: string,
   serverName: string,
   entry: Record<string, unknown>,
+  opts: { readonly serversKey?: McpServersKey } = {},
 ): MergeResult {
+  const serversKey = opts.serversKey ?? 'mcpServers';
   let existing: Record<string, unknown> = {};
   let created = true;
   if (existsSync(configPath)) {
@@ -30,13 +34,13 @@ export function mergeMcpServerEntry(
   }
 
   const servers =
-    existing.mcpServers !== null &&
-    typeof existing.mcpServers === 'object' &&
-    !Array.isArray(existing.mcpServers)
-      ? { ...(existing.mcpServers as Record<string, unknown>) }
+    existing[serversKey] !== null &&
+    typeof existing[serversKey] === 'object' &&
+    !Array.isArray(existing[serversKey])
+      ? { ...(existing[serversKey] as Record<string, unknown>) }
       : {};
   servers[serverName] = entry;
-  const next = { ...existing, mcpServers: servers };
+  const next = { ...existing, [serversKey]: servers };
   mkdirSync(dirname(configPath), { recursive: true });
   writeFileSync(configPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
   try {
@@ -50,12 +54,14 @@ export function mergeMcpServerEntry(
 export function readMcpServerEntry(
   configPath: string,
   serverName: string,
+  opts: { readonly serversKey?: McpServersKey } = {},
 ): Record<string, unknown> | null {
+  const serversKey = opts.serversKey ?? 'mcpServers';
   if (!existsSync(configPath)) return null;
   try {
     const parsed: unknown = JSON.parse(readFileSync(configPath, 'utf8'));
     if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-    const servers = (parsed as Record<string, unknown>).mcpServers;
+    const servers = (parsed as Record<string, unknown>)[serversKey];
     if (servers === null || typeof servers !== 'object' || Array.isArray(servers)) return null;
     const entry = (servers as Record<string, unknown>)[serverName];
     if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return null;

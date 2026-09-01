@@ -17,10 +17,10 @@ test('unsupported adapter refuses install and reports maturity', async () => {
   assert.equal(verify.ok, false);
 });
 
-test('registry returns stubs for known-but-unwired clients', () => {
+test('registry returns stubs for unwired clients; vscode has a writer', () => {
   assert.equal(integrationAdapterFor('opencode')?.id, 'opencode');
   assert.equal(integrationAdapterFor('bob')?.id, 'bob');
-  assert.equal(integrationAdapterFor('vscode')?.id, 'vscode');
   assert.equal(integrationAdapterFor('codex')?.id, 'codex');
+  assert.equal(integrationAdapterFor('vscode')?.capabilities().maturity, 'documented');
   assert.equal(integrationAdapterFor('nope'), null);
 });
