@@ -4,6 +4,25 @@
 
 (empty)
 
+## 3.0.0-alpha.22 — 2026-09-01
+
+Dogfood polish: structural watches are operable again, divergence gaps are
+named, sweeps stay bounded, and composed documents disclose voice overrides.
+
+- **`construct watch` restored.** Declare watches with `watch add`; run due
+  sweeps with `watch --due` on your own schedule (cron or launchd). See
+  `docs/scheduled-operation.md`.
+- **Half-watched divergence relations are named.** `source relations` and
+  post-sweep `--due` report when a relation is divergence-inert because one end
+  has no active watch; `watch add` states which relations became checkable.
+- **Divergence sweeps bound history reads.** `--due` no longer rescans each
+  watch's full firing history on every edge touch.
+- **Composed markdown discloses voice overrides.** When a run used a non-house
+  voice, the document body carries a visible override line instead of the
+  house-voice attribution.
+- **Open-weight promotion path recorded.** RESEARCH-DECISIONS §32: development
+  org-harness promotion runs on subscription-reachable hosts, not local Ollama.
+
 ## 3.0.0-alpha.21 — 2026-09-01
 
 Dogfood alpha for Gerald. No external-tester program and none planned;

@@ -2,42 +2,41 @@
 
 Epic: `construct-cki1` · Phase J: `construct-umx9`  
 Measured: 2026-09-01 · HEAD at verdict prep: see git tag `v3.0.0-alpha.20`  
-Follow-on dogfood cut: `v3.0.0-alpha.21` (post-20 hardening; no external testers)
+Follow-on dogfood cut: `v3.0.0-alpha.22` (watch/divergence/voice polish; no external testers)
 
 ## Verdict
 
-**READY FOR NEW ALPHA** (clean-slate) · **alpha.21 published for Gerald dogfood**
+**READY FOR NEW ALPHA** (clean-slate) · **alpha.22 cut for Gerald dogfood**
 
 Not “mostly ready.” Architecture phases A–I landed. Local gate green. PR CI
 runs the full gate. `3.0.0-alpha.20` was the intentional provenance rebuild.
-`3.0.0-alpha.21` carries post-20 dogfood hardening and states there is no
-external-tester program — Gerald’s recorded outcomes are the only acceptance
-surface. Registry `3.0.0-alpha.19` remains untrusted (no `gitHead`, no matching
-git tag).
+`3.0.0-alpha.22` carries watch/divergence/voice dogfood polish on top of
+alpha.21. Gerald's recorded outcomes remain the only acceptance surface.
+Registry `3.0.0-alpha.19` remains untrusted (no `gitHead`, no matching git tag).
 
 ## Provenance
 
 | Fact | Value |
 |------|-------|
-| package.json | `3.0.0-alpha.21` |
-| git tag | `v3.0.0-alpha.21` → `dcac3e6414fba7fdce77f398bae54a353fe1189b` |
-| npm `alpha` | `3.0.0-alpha.21` · registry `gitHead` still `d791b64c…` until the next publish (message-only history rewrite; tarball unchanged) |
-| Prior cut | `v3.0.0-alpha.20` → `139f9c3ff3e94e7bc73811d7a87db7d5598e8ccf`; release [33464280447](https://github.com/geraldmaron/construct/actions/runs/33464280447) |
+| package.json | `3.0.0-alpha.22` |
+| git tag | `v3.0.0-alpha.22` → (set at cut) |
+| npm `alpha` | pending publish after tag push |
+| Prior cut | `v3.0.0-alpha.21` → `dcac3e6414fba7fdce77f398bae54a353fe1189b` |
 
-**Triple agreed** for alpha.21 (2026-09-01): package version, git tag commit, and npm
-`gitHead` are the same SHA. alpha.20 triple agreed the same way on `139f9c3f`.
+**Triple agreed** for alpha.22: package version, git tag commit, and npm
+`gitHead` must be the same SHA after publish.
 
 First tag push of `v3.0.0-alpha.20` failed release smoke (unknown verb printed
 help without saying `unknown`). Fixed on main; tag moved to the fix commit
 before the successful publish.
 
-## Gate (local, 2026-09-01, before alpha.21 tag)
+## Gate (local, 2026-09-01, before alpha.22 tag)
 
 | Check | Result |
 |-------|--------|
 | `npm run lint` | pass |
 | `npm run typecheck` | pass |
-| `npm test` | 3028 pass / 0 fail |
+| `npm test` | 3036 pass / 0 fail |
 | `npm run smoke` | pass |
 
 ## Complexity vs Phase A baseline
