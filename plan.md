@@ -29,19 +29,20 @@ Epic: `construct-cki1`.
 | `wire` product verb | **done** |
 | `host-pull-serve` + hostpull module | **done** |
 | Legacy MCP `projection.ts` (serve requires v1) | **done** |
-| `cleanup` catalog + verb | **done** (this session, with smoke fix) |
-| naming_cache wiring / table | **done** (this session) |
-| session-drift from package runtime | **done** (moved to `scripts/tracker/`; bare `watch` points at `npm run reconcile`) |
-| keyword routing on product path | pending |
-| standing/watch/schedule/daemon modules | pending (Routine due-runner first, or accept manual-only) |
-| interactive home-store `work.ts` path | pending |
+| `cleanup` catalog + verb | **done** |
+| naming_cache wiring / table | **done** |
+| session-drift from package runtime | **done** (moved to `scripts/tracker/`) |
+| keyword routing on product path | **done** |
+| standing/watch/schedule/daemon modules | **done** (manual Routine only; kernel source-watch kept) |
+| interactive home-store `work.ts` path | pending (v1 headless via init; home-store legacy path still present) |
 | persona pack auto-install / pack verb | pending (H) |
 
 ## What remains overall
 
 ```
 DONE   A–F
-NOW    G  keyword routing, background verbs, legacy work.ts
+DONE   G  keyword routing, background verbs, cleanup, naming cache, session-drift
+NOW    G  home-store legacy work.ts path
 OPEN   H  skill scorecards; only operational skill auto-installs
 OPEN   I  docs/help/first-run truth; close PRs #9/#11/#12/#13; lock exports
 OPEN   J  full gate; provenance rebuild; release verdict

@@ -9,7 +9,6 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { resolvePaths } from '../kernel/paths.ts';
-import { probeDaemon } from './daemon.ts';
 import { openStore, storePath, storeWriteProblem, StoreUnavailableError } from '../kernel/store/open.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import type { StoreLocation } from './local-state.ts';
@@ -33,7 +32,6 @@ import { detectAmbientHost } from '../hosts/ambient.ts';
 import { allIntegrationAdapters } from '../hosts/integrations/registry.ts';
 import { now, packageVersion } from './runtime.ts';
 import { parseFlags } from './flags.ts';
-import { scheduleReport } from './schedule.ts';
 import { readSkillFolders } from './skills.ts';
 
 const MIN_NODE = { major: 22, minor: 18 };
@@ -164,42 +162,6 @@ export async function doctor(cwd: string = process.cwd(), env: NodeJS.ProcessEnv
       name: 'integration',
       ok,
       detail: `${adapter.id}: maturity=${caps.maturity} status=${view.status}${pathBit}${detailBit}`,
-    });
-  }
-
-  // Whether a platform entry is installed to fire what has come due, read
-  // from the entry's own text. Reported, never gated: a machine with no
-  // schedule is not broken, it is one where somebody else owns the clock, and
-  // this check asks the platform nothing — it reads the file and says what
-  // cadence that file states.
-  checks.push({ name: 'schedule', ok: true, detail: scheduleReport(process.platform, env) });
-
-  // Whether the opt-in resident is up, and if not, whether that absence is the
-  // designed state or a stale socket somebody left behind. All three states
-  // are reported, never gated: "not running" is what a healthy install looks
-  // like by default, and a stale socket is residue for `construct daemon start`
-  // to replace — not a doctor gate.
-  // reap, not a broken install for doctor to fail on.
-  const daemonProbe = await probeDaemon(paths);
-  if (daemonProbe.state === 'absent') {
-    checks.push({
-      name: 'daemon',
-      ok: true,
-      detail: 'not running (designed state) — start one with: construct daemon start',
-    });
-  } else if (daemonProbe.state === 'stale') {
-    checks.push({
-      name: 'daemon',
-      ok: true,
-      detail:
-        `STALE SOCKET at ${daemonProbe.socketPath} — nothing answers on it — ` +
-        'recover with: construct daemon start',
-      });
-  } else {
-    checks.push({
-      name: 'daemon',
-      ok: true,
-      detail: `running (version ${daemonProbe.reply.version}), serving ${daemonProbe.reply.storePath}`,
     });
   }
 

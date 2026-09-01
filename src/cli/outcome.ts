@@ -2,15 +2,11 @@
  * cli/outcome.ts — writing down what you want to happen, and the plan the run
  * works from.
  *
- * Without a host named this path is deterministic, does no I/O beyond the
- * store, and costs nothing. With one, that host's model reads every outcome as
- * the primary namer and the keyword map is only the fallback if the model
- * fails. Inside an ambient host session, this verb does not consult the
- * keyword map and does not create a run: the host infers, and the only
- * surfaces are this session's dispatch or the inbox. The plan is recorded
- * write-once here so `work` executes against a stated plan rather than an
- * implicit one, which is why `ask` and the standing firings both come back
- * through this file to record theirs.
+ * Product staffing is `--domains` (user-named), `--host` (model namer), or an
+ * in-session handoff. Keyword routing is measurement-only. Inside an ambient
+ * host session this verb does not create a hollow run: the host infers via
+ * MCP. The plan is recorded write-once so later work executes against a
+ * stated plan.
  */
 
 import type { Store } from '../kernel/store/open.ts';
@@ -19,7 +15,7 @@ import { recordRunDispatch } from '../kernel/store/dispatch.ts';
 import { engagementMode, sourcesFor } from '../kernel/store/sources.ts';
 import { recordPlan } from '../kernel/store/plans.ts';
 import { buildPlan } from '../kernel/plan/planner.ts';
-import { startRun, startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
+import { startRunNamed, startRunSelected } from '../kernel/run/outcome.ts';
 import type { StartedRun } from '../kernel/run/outcome.ts';
 import type { Implication } from '../kernel/implication/map.ts';
 import type { DensifiedIntake } from '../kernel/intake/densify.ts';
@@ -28,9 +24,8 @@ import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { createHostDensifier } from '../hosts/densifier.ts';
 import type { DensifiedReply } from '../hosts/densifier.ts';
 import { createHostNamer } from '../hosts/namer.ts';
-import { adapterForHost, HOST_NAMES, now, withStoreAsync } from './runtime.ts';
+import { adapterForHost, now, withStoreAsync } from './runtime.ts';
 import type { HostName } from './runtime.ts';
-import { detectAmbientHost } from '../hosts/ambient.ts';
 import { sessionNamingPacket, usesSessionDispatch, type AmbientDetection } from '../hosts/session.ts';
 import { firstUnknownFlag, isHelpFlag, parseHostFlags, wantsHelp, workspaceFlag } from './flags.ts';
 import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
@@ -220,10 +215,7 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
     process.stdout.write(`  ${implication.domain}  — ${escapeForTerminal(implication.concern)}\n`);
     // Named implications carry no keyword score, so reporting one would
     // invite comparison with numbers that mean something else entirely.
-    const evidence =
-      started.inferredBy === 'keywords'
-        ? `signals: ${implication.signals.slice(0, 4).join(', ')} (score ${implication.score})`
-        : `reason: ${implication.signals.join(' ')}`;
+    const evidence = `reason: ${implication.signals.join(' ')}`;
     process.stdout.write(`      ${escapeForTerminal(evidence)}\n`);
   }
   if (started.inferredBy === 'user') {
@@ -237,10 +229,8 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
     );
   }
   if (started.namerFailure !== undefined) {
-    // A keyword answer standing in for a model's is a degradation, and the
-    // user hears it here as well as in the log.
     process.stdout.write(
-      `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); the keyword map answered instead.\n`,
+      `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); nothing was inferred.\n`,
     );
   }
   if (started.namerRetriedAfter !== undefined) {
@@ -254,31 +244,22 @@ export function reportRun(started: StartedRun, env: NodeJS.ProcessEnv = process.
   process.stdout.write(
     `\nfiled ${started.logged.length} work log entries and queued ${started.tasks.length} task(s).\n`,
   );
-  // The command named here is the one `construct work` would actually pick
-  // with no --host typed — an ambient host with a wired adapter, when there
-  // is one — so what is relayed and what would run never say two things.
-  const ambient = detectAmbientHost(env);
-  const ambientWired = ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host);
   process.stdout.write(
-    `Run them:  construct work --run ${started.runId}` + (ambientWired ? ` --host=${ambient.host}` : '') + '\n',
+    `Interactive: next_work / submit_work in the host session (MCP).\n` +
+      `Headless:   construct work claim --pin=<executor>  (requires construct init)\n` +
+      `Read back:  construct log --run ${started.runId}\n`,
   );
-  process.stdout.write(`Read back: construct log --run ${started.runId}\n`);
 }
 
 /**
  * Record an outcome.
  *
- * Without --host the path is deterministic, does no I/O beyond the store, and
- * costs nothing — the keyword map answers or it does not, except inside an
- * ambient host session, where the map is not consulted, no run is created,
- * and the host infers (session dispatch or inbox — not a Construct classifier).
- * With --host, that host's model reads every outcome as the primary namer and
- * the map is only the fallback if the model fails (adopted 2026-08-05 on the
- * RESEARCH-DECISIONS.md §10 figures: on wording the catalog's authors never
- * wrote, the map missed 0.634 where the namer missed 0.301).
+ * Product staffing requires `--domains` (user-named), `--host` (model namer),
+ * or an in-session handoff. The keyword dispatcher is measurement-only and
+ * never staffs a run from the CLI.
  *
  * `hostOverride` exists so the CLI's own wiring is testable without a binary
- * present, exactly as with `work`.
+ * present.
  */
 export async function outcome(
   argv: string[],
@@ -349,39 +330,19 @@ export async function outcome(
       return 0;
     }
 
-    if (args.host === undefined) {
-      const started = startRun(store, { runId, outcome: args.text, at });
-      if (started.implicated.length === 0) {
-        process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
-        process.stdout.write(
-          'no domains implicated. Nothing was inferred — this is recorded, not silently dropped.\n',
-        );
-        // The signpost that makes the dead end a choice rather than a wall
-        //: the user, not the tool, decides to spend money. Named first, when
-        // detected, is the host this process is already running inside — the
-        // command a user in that session would actually want to type — with
-        // the full list still shown as every other way to spend.
-        const ambient = detectAmbientHost(env);
-        const ambientWired = ambient !== null && (HOST_NAMES as readonly string[]).includes(ambient.host);
-        process.stdout.write(
-          '\nA host model can be asked instead, at cost:\n' +
-            (ambientWired
-              ? `  construct outcome --host=${ambient.host} ${JSON.stringify(args.text)}  ` +
-                `(this session is running inside ${ambient.host})\n`
-              : '') +
-            `  construct outcome --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.text)}\n`,
-        );
-        planRun(store, started, null, workspace, at);
-        return 0;
-      }
-      reportRun(started, env);
-      planRun(store, started, null, workspace, at);
-      return 0;
+    if (args.host === undefined && hostOverride === undefined) {
+      process.stderr.write(
+        'outcome: name the staff with --domains=…, or consult a host model with --host=…\n' +
+          'Keyword routing is not a product staffing path. In a host session, talk ordinarily\n' +
+          'and use MCP start_run / next_work instead.\n' +
+          OUTCOME_USAGE,
+      );
+      return 2;
     }
 
     const host =
       hostOverride ??
-      adapterForHost(args.host, {
+      adapterForHost(args.host!, {
         binary: args.binary,
         model: args.model,
         dir: args.dir,
@@ -472,8 +433,8 @@ export async function outcome(
       process.stdout.write(`run ${started.runId}\n  outcome: ${started.outcome}\n\n`);
       process.stdout.write(
         started.namerFailure !== undefined
-          ? `no domains implicated. ${host.name} could not be consulted (${escapeForTerminal(started.namerFailure)}) ` +
-              'and the keyword map is silent too — this is recorded, not silently dropped.\n'
+          ? `no domains implicated. ${host.name} could not be consulted (${escapeForTerminal(started.namerFailure)}) — ` +
+              'nothing was inferred; this is recorded, not silently dropped.\n'
           : `no domains implicated. ${host.name} considered the catalog and named nothing — ` +
               'this is recorded, not silently dropped.\n',
       );

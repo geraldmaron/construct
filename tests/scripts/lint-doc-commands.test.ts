@@ -98,13 +98,12 @@ test('the surface is the same from any working directory', () => {
 });
 
 test('a verb that swallows an unknown positional still yields its subcommands', () => {
-  // `watch` runs its sweep rather than rejecting a bad argument, so neither the
-  // bare nor the sentinel form reaches its usage. Missing this made
-  // `construct watch remove` pass.
-  const surface = probeSurface(['watch']) as Map<string, Surface>;
-  assert.equal(surface.get('watch')?.shape, 'subcommands');
-  for (const sub of ['add', 'list', 'retire']) {
-    assert.ok(surface.get('watch')?.subcommands.has(sub), `watch should accept ${sub}`);
+  // `routine` prints usage for a bad subcommand; the probe must still learn
+  // the closed set. Missing this made invented subcommands pass the doc lint.
+  const surface = probeSurface(['routine']) as Map<string, Surface>;
+  assert.equal(surface.get('routine')?.shape, 'subcommands');
+  for (const sub of ['create', 'list', 'enable', 'disable', 'run']) {
+    assert.ok(surface.get('routine')?.subcommands.has(sub), `routine should accept ${sub}`);
   }
 });
 

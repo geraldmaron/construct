@@ -42,7 +42,9 @@ async function captureOutcome(
   process.env.XDG_CACHE_HOME = join(root, 'cache');
   const chunks: string[] = [];
   const realOut = process.stdout.write.bind(process.stdout);
+  const realErr = process.stderr.write.bind(process.stderr);
   (process.stdout as { write: unknown }).write = (c: string) => (chunks.push(String(c)), true);
+  (process.stderr as { write: unknown }).write = (c: string) => (chunks.push(String(c)), true);
   try {
     const code = await outcome(argv, undefined, env);
     const inSession = env.CURSOR_AGENT !== undefined || env.CLAUDECODE !== undefined;
@@ -57,6 +59,7 @@ async function captureOutcome(
     return { code, out: chunks.join('') };
   } finally {
     (process.stdout as { write: unknown }).write = realOut;
+    (process.stderr as { write: unknown }).write = realErr;
     if (previous.data === undefined) delete process.env.XDG_DATA_HOME;
     else process.env.XDG_DATA_HOME = previous.data;
     if (previous.cache === undefined) delete process.env.XDG_CACHE_HOME;
@@ -94,13 +97,12 @@ test('host in session does not invent a hollow run when the keyword map would be
   assert.doesNotMatch(out, /\bnamer\b/i);
 });
 
-test('a terminal with no host session still uses the keyword map', async () => {
+test('a terminal with no host session refuses keyword staffing', async () => {
   const { code, out } = await captureOutcome([KEYWORD_RICH], {});
-  assert.equal(code, 0);
-  assert.match(out, /implicated domains/);
-  assert.match(out, /run run-/);
-  assert.match(out, /\bemployment\b/);
-  assert.doesNotMatch(out, /keyword map is not consulted/);
+  assert.equal(code, 2);
+  assert.match(out, /--domains|--host|Keyword routing is not a product staffing path/);
+  assert.doesNotMatch(out, /implicated domains/);
+  assert.doesNotMatch(out, /run run-/);
 });
 
 test('the implication map has no hardcoded sentence-to-domain table', () => {

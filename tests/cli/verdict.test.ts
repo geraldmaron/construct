@@ -69,7 +69,7 @@ function extractRun(out: string): string {
 
 test('verdict with no flags lists what surfaced and how to record a verdict', async () => {
   const { code, out } = await runAll([
-    ['outcome', 'launch a paid beta to EU users next month'],
+    ['outcome', '--domains=privacy,commerce-tax,program-sequencing,product-scoping', 'launch a paid beta to EU users next month'],
     (soFar) => ['verdict', `--run=${extractRun(soFar)}`],
   ]);
   assert.equal(code, 0);
@@ -81,7 +81,7 @@ test('verdict with no flags lists what surfaced and how to record a verdict', as
 
 test('confirm and dismiss only apply to domains the run actually surfaced', async () => {
   const { code, err } = await runAll([
-    ['outcome', 'launch a paid beta to EU users next month'],
+    ['outcome', '--domains=privacy,commerce-tax,program-sequencing,product-scoping', 'launch a paid beta to EU users next month'],
     (soFar) => ['verdict', `--run=${extractRun(soFar)}`, '--confirm=a-domain-that-never-surfaced'],
   ]);
   assert.equal(code, 2);
@@ -91,7 +91,7 @@ test('confirm and dismiss only apply to domains the run actually surfaced', asyn
 
 test('a felt absence records even though it never surfaced', async () => {
   const { code, out } = await runAll([
-    ['outcome', 'launch a paid beta to EU users next month'],
+    ['outcome', '--domains=privacy,commerce-tax,program-sequencing,product-scoping', 'launch a paid beta to EU users next month'],
     (soFar) => [
       'verdict',
       `--run=${extractRun(soFar)}`,
@@ -109,7 +109,7 @@ test('a verdict recorded with confirm and dismiss exports as a fixture-shaped co
     const exportPath = join(root, 'harvested.json');
 
     const { code } = await runAll([
-      ['outcome', 'launch a paid beta to EU users next month'],
+      ['outcome', '--domains=privacy,commerce-tax,program-sequencing,product-scoping', 'launch a paid beta to EU users next month'],
       (soFar) => [
         'verdict',
         `--run=${extractRun(soFar)}`,
@@ -159,7 +159,7 @@ test('corpus export with no recorded verdicts writes zero outcomes, not an error
 
 test('verdict takes --run <id> as well as --run=<id>, the form log and work accept', async () => {
   const result = await runAll([
-    ['outcome', 'We want to hire a contractor in Poland'],
+    ['outcome', '--domains=employment', 'We want to hire a contractor in Poland'],
     (soFar) => ['verdict', '--run', /run-\d+/.exec(soFar)?.[0] ?? 'missing'],
   ]);
   assert.equal(result.code, 0, result.err);

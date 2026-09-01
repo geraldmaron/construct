@@ -32,7 +32,7 @@ import { firstUnknownFlag, parseFlags, parseHostFlags, wantsHelp, workspaceFlag 
 import { failureLine, money } from './present.ts';
 import { surveyor } from './survey.ts';
 import { planRun } from './outcome.ts';
-import { DEFAULT_SPEND_CEILING } from './work.ts';
+import { DEFAULT_SPEND_CEILING } from './spend.ts';
 
 /** The same lease `work` takes by default; a single dispatch needs no other rule. */
 const DEFAULT_LEASE_MINUTES_ASK = 15;
@@ -137,45 +137,42 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       }
     }
 
-    // Who answers is inferred exactly as it is for an outcome: the named host's
-    // model reads the question, and the keyword map answers only if it fails or
-    // if no host was named. A question with no host is recorded and routed and
-    // then has nobody to answer it, which is said rather than pretended past.
-    const started = host
-      ? await startAskNamed(store, {
-          runId,
-          outcome: args.question,
-          at,
-          host: host.name,
-          namer: createHostNamer(host),
-        })
-      : await startAskNamed(store, { runId, outcome: args.question, at });
+    // Who answers: a named host's model reads the question. Keyword routing
+    // is not a product path — without --host, refuse rather than keyword-staff.
+    if (!host) {
+      process.stderr.write(
+        'ask: name a host with --host=… so a model can read the question.\n' +
+          'Keyword routing is not a product staffing path.\n' +
+          ASK_USAGE,
+      );
+      return 2;
+    }
+
+    const started = await startAskNamed(store, {
+      runId,
+      outcome: args.question,
+      at,
+      host: host.name,
+      namer: createHostNamer(host),
+    });
 
     process.stdout.write(`run ${started.runId}\n  question: ${args.question}\n\n`);
 
     const answering = primaryImplication(started.implicated);
     if (!answering) {
       process.stdout.write(
-        host
-          ? `no concern in the catalog owns this question — ${host.name} read it and named nothing. ` +
-              'That is recorded, not silently dropped.\n'
-          : 'no concern in the catalog owns this question, by keyword match. ' +
-              'Nothing was inferred and no model was consulted.\n',
+        started.namerFailure !== undefined
+          ? `no concern in the catalog owns this question — ${host.name} could not be consulted (${escapeForTerminal(started.namerFailure)}). ` +
+              'Nothing was inferred.\n'
+          : `no concern in the catalog owns this question — ${host.name} read it and named nothing. ` +
+              'That is recorded, not silently dropped.\n',
       );
-      if (!host) {
-        process.stdout.write(
-          '\nA host model reads the question properly, at cost:\n' +
-            `  construct ask --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.question)}\n`,
-        );
-      }
       planRun(store, started, null, args.workspace, at, []);
       return 0;
     }
 
     process.stdout.write(`answering: ${answering.domain} — ${escapeForTerminal(answering.concern)}\n`);
-    process.stdout.write(
-      `  ${started.inferredBy === 'keywords' ? 'signals' : 'reason'}: ${escapeForTerminal(answering.signals.join(' '))}\n`,
-    );
+    process.stdout.write(`  reason: ${escapeForTerminal(answering.signals.join(' '))}\n`);
     const alsoTouched = started.implicated.filter((i) => i !== answering);
     if (alsoTouched.length > 0) {
       // The concerns a question reached and nobody answered are the reason the
@@ -184,26 +181,18 @@ export async function ask(argv: string[], hostOverride?: HostAdapter): Promise<n
       process.stdout.write(
         `\nalso implicated, and not asked: ${alsoTouched.map((i) => i.domain).join(', ')}\n` +
           '  A question is answered by one concern. To have them all answered:\n' +
-          `  construct outcome ${JSON.stringify(args.question)}\n`,
+          `  construct outcome --host=${host.name} ${JSON.stringify(args.question)}\n`,
       );
     }
     if (started.namerFailure !== undefined) {
       process.stdout.write(
-        `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); the keyword map answered instead.\n`,
+        `\nThe model could not be consulted (${escapeForTerminal(started.namerFailure)}); nothing was inferred.\n`,
       );
     }
     const notice = highRiskNotice(answering.domain, licensedReviewFor(answering.domain));
     if (notice) process.stdout.write(`\n${notice}\n`);
 
     planRun(store, started, null, args.workspace, at, [answering]);
-
-    if (!host) {
-      process.stdout.write(
-        '\nNobody was dispatched: answering costs a model call, and no host was named.\n' +
-          `  construct ask --host=<opencode|claude|codex|cursor> ${JSON.stringify(args.question)}\n`,
-      );
-      return 0;
-    }
 
     recordRunDispatch(store, {
       run: started.runId,

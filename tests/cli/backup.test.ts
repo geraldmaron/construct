@@ -84,7 +84,7 @@ function copyIn(dir: string): string {
 
 test('construct backup copies the store out of its own directory, and the copy verifies', async () => {
   await inFreshInstall(async ({ root, storeDir, run }) => {
-    await run(['outcome', 'a run that leaves something worth keeping']);
+    await run(['outcome', '--domains=product-scoping', 'a run that leaves something worth keeping']);
     assert.ok(existsSync(join(storeDir, 'construct.db')), 'the store exists to be copied');
 
     const vault = join(root, 'vault');
@@ -103,7 +103,7 @@ test('construct backup copies the store out of its own directory, and the copy v
 
 test('construct backup --verify fails loudly on a copy that has been altered', async () => {
   await inFreshInstall(async ({ root, run }) => {
-    await run(['outcome', 'a run that leaves something worth keeping']);
+    await run(['outcome', '--domains=product-scoping', 'a run that leaves something worth keeping']);
     const vault = join(root, 'vault');
     await run(['backup', vault]);
     const copy = copyIn(vault);
@@ -122,7 +122,7 @@ test('construct backup --verify fails loudly on a copy that has been altered', a
 
 test('construct backup refuses a destination inside the store directory', async () => {
   await inFreshInstall(async ({ storeDir, run }) => {
-    await run(['outcome', 'a run that leaves something worth keeping']);
+    await run(['outcome', '--domains=product-scoping', 'a run that leaves something worth keeping']);
 
     const inside = join(storeDir, 'copies');
     const refused = await run(['backup', inside]);

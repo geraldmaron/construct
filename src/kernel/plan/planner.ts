@@ -49,8 +49,7 @@ function routedByFrom(inferredBy: InferredBy): RoutedBy {
     case 'user':
       return 'user';
     default:
-      // 'keywords' and 'none' both mean the namer did not decide: the frozen
-      // lexical dispatcher did, or nothing fired at all.
+      // 'keywords' (legacy rows) and 'none' both mean the namer did not decide.
       return 'lexical-fallback';
   }
 }

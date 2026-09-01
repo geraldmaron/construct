@@ -1,47 +1,27 @@
 /**
- * kernel/implication/naming.ts — which domains an outcome implicates, model
- * first (adopted 2026-08-05 on the RESEARCH-DECISIONS.md §10
- * figures).
+ * kernel/implication/naming.ts — which domains an outcome implicates, via an
+ * injected namer (adopted 2026-08-05 on RESEARCH-DECISIONS.md §10 figures;
+ * keyword product fallthrough removed in the clean-slate rewrite).
  *
- * This module replaced escalate.ts, and the order of consultation is the whole
- * difference. The shipped behavior used to be keywords first with a model
- * consulted only on silence; measured on wording authored by minds that never
- * saw the catalog, that ordering missed 0.398 while namer-first missed 0.301
- * and over-implicated less (0.188 vs 0.325). The keyword map's near-perfect
- * showing on its own tuning family is memorization, and no real user shares
- * it. So: when a namer is supplied it is consulted on EVERY outcome, and the
- * keyword map holds exactly two demoted duties —
+ * When a namer is supplied it is consulted on every outcome. Without one, or
+ * when it throws, nothing is inferred and the failure (if any) is stated —
+ * keywords never staff a product run. The keyword map in map.ts remains for
+ * measurement and for gates that intentionally inspect lexical overlap
+ * (staffing profile rebuttals), not for routing work onto roles.
  *
- *   - the zero-model fallback: no namer supplied (recording an outcome stays
- *     free), or the namer failed (a broken host must not take routing with it);
- *   - the evidence layer: keyword hits as corroborating signals in role task
- *     prompts, which lands with the dispatch-evidence work, not here.
+ * Three properties that stay load-bearing:
  *
- * What ships here is exactly what §10 measured as configuration B, including
- * the edge that matters: a namer that SUCCEEDS and names nothing is an answer
- * ("this outcome implicates nothing"), not a failure — keywords do not
- * second-guess it. Only a namer that throws falls back, and that fallback is
- * reported on the result so the caller can log the degradation instead of
- * letting a keyword answer impersonate a model's.
+ *   - The kernel stays ignorant of hosts. The namer is injected; this module
+ *     imports no adapter and knows no vendor.
+ *   - A namer cannot invent a domain. Anything outside the catalog is
+ *     discarded (admissible below) — it proposes, never certifies.
+ *   - How an implication was reached travels with it. `inferredBy` and the
+ *     model's stated reason are the record a user can argue with.
  *
- * Three properties carried over from the seam this replaces, unchanged:
- *
- *   - The kernel stays ignorant of hosts. The namer is injected, exactly like
- *     Paths and the clock. This module imports no adapter and knows no vendor.
- *   - A namer cannot invent a domain. Anything it returns that is not in the
- *     catalog is discarded (admissible below) — it proposes, never certifies.
- *   - How an implication was reached travels with it. `inferredBy` is on the
- *     result, and named implications carry the model's stated reason as their
- *     signal, because an inference a user cannot argue with is the defect
- *     this inversion started from.
- *
- * The similarity shortlist that rode the old escalation path does not ride
- * this one: §10's figures were measured with the namer reading the full
- * catalog, and shipping a narrowed variant would ship an unmeasured behavior
- * wearing measured numbers. similarity.ts remains for measurement.
+ * The similarity shortlist does not ride this path: §10 measured the namer on
+ * the full catalog. similarity.ts remains for measurement.
  */
 
-import { mapImplications } from './map.ts';
 import type { Implication, ImplicationMap } from './map.ts';
 import { DOMAINS, domainsByName } from './domains.ts';
 import type { Domain } from './domains.ts';
@@ -170,8 +150,8 @@ export interface NamedMap extends ImplicationMap {
    *              as a namer, not this session handing namings in).
    * 'session'  — this session already had the words and supplied the namings
    *              to record_outcome. Not Construct's namer. Not the keyword map.
-   * 'keywords' — the zero-model fallback answered: no namer was supplied, or
-   *              the namer failed and the map caught the run.
+   * 'keywords' — legacy / measurement only. Product staffing never writes this.
+   *              Old work-log rows may still carry it.
    * 'user'     — the user named the domains outright; nothing was inferred.
    * 'none'     — the catalog was considered and nothing was named.
    *              A genuine answer, not a gap.
@@ -183,10 +163,9 @@ export interface NamedMap extends ImplicationMap {
    */
   readonly inferredBy: InferredBy;
   /**
-   * Present exactly when a namer was supplied and threw: the message of what
-   * went wrong, so the caller can record that a keyword answer stands in for a
-   * model's rather than letting it impersonate one. Absent on every other
-   * path, including a namer that legitimately named nothing.
+   * Present exactly when a namer was supplied and threw. Absent on every other
+   * path, including a namer that legitimately named nothing. Callers log the
+   * failure; nothing is inferred in its place.
    */
   readonly namerFailure?: string;
   /**
@@ -207,7 +186,7 @@ export interface NameInput {
   readonly catalog?: readonly Domain[];
   readonly minSignal?: number;
   readonly limit?: number;
-  /** Absent means the zero-model fallback: the keyword map alone answers. */
+  /** Absent means nothing is inferred on the product path (keywords are measurement-only). */
   readonly namer?: DomainNamer;
   /**
    * When the namings are already in hand from this session, the result is
@@ -285,30 +264,18 @@ function admissible(
 }
 
 /**
- * Map an outcome to its domains: the namer primary when supplied, the keyword
- * map as the zero-model fallback.
+ * Map an outcome to its domains: the namer primary when supplied.
  *
- * Without a namer this does no I/O and costs nothing — the map answers or it
- * does not, exactly as it always has. With one, every outcome is a fresh model
- * consultation: an outcome-text cache is the wrong key under project, catalog,
- * and context change, so the same words may be named again.
+ * Without a namer this returns an empty map tagged `none` — the keyword
+ * dispatcher is measurement-only and never a product staffing path. With a
+ * namer, every outcome is a fresh model consultation; on throw the failure is
+ * stated and nothing is inferred (no keyword substitution).
  */
 export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> {
   const catalog = input.catalog ?? DOMAINS;
-  const keywords = (): ImplicationMap =>
-    mapImplications({
-      outcome: input.outcome,
-      catalog,
-      minSignal: input.minSignal,
-      limit: input.limit,
-    });
 
   if (!input.namer) {
-    const fallback = keywords();
-    // The keyword map draws from the catalog and cannot propose outside it, so
-    // it has no unmet concerns to report. Its silence is a different thing
-    // from a namer's silence and must not be dressed up as the same evidence.
-    return { ...fallback, inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none', unmet: [] };
+    return { outcome: input.outcome, implicated: [], inferredBy: 'none', unmet: [] };
   }
 
   let namings: readonly DomainNaming[];
@@ -324,14 +291,10 @@ export async function mapImplicationsNamed(input: NameInput): Promise<NamedMap> 
       namings = reply;
     }
   } catch (error) {
-    // The zero-model fallback catches the run — §10's configuration B fell
-    // back exactly here — but the substitution is stated, never silent: a
-    // keyword answer standing in for a model's is a degradation the work log
-    // must be able to show.
-    const fallback = keywords();
     return {
-      ...fallback,
-      inferredBy: fallback.implicated.length > 0 ? 'keywords' : 'none',
+      outcome: input.outcome,
+      implicated: [],
+      inferredBy: 'none',
       namerFailure: (error as Error)?.message ?? String(error),
       unmet: [],
     };

@@ -22,7 +22,6 @@ import {
 import { assignmentFor } from '../../../src/kernel/run/coordinator.ts';
 import type { Brief } from '../../../src/kernel/brief/schema.ts';
 import { findUntaggedClaims } from '../../../src/kernel/verify/claims.ts';
-import { parseWorkArgs } from '../../../src/cli/index.ts';
 
 /**
  * Every way a prompt in this system declares who is writing it. One of these
@@ -169,10 +168,4 @@ test('the attribution a document carries says who framed it and who wrote it', (
   // Nothing narrower framed it, and the line still says who wrote it rather
   // than leaving the document unsigned.
   assert.equal(attributionLine([]), '*Written by Construct, in one voice.*');
-});
-
-test('the CLI carries an override through, and blank is not an override', () => {
-  assert.equal(parseWorkArgs(['--voice=Write it as a limerick.']).voice, 'Write it as a limerick.');
-  assert.equal(parseWorkArgs(['--voice=   ']).voice, undefined);
-  assert.equal(parseWorkArgs([]).voice, undefined);
 });

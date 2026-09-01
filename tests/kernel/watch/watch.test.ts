@@ -23,7 +23,6 @@ import { openDecisions, getDecision, resolveDecision } from '../../../src/kernel
 import { readWorkLog } from '../../../src/kernel/store/worklog.ts';
 import { startWatch, sweepWatch, watchRun } from '../../../src/kernel/watch/watch.ts';
 import type { Finding, Watch } from '../../../src/kernel/watch/watch.ts';
-import { main } from '../../../src/cli/index.ts';
 
 const AT = '2026-08-05T00:00:00.000Z';
 const LATER = '2026-08-06T00:00:00.000Z';
@@ -134,21 +133,4 @@ test('the watch lives on the spine: its run is a run, and its log is the work lo
     assert.deepEqual(actions, ['watch-started', 'watch-found', 'watch-swept']);
     assert.equal(openDecisions(store)[0].run, run, 'findings hang off the watch run');
   });
-});
-
-test('bare construct watch refuses and points at npm run reconcile', async () => {
-  const err: string[] = [];
-  const realErr = process.stderr.write.bind(process.stderr);
-  (process.stderr as { write: unknown }).write = (chunk: string) => {
-    err.push(String(chunk));
-    return true;
-  };
-  try {
-    assert.equal(await main(['watch']), 2);
-    const printed = err.join('');
-    assert.match(printed, /npm run reconcile/);
-    assert.match(printed, /watch add/);
-  } finally {
-    (process.stderr as { write: unknown }).write = realErr;
-  }
 });
