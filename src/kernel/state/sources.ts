@@ -25,9 +25,14 @@ export type Sensitivity = (typeof SENSITIVITIES)[number];
 export const REACHABILITIES = ['unknown', 'reachable', 'unreachable'] as const;
 export type Reachability = (typeof REACHABILITIES)[number];
 
+export const SOURCE_ORIGINS = ['declared', 'local'] as const;
+export type SourceOrigin = (typeof SOURCE_ORIGINS)[number];
+
 export interface Source {
   readonly id: string;
   readonly kind: string;
+  /** declared: from the committed sources file; local: added in this checkout only. */
+  readonly origin: SourceOrigin;
   readonly purpose: string;
   readonly locator: string | null;
   readonly authorityLevel: AuthorityLevel;
@@ -48,6 +53,7 @@ export interface Source {
 interface Row {
   readonly id: string;
   readonly kind: string;
+  readonly origin: SourceOrigin;
   readonly purpose: string;
   readonly locator: string | null;
   readonly authority_level: AuthorityLevel;
@@ -69,6 +75,7 @@ function toSource(row: Row): Source {
   return {
     id: row.id,
     kind: row.kind,
+    origin: row.origin,
     purpose: row.purpose,
     locator: row.locator,
     authorityLevel: row.authority_level,
@@ -90,6 +97,8 @@ function toSource(row: Row): Source {
 export interface AddSourceInput {
   readonly id: string;
   readonly kind: string;
+  /** Defaults to local: a source only this checkout knows about. */
+  readonly origin?: SourceOrigin;
   readonly purpose: string;
   readonly locator?: string;
   readonly authorityLevel: AuthorityLevel;
@@ -112,6 +121,8 @@ export function addSource(store: StateStore, input: AddSourceInput): Source {
   requireNonEmpty(input.purpose, 'source.purpose');
   requireOneOf(input.authorityLevel, AUTHORITY_LEVELS, 'source.authorityLevel');
   requireOneOf(input.sensitivity, SENSITIVITIES, 'source.sensitivity');
+  const origin = input.origin ?? 'local';
+  requireOneOf(origin, SOURCE_ORIGINS, 'source.origin');
   requireInstant(input.at, 'source.at');
   if (input.freshnessHours !== undefined && !(input.freshnessHours > 0)) {
     throw new Error('source.freshnessHours must be a positive number of hours');
@@ -128,13 +139,14 @@ export function addSource(store: StateStore, input: AddSourceInput): Source {
     const row = store.db
       .prepare(
         `INSERT INTO sources
-           (id, kind, purpose, locator, authority_level, freshness_hours, sensitivity, retention,
+           (id, kind, origin, purpose, locator, authority_level, freshness_hours, sensitivity, retention,
             can_read, can_write, identity_mapping_json, reachability, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unknown', 'active', ?, ?) RETURNING *`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'unknown', 'active', ?, ?) RETURNING *`,
       )
       .get(
         input.id,
         input.kind,
+        origin,
         input.purpose,
         input.locator ?? null,
         input.authorityLevel,
@@ -154,6 +166,54 @@ export function addSource(store: StateStore, input: AddSourceInput): Source {
       setAuthority(store, input.id, claimType, false);
     }
     return toSource(row);
+  });
+}
+
+export interface UpdateSourceInput {
+  readonly purpose?: string;
+  readonly locator?: string | null;
+  readonly authorityLevel?: AuthorityLevel;
+  readonly freshnessHours?: number | null;
+  readonly sensitivity?: Sensitivity;
+  readonly retention?: string | null;
+  readonly canRead?: boolean;
+  readonly canWrite?: boolean;
+  readonly identityMapping?: unknown;
+}
+
+/** Patch a source's declaration fields. Omitted fields are kept. */
+export function updateSource(store: StateStore, id: string, patch: UpdateSourceInput, at: string): Source {
+  requireInstant(at, 'source.at');
+  if (patch.authorityLevel !== undefined) requireOneOf(patch.authorityLevel, AUTHORITY_LEVELS, 'source.authorityLevel');
+  if (patch.sensitivity !== undefined) requireOneOf(patch.sensitivity, SENSITIVITIES, 'source.sensitivity');
+  if (patch.freshnessHours !== undefined && patch.freshnessHours !== null && !(patch.freshnessHours > 0)) {
+    throw new Error('source.freshnessHours must be a positive number of hours');
+  }
+  return store.transaction(() => {
+    const current = getSource(store, id);
+    if (!current) throw new Error(`no source ${id}`);
+    store.db
+      .prepare(
+        `UPDATE sources SET purpose = ?, locator = ?, authority_level = ?, freshness_hours = ?, sensitivity = ?,
+                retention = ?, can_read = ?, can_write = ?, identity_mapping_json = ?, updated_at = ?
+          WHERE id = ?`,
+      )
+      .run(
+        patch.purpose ?? current.purpose,
+        patch.locator === undefined ? current.locator : patch.locator,
+        patch.authorityLevel ?? current.authorityLevel,
+        patch.freshnessHours === undefined ? current.freshnessHours : patch.freshnessHours,
+        patch.sensitivity ?? current.sensitivity,
+        patch.retention === undefined ? current.retention : patch.retention,
+        (patch.canRead ?? current.canRead) ? 1 : 0,
+        (patch.canWrite ?? current.canWrite) ? 1 : 0,
+        patch.identityMapping === undefined
+          ? (current.identityMapping === null ? null : toJson(current.identityMapping))
+          : toJson(patch.identityMapping),
+        at,
+        id,
+      );
+    return getSource(store, id)!;
   });
 }
 
@@ -212,6 +272,11 @@ export function setAuthority(
     )
     .run(sourceId, claimType, authoritative ? 1 : 0);
   if (result.changes === 0) throw new Error(`no source ${sourceId}`);
+}
+
+/** Forget every authority row for a source; the caller re-declares the current set. */
+export function clearAuthority(store: StateStore, sourceId: string): void {
+  store.db.prepare('DELETE FROM source_authority WHERE source_id = ?').run(sourceId);
 }
 
 export interface SourceAuthority {

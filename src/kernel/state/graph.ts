@@ -169,6 +169,8 @@ export const RELATION_KINDS = [
   'owned_by',
   'contributes_to',
   'sourced_from',
+  'reports_to',
+  'member_of',
 ] as const;
 export type RelationKind = (typeof RELATION_KINDS)[number];
 
@@ -232,7 +234,12 @@ export const RELATION_ENDPOINTS: Readonly<
     to: ['initiative', 'metric'],
   },
   sourced_from: { from: ENTITY_KINDS, to: ['artifact', 'system'] },
+  reports_to: { from: ['person', 'team'], to: ['person', 'team'] },
+  member_of: { from: ['person', 'team'], to: ['team'] },
 };
+
+/** Relations a source may propose but only a person may confirm. */
+export const CONFIRMATION_REQUIRED_RELATIONS: readonly RelationKind[] = ['owned_by', 'reports_to', 'member_of'];
 
 export interface Relation {
   readonly id: string;
@@ -333,6 +340,11 @@ export function addRelation(
     if (input.confirmed && inferred) {
       throw new InvalidRelationError(
         `an ${input.basis} ${input.kind} relation is proposed, not confirmed; confirm it separately`,
+      );
+    }
+    if (input.confirmed && CONFIRMATION_REQUIRED_RELATIONS.includes(input.kind) && input.sourceId !== undefined) {
+      throw new InvalidRelationError(
+        `a ${input.kind} relation read from a source is proposed, not confirmed; a person confirms ownership, reporting lines, and membership`,
       );
     }
     const status: RelationStatus = inferred ? 'proposed' : input.confirmed ? 'confirmed' : 'proposed';
