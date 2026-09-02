@@ -35,7 +35,9 @@
   "files": [
     "bin",
     "dist",
-    "skills"
+    "skills",
+    "workflows",
+    "registry"
   ],
   "exports": {
     ".": "./dist/kernel/index.js"
@@ -43,11 +45,12 @@
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/lint-skill-spec.mjs && node scripts/lint-skill-policy.mjs && node scripts/lint-terminal-escape.mjs && node scripts/lint-docs-index.mjs && node scripts/lint-doc-commands.mjs && node scripts/lint-doc-bead-refs.mjs && node scripts/lint-lockfile-version.mjs",
+    "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/lint-skill-spec.mjs && node scripts/lint-skill-policy.mjs && node scripts/lint-terminal-escape.mjs && node scripts/lint-docs-index.mjs && node scripts/lint-doc-commands.mjs && node scripts/lint-doc-bead-refs.mjs && node scripts/lint-lockfile-version.mjs && node scripts/generate-registry-index.mjs --check",
     "build": "tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "smoke": "bash scripts/smoke-packaged-install.sh",
-    "reconcile": "node scripts/reconcile-tracker.mjs"
+    "reconcile": "node scripts/reconcile-tracker.mjs",
+    "registry:index": "node scripts/generate-registry-index.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

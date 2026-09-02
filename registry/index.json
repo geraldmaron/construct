@@ -1,0 +1,68 @@
+{
+  "format": "construct-registry-index",
+  "formatVersion": 1,
+  "skills": {
+    "adversarial-review": {
+      "version": "0.3.0",
+      "digest": "sha256:6e9ddb265fdfa00ebf5c58d587a95fae2e57387dd82f67cfd7e8b1b8229590a6",
+      "category": "method",
+      "title": "Adversarial review"
+    },
+    "construct": {
+      "version": "1.0.0",
+      "digest": "sha256:f4a8a75e7eb5df00765a58791d8873b63a3e8c9ffae9ed3a3f9108d4b8cdf8a9",
+      "category": "operational",
+      "title": "Construct operating skill"
+    },
+    "context-mapping": {
+      "version": "0.4.0",
+      "digest": "sha256:162d3285fdd4e6d42af5565cb9271f4460cf73dc97e9dd3176ad8d73fa668cf4",
+      "category": "method",
+      "title": "Context mapping"
+    },
+    "decision-framing": {
+      "version": "0.3.0",
+      "digest": "sha256:2f9b5594059d83d74c0f2834ce90806b4940d9909ef10b5755fadd068253ea41",
+      "category": "method",
+      "title": "Decision framing"
+    },
+    "intake": {
+      "version": "0.3.0",
+      "digest": "sha256:d5541013e96d62740a8aee82073878a77311de6df79c80d5e119a8d46258dce3",
+      "category": "method",
+      "title": "Intake"
+    },
+    "investigative-research": {
+      "version": "0.3.0",
+      "digest": "sha256:2dbcd92641a7f9d7a89d3edae29f9b33e5e9317ec48d91007841921764179f78",
+      "category": "method",
+      "title": "Investigative research"
+    },
+    "requirements-structuring": {
+      "version": "0.5.0",
+      "digest": "sha256:90f844bf5956377c55783f9f2508500169aa2e36c5af15cf9d24d2e515a90fe5",
+      "category": "method",
+      "title": "Requirements structuring"
+    },
+    "written-voice": {
+      "version": "0.4.0",
+      "digest": "sha256:22b23727d7ccdfc09c9062c6c049fba3a73ccd1905e7a499f10066d68e72f8b1",
+      "category": "method",
+      "title": "Written voice"
+    }
+  },
+  "workflows": {
+    "design-conformance": {
+      "version": "1.0.0",
+      "digest": "sha256:798a820e8f958f1c713f2f045f0b033d912af98d83587b0b9374e8b8d9c45eec",
+      "title": "Design-principle conformance review",
+      "interactionClass": "manage"
+    },
+    "remember": {
+      "version": "1.0.0",
+      "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
+      "title": "Remember one thing",
+      "interactionClass": "remember"
+    }
+  }
+}

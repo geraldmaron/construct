@@ -1,0 +1,58 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "intake",
+  "title": "Intake",
+  "version": "0.3.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "a long, messy, nonlinear request with several asks",
+    "the asks outnumber the sentences stating them"
+  ],
+  "standDown": [
+    "a clear single-outcome request",
+    "thinking out loud with no ask yet"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an execution plan with primary outcome, constraints, decisions made, parking lot"
+  ],
+  "deliverableTypes": [
+    "plan/execution"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a genuinely blocking question is asked; everything else proceeds on labeled assumptions"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

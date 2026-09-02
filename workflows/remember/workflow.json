@@ -1,0 +1,40 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "remember",
+  "title": "Remember one thing",
+  "version": "1.0.0",
+  "purpose": "Record a decision, constraint, principle, note, or outcome in the person's own wording as one statement, with project binding, timestamp, and provenance. Nothing else is created.",
+  "activation": ["the person asks to remember, record, or note something"],
+  "standDown": ["the person is asking a question", "the person is asking for work to be done"],
+  "interactionClass": "remember",
+  "inputSchema": { "kind": "string", "text": "string" },
+  "requiredInputs": ["kind", "text"],
+  "steps": [
+    {
+      "id": "record",
+      "title": "Record the statement",
+      "needs": [],
+      "skill": null,
+      "capabilities": ["write_project_context"],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": { "kind": "input.kind", "text": "input.text" },
+      "outputs": ["statementId"],
+      "validators": ["schema"],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": { "maxAttempts": 1, "backoffMs": 0 },
+      "timeoutMs": 10000
+    }
+  ],
+  "triggers": ["manual"],
+  "onNoData": "fail",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": ["kind", "text"],
+  "cancellation": "immediate",
+  "deliverable": { "kind": "statement", "schema": "statement/v1", "challenge": false },
+  "proposes": [],
+  "evals": []
+}

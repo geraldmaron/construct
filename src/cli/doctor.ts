@@ -13,6 +13,9 @@ import { projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { getProfile } from '../kernel/state/profile.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
+import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
+import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
+import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { createContext, gitRootOf, type CliContext } from './context.ts';
@@ -62,6 +65,21 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       if (files.constitution) {
         const c = constitutionCompleteness(files.constitution);
         checks.push({ name: 'constitution', ok: true, detail: c.complete ? 'complete' : `incomplete: ${c.missing.join(', ')} not yet answered` });
+      }
+      if (files.lock) {
+        const skills = createSkillRegistry({ projectDir: layout.skillsDir });
+        const workflows = createWorkflowRegistry({ projectDir: layout.workflowsDir });
+        const problems = [...skills.problems(), ...workflows.problems()];
+        const rows = lockStatus(files.lock, skills.list(), workflows.list());
+        const broken = rows.filter((r) => r.state === 'diverged' || r.state === 'blocked' || r.state === 'missing');
+        const behind = rows.filter((r) => r.state === 'outdated' || r.state === 'unlocked');
+        const detail = [
+          `${String(rows.filter((r) => r.state === 'current').length)}/${String(rows.length)} current`,
+          broken.length ? `${broken.map((r) => `${r.id} ${r.state}`).join(', ')}` : '',
+          behind.length ? `${String(behind.length)} outdated or unlocked (run init to lock)` : '',
+          problems.length ? `${String(problems.length)} bundle(s) failed to load: ${problems.map((p) => p.message).join('; ')}` : '',
+        ].filter(Boolean).join('; ');
+        checks.push({ name: 'registry', ok: broken.length === 0 && problems.length === 0, detail });
       }
     } catch (error) {
       checks.push({ name: 'files', ok: false, detail: (error as Error).message });

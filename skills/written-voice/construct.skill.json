@@ -1,0 +1,57 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "written-voice",
+  "title": "Written voice",
+  "version": "0.4.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "drafting a document a reader will act on",
+    "unifying documents by different hands into one voice",
+    "a draft reads buried, hedged, or salesy"
+  ],
+  "standDown": [
+    "a two-line answer, a code comment, a commit message",
+    "prose whose format an external template dictates"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "prose in the house voice with the decision at the top"
+  ],
+  "deliverableTypes": [
+    "prose/document"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context"
+  ],
+  "actionTiers": [
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a claim of done or tested that was not observed is removed, not softened"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

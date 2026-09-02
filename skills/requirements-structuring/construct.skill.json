@@ -1,0 +1,58 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "requirements-structuring",
+  "title": "Requirements structuring",
+  "version": "0.5.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "scoping a feature, product, program, or change",
+    "a build starting on requirements that exist only as conversation"
+  ],
+  "standDown": [
+    "requirements already obvious and small",
+    "the question is whether to build at all"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "a requirements artifact a stranger could verify against"
+  ],
+  "deliverableTypes": [
+    "spec/requirements"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "whether to build is surfaced as a decision-framing question, not specified around"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}
