@@ -1,7 +1,12 @@
 ---
 name: software-engineering
 description: >-
-  Review or shape an implementation for correctness evidence, scope, reversibility, dependencies, and operability. For changes someone will ship; not style alone.
+  Reviews or shapes an implementation for correctness evidence, scope,
+  reversibility, dependencies, and operability. Use when the person says
+  things like: tests pass but I have a bad feeling about this; look at this
+  PR before I merge; is this migration safe to roll back; it works on my
+  machine, what am I missing; is this the right way to build it; review this
+  code. Not for style alone.
 license: Apache-2.0
 metadata:
   version: 1.0.0

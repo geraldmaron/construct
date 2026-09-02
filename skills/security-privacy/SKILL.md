@@ -1,7 +1,13 @@
 ---
 name: security-privacy
 description: >-
-  Defensive review for threat model, access, secrets, data classification and retention, privacy by design, dependencies, logging. Names exposures, never exploits.
+  Defensive review of threat model, access, secrets, data handling, and
+  privacy, with fixes. Use when the person says things like: our logs have
+  customer emails and go to a third party; a contractor still has prod
+  access; someone pasted an API key in Slack; we want to add SSO, what can
+  go wrong; is this endpoint safe; who can see this data. Defensive only:
+  never attack tooling, never evasion; contractual and regulatory exposure
+  goes to governance.
 license: Apache-2.0
 metadata:
   version: 1.0.0

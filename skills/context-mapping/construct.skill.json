@@ -7,6 +7,13 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
+    "I just inherited this codebase",
+    "new job and they handed me the repo",
+    "where do I even start with this system",
+    "before I touch this I want to know what will break",
+    "who actually owns this and what depends on it",
+    "we took over a vendor integration and the docs are wrong",
+    "what reads the output of this job",
     "acting inside a system you did not build or do not hold in your head",
     "inheriting a codebase, service, program, or vendor relationship; onboarding; integrating; resuming shifted ground",
     "map the dependencies, owners, boundaries, and unknowns before changing anything",

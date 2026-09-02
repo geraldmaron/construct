@@ -24,6 +24,7 @@ import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
 import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
+import { createRouter, type Router } from '../skills/routing.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -156,7 +157,7 @@ const remember = define<{ kind: StatementKind; text: string }, unknown>({
 const classify = define<{ text: string }, unknown>({
   name: 'classify_request',
   title: 'What kind of request is this',
-  description: 'Tells you whether a request is a plain question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and when to confirm before choosing the bigger one. Also names the workflow that fits.',
+  description: 'Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'The request in the person’s words.' } }, required: ['text'], additionalProperties: false },
@@ -166,12 +167,44 @@ const classify = define<{ text: string }, unknown>({
   },
   run(ctx, { text }) {
     const c = ctx.workflow.classify(text);
-    const lower = text.toLowerCase();
-    const candidates = ctx.workflows.list().filter((w) => w.manifest.interactionClass === c.class || (c.class === 'maintain' && w.manifest.triggers.includes('schedule')));
-    const scored = candidates.map((w) => ({ id: w.manifest.id, title: w.manifest.title, score: w.manifest.activation.filter((a) => a.toLowerCase().split(/\W+/).filter((word) => word.length > 3).some((word) => lower.includes(word))).length })).sort((a, b) => b.score - a.score);
-    return { ...c, suggestedWorkflows: scored.filter((s) => s.score > 0).slice(0, 3).map((s) => ({ id: s.id, title: s.title })) };
+    const ranked = routerFor(ctx.skills.list()).route(text);
+    const byId = new Map(ctx.skills.list().map((s) => [s.manifest.id, s]));
+    const skills = ranked
+      .filter((r) => r.band !== 'unlikely')
+      .map((r) => {
+        const s = byId.get(r.id)!;
+        return { id: r.id, band: r.band, title: s.manifest.title, category: s.manifest.category, useWhen: s.description, nearestExample: r.nearestExample, workflows: workflowsUsing(ctx, r.id) };
+      });
+    const likely = skills.filter((s) => s.band === 'likely');
+    const workflowsForClass = ctx.workflows.list().filter((w) => w.manifest.interactionClass === c.class || (c.class === 'maintain' && w.manifest.triggers.includes('schedule')));
+    const suggestedWorkflows = [...new Set([...likely.flatMap((s) => s.workflows), ...workflowsForClass.map((w) => w.manifest.id)])]
+      .map((id) => ctx.workflows.get(id))
+      .filter((w) => w !== null)
+      .filter((w) => c.class === 'answer' || c.class === 'remember' ? false : true)
+      .slice(0, 5)
+      .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
+    const next =
+      c.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
+      : c.class === 'remember' ? 'call remember with the person’s wording'
+      : likely.length === 0 ? 'no skill is a clear fit; answer, or ask one question about what the person wants produced'
+      : 'read the likely skills in order and choose by their useWhen text, not by rank alone; ask one question only when two fit and the difference changes the work; then resolve the workflow that carries the skill';
+    return { ...c, next, skills, suggestedWorkflows };
   },
 });
+
+// One router per catalog; the catalog changes only when a bundle digest does.
+let routerCache: { key: string; router: Router } | null = null;
+function routerFor(skills: readonly import('../registry/models.ts').RegisteredSkill[]): Router {
+  const key = skills.map((s) => s.digest).join('|');
+  if (routerCache && routerCache.key === key) return routerCache.router;
+  const router = createRouter(skills.map((s) => ({ id: s.manifest.id, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown, examples: s.examples })));
+  routerCache = { key, router };
+  return router;
+}
+
+function workflowsUsing(ctx: BrokerContext, skillId: string): string[] {
+  return ctx.workflows.list().filter((w) => w.manifest.steps.some((st) => st.skill?.id === skillId)).map((w) => w.manifest.id);
+}
 
 const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; input?: Record<string, unknown> }, unknown>({
   name: 'workflows',

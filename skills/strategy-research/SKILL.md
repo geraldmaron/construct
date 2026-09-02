@@ -1,7 +1,13 @@
 ---
 name: strategy-research
 description: >-
-  Review a strategy against the work and capacity it directs: kernel, initiatives with owners and work, capacity ranges with assumptions, cited conflicts. Never velocity as capacity.
+  Reviews a strategy against the work and capacity it actually directs: what
+  was decided, what teams are doing, where they diverge, and what the gap
+  costs. Use when the person says things like: three teams are building the
+  same thing and leadership says we're aligned; does our roadmap match what
+  the company said it would do; we say upmarket but every hire is SMB;
+  compare what the offsite decided to what teams are doing; are we working
+  on the right things. Velocity is never capacity.
 license: Apache-2.0
 metadata:
   version: 1.0.0

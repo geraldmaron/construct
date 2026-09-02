@@ -109,10 +109,13 @@ each exercised path recorded, each untested path named.
 
 ## Named risks
 
-1. **The activation proxy overpromises.** Skill triggers are checked by a
-   lexical proxy; the real judge is the host model. Mitigation: model-judged
-   fixtures ship beside every skill and run only under the conformance
-   command against a real host; nothing lexical is reported as a model result.
+1. **Skill triggering is only as good as the descriptions.** The host model
+   is the judge of which skill loads; Construct's router only orders the
+   list. Mitigation: descriptions and activation phrases are written in the
+   person's language, a held-out routing set with measured floors gates
+   every change to them, and `npm run evals:live` records what a real model
+   picks from the shipped descriptions; nothing lexical is reported as a
+   model result.
 2. **Doctrine goes stale.** Pack sources carry review dates and were not
    re-opened in the build that cited them. Mitigation: each source names a
    review-due date; a finding leaning on a clause must open it first.

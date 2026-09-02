@@ -1,17 +1,12 @@
 ---
 name: written-voice
-description: One plain, direct house voice for every prose deliverable
-  someone else will read, plus per-genre shapes - spec, proposal, status
-  update, announcement, README, decision log entry, handoff. The reader's
-  decision or the outcome goes at the top, hype vocabulary is banned unless
-  defined and earned, and every claim of done or tested must have been
-  observed. Use before drafting any document a reader will act on - a spec,
-  proposal, update, announcement, README, report, or memo - and when unifying
-  documents written by different hands or models into one voice, or when a
-  draft reads buried, hedged, or salesy and needs the decision surfaced. Not
-  for a two-line chat answer, a code comment, a commit message, or prose
-  whose format is dictated by an external template - write those directly and
-  skip this method entirely.
+description: >-
+  One plain, direct house voice for prose: what it says, for whom, and
+  nothing decorative. Use when the person says things like: make this sound
+  less like a robot wrote it; rewrite the outage email so customers don't
+  panic; this reads like marketing, make it plain; tighten this up, it's
+  three pages saying one thing; draft the announcement; is the tone right.
+  Not for what the document decides, only how it says it.
 license: Apache-2.0
 metadata:
   version: 0.4.0

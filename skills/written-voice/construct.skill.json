@@ -7,6 +7,12 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
+    "make this sound less like a robot wrote it",
+    "rewrite the outage email so customers do not panic",
+    "this reads like marketing, make it plain",
+    "tighten this up, it is three pages saying one thing",
+    "draft the announcement in our voice",
+    "is the tone of this right",
     "someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo",
     "write the announcement customers will read, draft the proposal with the decision at the top",
     "unify documents written by different people into one voice",

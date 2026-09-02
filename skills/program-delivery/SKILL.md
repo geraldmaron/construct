@@ -1,7 +1,13 @@
 ---
 name: program-delivery
 description: >-
-  Review a plan, schedule, or status for claims that cannot all hold: dates, dependencies, capacity, risks, decision rights. Not what or how to build.
+  Reviews a plan, schedule, or status for claims that cannot all hold: dates
+  against dependencies, owners against capacity, risk against who is holding
+  it. Use when the person says things like: the plan says June but the
+  vendor starts in July; what's on the critical path and who owns the risky
+  bits; three teams say they're on track and I don't believe them; we keep
+  slipping the same milestone; can we hit this date; what would have to be
+  true to ship by then. Not for whether the strategy is right.
 license: Apache-2.0
 metadata:
   version: 1.0.0

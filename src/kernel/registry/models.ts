@@ -121,6 +121,8 @@ export interface RegisteredSkill {
   readonly description: string;
   /** Files by relative path, so a selected body loads on demand. */
   readonly files: readonly string[];
+  /** Requests the skill's eval file labels as activating it; the router retrieves over them. */
+  readonly examples: readonly string[];
 }
 
 export interface RegisteredWorkflow {

@@ -7,6 +7,12 @@
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
+    "we went live and nobody set up alerts",
+    "the service falls over whenever traffic spikes",
+    "we got paged four times last night for the same thing",
+    "what should the on-call runbook say",
+    "is this safe to run unattended",
+    "what happens when the queue backs up",
     "is this ready to operate, ready to launch, ready for on-call",
     "review the runbook, the alerts, the SLOs, the error budget, the rollback",
     "write the incident postmortem, what do we learn from the outage",

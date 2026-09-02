@@ -1,7 +1,14 @@
 ---
 name: product-management
 description: >-
-  Review or shape a product decision: problem, users, outcome and measure, scope, priority evidence, assumptions. For PRDs and roadmap calls; not how to build.
+  Reviews or shapes a product decision: the problem, who has it, what
+  changes for them, how it will be measured, what is cut. Use when the
+  person says things like: everyone loves this idea but nobody can say what
+  it changes for the customer; sanity check this spec before engineering
+  starts; which of these twelve asks actually matter this quarter; did last
+  quarter's launch do anything; what should we build next; is this worth
+  building. Not for writing the buildable requirements (that is
+  requirements).
 license: Apache-2.0
 metadata:
   version: 1.0.0

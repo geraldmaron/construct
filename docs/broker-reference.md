@@ -15,7 +15,7 @@ Surface: both. Reads only: yes.
 
 ### `classify_request`
 
-What kind of request is this. Tells you whether a request is a plain question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and when to confirm before choosing the bigger one. Also names the workflow that fits.
+What kind of request is this. Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.
 
 Surface: interactive. Reads only: yes.
 

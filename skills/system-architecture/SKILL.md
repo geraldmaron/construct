@@ -1,7 +1,13 @@
 ---
 name: system-architecture
 description: >-
-  Review or frame a system design for boundaries, coupling, data ownership, failure modes, and what becomes hard to undo. Not code review.
+  Reviews or frames a system design for boundaries, coupling, data
+  ownership, and failure paths. Use when the person says things like: two
+  teams keep writing to the same table; should this service own its own
+  database; we're splitting the monolith, where do the seams go; every
+  request goes through four hops; how should these pieces talk to each
+  other; is this design going to scale. Not for the line-by-line code, and
+  not for who owns what organisationally.
 license: Apache-2.0
 metadata:
   version: 1.0.0

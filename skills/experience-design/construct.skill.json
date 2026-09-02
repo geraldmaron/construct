@@ -7,6 +7,13 @@
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
+    "customers abandon the signup at this step",
+    "support keeps asking where the button is",
+    "nobody can find anything on this page",
+    "the checkout takes too many screens",
+    "is this flow usable and accessible",
+    "does this screen follow our design system",
+    "people get stuck in the onboarding",
     "review this screen, this flow, this interface for usability and accessibility",
     "can people complete the task, what happens when it fails, is it accessible",
     "does this design follow our design system, is it consistent",

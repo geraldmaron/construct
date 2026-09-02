@@ -1,17 +1,13 @@
 ---
 name: intake
-description: Turns a long, messy, nonlinear request - several concerns,
-  corrections, and implied outcomes in one message - into an execution plan
-  without asking the requester to restate it more cleanly. Extracts the
-  primary outcome, explicit and implied constraints, decisions already made,
-  and supersessions; keeps tangents visible in a parking lot instead of
-  chasing or discarding them; proceeds on safe, labeled assumptions and asks
-  only what genuinely blocks. Use when a request arrives as a brain dump, a
-  meeting's worth of threads, a forwarded conversation, or any message where
-  the asks outnumber the sentences that state them - before starting work on
-  any of it. Not for a clear single-outcome request - just do that - and not
-  for a message that is thinking out loud with no ask yet, where the right
-  response is engagement, not a plan.
+description: >-
+  Turns a long, messy, nonlinear request into one structured brief: what is
+  actually being asked, the constraints, what was already decided, the open
+  questions. Use when the person says things like: so the thing from Tuesday
+  plus what Raj said minus the pricing part; here are my notes, pull out
+  what they asked for; five messages saying different things, what do they
+  want; turn this rambling memo into something the team can act on; make
+  this a ticket. Not for a single clear ask.
 license: Apache-2.0
 metadata:
   version: 0.3.0

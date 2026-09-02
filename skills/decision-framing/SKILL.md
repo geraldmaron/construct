@@ -1,17 +1,13 @@
 ---
 name: decision-framing
-description: Disciplined framing for decisions that will be expensive to
-  revisit - one recommendation backed by honestly generated options, a
-  stated do-nothing baseline, a reversibility class, the strongest objection
-  in its own words, a pre-mortem, and a decision record a later reader can
-  audit without the conversation that produced it. Use when someone must
-  choose between real alternatives and being wrong has a cost - architecture
-  and vendor choices, build-vs-buy, sequencing and investment calls,
-  organizational or strategic direction, any "which way should we go"
-  question whose answer someone will act on. Not for decisions already made
-  (help execute instead), choices with one viable option (say so and
-  proceed), or reversible low-stakes picks where deciding fast beats
-  deciding well - answer those directly and skip this method entirely.
+description: >-
+  Frames a decision that will be expensive to reverse: the options, the
+  trade-offs, the strongest objection, a recommendation. Use when the person
+  says things like: buy or build; should we go with X or Y; we've argued
+  about this for weeks, settle it; lay out the options so leadership can
+  pick; is it worth delaying to fix; help me decide; we keep going back and
+  forth. Not for choices that are cheap to undo, and not for gathering the
+  facts first (that is research).
 license: Apache-2.0
 metadata:
   version: 0.3.0

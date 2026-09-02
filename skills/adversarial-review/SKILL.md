@@ -1,19 +1,14 @@
 ---
 name: adversarial-review
-description: A finished deliverable or decision is challenged before anyone
-  commits to it - by a reviewer whose job is to break it, not improve it.
-  Six mandatory challenges - strongest failure mode with concrete inputs,
-  best alternative not chosen, load-bearing-claims audit, assumption
-  inversion, who-bears-the-cost, five-minute hostile expert - closing in
-  exactly one of four verdicts - accepted, accepted with controls, needs
-  validation, or rejected. Use before committing to a load-bearing
-  artifact - an architecture or data
-  design, a security or access boundary, a vendor or dependency choice, a
-  migration or irreversible change, a spec about to be built, a public
-  factual claim, a decision record about to be executed. Not for drafts
-  still in motion (challenge them when they stabilize), not for low-stakes
-  reversible work, and not for code review of a diff - it reviews the
-  thinking an artifact rests on, not its line-by-line construction.
+description: >-
+  Challenges a finished deliverable, plan, or decision before anyone
+  commits: the strongest case against it, the failure it hides, the
+  assumption doing the work. Use when the person says things like: poke
+  holes in this; tell me why this will fail; argue the other side; be the
+  skeptic; what's wrong with this plan; we're too excited about this; find
+  the weak point before we commit. Not for building or fixing the thing
+  itself, and not a substitute for the review a licensed professional must
+  give.
 license: Apache-2.0
 metadata:
   version: 0.3.0

@@ -1,10 +1,13 @@
 ---
 name: construct
 description: >-
-  Construct is bound to this project. Use it to remember what the person
-  asks to keep, to manage an outcome through a resolved workflow, or to set
-  up a standing outcome an external clock fires. Answer plain questions
-  plainly and record nothing; stand down when nothing is asked of Construct.
+  Construct is bound to this project: it remembers what the person asks to
+  keep, runs an outcome through a resolved workflow, and keeps a standing
+  outcome reviewed on a clock the person owns. Use when the person says
+  things like: remember that we decided; what did we decide about; kick off
+  the review for; start the release readiness check; every Monday compare
+  the roadmap to the board. Answer plain questions plainly and record
+  nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
   version: 2.0.0
@@ -36,9 +39,14 @@ relay each answer with `decide`.
    principle, note, outcome). One record, nothing else: no run, no tasks,
    no staff, no follow-up questions about roles or approvals.
 3. **Manage an outcome.** "Review this against our design principles",
-   "Write the requirements for…". Call `classify_request` when unsure, then
-   `workflows` with `resolve` to learn whether the fitting workflow can run
-   here and what would stop it. Only then `start_outcome`.
+   "Write the requirements for…", or a situation described in the person's
+   own words with no skill or workflow named. Call `classify_request` with
+   their wording: it ranks the skills that fit and names the workflows that
+   carry them. You are the judge; read the likely skills' `useWhen` text
+   and choose, ask one question only when two fit and the difference
+   changes the work. Then `workflows` with `resolve` to learn whether that
+   workflow can run here and what would stop it. Only then `start_outcome`.
+   Never ask the person to name a skill or a workflow.
 4. **Maintain a standing outcome.** "Every January, compare strategies to
    active work and capacity." Explain what the standing workflow needs
    (sources, freshness, a clock, permissions, overlap policy) and define it

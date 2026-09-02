@@ -1,16 +1,13 @@
 ---
 name: investigative-research
-description: Disciplined multi-source research over public records and provided
-  material, for conclusions that must survive a hostile reader. Mandatory
-  verification gates - every load-bearing claim cited or marked [unverified],
-  sources classed (record, derived record, aggregator, inference), independence
-  checked before two sources count as two, a disconfirmation pass before any
-  conclusion, and a closing verification record naming where each gate was
-  answered. Use when the task is due diligence, a background or competitive
-  investigation, incident or timeline reconstruction, verifying a specific
-  claim, or any "what does the record actually say" question where being wrong
-  has a cost. Not for casual lookups a single authoritative source settles -
-  answer those directly and skip this method entirely.
+description: >-
+  Establishes what is actually true from primary sources and records: claims
+  checked against evidence, timelines reconstructed, provenance kept. Use
+  when the person says things like: is that real; someone claims X, check
+  it; find out whether their numbers are true; what actually happened, the
+  timeline doesn't add up; verify this before we publish; who said what and
+  when. Not for deciding what to do with the facts, and not for compliance
+  obligations.
 license: Apache-2.0
 metadata:
   version: 0.3.0

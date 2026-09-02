@@ -7,6 +7,12 @@
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
+    "everyone loves this idea but nobody can say what it changes for the customer",
+    "sanity check this spec before engineering starts",
+    "which of these asks actually matter this quarter",
+    "did last quarter's launch do anything",
+    "what should we build next",
+    "is this feature worth building",
     "review this PRD, this product requirements document, this opportunity assessment",
     "what problem does this solve, for whom, and how would we know it worked",
     "should we build this feature, prioritize this, cut this from scope",
