@@ -66,7 +66,7 @@ test('interactive effectiveExecutor uses session unless explicit override', asyn
   const { mkdtempSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join: pathJoin } = await import('node:path');
-  const { openStateStore } = await import('../../src/kernel/state/open.ts');
+  const { openStateStore } = await import('../../src/kernel/state-v1/open.ts');
   const { createInteractiveRunService } = await import(
     '../../src/kernel/services/interactive-run.ts'
   );

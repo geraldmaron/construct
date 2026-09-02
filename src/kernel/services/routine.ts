@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import {
   createRoutine,
   getRoutine,
@@ -14,9 +14,9 @@ import {
   markRoutineRun,
   setRoutineEnabled,
   type Routine,
-} from '../state/routines.ts';
+} from '../state-v1/routines.ts';
 import { createHeadlessRunService } from './headless-run.ts';
-import type { Run } from '../state/runs.ts';
+import type { Run } from '../state-v1/runs.ts';
 
 function pinFromPolicy(policy: unknown): string | null {
   if (policy === null || typeof policy !== 'object') return null;

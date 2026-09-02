@@ -1,5 +1,5 @@
 /**
- * kernel/state/integrations.ts — host integration fingerprints for reconcile.
+ * kernel/state-v1/integrations.ts — host integration fingerprints for reconcile.
  */
 
 import type { StateStore } from './open.ts';

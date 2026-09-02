@@ -1,5 +1,5 @@
 /**
- * kernel/state/tasks.ts — task execution state machine for format v1.
+ * kernel/state-v1/tasks.ts — task execution state machine for format v1.
  *
  * pending → leased → done | failed
  *

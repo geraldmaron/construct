@@ -8,8 +8,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { createDecisionService } from '../kernel/services/decision.ts';
-import type { DecisionKind, DecisionSubject } from '../kernel/state/decisions.ts';
-import type { StateStore } from '../kernel/state/open.ts';
+import type { DecisionKind, DecisionSubject } from '../kernel/state-v1/decisions.ts';
+import type { StateStore } from '../kernel/state-v1/open.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
 import { now } from './runtime.ts';
 

@@ -6,7 +6,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { openStateStore, type StateStore } from '../kernel/state/open.ts';
+import { openStateStore, type StateStore } from '../kernel/state-v1/open.ts';
 import { resolveProjectContext } from '../kernel/project/context.ts';
 import { projectConfigPath, projectDbPath } from '../kernel/project/layout.ts';
 import { gitRoot } from './settings-file.ts';

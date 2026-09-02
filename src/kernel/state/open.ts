@@ -1,23 +1,30 @@
 /**
- * kernel/state/open.ts — open or create a project-local Construct state v1 store.
+ * kernel/state/open.ts — open or create the project's one state database.
  *
- * Refuses unrecognized formats and prior alpha schema versions. No migration.
+ * Refuses any file that is not exactly this format. Foreign keys are always
+ * on. Multi-row transitions run inside `transaction`, which is the only
+ * place BEGIN and COMMIT appear.
  */
 
-import { mkdirSync, existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import {
-  STATE_FORMAT_ID,
-  STATE_FORMAT_VERSION,
-  UnsupportedAlphaStoreError,
-} from './format.ts';
-import { SCHEMA_V1_SQL } from './schema.ts';
+import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UnsupportedStateError } from './format.ts';
+import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
 
 export interface StateStore {
   readonly db: DatabaseSync;
   readonly path: string;
+  /** Run `fn` atomically. Nested calls join the outer transaction. */
+  transaction<T>(fn: () => T): T;
   close(): void;
+}
+
+function tableNames(db: DatabaseSync): Set<string> {
+  const rows = db
+    .prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`)
+    .all() as Array<{ name: string }>;
+  return new Set(rows.map((r) => r.name));
 }
 
 function readMeta(db: DatabaseSync, key: string): string | null {
@@ -27,139 +34,77 @@ function readMeta(db: DatabaseSync, key: string): string | null {
   return row?.value ?? null;
 }
 
-function writeMeta(db: DatabaseSync, key: string, value: string): void {
-  db.prepare(
-    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-  ).run(key, value);
-}
-
 /**
- * Detect legacy home/project sqlite that used SCHEMA_VERSION integers without
- * a format id — including schema 23.
+ * Anything other than "meta says construct-state, format 2, and every
+ * required table exists" is refused. Old stores are recognized only by the
+ * absence of that stamp; their contents are never read.
  */
-function refuseIfLegacy(db: DatabaseSync): void {
-  const tables = db
-    .prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`)
-    .all() as Array<{ name: string }>;
-  const names = new Set(tables.map((t) => t.name));
-
-  if (!names.has('meta')) {
-    // Empty or unrelated file with no meta — treat as unsupported if any tables exist.
-    if (names.size > 0) throw new UnsupportedAlphaStoreError(null, null);
-    return;
-  }
+function verifyFormat(db: DatabaseSync): void {
+  const names = tableNames(db);
+  if (names.size === 0) return; // an empty file: create path stamps it
+  if (!names.has('meta')) throw new UnsupportedStateError(null, null);
 
   const format = readMeta(db, 'format');
   const versionRaw = readMeta(db, 'format_version') ?? readMeta(db, 'schema_version');
+  const version = versionRaw === null ? null : Number(versionRaw);
+  const versionOrNull = version !== null && Number.isFinite(version) ? version : null;
 
-  if (format === STATE_FORMAT_ID) {
-    const version = versionRaw !== null ? Number(versionRaw) : NaN;
-    if (version !== STATE_FORMAT_VERSION) {
-      throw new UnsupportedAlphaStoreError(format, Number.isFinite(version) ? version : null);
-    }
-    return;
+  if (format !== STATE_FORMAT_ID || versionOrNull !== STATE_FORMAT_VERSION) {
+    throw new UnsupportedStateError(format, versionOrNull);
   }
-
-  // Prior alphas stamped schema_version (1..23) without format id.
-  if (format === null && versionRaw !== null) {
-    throw new UnsupportedAlphaStoreError(null, Number(versionRaw));
-  }
-  if (format !== null && format !== STATE_FORMAT_ID) {
-    throw new UnsupportedAlphaStoreError(format, versionRaw !== null ? Number(versionRaw) : null);
-  }
-  // meta exists but empty / unknown — refuse rather than guess.
-  if (names.size > 1 || (names.size === 1 && readMeta(db, 'format') === null && versionRaw === null)) {
-    // Brand-new create path applies schema then stamps meta; opening a file that
-    // already has only empty meta is still unsupported.
-    const hasAppTables = [...names].some((n) => n !== 'meta');
-    if (hasAppTables) throw new UnsupportedAlphaStoreError(format, null);
+  for (const table of REQUIRED_TABLES) {
+    if (!names.has(table)) throw new UnsupportedStateError(format, versionOrNull);
   }
 }
 
-/**
- * Open an existing v1 store or create a fresh one at `dbPath`.
- */
 export function openStateStore(dbPath: string): StateStore {
   mkdirSync(dirname(dbPath), { recursive: true });
   const existed = existsSync(dbPath);
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA foreign_keys = ON');
 
-  if (existed) {
-    try {
-      refuseIfLegacy(db);
-    } catch (err) {
-      db.close();
-      throw err;
+  try {
+    if (existed) {
+      verifyFormat(db);
+      if (tableNames(db).size === 0) stampFresh(db);
+    } else {
+      stampFresh(db);
     }
-    const format = readMeta(db, 'format');
-    if (format !== STATE_FORMAT_ID) {
-      db.close();
-      throw new UnsupportedAlphaStoreError(format, null);
-    }
-    // Additive v1 tables appear on reopen without a format bump.
-    db.exec(SCHEMA_V1_SQL);
-    ensureDecisionsShape(db);
-  } else {
-    db.exec(SCHEMA_V1_SQL);
-    writeMeta(db, 'format', STATE_FORMAT_ID);
-    writeMeta(db, 'format_version', String(STATE_FORMAT_VERSION));
+  } catch (err) {
+    db.close();
+    throw err;
   }
 
+  let depth = 0;
   return {
     db,
     path: dbPath,
+    transaction<T>(fn: () => T): T {
+      if (depth > 0) return fn();
+      depth += 1;
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        const out = fn();
+        db.exec('COMMIT');
+        return out;
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      } finally {
+        depth -= 1;
+      }
+    },
     close: () => db.close(),
   };
 }
 
-/**
- * Alpha cutover: early v1 decisions tables lacked subject_json and the
- * judgment kinds (waiver/revocation/verdict/consent). Rebuild in place so
- * reopen works without a format bump — still not a schema-23 migration.
- */
-function ensureDecisionsShape(db: DatabaseSync): void {
-  const row = db
-    .prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'decisions'`)
-    .get() as { sql: string } | undefined;
-  if (!row) return;
-  if (row.sql.includes('requires_waiver') && row.sql.includes('subject_json')) return;
-
+function stampFresh(db: DatabaseSync): void {
   db.exec('BEGIN');
   try {
-    db.exec(`
-      CREATE TABLE decisions_new (
-        id              TEXT PRIMARY KEY,
-        run_id          TEXT REFERENCES runs(id),
-        kind            TEXT NOT NULL CHECK (kind IN (
-                          'requires_decision',
-                          'requires_action_approval',
-                          'requires_trust',
-                          'requires_waiver',
-                          'requires_revocation',
-                          'requires_verdict',
-                          'requires_consent',
-                          'blocked'
-                        )),
-        question        TEXT NOT NULL,
-        subject_json    TEXT,
-        state           TEXT NOT NULL CHECK (state IN ('open', 'resolved')),
-        resolution_json TEXT,
-        raised_at       TEXT NOT NULL,
-        resolved_at     TEXT,
-        resolved_by     TEXT
-      );
-      INSERT INTO decisions_new (
-        id, run_id, kind, question, subject_json, state,
-        resolution_json, raised_at, resolved_at, resolved_by
-      )
-      SELECT id, run_id, kind, question, NULL, state,
-             resolution_json, raised_at, resolved_at, resolved_by
-        FROM decisions;
-      DROP TABLE decisions;
-      ALTER TABLE decisions_new RENAME TO decisions;
-      CREATE INDEX IF NOT EXISTS decisions_open ON decisions (state, raised_at);
-    `);
+    db.exec(SCHEMA_SQL);
+    const put = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
+    put.run('format', STATE_FORMAT_ID);
+    put.run('format_version', String(STATE_FORMAT_VERSION));
     db.exec('COMMIT');
   } catch (err) {
     db.exec('ROLLBACK');

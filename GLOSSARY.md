@@ -10,7 +10,8 @@ The natural-language naming binding for every surface — schemas, CLI, docs. `s
 | brief | contract | A declaration of what a task needs: inputs, tool capabilities, postconditions. |
 | dispatcher | router | Resolves a brief's requirements against available tools and roles. |
 | host | harness | The agent runtime a role actually executes on. Four adapters ship: OpenCode, Claude Code, the Codex CLI, and the Cursor CLI. Only OpenCode and Claude Code carry `outward-write`; Codex and Cursor dispatch read-only. |
-| deliverable | artifact | The finished, traceable output of a run. |
+| deliverable | — | The finished, traceable output of a run. Distinct from an artifact, which the project already owns. |
+| artifact | — | A thing the project owns that a source can point at and a principle can govern: a document, a design record, a specification, an ownership file. An entity in the context graph; never the output of a run, which is a deliverable. |
 | work log | accountability ledger | The append-only record of what was done, by whom, under what role. |
 | decision inbox | — | The short list of calls that are genuinely the user's to make. |
 | model capability floor | — | The weakest model tier a brief's work may run on: `any`, `capable`, or `frontier`. Ordinal and family-agnostic — never a vendor model name. Running below it degrades loudly and is recorded; it does not refuse. |

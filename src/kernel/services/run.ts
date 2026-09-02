@@ -2,15 +2,15 @@
  * kernel/services/run.ts — start/get run with concerns.
  */
 
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import {
   startRun,
   getRun,
   listRunConcerns,
   type Run,
   type RunConcern,
-} from '../state/runs.ts';
-import { enqueueTask } from '../state/tasks.ts';
+} from '../state-v1/runs.ts';
+import { enqueueTask } from '../state-v1/tasks.ts';
 
 export interface RunService {
   start(input: {

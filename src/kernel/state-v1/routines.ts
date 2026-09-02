@@ -1,5 +1,5 @@
 /**
- * kernel/state/routines.ts — unified recurring / event / scheduled work.
+ * kernel/state-v1/routines.ts — unified recurring / event / scheduled work.
  *
  * Replaces standing + watch + schedule + daemon as product concepts.
  */

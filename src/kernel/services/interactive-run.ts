@@ -8,13 +8,13 @@
  * on the call (not inferred from installed agents).
  */
 
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import { createRunService, type RunService } from './run.ts';
 import { createTaskService, type TaskService } from './task.ts';
-import type { LeasedTask } from '../state/tasks.ts';
-import type { SubmitCompletedWorkResult } from '../state/submit.ts';
-import type { Run, RunConcern } from '../state/runs.ts';
-import { appendActivity } from '../state/deliverables.ts';
+import type { LeasedTask } from '../state-v1/tasks.ts';
+import type { SubmitCompletedWorkResult } from '../state-v1/submit.ts';
+import type { Run, RunConcern } from '../state-v1/runs.ts';
+import { appendActivity } from '../state-v1/deliverables.ts';
 
 export interface InteractiveSession {
   /** Client where the user is interacting (cursor, claude-code, …). */

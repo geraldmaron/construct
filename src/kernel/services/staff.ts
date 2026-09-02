@@ -2,7 +2,7 @@
  * kernel/services/staff.ts — StaffMember façade (identity ≠ executor).
  */
 
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import {
   createStaffMember,
   getStaffMember,
@@ -10,7 +10,7 @@ import {
   setStaffStatus,
   type StaffMember,
   type StaffStatus,
-} from '../state/staff.ts';
+} from '../state-v1/staff.ts';
 
 export interface StaffService {
   create(input: Parameters<typeof createStaffMember>[1]): StaffMember;

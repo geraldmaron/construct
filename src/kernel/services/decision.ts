@@ -2,14 +2,14 @@
  * kernel/services/decision.ts — inbox / approvals façade with kind side effects.
  */
 
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import {
   raiseDecision,
   resolveDecision,
   listOpenDecisions,
   getDecision,
   type Decision,
-} from '../state/decisions.ts';
+} from '../state-v1/decisions.ts';
 
 export interface DecisionService {
   raise(input: Parameters<typeof raiseDecision>[1]): Decision;

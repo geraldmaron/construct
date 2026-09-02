@@ -8,7 +8,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { openStateStore, type StateStore } from '../state/open.ts';
+import { openStateStore, type StateStore } from '../state-v1/open.ts';
 import type { ProjectContext } from './context.ts';
 import {
   projectConfigPath,

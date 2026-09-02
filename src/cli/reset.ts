@@ -6,7 +6,7 @@
  * destroys runtime state.
  */
 
-import { UnsupportedAlphaStoreError } from '../kernel/state/format.ts';
+import { UnsupportedAlphaStoreError } from '../kernel/state-v1/format.ts';
 import { resolveProjectContext } from '../kernel/project/context.ts';
 import { resetProject } from '../kernel/project/reset.ts';
 import { gitRoot } from './settings-file.ts';

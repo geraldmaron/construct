@@ -2,14 +2,14 @@
  * kernel/services/project.ts — project status projection for doctor / MCP.
  */
 
-import type { StateStore } from '../state/open.ts';
+import type { StateStore } from '../state-v1/open.ts';
 import type { ProjectContext } from '../project/context.ts';
-import { listIntegrations } from '../state/integrations.ts';
-import { listOpenDecisions } from '../state/decisions.ts';
-import { listStaffMembers } from '../state/staff.ts';
-import { listRoutines } from '../state/routines.ts';
-import { listSources } from '../state/sources.ts';
-import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../state/format.ts';
+import { listIntegrations } from '../state-v1/integrations.ts';
+import { listOpenDecisions } from '../state-v1/decisions.ts';
+import { listStaffMembers } from '../state-v1/staff.ts';
+import { listRoutines } from '../state-v1/routines.ts';
+import { listSources } from '../state-v1/sources.ts';
+import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../state-v1/format.ts';
 
 export interface ProjectService {
   status(): {
