@@ -25,6 +25,11 @@
   any for 21 situations the packs cover; the rewritten descriptions score
   73 of 74 in that harness and 74 of 74 in the recorded run. The cases and
   the descriptions share an author, so that agreement is an upper bound.
+- **Quiet on Node 22.** Node 22 prints an experimental warning for
+  `node:sqlite` on every command; the launcher now drops that one warning
+  and no other, so stderr carries only what the person can act on. Found
+  by the release workflow, whose smoke merged the warning into a JSON
+  capture; the smoke now parses stdout alone.
 
 ## 3.0.0-alpha.23 — 2026-09-02
 

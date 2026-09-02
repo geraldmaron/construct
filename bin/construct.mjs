@@ -37,6 +37,17 @@ if (!Number.isFinite(major) || major < 22) {
   process.exit(1);
 }
 
+// Node 22 marks node:sqlite experimental and prints a warning on every run.
+// The floor is 22.18, so the warning is expected and says nothing the person
+// can act on; it would land in stderr of every command, and in any capture
+// that merges the streams. Every other warning still prints as Node would.
+const printWarning = process.listeners('warning');
+process.removeAllListeners('warning');
+process.on('warning', (warning) => {
+  if (warning.name === 'ExperimentalWarning' && /SQLite/i.test(warning.message)) return;
+  for (const listener of printWarning) listener(warning);
+});
+
 const dist = new URL('../dist/cli/index.js', import.meta.url);
 const src = new URL('../src/cli/index.ts', import.meta.url);
 const target = existsSync(fileURLToPath(src)) ? src : dist;
