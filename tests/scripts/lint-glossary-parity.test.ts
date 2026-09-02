@@ -47,7 +47,7 @@ async function runLint(): Promise<{ code: number; stderr: string }> {
 }
 
 test('a never-tracked file using a retired term fails the lint before it is added', async () => {
-  // 'trunk' is the retired synonym for 'playbook' — and the exact term commit
+  // 'trunk' is the retired synonym for 'workflow' — and the exact term commit
   // 39da902 shipped to main through this hole.
   writeFileSync(FIXTURE, 'export const shared = "the trunk every role draws on";\n');
   try {
@@ -55,7 +55,7 @@ test('a never-tracked file using a retired term fails the lint before it is adde
     assert.equal(code, 1, 'lint should exit non-zero on an untracked violation');
     assert.match(stderr, /__glossary-lint-fixture__/);
     assert.match(stderr, /retired term "trunk"/);
-    assert.match(stderr, /use "playbook"/);
+    assert.match(stderr, /use "workflow"/);
   } finally {
     rmSync(FIXTURE, { force: true });
   }

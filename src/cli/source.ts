@@ -14,6 +14,7 @@ import { readDirectorySource } from '../hosts/sources/directory.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, openProject, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { isAbsolute, resolve } from 'node:path';
 
 const group = 'Sources';
 
@@ -55,12 +56,14 @@ function readers() {
   return new Map([['directory', readDirectorySource]]);
 }
 
-function declaredFrom(id: string, args: ParsedArgs): DeclaredSource {
+function declaredFrom(id: string, args: ParsedArgs, root: string): DeclaredSource {
   const kind = stringFlag(args, 'kind');
   if (!kind || !(SOURCE_KINDS as readonly string[]).includes(kind)) throw new UsageError(`--kind must be one of ${SOURCE_KINDS.join(' | ')}`);
   const purpose = stringFlag(args, 'purpose');
   if (!purpose) throw new UsageError('--purpose says what this source is for');
-  const locator = stringFlag(args, 'locator') ?? null;
+  const rawLocator = stringFlag(args, 'locator') ?? null;
+  // A relative directory is relative to the project, which is what a person means when they type it.
+  const locator = rawLocator !== null && kind === 'directory' && !isAbsolute(rawLocator) ? resolve(root, rawLocator) : rawLocator;
   const problem = locatorProblem(kind, locator);
   if (problem) throw new UsageError(problem);
   const authority = stringFlag(args, 'authority') ?? 'informative';
@@ -123,8 +126,8 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
     }
     case 'add': {
       const id = args.positionals[0]!;
-      const declared = declaredFrom(id, args);
-      return withProject(ctx, ({ store, layout, files }) => {
+      return withProject(ctx, ({ store, layout, files, root }) => {
+        const declared = declaredFrom(id, args, root);
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
         if (boolFlag(args, 'local')) {

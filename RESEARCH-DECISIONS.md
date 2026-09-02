@@ -1,4 +1,15 @@
-# Research: the decision layer, measured
+# Research decisions
+
+**Status of this record.** Sections 1 through 32 are the decision record of
+the program that preceded the architectural cutover of 2026-09-02: the
+keyword implication map, the model namer, roles as lenses, the tuned-family
+matrix, the home store, and the 37-verb command line. Those mechanisms no
+longer exist in the code. The sections stay because their measurements are
+dated evidence for the decisions that led here (in particular §§10, 14, 15,
+18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
+Nothing in §§1–32 describes the current product; section 33 does, and
+STRATEGY.md states the settled direction.
+
 
 Third standing document, alongside `STRATEGY.md` (phase plan and commitments) and
 `GLOSSARY.md` (vocabulary). This one carries the quantitative basis for the system's
@@ -2905,3 +2916,49 @@ best-effort degradation note — an honest partial (for example `qwen3.6:35b`'s
 **What this does not change.** User choice: someone configuring Construct with a
 local model still gets that choice. This section governs **development**
 measurement only.
+
+
+## 33. The cutover (2026-09-02)
+
+Gerald's directive of 2026-09-02 (committed verbatim at
+docs/internal/cutover-directive.md) replaced the program above with one
+product definition: a project-bound, capability-aware operating layer for
+agent hosts. The decisions made while executing it, each recorded on its
+tracker child under construct-qs7n:
+
+1. **No migration, no compatibility.** State format 2 and project config
+   format 2 refuse every earlier format unread with a reset instruction.
+   The old store's schema number was 24, not 23 as the directive stated;
+   recorded as contrary evidence and irrelevant to the refusal.
+2. **Phase B was one deletion sweep plus a minimal command line.** The old
+   store's consumers were exactly the surfaces Phase D replaces, so the
+   store, the run coordinator, routing, implication, plan and lens
+   composition, extraction, metrics, tracker projections, spawn adapters,
+   connectors bound to the store, the format-1 broker, 37 verbs, generated
+   packs, fixtures, probes, and their tests went in one commit while init,
+   status, doctor, config, project, source, skill, reset, completion,
+   version, and help kept the package runnable. Test count went from 3,112
+   to 238 at that commit and stands at 289 after E3; the removed tests
+   proved removed mechanisms.
+3. **Ownership is never inferred into fact.** Reporting lines, membership,
+   and ownership from any source stay proposed until a person confirms
+   them, whatever the source's formal standing.
+4. **A remember is a Construct-state write, not a project write.** Project
+   policy `policy.projectWrite: never` forbids writes to project files
+   inside managed outcomes; it does not stop the person from asking
+   Construct to remember something.
+5. **A blocked run never holds the door.** Overlap and single-concurrency
+   checks ignore blocked runs, and a firing that resolves supersedes them.
+6. **The activation judge is a lexical proxy and says so.** Every skill
+   ships trigger fixtures the proxy must agree with, and cases only a model
+   can judge (a scheduling question, whether-versus-what, a factual
+   question) are marked so and run only under the conformance command.
+7. **Doctrine citations were not re-opened in this build.** Every pack's
+   sources file says so and carries review-due dates; a finding that leans
+   on a clause opens it first.
+8. **Only directory reading ships as a connector.** Other source kinds read
+   through the host's own tools in an interactive session or are reported
+   unreachable; nothing fabricates a snapshot.
+9. **Push is withheld.** The directive forbids pushing until instructed
+   after implementation; the session-close push rule in the project
+   instructions is overridden for this program and the handoff says so.
