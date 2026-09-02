@@ -106,6 +106,13 @@ expect_contains "second source refresh" "$refresh2" "unchanged"
 list_out="$(npx --no-install construct source list)" || fail "source list exited non-zero"
 expect_contains "source list" "$list_out" "reachable"
 
+echo "== the packaged install can describe the surface it would serve =="
+serve_out="$(npx --no-install construct serve --client=cursor --describe 2>&1)" || fail "serve --describe exited non-zero" "$serve_out"
+expect_contains "serve --describe" "$serve_out" "would serve the interactive surface for cursor"
+mcp_out="$(printf '%s\n%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | npx --no-install construct serve --client=cursor 2>/dev/null)" || fail "serve over stdio exited non-zero" "$mcp_out"
+expect_contains "serve initialize" "$mcp_out" '"name":"construct"'
+expect_contains "serve tools/list" "$mcp_out" '"name":"bootstrap"'
+
 echo "== the packaged install carries the skills =="
 skills_list="$(npx --no-install construct skill list 2>&1)" || fail "skill list exited non-zero" "$skills_list"
 expect_contains "skill list" "$skills_list" "investigative-research"

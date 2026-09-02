@@ -8,7 +8,6 @@
  * wrong.
  */
 
-import { readFileSync } from 'node:fs';
 import { commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
 import { reportFailure, say, warn, UsageError } from './output.ts';
@@ -21,6 +20,8 @@ import { projectCommand, PROJECT_SPECS } from './project.ts';
 import { sourceCommand, SOURCE_SPECS } from './source.ts';
 import { skillCommand, SKILL_SPECS } from './skill.ts';
 import { completionScript, SHELLS, type Shell } from './completions.ts';
+import { serve, SERVE_SPEC } from './serve.ts';
+import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
 export const HELP_SPEC: CommandSpec = { path: ['help'], gloss: 'show every command', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -43,13 +44,14 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...CONFIG_SPECS,
   ...SOURCE_SPECS,
   ...SKILL_SPECS,
+  SERVE_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
   VERSION_SPEC,
   HELP_SPEC,
 ]);
 
-export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Recover', 'Help']);
+export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Host', 'Recover', 'Help']);
 
 const INTRO: readonly string[] = [
   'construct — a project-bound operating layer for the agent host you already use.',
@@ -64,10 +66,7 @@ export function commandNames(): readonly string[] {
   return COMMANDS.map((c) => c.path.join(' '));
 }
 
-export function packageVersion(): string {
-  const raw = readFileSync(new URL('../../package.json', import.meta.url), 'utf8');
-  return (JSON.parse(raw) as { version: string }).version;
-}
+export { packageVersion };
 
 export async function main(argv: string[] = process.argv.slice(2), ctx: CliContext = createContext()): Promise<number> {
   const quitOnClosedOutput = (error: NodeJS.ErrnoException): void => {
@@ -130,6 +129,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return doctor(args, ctx);
     case 'reset':
       return reset(args, ctx);
+    case 'serve':
+      return serve(args, ctx);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':

@@ -19,6 +19,8 @@ import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { updateLock } from '../kernel/registry/lockfile.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
+import { installWiring } from '../hosts/wiring/wire.ts';
+import { clientWiring, normalizeClient, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, initRootFor, type CliContext } from './context.ts';
@@ -36,22 +38,34 @@ export const INIT_SPEC: CommandSpec = {
     { name: 'scale', gloss: `what this is to you: ${PROJECT_SCALES.join(' | ')}`, takesValue: true },
     { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
     { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
-    { name: 'client', gloss: `plant the operational skill for this host: ${SKILLS_HOST_NAMES.join(' | ')}`, takesValue: true },
+    { name: 'client', gloss: `the host you use: plants its skill and wires its MCP config (${WIRABLE_CLIENTS.join(' | ')}, bob, codex)`, takesValue: true },
+    { name: 'no-wire', gloss: 'do not write the host’s MCP configuration', takesValue: false },
     { name: 'skills-dir', gloss: 'plant the operational skill into this directory instead of a host’s', takesValue: true },
     { name: 'dry-run', gloss: 'say what would happen and write nothing', takesValue: false },
   ],
   readOnly: false,
 };
 
+/** The skills directory a host name maps to; vscode reads none of its own. */
+function skillsHostFor(client: string): SkillsHostName | null {
+  const map: Record<string, SkillsHostName> = { claude: 'claude', 'claude-code': 'claude', cursor: 'cursor', opencode: 'opencode', codex: 'codex', bob: 'bob' };
+  return map[client] ?? null;
+}
+
+function wiringClientFor(args: ParsedArgs, ctx: CliContext): WirableClient | null {
+  const explicit = stringFlag(args, 'client');
+  const id = normalizeClient(explicit ?? detectAmbientHost(ctx.env)?.host);
+  return clientWiring(id) ? (id as WirableClient) : null;
+}
+
 function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: string | null; readonly how: string } {
   const explicit = stringFlag(args, 'skills-dir');
   if (explicit) return { dir: explicit, how: '--skills-dir' };
   const client = stringFlag(args, 'client');
   if (client !== undefined) {
-    if (!(SKILLS_HOST_NAMES as readonly string[]).includes(client)) {
-      throw new UsageError(`--client must be one of ${SKILLS_HOST_NAMES.join(' | ')}`);
-    }
-    return { dir: resolveHostSkillsDir(client as SkillsHostName, ctx.env), how: `--client=${client}` };
+    const skillsHost = skillsHostFor(client);
+    if (!skillsHost) throw new UsageError(`--client must be one of ${[...WIRABLE_CLIENTS, 'bob', 'codex'].join(' | ')}`);
+    return { dir: resolveHostSkillsDir(skillsHost, ctx.env), how: `--client=${client}` };
   }
   const ambient = detectAmbientHost(ctx.env);
   if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
@@ -79,6 +93,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       proposals: draft.statements.length + draft.profile.length + draft.ownership.length,
       questions: draft.questions.map((q) => q.id),
       operationalSkill: skills.dir ? `${skills.dir} (${skills.how})` : `skipped: ${skills.how}`,
+      hostWiring: wiringClientFor(args, ctx),
     };
     if (args.json) {
       writeJson(record);
@@ -89,6 +104,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     say(`  would propose ${String(record.proposals)} item(s) read from the project’s own files, each with its source`);
     say(`  would ask: ${record.questions.join(', ')}`);
     say(`  operational skill: ${esc(record.operationalSkill)}`);
+    say(`  host wiring: ${record.hostWiring ? `would write MCP config for ${record.hostWiring}` : 'none'}`);
     say('Nothing was written.');
     return 0;
   }
@@ -119,6 +135,8 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     if (locked.changed.length > 0 || locked.removed.length > 0) writeJsonFile(result.layout.lockFile, locked.lock);
     const status = onboardingStatus(result.store);
 
+    const wireClient = boolFlag(args, 'no-wire') ? null : wiringClientFor(args, ctx);
+    const wiring = wireClient ? installWiring(wireClient, root) : null;
     let skillLine: string;
     let skillOk = false;
     if (skills.dir) {
@@ -142,6 +160,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       proposed: applied.proposedStatements.length,
       openQuestions: status.openQuestions.map((q) => q.question),
       sources: synced,
+      hostWiring: wiring ? { client: wiring.client, path: wiring.path, status: wiring.status } : null,
       registry: { locked: Object.keys(locked.lock.skills).length + Object.keys(locked.lock.workflows).length, updated: locked.changed.length, awaitingConfirmation: locked.needsConfirmation },
       operationalSkill: skillLine,
     };
@@ -163,6 +182,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     say(`  registry: ${String(Object.keys(locked.lock.skills).length)} skill(s), ${String(Object.keys(locked.lock.workflows).length)} workflow(s) locked${locked.needsConfirmation.length ? `; ${String(locked.needsConfirmation.length)} project bundle(s) changed and await confirmation` : ''}`);
     say(`  operational skill: ${esc(skillLine)}`);
     if (!skillOk && skills.dir) say('  (the skill was not planted; see above)');
+    say(wiring ? `  host: ${wiring.client} ${wiring.status} (${esc(wiring.detail)})` : `  host: no MCP configuration written${boolFlag(args, 'no-wire') ? ' (--no-wire)' : '; pass --client=<host> to wire one'}`);
     say(status.openQuestions.length > 0
       ? 'Next: answer the questions in your agent session, or pass --scale, --outcome, and --constraint to init.'
       : 'Next: talk in your agent session. `construct status` shows where things stand.');
