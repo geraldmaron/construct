@@ -13,7 +13,7 @@ import { capture } from './support.ts';
 const nouns = [...new Set(COMMANDS.map((c) => c.path[0]))];
 
 test('the registry names no removed verb', () => {
-  for (const gone of ['outcome', 'work', 'ask', 'skills', 'settings', 'serve']) assert.ok(!nouns.includes(gone), gone);
+  for (const gone of ['outcome', 'work', 'ask', 'skills', 'settings', 'role-serve']) assert.ok(!nouns.includes(gone), gone);
 });
 
 test('bash and zsh scripts name every command noun and subcommand', () => {

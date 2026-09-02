@@ -17,6 +17,8 @@ import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import { inspectWiring } from '../hosts/wiring/wire.ts';
+import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { createContext, gitRootOf, type CliContext } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
@@ -103,6 +105,10 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   }
 
   const ambient = detectAmbientHost(ctx.env);
+  if (root !== null) {
+    const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
+    checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
+  }
   if (ambient) {
     checks.push({ name: 'host', ok: true, detail: `inside ${ambient.host} (${ambient.marker})` });
     if ((SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
