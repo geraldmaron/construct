@@ -21,6 +21,10 @@ import { sourceCommand, SOURCE_SPECS } from './source.ts';
 import { skillCommand, SKILL_SPECS } from './skill.ts';
 import { completionScript, SHELLS, type Shell } from './completions.ts';
 import { serve, SERVE_SPEC } from './serve.ts';
+import { workflowCommand, WORKFLOW_SPECS } from './workflow.ts';
+import { runCommand, RUN_SPECS } from './run.ts';
+import { inboxCommand, INBOX_SPECS } from './inbox.ts';
+import { staffCommand, STAFF_SPECS } from './staff.ts';
 import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -44,6 +48,10 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...CONFIG_SPECS,
   ...SOURCE_SPECS,
   ...SKILL_SPECS,
+  ...WORKFLOW_SPECS,
+  ...RUN_SPECS,
+  ...INBOX_SPECS,
+  ...STAFF_SPECS,
   SERVE_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
@@ -51,7 +59,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   HELP_SPEC,
 ]);
 
-export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Host', 'Recover', 'Help']);
+export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
 
 const INTRO: readonly string[] = [
   'construct — a project-bound operating layer for the agent host you already use.',
@@ -131,6 +139,14 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return reset(args, ctx);
     case 'serve':
       return serve(args, ctx);
+    case 'workflow':
+      return workflowCommand(verb!, args, ctx);
+    case 'run':
+      return runCommand(verb!, args, ctx);
+    case 'inbox':
+      return inboxCommand(verb!, args, ctx);
+    case 'staff':
+      return staffCommand(verb!, args, ctx);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':
