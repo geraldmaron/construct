@@ -2,8 +2,8 @@
  * kernel/services/source.ts — source façade.
  */
 
-import type { StateStore } from '../state/open.ts';
-import { addSource, getSource, listSources, type Source } from '../state/sources.ts';
+import type { StateStore } from '../state-v1/open.ts';
+import { addSource, getSource, listSources, type Source } from '../state-v1/sources.ts';
 
 export interface SourceService {
   add(input: Parameters<typeof addSource>[1]): Source;

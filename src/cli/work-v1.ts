@@ -7,10 +7,10 @@
  */
 
 import { createHeadlessRunService } from '../kernel/services/headless-run.ts';
-import { listTasks, countTasksByState, getTask } from '../kernel/state/tasks.ts';
-import { getDeliverableByTask } from '../kernel/state/deliverables.ts';
+import { listTasks, countTasksByState, getTask } from '../kernel/state-v1/tasks.ts';
+import { getDeliverableByTask } from '../kernel/state-v1/deliverables.ts';
 import { escapeForTerminal } from '../kernel/render/terminal.ts';
-import type { StateStore } from '../kernel/state/open.ts';
+import type { StateStore } from '../kernel/state-v1/open.ts';
 import { now } from './runtime.ts';
 import { parseFlags } from './flags.ts';
 

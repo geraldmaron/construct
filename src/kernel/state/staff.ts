@@ -1,26 +1,21 @@
 /**
- * kernel/state/staff.ts — durable StaffMember ownership for format v1.
- *
- * StaffMember ≠ Concern ≠ Skill ≠ Executor. A member may use different
- * executors over time; identity and mission stay stable.
+ * kernel/state/staff.ts — staff members and their capability and skill assignments.
  */
 
 import type { StateStore } from './open.ts';
-import { appendActivity } from './deliverables.ts';
+import { requireInstant, requireNonEmpty, requireOneOf } from './rows.ts';
 
-export type StaffStatus = 'active' | 'paused' | 'retired';
+export const STAFF_STATUSES = ['active', 'paused', 'retired'] as const;
+export type StaffStatus = (typeof STAFF_STATUSES)[number];
 
 export interface StaffMember {
   readonly id: string;
   readonly name: string;
   readonly title: string;
   readonly mission: string;
-  readonly concerns: readonly string[];
-  readonly skillIds: readonly string[];
-  readonly sourceIds: readonly string[];
-  readonly executionPolicy: unknown;
-  readonly approvalPolicy: unknown;
   readonly status: StaffStatus;
+  readonly capabilities: readonly string[];
+  readonly skillIds: readonly string[];
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -30,33 +25,31 @@ interface Row {
   readonly name: string;
   readonly title: string;
   readonly mission: string;
-  readonly concerns_json: string;
-  readonly skill_ids_json: string;
-  readonly source_ids_json: string;
-  readonly execution_policy_json: string;
-  readonly approval_policy_json: string;
   readonly status: StaffStatus;
   readonly created_at: string;
   readonly updated_at: string;
 }
 
-function parseArray(raw: string): string[] {
-  const value = JSON.parse(raw) as unknown;
-  return Array.isArray(value) ? value.map(String) : [];
+function assignments(store: StateStore, id: string): { capabilities: string[]; skillIds: string[] } {
+  const caps = store.db
+    .prepare('SELECT capability FROM staff_capabilities WHERE staff_id = ? ORDER BY capability')
+    .all(id) as unknown as Array<{ capability: string }>;
+  const skills = store.db
+    .prepare('SELECT skill_id FROM staff_skills WHERE staff_id = ? ORDER BY skill_id')
+    .all(id) as unknown as Array<{ skill_id: string }>;
+  return { capabilities: caps.map((c) => c.capability), skillIds: skills.map((s) => s.skill_id) };
 }
 
-function toStaff(row: Row): StaffMember {
+function toStaff(store: StateStore, row: Row): StaffMember {
+  const { capabilities, skillIds } = assignments(store, row.id);
   return {
     id: row.id,
     name: row.name,
     title: row.title,
     mission: row.mission,
-    concerns: parseArray(row.concerns_json),
-    skillIds: parseArray(row.skill_ids_json),
-    sourceIds: parseArray(row.source_ids_json),
-    executionPolicy: JSON.parse(row.execution_policy_json),
-    approvalPolicy: JSON.parse(row.approval_policy_json),
     status: row.status,
+    capabilities,
+    skillIds,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -69,69 +62,72 @@ export function createStaffMember(
     readonly name: string;
     readonly title: string;
     readonly mission: string;
-    readonly concerns?: readonly string[];
+    readonly capabilities?: readonly string[];
     readonly skillIds?: readonly string[];
-    readonly sourceIds?: readonly string[];
-    readonly executionPolicy?: unknown;
-    readonly approvalPolicy?: unknown;
     readonly at: string;
   },
 ): StaffMember {
-  store.db
-    .prepare(
-      `INSERT INTO staff_members (
-         id, name, title, mission, concerns_json, skill_ids_json, source_ids_json,
-         execution_policy_json, approval_policy_json, status, created_at, updated_at
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
-    )
-    .run(
-      input.id,
-      input.name,
-      input.title,
-      input.mission,
-      JSON.stringify(input.concerns ?? []),
-      JSON.stringify(input.skillIds ?? []),
-      JSON.stringify(input.sourceIds ?? []),
-      JSON.stringify(input.executionPolicy ?? { mode: 'interactive-session' }),
-      JSON.stringify(input.approvalPolicy ?? { consequential: 'require' }),
-      input.at,
-      input.at,
-    );
-  appendActivity(store, {
-    at: input.at,
-    kind: 'staff.assigned',
-    payload: { staffId: input.id, name: input.name },
+  requireNonEmpty(input.id, 'staff.id');
+  requireNonEmpty(input.name, 'staff.name');
+  requireNonEmpty(input.title, 'staff.title');
+  requireNonEmpty(input.mission, 'staff.mission');
+  requireInstant(input.at, 'staff.at');
+  return store.transaction(() => {
+    store.db
+      .prepare(
+        `INSERT INTO staff_members (id, name, title, mission, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, 'active', ?, ?)`,
+      )
+      .run(input.id, input.name, input.title, input.mission, input.at, input.at);
+    setAssignments(store, input.id, input.capabilities ?? [], input.skillIds ?? [], input.at);
+    return getStaffMember(store, input.id)!;
   });
-  return getStaffMember(store, input.id)!;
 }
 
 export function getStaffMember(store: StateStore, id: string): StaffMember | null {
-  const row = store.db.prepare('SELECT * FROM staff_members WHERE id = ?').get(id) as
-    | Row
-    | undefined;
-  return row ? toStaff(row) : null;
+  const row = store.db.prepare('SELECT * FROM staff_members WHERE id = ?').get(id) as Row | undefined;
+  return row ? toStaff(store, row) : null;
 }
 
-export function listStaffMembers(store: StateStore): StaffMember[] {
-  const rows = store.db
-    .prepare(`SELECT * FROM staff_members WHERE status != 'retired' ORDER BY name`)
-    .all() as unknown as Row[];
-  return rows.map(toStaff);
-}
-
-export function setStaffStatus(
+export function listStaffMembers(
   store: StateStore,
-  input: { readonly id: string; readonly status: StaffStatus; readonly at: string },
+  filter: { readonly status?: StaffStatus } = {},
+): StaffMember[] {
+  const rows = store.db
+    .prepare(`SELECT * FROM staff_members WHERE (? IS NULL OR status = ?) ORDER BY created_at, id`)
+    .all(filter.status ?? null, filter.status ?? null) as unknown as Row[];
+  return rows.map((row) => toStaff(store, row));
+}
+
+export function setStaffStatus(store: StateStore, id: string, status: StaffStatus, at: string): StaffMember {
+  requireOneOf(status, STAFF_STATUSES, 'staff.status');
+  requireInstant(at, 'staff.at');
+  const result = store.db
+    .prepare('UPDATE staff_members SET status = ?, updated_at = ? WHERE id = ?')
+    .run(status, at, id);
+  if (result.changes === 0) throw new Error(`no staff member ${id}`);
+  return getStaffMember(store, id)!;
+}
+
+/** Replace a member's capability and skill assignments wholesale. */
+export function setAssignments(
+  store: StateStore,
+  id: string,
+  capabilities: readonly string[],
+  skillIds: readonly string[],
+  at: string,
 ): StaffMember {
-  const existing = getStaffMember(store, input.id);
-  if (!existing) throw new Error(`staff member ${input.id} not found`);
-  store.db
-    .prepare(`UPDATE staff_members SET status = ?, updated_at = ? WHERE id = ?`)
-    .run(input.status, input.at, input.id);
-  appendActivity(store, {
-    at: input.at,
-    kind: 'staff.status',
-    payload: { staffId: input.id, status: input.status },
+  requireInstant(at, 'staff.at');
+  return store.transaction(() => {
+    const exists = store.db.prepare('SELECT 1 FROM staff_members WHERE id = ?').get(id);
+    if (!exists) throw new Error(`no staff member ${id}`);
+    store.db.prepare('DELETE FROM staff_capabilities WHERE staff_id = ?').run(id);
+    store.db.prepare('DELETE FROM staff_skills WHERE staff_id = ?').run(id);
+    const putCap = store.db.prepare('INSERT INTO staff_capabilities (staff_id, capability) VALUES (?, ?)');
+    for (const cap of new Set(capabilities)) putCap.run(id, requireNonEmpty(cap, 'staff.capability'));
+    const putSkill = store.db.prepare('INSERT INTO staff_skills (staff_id, skill_id) VALUES (?, ?)');
+    for (const skill of new Set(skillIds)) putSkill.run(id, requireNonEmpty(skill, 'staff.skillId'));
+    store.db.prepare('UPDATE staff_members SET updated_at = ? WHERE id = ?').run(at, id);
+    return getStaffMember(store, id)!;
   });
-  return getStaffMember(store, input.id)!;
 }

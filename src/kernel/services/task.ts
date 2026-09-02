@@ -2,14 +2,14 @@
  * kernel/services/task.ts — claim / submit / fail over format-v1 tasks.
  */
 
-import type { StateStore } from '../state/open.ts';
-import { claimTask, getTask, type LeasedTask, type Task } from '../state/tasks.ts';
+import type { StateStore } from '../state-v1/open.ts';
+import { claimTask, getTask, type LeasedTask, type Task } from '../state-v1/tasks.ts';
 import {
   submitCompletedWork,
   submitFailedWork,
   type SubmitCompletedWorkResult,
-} from '../state/submit.ts';
-import { getDeliverableByTask, type Deliverable } from '../state/deliverables.ts';
+} from '../state-v1/submit.ts';
+import { getDeliverableByTask, type Deliverable } from '../state-v1/deliverables.ts';
 
 export interface TaskService {
   claim(input: {

@@ -84,8 +84,20 @@ function docFiles() {
     cwd: ROOT,
     encoding: 'utf8',
   });
-  return out.split('\n').filter(Boolean).map((path) => join(ROOT, path));
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .filter((path) => !DIRECTIVES.has(path))
+    .map((path) => join(ROOT, path));
 }
+
+/**
+ * A directive describes the surface a program is building, not the one that
+ * ships today; its commands become real as the program lands. Checking it
+ * against the current verb table would fail until the last phase and then
+ * pass, which measures the calendar, not the document.
+ */
+const DIRECTIVES = new Set(['docs/internal/cutover-directive.md']);
 
 /**
  * A command line, not a sentence: `construct` opens the line, optionally behind

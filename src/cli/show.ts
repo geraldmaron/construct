@@ -497,7 +497,7 @@ export function inbox(argv: string[] = [], cwd: string = process.cwd()): number 
   });
 }
 
-function inboxV1(store: import('../kernel/state/open.ts').StateStore, argv: string[]): number {
+function inboxV1(store: import('../kernel/state-v1/open.ts').StateStore, argv: string[]): number {
   const decisions = createDecisionService(store);
   const sub = argv[0];
   if (sub === 'decide') {

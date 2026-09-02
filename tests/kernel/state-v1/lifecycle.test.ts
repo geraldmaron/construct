@@ -1,5 +1,5 @@
 /**
- * tests/kernel/state/lifecycle.test.ts — claim/submit separates task done from draft trust.
+ * tests/kernel/state-v1/lifecycle.test.ts — claim/submit separates task done from draft trust.
  */
 
 import { test } from 'node:test';
@@ -8,14 +8,14 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
-import { openStateStore } from '../../../src/kernel/state/open.ts';
+import { openStateStore } from '../../../src/kernel/state-v1/open.ts';
 import {
   UnsupportedAlphaStoreError,
   UNSUPPORTED_ALPHA_MESSAGE,
-} from '../../../src/kernel/state/format.ts';
-import { ensureRun, enqueueTask, claimTask, getTask, StaleLeaseError } from '../../../src/kernel/state/tasks.ts';
-import { getDeliverableByTask } from '../../../src/kernel/state/deliverables.ts';
-import { submitCompletedWork, submitFailedWork } from '../../../src/kernel/state/submit.ts';
+} from '../../../src/kernel/state-v1/format.ts';
+import { ensureRun, enqueueTask, claimTask, getTask, StaleLeaseError } from '../../../src/kernel/state-v1/tasks.ts';
+import { getDeliverableByTask } from '../../../src/kernel/state-v1/deliverables.ts';
+import { submitCompletedWork, submitFailedWork } from '../../../src/kernel/state-v1/submit.ts';
 import { resolveProjectContext } from '../../../src/kernel/project/context.ts';
 import { projectDbPath, projectConfigPath, projectStateDir } from '../../../src/kernel/project/layout.ts';
 

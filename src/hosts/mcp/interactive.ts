@@ -8,8 +8,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import type { StateStore } from '../../kernel/state/open.ts';
-import { openStateStore } from '../../kernel/state/open.ts';
+import type { StateStore } from '../../kernel/state-v1/open.ts';
+import { openStateStore } from '../../kernel/state-v1/open.ts';
 import { projectConfigPath, projectDbPath } from '../../kernel/project/layout.ts';
 import {
   createInteractiveRunService,
@@ -19,13 +19,13 @@ import {
 import { createDecisionService } from '../../kernel/services/decision.ts';
 import { createStaffService } from '../../kernel/services/staff.ts';
 import { createRoutineService } from '../../kernel/services/routine.ts';
-import type { DecisionKind, DecisionSubject } from '../../kernel/state/decisions.ts';
-import { DECISION_KINDS } from '../../kernel/state/decisions.ts';
-import type { LeasedTask } from '../../kernel/state/tasks.ts';
-import { StaleLeaseError, listTasks, countTasksByState } from '../../kernel/state/tasks.ts';
-import { listActivity } from '../../kernel/state/deliverables.ts';
-import { getRun, listRunConcerns } from '../../kernel/state/runs.ts';
-import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../../kernel/state/format.ts';
+import type { DecisionKind, DecisionSubject } from '../../kernel/state-v1/decisions.ts';
+import { DECISION_KINDS } from '../../kernel/state-v1/decisions.ts';
+import type { LeasedTask } from '../../kernel/state-v1/tasks.ts';
+import { StaleLeaseError, listTasks, countTasksByState } from '../../kernel/state-v1/tasks.ts';
+import { listActivity } from '../../kernel/state-v1/deliverables.ts';
+import { getRun, listRunConcerns } from '../../kernel/state-v1/runs.ts';
+import { STATE_FORMAT_ID, STATE_FORMAT_VERSION } from '../../kernel/state-v1/format.ts';
 import { PROTOCOL_VERSION, response, failure, serveLines } from './jsonrpc.ts';
 import type { JsonRpcRequest, JsonRpcResponse } from './jsonrpc.ts';
 

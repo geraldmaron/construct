@@ -1,5 +1,5 @@
 /**
- * kernel/state/submit.ts — submit completed interactive/headless work.
+ * kernel/state-v1/submit.ts — submit completed interactive/headless work.
  *
  * Settles the task (execution) and upserts a draft (trust). Those are
  * separate: success here never promotes the deliverable.

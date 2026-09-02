@@ -1,253 +1,163 @@
 /**
- * kernel/state/deliverables.ts — deliverable trust state machine for format v1.
+ * kernel/state/deliverables.ts — what a run produces, and how far it is trusted.
  *
- * none → draft → reviewed|challenged → accepted|final
- *
- * Submitting completed work creates or updates a draft. It never promotes.
+ * Trust is a separate machine from step completion: a step succeeding leaves
+ * its deliverable a draft. Only an explicit, recorded judgment moves it.
  */
 
 import type { StateStore } from './open.ts';
+import { appendActivity } from './activity.ts';
+import { assertTransition, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from './rows.ts';
 
-export const TRUST_STATES = [
-  'none',
-  'draft',
-  'reviewed',
-  'challenged',
-  'accepted',
-  'final',
-] as const;
+export const TRUST_STATES = ['draft', 'validated', 'challenged', 'accepted', 'final', 'rejected'] as const;
 export type TrustState = (typeof TRUST_STATES)[number];
+
+export const TRUST_TRANSITIONS: Readonly<Record<TrustState, readonly TrustState[]>> = {
+  draft: ['validated', 'challenged', 'rejected'],
+  validated: ['challenged', 'accepted', 'rejected'],
+  challenged: ['draft', 'validated', 'accepted', 'rejected'],
+  accepted: ['final', 'challenged'],
+  final: [],
+  rejected: ['draft'],
+};
 
 export interface Deliverable {
   readonly id: string;
-  readonly taskId: string;
   readonly runId: string;
-  readonly trustState: TrustState;
+  readonly stepRunId: string | null;
+  readonly kind: string;
   readonly body: unknown;
+  readonly trustState: TrustState;
+  readonly verification: unknown;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
 
 interface Row {
   readonly id: string;
-  readonly task_id: string;
   readonly run_id: string;
+  readonly step_run_id: string | null;
+  readonly kind: string;
+  readonly body_json: string;
   readonly trust_state: TrustState;
-  readonly body_json: string | null;
+  readonly verification_json: string | null;
   readonly created_at: string;
   readonly updated_at: string;
-}
-
-function parseJson(raw: string | null): unknown {
-  if (raw === null) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return raw;
-  }
 }
 
 function toDeliverable(row: Row): Deliverable {
   return {
     id: row.id,
-    taskId: row.task_id,
     runId: row.run_id,
-    trustState: row.trust_state,
+    stepRunId: row.step_run_id,
+    kind: row.kind,
     body: parseJson(row.body_json),
+    trustState: row.trust_state,
+    verification: parseJson(row.verification_json),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
 }
 
-export function getDeliverableByTask(store: StateStore, taskId: string): Deliverable | null {
-  const row = store.db
-    .prepare('SELECT * FROM deliverables WHERE task_id = ?')
-    .get(taskId) as Row | undefined;
-  return row ? toDeliverable(row) : null;
-}
-
-const TRUST_TRANSITIONS: Readonly<Record<TrustState, readonly TrustState[]>> = {
-  none: ['draft'],
-  draft: ['reviewed', 'challenged', 'accepted'],
-  reviewed: ['accepted', 'challenged', 'final'],
-  challenged: ['draft', 'accepted', 'reviewed'],
-  accepted: ['final'],
-  final: [],
-};
-
-/**
- * Move a deliverable's trust state. Submitting work never calls this —
- * only an explicit human judgment (inbox decide / verdict / trust).
- */
-export function setTrustState(
-  store: StateStore,
-  input: {
-    readonly taskId: string;
-    readonly trustState: TrustState;
-    readonly at: string;
-    readonly by: string;
-    readonly decisionId?: string;
-  },
-): Deliverable {
-  const existing = getDeliverableByTask(store, input.taskId);
-  if (!existing) {
-    throw new Error(`no deliverable for task ${input.taskId}`);
-  }
-  const allowed = TRUST_TRANSITIONS[existing.trustState];
-  if (!allowed.includes(input.trustState)) {
-    throw new Error(
-      `deliverable for task ${input.taskId} cannot move from ${existing.trustState} to ${input.trustState}`,
-    );
-  }
-  store.db
-    .prepare(
-      `UPDATE deliverables SET trust_state = ?, updated_at = ? WHERE task_id = ?`,
-    )
-    .run(input.trustState, input.at, input.taskId);
-  appendActivity(store, {
-    at: input.at,
-    kind: 'deliverable.trust',
-    runId: existing.runId,
-    taskId: input.taskId,
-    payload: {
-      from: existing.trustState,
-      to: input.trustState,
-      by: input.by,
-      decisionId: input.decisionId ?? null,
-    },
-  });
-  const updated = getDeliverableByTask(store, input.taskId);
-  if (!updated) throw new Error('trust update failed');
-  return updated;
-}
-
-/**
- * Upsert a draft body for a task. Trust stays draft; never jumps to accepted.
- */
+/** Create a draft, or replace the body of an existing draft/rejected one. */
 export function upsertDraft(
   store: StateStore,
   input: {
     readonly id: string;
-    readonly taskId: string;
     readonly runId: string;
+    readonly stepRunId?: string;
+    readonly kind: string;
     readonly body: unknown;
     readonly at: string;
   },
 ): Deliverable {
-  const existing = getDeliverableByTask(store, input.taskId);
-  if (existing) {
-    if (existing.trustState === 'accepted' || existing.trustState === 'final') {
-      throw new Error(`deliverable for task ${input.taskId} is ${existing.trustState}; drafts cannot overwrite it`);
+  requireNonEmpty(input.id, 'deliverable.id');
+  requireNonEmpty(input.kind, 'deliverable.kind');
+  requireInstant(input.at, 'deliverable.at');
+  return store.transaction(() => {
+    const existing = getDeliverable(store, input.id);
+    if (existing) {
+      if (existing.trustState !== 'draft' && existing.trustState !== 'rejected') {
+        throw new Error(
+          `deliverable ${input.id} is ${existing.trustState}; only a draft or rejected deliverable can be redrafted`,
+        );
+      }
+      store.db
+        .prepare(
+          `UPDATE deliverables SET body_json = ?, trust_state = 'draft', verification_json = NULL, updated_at = ? WHERE id = ?`,
+        )
+        .run(toJson(input.body), input.at, input.id);
+    } else {
+      store.db
+        .prepare(
+          `INSERT INTO deliverables (id, run_id, step_run_id, kind, body_json, trust_state, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, 'draft', ?, ?)`,
+        )
+        .run(input.id, input.runId, input.stepRunId ?? null, input.kind, toJson(input.body), input.at, input.at);
     }
-    store.db
-      .prepare(
-        `UPDATE deliverables
-            SET body_json = ?, trust_state = 'draft', updated_at = ?
-          WHERE task_id = ?`,
-      )
-      .run(JSON.stringify(input.body ?? null), input.at, input.taskId);
-  } else {
-    store.db
-      .prepare(
-        `INSERT INTO deliverables (id, task_id, run_id, trust_state, body_json, created_at, updated_at)
-         VALUES (?, ?, ?, 'draft', ?, ?, ?)`,
-      )
-      .run(
-        input.id,
-        input.taskId,
-        input.runId,
-        JSON.stringify(input.body ?? null),
-        input.at,
-        input.at,
-      );
-  }
-  const row = getDeliverableByTask(store, input.taskId);
-  if (!row) throw new Error('draft upsert failed');
-  return row;
+    appendActivity(store, {
+      at: input.at,
+      kind: 'deliverable.drafted',
+      runId: input.runId,
+      stepRunId: input.stepRunId ?? null,
+      payload: { deliverableId: input.id, kind: input.kind },
+    });
+    return getDeliverable(store, input.id)!;
+  });
 }
 
-export function appendActivity(
+export function getDeliverable(store: StateStore, id: string): Deliverable | null {
+  const row = store.db.prepare('SELECT * FROM deliverables WHERE id = ?').get(id) as Row | undefined;
+  return row ? toDeliverable(row) : null;
+}
+
+export function listDeliverables(store: StateStore, runId: string): Deliverable[] {
+  const rows = store.db
+    .prepare('SELECT * FROM deliverables WHERE run_id = ? ORDER BY created_at, id')
+    .all(runId) as unknown as Row[];
+  return rows.map(toDeliverable);
+}
+
+/**
+ * Move trust. The actor and the basis are recorded; a validator's result or a
+ * challenge verdict travels in `verification`.
+ */
+export function setTrustState(
   store: StateStore,
   input: {
+    readonly id: string;
+    readonly trustState: TrustState;
+    readonly actor: string;
     readonly at: string;
-    readonly kind: string;
-    readonly runId?: string;
-    readonly taskId?: string;
-    readonly payload: unknown;
+    readonly verification?: unknown;
+    readonly reason?: string;
   },
-): void {
-  store.db
-    .prepare(
-      `INSERT INTO activity_events (at, kind, run_id, task_id, payload)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(
-      input.at,
-      input.kind,
-      input.runId ?? null,
-      input.taskId ?? null,
-      JSON.stringify(input.payload ?? null),
-    );
-}
-
-export interface ActivityEvent {
-  readonly id: number;
-  readonly at: string;
-  readonly kind: string;
-  readonly runId: string | null;
-  readonly taskId: string | null;
-  readonly payload: unknown;
-}
-
-interface ActivityRow {
-  readonly id: number;
-  readonly at: string;
-  readonly kind: string;
-  readonly run_id: string | null;
-  readonly task_id: string | null;
-  readonly payload: string | null;
-}
-
-function toActivity(row: ActivityRow): ActivityEvent {
-  let payload: unknown = null;
-  if (row.payload !== null) {
-    try {
-      payload = JSON.parse(row.payload);
-    } catch {
-      payload = row.payload;
-    }
-  }
-  return {
-    id: row.id,
-    at: row.at,
-    kind: row.kind,
-    runId: row.run_id,
-    taskId: row.task_id,
-    payload,
-  };
-}
-
-/** Recent activity, newest last within the window (chronological for readers). */
-export function listActivity(
-  store: StateStore,
-  opts: { readonly runId?: string; readonly limit?: number } = {},
-): ActivityEvent[] {
-  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
-  const rows =
-    opts.runId === undefined
-      ? (store.db
-          .prepare(
-            `SELECT * FROM (
-               SELECT * FROM activity_events ORDER BY id DESC LIMIT ?
-             ) ORDER BY id ASC`,
-          )
-          .all(limit) as unknown as ActivityRow[])
-      : (store.db
-          .prepare(
-            `SELECT * FROM (
-               SELECT * FROM activity_events WHERE run_id = ? ORDER BY id DESC LIMIT ?
-             ) ORDER BY id ASC`,
-          )
-          .all(opts.runId, limit) as unknown as ActivityRow[]);
-  return rows.map(toActivity);
+): Deliverable {
+  requireOneOf(input.trustState, TRUST_STATES, 'deliverable.trustState');
+  requireNonEmpty(input.actor, 'deliverable.actor');
+  requireInstant(input.at, 'deliverable.at');
+  return store.transaction(() => {
+    const current = getDeliverable(store, input.id);
+    if (!current) throw new Error(`no deliverable ${input.id}`);
+    assertTransition(TRUST_TRANSITIONS, `deliverable ${input.id}`, current.trustState, input.trustState);
+    store.db
+      .prepare(
+        `UPDATE deliverables SET trust_state = ?, verification_json = COALESCE(?, verification_json), updated_at = ? WHERE id = ?`,
+      )
+      .run(
+        input.trustState,
+        input.verification === undefined ? null : toJson(input.verification),
+        input.at,
+        input.id,
+      );
+    appendActivity(store, {
+      at: input.at,
+      kind: 'deliverable.trust',
+      runId: current.runId,
+      stepRunId: current.stepRunId,
+      actor: input.actor,
+      payload: { deliverableId: input.id, from: current.trustState, to: input.trustState, reason: input.reason ?? null },
+    });
+    return getDeliverable(store, input.id)!;
+  });
 }

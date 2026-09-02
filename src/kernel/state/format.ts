@@ -1,25 +1,25 @@
 /**
- * kernel/state/format.ts — Construct project-state format identity.
+ * kernel/state/format.ts — Construct state format identity.
  *
- * There is no migration from prior alpha schemas. An old store is refused
- * and the operator must `construct reset` (or init into a clean location).
+ * A state file carries its format id and version in the `meta` table. Any
+ * file that does not carry exactly this format is refused unread: no prior
+ * schema is parsed, interpreted, or migrated. The operator resets.
  */
 
-/** Current on-disk format. Starts at 1; never inherits schema-23 numbering. */
 export const STATE_FORMAT_ID = 'construct-state';
-export const STATE_FORMAT_VERSION = 1;
+export const STATE_FORMAT_VERSION = 2;
 
-export const UNSUPPORTED_ALPHA_MESSAGE =
-  'Construct state is from an unsupported alpha format.\n' +
-  'Run `construct reset` to initialize the current format.';
+export const UNSUPPORTED_STATE_MESSAGE =
+  'This Construct state was written by a format this version does not read.\n' +
+  'Run `construct reset` to start fresh project state. Your project files are not touched.';
 
-export class UnsupportedAlphaStoreError extends Error {
+export class UnsupportedStateError extends Error {
   readonly foundFormat: string | null;
   readonly foundVersion: number | null;
 
   constructor(foundFormat: string | null, foundVersion: number | null) {
-    super(UNSUPPORTED_ALPHA_MESSAGE);
-    this.name = 'UnsupportedAlphaStoreError';
+    super(UNSUPPORTED_STATE_MESSAGE);
+    this.name = 'UnsupportedStateError';
     this.foundFormat = foundFormat;
     this.foundVersion = foundVersion;
   }

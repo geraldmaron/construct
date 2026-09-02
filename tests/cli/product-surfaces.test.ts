@@ -16,10 +16,10 @@ import { waive, revoke } from '../../src/cli/controls.ts';
 import { consent, trust } from '../../src/cli/settings.ts';
 import { verdict } from '../../src/cli/verdict.ts';
 import { createDecisionService } from '../../src/kernel/services/decision.ts';
-import { openStateStore } from '../../src/kernel/state/open.ts';
+import { openStateStore } from '../../src/kernel/state-v1/open.ts';
 import { projectDbPath } from '../../src/kernel/project/layout.ts';
-import { getDeliverableByTask, listActivity } from '../../src/kernel/state/deliverables.ts';
-import { getTask } from '../../src/kernel/state/tasks.ts';
+import { getDeliverableByTask, listActivity } from '../../src/kernel/state-v1/deliverables.ts';
+import { getTask } from '../../src/kernel/state-v1/tasks.ts';
 
 async function capture(fn: () => number | Promise<number>): Promise<{
   code: number;
