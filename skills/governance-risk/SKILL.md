@@ -1,7 +1,14 @@
 ---
 name: governance-risk
 description: >-
-  Issue-spotting for compliance, legal, and finance: find and quote the governing text, name exposures, controls, evidence, and the reviewer packet. Research, never advice.
+  Spots compliance, legal, contractual, and financial exposure in plain
+  language: what rule or obligation applies, what the evidence is, what a
+  licensed professional must settle. Use when the person says things like:
+  we started selling in a new country or industry; a lawyer sent us a
+  letter; we're about to sign this deal, what could bite us; the board wants
+  a risk register; are we allowed to; do we need a policy for this. Research
+  and issue-spotting only, never advice; security controls go to security-
+  privacy.
 license: Apache-2.0
 metadata:
   version: 1.0.0

@@ -9,23 +9,23 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 
 | Skill | Version | Category | Engages when | Stands down when |
 |---|---|---|---|---|
-| `adversarial-review` | 0.3.0 | method | a finished artifact is about to be committed to and being wrong is expensive | the artifact is still moving, a half-finished draft, tidy up |
-| `construct` | 2.0.0 | operational | Construct is bound to this project and the person is talking in their agent session | a plain question about how something works, explain, what does this function do |
-| `context-mapping` | 0.4.0 | method | acting inside a system you did not build or do not hold in your head | you already hold the map, know the system, just implement |
-| `decision-framing` | 0.3.0 | method | a real choice that will carry weight: build, buy, commit, reorganize, or forgo, and reversing has a cost | the decision is already made, help execute the rollout |
-| `experience-design` | 1.0.0 | professional | review this screen, this flow, this interface for usability and accessibility | which color or font looks nicer with no task in view |
-| `governance-risk` | 1.0.0 | professional | what compliance, legal, or financial exposure does this create, spot the issues | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
-| `intake` | 0.3.0 | method | a request carrying several concerns, corrections, or implied outcomes at once | a clear single-outcome request: add a button, rename the function, just do it |
-| `investigative-research` | 0.3.0 | method | a conclusion someone will decide, spend, accuse, publish, or rely on | a single-fact question one authoritative source settles, what year was it released |
-| `operations-reliability` | 1.0.0 | professional | is this ready to operate, ready to launch, ready for on-call | feature scope or priority |
-| `product-management` | 1.0.0 | professional | review this PRD, this product requirements document, this opportunity assessment | how to build it, which library, which architecture |
-| `program-delivery` | 1.0.0 | professional | review the delivery plan, the schedule, the program plan, the roadmap dates | what to build or why (product owns that) |
-| `requirements-structuring` | 0.5.0 | method | work will be built, bought, or committed to on the artifact's strength and requirements live in conversation or someone's head | requirements already obvious and small: rename a flag, flip a config, a well-understood fix |
-| `security-privacy` | 1.0.0 | professional | review this for security, threat model it, who can reach what | write an exploit, bypass a control, evade detection |
-| `software-engineering` | 1.0.0 | professional | review this implementation, this change, this pull request for correctness and risk | style and naming on a diff, formatting, lint noise |
-| `strategy-research` | 1.0.0 | professional | compare the strategy to the active work, the initiatives to the roadmap, the plan to capacity | a single project plan with no strategy in view (program-delivery owns that) |
-| `system-architecture` | 1.0.0 | professional | review the architecture, the system design, the service boundaries | review a diff or an implementation detail |
-| `written-voice` | 0.4.0 | method | someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
+| `adversarial-review` | 0.3.0 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
+| `construct` | 2.0.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
+| `context-mapping` | 0.4.0 | method | I just inherited this codebase | you already hold the map, know the system, just implement |
+| `decision-framing` | 0.3.0 | method | buy or build, which one | the decision is already made, help execute the rollout |
+| `experience-design` | 1.0.0 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
+| `governance-risk` | 1.0.0 | professional | we started selling to a new country or industry | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
+| `intake` | 0.3.0 | method | the thing from Tuesday plus what he said minus the pricing part | a clear single-outcome request: add a button, rename the function, just do it |
+| `investigative-research` | 0.3.0 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
+| `operations-reliability` | 1.0.0 | professional | we went live and nobody set up alerts | feature scope or priority |
+| `product-management` | 1.0.0 | professional | everyone loves this idea but nobody can say what it changes for the customer | how to build it, which library, which architecture |
+| `program-delivery` | 1.0.0 | professional | the plan says June but the vendor starts in July | what to build or why (product owns that) |
+| `requirements-structuring` | 0.5.0 | method | we agree what we want but never wrote down what finished looks like | requirements already obvious and small: rename a flag, flip a config, a well-understood fix |
+| `security-privacy` | 1.0.0 | professional | our logs contain customer emails and go to a third party | write an exploit, bypass a control, evade detection |
+| `software-engineering` | 1.0.0 | professional | tests pass but I have a bad feeling about this code | style and naming on a diff, formatting, lint noise |
+| `strategy-research` | 1.0.0 | professional | three teams are building the same thing and leadership says we are aligned | a single project plan with no strategy in view (program-delivery owns that) |
+| `system-architecture` | 1.0.0 | professional | two teams keep writing to the same table | review a diff or an implementation detail |
+| `written-voice` | 0.4.0 | method | make this sound less like a robot wrote it | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
 
 ## Workflows
 

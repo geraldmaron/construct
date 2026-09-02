@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Review the delivery plan for dates and dependencies that cannot all hold",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What is the critical path for the Q4 program and who owns the risks",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Write an honest status update on the migration program",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Is this commitment feasible with the people and dependencies we have",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What feature should we build next",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "How should we implement the queue",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Create one ticket for the bug",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "the plan says June but the vendor contract starts in July",
       "expect": "activate",
-      "judge": "model",
       "why": "a dependency and a date that cannot both hold"
+    },
+    {
+      "text": "the plan says june but the vendor doesn't start until july",
+      "expect": "activate"
+    },
+    {
+      "text": "what's on the critical path for the migration and who is holding the risky bits",
+      "expect": "activate"
+    },
+    {
+      "text": "three teams say they're on track and I don't believe any of them",
+      "expect": "activate"
+    },
+    {
+      "text": "we keep slipping the same milestone, figure out why",
+      "expect": "activate"
     }
   ]
 }

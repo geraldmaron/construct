@@ -7,6 +7,13 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
+    "poke holes in this before we commit",
+    "tell me why this will fail",
+    "argue the other side",
+    "be the skeptic about this proposal",
+    "what is wrong with this plan",
+    "we are too excited about this idea",
+    "find the weak point",
     "a finished artifact is about to be committed to and being wrong is expensive",
     "architecture, data model, security boundary, vendor, dependency, build-vs-buy, migration, hard-to-reverse change",
     "a spec about to be built, a public factual claim, a decision record about to be executed, a strategy about to be funded",

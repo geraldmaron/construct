@@ -2962,3 +2962,46 @@ tracker child under construct-qs7n:
 9. **Push is withheld.** The directive forbids pushing until instructed
    after implementation; the session-close push rule in the project
    instructions is overridden for this program and the handoff says so.
+
+## 34. The host model judges skill activation; Construct ranks (2026-09-02)
+
+**Question.** Skill triggers were checked by a lexical proxy over manifest
+phrases, and cases it could not judge were marked for a model. Gerald called
+this weak and asked for methods that trigger the right skill or surface with
+higher confidence, without the person knowing skill names.
+
+**Measured.** Seventy-four natural requests labeled by Fable 5.1 and written
+to borrow no skill vocabulary. The lexical proxy, used as a multi-class
+router, put the right skill first 14/68 times (21%). BM25 retrieval over
+descriptions, activation phrases, and labeled examples reached 33/68 top-1
+and 55/68 top-5. A cross-family subscription model (Codex, GPT-5 family)
+reading only the shipped descriptions picked the right skill 73/74 in a
+batch and 24/25 one request at a time. After the descriptions and phrases
+were rewritten in the person's language, the first set was contaminated
+(its phrases had been paraphrased into the catalog) and was folded into
+the skills' own labeled cases; a second set of 74, written afterwards and
+never used to tune, measured retrieval at 26/68 top-1 and 55/68 top-5.
+Weighting nearest labeled examples at parity with retrieval memorized
+them and dropped leave-one-out top-1 from 62/84 to 15/84; 0.3 with one
+neighbour held both. The judging model shares no family with the model
+that wrote the cases; the labels and the descriptions do share an author,
+so agreement between them is an upper bound on independent agreement.
+
+**Decision.** Construct does not decide which skill loads. It orders every
+skill for the request and hands the host model the banded list with each
+skill's use-when text through `classify_request`; the operational skill
+tells the session to call it for anything that is not a plain question and
+to choose by reading, asking one question only when two fit and the
+difference changes the work. Descriptions are the trigger surface a host
+reads on its own, so they carry the person's phrasings within the budget.
+The floors on the held-out set gate description and phrase changes; the
+live judge record is provenance, refreshed by `npm run evals:live` and
+never run by the suite. Also found and fixed: the bundle frontmatter parser
+read only the first line of a wrapped plain-scalar description, so the
+registry had carried about sixty characters for each method skill.
+
+**Rejected.** Embeddings (a runtime dependency or a model call on every
+request, against the zero-dependency and local-first commitments);
+letting the router decide and auto-load (its honest top-1 is 40%, the
+model's is near 100%); keeping the `judge: model` marking (a case the
+suite skips is not a gate).

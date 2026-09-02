@@ -4,50 +4,57 @@
   "cases": [
     {
       "text": "Should we build this ourselves or buy a vendor product; it's expensive to reverse",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Help me frame the choice between the two architectures with the trade-offs",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "We need to pick a database; recommend one with the strongest objection stated",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Which sequencing of these investments should we commit to this year",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "The decision is already made; help me execute the rollout",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "There is only one option here; just do it",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Pick any of these two names, it's reversible and cheap",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "What time is the meeting",
       "expect": "stand_down",
-      "judge": "model",
       "why": "a scheduling question is told apart from a decision by meaning, not by its words"
     },
     {
       "text": "We keep going back and forth on whether to migrate; nobody has written down why",
       "expect": "activate",
-      "judge": "model",
       "why": "an unframed choice with weight"
+    },
+    {
+      "text": "buy the tool or keep building our own, the CFO wants an answer friday",
+      "expect": "activate"
+    },
+    {
+      "text": "we've argued about postgres vs dynamo for three weeks, settle it",
+      "expect": "activate"
+    },
+    {
+      "text": "help me lay out the options for the org restructure so leadership can pick",
+      "expect": "activate"
+    },
+    {
+      "text": "is it worth delaying launch two weeks to fix the onboarding flow",
+      "expect": "activate"
     }
   ]
 }

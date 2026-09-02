@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Remember that we will not add schema migration until stable",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Review this implementation against our design principles",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Every January compare team strategies to active Jira work and capacity",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Start the design conformance review for the payments feature",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What does this function do",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Explain how async iterators work",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Thanks, that's all",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "can you keep in mind that the API freeze is Friday",
       "expect": "activate",
-      "judge": "model",
       "why": "a remember request in casual wording"
+    },
+    {
+      "text": "remember that we decided not to support IE11",
+      "expect": "activate"
+    },
+    {
+      "text": "every monday check whether the roadmap still matches the jira board",
+      "expect": "activate"
+    },
+    {
+      "text": "what did we decide about the pricing tiers last month",
+      "expect": "activate"
+    },
+    {
+      "text": "kick off the release readiness review for 3.1",
+      "expect": "activate"
     }
   ]
 }

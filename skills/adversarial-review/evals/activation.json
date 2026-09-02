@@ -4,54 +4,60 @@
   "cases": [
     {
       "text": "Challenge this architecture decision before we commit to it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "We're about to sign with this vendor; try to break the case for it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Review the migration plan for the failure modes we haven't considered",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "This spec is final and about to be built; find what's wrong with the thinking",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Before we publish this claim publicly, what is the strongest case against it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "This is a half-finished draft, can you tidy it up",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Code review this diff for style and naming",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Which color should the button be, it's easy to change later",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Just fix the typo in the README",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "We decided last week and the work started Monday; what do you think of it now",
       "expect": "stand_down",
-      "judge": "model",
       "why": "a decision already executed is not challenged before commitment"
+    },
+    {
+      "text": "poke holes in this design before we commit",
+      "expect": "activate"
+    },
+    {
+      "text": "tell me why this plan will fail",
+      "expect": "activate"
+    },
+    {
+      "text": "be the skeptic, what's wrong with this proposal",
+      "expect": "activate"
+    },
+    {
+      "text": "we're too excited about this, someone needs to argue the other side",
+      "expect": "activate"
     }
   ]
 }

@@ -1,7 +1,13 @@
 ---
 name: operations-reliability
 description: >-
-  Review a service or change for how it runs at night: objectives, alerts, on-call, runbooks, rollback, capacity, blameless learning. Not feature scope.
+  Reviews how a service or change behaves at night: objectives, alerts, on-
+  call, runbooks, capacity, failure and recovery. Use when the person says
+  things like: we went live and nobody set up alerts; the service falls over
+  whenever traffic spikes; we got paged four times for the same thing; what
+  should the runbook say; is this safe to run unattended; what happens when
+  the queue backs up. Not for whether the code is correct (that is
+  engineering).
 license: Apache-2.0
 metadata:
   version: 1.0.0

@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+- **Skill routing by the person's words.** `classify_request` now ranks
+  every skill against the request (retrieval over descriptions, activation
+  phrases, and each skill's labeled cases) and hands the host a banded list
+  with each skill's use-when text; the host model chooses, the ranking only
+  orders. The operational skill tells the session to call it for anything
+  that is not a plain question and never to ask the person to name a skill.
+  The lexical activation judge and the `judge: model` case marking are
+  gone. Every description was rewritten with triggers in ordinary language
+  within the published budget, and a frontmatter parser defect that kept
+  only the first line of a wrapped plain-scalar description (so the registry
+  held about sixty characters for seven method skills) is fixed.
+- **Measured, not asserted.** `skills/evals/routing.json` holds requests
+  written after the catalog was final and never used to tune it; the tests
+  assert the router's floors on it (top-1 at least 35%, top-5 at least 75%,
+  measured 2026-09-02 at 26/68 and 55/68) and leave-one-out on the labeled
+  cases (139/152 top-1). `npm run evals:live` records a subscription model's
+  picks from the shipped descriptions in `skills/evals/live-judge.json`.
+  Measured 2026-09-02 with Codex (GPT-5 family, no family shared with the
+  author of the cases) on the held-out set: the previous descriptions had
+  the model load the right skill for 37 of 74 requests and decline to load
+  any for 21 situations the packs cover; the rewritten descriptions score
+  73 of 74 in that harness and 74 of 74 in the recorded run. The cases and
+  the descriptions share an author, so that agreement is an upper bound.
+
 ## 3.0.0-alpha.23 — 2026-09-02
 
 Architectural cutover. No backward compatibility with any prior alpha: state

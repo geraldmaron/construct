@@ -4,39 +4,48 @@
   "cases": [
     {
       "text": "Here's a brain dump from the meeting with several asks and corrections, turn it into a plan",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Forwarded thread with three different requests and some contradictions; what do we actually do",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "These meeting notes carry corrections and implied outcomes; extract the plan without asking me to restate",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Add a logout button to the settings page",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "I'm just thinking out loud about the roadmap, no ask yet",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Rename the function",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "so like the thing from tuesday, plus what raj said, but not the part about billing, and also the doc needs redoing",
       "expect": "activate",
-      "judge": "model",
       "why": "messy multi-concern request"
+    },
+    {
+      "text": "ok so the thing sarah mentioned plus the slack thread from monday minus the pricing stuff, make that a ticket",
+      "expect": "activate"
+    },
+    {
+      "text": "here are my notes from the customer call, pull out what they actually asked for",
+      "expect": "activate"
+    },
+    {
+      "text": "i have five messages from the client saying different things, what do they want",
+      "expect": "activate"
+    },
+    {
+      "text": "turn this rambling voice memo into something the team can act on",
+      "expect": "activate"
     }
   ]
 }

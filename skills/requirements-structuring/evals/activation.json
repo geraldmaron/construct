@@ -4,50 +4,57 @@
   "cases": [
     {
       "text": "Write the requirements for the export feature so the team can build from it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Turn this idea into a PRD with acceptance criteria a stranger could verify",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Spec this out; the requirements only exist in conversation right now",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "We're committing to build this; structure the outcomes, constraints, and non-goals",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Rename the config flag",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Flip the feature flag in config, it's well understood",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Should we build this at all",
       "expect": "stand_down",
-      "judge": "model",
       "why": "whether versus what is a distinction of meaning; the words overlap with a build request"
     },
     {
       "text": "Fix the well-understood null check bug",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "The intent is settled, we just never wrote what done looks like",
       "expect": "activate",
-      "judge": "model",
       "why": "a settled intent without a verifiable artifact"
+    },
+    {
+      "text": "we all agree what we want, we just never wrote down what finished looks like",
+      "expect": "activate"
+    },
+    {
+      "text": "write up the export feature so a new engineer could build it without asking me",
+      "expect": "activate"
+    },
+    {
+      "text": "turn these acceptance criteria into something testable",
+      "expect": "activate"
+    },
+    {
+      "text": "the ticket says 'make it faster', that's not enough to build from",
+      "expect": "activate"
     }
   ]
 }

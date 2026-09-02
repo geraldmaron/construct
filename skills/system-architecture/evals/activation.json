@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Review the architecture for the new billing service boundaries",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Write the architecture decision record for adopting the message queue",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What does this design make hard to undo and where is the coupling",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Should we split the monolith into these three services",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Review this diff for correctness",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "How does this ORM handle transactions",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Which feature should we prioritize next quarter",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "two teams keep stepping on the same table and nobody knows who owns it",
       "expect": "activate",
-      "judge": "model",
       "why": "a data ownership problem is an architecture question"
+    },
+    {
+      "text": "two teams keep writing to the same table and it's a mess",
+      "expect": "activate"
+    },
+    {
+      "text": "should the notification service own its own database",
+      "expect": "activate"
+    },
+    {
+      "text": "we're splitting the monolith, where do the seams go",
+      "expect": "activate"
+    },
+    {
+      "text": "every request goes through four hops, is that necessary",
+      "expect": "activate"
     }
   ]
 }

@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { listShippedSkills, readShippedSkill, type ShippedSkill } from '../skills/bundle.ts';
 import { bundleDigest } from './digest.ts';
+import { examplesFrom } from '../skills/routing.ts';
 import { SKILL_MANIFEST_FILE, type BundleOrigin, type RegisteredSkill } from './models.ts';
 import { checkFrontmatterAgreement, validateSkillManifest, ManifestError } from './validation.ts';
 
@@ -53,6 +54,7 @@ function register(skill: ShippedSkill, origin: BundleOrigin): RegisteredSkill | 
       digest,
       description: skill.description,
       files: [...skill.files.map((f) => f.relativePath), SKILL_MANIFEST_FILE].sort(),
+      examples: examplesFrom(skill.files.find((f) => f.relativePath === 'evals/activation.json')?.bytes ?? null),
     };
     cache.set(digest, entry);
     return entry;

@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "What compliance and legal exposure does the new data-sharing feature create",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Which regulation governs storing EU customer data and what does it actually say",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Prepare the packet for counsel on the vendor contract change",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What controls and evidence would an auditor expect for this access process",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Is this contract legally binding, give me your legal opinion",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Review the code for correctness",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Where is the expense policy document",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "we started charging in a new country last month",
       "expect": "activate",
-      "judge": "model",
       "why": "a money flow that creates obligations at the moment it moves"
+    },
+    {
+      "text": "we started selling to hospitals last month, anything we need to worry about",
+      "expect": "activate"
+    },
+    {
+      "text": "a customer's lawyer sent us a letter about our data retention",
+      "expect": "activate"
+    },
+    {
+      "text": "we're about to sign a reseller deal in brazil, what could bite us",
+      "expect": "activate"
+    },
+    {
+      "text": "the board wants a risk register for the new business line",
+      "expect": "activate"
     }
   ]
 }

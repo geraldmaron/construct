@@ -7,6 +7,12 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
+    "we agree what we want but never wrote down what finished looks like",
+    "write this up so a new engineer could build it without asking",
+    "make these acceptance criteria testable",
+    "the ticket just says make it faster, that is not enough",
+    "spec this out properly",
+    "what exactly are we building",
     "work will be built, bought, or committed to on the artifact's strength and requirements live in conversation or someone's head",
     "write the requirements, spec this out, turn this idea into a PRD, acceptance criteria a stranger could verify",
     "structure the outcomes, constraints, assumptions, and non-goals for a build we are committing to"

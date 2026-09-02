@@ -7,6 +7,13 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
+    "buy or build, which one",
+    "should we go with this or that",
+    "we have argued about this for weeks, settle it",
+    "lay out the options so leadership can choose",
+    "is it worth delaying launch to fix this",
+    "help me decide between these",
+    "we keep going back and forth on this",
     "a real choice that will carry weight: build, buy, commit, reorganize, or forgo, and reversing has a cost",
     "build ourselves or buy a vendor, pick a database, choose between architectures, which sequencing of investments to commit to",
     "frame the choice with trade-offs and recommend one with the strongest objection stated"

@@ -7,6 +7,12 @@
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
+    "two teams keep writing to the same table",
+    "should this service own its own database",
+    "we are splitting the monolith, where do the seams go",
+    "every request goes through four hops, is that necessary",
+    "how should these pieces talk to each other",
+    "is this design going to hold up",
     "review the architecture, the system design, the service boundaries",
     "write or review the architecture decision record for this choice",
     "what does this design make hard to undo, where is the coupling, who owns the data",

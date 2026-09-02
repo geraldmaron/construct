@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Threat model the new file upload feature and who can reach what",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Are the API secrets handled safely and is customer data classified",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Privacy review for the analytics pipeline: consent, retention, cross-border flow",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Is this dependency vulnerable and what does the upgrade expose",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Write an exploit for this endpoint",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Explain how TLS handshakes work",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Should we build the export feature first",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "the logs have emails in them and go to a third party",
       "expect": "activate",
-      "judge": "model",
       "why": "a personal-data exposure described plainly"
+    },
+    {
+      "text": "our logs contain customer emails and we ship them to a third party",
+      "expect": "activate"
+    },
+    {
+      "text": "a contractor still has prod access six months after leaving",
+      "expect": "activate"
+    },
+    {
+      "text": "we want to add SSO, what can go wrong",
+      "expect": "activate"
+    },
+    {
+      "text": "someone pasted an API key in slack last week",
+      "expect": "activate"
     }
   ]
 }

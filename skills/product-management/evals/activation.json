@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Review this PRD before the team commits to building it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What problem does the export feature solve and how would we know it worked",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Should we prioritize the mobile app over the integrations this quarter",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Write the working-backwards press release for the new plan",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Which library should we use to build the export",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "What does the settings page do",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "The roadmap is decided, help me write the sprint tickets",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "everyone wants this feature but nobody can say what changes if we ship it",
       "expect": "activate",
-      "judge": "model",
       "why": "an outcome without a measure"
+    },
+    {
+      "text": "everyone loves this feature idea but nobody can say what it changes for the customer",
+      "expect": "activate"
+    },
+    {
+      "text": "sanity check this spec before engineering starts on it",
+      "expect": "activate"
+    },
+    {
+      "text": "sales wants twelve things, which ones actually matter this quarter",
+      "expect": "activate"
+    },
+    {
+      "text": "we have no idea whether last quarter's launch did anything",
+      "expect": "activate"
     }
   ]
 }

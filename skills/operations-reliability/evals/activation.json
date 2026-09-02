@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Is the new billing service ready to operate and go on-call",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Review the runbook and alerts for the payment gateway",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Write the blameless postmortem for last night's outage",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Who gets woken by this change and how would we know it broke",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Which feature should ship first",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Fix the code style in this file",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Which database shape fits the domain",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "we shipped it friday and nobody knows what the dashboard should look like",
       "expect": "activate",
-      "judge": "model",
       "why": "a launch with no operating signal"
+    },
+    {
+      "text": "we went live friday and nobody set up alerts",
+      "expect": "activate"
+    },
+    {
+      "text": "the service falls over every time marketing sends an email blast",
+      "expect": "activate"
+    },
+    {
+      "text": "what should the on-call runbook say for the new queue",
+      "expect": "activate"
+    },
+    {
+      "text": "we got paged four times last night for the same thing",
+      "expect": "activate"
     }
   ]
 }

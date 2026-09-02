@@ -1,20 +1,14 @@
 ---
 name: context-mapping
-description: Before acting inside an unfamiliar or half-familiar system - a
-  codebase, an organization, a program, a domain - its context is mapped
-  first - entities, typed relationships (owns, depends-on, feeds, blocks,
-  supersedes), obligations, boundaries, and unknowns as first-class
-  entries, each mapped fact naming how it was observed. Produces a dated,
-  one-page context map a stranger could act safely from. Use when starting
-  work in a system you did not build, inheriting a service or program,
-  onboarding to a domain, integrating with something new, or whenever a
-  wrong assumption about how parts relate would cost real work. Not when
-  the actor already holds the map (acting on known ground needs no
-  ceremony), and not for tasks too small to be endangered by a wrong
-  relationship - just do those. This file holds the method only; it does
-  not remember anything between sessions, and where a memory or knowledge
-  store is present, the store keeps the map and this skill governs what a
-  good map contains.
+description: >-
+  Maps an unfamiliar system before anyone acts in it: the parts, who owns
+  what, what depends on what, the boundaries, and the unknowns, each with
+  how it was observed. Use when the person says things like: I just
+  inherited this; new job and they handed me the repo; where do I even
+  start; before I touch this I want to know what breaks; who actually owns
+  this; we took over a vendor's integration; what reads this output. Not
+  when the person already knows the ground, or for a one-line change whose
+  neighbours do not matter.
 license: Apache-2.0
 metadata:
   version: 0.4.0

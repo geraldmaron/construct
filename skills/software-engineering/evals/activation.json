@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Review this pull request for correctness and risk before we merge",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Is this database migration safe and can we roll it back",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Should we upgrade this library to the new major version",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Shape the implementation plan for the export feature",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Fix the formatting and naming in this diff",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "How does async iteration work in this language",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Which architecture should the platform have",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "the tests pass but I have a bad feeling about the retry loop",
       "expect": "activate",
-      "judge": "model",
       "why": "a correctness concern in an implementation"
+    },
+    {
+      "text": "tests are green but I have a bad feeling about the retry logic",
+      "expect": "activate"
+    },
+    {
+      "text": "look at this PR before I merge it, it touches billing",
+      "expect": "activate"
+    },
+    {
+      "text": "is this migration safe to roll back if it goes wrong",
+      "expect": "activate"
+    },
+    {
+      "text": "the fix works on my machine, what am I missing",
+      "expect": "activate"
     }
   ]
 }

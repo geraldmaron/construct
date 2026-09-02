@@ -4,44 +4,52 @@
   "cases": [
     {
       "text": "Review the checkout flow for usability and accessibility",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Can people complete the signup task and what happens when it fails",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Does the new settings screen follow our design system",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What does the research say about how people use the dashboard",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Which shade of blue looks nicer",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "How is the dropdown component implemented",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Change the database index",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "support keeps getting tickets from people who cannot find the export button",
       "expect": "activate",
-      "judge": "model",
       "why": "a task-success problem stated as a support pattern"
+    },
+    {
+      "text": "customers keep abandoning the signup on the phone number step",
+      "expect": "activate"
+    },
+    {
+      "text": "our support inbox is full of 'where is the download button'",
+      "expect": "activate"
+    },
+    {
+      "text": "rework the settings page, nobody can find anything in it",
+      "expect": "activate"
+    },
+    {
+      "text": "the checkout takes seven screens, that can't be right",
+      "expect": "activate"
     }
   ]
 }

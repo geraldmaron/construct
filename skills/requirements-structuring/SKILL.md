@@ -1,18 +1,13 @@
 ---
 name: requirements-structuring
-description: Turns an intent - "we should build X" - into a requirements
-  artifact someone could build from and a stranger could verify against.
-  Outcomes, constraints, assumptions, and already-made decisions separated
-  and labeled; every acceptance criterion an observation a stranger could
-  make; non-goals stated; open questions earned, not dumped. Shapes for a
-  full PRD, a one-page brief, and a change-request addendum. Use when
-  scoping a feature, product, program, or change - "write the requirements",
-  "spec this out", "turn this idea into a PRD", or when a build is starting
-  on requirements that exist only as conversation. Not for work whose
-  requirements are already obvious and small (a rename, a config change, a
-  well-understood fix) - state the one-line intent and proceed - and not for
-  the decision of WHETHER to build, which is a decision-framing problem to
-  surface, not to specify around.
+description: >-
+  Turns a settled intent into requirements a team can build and test from:
+  scope, behaviour, acceptance, what done looks like. Use when the person
+  says things like: we agree what we want but never wrote what finished
+  looks like; write this up so a new engineer could build it without asking
+  me; make these acceptance criteria testable; the ticket just says make it
+  faster; spec this out; what exactly are we building. Not for deciding
+  whether to build it.
 license: Apache-2.0
 metadata:
   version: 0.5.0

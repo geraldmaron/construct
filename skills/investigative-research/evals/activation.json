@@ -4,49 +4,56 @@
   "cases": [
     {
       "text": "Do due diligence on this vendor before we sign; the conclusion must survive a hostile reader",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Reconstruct the incident timeline from the records and verify every claim",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Verify this competitive claim against primary sources before we publish it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Background investigation on this company with sources classed and independence checked",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "What year was Node.js released",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Brainstorm some names for the feature",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Quick opinion, speed over certainty: is this library popular",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Draft a tweet about the launch",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Someone claims our competitor lost a big customer; is that true",
       "expect": "activate",
-      "judge": "model",
       "why": "a claim someone will rely on"
+    },
+    {
+      "text": "a journalist says our competitor is being acquired, is that real",
+      "expect": "activate"
+    },
+    {
+      "text": "find out whether the vendor's uptime numbers are actually true",
+      "expect": "activate"
+    },
+    {
+      "text": "someone on twitter claims our library leaks memory, check it against the facts",
+      "expect": "activate"
+    },
+    {
+      "text": "what's the actual history of this outage, the timeline in the ticket doesn't add up",
+      "expect": "activate"
     }
   ]
 }

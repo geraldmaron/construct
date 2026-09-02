@@ -7,6 +7,12 @@
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
+    "tests pass but I have a bad feeling about this code",
+    "look at this pull request before I merge it",
+    "is this migration safe to roll back",
+    "it works on my machine, what am I missing",
+    "is this the right way to build it",
+    "review this code change",
     "review this implementation, this change, this pull request for correctness and risk",
     "is this migration safe, can we roll it back, what tests prove it",
     "should we take this dependency, upgrade this library, adopt this framework",

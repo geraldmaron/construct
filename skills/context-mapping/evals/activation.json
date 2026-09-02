@@ -4,50 +4,57 @@
   "cases": [
     {
       "text": "I just inherited this service and don't know how the parts relate",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Map the dependencies and owners of this program before I change anything",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "We're onboarding to this codebase; what depends on what and who owns it",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Integrate with the billing system; I need the boundaries and the unknowns first",
-      "expect": "activate",
-      "judge": "lexical"
+      "expect": "activate"
     },
     {
       "text": "Fix this one-line bug in a file I know well",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "I already know the system; just implement the change",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "Rename this variable",
-      "expect": "stand_down",
-      "judge": "lexical"
+      "expect": "stand_down"
     },
     {
       "text": "What is the capital of France",
       "expect": "stand_down",
-      "judge": "model",
       "why": "a factual question is told apart from a mapping request by meaning, not by its words"
     },
     {
       "text": "The team lead says the queue feeds the report but nobody is sure; we're about to rewrite the report",
       "expect": "activate",
-      "judge": "model",
       "why": "a doubtful relationship assumption before real work"
+    },
+    {
+      "text": "new job, they handed me the payments repo and left for vacation, where do I even start",
+      "expect": "activate"
+    },
+    {
+      "text": "before I touch the scheduler I want to know what will break",
+      "expect": "activate"
+    },
+    {
+      "text": "who actually owns the invoicing cron and what reads its output",
+      "expect": "activate"
+    },
+    {
+      "text": "we took over a vendor's integration and half the docs are wrong",
+      "expect": "activate"
     }
   ]
 }

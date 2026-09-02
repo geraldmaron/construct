@@ -45,14 +45,15 @@ function frontmatter(text: string): Record<string, string> {
     const kv = /^([A-Za-z_][\w-]*):\s*(.*)$/.exec(lines[i]!);
     if (!kv) continue;
     let value = kv[2]!.trim();
-    if (value === '>-' || value === '>' || value === '|') {
-      const buf: string[] = [];
-      while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1]!)) {
-        buf.push(lines[i + 1]!.trim());
-        i += 1;
-      }
-      value = buf.join(' ');
+    // A folded or literal block, or a plain scalar that wraps onto indented
+    // lines, is one value; the host's YAML reader sees all of it, so must we.
+    const block = value === '>-' || value === '>' || value === '|';
+    const buf: string[] = block ? [] : [value];
+    while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1]!)) {
+      buf.push(lines[i + 1]!.trim());
+      i += 1;
     }
+    value = buf.join(' ');
     out[kv[1]!] = value.replace(/^["']|["']$/g, '');
   }
   const meta = /^metadata:\s*\n((?:[ \t]+.*\n?)+)/m.exec(m[1]!);

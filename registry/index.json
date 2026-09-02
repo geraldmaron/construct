@@ -4,103 +4,103 @@
   "skills": {
     "adversarial-review": {
       "version": "0.3.0",
-      "digest": "sha256:35fda0add373757824d8feb290dfad229cfd6734336203c80deba25831df279d",
+      "digest": "sha256:142171edebe35ea863c1b65e38e3393bd947482e673116ed17f433a17cb46a17",
       "category": "method",
       "title": "Adversarial review"
     },
     "construct": {
       "version": "2.0.0",
-      "digest": "sha256:0743a86ec756b4261c46e676ea158db003f55edf0690b22a2dd5f892cccd8f0e",
+      "digest": "sha256:697bb12420288f4f5c8074823862f946c61adb4c69d1eeb98286e353315b5000",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
       "version": "0.4.0",
-      "digest": "sha256:6e2de4e8c37ff73234e2d114abb472d342873fe8270820913ff7f36e448531e5",
+      "digest": "sha256:decff7cea183cca27095a4a848882a7da7db1129a10e468df9f4129ab5535dba",
       "category": "method",
       "title": "Context mapping"
     },
     "decision-framing": {
       "version": "0.3.0",
-      "digest": "sha256:9430f5d99dcf1da96387eebed2c5958bb29b831cc497b1b46b68861214885318",
+      "digest": "sha256:53be976dfe7996b7acbe4ff9f94acf55bc3ccc5d4fda39ed32f5e2415ff64097",
       "category": "method",
       "title": "Decision framing"
     },
     "experience-design": {
       "version": "1.0.0",
-      "digest": "sha256:030d950fa13f3c5963eb462498904c99be3fac8299a12ec257d8edd82f5f846a",
+      "digest": "sha256:01984530a76059f4c3893aec4087b3520037b75fd2e59f0b800f31d7f4b656cd",
       "category": "professional",
       "title": "Experience design"
     },
     "governance-risk": {
       "version": "1.0.0",
-      "digest": "sha256:69f016bcf04f36cb6f66930034d6064fc934587b627eb2ccb3ba5a3b93ea7b73",
+      "digest": "sha256:481e8e4dfa571fe937c43e54920a9ce91bf171bc7deb4df942fda85a7c572a6a",
       "category": "professional",
       "title": "Governance and risk"
     },
     "intake": {
       "version": "0.3.0",
-      "digest": "sha256:0ecc4bdf887607314bd48ffc4d740d5076269de6b682727bceeb9ef39cd4b058",
+      "digest": "sha256:0c5763c6e98e8605bfa63d1dcbef645ed251329b8f38f01072f409259f6992e2",
       "category": "method",
       "title": "Intake"
     },
     "investigative-research": {
       "version": "0.3.0",
-      "digest": "sha256:3ca96caa20de40ecb28973068b485417c73540aa0f1c89e8445227b591011dad",
+      "digest": "sha256:4e05265ae3349d68499d74af0110e4683ba6de2da073ec04ae58daf2f764f61e",
       "category": "method",
       "title": "Investigative research"
     },
     "operations-reliability": {
       "version": "1.0.0",
-      "digest": "sha256:e8dbd8dfaed8805275470459576e2f0a6c7d1c40442f7fd450537baae24e454d",
+      "digest": "sha256:da73fa958d830e7acdea4c0a485bf403619604d805703b6edcd5780bf801dbca",
       "category": "professional",
       "title": "Operations and reliability"
     },
     "product-management": {
       "version": "1.0.0",
-      "digest": "sha256:44752961c0126d12b35d1195b7af4f3cfff37c9dddce1c3f524616d0c897987a",
+      "digest": "sha256:de40a475f22b9dfd7a28361d5d4a7e0fc321a4dca20bbc671d03a14632372d2d",
       "category": "professional",
       "title": "Product management"
     },
     "program-delivery": {
       "version": "1.0.0",
-      "digest": "sha256:5553229fe04fef2f20ca4f5eda6009f925519dcf14fbb976a7fc8cc6a17de72f",
+      "digest": "sha256:f96742351a2b3aa93132711a7e87278725b154424292848c3ae8cfbff777bcd7",
       "category": "professional",
       "title": "Program delivery"
     },
     "requirements-structuring": {
       "version": "0.5.0",
-      "digest": "sha256:cac925ba19425ec5d76e3c03546e9ff614d712063a2ee90c8063a37d224821f7",
+      "digest": "sha256:17c5254804f95350c54a32e9e0285babc8768b8f75ed19abb7379684b45e7834",
       "category": "method",
       "title": "Requirements structuring"
     },
     "security-privacy": {
       "version": "1.0.0",
-      "digest": "sha256:debdfabc1502d51b7a5b05ecd8c0063014ff376e3f1cf45ce392a07811c086e0",
+      "digest": "sha256:962bcae63d5272b8570c61ab795c8904bb899568e966fbda271c6ef045f0e274",
       "category": "professional",
       "title": "Security and privacy"
     },
     "software-engineering": {
       "version": "1.0.0",
-      "digest": "sha256:bbf1b975a084cb31708719fedb7346cebc0f81429d198f98f96995b3e0e5349b",
+      "digest": "sha256:5509a72f05fb343eadb59183c42f5f1ebaa4253184cfc7c11faaac809e90b998",
       "category": "professional",
       "title": "Software engineering"
     },
     "strategy-research": {
       "version": "1.0.0",
-      "digest": "sha256:1dbe0c6c8f1f4f12afc92b33c8875d77b2e750b4eca56888cf7ff3db491cb22c",
+      "digest": "sha256:c36ccd0d894a7983e75ef7e7a52be8408fae09ecfb01995fb2114b45f4215d4f",
       "category": "professional",
       "title": "Strategy and research"
     },
     "system-architecture": {
       "version": "1.0.0",
-      "digest": "sha256:138a72f64df025fc6242893f1c56b59264fe925f2d03d1f59983c760588624e1",
+      "digest": "sha256:591a50e0f006ae14ab4593f44e2fb9bd346a6031df29eefff084c4e53f42185a",
       "category": "professional",
       "title": "System architecture"
     },
     "written-voice": {
       "version": "0.4.0",
-      "digest": "sha256:5debcb8b6aa8f525340d2862b0f64faee5f972b3deced0b06ab24d0b9ea80fdd",
+      "digest": "sha256:d8f723e30238e70207b7095b29783d4c91212836837a12092b063dce844014ab",
       "category": "method",
       "title": "Written voice"
     }

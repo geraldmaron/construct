@@ -1,7 +1,13 @@
 ---
 name: experience-design
 description: >-
-  Review an interface or flow for task success, accessibility, error states, consistency, and evidence. For things people will use; not taste alone.
+  Reviews or reshapes an interface or flow for whether people succeed in it:
+  task completion, findability, error states, accessibility, and fit with
+  the design system. Use when the person says things like: customers abandon
+  the signup at this step; support keeps asking where the button is; nobody
+  can find anything on this page; the checkout takes too many screens; is
+  this form usable; does this screen follow our design system. Not for
+  backend behaviour or copy tone alone.
 license: Apache-2.0
 metadata:
   version: 1.0.0

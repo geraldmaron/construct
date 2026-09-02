@@ -1,0 +1,380 @@
+{
+  "format": "construct-live-judge",
+  "formatVersion": 1,
+  "judge": "codex",
+  "recordedAt": "2026-09-02",
+  "cases": 74,
+  "agree": 74,
+  "verdicts": [
+    {
+      "text": "the guy who built the billing cron quit and I'm supposed to change it next sprint",
+      "expected": "context-mapping",
+      "picked": "context-mapping"
+    },
+    {
+      "text": "which services would notice if I turned off the legacy auth box",
+      "expected": "context-mapping",
+      "picked": "context-mapping"
+    },
+    {
+      "text": "we acquired a company and I need to understand their stack before the integration kickoff",
+      "expected": "context-mapping",
+      "picked": "context-mapping"
+    },
+    {
+      "text": "there's a spreadsheet, a lambda and a slack bot and nobody knows how they connect",
+      "expected": "context-mapping",
+      "picked": "context-mapping"
+    },
+    {
+      "text": "stripe or adyen, we sign a three year contract either way",
+      "expected": "decision-framing",
+      "picked": "decision-framing"
+    },
+    {
+      "text": "do we hire a contractor for the redesign or push it to next year",
+      "expected": "decision-framing",
+      "picked": "decision-framing"
+    },
+    {
+      "text": "the founders disagree on whether to open source the core, help us get to a call",
+      "expected": "decision-framing",
+      "picked": "decision-framing"
+    },
+    {
+      "text": "rewrite in rust or keep patching the go service, I need to present this thursday",
+      "expected": "decision-framing",
+      "picked": "decision-framing"
+    },
+    {
+      "text": "users hit the wrong button constantly because the two look identical",
+      "expected": "experience-design",
+      "picked": "experience-design"
+    },
+    {
+      "text": "our error messages are just 'something went wrong' everywhere",
+      "expected": "experience-design",
+      "picked": "experience-design"
+    },
+    {
+      "text": "the app is unusable with a screen reader according to a customer",
+      "expected": "experience-design",
+      "picked": "experience-design"
+    },
+    {
+      "text": "people sign up and then never come back after the first screen",
+      "expected": "experience-design",
+      "picked": "experience-design"
+    },
+    {
+      "text": "a german customer asked where their data is stored and I don't know what to say",
+      "expected": "governance-risk",
+      "picked": "governance-risk"
+    },
+    {
+      "text": "we're taking payments from minors on the new game, is that a problem",
+      "expected": "governance-risk",
+      "picked": "governance-risk"
+    },
+    {
+      "text": "the auditor asked for our vendor due diligence file and we don't have one",
+      "expected": "governance-risk",
+      "picked": "governance-risk"
+    },
+    {
+      "text": "the partnership agreement has an exclusivity clause, what does that mean for our roadmap",
+      "expected": "governance-risk",
+      "picked": "governance-risk"
+    },
+    {
+      "text": "long email chain from the client, three people asking for different things, figure out the actual request",
+      "expected": "intake",
+      "picked": "intake"
+    },
+    {
+      "text": "my boss dumped a wall of text in slack at midnight, what is he actually asking for",
+      "expected": "intake",
+      "picked": "intake"
+    },
+    {
+      "text": "transcript of the discovery call attached, what did they commit to and what's still open",
+      "expected": "intake",
+      "picked": "intake"
+    },
+    {
+      "text": "half a dozen sticky notes from the workshop, make sense of them",
+      "expected": "intake",
+      "picked": "intake"
+    },
+    {
+      "text": "a blog post says our competitor's outage lasted nine hours, confirm before I mention it in the deck",
+      "expected": "investigative-research",
+      "picked": "investigative-research"
+    },
+    {
+      "text": "the customer says we promised them a feature in 2024, did we",
+      "expected": "investigative-research",
+      "picked": "investigative-research"
+    },
+    {
+      "text": "reconstruct who approved the vendor change and when from the ticket history",
+      "expected": "investigative-research",
+      "picked": "investigative-research"
+    },
+    {
+      "text": "an analyst report quotes a market size that seems made up, trace it",
+      "expected": "investigative-research",
+      "picked": "investigative-research"
+    },
+    {
+      "text": "the batch job silently stopped running two weeks ago and nobody noticed",
+      "expected": "operations-reliability",
+      "picked": "operations-reliability"
+    },
+    {
+      "text": "black friday is in a month and I have no idea if we'll stay up",
+      "expected": "operations-reliability",
+      "picked": "operations-reliability"
+    },
+    {
+      "text": "our disk filled up and took the database down, again",
+      "expected": "operations-reliability",
+      "picked": "operations-reliability"
+    },
+    {
+      "text": "who gets woken up when the payment webhook fails at 3am",
+      "expected": "operations-reliability",
+      "picked": "operations-reliability"
+    },
+    {
+      "text": "the CEO wants a chatbot, I'm not sure any customer asked for one",
+      "expected": "product-management",
+      "picked": "product-management"
+    },
+    {
+      "text": "we have forty feature requests and one team, help me pick",
+      "expected": "product-management",
+      "picked": "product-management"
+    },
+    {
+      "text": "how would we even know if the new dashboard is a success",
+      "expected": "product-management",
+      "picked": "product-management"
+    },
+    {
+      "text": "a big customer wants a custom integration, should it go on the roadmap",
+      "expected": "product-management",
+      "picked": "product-management"
+    },
+    {
+      "text": "the go-live date was set before anyone estimated the work",
+      "expected": "program-delivery",
+      "picked": "program-delivery"
+    },
+    {
+      "text": "two of the five workstreams depend on the same person",
+      "expected": "program-delivery",
+      "picked": "program-delivery"
+    },
+    {
+      "text": "the status report is green but the demo didn't work",
+      "expected": "program-delivery",
+      "picked": "program-delivery"
+    },
+    {
+      "text": "what has to happen in what order for the data center move",
+      "expected": "program-delivery",
+      "picked": "program-delivery"
+    },
+    {
+      "text": "the designer and the engineer built different things from the same mockup",
+      "expected": "requirements-structuring",
+      "picked": "requirements-structuring"
+    },
+    {
+      "text": "QA asks how they're supposed to test 'improve search'",
+      "expected": "requirements-structuring",
+      "picked": "requirements-structuring"
+    },
+    {
+      "text": "we keep reopening this ticket because nobody agrees when it's finished",
+      "expected": "requirements-structuring",
+      "picked": "requirements-structuring"
+    },
+    {
+      "text": "write down what the export needs to do before the offshore team starts",
+      "expected": "requirements-structuring",
+      "picked": "requirements-structuring"
+    },
+    {
+      "text": "every engineer shares the same database password",
+      "expected": "security-privacy",
+      "picked": "security-privacy"
+    },
+    {
+      "text": "a customer uploaded a file and it ended up in a public bucket",
+      "expected": "security-privacy",
+      "picked": "security-privacy"
+    },
+    {
+      "text": "we log full request bodies including credit card numbers",
+      "expected": "security-privacy",
+      "picked": "security-privacy"
+    },
+    {
+      "text": "a former employee's laptop was never wiped",
+      "expected": "security-privacy",
+      "picked": "security-privacy"
+    },
+    {
+      "text": "this function has four nested try/catch blocks and I can't tell what it does on failure",
+      "expected": "software-engineering",
+      "picked": "software-engineering"
+    },
+    {
+      "text": "can I ship this refactor without a feature flag",
+      "expected": "software-engineering",
+      "picked": "software-engineering"
+    },
+    {
+      "text": "the new dependency pulls in two hundred packages, is that fine",
+      "expected": "software-engineering",
+      "picked": "software-engineering"
+    },
+    {
+      "text": "review my changes to the payment retry code",
+      "expected": "software-engineering",
+      "picked": "software-engineering"
+    },
+    {
+      "text": "the all hands said focus on enterprise but every sprint is consumer features",
+      "expected": "strategy-research",
+      "picked": "strategy-research"
+    },
+    {
+      "text": "our OKRs and our actual backlog have nothing in common",
+      "expected": "strategy-research",
+      "picked": "strategy-research"
+    },
+    {
+      "text": "leadership announced three priorities and each team picked a different one",
+      "expected": "strategy-research",
+      "picked": "strategy-research"
+    },
+    {
+      "text": "are we resourced for what the annual plan promises",
+      "expected": "strategy-research",
+      "picked": "strategy-research"
+    },
+    {
+      "text": "the orders service calls inventory which calls orders",
+      "expected": "system-architecture",
+      "picked": "system-architecture"
+    },
+    {
+      "text": "should reporting read from the production database or a copy",
+      "expected": "system-architecture",
+      "picked": "system-architecture"
+    },
+    {
+      "text": "we have one queue for everything and it's becoming a problem",
+      "expected": "system-architecture",
+      "picked": "system-architecture"
+    },
+    {
+      "text": "where should the tenant boundary live in the new platform",
+      "expected": "system-architecture",
+      "picked": "system-architecture"
+    },
+    {
+      "text": "this release note is full of buzzwords, fix it",
+      "expected": "written-voice",
+      "picked": "written-voice"
+    },
+    {
+      "text": "write the apology to customers for yesterday's data loss",
+      "expected": "written-voice",
+      "picked": "written-voice"
+    },
+    {
+      "text": "the onboarding guide sounds like a legal contract",
+      "expected": "written-voice",
+      "picked": "written-voice"
+    },
+    {
+      "text": "shorten this exec summary to something people will actually read",
+      "expected": "written-voice",
+      "picked": "written-voice"
+    },
+    {
+      "text": "before the board sees this, tell me what they'll attack",
+      "expected": "adversarial-review",
+      "picked": "adversarial-review"
+    },
+    {
+      "text": "steelman the case against our migration plan",
+      "expected": "adversarial-review",
+      "picked": "adversarial-review"
+    },
+    {
+      "text": "I'm sure this design is right, prove me wrong",
+      "expected": "adversarial-review",
+      "picked": "adversarial-review"
+    },
+    {
+      "text": "find the flaw in this pricing proposal",
+      "expected": "adversarial-review",
+      "picked": "adversarial-review"
+    },
+    {
+      "text": "keep in mind we froze the API until the audit is over",
+      "expected": "construct",
+      "picked": "construct"
+    },
+    {
+      "text": "once a quarter check our roadmap against the OKRs",
+      "expected": "construct",
+      "picked": "construct"
+    },
+    {
+      "text": "what constraints have we recorded for this project",
+      "expected": "construct",
+      "picked": "construct"
+    },
+    {
+      "text": "run the security review on the new upload feature",
+      "expected": "construct",
+      "picked": "construct"
+    },
+    {
+      "text": "what's the difference between a mutex and a semaphore",
+      "expected": "none",
+      "picked": "none"
+    },
+    {
+      "text": "format this date as ISO 8601",
+      "expected": "none",
+      "picked": "none"
+    },
+    {
+      "text": "add a semicolon at the end of line 12",
+      "expected": "none",
+      "picked": "none"
+    },
+    {
+      "text": "good morning",
+      "expected": "none",
+      "picked": "none"
+    },
+    {
+      "text": "how many bytes in a kilobyte",
+      "expected": "none",
+      "picked": "none"
+    },
+    {
+      "text": "translate this error message to french",
+      "expected": "none",
+      "picked": "none"
+    }
+  ]
+}
