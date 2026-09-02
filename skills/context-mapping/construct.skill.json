@@ -7,12 +7,15 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
-    "work starts inside a system the actor did not build",
-    "a wrong assumption about how parts relate would cost real work"
+    "acting inside a system you did not build or do not hold in your head",
+    "inheriting a codebase, service, program, or vendor relationship; onboarding; integrating; resuming shifted ground",
+    "map the dependencies, owners, boundaries, and unknowns before changing anything",
+    "how the parts relate, what depends on what, who owns it"
   ],
   "standDown": [
-    "the actor already holds the map",
-    "the task is too small to be endangered by a wrong relationship"
+    "you already hold the map, know the system, just implement",
+    "a one-line fix whose neighbors do not matter, rename a variable",
+    "a plain question with no system to map"
   ],
   "interactionClasses": [
     "manage"
@@ -24,11 +27,10 @@
     "map/context"
   ],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "the system's own material: code, documents, ownership files, declared sources"
   ],
   "outputSchemas": [
-    "deliverable/markdown"
+    "map/context/v1"
   ],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
@@ -50,9 +52,11 @@
     }
   ],
   "escalation": [
-    "an unknown that blocks safe action is raised as a decision, not guessed"
+    "an unknown that blocks safe action is raised as a question, never guessed"
   ],
   "licensedReviewBoundaries": [],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }

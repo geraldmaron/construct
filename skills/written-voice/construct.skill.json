@@ -7,13 +7,14 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
-    "drafting a document a reader will act on",
-    "unifying documents by different hands into one voice",
-    "a draft reads buried, hedged, or salesy"
+    "someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo",
+    "write the announcement customers will read, draft the proposal with the decision at the top",
+    "unify documents written by different people into one voice",
+    "a draft reads buried, hedged, or salesy; surface the decision"
   ],
   "standDown": [
-    "a two-line answer, a code comment, a commit message",
-    "prose whose format an external template dictates"
+    "not a deliverable: a chat reply, a code comment, a commit message, a quick answer",
+    "an external template dictates the format: a legal filing, a grant form, a journal structure"
   ],
   "interactionClasses": [
     "manage"
@@ -25,11 +26,11 @@
     "prose/document"
   ],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "the draft or drafts",
+    "who will read it and what they must decide"
   ],
   "outputSchemas": [
-    "deliverable/markdown"
+    "prose/document/v1"
   ],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
@@ -53,5 +54,7 @@
   ],
   "licensedReviewBoundaries": [],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }

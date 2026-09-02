@@ -3,14 +3,20 @@
   "formatVersion": 1,
   "id": "construct",
   "title": "Construct operating skill",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "category": "operational",
   "owner": "geraldmaron/construct",
   "activation": [
-    "Construct is available in this project and the person is talking in their agent session"
+    "Construct is bound to this project and the person is talking in their agent session",
+    "remember that",
+    "record this, note this, keep in mind",
+    "review this against our principles, do this piece of work and hand it back",
+    "every month, every January, keep this reviewed on a schedule, start the review"
   ],
   "standDown": [
-    "the person is not asking Construct to remember, manage, or maintain anything"
+    "a plain question about how something works, explain, what does this function do",
+    "thanks",
+    "that is all, nothing more, no work or memory was asked for"
   ],
   "interactionClasses": [
     "answer",
@@ -19,16 +25,13 @@
     "maintain"
   ],
   "outcomes": [
-    "the four interaction classes handled in the host"
+    "the four interaction classes handled in the host: answer, remember, manage, maintain"
   ],
   "deliverableTypes": [],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "what the person says, in their words"
   ],
-  "outputSchemas": [
-    "deliverable/markdown"
-  ],
+  "outputSchemas": [],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
   "capabilities": [
@@ -44,8 +47,14 @@
   "skillDependencies": [],
   "workflowDependencies": [],
   "qualityGates": [],
-  "escalation": [],
-  "licensedReviewBoundaries": [],
+  "escalation": [
+    "every decision, approval, and clarification is surfaced to the person in conversation and relayed with decide; none is answered by the session on its own"
+  ],
+  "licensedReviewBoundaries": [
+    "legal, medical, regulated, or fiduciary sign-off is prepared for a qualified person, never given"
+  ],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }

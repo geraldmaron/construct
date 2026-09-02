@@ -7,13 +7,15 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
-    "a choice between real alternatives where being wrong has a cost",
-    "architecture, vendor, build-vs-buy, sequencing, or direction calls"
+    "a real choice that will carry weight: build, buy, commit, reorganize, or forgo, and reversing has a cost",
+    "build ourselves or buy a vendor, pick a database, choose between architectures, which sequencing of investments to commit to",
+    "frame the choice with trade-offs and recommend one with the strongest objection stated"
   ],
   "standDown": [
-    "the decision is already made",
-    "one option is viable",
-    "a reversible low-stakes pick"
+    "the decision is already made, help execute the rollout",
+    "only one viable option, just do it",
+    "a cheap reversible pick, any of these, easy to change",
+    "a scheduling or factual question with nothing to decide"
   ],
   "interactionClasses": [
     "manage"
@@ -25,11 +27,11 @@
     "record/decision"
   ],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "the alternatives in play and what each would cost",
+    "the do-nothing baseline"
   ],
   "outputSchemas": [
-    "deliverable/markdown"
+    "record/decision/v1"
   ],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
@@ -51,9 +53,12 @@
     }
   ],
   "escalation": [
-    "the recommendation is presented as a decision for the person, never applied"
+    "the recommendation is presented as the person's decision to make, never applied",
+    "when stakes are unclear one question is asked rather than guessed"
   ],
   "licensedReviewBoundaries": [],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }
