@@ -64,8 +64,9 @@ function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: st
   const client = stringFlag(args, 'client');
   if (client !== undefined) {
     const skillsHost = skillsHostFor(client);
-    if (!skillsHost) throw new UsageError(`--client must be one of ${[...WIRABLE_CLIENTS, 'bob', 'codex'].join(' | ')}`);
-    return { dir: resolveHostSkillsDir(skillsHost, ctx.env), how: `--client=${client}` };
+    if (skillsHost) return { dir: resolveHostSkillsDir(skillsHost, ctx.env), how: `--client=${client}` };
+    if (normalizeClient(client) === null) throw new UsageError(`--client must be one of ${[...WIRABLE_CLIENTS, 'bob', 'codex'].join(' | ')}`);
+    return { dir: null, how: `${client} documents no personal skills directory; pass --skills-dir=<dir> to plant the operational skill where it reads` };
   }
   const ambient = detectAmbientHost(ctx.env);
   if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {

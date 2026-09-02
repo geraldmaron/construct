@@ -15,9 +15,9 @@ Everything Construct knows about a project lives in the project.
   state/construct.sqlite  the only runtime database (ignored by Git)
 ```
 
-There is no home database, no shared workspace, and no
-`.construct/settings.json`. A file from an earlier alpha is recognized by
-path or stamp, named exactly, and never parsed; `construct reset` shows
+There is no home database, no shared workspace, and no settings file. A
+file from an earlier alpha is recognized by path or stamp, named exactly,
+and never parsed; `construct reset` shows
 what it would remove and removes only that when you confirm.
 
 ## Configuration precedence

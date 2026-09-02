@@ -51,7 +51,8 @@
     "smoke": "bash scripts/smoke-packaged-install.sh",
     "reconcile": "node scripts/reconcile-tracker.mjs",
     "registry:index": "node scripts/generate-registry-index.mjs",
-    "docs:generate": "node scripts/generate-docs.mjs"
+    "docs:generate": "node scripts/generate-docs.mjs",
+    "conformance": "node scripts/conformance.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
