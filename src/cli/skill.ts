@@ -4,6 +4,13 @@
  */
 
 import { listShippedSkills, readShippedSkill, plantSkill, removeSkill, skillState } from '../kernel/skills/bundle.ts';
+import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
+import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
+import { lockStatus, updateLock } from '../kernel/registry/lockfile.ts';
+import { emptyLock } from '../kernel/project/lock.ts';
+import { writeJsonFile } from '../kernel/project/files.ts';
+import { bindProject } from './context.ts';
+import { listFlag } from './commands.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
@@ -19,6 +26,7 @@ export const SKILL_SPECS: readonly CommandSpec[] = [
   { path: ['skill', 'show'], gloss: 'one skill’s description, version, and files', group, positionals: ['<name>'], flags: [], readOnly: true },
   { path: ['skill', 'install'], gloss: 'plant a shipped skill into a host’s skills directory, byte for byte', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'force', gloss: 'overwrite a copy that differs', takesValue: false }], readOnly: false },
   { path: ['skill', 'verify'], gloss: 'compare installed skills with the shipped ones', group, positionals: [], flags: [dirFlag, clientFlag], readOnly: true },
+  { path: ['skill', 'update'], gloss: 'bring the project’s registry lock up to the skills and workflows present; project-authored changes are locked only when named', group, positionals: [], flags: [{ name: 'confirm', gloss: 'a project-authored bundle id whose change may be locked (repeatable)', takesValue: true, repeatable: true }, { name: 'dry-run', gloss: 'report what would change', takesValue: false }], readOnly: false },
   { path: ['skill', 'remove'], gloss: 'remove an installed skill (needs --confirm)', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'confirm', gloss: 'actually remove it', takesValue: false }], readOnly: false },
 ];
 
@@ -76,6 +84,23 @@ export function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = cr
       const rows = listShippedSkills().map((s) => ({ name: s.name, ...skillState(s, dir) }));
       if (args.json) writeJson({ dir, skills: rows });
       else for (const r of rows) say(`${r.name}: ${r.state} (${esc(r.why)})`);
+      return 0;
+    }
+    case 'update': {
+      const bound = bindProject(ctx);
+      const skills = createSkillRegistry({ projectDir: bound.layout.skillsDir });
+      const workflows = createWorkflowRegistry({ projectDir: bound.layout.workflowsDir });
+      const current = bound.files.lock ?? emptyLock();
+      const result = updateLock(current, skills.list(), workflows.list(), { confirmProjectBundles: listFlag(args, 'confirm') });
+      const dry = boolFlag(args, 'dry-run');
+      if (!dry && (result.changed.length > 0 || result.removed.length > 0)) writeJsonFile(bound.layout.lockFile, result.lock);
+      const after = lockStatus(dry ? current : result.lock, skills.list(), workflows.list());
+      if (args.json) writeJson({ ...result, lock: undefined, dryRun: dry, status: after.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) });
+      else {
+        say(`${dry ? 'would update' : 'updated'}: ${result.changed.join(', ') || 'nothing'}${result.removed.length ? `; removed: ${result.removed.join(', ')}` : ''}`);
+        if (result.needsConfirmation.length) say(`  changed in this project and left alone until confirmed: ${result.needsConfirmation.join(', ')} (pass --confirm=<id>)`);
+        say(`  ${String(after.filter((r) => r.state === 'current').length)}/${String(after.length)} current`);
+      }
       return 0;
     }
     case 'remove': {
