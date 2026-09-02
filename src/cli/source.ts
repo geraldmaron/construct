@@ -1,441 +1,207 @@
 /**
- * cli/source.ts — where a workspace's organizational context lives.
+ * cli/source.ts — declare and inspect the ground the project reads. Declared
+ * sources live in the committed sources file; local ones stay in state.
  */
 
-import {
-  addSource,
-  authorityLabel,
-  docsLocatorProblem,
-  getSource,
-  retireSource,
-  setSourceDeclaration,
-  setSourceShape,
-  SOURCE_AUTHORITIES,
-  SOURCE_KINDS,
-  sourceDeclaration,
-  sourceShape,
-  sourcesFor,
-  SURVEY_EMPHASES,
-} from '../kernel/store/sources.ts';
-import type {
-  SourceAuthority,
-  SourceDeclaration,
-  SourceKind,
-  SurveyEmphasis,
-} from '../kernel/store/sources.ts';
-import {
-  declareSourceEdge,
-  getSourceEdge,
-  groundAssemblyEffect,
-  relationPhrase,
-  retireSourceEdge,
-  SOURCE_RELATIONS,
-  sourceEdgesFor,
-} from '../kernel/store/source-edges.ts';
-import type { SourceEdge, SourceRelation } from '../kernel/store/source-edges.ts';
-import { activeWatchForSource } from '../kernel/store/source-watches.ts';
-import {
-  divergenceInertNotice,
-  divergenceInertUnwatchedEnd,
-} from '../kernel/watch/source-ground.ts';
-import type { Store } from '../kernel/store/open.ts';
-import { existsSync } from 'node:fs';
-import { DOCUMENT_CAP } from '../hosts/sources.ts';
-import { escapeForTerminal } from '../kernel/render/terminal.ts';
-import { now, withStore } from './runtime.ts';
-import { parseFlags } from './flags.ts';
-import { effectiveWorkspace, SHARED_DEFAULT_WORKSPACE_NOTICE } from './settings.ts';
-import { messageOf } from './errors.ts';
-import { jsonFlag, writeJson } from './json.ts';
+import { AUTHORITY_LEVELS, SENSITIVITIES, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
+import { RELATION_KINDS, addRelation, type RelationKind } from '../kernel/state/graph.ts';
+import { validateSourcesFile, type DeclaredSource, type SourcesFile } from '../kernel/project/sources-file.ts';
+import { writeJsonFile } from '../kernel/project/files.ts';
+import { SOURCE_KINDS, locatorProblem } from '../kernel/source/locators.ts';
+import { createSourceService } from '../kernel/source/service.ts';
+import { ensureSourceEntities, sourceEntity } from '../kernel/source/entities.ts';
+import { readDirectorySource } from '../hosts/sources/directory.ts';
+import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { createContext, openProject, withProject, type CliContext } from './context.ts';
+import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 
-const SOURCE_USAGE =
-  'usage: construct source add --kind=<directory|git|github|jira|docs> --locator=<where> ' +
-  '[--workspace=<name>] [--emphasis=<prose|code|all>] [--cap=<documents>] ' +
-  '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] [--sensitive]\n' +
-  '       construct source describe --id=<source-id> ' +
-  '[--authority=<source-of-truth|working|aspirational|archive>] [--relevance=<one line>] ' +
-  '[--sensitive] [--not-sensitive]\n' +
-  '       construct source list [--workspace=<name>] [--all] [--json]\n' +
-  '       construct source retire --id=<source-id>\n' +
-  '       construct source relate --from=<source-id> --to=<source-id> ' +
-  `--as=<${SOURCE_RELATIONS.join('|')}> [--note=<one line>] [--workspace=<name>]\n` +
-  '       construct source relations [--workspace=<name>] [--all]\n' +
-  '       construct source unrelate --id=<relationship-id>\n';
+const group = 'Sources';
 
-/**
- * What a user said about a source, printed the same way wherever it is shown.
- * One writer, because a declaration shown two ways is the second copy this
- * surface exists to avoid.
- */
-function declarationLine(declaration: SourceDeclaration): string {
-  return (
-    `[${authorityLabel(declaration.authority)}` +
-    (declaration.sensitive ? ', sensitive' : '') +
-    ']' +
-    (declaration.relevance === '' ? '' : `  ${declaration.relevance}`)
-  );
+export const SOURCE_SPECS: readonly CommandSpec[] = [
+  { path: ['source', 'list'], gloss: 'every active source with reachability and freshness', group, positionals: [], flags: [], readOnly: true },
+  { path: ['source', 'show'], gloss: 'one source: purpose, authority, freshness, last read', group, positionals: ['<id>'], flags: [], readOnly: true },
+  {
+    path: ['source', 'add'],
+    gloss: 'declare a source (committed) or add one only this checkout knows (--local)',
+    group,
+    positionals: ['<id>'],
+    flags: [
+      { name: 'kind', gloss: `one of ${SOURCE_KINDS.join(' | ')}`, takesValue: true },
+      { name: 'purpose', gloss: 'what this source is for, in a sentence', takesValue: true },
+      { name: 'locator', gloss: 'where it is: a path, PROJ, owner/repo, provider:container:id', takesValue: true },
+      { name: 'authority', gloss: `overall trust: ${AUTHORITY_LEVELS.join(' | ')} (default informative)`, takesValue: true },
+      { name: 'authoritative-for', gloss: 'a claim type this source settles', takesValue: true, repeatable: true },
+      { name: 'not-authoritative-for', gloss: 'a claim type this source must not settle', takesValue: true, repeatable: true },
+      { name: 'sensitivity', gloss: `${SENSITIVITIES.join(' | ')} (default internal)`, takesValue: true },
+      { name: 'freshness-hours', gloss: 'how old a read may be before it is stale', takesValue: true },
+      { name: 'write', gloss: 'this source may be written to (still gated per action)', takesValue: false },
+      { name: 'local', gloss: 'keep it out of the committed file; the locator may be sensitive', takesValue: false },
+    ],
+    readOnly: false,
+  },
+  { path: ['source', 'retire'], gloss: 'retire a source; its history stays', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['source', 'refresh'], gloss: 'read a source now and record what changed', group, positionals: ['<id>'], flags: [], readOnly: false },
+  {
+    path: ['source', 'relate'],
+    gloss: `record how two sources stand to each other: ${RELATION_KINDS.filter((k) => ['governs', 'supersedes', 'contradicts', 'depends_on', 'feeds'].includes(k)).join(' | ')}`,
+    group,
+    positionals: ['<from-id>', '<relation>', '<to-id>'],
+    flags: [],
+    readOnly: false,
+  },
+];
+
+function readers() {
+  return new Map([['directory', readDirectorySource]]);
 }
 
-/**
- * A relationship in the words its author used, printed the same way wherever
- * it is shown. Locators rather than ids, because a reader recognizes the place
- * their material lives and does not recognize `src-20260825…`.
- */
-function relationLine(store: Store, edge: SourceEdge): string {
-  const where = (id: string): string => getSource(store, id)?.locator ?? id;
-  return (
-    `${where(edge.from)} ${relationPhrase(edge.relation)} ${where(edge.to)}` +
-    (edge.note.trim() === '' ? '' : `  — ${edge.note.trim()}`)
-  );
-}
-
-function divergenceInertLine(store: Store, edge: SourceEdge): string | null {
-  if (edge.retiredAt !== null) return null;
-  const unwatchedId = divergenceInertUnwatchedEnd(
-    edge,
-    activeWatchForSource(store, edge.from) !== null,
-    activeWatchForSource(store, edge.to) !== null,
-  );
-  if (unwatchedId === null) return null;
-  const unwatched = getSource(store, unwatchedId);
-  return unwatched ? divergenceInertNotice(unwatched) : null;
-}
-
-/**
- * The declaration flags, read once for both the surface that declares a source
- * and the surface that describes one already declared.
- *
- * A flag nobody passed leaves what is already recorded alone: `--relevance`
- * alone restates why a source is here without silently re-tiering it. Only an
- * authority — this source's own, or a new one on this command — can produce a
- * declaration at all, because a relevance line with no standing beside it says
- * nothing about how far a role may carry the source.
- */
-function readDeclarationFlags(
-  flags: Record<string, string | undefined>,
-  existing: SourceDeclaration | null,
-): { readonly declaration: SourceDeclaration | null } | { readonly problem: string } {
-  const authority = flags.authority;
-  if (authority !== undefined && !(SOURCE_AUTHORITIES as readonly string[]).includes(authority)) {
-    return {
-      problem: `unknown authority "${authority}" (tiers: ${SOURCE_AUTHORITIES.join(', ')})`,
-    };
-  }
-  if (flags.sensitive === 'true' && flags['not-sensitive'] === 'true') {
-    return { problem: 'a source is either sensitive or it is not; --sensitive and --not-sensitive contradict' };
-  }
-  const relevance = flags.relevance;
-  const sensitive =
-    flags.sensitive === 'true' ? true : flags['not-sensitive'] === 'true' ? false : existing?.sensitive ?? false;
-  const stated = authority !== undefined || relevance !== undefined || flags.sensitive === 'true' || flags['not-sensitive'] === 'true';
-  if (!stated) return { declaration: null };
-  const tier = (authority as SourceAuthority | undefined) ?? existing?.authority;
-  if (tier === undefined) {
-    return {
-      problem:
-        'say what this source is before saying why it matters: ' +
-        `--authority=<${SOURCE_AUTHORITIES.join('|')}>`,
-    };
-  }
+function declaredFrom(id: string, args: ParsedArgs): DeclaredSource {
+  const kind = stringFlag(args, 'kind');
+  if (!kind || !(SOURCE_KINDS as readonly string[]).includes(kind)) throw new UsageError(`--kind must be one of ${SOURCE_KINDS.join(' | ')}`);
+  const purpose = stringFlag(args, 'purpose');
+  if (!purpose) throw new UsageError('--purpose says what this source is for');
+  const locator = stringFlag(args, 'locator') ?? null;
+  const problem = locatorProblem(kind, locator);
+  if (problem) throw new UsageError(problem);
+  const authority = stringFlag(args, 'authority') ?? 'informative';
+  if (!(AUTHORITY_LEVELS as readonly string[]).includes(authority)) throw new UsageError(`--authority must be one of ${AUTHORITY_LEVELS.join(' | ')}`);
+  const sensitivity = stringFlag(args, 'sensitivity') ?? 'internal';
+  if (!(SENSITIVITIES as readonly string[]).includes(sensitivity)) throw new UsageError(`--sensitivity must be one of ${SENSITIVITIES.join(' | ')}`);
+  const fresh = stringFlag(args, 'freshness-hours');
+  const freshnessHours = fresh === undefined ? null : Number(fresh);
+  if (freshnessHours !== null && !(freshnessHours > 0)) throw new UsageError('--freshness-hours must be a positive number');
+  const authoritativeFor = [...new Set(((args.flags['authoritative-for'] as readonly string[] | string | undefined) ?? []) as string[])];
+  const notAuthoritativeFor = [...new Set(((args.flags['not-authoritative-for'] as readonly string[] | string | undefined) ?? []) as string[])];
   return {
-    declaration: { authority: tier, relevance: relevance ?? existing?.relevance ?? '', sensitive },
+    id, kind, purpose, locator,
+    authorityLevel: authority as AuthorityLevel,
+    authoritativeFor: typeof authoritativeFor === 'string' ? [authoritativeFor] : authoritativeFor,
+    notAuthoritativeFor: typeof notAuthoritativeFor === 'string' ? [notAuthoritativeFor] : notAuthoritativeFor,
+    freshnessHours,
+    sensitivity: sensitivity as Sensitivity,
+    read: true,
+    write: boolFlag(args, 'write'),
   };
 }
 
-/**
- * Declare, list, describe, and retire the sources a workspace works from.
- * Declaring builds no connection and reads nothing: it names where
- * organizational material lives so a run can be held to what it actually read
- * from there (the provenance rows), and so an outward write can name its
- * target. Live jira/github connectors are not wired yet; remotes stay
- * unreachable from Construct until a host reaches them.
- *
- * Describing is the user saying what a source is — whether it holds the record
- * or an aspiration, why it is here, whether it is sensitive. It is stated
- * here or not at all: nothing else in this system writes a declaration, so
- * every tier a reader sees is one a person typed.
- *
- * Relating is the same kind of statement about a pair: this strategy governs
- * that repository, this plan supersedes that one, these two cover the same
- * initiative. It is read where it changes something — which material reaches
- * which dispatch, and what a watch over both ends raises when one of them
- * moves — and like a description it is stated here or proposed and decided,
- * never inferred into force.
- */
-export function source(argv: string[]): number {
-  const sub = argv[0];
-  const { flags } = parseFlags(argv.slice(1));
-
-  if (sub === 'add') {
-    const kind = flags.kind ?? '';
-    const locator = flags.locator ?? '';
-    if (!(SOURCE_KINDS as readonly string[]).includes(kind) || locator.trim() === '') {
-      process.stderr.write(SOURCE_USAGE);
-      return 2;
-    }
-    // docs spans three unrelated providers (Google Docs, Confluence, Notion),
-    // so unlike jira or github its locator must self-identify both — caught
-    // here, before the store, so the refusal is a sentence and not a thrown
-    // error the generic catch below would have to decide what to do with.
-    if (kind === 'docs') {
-      const problem = docsLocatorProblem(locator);
-      if (problem) {
-        process.stderr.write(`source: ${problem}\n`);
-        return 2;
-      }
-    }
-    // How this source is walked, declared with it. Both flags are optional and
-    // absent means today's behavior, so nothing about an existing workspace
-    // changes by the setting coming into existence.
-    const emphasis = flags.emphasis;
-    if (emphasis !== undefined && !(SURVEY_EMPHASES as readonly string[]).includes(emphasis)) {
-      process.stderr.write(
-        `source: unknown emphasis "${emphasis}" (emphases: ${SURVEY_EMPHASES.join(', ')})\n${SOURCE_USAGE}`,
-      );
-      return 2;
-    }
-    const cap = flags.cap === undefined ? undefined : Number(flags.cap);
-    if (cap !== undefined && (!Number.isInteger(cap) || cap < 1)) {
-      process.stderr.write(`source: --cap must be a positive whole number, got "${flags.cap ?? ''}"\n`);
-      return 2;
-    }
-    // What the source is, said with it. Optional here and stated later by
-    // `describe`, so a user who does not know yet declares where the context
-    // lives and says what it is worth when they do.
-    const stated = readDeclarationFlags(flags, null);
-    if ('problem' in stated) {
-      process.stderr.write(`source: ${stated.problem}\n${SOURCE_USAGE}`);
-      return 2;
-    }
-    return withStore((store) => {
-      const { workspace, unboundDefault } = effectiveWorkspace(store, flags.workspace);
-      // Sources are append-only — a declaration is retired, never deleted — so
-      // the warning has to reach the operator before the row lands, not after
-      // it is already visible to every other repository on the machine.
-      if (unboundDefault) process.stderr.write(`source: ${SHARED_DEFAULT_WORKSPACE_NOTICE}\n`);
-      const at = now();
-      const id = `src-${at.replace(/[-:.TZ]/g, '')}`;
-      try {
-        addSource(store, { id, workspace, kind: kind as SourceKind, locator, addedAt: at });
-      } catch (error) {
-        if (/UNIQUE/i.test(messageOf(error))) {
-          process.stderr.write(
-            `source: ${workspace} already declares ${kind} ${locator} — retire the old declaration first if it moved\n`,
-          );
-          return 1;
-        }
-        throw error;
-      }
-      let line = `declared ${id}: ${kind} ${locator} (workspace ${workspace})`;
-      if (emphasis !== undefined || cap !== undefined) {
-        const shape = { emphasis: (emphasis ?? 'prose') as SurveyEmphasis, cap: cap ?? DOCUMENT_CAP };
-        setSourceShape(store, id, shape, at);
-        line += `, surveyed ${shape.emphasis}-first, up to ${String(shape.cap)} documents`;
-      }
-      if (stated.declaration) {
-        setSourceDeclaration(store, id, stated.declaration, at);
-        line += `, ${declarationLine(stated.declaration)}`;
-      }
-      process.stdout.write(`${line}\n`);
-      // A directory source whose path is not there yet is declared, not
-      // refused: validation is deferred to read time. Say so, rather than
-      // returning success in silence, so a typo'd path is noticed now.
-      if (kind === 'directory' && !existsSync(locator)) {
-        process.stderr.write(
-          `source: ${locator} is not there yet — the source is declared and this path is checked when it is read\n`,
-        );
-      }
-      return 0;
-    });
-  }
-
-  if (sub === 'describe') {
-    const id = flags.id ?? '';
-    if (id.trim() === '') {
-      process.stderr.write(SOURCE_USAGE);
-      return 2;
-    }
-    return withStore((store) => {
-      const existing = sourceDeclaration(store, id);
-      const stated = readDeclarationFlags(flags, existing);
-      if ('problem' in stated) {
-        process.stderr.write(`source: ${stated.problem}\n${SOURCE_USAGE}`);
-        return 2;
-      }
-      if (!stated.declaration) {
-        process.stderr.write(
-          `source: describe says what a source is, and this command says nothing about ${id}\n${SOURCE_USAGE}`,
-        );
-        return 2;
-      }
-      try {
-        setSourceDeclaration(store, id, stated.declaration, now());
-      } catch (error) {
-        process.stderr.write(`source: ${messageOf(error)}\n`);
-        return 1;
-      }
-      process.stdout.write(`described ${id}: ${declarationLine(stated.declaration)}\n`);
-      return 0;
-    });
-  }
-
-  if (sub === 'list') {
-    return withStore((store) => {
-      const { workspace } = effectiveWorkspace(store, flags.workspace);
-      const rows = sourcesFor(store, workspace, { includeRetired: flags.all === 'true' });
-      if (jsonFlag(argv)) {
-        // Each source row with the shape and declaration recorded against it
-        // — the same three records the human listing reads, merged the same
-        // way, but as data rather than one formatted line per source.
-        writeJson(
-          rows.map((row) => ({
-            ...row,
-            shape: sourceShape(store, row.id),
-            declaration: sourceDeclaration(store, row.id),
-          })),
-        );
-        return 0;
-      }
-      if (rows.length === 0) {
-        process.stdout.write(`no sources declared for workspace ${workspace}\n`);
-        return 0;
-      }
-      for (const row of rows) {
-        const shape = sourceShape(store, row.id);
-        const declaration = sourceDeclaration(store, row.id);
-        process.stdout.write(
-          `${row.id}  ${row.kind}  ${row.locator}` +
-            (shape ? `  [${shape.emphasis}-first, cap ${String(shape.cap)}]` : '') +
-            (declaration ? `  ${declarationLine(declaration)}` : '') +
-            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
-            '\n',
-        );
-      }
-      return 0;
-    });
-  }
-
-  if (sub === 'retire') {
-    const id = flags.id ?? '';
-    if (id.trim() === '') {
-      process.stderr.write(SOURCE_USAGE);
-      return 2;
-    }
-    return withStore((store) => {
-      try {
-        retireSource(store, id, now());
-      } catch (error) {
-        process.stderr.write(`source: ${messageOf(error)}\n`);
-        return 1;
-      }
-      process.stdout.write(`retired ${id}\n`);
-      return 0;
-    });
-  }
-
-  if (sub === 'relate') {
-    const from = (flags.from ?? '').trim();
-    const to = (flags.to ?? '').trim();
-    const relation = flags.as ?? '';
-    if (from === '' || to === '' || !(SOURCE_RELATIONS as readonly string[]).includes(relation)) {
-      process.stderr.write(SOURCE_USAGE);
-      return 2;
-    }
-    return withStore((store) => {
-      const { workspace } = effectiveWorkspace(store, flags.workspace);
-      const at = now();
-      // Two relationships declared inside the same millisecond are two
-      // statements, not one, so the id is walked past whatever is already
-      // there rather than colliding and reading as a duplicate.
-      const stem = `rel-${at.replace(/[-:.TZ]/g, '')}-${relation}`;
-      let id = stem;
-      for (let nth = 2; getSourceEdge(store, id) !== null; nth += 1) id = `${stem}-${String(nth)}`;
-      try {
-        declareSourceEdge(store, {
-          id,
-          workspace,
-          from,
-          to,
-          relation: relation as SourceRelation,
-          note: flags.note ?? '',
-          declaredAt: at,
-        });
-      } catch (error) {
-        const message = messageOf(error);
-        if (/UNIQUE/i.test(message)) {
-          process.stdout.write('already related that way; the earlier statement stands.\n');
+export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
+  switch (sub) {
+    case 'list':
+      return withProject(ctx, ({ store }) => {
+        const svc = createSourceService(store, { readers: readers() });
+        const at = ctx.now();
+        const rows = svc.list().map((s) => svc.status(s.id, at));
+        if (args.json) {
+          writeJson(rows);
           return 0;
         }
-        process.stderr.write(`source: ${escapeForTerminal(message)}\n`);
-        return 1;
-      }
-      process.stdout.write(
-        `related ${id}: ${relationLine(store, {
-          id,
-          workspace,
-          from,
-          to,
-          relation: relation as SourceRelation,
-          note: flags.note ?? '',
-          declaredAt: at,
-          retiredAt: null,
-        })}\n`,
-      );
-      // Supersedes withholds the replaced source from dispatches that carry
-      // the replacement — say so at declare time, or the silence is the bug.
-      if (relation === 'supersedes') {
-        process.stdout.write(
-          '  the replaced source will be withheld from dispatches that carry its replacement\n',
-        );
-      }
-      return 0;
-    });
-  }
-
-  if (sub === 'relations') {
-    return withStore((store) => {
-      const { workspace } = effectiveWorkspace(store, flags.workspace);
-      const rows = sourceEdgesFor(store, workspace, { includeRetired: flags.all === 'true' });
-      if (rows.length === 0) {
-        process.stdout.write(`no relationships declared for workspace ${workspace}\n`);
-        return 0;
-      }
-      for (const row of rows) {
-        process.stdout.write(
-          `${row.id}  ${relationLine(store, row)}` +
-            (row.retiredAt ? `  (retired ${row.retiredAt})` : '') +
-            '\n',
-        );
-        if (row.retiredAt === null) {
-          process.stdout.write(`  ground: ${groundAssemblyEffect(row.relation)}\n`);
-          const inert = divergenceInertLine(store, row);
-          if (inert !== null) process.stdout.write(`  ${inert}\n`);
+        if (rows.length === 0) {
+          say('no sources declared. `construct source add <id> --kind ... --purpose ...` declares one.');
+          return 0;
         }
-      }
-      return 0;
-    });
-  }
-
-  if (sub === 'unrelate') {
-    const id = (flags.id ?? '').trim();
-    if (id === '') {
-      process.stderr.write(SOURCE_USAGE);
-      return 2;
+        for (const r of rows) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+        return 0;
+      });
+    case 'show': {
+      const id = args.positionals[0]!;
+      return withProject(ctx, ({ store }) => {
+        const svc = createSourceService(store, { readers: readers() });
+        if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`, '`construct source list` shows the ones that exist.');
+        const r = svc.status(id, ctx.now());
+        if (args.json) {
+          writeJson(r);
+          return 0;
+        }
+        say(`${esc(r.source.id)} (${r.source.kind}, ${r.source.origin})`);
+        say(`  purpose: ${esc(r.source.purpose)}`);
+        say(`  locator: ${r.source.locator ? esc(r.source.locator) : 'none'}`);
+        say(`  authority: ${r.source.authorityLevel}; settles ${r.authoritativeFor.length ? r.authoritativeFor.map(esc).join(', ') : 'nothing declared'}; must not settle ${r.notAuthoritativeFor.length ? r.notAuthoritativeFor.map(esc).join(', ') : 'nothing declared'}`);
+        say(`  sensitivity: ${r.source.sensitivity}; reads ${r.source.canRead ? 'yes' : 'no'}; writes ${r.source.canWrite ? 'allowed per action' : 'no'}`);
+        say(`  reachability: ${r.source.reachability}; freshness: ${r.freshness}${r.lastSnapshot ? ` (last read ${r.lastSnapshot.takenAt}, ${esc(r.lastSnapshot.summary ?? '')})` : ''}`);
+        return 0;
+      });
     }
-    return withStore((store) => {
+    case 'add': {
+      const id = args.positionals[0]!;
+      const declared = declaredFrom(id, args);
+      return withProject(ctx, ({ store, layout, files }) => {
+        const at = ctx.now();
+        const svc = createSourceService(store, { readers: readers() });
+        if (boolFlag(args, 'local')) {
+          svc.addLocal({ ...declared }, at);
+        } else {
+          const current: SourcesFile = files.sources ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
+          if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
+          const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
+          writeJsonFile(layout.sourcesFile, next);
+          svc.syncDeclarations(next, at);
+        }
+        ensureSourceEntities(store, at, ctx.nextId);
+        const r = svc.status(id, at);
+        if (args.json) writeJson(r);
+        else {
+          say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ' in .construct/sources.json'}`);
+          say(`Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`);
+        }
+        return 0;
+      });
+    }
+    case 'retire': {
+      const id = args.positionals[0]!;
+      return withProject(ctx, ({ store, layout, files }) => {
+        const at = ctx.now();
+        const svc = createSourceService(store, { readers: readers() });
+        const source = svc.list().find((s) => s.id === id);
+        if (!source) throw new OperationError(`no active source ${id}`);
+        if (source.origin === 'declared') {
+          const current = files.sources!;
+          const next = validateSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }, layout.sourcesFile);
+          writeJsonFile(layout.sourcesFile, next);
+          svc.syncDeclarations(next, at);
+        } else {
+          retireSource(store, id, at);
+        }
+        if (args.json) writeJson({ id, retired: true });
+        else say(`retired source ${esc(id)}; its snapshots and claims stay on the record`);
+        return 0;
+      });
+    }
+    case 'refresh': {
+      const id = args.positionals[0]!;
+      const project = openProject(ctx);
       try {
-        retireSourceEdge(store, id, now());
-      } catch (error) {
-        process.stderr.write(`source: ${escapeForTerminal(messageOf(error))}\n`);
-        return 1;
+        const svc = createSourceService(project.store, { readers: readers() });
+        if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`);
+        const result = await svc.refresh(id, ctx.now(), () => ctx.nextId('snap'));
+        if (args.json) writeJson(result);
+        else if (result.outcome === 'unreachable') say(`${esc(id)}: unreachable (${esc(result.reason ?? '')})`);
+        else say(`${esc(id)}: ${result.outcome}${result.snapshot ? ` (${esc(result.snapshot.summary ?? '')})` : ''}`);
+        return result.outcome === 'unreachable' ? 1 : 0;
+      } finally {
+        project.store.close();
       }
-      process.stdout.write(
-        `retired ${id}; it stops governing what any run is assembled from, and stays on the record\n`,
-      );
-      return 0;
-    });
+    }
+    case 'relate': {
+      const [fromId, relation, toId] = args.positionals as [string, string, string];
+      const allowed: readonly RelationKind[] = ['governs', 'supersedes', 'contradicts', 'depends_on', 'feeds'];
+      if (!(allowed as readonly string[]).includes(relation)) throw new UsageError(`relation must be one of ${allowed.join(' | ')}`);
+      return withProject(ctx, ({ store }) => {
+        const at = ctx.now();
+        ensureSourceEntities(store, at, ctx.nextId);
+        const svc = createSourceService(store, { readers: readers() });
+        const from = svc.list().find((s) => s.id === fromId);
+        const to = svc.list().find((s) => s.id === toId);
+        if (!from) throw new OperationError(`no active source ${fromId}`);
+        if (!to) throw new OperationError(`no active source ${toId}`);
+        const fromEntity = sourceEntity(store, from.id, from.kind)!;
+        const toEntity = sourceEntity(store, to.id, to.kind)!;
+        const rel = addRelation(store, { id: ctx.nextId('rel'), kind: relation as RelationKind, fromId: fromEntity.id, toId: toEntity.id, basis: 'declared', confidence: 1, confirmed: true, at });
+        if (args.json) writeJson(rel);
+        else say(`recorded: ${esc(fromId)} ${relation} ${esc(toId)} (declared by you, confirmed)`);
+        return 0;
+      });
+    }
+    default:
+      throw new UsageError(`source has no subcommand "${sub}"`);
   }
-
-  process.stderr.write(SOURCE_USAGE);
-  return 2;
 }

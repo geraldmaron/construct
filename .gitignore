@@ -12,20 +12,10 @@ coverage/
 *.db
 .beads-credential-key
 
-# construct-2jb.3: generated labeling sheets and real coder responses never
-# belong in git — sheets/ is regenerable, returned/ may carry a labeler's name.
-scripts/labeling-kit/sheets/
-scripts/labeling-kit/returned/*.json
-
 # Agent worktrees: ephemeral per-agent checkouts, auto-cleaned, never committed.
 .claude/worktrees/
 # Session Typst/PDF dogfood lives next to the checkout, not in the product tree.
 tmp/
-
-# Scratch probe output: a checksum sidecar a backup probe writes beside a
-# database it does not keep. It named a file that no longer exists the moment
-# the probe ended, so committing one records nothing a reader can check.
-__probe__/
 
 # Dotenv files hold live credentials and never belong in git; the example
 # template of variable names does.

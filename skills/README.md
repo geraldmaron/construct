@@ -22,7 +22,7 @@ Seven method skills cover a working lifecycle - intake → context → evidence
   stranger could build from and verify against.
 - **written-voice** - one plain house voice for prose deliverables, with
   shapes for spec, proposal, status update, announcement, README, and more.
-  Opt-in: not included in `construct skills install --all`.
+  Opt-in: install it by name when a piece of prose needs it.
 - **adversarial-review** - a finished deliverable or decision is challenged
   before anyone commits to it, closing in one of four verdicts.
 
@@ -33,7 +33,6 @@ points at those files when needed.
 An operational **`construct`** skill (host posture for Construct MCP /
 coordination) is separate from this method set. When present in the package,
 `construct init` auto-installs it; method skills never auto-install that way.
-Lens / persona packs are not product auto-install either.
 
 More skills are planned. None are listed here until they ship.
 
@@ -67,13 +66,12 @@ Three ways to get a skill into your agent:
    skills from this repo via git - this runs Vercel's third-party `skills`
    installer, not this project's own tooling, at whatever version npx
    resolves as latest.
-3. **Use the CLI.** `construct skills list` names what's shipped;
-   `construct skills install <name>` (or `--all`) copies it into a host
-   skills directory as an exact copy; `construct skills installed` reports
-   what's there and whether it matches; `construct skills uninstall <name>`
-   removes it. `--all` installs the default method set and skips
-   opt-in-only skills (written-voice). Name the destination by host with
-   `--host=<claude|bob|opencode|cursor|codex>`, or give a path with
+3. **Use the CLI.** `construct skill list` names what's shipped;
+   `construct skill install <name>` copies it into a host
+   skills directory as an exact copy; `construct skill verify` reports
+   what's there and whether it matches; `construct skill remove <name>`
+   removes it once you confirm. Name the destination by host with
+   `--client=<claude|bob|opencode|cursor|codex>`, or give a path with
    `--dir`. The skills travel inside the npm package.
 
 Each method skill is severable: no construct checkout is required for it to

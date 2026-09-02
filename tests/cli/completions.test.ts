@@ -1,139 +1,46 @@
 /**
- * tests/cli/completions.test.ts — shell completion scripts generation.
- *
- * Tests that `construct completions --shell=bash|zsh` emits scripts that:
- * - Cover every verb from the VERBS array (no drift)
- * - Handle missing/invalid --shell values correctly
- * - Produce valid shell syntax
+ * tests/cli/completions.test.ts — completion scripts derive from the command
+ * registry, so every command is completable and nothing else is.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { main, VERBS, completions } from '../../src/cli/index.ts';
-import { sterileHome } from '../harness/sterile.ts';
+import { execFileSync } from 'node:child_process';
+import { COMMANDS, run } from '../../src/cli/index.ts';
+import { completionScript } from '../../src/cli/completions.ts';
+import { capture } from './support.ts';
 
-sterileHome();
+const nouns = [...new Set(COMMANDS.map((c) => c.path[0]))];
 
-interface Capture {
-  readonly code: number;
-  readonly out: string;
-  readonly err: string;
-}
+test('the registry names no removed verb', () => {
+  for (const gone of ['outcome', 'work', 'ask', 'skills', 'settings', 'serve']) assert.ok(!nouns.includes(gone), gone);
+});
 
-async function capture(argv: string[]): Promise<Capture> {
-  const out: string[] = [];
-  const err: string[] = [];
-  const realOut = process.stdout.write.bind(process.stdout);
-  const realErr = process.stderr.write.bind(process.stderr);
-  (process.stdout as { write: unknown }).write = (chunk: string) => {
-    out.push(String(chunk));
-    return true;
-  };
-  (process.stderr as { write: unknown }).write = (chunk: string) => {
-    err.push(String(chunk));
-    return true;
-  };
-  let code = 0;
+test('bash and zsh scripts name every command noun and subcommand', () => {
+  for (const shell of ['bash', 'zsh', 'fish'] as const) {
+    const script = completionScript(shell, COMMANDS);
+    for (const noun of nouns) assert.ok(script.includes(noun), `${shell} names ${noun}`);
+    for (const c of COMMANDS) if (c.path[1]) assert.ok(script.includes(c.path[1]), `${shell} names ${c.path.join(' ')}`);
+  }
+});
+
+test('the bash script parses under bash and the zsh script under zsh where available', () => {
+  execFileSync('bash', ['-n'], { input: completionScript('bash', COMMANDS) });
   try {
-    code = await main(argv);
-    return { code, out: out.join(''), err: err.join('') };
-  } finally {
-    (process.stdout as { write: unknown }).write = realOut;
-    (process.stderr as { write: unknown }).write = realErr;
-  }
-}
-
-test('completions --shell=bash emits a valid bash completion script', async () => {
-  const result = await capture(['completions', '--shell=bash']);
-  assert.strictEqual(result.code, 0, 'should exit with 0');
-  assert.match(result.out, /bash/, 'should mention bash in output');
-  assert.match(result.out, /_construct_completions/, 'should define completion function');
-  assert.strictEqual(result.err, '', 'should have no stderr');
-});
-
-test('completions --shell=zsh emits a valid zsh completion script', async () => {
-  const result = await capture(['completions', '--shell=zsh']);
-  assert.strictEqual(result.code, 0, 'should exit with 0');
-  assert.match(result.out, /#compdef construct/, 'should have zsh compdef directive');
-  assert.match(result.out, /_construct_completions/, 'should define completion function');
-  assert.strictEqual(result.err, '', 'should have no stderr');
-});
-
-test('bash completion script contains all verbs from VERBS array', async () => {
-  const result = await capture(['completions', '--shell=bash']);
-  const verbs = VERBS.filter((v) => v !== 'help'); // help is special-cased
-
-  for (const verb of verbs) {
-    assert.match(
-      result.out,
-      new RegExp(verb),
-      `bash script should contain verb "${verb}" (derived from VERBS array)`,
-    );
+    execFileSync('zsh', ['-n'], { input: completionScript('zsh', COMMANDS) });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
   }
 });
 
-test('zsh completion script contains all verbs from VERBS array', async () => {
-  const result = await capture(['completions', '--shell=zsh']);
-  const verbs = VERBS.filter((v) => v !== 'help'); // help is special-cased
-
-  for (const verb of verbs) {
-    assert.match(
-      result.out,
-      new RegExp(verb),
-      `zsh script should contain verb "${verb}" (derived from VERBS array)`,
-    );
-  }
-});
-
-test('completions with missing --shell flag returns error', async () => {
-  const result = await capture(['completions']);
-  assert.strictEqual(result.code, 2, 'should exit with 2 (usage error)');
-  assert.match(result.err, /usage:/, 'should show usage');
-  assert.match(result.err, /--shell=/, 'should mention --shell flag');
-});
-
-test('completions with unknown --shell value returns error', async () => {
-  const result = await capture(['completions', '--shell=fish']);
-  assert.strictEqual(result.code, 2, 'should exit with 2 (usage error)');
-  assert.match(result.err, /unknown shell/, 'should mention unknown shell');
-  assert.match(result.err, /bash or zsh/, 'should list expected values');
-});
-
-test('completions is registered in VERBS array', () => {
-  assert.ok(VERBS.includes('completions'), 'completions should be in VERBS array');
-});
-
-test('completions verb is discoverable via help', async () => {
-  // The USAGE line is built from VERBS, so if completions is in VERBS,
-  // it will appear in the help output when an unknown command is given.
-  const result = await capture(['nonexistent']);
-  assert.match(
-    result.out,
-    /completions/,
-    'help output should include completions verb (derived from VERBS)',
-  );
-});
-
-test('completions --help shows usage', async () => {
-  const result = await capture(['completions', '--help']);
-  assert.strictEqual(result.code, 0, 'should exit with 0');
-  assert.match(result.err, /usage/, 'should show usage');
-  assert.match(result.err, /--shell/, 'should mention --shell option');
-});
-
-test('bash script syntax is bash-compatible', async () => {
-  const result = await capture(['completions', '--shell=bash']);
-  // Basic bash syntax checks
-  assert.match(result.out, /complete -o/, 'should have bash complete directive');
-  assert.match(result.out, /compgen/, 'should use compgen');
-});
-
-test('zsh script syntax is zsh-compatible', async () => {
-  const result = await capture(['completions', '--shell=zsh']);
-  // Basic zsh syntax checks
-  assert.match(result.out, /#compdef/, 'should have compdef directive');
-  assert.match(result.out, /_values/, 'should use _values for completion');
+test('construct completion prints bash by default, honors --shell, and refuses an unknown shell', async () => {
+  const bash = await capture(() => run(['completion']));
+  assert.equal(bash.code, 0);
+  assert.match(bash.out, /complete -F _construct construct/);
+  const fish = await capture(() => run(['completion', '--shell=fish']));
+  assert.equal(fish.code, 0);
+  assert.match(fish.out, /complete -c construct/);
+  const bad = await capture(() => run(['completion', '--shell=powershell']));
+  assert.equal(bad.code, 2);
+  assert.match(bad.err, /--shell must be one of/);
 });

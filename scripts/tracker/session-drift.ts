@@ -53,11 +53,11 @@
  * src/kernel/tracker/ (authority, projection, reconcileAll).
  */
 
-import { AUTHORITY } from '../../src/kernel/tracker/authority.ts';
-import { projectionId } from '../../src/kernel/tracker/projection.ts';
-import type { Projection } from '../../src/kernel/tracker/projection.ts';
-import { reconcileAll } from '../../src/kernel/tracker/reconcile.ts';
-import type { DriftReport } from '../../src/kernel/tracker/reconcile.ts';
+import { AUTHORITY } from './lib/authority.ts';
+import { projectionId } from './lib/projection.ts';
+import type { Projection } from './lib/projection.ts';
+import { reconcileAll } from './lib/reconcile.ts';
+import type { DriftReport } from './lib/reconcile.ts';
 
 /** The propositions this projection reconciles. Both are repo-owned. */
 const SESSION_FIELD_AUTHORITY = Object.freeze({

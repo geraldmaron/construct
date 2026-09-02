@@ -1,153 +1,72 @@
 /**
- * cli/completions.ts — shell completion scripts generated from the CLI's verb table.
- *
- * Completions are generated from the VERBS array rather than hand-written, so
- * they cannot drift from what the CLI actually accepts. The script emitted here
- * covers every verb and common flags. A user runs:
- *
- *   construct completions --shell=zsh > /path/to/completions
- *
- * and sources it in their shell startup file.
+ * cli/completions.ts — shell completion scripts derived from the command
+ * registry, so a command that exists is completable and one that does not is
+ * not.
  */
 
-import { VERBS } from './index.ts';
+import { GLOBAL_FLAGS, type CommandSpec } from './commands.ts';
 
-/**
- * Generates a zsh completion script covering all verbs and common flags.
- * The verbs are derived from the same table that `help` reads, so they
- * cannot drift.
- */
-function generateZshCompletions(): string {
-  const verbs = VERBS.filter((v) => v !== 'help'); // help is special-cased in usage
-  const flags = ['help', 'host', 'model', 'binary', 'dir', 'timeout', 'workspace', 'run'];
+export const SHELLS = ['bash', 'zsh', 'fish'] as const;
+export type Shell = (typeof SHELLS)[number];
 
-  return `#compdef construct
-
-# This completion script is generated from the CLI's verb table (VERBS in src/cli/index.ts).
-# To update completions, run: construct completions --shell=zsh > ~/.zfunc/_construct
-
-_construct_completions() {
-  local -a verbs
-  verbs=(${verbs.map((v) => `'${v}'`).join(' ')})
-
-  local -a common_flags
-  common_flags=(
-    '--help'
-    '--host=[opencode|claude|codex|cursor]'
-    '--model=[model name]'
-    '--binary=[path to binary]'
-    '--dir=[directory path]'
-    '--timeout=[minutes]'
-    '--workspace=[workspace name]'
-    '--run=[run id]'
-  )
-
-  local cur prev
-  cur="\${COMP_WORDS[-1]}"
-  prev="\${COMP_WORDS[-2]}"
-
-  # Complete verbs at first position
-  if (( CURRENT == 2 )); then
-    _values 'construct verbs' \$verbs
-  else
-    # Complete flags for any verb
-    _values 'flags' \$common_flags
-  fi
-}
-
-_construct_completions "$@"
-`;
-}
-
-/**
- * Generates a bash completion script covering all verbs and common flags.
- * The verbs are derived from the same table that `help` reads, so they
- * cannot drift.
- */
-function generateBashCompletions(): string {
-  const verbs = VERBS.filter((v) => v !== 'help'); // help is special-cased in usage
-  const flags = ['help', 'host', 'model', 'binary', 'dir', 'timeout', 'workspace', 'run'];
-
-  const verbsString = verbs.join(' ');
-  const flagsString = flags.map((f) => `--${f}`).join(' ');
-
-  return `# Bash completion for construct
-# This completion script is generated from the CLI's verb table (VERBS in src/cli/index.ts).
-# To install, run: construct completions --shell=bash | sudo tee /usr/local/etc/bash_completion.d/construct
-# Or add to your .bashrc:
-#   source <(construct completions --shell=bash)
-
-_construct_completions() {
-  local cur prev words cword
-  COMPREPLY=()
-  cur="\${COMP_WORDS[COMP_CWORD]}"
-  prev="\${COMP_WORDS[COMP_CWORD-1]}"
-  words=(\${COMP_WORDS[@]})
-  cword=\${COMP_CWORD}
-
-  local verbs="${verbsString}"
-  local flags="${flagsString}"
-
-  # Complete verbs if we're at the first argument
-  if [[ \$cword -eq 1 ]]; then
-    COMPREPLY=( \$(compgen -W "\${verbs}" -- "\${cur}") )
-    return 0
-  fi
-
-  # Complete flags
-  if [[ \${cur} == -* ]]; then
-    COMPREPLY=( \$(compgen -W "\${flags}" -- "\${cur}") )
-    return 0
-  fi
-
-  return 0
-}
-
-complete -o bashdefault -o default -o nospace -F _construct_completions construct
-`;
-}
-
-/**
- * The completions verb. Generates shell completion scripts covering every
- * verb in the CLI's own verb table (VERBS array), so they remain in sync
- * and cannot drift.
- *
- * Usage:
- *   construct completions --shell=zsh > /path/to/completions
- *   construct completions --shell=bash > /path/to/completions
- */
-export function completions(argv: string[]): number {
-  const hasHelp = argv.includes('--help');
-  const shell = argv.find((a) => a.startsWith('--shell='))?.split('=')[1] || '';
-
-  if (hasHelp) {
-    process.stderr.write(
-      'usage: construct completions --shell=zsh|bash\n' +
-        '  --shell=zsh      Emit a zsh completion script\n' +
-        '  --shell=bash     Emit a bash completion script\n',
-    );
-    return 0;
+function words(commands: readonly CommandSpec[]): { readonly first: string[]; readonly second: Record<string, string[]>; readonly flags: Record<string, string[]> } {
+  const first = [...new Set(commands.map((c) => c.path[0]!))].sort();
+  const second: Record<string, string[]> = {};
+  const flags: Record<string, string[]> = {};
+  for (const c of commands) {
+    if (c.path.length > 1) (second[c.path[0]!] ??= []).push(c.path[1]!);
+    flags[c.path.join(' ')] = [...c.flags, ...GLOBAL_FLAGS].map((f) => `--${f.name}`);
   }
+  for (const k of Object.keys(second)) second[k] = [...new Set(second[k])].sort();
+  return { first, second, flags };
+}
 
-  if (shell === 'zsh') {
-    process.stdout.write(generateZshCompletions());
-    return 0;
-  }
-
+export function completionScript(shell: Shell, commands: readonly CommandSpec[]): string {
+  const w = words(commands);
   if (shell === 'bash') {
-    process.stdout.write(generateBashCompletions());
-    return 0;
+    const cases = Object.entries(w.second).map(([verb, subs]) => `      ${verb}) COMPREPLY=( $(compgen -W "${subs.join(' ')}" -- "$cur") ); return;;`).join('\n');
+    return [
+      '_construct() {',
+      '  local cur prev',
+      '  cur="${COMP_WORDS[COMP_CWORD]}"',
+      '  prev="${COMP_WORDS[COMP_CWORD-1]}"',
+      '  if [ "$COMP_CWORD" -eq 1 ]; then',
+      `    COMPREPLY=( $(compgen -W "${w.first.join(' ')}" -- "$cur") ); return`,
+      '  fi',
+      '  if [ "$COMP_CWORD" -eq 2 ]; then',
+      '    case "$prev" in',
+      cases,
+      '    esac',
+      '  fi',
+      `  COMPREPLY=( $(compgen -W "${[...new Set(Object.values(w.flags).flat())].sort().join(' ')}" -- "$cur") )`,
+      '}',
+      'complete -F _construct construct',
+      '',
+    ].join('\n');
   }
-
-  if (shell === '') {
-    process.stderr.write(
-      'usage: construct completions --shell=zsh|bash\n' +
-        '  --shell=zsh      Emit a zsh completion script\n' +
-        '  --shell=bash     Emit a bash completion script\n',
-    );
-    return 2;
+  if (shell === 'zsh') {
+    const subs = Object.entries(w.second).map(([verb, s]) => `    ${verb}) _values 'subcommand' ${s.join(' ')};;`).join('\n');
+    return [
+      '#compdef construct',
+      '_construct() {',
+      '  if (( CURRENT == 2 )); then',
+      `    _values 'command' ${w.first.join(' ')}`,
+      '  elif (( CURRENT == 3 )); then',
+      '    case "$words[2]" in',
+      subs,
+      '    esac',
+      '  else',
+      `    _values 'flag' ${[...new Set(Object.values(w.flags).flat())].sort().join(' ')}`,
+      '  fi',
+      '}',
+      '_construct "$@"',
+      '',
+    ].join('\n');
   }
-
-  process.stderr.write(`construct: unknown shell "${shell}" (expected bash or zsh)\n`);
-  return 2;
+  const lines = [`complete -c construct -f -n '__fish_use_subcommand' -a '${w.first.join(' ')}'`];
+  for (const [verb, subs] of Object.entries(w.second)) {
+    lines.push(`complete -c construct -f -n '__fish_seen_subcommand_from ${verb}' -a '${subs.join(' ')}'`);
+  }
+  for (const flag of [...new Set(Object.values(w.flags).flat())].sort()) lines.push(`complete -c construct -l ${flag.slice(2)}`);
+  return `${lines.join('\n')}\n`;
 }

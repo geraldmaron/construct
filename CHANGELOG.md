@@ -2,7 +2,35 @@
 
 ## Unreleased
 
-(empty)
+Architectural cutover (in progress). No backward compatibility with any prior
+alpha: state format 2, project config format 2, no migration; files from an
+earlier alpha are recognized by path or stamp and refused unread, and
+`construct reset` names exactly what it would remove.
+
+- **One project contract and one state universe.** `.construct/` holds
+  `project.json`, `constitution.json`, `sources.json`, `registry.lock.json`,
+  optional `skills/` and `workflows/`, and `state/construct.sqlite` as the only
+  runtime database. The home database and `.construct/settings.json` are gone.
+- **Format-2 state.** Typed, checked columns for the profile, constitution
+  statements, sources with per-claim-type authority and digest snapshots,
+  entities and typed relations, claims with provenance, staff, workflow runs
+  and leased steps, deliverable trust, decisions, scoped grants and
+  break-glass, drift findings, lessons, and an append-only activity log.
+- **Progressive discovery.** Init reads the project's own files, proposes with
+  provenance, and asks three questions; only a person confirms.
+- **Sources, authority, identity, organization.** A source is authoritative
+  only for the claim types the project declares; identities never merge while
+  ambiguous; ownership, reporting lines, and membership from any source are
+  proposals until confirmed.
+- **Action lattice and policy engine.** observe, draft, project_write,
+  external_write, destructive, licensed_judgment; denials name the smallest
+  step-up; approvals are scoped to exactly one action and expire.
+- **The command line is an object surface.** `init`, `status`, `doctor`,
+  `config`, `project`, `source`, `skill`, `reset`, `completion`, `version`,
+  `help`. The 37-verb surface, the home store, the lens packs, the host spawn
+  adapters, the connectors that depended on the old store, and their tests,
+  scripts, and fixtures are removed. The MCP broker, workflows, runs, inbox,
+  and staff commands return on the new core in the phases that follow.
 
 ## 3.0.0-alpha.22 — 2026-09-01
 

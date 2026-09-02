@@ -1,6 +1,0 @@
-Drop completed coder sheets here, named <coder-name>.json, matching the
-filename generate-sheets.mjs sent out. See ../README.md step 4.
-
-This directory's *.json contents are gitignored (a labeler's name and their
-raw answers don't belong in the repo) — this .gitkeep just keeps the empty
-directory tracked so `compute-alpha.mjs` has somewhere to look.

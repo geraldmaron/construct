@@ -167,7 +167,7 @@ export function applyOnboardingAnswers(
       if (d.kind !== 'clarification') continue;
       if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at });
       if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at });
-      if (answers.protectedConstraints && isOnboardingSubject(d.subject, 'protected_constraints')) {
+      if (answers.protectedConstraints && answers.protectedConstraints.length > 0 && isOnboardingSubject(d.subject, 'protected_constraints')) {
         resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at });
       }
     }

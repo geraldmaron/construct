@@ -12,8 +12,7 @@
  *   material belongs in references/)
  * - Severability: no tracker bead ids, no repo-relative source paths, no
  *   absolute machine paths
- * - Directory set matches METHOD_SKILLS + OPERATIONAL_SKILL in
- *   src/kernel/skills/library.ts
+ * - The operational skill named in src/kernel/skills/bundle.ts ships on disk
  *
  * Construct quality policy (AUTHORING.md layer 2) - presence hints, not
  * format requirements:
@@ -145,37 +144,18 @@ if (descriptionBudgetUsed > MAX_DESCRIPTION_BUDGET) {
 }
 
 const shippedDirs = [...new Set(files.map((file) => basename(dirname(file))))].sort();
-const declared = readFileSync('src/kernel/skills/library.ts', 'utf8');
-
-const listNames = (constName) => {
-  const match = new RegExp(
-    `export const ${constName}[\\s\\S]*?Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\)`,
-  ).exec(declared);
-  if (!match) return null;
-  return [...match[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-};
-
-const methodNames = listNames('METHOD_SKILLS');
-const operationalMatch = /export const OPERATIONAL_SKILL\s*=\s*'([^']+)'/.exec(declared);
+// The directory on disk is the catalog (kernel/skills/bundle.ts lists it at
+// runtime), so there is no second list to keep in parity. The one name the
+// code depends on by itself is the operational skill: init plants it.
+const bundle = readFileSync('src/kernel/skills/bundle.ts', 'utf8');
+const operationalMatch = /export const OPERATIONAL_SKILL\s*=\s*'([^']+)'/.exec(bundle);
 const operationalName = operationalMatch?.[1] ?? null;
-
-if (!methodNames || !operationalName) {
+if (!operationalName) {
   violations += 1;
-  console.error(
-    'skill spec: src/kernel/skills/library.ts: need METHOD_SKILLS array and OPERATIONAL_SKILL string to check directories',
-  );
-} else {
-  const names = [...new Set([...methodNames, operationalName])].sort();
-  const missing = shippedDirs.filter((dir) => !names.includes(dir));
-  const extra = names.filter((name) => !shippedDirs.includes(name));
-  for (const dir of missing) {
-    violations += 1;
-    console.error(`skill spec: skills/${dir}: shipped on disk but absent from METHOD_SKILLS / OPERATIONAL_SKILL`);
-  }
-  for (const name of extra) {
-    violations += 1;
-    console.error(`skill spec: library declares "${name}", which no skills/ directory ships`);
-  }
+  console.error('skill spec: src/kernel/skills/bundle.ts: need OPERATIONAL_SKILL string');
+} else if (!shippedDirs.includes(operationalName)) {
+  violations += 1;
+  console.error(`skill spec: skills/${operationalName}: the operational skill is not shipped on disk`);
 }
 
 if (violations > 0) {
