@@ -1,0 +1,93 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "product-management",
+  "title": "Product management",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review this PRD, this product requirements document, this opportunity assessment",
+    "what problem does this solve, for whom, and how would we know it worked",
+    "should we build this feature, prioritize this, cut this from scope",
+    "write the product brief, the working-backwards press release",
+    "should we prioritize this over that this quarter"
+  ],
+  "standDown": [
+    "how to build it, which library, which architecture",
+    "a plain question about what the product does",
+    "a finished decision that needs execution, not framing",
+    "what does the settings page do",
+    "the roadmap is decided, write the sprint tickets"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "a product review naming the problem, users, outcome measure, scope, priority evidence, and assumptions",
+    "a requirements or opportunity artifact a team could build from and a stranger could verify against"
+  ],
+  "deliverableTypes": [
+    "review/product",
+    "spec/prd",
+    "assessment/opportunity"
+  ],
+  "inputs": [
+    "the product document or proposal",
+    "the confirmed primary outcome and success measures",
+    "user evidence and market material declared as sources"
+  ],
+  "outputSchemas": [
+    "product-management/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every user, problem, and priority claim cites research, data, or a declared source; an unsupported claim is labeled an assumption",
+  "capabilities": [
+    "read_project_context",
+    "read_source",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [
+    {
+      "id": "requirements-structuring",
+      "range": "^0.5.0"
+    },
+    {
+      "id": "decision-framing",
+      "range": "^0.3.0"
+    }
+  ],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "whether to build at all is framed as a decision for the person, never decided by the pack",
+    "a measure that cannot be observed with the sources declared is reported as unobservable and handed to the analyst or the person"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

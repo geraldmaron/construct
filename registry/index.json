@@ -10,7 +10,7 @@
     },
     "construct": {
       "version": "2.0.0",
-      "digest": "sha256:656eb40b233a3e834280fead32600596234baebe6013df8631d8b2046554d0ad",
+      "digest": "sha256:0743a86ec756b4261c46e676ea158db003f55edf0690b22a2dd5f892cccd8f0e",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -26,6 +26,18 @@
       "category": "method",
       "title": "Decision framing"
     },
+    "experience-design": {
+      "version": "1.0.0",
+      "digest": "sha256:030d950fa13f3c5963eb462498904c99be3fac8299a12ec257d8edd82f5f846a",
+      "category": "professional",
+      "title": "Experience design"
+    },
+    "governance-risk": {
+      "version": "1.0.0",
+      "digest": "sha256:69f016bcf04f36cb6f66930034d6064fc934587b627eb2ccb3ba5a3b93ea7b73",
+      "category": "professional",
+      "title": "Governance and risk"
+    },
     "intake": {
       "version": "0.3.0",
       "digest": "sha256:0ecc4bdf887607314bd48ffc4d740d5076269de6b682727bceeb9ef39cd4b058",
@@ -38,11 +50,53 @@
       "category": "method",
       "title": "Investigative research"
     },
+    "operations-reliability": {
+      "version": "1.0.0",
+      "digest": "sha256:e8dbd8dfaed8805275470459576e2f0a6c7d1c40442f7fd450537baae24e454d",
+      "category": "professional",
+      "title": "Operations and reliability"
+    },
+    "product-management": {
+      "version": "1.0.0",
+      "digest": "sha256:44752961c0126d12b35d1195b7af4f3cfff37c9dddce1c3f524616d0c897987a",
+      "category": "professional",
+      "title": "Product management"
+    },
+    "program-delivery": {
+      "version": "1.0.0",
+      "digest": "sha256:5553229fe04fef2f20ca4f5eda6009f925519dcf14fbb976a7fc8cc6a17de72f",
+      "category": "professional",
+      "title": "Program delivery"
+    },
     "requirements-structuring": {
       "version": "0.5.0",
       "digest": "sha256:cac925ba19425ec5d76e3c03546e9ff614d712063a2ee90c8063a37d224821f7",
       "category": "method",
       "title": "Requirements structuring"
+    },
+    "security-privacy": {
+      "version": "1.0.0",
+      "digest": "sha256:debdfabc1502d51b7a5b05ecd8c0063014ff376e3f1cf45ce392a07811c086e0",
+      "category": "professional",
+      "title": "Security and privacy"
+    },
+    "software-engineering": {
+      "version": "1.0.0",
+      "digest": "sha256:bbf1b975a084cb31708719fedb7346cebc0f81429d198f98f96995b3e0e5349b",
+      "category": "professional",
+      "title": "Software engineering"
+    },
+    "strategy-research": {
+      "version": "1.0.0",
+      "digest": "sha256:1dbe0c6c8f1f4f12afc92b33c8875d77b2e750b4eca56888cf7ff3db491cb22c",
+      "category": "professional",
+      "title": "Strategy and research"
+    },
+    "system-architecture": {
+      "version": "1.0.0",
+      "digest": "sha256:138a72f64df025fc6242893f1c56b59264fe925f2d03d1f59983c760588624e1",
+      "category": "professional",
+      "title": "System architecture"
     },
     "written-voice": {
       "version": "0.4.0",
@@ -52,10 +106,52 @@
     }
   },
   "workflows": {
+    "architecture-decision-review": {
+      "version": "1.0.0",
+      "digest": "sha256:dd2222ff198aabf98609ddf1825fb93d8f5cd40408451088d56c03acafa189a8",
+      "title": "Architecture decision review",
+      "interactionClass": "manage"
+    },
+    "delivery-plan-review": {
+      "version": "1.0.0",
+      "digest": "sha256:c52b6f212a2c0dffaab027041487c42738e987862ce0730db1f4c7eedff2e85e",
+      "title": "Delivery plan review",
+      "interactionClass": "manage"
+    },
     "design-conformance": {
       "version": "1.0.0",
       "digest": "sha256:798a820e8f958f1c713f2f045f0b033d912af98d83587b0b9374e8b8d9c45eec",
       "title": "Design-principle conformance review",
+      "interactionClass": "manage"
+    },
+    "experience-review": {
+      "version": "1.0.0",
+      "digest": "sha256:9665c08782c18a43b91359131e649ed42441ac6da65aefc4043d3c5cd2f7151e",
+      "title": "Experience review",
+      "interactionClass": "manage"
+    },
+    "governance-issue-spotting": {
+      "version": "1.0.0",
+      "digest": "sha256:2fece2551c6bb4c217ce391827dbe5df69303d20ad81854aa9ef6cf17d62092d",
+      "title": "Governance issue spotting",
+      "interactionClass": "manage"
+    },
+    "implementation-review": {
+      "version": "1.0.0",
+      "digest": "sha256:0442e6f411cec53800166869b4edb4491f280f56986ca2883d284fc8c669952e",
+      "title": "Implementation review",
+      "interactionClass": "manage"
+    },
+    "operational-readiness-review": {
+      "version": "1.0.0",
+      "digest": "sha256:2058bfd42b342a5a208279430c78f32d0b898a4c0393b3edfc33a12afa683255",
+      "title": "Operational readiness review",
+      "interactionClass": "manage"
+    },
+    "product-requirements-review": {
+      "version": "1.0.0",
+      "digest": "sha256:a79b02d401582163283258f4d02944ff7977b86e5f25e8a964b16d7b1f8073c8",
+      "title": "Product requirements review",
       "interactionClass": "manage"
     },
     "remember": {
@@ -63,6 +159,18 @@
       "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
       "title": "Remember one thing",
       "interactionClass": "remember"
+    },
+    "security-privacy-review": {
+      "version": "1.0.0",
+      "digest": "sha256:1e3ef68e85223b99907c88d779ab9bc9e70beb00c9e33422d3e465b962732dbc",
+      "title": "Security and privacy review",
+      "interactionClass": "manage"
+    },
+    "strategy-execution-review": {
+      "version": "1.0.0",
+      "digest": "sha256:6e74f5909a7d41d46f2b6331479d0fecccee7cbaeefbfd1493dc3e628f5eb65b",
+      "title": "Strategy-to-execution and capacity review",
+      "interactionClass": "manage"
     }
   }
 }

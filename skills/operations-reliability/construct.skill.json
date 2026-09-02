@@ -1,0 +1,82 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "operations-reliability",
+  "title": "Operations and reliability",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "is this ready to operate, ready to launch, ready for on-call",
+    "review the runbook, the alerts, the SLOs, the error budget, the rollback",
+    "write the incident postmortem, what do we learn from the outage",
+    "who gets woken by this, how would we know it broke"
+  ],
+  "standDown": [
+    "feature scope or priority",
+    "code style",
+    "a design question with no operating concern",
+    "which feature should ship first",
+    "which database shape fits the domain"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an operational readiness review naming objectives, signals, on-call, runbooks, rollback, and capacity",
+    "a blameless postmortem with timeline, contributing factors, and actions with owners"
+  ],
+  "deliverableTypes": [
+    "review/operational-readiness",
+    "record/postmortem"
+  ],
+  "inputs": [
+    "the service, change, or incident under review",
+    "monitoring, alerting, and incident sources the project declares",
+    "the confirmed risk posture and review cadence"
+  ],
+  "outputSchemas": [
+    "operations-reliability/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every objective, alert, and capacity claim cites a dashboard, config, runbook, or incident record; a runbook nobody has run is marked untested",
+  "capabilities": [
+    "read_project_context",
+    "read_source",
+    "read_project_files"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a change with no rollback and no way to notice failure is reported as not ready, whatever the launch date",
+    "an incident with a security or privacy dimension is handed to security-privacy before the postmortem is closed"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

@@ -1,0 +1,196 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "delivery-plan-review",
+  "title": "Delivery plan review",
+  "version": "1.0.0",
+  "purpose": "Review a plan or status for claims that cannot all hold, the critical path, capacity as a range with assumptions, risks with owners, and decisions needed; deterministic conflict checks run first, every finding is cited, and conflicts are raised to their owners.",
+  "activation": [
+    "review the delivery plan",
+    "can these dates all hold",
+    "write an honest status"
+  ],
+  "standDown": [
+    "what to build",
+    "how to build it"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string"
+  },
+  "requiredInputs": [
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "jira",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Run the deterministic conflict checks: dates against dependencies, double allocation, unstaffed dependencies",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Review the plan against its obligations",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": {
+        "id": "program-delivery",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete",
+        "no_velocity_as_capacity"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/delivery-plan",
+    "schema": "program-delivery/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

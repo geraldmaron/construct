@@ -1,0 +1,79 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "experience-design",
+  "title": "Experience design",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review this screen, this flow, this interface for usability and accessibility",
+    "can people complete the task, what happens when it fails, is it accessible",
+    "does this design follow our design system, is it consistent",
+    "what does the research say about how people use this"
+  ],
+  "standDown": [
+    "which color or font looks nicer with no task in view",
+    "implementation detail of a component",
+    "backend behavior with no interface",
+    "change the database, the backend, the index, the server"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an experience review naming task success, accessibility, error states, consistency, and evidence"
+  ],
+  "deliverableTypes": [
+    "review/experience"
+  ],
+  "inputs": [
+    "the screen, flow, prototype, or component under review",
+    "the design system and accessibility target the project declares",
+    "research and usage evidence declared as sources"
+  ],
+  "outputSchemas": [
+    "experience-design/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every usability claim names the heuristic or the research it rests on; every accessibility finding names the WCAG success criterion",
+  "capabilities": [
+    "read_project_files",
+    "read_project_context",
+    "read_source"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a finding that would exclude people by disability is reported as serious or fatal, never minor",
+    "a claim about how people actually behave that no research supports is labeled an assumption and handed to research"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

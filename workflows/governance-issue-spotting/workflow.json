@@ -1,0 +1,190 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "governance-issue-spotting",
+  "title": "Governance issue spotting",
+  "version": "1.0.0",
+  "purpose": "Spot compliance, legal, and finance issues in a change, contract, data flow, or money flow: locate and quote the governing texts, state exposures and how they may apply as research, list expected controls and existing evidence, and prepare the questions and material a qualified reviewer needs; never advice or sign-off.",
+  "activation": [
+    "what exposure does this create",
+    "which regulation governs this",
+    "prepare the packet for counsel or the auditor"
+  ],
+  "standDown": [
+    "give advice or sign off",
+    "no regulatory dimension"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string"
+  },
+  "requiredInputs": [
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Check that every exposure cites a text by section and the memo carries its label",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Issue-spot against the governing texts and prepare the reviewer packet",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": {
+        "id": "governance-risk",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "memo/issue-spotting",
+    "schema": "governance-risk/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

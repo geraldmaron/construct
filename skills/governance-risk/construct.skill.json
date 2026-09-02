@@ -1,0 +1,85 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "governance-risk",
+  "title": "Governance and risk",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "what compliance, legal, or financial exposure does this create, spot the issues",
+    "which regulation, contract, or policy governs this and what does it say",
+    "prepare the packet for counsel, for the auditor, for finance review",
+    "what controls and evidence would an auditor expect here"
+  ],
+  "standDown": [
+    "give legal, tax, or financial advice, sign off, certify, decide whether it is lawful",
+    "a technical review with no regulatory, contractual, or financial dimension",
+    "a question a plain policy lookup answers",
+    "review the code for correctness or style",
+    "where is the policy document"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an issue-spotting memo naming the governing text, the exposure, the controls and evidence, and the questions for a qualified reviewer"
+  ],
+  "deliverableTypes": [
+    "memo/issue-spotting",
+    "packet/qualified-review"
+  ],
+  "inputs": [
+    "the change, contract, data flow, or process under review",
+    "the governing texts declared as sources (regulations, contracts, policies, standards)",
+    "the project's declared risk posture and decision rights"
+  ],
+  "outputSchemas": [
+    "governance-risk/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every exposure cites the governing text by section and quotes what it says; every applicability statement is labeled research, not a conclusion",
+  "capabilities": [
+    "read_project_context",
+    "read_source",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "every memo is labeled research and issue-spotting, not legal, tax, or financial advice, and is handed to a qualified reviewer for any conclusion",
+    "an exposure that could be material is raised to the owner the constitution names before the memo is finished"
+  ],
+  "licensedReviewBoundaries": [
+    "whether conduct is lawful, whether a contract binds, and what a filing must say are a licensed professional's judgments",
+    "tax treatment and remittance obligations are a tax professional's judgments",
+    "audit opinions and certifications are an auditor's judgments"
+  ],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

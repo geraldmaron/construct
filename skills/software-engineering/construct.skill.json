@@ -1,0 +1,81 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "software-engineering",
+  "title": "Software engineering",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review this implementation, this change, this pull request for correctness and risk",
+    "is this migration safe, can we roll it back, what tests prove it",
+    "should we take this dependency, upgrade this library, adopt this framework",
+    "shape the implementation plan for this feature before we write it"
+  ],
+  "standDown": [
+    "style and naming on a diff, formatting, lint noise",
+    "a question about how a language feature or library works",
+    "a design or architecture question with no implementation in view",
+    "which architecture should the platform have"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an implementation review with evidence of correctness and a rollback path",
+    "an implementation plan a stranger could execute"
+  ],
+  "deliverableTypes": [
+    "review/implementation",
+    "plan/implementation"
+  ],
+  "inputs": [
+    "the change, plan, or dependency proposal",
+    "the project's test and build commands",
+    "the principles and constraints that govern the code"
+  ],
+  "outputSchemas": [
+    "software-engineering/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every correctness claim names the test or check that showed it, with its result; a claim with no run is marked unverified",
+  "capabilities": [
+    "read_project_files",
+    "read_project_context",
+    "run_tests"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a change that touches an authoritative data store, a security boundary, or an irreversible migration is handed to the architecture and security packs before it is called safe",
+    "a finding that depends on a claim nobody could test is reported as unverified, never as passed"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}
