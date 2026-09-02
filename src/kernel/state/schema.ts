@@ -82,6 +82,7 @@ CREATE UNIQUE INDEX statements_glossary_term ON statements (term)
 CREATE TABLE sources (
   id                    TEXT PRIMARY KEY,
   kind                  TEXT NOT NULL,
+  origin                TEXT NOT NULL CHECK (origin IN ('declared', 'local')),
   purpose               TEXT NOT NULL,
   locator               TEXT,
   authority_level       TEXT NOT NULL CHECK (authority_level IN ('authoritative', 'informative', 'untrusted')),
@@ -139,7 +140,7 @@ CREATE TABLE relations (
   id          TEXT PRIMARY KEY,
   kind        TEXT NOT NULL CHECK (kind IN (
                 'governs', 'implements', 'verifies', 'depends_on', 'feeds', 'supersedes',
-                'contradicts', 'owned_by', 'contributes_to', 'sourced_from'
+                'contradicts', 'owned_by', 'contributes_to', 'sourced_from', 'reports_to', 'member_of'
               )),
   from_id     TEXT NOT NULL REFERENCES entities(id),
   to_id       TEXT NOT NULL REFERENCES entities(id),
