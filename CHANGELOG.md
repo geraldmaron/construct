@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.24 — 2026-09-02
 
 - **Skill routing by the person's words.** `classify_request` now ranks
   every skill against the request (retrieval over descriptions, activation
