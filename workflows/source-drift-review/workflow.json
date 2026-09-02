@@ -1,55 +1,55 @@
 {
   "format": "construct-workflow",
   "formatVersion": 1,
-  "id": "design-conformance",
-  "title": "Design-principle conformance review",
+  "evals": [],
+  "id": "source-drift-review",
+  "title": "Source freshness and drift review",
   "version": "1.0.0",
-  "purpose": "Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented.",
+  "purpose": "Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed.",
   "activation": [
-    "review this against our design principles",
-    "does this conform to the constitution",
-    "check this feature against our constraints"
+    "has anything drifted",
+    "check the sources against the implementation",
+    "review the governing documents for changes",
+    "source drift"
   ],
   "standDown": [
-    "there is no confirmed principle or constraint to review against; ask for one instead",
-    "the ask is a general code review"
+    "no sources are declared",
+    "the person asked a question with no drift in view"
   ],
-  "interactionClass": "manage",
+  "interactionClass": "maintain",
   "inputSchema": {
-    "target": "string",
-    "principles": "string[]"
+    "scope": "string"
   },
-  "requiredInputs": [
-    "target"
-  ],
+  "requiredInputs": [],
   "steps": [
     {
-      "id": "gather",
-      "title": "Read the governing principles and the target",
+      "id": "refresh",
+      "title": "Read each declared source and record what changed",
       "needs": [],
-      "skill": {
-        "id": "context-mapping",
-        "range": "^0.4.0"
-      },
+      "skill": null,
       "capabilities": [
-        "read_project_context",
-        "read_project_files"
+        "read_source"
       ],
       "sources": [
         {
           "kind": "directory",
           "freshness": "any",
           "required": false
+        },
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
         }
       ],
       "tier": "observe",
       "inputs": {
-        "target": "input.target"
+        "scope": "input.scope"
       },
       "outputs": [
-        "principles",
-        "targetSummary",
-        "unknownPrinciples"
+        "changed",
+        "unchanged",
+        "unreachable"
       ],
       "validators": [
         "citations_present"
@@ -63,23 +63,24 @@
       "timeoutMs": 300000
     },
     {
-      "id": "deterministic",
-      "title": "Run the deterministic invariant checks",
+      "id": "detect",
+      "title": "Deterministic drift checks over the context graph",
       "needs": [
-        "gather"
+        "refresh"
       ],
       "skill": null,
       "capabilities": [
-        "run_validator:constitution_shape",
-        "run_tests"
+        "kernel:drift_detect"
       ],
       "sources": [],
       "tier": "observe",
       "inputs": {
-        "principles": "steps.gather.principles"
+        "changed": "steps.refresh.changed"
       },
       "outputs": [
-        "findings"
+        "findings",
+        "noDrift",
+        "recordedFindingIds"
       ],
       "validators": [
         "evidence_refs_resolve"
@@ -90,33 +91,35 @@
         "maxAttempts": 1,
         "backoffMs": 0
       },
-      "timeoutMs": 600000
+      "timeoutMs": 300000
     },
     {
       "id": "review",
-      "title": "Semantic review, every finding cited",
+      "title": "Semantic drift: contradictions between governing text and implementation, cited to both",
       "needs": [
-        "gather",
-        "deterministic"
+        "detect",
+        "refresh"
       ],
       "skill": {
-        "id": "adversarial-review",
-        "range": "^0.3.0"
+        "id": "context-mapping",
+        "range": "^0.4.0"
       },
       "capabilities": [
-        "model_review"
+        "model_review",
+        "read_project_files"
       ],
       "sources": [],
       "tier": "draft",
       "inputs": {
-        "principles": "steps.gather.principles",
-        "target": "steps.gather.targetSummary",
-        "deterministic": "steps.deterministic.findings"
+        "deterministic": "steps.detect.findings",
+        "changed": "steps.refresh.changed",
+        "noDrift": "steps.detect.noDrift"
       },
       "outputs": [
         "summary",
         "findings",
-        "assumptions"
+        "assumptions",
+        "controls"
       ],
       "validators": [
         "citations_present",
@@ -127,16 +130,15 @@
       "challenge": true,
       "retry": {
         "maxAttempts": 2,
-        "backoffMs": 2000
+        "backoffMs": 1000
       },
-      "timeoutMs": 600000
+      "timeoutMs": 300000
     },
     {
       "id": "record",
-      "title": "Record material drift and raise unknown principles",
+      "title": "Record semantic findings and propose lessons",
       "needs": [
-        "review",
-        "gather"
+        "review"
       ],
       "skill": null,
       "capabilities": [
@@ -146,13 +148,11 @@
       "sources": [],
       "tier": "project_write",
       "inputs": {
-        "findings": "steps.review.findings",
-        "summary": "steps.review.summary",
-        "unknown": "steps.gather.unknownPrinciples"
+        "findings": "steps.review.findings"
       },
       "outputs": [
-        "driftFindingIds",
-        "decisionIds"
+        "recordedIds",
+        "lessonIds"
       ],
       "validators": [
         "schema"
@@ -168,22 +168,23 @@
   ],
   "triggers": [
     "manual",
-    "schedule"
+    "schedule",
+    "event"
   ],
-  "onNoData": "block",
+  "onNoData": "succeed_empty",
   "onStaleData": "proceed_flagged",
   "concurrency": "single",
   "dedupeKey": [
-    "target"
+    "scope"
   ],
   "cancellation": "after_step",
   "deliverable": {
-    "kind": "review",
-    "schema": "review/design-conformance/v1",
+    "kind": "review/drift",
+    "schema": "review/drift/v1",
     "challenge": true
   },
   "proposes": [
-    "lessons"
-  ],
-  "evals": []
+    "lessons",
+    "constitution"
+  ]
 }

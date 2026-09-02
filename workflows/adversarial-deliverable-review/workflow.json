@@ -1,0 +1,144 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "evals": [],
+  "id": "adversarial-deliverable-review",
+  "title": "Adversarial deliverable review",
+  "version": "1.0.0",
+  "purpose": "Challenge a finished deliverable independently of the run that produced it: the six mandatory challenges, findings by severity with the smallest fix stated, and exactly one verdict; the verdict is recorded on the deliverable and acceptance stays with the person.",
+  "activation": [
+    "challenge this deliverable",
+    "break this before we commit",
+    "adversarial review of the result"
+  ],
+  "standDown": [
+    "the deliverable is still a draft in motion",
+    "the ask is to improve rather than to challenge"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "deliverableId": "string",
+    "runId": "string"
+  },
+  "requiredInputs": [
+    "deliverableId"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the deliverable, its evidence, and the obligations it claims to meet",
+      "needs": [],
+      "skill": null,
+      "capabilities": [
+        "read_project_context"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "deliverableId": "input.deliverableId"
+      },
+      "outputs": [
+        "deliverable",
+        "claims",
+        "evidence"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "challenge",
+      "title": "Run the six challenges and deliver findings with one verdict",
+      "needs": [
+        "gather"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "deliverable": "steps.gather.deliverable",
+        "claims": "steps.gather.claims"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "record",
+      "title": "Record the verdict on the deliverable; acceptance stays with the person",
+      "needs": [
+        "challenge"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "verdict": "steps.challenge.verdict",
+        "findings": "steps.challenge.findings"
+      },
+      "outputs": [
+        "recordedVerdict"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "event"
+  ],
+  "onNoData": "fail",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "deliverableId"
+  ],
+  "cancellation": "immediate",
+  "deliverable": {
+    "kind": "review/challenge",
+    "schema": "review/challenge/v1",
+    "challenge": false
+  },
+  "proposes": [
+    "lessons"
+  ]
+}
