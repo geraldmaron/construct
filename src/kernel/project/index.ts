@@ -22,3 +22,5 @@ export * from './legacy.ts';
 export * from './discover.ts';
 export * from './initialize.ts';
 export * from './reset.ts';
+export * from './discovery.ts';
+export * from './onboarding.ts';

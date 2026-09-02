@@ -15,6 +15,7 @@ import {
   optionalString,
   refuseForbiddenKeys,
   stringList,
+  writeJsonFile,
 } from './files.ts';
 
 export const CONSTITUTION_FORMAT = 'construct-constitution';
@@ -166,4 +167,9 @@ export function constitutionCompleteness(c: Constitution): {
 } {
   const missing = CONSTITUTION_REQUIRED.filter((field) => c[field] === null);
   return { complete: missing.length === 0, missing };
+}
+
+/** Write the constitution file; the caller composed it from confirmed material. */
+export function saveConstitution(path: string, constitution: Constitution): void {
+  writeJsonFile(path, validateConstitution(constitution, path));
 }
