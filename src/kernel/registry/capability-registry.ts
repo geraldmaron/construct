@@ -19,6 +19,7 @@ export const BUILTIN_CAPABILITIES: readonly CapabilityDeclaration[] = Object.fre
   { name: 'model_review', description: 'Ask the session’s model to review with an explicit input and output schema.', tier: 'draft', kind: 'review' },
   { name: 'ask_user', description: 'Raise a decision or clarification to the person and wait.', tier: 'observe', kind: 'interaction' },
   { name: 'run_tests', description: 'Run the project’s own test command and read the result.', tier: 'observe', kind: 'validator' },
+  { name: 'kernel', description: 'A deterministic check Construct runs itself when the step is reached (scope: drift_detect).', tier: 'observe', kind: 'validator' },
 ]);
 
 export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([

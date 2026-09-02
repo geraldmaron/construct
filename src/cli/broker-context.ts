@@ -28,11 +28,15 @@ export interface BrokerBinding {
 
 /** What this session may do, described as capabilities rather than binaries. */
 export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null): HostCapabilities {
-  const available = new Set<string>(['read_project_files', 'read_project_context', 'write_project_context', 'run_validator', 'read_source:directory', 'run_tests']);
+  const available = new Set<string>(['read_project_files', 'read_project_context', 'write_project_context', 'run_validator', 'read_source:directory', 'run_tests', 'kernel']);
   if (binding.surface === 'interactive') {
     available.add('model_review');
     available.add('ask_user');
     available.add('write_project_files');
+    // The session reads and writes the systems the person already has open, through its own tools;
+    // Construct records what was read as evidence and gates every write per step.
+    available.add('read_source');
+    available.add('write_source');
   }
   return {
     hostId: binding.client,

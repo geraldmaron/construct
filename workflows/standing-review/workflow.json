@@ -1,0 +1,188 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "evals": [],
+  "id": "standing-review",
+  "title": "Standing review",
+  "version": "1.0.0",
+  "purpose": "The wrapper an external clock fires: check source freshness, run the deterministic drift checks, review conformance to the confirmed principles with every finding cited, and deliver a no-drift record, a cited drift report, or a concise blocked decision; stale or missing sources follow the declared policy.",
+  "activation": [
+    "every month review the governing documents against the implementation",
+    "keep this reviewed on a schedule",
+    "standing review"
+  ],
+  "standDown": [
+    "a one-off review (use source-drift-review or design-conformance)"
+  ],
+  "interactionClass": "maintain",
+  "inputSchema": {
+    "scope": "string"
+  },
+  "requiredInputs": [],
+  "steps": [
+    {
+      "id": "freshness",
+      "title": "Check every declared source's reachability and freshness",
+      "needs": [],
+      "skill": null,
+      "capabilities": [
+        "read_source"
+      ],
+      "sources": [
+        {
+          "kind": "docs",
+          "freshness": "fresh",
+          "required": false
+        },
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "scope": "input.scope"
+      },
+      "outputs": [
+        "fresh",
+        "stale",
+        "unreachable"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "detect",
+      "title": "Deterministic drift checks",
+      "needs": [
+        "freshness"
+      ],
+      "skill": null,
+      "capabilities": [
+        "kernel:drift_detect"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "stale": "steps.freshness.stale"
+      },
+      "outputs": [
+        "findings",
+        "noDrift",
+        "recordedFindingIds"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "conformance",
+      "title": "Review conformance to the confirmed principles, cited",
+      "needs": [
+        "detect",
+        "freshness"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "model_review",
+        "read_project_files",
+        "read_project_context"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "deterministic": "steps.detect.findings",
+        "noDrift": "steps.detect.noDrift"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "deliver",
+      "title": "Record the outcome: no drift, a cited report, or a blocked decision",
+      "needs": [
+        "conformance"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "findings": "steps.conformance.findings",
+        "summary": "steps.conformance.summary"
+      },
+      "outputs": [
+        "outcome",
+        "recordedIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "schedule",
+    "event",
+    "manual"
+  ],
+  "onNoData": "succeed_empty",
+  "onStaleData": "block",
+  "concurrency": "single",
+  "dedupeKey": [
+    "scope"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/standing",
+    "schema": "review/standing/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons",
+    "constitution"
+  ]
+}

@@ -106,6 +106,12 @@
     }
   },
   "workflows": {
+    "adversarial-deliverable-review": {
+      "version": "1.0.0",
+      "digest": "sha256:29c282c876be7c652c576db28d7888139b5773a67ff9d8fcfe051a86bf444e20",
+      "title": "Adversarial deliverable review",
+      "interactionClass": "manage"
+    },
     "architecture-decision-review": {
       "version": "1.0.0",
       "digest": "sha256:dd2222ff198aabf98609ddf1825fb93d8f5cd40408451088d56c03acafa189a8",
@@ -120,7 +126,7 @@
     },
     "design-conformance": {
       "version": "1.0.0",
-      "digest": "sha256:798a820e8f958f1c713f2f045f0b033d912af98d83587b0b9374e8b8d9c45eec",
+      "digest": "sha256:8ba076e0162f895d63b7923c1afabe6341098a70aee7cffa2916023cca7e5be1",
       "title": "Design-principle conformance review",
       "interactionClass": "manage"
     },
@@ -142,6 +148,12 @@
       "title": "Implementation review",
       "interactionClass": "manage"
     },
+    "managed-outcome": {
+      "version": "1.0.0",
+      "digest": "sha256:d5e8a794b48ed54804058a60a60083d1359cde8d1fa5a95834a91babc979a759",
+      "title": "Managed outcome with verification",
+      "interactionClass": "manage"
+    },
     "operational-readiness-review": {
       "version": "1.0.0",
       "digest": "sha256:2058bfd42b342a5a208279430c78f32d0b898a4c0393b3edfc33a12afa683255",
@@ -152,6 +164,12 @@
       "version": "1.0.0",
       "digest": "sha256:a79b02d401582163283258f4d02944ff7977b86e5f25e8a964b16d7b1f8073c8",
       "title": "Product requirements review",
+      "interactionClass": "manage"
+    },
+    "project-bootstrap": {
+      "version": "1.0.0",
+      "digest": "sha256:b080405d531050fdaced069d383cfecf4bce5894f312f04698804dd2f4fe2802",
+      "title": "Project bootstrap and constitution review",
       "interactionClass": "manage"
     },
     "remember": {
@@ -165,6 +183,18 @@
       "digest": "sha256:1e3ef68e85223b99907c88d779ab9bc9e70beb00c9e33422d3e465b962732dbc",
       "title": "Security and privacy review",
       "interactionClass": "manage"
+    },
+    "source-drift-review": {
+      "version": "1.0.0",
+      "digest": "sha256:71aee2891a9913acc2cdc7abf170d7624980ee678cc205ac45ab1506e2d99731",
+      "title": "Source freshness and drift review",
+      "interactionClass": "maintain"
+    },
+    "standing-review": {
+      "version": "1.0.0",
+      "digest": "sha256:2bcf938fc423f942a258c7221d4d961abffb155211d285d754b7c037044bbffb",
+      "title": "Standing review",
+      "interactionClass": "maintain"
     },
     "strategy-execution-review": {
       "version": "1.0.0",

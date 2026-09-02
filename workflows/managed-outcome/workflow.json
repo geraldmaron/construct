@@ -1,0 +1,186 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "evals": [],
+  "id": "managed-outcome",
+  "title": "Managed outcome with verification",
+  "version": "1.0.0",
+  "purpose": "Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance.",
+  "activation": [
+    "do this piece of work and hand it back",
+    "manage this outcome",
+    "get this done and verify it"
+  ],
+  "standDown": [
+    "a plain question",
+    "something to remember",
+    "a standing outcome"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "request": "string",
+    "target": "string"
+  },
+  "requiredInputs": [
+    "request"
+  ],
+  "steps": [
+    {
+      "id": "plan",
+      "title": "Turn the request into an execution plan with labeled assumptions",
+      "needs": [],
+      "skill": {
+        "id": "intake",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "request": "input.request"
+      },
+      "outputs": [
+        "plan",
+        "assumptions",
+        "blockers"
+      ],
+      "validators": [
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "do",
+      "title": "Do the work in this session, citing what was read",
+      "needs": [
+        "plan"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_files",
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "project_write",
+      "inputs": {
+        "plan": "steps.plan.plan",
+        "assumptions": "steps.plan.assumptions"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "changes"
+      ],
+      "validators": [
+        "citations_present",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "verify",
+      "title": "Run the project's own checks and the validators",
+      "needs": [
+        "do"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_tests",
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "changes": "steps.do.changes"
+      },
+      "outputs": [
+        "verification",
+        "passed"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 1200000
+    },
+    {
+      "id": "record",
+      "title": "Record the outcome and hand it back",
+      "needs": [
+        "verify",
+        "do"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "summary": "steps.do.summary",
+        "findings": "steps.do.findings",
+        "verification": "steps.verify.verification"
+      },
+      "outputs": [
+        "deliverableId"
+      ],
+      "validators": [
+        "schema",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "fail",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "request",
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "outcome/managed",
+    "schema": "outcome/managed/v1",
+    "challenge": false
+  },
+  "proposes": [
+    "lessons"
+  ]
+}

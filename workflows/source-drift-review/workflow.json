@@ -1,0 +1,190 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "evals": [],
+  "id": "source-drift-review",
+  "title": "Source freshness and drift review",
+  "version": "1.0.0",
+  "purpose": "Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed.",
+  "activation": [
+    "has anything drifted",
+    "check the sources against the implementation",
+    "review the governing documents for changes",
+    "source drift"
+  ],
+  "standDown": [
+    "no sources are declared",
+    "the person asked a question with no drift in view"
+  ],
+  "interactionClass": "maintain",
+  "inputSchema": {
+    "scope": "string"
+  },
+  "requiredInputs": [],
+  "steps": [
+    {
+      "id": "refresh",
+      "title": "Read each declared source and record what changed",
+      "needs": [],
+      "skill": null,
+      "capabilities": [
+        "read_source"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "scope": "input.scope"
+      },
+      "outputs": [
+        "changed",
+        "unchanged",
+        "unreachable"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "detect",
+      "title": "Deterministic drift checks over the context graph",
+      "needs": [
+        "refresh"
+      ],
+      "skill": null,
+      "capabilities": [
+        "kernel:drift_detect"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "changed": "steps.refresh.changed"
+      },
+      "outputs": [
+        "findings",
+        "noDrift",
+        "recordedFindingIds"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "review",
+      "title": "Semantic drift: contradictions between governing text and implementation, cited to both",
+      "needs": [
+        "detect",
+        "refresh"
+      ],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "model_review",
+        "read_project_files"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "deterministic": "steps.detect.findings",
+        "changed": "steps.refresh.changed",
+        "noDrift": "steps.detect.noDrift"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "controls"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "record",
+      "title": "Record semantic findings and propose lessons",
+      "needs": [
+        "review"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "findings": "steps.review.findings"
+      },
+      "outputs": [
+        "recordedIds",
+        "lessonIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule",
+    "event"
+  ],
+  "onNoData": "succeed_empty",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "scope"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/drift",
+    "schema": "review/drift/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons",
+    "constitution"
+  ]
+}

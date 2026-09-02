@@ -29,6 +29,7 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
+import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
 
 export interface WorkflowServiceDeps {
@@ -296,7 +297,19 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           return { run: active, created: false, resolution, preflight: { ...preflightOf(resolution), flags: [...preflightOf(resolution).flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
         }
       }
-      const resolution = resolutionFor(m.id, input.input, executorId);
+      let resolution = resolutionFor(m.id, input.input, executorId);
+      if ((resolution.status === 'runnable' || resolution.status === 'outdated') && m.onStaleData === 'block') {
+        const kinds = new Set(m.steps.flatMap((s) => s.sources.map((src) => src.kind)));
+        const stale = deps.sources().filter((s) => kinds.has(s.kind) && (s.freshness === 'stale' || s.freshness === 'never_read'));
+        if (stale.length > 0) {
+          resolution = {
+            ...resolution,
+            status: 'blocked',
+            reasons: [...resolution.reasons, ...stale.map((s) => ({ code: 'stale_source' as const, stepId: null, message: `${s.id} is ${s.freshness === 'stale' ? 'stale' : 'unread'} and this workflow blocks on stale data`, remedy: `Refresh ${s.id}.` }))],
+            summary: `${m.id} ${m.version} is blocked: ${stale.map((s) => `${s.id} ${s.freshness === 'stale' ? 'stale' : 'unread'}`).join(', ')} (onStaleData: block)`,
+          };
+        }
+      }
       const preflight = preflightOf(resolution);
       return store.transaction(() => {
         if (resolution.status === 'runnable' || resolution.status === 'outdated') {
@@ -361,6 +374,20 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           const decision = gateStep(getRun(store, run.id)!, sr, step, at);
           if (decision) return { packet: null, waitingOn: { kind: 'decision', decision } };
         }
+        // Steps the kernel performs itself: deterministic drift detection needs no host.
+        let ranKernelStep = false;
+        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+          const step = manifestSteps.find((s) => s.id === sr.stepId)!;
+          if (!step.capabilities.includes('kernel:drift_detect')) continue;
+          const leasedByKernel = claimStep(store, { owner: 'kernel', now: at, leaseUntil: new Date(Date.parse(at) + 60_000).toISOString(), runId: run.id });
+          if (!leasedByKernel || leasedByKernel.id !== sr.id) continue;
+          const detected = detectDrift(store, { at, requireDecisionForChanges: false });
+          const { recorded, alreadyOpen } = recordDrift(store, { runId: run.id, detected, at, nextId: deps.nextId });
+          completeStep(store, { id: leasedByKernel.id, owner: 'kernel', token: leasedByKernel.token, at, output: { findings: detected, recordedFindingIds: recorded.map((f) => f.id), alreadyOpen, noDrift: detected.length === 0, evidence: detected.flatMap((d) => d.evidence.map((e) => ({ ref: e.ref, excerpt: e.note }))) } });
+          appendActivity(store, { at, kind: 'step.kernel_ran', runId: run.id, stepRunId: sr.id, actor: 'kernel', payload: { stepId: step.id, findings: detected.length, recorded: recorded.length } });
+          ranKernelStep = true;
+        }
+        if (ranKernelStep) advance(run.id, at);
         const leased = claimStep(store, { owner: who, now: at, leaseUntil: new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString(), runId: run.id });
         if (!leased) continue;
         const fresh = getRun(store, run.id)!;

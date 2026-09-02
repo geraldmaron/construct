@@ -5,84 +5,185 @@
   "title": "Design-principle conformance review",
   "version": "1.0.0",
   "purpose": "Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented.",
-  "activation": ["review this against our design principles", "does this conform to the constitution", "check this feature against our constraints"],
-  "standDown": ["there is no confirmed principle or constraint to review against; ask for one instead", "the ask is a general code review"],
+  "activation": [
+    "review this against our design principles",
+    "does this conform to the constitution",
+    "check this feature against our constraints"
+  ],
+  "standDown": [
+    "there is no confirmed principle or constraint to review against; ask for one instead",
+    "the ask is a general code review"
+  ],
   "interactionClass": "manage",
-  "inputSchema": { "target": "string", "principles": "string[]" },
-  "requiredInputs": ["target"],
+  "inputSchema": {
+    "target": "string",
+    "principles": "string[]"
+  },
+  "requiredInputs": [
+    "target"
+  ],
   "steps": [
     {
       "id": "gather",
       "title": "Read the governing principles and the target",
       "needs": [],
-      "skill": { "id": "context-mapping", "range": "^0.4.0" },
-      "capabilities": ["read_project_context", "read_project_files"],
-      "sources": [{ "kind": "directory", "freshness": "any", "required": false }],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
       "tier": "observe",
-      "inputs": { "target": "input.target" },
-      "outputs": ["principles", "targetSummary", "unknownPrinciples"],
-      "validators": ["citations_present"],
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "principles",
+        "targetSummary",
+        "unknownPrinciples"
+      ],
+      "validators": [
+        "citations_present"
+      ],
       "loadBearing": true,
       "challenge": false,
-      "retry": { "maxAttempts": 2, "backoffMs": 1000 },
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
       "timeoutMs": 300000
     },
     {
       "id": "deterministic",
       "title": "Run the deterministic invariant checks",
-      "needs": ["gather"],
+      "needs": [
+        "gather"
+      ],
       "skill": null,
-      "capabilities": ["run_validator:constitution_shape", "run_tests"],
+      "capabilities": [
+        "run_validator:constitution_shape",
+        "run_tests"
+      ],
       "sources": [],
       "tier": "observe",
-      "inputs": { "principles": "steps.gather.principles" },
-      "outputs": ["findings"],
-      "validators": ["evidence_refs_resolve"],
+      "inputs": {
+        "principles": "steps.gather.principles"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
       "loadBearing": true,
       "challenge": false,
-      "retry": { "maxAttempts": 1, "backoffMs": 0 },
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
       "timeoutMs": 600000
     },
     {
       "id": "review",
       "title": "Semantic review, every finding cited",
-      "needs": ["gather", "deterministic"],
-      "skill": { "id": "adversarial-review", "range": "^0.3.0" },
-      "capabilities": ["model_review"],
+      "needs": [
+        "gather",
+        "deterministic"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
       "sources": [],
       "tier": "draft",
-      "inputs": { "principles": "steps.gather.principles", "target": "steps.gather.targetSummary", "deterministic": "steps.deterministic.findings" },
-      "outputs": ["review"],
-      "validators": ["citations_present", "no_uncited_material_findings"],
+      "inputs": {
+        "principles": "steps.gather.principles",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.deterministic.findings"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
       "loadBearing": true,
       "challenge": true,
-      "retry": { "maxAttempts": 2, "backoffMs": 2000 },
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
       "timeoutMs": 600000
     },
     {
       "id": "record",
       "title": "Record material drift and raise unknown principles",
-      "needs": ["review", "gather"],
+      "needs": [
+        "review",
+        "gather"
+      ],
       "skill": null,
-      "capabilities": ["write_project_context", "ask_user"],
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
       "sources": [],
       "tier": "project_write",
-      "inputs": { "review": "steps.review.review", "unknown": "steps.gather.unknownPrinciples" },
-      "outputs": ["driftFindingIds", "decisionIds"],
-      "validators": ["schema"],
+      "inputs": {
+        "findings": "steps.review.findings",
+        "summary": "steps.review.summary",
+        "unknown": "steps.gather.unknownPrinciples"
+      },
+      "outputs": [
+        "driftFindingIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
       "loadBearing": true,
       "challenge": false,
-      "retry": { "maxAttempts": 1, "backoffMs": 0 },
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
       "timeoutMs": 30000
     }
   ],
-  "triggers": ["manual", "schedule"],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
   "onNoData": "block",
   "onStaleData": "proceed_flagged",
   "concurrency": "single",
-  "dedupeKey": ["target"],
+  "dedupeKey": [
+    "target"
+  ],
   "cancellation": "after_step",
-  "deliverable": { "kind": "review", "schema": "review/design-conformance/v1", "challenge": true },
-  "proposes": ["lessons"],
+  "deliverable": {
+    "kind": "review",
+    "schema": "review/design-conformance/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
   "evals": []
 }

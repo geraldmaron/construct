@@ -1,0 +1,153 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "evals": [],
+  "id": "project-bootstrap",
+  "title": "Project bootstrap and constitution review",
+  "version": "1.0.0",
+  "purpose": "Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow.",
+  "activation": [
+    "set up construct here",
+    "bootstrap the project",
+    "review the constitution",
+    "what does construct know about this project"
+  ],
+  "standDown": [
+    "the person asked a question about the code",
+    "setup is complete and nothing changed"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string"
+  },
+  "requiredInputs": [],
+  "steps": [
+    {
+      "id": "discover",
+      "title": "Read the project's own material and draft proposals with provenance",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "read_project_context"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "proposals",
+        "questions",
+        "material"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "review",
+      "title": "Review the drafted constitution for shape, contradictions, and unknowns",
+      "needs": [
+        "discover"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "model_review",
+        "run_validator:constitution_shape"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "proposals": "steps.discover.proposals",
+        "material": "steps.discover.material"
+      },
+      "outputs": [
+        "principles",
+        "contradictions",
+        "unknowns"
+      ],
+      "validators": [
+        "constitution_shape",
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "record",
+      "title": "Record proposals and raise the questions that belong to the person",
+      "needs": [
+        "review",
+        "discover"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "principles": "steps.review.principles",
+        "questions": "steps.discover.questions",
+        "unknowns": "steps.review.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "questionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "succeed_empty",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "constitution/review",
+    "schema": "constitution/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "constitution"
+  ]
+}
