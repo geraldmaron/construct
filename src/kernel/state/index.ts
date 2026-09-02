@@ -18,3 +18,4 @@ export * from './deliverables.ts';
 export * from './decisions.ts';
 export * from './grants.ts';
 export * from './drift.ts';
+export * from './triggers.ts';
