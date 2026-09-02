@@ -12,7 +12,7 @@ repository.
 
 ## A file from an earlier alpha
 
-Init and doctor name any `.construct/settings.json` or format-1
+Init and doctor name any earlier-alpha settings file or format-1
 `project.json` they find and refuse to read it. `construct reset` lists
 exactly what it would remove; `construct reset --confirm` removes those
 paths and recreates clean state, keeping the committed project files unless

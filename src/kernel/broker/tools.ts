@@ -10,7 +10,8 @@
 
 import { listStatements, getProfile, missingProfileFields } from '../state/profile.ts';
 import { listActiveRuns, listRuns } from '../state/runs.ts';
-import { listOpenDecisions } from '../state/decisions.ts';
+import { getDecision, listOpenDecisions } from '../state/decisions.ts';
+import { applyOnboardingAnswers, type OnboardingAnswers } from '../project/onboarding.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
 import { listEntities, listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
@@ -385,10 +386,28 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     return { decisionId: str(raw, 'decisionId')!, resolution: str(raw, 'resolution')! };
   },
   run(ctx, { decisionId, resolution }) {
+    // A setup question answered here is the same answer init would have taken
+    // as a flag: it lands in the profile, and the question closes with it.
+    const existing = getDecision(ctx.store, decisionId);
+    const onboarding = existing?.kind === 'clarification' && existing.state === 'open' ? onboardingAnswerFor(existing.subject, resolution) : null;
+    if (onboarding) {
+      const applied = applyOnboardingAnswers(ctx.store, { answers: onboarding, by: ctx.actor, at: ctx.now(), nextId: ctx.nextId });
+      const decision = getDecision(ctx.store, decisionId)!;
+      return { decision: { id: decision.id, state: decision.state, resolvedBy: decision.resolvedBy }, run: null, profile: { onboarding: applied.profile.onboardingState, missing: applied.missing } };
+    }
     const r = ctx.workflow.decide({ decisionId, resolution, by: ctx.actor });
     return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
   },
 });
+
+function onboardingAnswerFor(subject: unknown, resolution: string | readonly string[]): OnboardingAnswers | null {
+  const id = subject !== null && typeof subject === 'object' ? (subject as { onboarding?: unknown }).onboarding : undefined;
+  const answers = Array.isArray(resolution) ? (resolution as readonly string[]) : [resolution as string];
+  if (id === 'scale') return { scale: answers.join(' ') as OnboardingAnswers['scale'] };
+  if (id === 'primary_outcome') return { primaryOutcome: answers.join(' ') };
+  if (id === 'protected_constraints') return { protectedConstraints: answers };
+  return null;
+}
 
 const sources = define<{ action: 'list' | 'show' | 'refresh'; id?: string }, unknown>({
   name: 'sources',

@@ -28,3 +28,6 @@ tmp/
 
 # Ephemeral test fixtures created inside the workspace (sandbox-safe)
 .tmp-*/
+
+# Conformance reports are recorded in the changelog, not committed as files
+.tmp-conformance/

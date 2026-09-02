@@ -35,8 +35,16 @@ an isolated home, and proves no per-user database appears.
 
 ## Live host conformance
 
-Automated CI is deterministic and credential-free. Live checks against
-installed hosts run only under an explicit conformance command, and a host
-that is not installed or has no credential is an explicit untested result.
-What was and was not exercised for a given version is recorded in the
-changelog entry for that version.
+Automated CI is deterministic and credential-free. `npm run conformance`
+checks every supported host without a credential: whether it is installed
+here, whether `construct init` wires it and plants the operational skill
+where it reads, the MCP handshake, ordinary-language classification, skill
+loading on request, a managed workflow run to a final deliverable, decision
+relay, and the limits of the headless surface. It prints a table and writes
+`.tmp-conformance/report.json`.
+
+Live calls into an installed host run only with `--live`, outside any host
+session, with that host's credential present. A host that is not installed,
+has no credential, or would be nested is an explicit untested result with
+the reason, never a pass. What was and was not exercised for a given version
+is recorded in the changelog entry for that version.

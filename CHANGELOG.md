@@ -54,6 +54,15 @@ names exactly what it would remove.
   definitions with a CI check, and every documented command executed in
   tests. STRATEGY, GLOSSARY, and RESEARCH-DECISIONS rewritten to the settled
   state.
+- **Proof.** Security fixtures (forbidden keys, symlinked and oversized
+  project files, terminal escaping, scoped approvals) and deletion gates
+  that fail when any retired name returns to product code or a current
+  guide. The packaged smoke drives the whole loop over the served MCP
+  surface: setup questions answered through `decide`, a remembered
+  decision, a managed workflow claimed and submitted to completion, and a
+  deliverable promoted to final. `npm run conformance` reports every
+  supported host as passed, failed, or untested with the reason; live host
+  calls run only with `--live` outside a host session.
 - **Removed.** The 37-verb surface, the home store, the keyword implication
   map and namer, lens and persona packs, tuned-family matrices, host spawn
   adapters and per-host probes, connectors bound to the old store, and their

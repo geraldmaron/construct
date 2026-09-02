@@ -119,6 +119,46 @@ expect_contains "inbox list" "$inbox_out" "nothing waits on you"
 cancel_out="$(npx --no-install construct run cancel "$run_id" 2>&1)" || fail "run cancel exited non-zero" "$cancel_out"
 expect_contains "run cancel" "$cancel_out" "cancelled"
 
+echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, final deliverable =="
+loop_project="$scratch/loop"
+mkdir -p "$loop_project" && cd "$loop_project" && git init -q . && printf '# Loop\n\nA project for the packaged loop.\n' > README.md && printf '# Design\n\n- Keep the kernel host-agnostic\n' > design.md
+npm init -y --silent >/dev/null && npm install --silent "$tarball_path"
+loop_init="$(npx --no-install construct init --no-wire --skills-dir="$skills_dir" 2>&1)" || fail "loop init exited non-zero" "$loop_init"
+expect_contains "loop init" "$loop_init" "still to answer (3)"
+cat > "$scratch/drive.mjs" <<'DRIVER'
+import { spawn } from 'node:child_process';
+const child = spawn(process.execPath, [process.argv[2], 'serve', '--client=cursor'], { stdio: ['pipe', 'pipe', 'inherit'] });
+let buffer = ''; const pending = new Map(); let nextId = 1;
+child.stdout.on('data', (chunk) => { buffer += chunk; let nl; while ((nl = buffer.indexOf('\n')) >= 0) { const line = buffer.slice(0, nl); buffer = buffer.slice(nl + 1); if (!line.trim()) continue; const msg = JSON.parse(line); const p = pending.get(msg.id); if (p) { pending.delete(msg.id); p(msg); } } });
+const rpc = (method, params) => new Promise((resolve) => { const id = nextId++; pending.set(id, resolve); child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n'); });
+const call = async (name, args = {}) => { const r = await rpc('tools/call', { name, arguments: args }); if (r.error) throw new Error(`${name}: ${r.error.message}`); if (r.result.isError) throw new Error(`${name}: ${r.result.structuredContent?.error ?? r.result.content[0].text}`); return r.result.structuredContent ?? JSON.parse(r.result.content[0].text); };
+const must = (cond, what) => { if (!cond) throw new Error(`loop: ${what}`); };
+const init = await rpc('initialize', {}); must(init.result.serverInfo.name === 'construct', 'server name');
+const boot = await call('bootstrap'); must(boot.profile.openQuestions.length === 3, 'three questions open at bootstrap'); must(/setup question/.test(boot.next), 'next action names the questions');
+const scale = boot.profile.openQuestions.find((q) => q.options); await call('decide', { decisionId: scale.id, resolution: 'solo' });
+for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call('decide', { decisionId: q.id, resolution: q.question.includes('result') ? 'prove the packaged loop' : 'never write outside this project' });
+const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confirmed', 'onboarding confirmed after decisions');
+const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
+const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
+const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.length === 1, 'one statement remembered');
+const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
+const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
+const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
+const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: [] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
+for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: started.run.id, includeSkillBody: i === 0 }); must(c.work, `step ${i} claimable`); if (i === 0) must(typeof c.work.skill.body === 'string' && c.work.skill.body.startsWith('---'), 'skill body loaded only when asked'); const r = await call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'design.md' }] }); must(r.step.state === 'succeeded', `step ${c.work.step.id} succeeded: ${r.step.reason}`); }
+const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
+const validated = status.deliverables.find((d) => d.trust === 'validated'); must(validated, 'final deliverable validated');
+await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop' });
+await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'accepted by the person' });
+const fin = await call('promote_deliverable', { deliverableId: validated.id, to: 'final' }); must(fin.deliverable.trust === 'final', 'deliverable final');
+const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
+child.stdin.end(); await new Promise((r) => child.on('exit', r));
+console.log('loop: bootstrap → decide ×3 → remember → resolve → start → claim/submit ×4 → status → promote to final: ok');
+DRIVER
+node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct" || fail "the packaged loop over the MCP server failed"
+[ ! -e "$XDG_DATA_HOME/construct" ] || fail "the loop created a per-user data directory"
+cd "$project"
+
 echo "== the packaged install can describe the surface it would serve =="
 serve_out="$(npx --no-install construct serve --client=cursor --describe 2>&1)" || fail "serve --describe exited non-zero" "$serve_out"
 expect_contains "serve --describe" "$serve_out" "would serve the interactive surface for cursor"
@@ -161,10 +201,10 @@ expect_contains "reset --confirm" "$confirm_out" "Fresh state"
 
 echo "== unknown and retired commands are refused =="
 set +e
-retired_out="$(npx --no-install construct outcome 'ship a thing' 2>&1)"
+retired_out="$(npx --no-install construct ask 'ship a thing' 2>&1)"
 retired_status=$?
 set -e
-[ "$retired_status" -ne 0 ] || fail "construct outcome should be unknown after the cutover"
-expect_contains "outcome" "$retired_out" "unknown command"
+[ "$retired_status" -ne 0 ] || fail "a retired verb should be unknown after the cutover"
+expect_contains "retired verb" "$retired_out" "unknown command"
 
 echo "smoke-packaged-install: pass"
