@@ -7,13 +7,18 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
-    "a finished deliverable or decision is about to be committed to",
-    "a load-bearing design, boundary, dependency, migration, or public claim needs breaking before trust"
+    "a finished artifact is about to be committed to and being wrong is expensive",
+    "architecture, data model, security boundary, vendor, dependency, build-vs-buy, migration, hard-to-reverse change",
+    "a spec about to be built, a public factual claim, a decision record about to be executed, a strategy about to be funded",
+    "challenge this, try to break the case, find what is wrong with the thinking, strongest case against",
+    "challenge this decision or architecture before we commit to it",
+    "review the plan for the failure modes we have not considered"
   ],
   "standDown": [
-    "the draft is still in motion",
-    "the work is low-stakes and reversible",
-    "the ask is line-by-line code review"
+    "the artifact is still moving, a half-finished draft, tidy up",
+    "low-stakes reversible work, easy to change later, cheap pick",
+    "code review of a diff for style and naming",
+    "fix a typo"
   ],
   "interactionClasses": [
     "manage"
@@ -22,14 +27,14 @@
     "challenge verdict on a deliverable"
   ],
   "deliverableTypes": [
-    "review/challenge"
+    "review/challenge verdict"
   ],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "the finished artifact or decision record",
+    "the claims and alternatives it rests on"
   ],
   "outputSchemas": [
-    "deliverable/markdown"
+    "review/challenge/v1"
   ],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
@@ -56,9 +61,12 @@
     }
   ],
   "escalation": [
-    "a verdict of rejected or needs validation returns the deliverable to its author with the failure mode named"
+    "a verdict of rejected or needs validation returns the deliverable to its author with the failure mode named",
+    "self-review is stated in the record because a reviewer who shares the author's context shares the blind spots"
   ],
   "licensedReviewBoundaries": [],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }

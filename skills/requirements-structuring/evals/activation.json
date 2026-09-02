@@ -1,0 +1,53 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Write the requirements for the export feature so the team can build from it",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Turn this idea into a PRD with acceptance criteria a stranger could verify",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Spec this out; the requirements only exist in conversation right now",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "We're committing to build this; structure the outcomes, constraints, and non-goals",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Rename the config flag",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Flip the feature flag in config, it's well understood",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Should we build this at all",
+      "expect": "stand_down",
+      "judge": "model",
+      "why": "whether versus what is a distinction of meaning; the words overlap with a build request"
+    },
+    {
+      "text": "Fix the well-understood null check bug",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "The intent is settled, we just never wrote what done looks like",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a settled intent without a verifiable artifact"
+    }
+  ]
+}

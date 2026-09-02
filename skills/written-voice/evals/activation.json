@@ -1,0 +1,52 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Draft the announcement for the release that customers will read",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write the proposal in one plain direct voice with the decision at the top",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Unify these three documents written by different people into one voice",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "This status update reads hedged and salesy; surface the decision and fix the voice",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Reply to this chat message",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write a code comment explaining the loop",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write the commit message",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Fill in this grant form whose format is dictated by the funder",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Make the README less buried, people miss the point",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a document readers act on that buries its point"
+    }
+  ]
+}

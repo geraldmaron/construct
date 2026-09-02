@@ -1,0 +1,53 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "I just inherited this service and don't know how the parts relate",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Map the dependencies and owners of this program before I change anything",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "We're onboarding to this codebase; what depends on what and who owns it",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Integrate with the billing system; I need the boundaries and the unknowns first",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Fix this one-line bug in a file I know well",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "I already know the system; just implement the change",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Rename this variable",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "What is the capital of France",
+      "expect": "stand_down",
+      "judge": "model",
+      "why": "a factual question is told apart from a mapping request by meaning, not by its words"
+    },
+    {
+      "text": "The team lead says the queue feeds the report but nobody is sure; we're about to rewrite the report",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a doubtful relationship assumption before real work"
+    }
+  ]
+}

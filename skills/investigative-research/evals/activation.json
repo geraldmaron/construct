@@ -1,0 +1,52 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Do due diligence on this vendor before we sign; the conclusion must survive a hostile reader",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Reconstruct the incident timeline from the records and verify every claim",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Verify this competitive claim against primary sources before we publish it",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Background investigation on this company with sources classed and independence checked",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What year was Node.js released",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Brainstorm some names for the feature",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Quick opinion, speed over certainty: is this library popular",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Draft a tweet about the launch",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Someone claims our competitor lost a big customer; is that true",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a claim someone will rely on"
+    }
+  ]
+}

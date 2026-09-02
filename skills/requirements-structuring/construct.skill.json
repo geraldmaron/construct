@@ -7,12 +7,13 @@
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
-    "scoping a feature, product, program, or change",
-    "a build starting on requirements that exist only as conversation"
+    "work will be built, bought, or committed to on the artifact's strength and requirements live in conversation or someone's head",
+    "write the requirements, spec this out, turn this idea into a PRD, acceptance criteria a stranger could verify",
+    "structure the outcomes, constraints, assumptions, and non-goals for a build we are committing to"
   ],
   "standDown": [
-    "requirements already obvious and small",
-    "the question is whether to build at all"
+    "requirements already obvious and small: rename a flag, flip a config, a well-understood fix",
+    "the real question is whether to build at all, not what"
   ],
   "interactionClasses": [
     "manage"
@@ -21,14 +22,16 @@
     "a requirements artifact a stranger could verify against"
   ],
   "deliverableTypes": [
-    "spec/requirements"
+    "spec/requirements",
+    "brief/one-page",
+    "addendum/change-request"
   ],
   "inputs": [
-    "the request in the person's own words",
-    "the project constitution when one exists"
+    "the settled intent and its constraints",
+    "decisions already made"
   ],
   "outputSchemas": [
-    "deliverable/markdown"
+    "spec/requirements/v1"
   ],
   "requiredSourceTypes": [],
   "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
@@ -50,9 +53,11 @@
     }
   ],
   "escalation": [
-    "whether to build is surfaced as a decision-framing question, not specified around"
+    "whether to build is surfaced as a decision to frame, never specified around"
   ],
   "licensedReviewBoundaries": [],
   "observedOn": [],
-  "evals": []
+  "evals": [
+    "evals/activation.json"
+  ]
 }

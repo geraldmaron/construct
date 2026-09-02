@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Remember that we will not add schema migration until stable",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Review this implementation against our design principles",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Every January compare team strategies to active Jira work and capacity",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Start the design conformance review for the payments feature",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What does this function do",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Explain how async iterators work",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Thanks, that's all",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "can you keep in mind that the API freeze is Friday",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a remember request in casual wording"
+    }
+  ]
+}

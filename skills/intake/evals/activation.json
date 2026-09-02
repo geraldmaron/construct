@@ -1,0 +1,42 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Here's a brain dump from the meeting with several asks and corrections, turn it into a plan",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Forwarded thread with three different requests and some contradictions; what do we actually do",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "These meeting notes carry corrections and implied outcomes; extract the plan without asking me to restate",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Add a logout button to the settings page",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "I'm just thinking out loud about the roadmap, no ask yet",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Rename the function",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "so like the thing from tuesday, plus what raj said, but not the part about billing, and also the doc needs redoing",
+      "expect": "activate",
+      "judge": "model",
+      "why": "messy multi-concern request"
+    }
+  ]
+}

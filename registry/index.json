@@ -4,49 +4,49 @@
   "skills": {
     "adversarial-review": {
       "version": "0.3.0",
-      "digest": "sha256:6e9ddb265fdfa00ebf5c58d587a95fae2e57387dd82f67cfd7e8b1b8229590a6",
+      "digest": "sha256:35fda0add373757824d8feb290dfad229cfd6734336203c80deba25831df279d",
       "category": "method",
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "1.0.0",
-      "digest": "sha256:f4a8a75e7eb5df00765a58791d8873b63a3e8c9ffae9ed3a3f9108d4b8cdf8a9",
+      "version": "2.0.0",
+      "digest": "sha256:656eb40b233a3e834280fead32600596234baebe6013df8631d8b2046554d0ad",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
       "version": "0.4.0",
-      "digest": "sha256:162d3285fdd4e6d42af5565cb9271f4460cf73dc97e9dd3176ad8d73fa668cf4",
+      "digest": "sha256:6e2de4e8c37ff73234e2d114abb472d342873fe8270820913ff7f36e448531e5",
       "category": "method",
       "title": "Context mapping"
     },
     "decision-framing": {
       "version": "0.3.0",
-      "digest": "sha256:2f9b5594059d83d74c0f2834ce90806b4940d9909ef10b5755fadd068253ea41",
+      "digest": "sha256:9430f5d99dcf1da96387eebed2c5958bb29b831cc497b1b46b68861214885318",
       "category": "method",
       "title": "Decision framing"
     },
     "intake": {
       "version": "0.3.0",
-      "digest": "sha256:d5541013e96d62740a8aee82073878a77311de6df79c80d5e119a8d46258dce3",
+      "digest": "sha256:0ecc4bdf887607314bd48ffc4d740d5076269de6b682727bceeb9ef39cd4b058",
       "category": "method",
       "title": "Intake"
     },
     "investigative-research": {
       "version": "0.3.0",
-      "digest": "sha256:2dbcd92641a7f9d7a89d3edae29f9b33e5e9317ec48d91007841921764179f78",
+      "digest": "sha256:3ca96caa20de40ecb28973068b485417c73540aa0f1c89e8445227b591011dad",
       "category": "method",
       "title": "Investigative research"
     },
     "requirements-structuring": {
       "version": "0.5.0",
-      "digest": "sha256:90f844bf5956377c55783f9f2508500169aa2e36c5af15cf9d24d2e515a90fe5",
+      "digest": "sha256:cac925ba19425ec5d76e3c03546e9ff614d712063a2ee90c8063a37d224821f7",
       "category": "method",
       "title": "Requirements structuring"
     },
     "written-voice": {
       "version": "0.4.0",
-      "digest": "sha256:22b23727d7ccdfc09c9062c6c049fba3a73ccd1905e7a499f10066d68e72f8b1",
+      "digest": "sha256:5debcb8b6aa8f525340d2862b0f64faee5f972b3deced0b06ab24d0b9ea80fdd",
       "category": "method",
       "title": "Written voice"
     }
