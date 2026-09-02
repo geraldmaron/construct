@@ -16,8 +16,8 @@ import {
 import { ensureRun, enqueueTask, claimTask, getTask, StaleLeaseError } from '../../../src/kernel/state-v1/tasks.ts';
 import { getDeliverableByTask } from '../../../src/kernel/state-v1/deliverables.ts';
 import { submitCompletedWork, submitFailedWork } from '../../../src/kernel/state-v1/submit.ts';
-import { resolveProjectContext } from '../../../src/kernel/project/context.ts';
-import { projectDbPath, projectConfigPath, projectStateDir } from '../../../src/kernel/project/layout.ts';
+import { resolveProjectContext } from '../../../src/kernel/project-v1/context.ts';
+import { projectDbPath, projectConfigPath, projectStateDir } from '../../../src/kernel/project-v1/layout.ts';
 
 function tmpRoot(): { root: string; cleanup(): void } {
   const root = mkdtempSync(join(tmpdir(), 'construct-state-'));

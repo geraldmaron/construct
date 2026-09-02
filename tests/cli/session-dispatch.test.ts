@@ -26,8 +26,8 @@ import {
   sessionFromBinding,
 } from '../../src/hosts/mcp/interactive.ts';
 import type { JsonRpcRequest } from '../../src/hosts/mcp/jsonrpc.ts';
-import { initializeProject } from '../../src/kernel/project/initialize.ts';
-import { resolveProjectContext } from '../../src/kernel/project/context.ts';
+import { initializeProject } from '../../src/kernel/project-v1/initialize.ts';
+import { resolveProjectContext } from '../../src/kernel/project-v1/context.ts';
 import { openStore, storePath } from '../../src/kernel/store/open.ts';
 import { resolvePaths } from '../../src/kernel/paths.ts';
 import { startRun, startRunSelected } from '../../src/kernel/run/outcome.ts';

@@ -6,8 +6,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { initializeProject } from '../../../src/kernel/project/initialize.ts';
-import { resolveProjectContext } from '../../../src/kernel/project/context.ts';
+import { initializeProject } from '../../../src/kernel/project-v1/initialize.ts';
+import { resolveProjectContext } from '../../../src/kernel/project-v1/context.ts';
 import {
   createInteractiveHandler,
   INTERACTIVE_TOOLS,

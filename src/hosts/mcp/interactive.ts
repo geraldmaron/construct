@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import type { StateStore } from '../../kernel/state-v1/open.ts';
 import { openStateStore } from '../../kernel/state-v1/open.ts';
-import { projectConfigPath, projectDbPath } from '../../kernel/project/layout.ts';
+import { projectConfigPath, projectDbPath } from '../../kernel/project-v1/layout.ts';
 import {
   createInteractiveRunService,
   type InteractiveRunService,

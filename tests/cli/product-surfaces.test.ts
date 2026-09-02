@@ -17,7 +17,7 @@ import { consent, trust } from '../../src/cli/settings.ts';
 import { verdict } from '../../src/cli/verdict.ts';
 import { createDecisionService } from '../../src/kernel/services/decision.ts';
 import { openStateStore } from '../../src/kernel/state-v1/open.ts';
-import { projectDbPath } from '../../src/kernel/project/layout.ts';
+import { projectDbPath } from '../../src/kernel/project-v1/layout.ts';
 import { getDeliverableByTask, listActivity } from '../../src/kernel/state-v1/deliverables.ts';
 import { getTask } from '../../src/kernel/state-v1/tasks.ts';
 

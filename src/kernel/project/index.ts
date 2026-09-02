@@ -1,29 +1,24 @@
 /**
- * kernel/project/index.ts — project identity and layout.
+ * kernel/project/index.ts — project layout, files, configuration, and setup.
  */
 
+export * from './layout.ts';
+export { resolveProjectContext, normalizeProjectRoot, type ProjectContext, type ResolveProjectContextInput } from './context.ts';
 export {
-  resolveProjectContext,
-  normalizeProjectRoot,
-  type ProjectContext,
-  type ResolveProjectContextInput,
-} from './context.ts';
-export {
-  PROJECT_DIR_NAME,
-  PROJECT_CONFIG_NAME,
-  PROJECT_STATE_DIR_NAME,
-  PROJECT_DB_NAME,
-  projectDir,
-  projectConfigPath,
-  projectStateDir,
-  projectDbPath,
-} from './layout.ts';
-export {
-  initializeProject,
-  STATE_GITIGNORE_PATTERN,
-  PROJECT_CONFIG_FORMAT,
-  PROJECT_CONFIG_VERSION,
-  type ProjectConfig,
-  type InitializeProjectResult,
-} from './initialize.ts';
-export { resetProject, type ResetProjectOptions } from './reset.ts';
+  ProjectFileError,
+  UnsupportedProjectFileError,
+  UNSUPPORTED_PROJECT_FILE_MESSAGE,
+  MAX_PROJECT_FILE_BYTES,
+  FORBIDDEN_FILE_KEY_WORDS,
+  readJsonFile,
+  writeJsonFile,
+  symlinkBetween,
+} from './files.ts';
+export * from './config.ts';
+export * from './constitution.ts';
+export * from './sources-file.ts';
+export * from './lock.ts';
+export * from './legacy.ts';
+export * from './discover.ts';
+export * from './initialize.ts';
+export * from './reset.ts';

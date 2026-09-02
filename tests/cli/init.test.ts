@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { init } from '../../src/cli/init.ts';
 import { reset } from '../../src/cli/reset.ts';
-import { projectConfigPath, projectDbPath } from '../../src/kernel/project/layout.ts';
+import { projectConfigPath, projectDbPath } from '../../src/kernel/project-v1/layout.ts';
 import { STATE_FORMAT_ID } from '../../src/kernel/state-v1/format.ts';
 
 interface Capture {
