@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.23 — 2026-09-02
 
 Architectural cutover. No backward compatibility with any prior alpha: state
 format 2, project config format 2, no migration; files from an earlier alpha
@@ -62,7 +62,12 @@ names exactly what it would remove.
   decision, a managed workflow claimed and submitted to completion, and a
   deliverable promoted to final. `npm run conformance` reports every
   supported host as passed, failed, or untested with the reason; live host
-  calls run only with `--live` outside a host session.
+  calls run only with `--live` outside a host session. Static conformance
+  for this version, run 2026-09-02 from inside a Claude Code session:
+  claude-code, cursor, vscode, opencode, and codex pass every credential-free
+  check (codex is not wired by a project file; bob is not installed here);
+  live host calls were not exercised for any host and are recorded as
+  untested.
 - **Removed.** The 37-verb surface, the home store, the keyword implication
   map and namer, lens and persona packs, tuned-family matrices, host spawn
   adapters and per-host probes, connectors bound to the old store, and their
