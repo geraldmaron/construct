@@ -1,0 +1,64 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "adversarial-review",
+  "title": "Adversarial review",
+  "version": "0.3.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "a finished deliverable or decision is about to be committed to",
+    "a load-bearing design, boundary, dependency, migration, or public claim needs breaking before trust"
+  ],
+  "standDown": [
+    "the draft is still in motion",
+    "the work is low-stakes and reversible",
+    "the ask is line-by-line code review"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "challenge verdict on a deliverable"
+  ],
+  "deliverableTypes": [
+    "review/challenge"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a verdict of rejected or needs validation returns the deliverable to its author with the failure mode named"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

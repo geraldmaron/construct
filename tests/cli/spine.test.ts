@@ -31,6 +31,9 @@ test('init creates the exact layout, one database, the ignore rule, and plants t
     assert.match(out, /still to answer \(3\)/);
     assert.match(out, /proposal\(s\), each with its source/);
     assert.equal(existsSync(join(box.home, '.data')), false, 'no per-user data directory is created');
+    const lock = JSON.parse(readFileSync(join(box.cwd, '.construct', 'registry.lock.json'), 'utf8'));
+    assert.equal(Object.keys(lock.skills).length, 8);
+    assert.match(lock.skills.intake.digest, /^sha256:/);
 
     // Idempotent, and answers can come later.
     const again = await capture(() => run(['init', '--scale=team', '--outcome=launch', '--constraint=keep the API', `--skills-dir=${skillsDir}`, '--json'], box.ctx));
@@ -88,12 +91,15 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     const record = JSON.parse(json.out);
     assert.equal(record.onboarding.state, 'confirmed');
     assert.equal(record.runs.active, 0);
-    assert.equal(record.registry.skills, 0);
+    assert.equal(record.registry.skills, 8);
+    assert.equal(record.registry.workflows, 2);
+    assert.deepEqual(record.registry.skew, []);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
     assert.equal(doctor.code, 0, doctor.out);
     const checks = JSON.parse(doctor.out);
     assert.equal(checks.healthy, true);
     assert.ok(checks.checks.some((c: { name: string }) => c.name === 'state'));
+    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /10\/10 current/);
     // Break the state file: doctor fails and says why, status leads with the problem.
     writeFileSync(join(box.cwd, '.construct', 'state', 'construct.sqlite'), 'garbage', 'utf8');
     const broken = await capture(() => run(['doctor'], ctx));

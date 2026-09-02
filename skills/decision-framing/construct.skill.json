@@ -1,0 +1,59 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "decision-framing",
+  "title": "Decision framing",
+  "version": "0.3.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "a choice between real alternatives where being wrong has a cost",
+    "architecture, vendor, build-vs-buy, sequencing, or direction calls"
+  ],
+  "standDown": [
+    "the decision is already made",
+    "one option is viable",
+    "a reversible low-stakes pick"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "a decision record with options, baseline, reversibility, objection, pre-mortem"
+  ],
+  "deliverableTypes": [
+    "record/decision"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "the recommendation is presented as a decision for the person, never applied"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

@@ -24,5 +24,5 @@ test('package exports expose only the root entry, never deep kernel or hosts pat
     assert.equal(key.includes('kernel/'), false);
     assert.equal(key.includes('hosts/'), false);
   }
-  assert.deepEqual(pkg.files?.slice().sort(), ['bin', 'dist', 'skills']);
+  assert.deepEqual(pkg.files?.slice().sort(), ['bin', 'dist', 'registry', 'skills', 'workflows']);
 });

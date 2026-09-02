@@ -15,6 +15,10 @@ import { PROJECT_SCALES, type ProjectScale } from '../kernel/state/profile.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities } from '../kernel/source/entities.ts';
 import { listShippedSkills, readShippedSkill, plantSkill, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
+import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
+import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
+import { updateLock } from '../kernel/registry/lockfile.ts';
+import { writeJsonFile } from '../kernel/project/files.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, initRootFor, type CliContext } from './context.ts';
@@ -109,6 +113,10 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     const sources = createSourceService(result.store, { readers: new Map() });
     const synced = sources.syncDeclarations(result.sources, at);
     ensureSourceEntities(result.store, at, ctx.nextId);
+    const skillRegistry = createSkillRegistry({ projectDir: result.layout.skillsDir });
+    const workflowRegistry = createWorkflowRegistry({ projectDir: result.layout.workflowsDir });
+    const locked = updateLock(result.lock, skillRegistry.list(), workflowRegistry.list());
+    if (locked.changed.length > 0 || locked.removed.length > 0) writeJsonFile(result.layout.lockFile, locked.lock);
     const status = onboardingStatus(result.store);
 
     let skillLine: string;
@@ -134,6 +142,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       proposed: applied.proposedStatements.length,
       openQuestions: status.openQuestions.map((q) => q.question),
       sources: synced,
+      registry: { locked: Object.keys(locked.lock.skills).length + Object.keys(locked.lock.workflows).length, updated: locked.changed.length, awaitingConfirmation: locked.needsConfirmation },
       operationalSkill: skillLine,
     };
     if (args.json) {
@@ -151,6 +160,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     } else {
       say('  onboarding: confirmed');
     }
+    say(`  registry: ${String(Object.keys(locked.lock.skills).length)} skill(s), ${String(Object.keys(locked.lock.workflows).length)} workflow(s) locked${locked.needsConfirmation.length ? `; ${String(locked.needsConfirmation.length)} project bundle(s) changed and await confirmation` : ''}`);
     say(`  operational skill: ${esc(skillLine)}`);
     if (!skillOk && skills.dir) say('  (the skill was not planted; see above)');
     say(status.openQuestions.length > 0

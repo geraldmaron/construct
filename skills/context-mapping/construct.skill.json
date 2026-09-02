@@ -1,0 +1,58 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "context-mapping",
+  "title": "Context mapping",
+  "version": "0.4.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "work starts inside a system the actor did not build",
+    "a wrong assumption about how parts relate would cost real work"
+  ],
+  "standDown": [
+    "the actor already holds the map",
+    "the task is too small to be endangered by a wrong relationship"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "a dated one-page context map"
+  ],
+  "deliverableTypes": [
+    "map/context"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_files",
+    "read_project_context"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "an unknown that blocks safe action is raised as a decision, not guessed"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

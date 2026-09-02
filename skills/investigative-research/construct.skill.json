@@ -1,0 +1,63 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "investigative-research",
+  "title": "Investigative research",
+  "version": "0.3.0",
+  "category": "method",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "due diligence, background or competitive investigation, timeline reconstruction, claim verification",
+    "a conclusion that must survive a hostile reader"
+  ],
+  "standDown": [
+    "a casual lookup a single authoritative source settles"
+  ],
+  "interactionClasses": [
+    "manage"
+  ],
+  "outcomes": [
+    "a verified finding with sources classed and independence checked"
+  ],
+  "deliverableTypes": [
+    "report/research"
+  ],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_source",
+    "read_project_context",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a load-bearing claim that cannot be cited is marked unverified, never asserted"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}

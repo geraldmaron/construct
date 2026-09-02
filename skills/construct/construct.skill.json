@@ -1,0 +1,51 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "construct",
+  "title": "Construct operating skill",
+  "version": "1.0.0",
+  "category": "operational",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "Construct is available in this project and the person is talking in their agent session"
+  ],
+  "standDown": [
+    "the person is not asking Construct to remember, manage, or maintain anything"
+  ],
+  "interactionClasses": [
+    "answer",
+    "remember",
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "the four interaction classes handled in the host"
+  ],
+  "deliverableTypes": [],
+  "inputs": [
+    "the request in the person's own words",
+    "the project constitution when one exists"
+  ],
+  "outputSchemas": [
+    "deliverable/markdown"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every load-bearing claim cites what it rests on or is marked unverified",
+  "capabilities": [
+    "read_project_context",
+    "write_project_context",
+    "ask_user"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft",
+    "project_write"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [],
+  "escalation": [],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": []
+}
