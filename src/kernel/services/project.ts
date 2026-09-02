@@ -3,7 +3,7 @@
  */
 
 import type { StateStore } from '../state-v1/open.ts';
-import type { ProjectContext } from '../project/context.ts';
+import type { ProjectContext } from '../project-v1/context.ts';
 import { listIntegrations } from '../state-v1/integrations.ts';
 import { listOpenDecisions } from '../state-v1/decisions.ts';
 import { listStaffMembers } from '../state-v1/staff.ts';

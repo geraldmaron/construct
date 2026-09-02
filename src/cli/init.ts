@@ -12,9 +12,9 @@ import { UnsupportedAlphaStoreError } from '../kernel/state-v1/format.ts';
 import {
   initializeProject,
   STATE_GITIGNORE_PATTERN,
-} from '../kernel/project/initialize.ts';
-import { resolveProjectContext } from '../kernel/project/context.ts';
-import { projectConfigPath, projectDbPath } from '../kernel/project/layout.ts';
+} from '../kernel/project-v1/initialize.ts';
+import { resolveProjectContext } from '../kernel/project-v1/context.ts';
+import { projectConfigPath, projectDbPath } from '../kernel/project-v1/layout.ts';
 import { upsertIntegration } from '../kernel/state-v1/integrations.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import {

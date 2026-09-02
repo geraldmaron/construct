@@ -16,8 +16,8 @@ import {
   sessionFromBinding,
 } from '../hosts/mcp/interactive.ts';
 import { parseSessionBinding } from '../kernel/session/binding.ts';
-import { resolveProjectContext } from '../kernel/project/context.ts';
-import { normalizeProjectRoot } from '../kernel/project/context.ts';
+import { resolveProjectContext } from '../kernel/project-v1/context.ts';
+import { normalizeProjectRoot } from '../kernel/project-v1/context.ts';
 import { serveRole } from './roleserve.ts';
 import { resolveStoreLocation } from './local-state.ts';
 import { now, packageVersion, secretFile } from './runtime.ts';

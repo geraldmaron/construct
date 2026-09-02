@@ -8,7 +8,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { openStateStore } from '../../../src/kernel/state-v1/open.ts';
-import { resolveProjectContext } from '../../../src/kernel/project/context.ts';
+import { resolveProjectContext } from '../../../src/kernel/project-v1/context.ts';
 import {
   createProjectService,
   createStaffService,
