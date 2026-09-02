@@ -32,6 +32,8 @@ export const REQUIRED_TABLES = [
   'observations',
   'drift_findings',
   'lessons',
+  'triggers',
+  'trigger_firings',
   'activity_events',
 ] as const;
 
@@ -376,6 +378,43 @@ CREATE TABLE lessons (
   created_at    TEXT NOT NULL,
   updated_at    TEXT NOT NULL
 );
+
+-- Standing outcomes: a trigger names a workflow, how it fires, and what
+-- happens when a firing overlaps a run. An external clock fires it; the
+-- firing ledger is what makes a repeated firing idempotent.
+CREATE TABLE triggers (
+  id                  TEXT PRIMARY KEY,
+  workflow_id         TEXT NOT NULL,
+  kind                TEXT NOT NULL CHECK (kind IN ('manual', 'schedule', 'event')),
+  schedule_expression TEXT,
+  timezone            TEXT,
+  event_name          TEXT,
+  adapter             TEXT NOT NULL CHECK (adapter IN ('manual', 'cron', 'ci', 'host')),
+  enabled             INTEGER NOT NULL CHECK (enabled IN (0, 1)),
+  overlap             TEXT NOT NULL CHECK (overlap IN ('skip', 'queue', 'replace')),
+  max_tier            TEXT NOT NULL CHECK (max_tier IN (
+                        'observe', 'draft', 'project_write', 'external_write', 'destructive', 'licensed_judgment'
+                      )),
+  delivery_json       TEXT NOT NULL,
+  input_json          TEXT NOT NULL,
+  last_fired_at       TEXT,
+  next_due_at         TEXT,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL,
+  CHECK (kind <> 'schedule' OR (schedule_expression IS NOT NULL AND timezone IS NOT NULL)),
+  CHECK (kind <> 'event' OR event_name IS NOT NULL)
+);
+
+CREATE TABLE trigger_firings (
+  id              TEXT PRIMARY KEY,
+  trigger_id      TEXT NOT NULL REFERENCES triggers(id),
+  idempotency_key TEXT NOT NULL UNIQUE,
+  fired_at        TEXT NOT NULL,
+  run_id          TEXT REFERENCES workflow_runs(id),
+  outcome         TEXT NOT NULL CHECK (outcome IN ('started', 'skipped_overlap', 'replaced', 'deduplicated', 'blocked', 'disabled')),
+  reason          TEXT
+);
+CREATE INDEX trigger_firings_trigger ON trigger_firings (trigger_id, fired_at);
 
 CREATE TABLE activity_events (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,

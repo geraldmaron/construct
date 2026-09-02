@@ -42,7 +42,7 @@ export type StepState = (typeof STEP_STATES)[number];
 
 export const STEP_TRANSITIONS: Readonly<Record<StepState, readonly StepState[]>> = {
   pending: ['ready', 'skipped', 'cancelled'],
-  ready: ['leased', 'skipped', 'cancelled'],
+  ready: ['leased', 'waiting_for_decision', 'skipped', 'cancelled'],
   leased: ['succeeded', 'failed', 'ready', 'waiting_for_decision', 'cancelled'],
   waiting_for_decision: ['ready', 'failed', 'cancelled'],
   succeeded: [],
@@ -246,8 +246,7 @@ export function claimStep(
             SET state = 'leased', lease_owner = ?, lease_until = ?, attempts = attempts + 1, updated_at = ?
           WHERE id = (
             SELECT id FROM step_runs
-             WHERE (state = 'ready' OR (state = 'leased' AND lease_until <= ?))
-               AND attempts < max_attempts
+             WHERE ((state = 'ready' AND attempts < max_attempts) OR (state = 'leased' AND lease_until <= ?))
                AND (? IS NULL OR run_id = ?)
              ORDER BY ordinal, created_at, id
              LIMIT 1
