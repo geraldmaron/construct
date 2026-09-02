@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Is the new billing service ready to operate and go on-call",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Review the runbook and alerts for the payment gateway",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write the blameless postmortem for last night's outage",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Who gets woken by this change and how would we know it broke",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which feature should ship first",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Fix the code style in this file",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which database shape fits the domain",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "we shipped it friday and nobody knows what the dashboard should look like",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a launch with no operating signal"
+    }
+  ]
+}

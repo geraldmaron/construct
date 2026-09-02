@@ -1,0 +1,190 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "security-privacy-review",
+  "title": "Security and privacy review",
+  "version": "1.0.0",
+  "purpose": "Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk.",
+  "activation": [
+    "review this for security",
+    "threat model it",
+    "privacy review"
+  ],
+  "standDown": [
+    "write an exploit",
+    "no boundary or data change"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string"
+  },
+  "requiredInputs": [
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Check that every finding names a path, a control status, and a citation",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Review the target against its security and privacy obligations",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": {
+        "id": "security-privacy",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/security-privacy",
+    "schema": "security-privacy/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

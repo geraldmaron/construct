@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Compare the team strategies to the active Jira work and capacity",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Review the strategy document for its diagnosis, guiding policy, and coherent actions",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which initiatives have no owner or no work linked and what conflicts with what",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Research this competitor's pricing claim before we bet the roadmap on it",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Review the delivery plan for the migration dates",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "What should the export feature do",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "The initiative is funded and running, give me the status",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "everyone says we are aligned but three teams are building the same thing",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a conflict the strategy did not resolve"
+    }
+  ]
+}

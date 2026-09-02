@@ -1,0 +1,51 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A plan commits two teams to overlapping deadlines that both depend on one unstaffed migration.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "critical path",
+          "conflict",
+          "owner"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Add a ticket for the typo.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A status update reports green while three dependencies slipped last week.",
+      "expect": {
+        "engage": true,
+        "mustNotInclude": [
+          "on track"
+        ],
+        "mustInclude": [
+          "slipped"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "Capacity is computed as last sprint's velocity times the number of sprints.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "velocity is not capacity",
+          "range",
+          "assumptions"
+        ]
+      }
+    }
+  ]
+}

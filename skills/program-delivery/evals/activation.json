@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Review the delivery plan for dates and dependencies that cannot all hold",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What is the critical path for the Q4 program and who owns the risks",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write an honest status update on the migration program",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Is this commitment feasible with the people and dependencies we have",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What feature should we build next",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "How should we implement the queue",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Create one ticket for the bug",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "the plan says June but the vendor contract starts in July",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a dependency and a date that cannot both hold"
+    }
+  ]
+}

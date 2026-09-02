@@ -1,0 +1,52 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "Strategy names four initiatives; Jira shows work for two; HRIS shows one team at 60% availability; the roadmap assumes 100%.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "unlinked initiatives",
+          "capacity range",
+          "assumptions",
+          "conflict"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Write the sprint plan for next week.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "Two strategy documents use the same words for different goals.",
+      "expect": {
+        "engage": true,
+        "mustNotInclude": [
+          "they contradict"
+        ],
+        "mustInclude": [
+          "same wording, different meaning"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "Capacity for next quarter equals last quarter's story points.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "velocity is not capacity",
+          "range",
+          "assumptions"
+        ]
+      }
+    }
+  ]
+}

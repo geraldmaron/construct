@@ -1,0 +1,201 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "strategy-execution-review",
+  "title": "Strategy-to-execution and capacity review",
+  "version": "1.0.0",
+  "purpose": "Compare strategy documents to active work and capacity: normalize initiatives, owners, dates, dependencies, allocations, constraints, skills, operational load, and throughput history with each claim's source authority; run deterministic conflict checks first, then a cited semantic review; state capacity as ranges with assumptions; deliver conflicts, unlinked work, infeasible commitments, capacity ranges, and recommended decisions with freshness and assumptions shown.",
+  "activation": [
+    "compare the strategy to the active work and capacity",
+    "which initiatives have no owner or work",
+    "every January review strategy against execution"
+  ],
+  "standDown": [
+    "one delivery plan",
+    "one feature's scope"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string"
+  },
+  "requiredInputs": [
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "docs",
+          "freshness": "fresh",
+          "required": true
+        },
+        {
+          "kind": "jira",
+          "freshness": "fresh",
+          "required": false
+        },
+        {
+          "kind": "hris",
+          "freshness": "fresh",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Normalize the sources and run the deterministic conflict checks",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Semantic review: incompatible commitments, cited to both texts",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": {
+        "id": "strategy-research",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete",
+        "no_velocity_as_capacity"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/strategy-execution",
+    "schema": "strategy-research/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

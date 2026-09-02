@@ -1,0 +1,87 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "program-delivery",
+  "title": "Program delivery",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review the delivery plan, the schedule, the program plan, the roadmap dates",
+    "can these dates and dependencies all hold, what is the critical path",
+    "write the status update honestly, what is at risk and who owns it",
+    "is this commitment feasible with the people and the dependencies we have"
+  ],
+  "standDown": [
+    "what to build or why (product owns that)",
+    "how to build it (engineering owns that)",
+    "a single task with no plan around it",
+    "how should we implement the queue",
+    "create one ticket for the bug"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "a delivery review naming conflicting claims, the critical path, risks with owners, and decisions needed",
+    "a status update that says what happened, what did not, and what is decided"
+  ],
+  "deliverableTypes": [
+    "review/delivery-plan",
+    "update/status"
+  ],
+  "inputs": [
+    "the plan, schedule, or status document",
+    "work-tracking and calendar sources the project declares",
+    "the confirmed decision rights"
+  ],
+  "outputSchemas": [
+    "program-delivery/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every date, dependency, and capacity claim cites the source it came from; a claim two sources contradict is a conflict, not a fact",
+  "capabilities": [
+    "read_project_context",
+    "read_source",
+    "run_validator"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_velocity_as_capacity",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a conflict between commitments is raised to the owner named in the constitution, never resolved by the pack",
+    "capacity is stated as a range with assumptions; a throughput figure alone is never capacity"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Threat model the new file upload feature and who can reach what",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Are the API secrets handled safely and is customer data classified",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Privacy review for the analytics pipeline: consent, retention, cross-border flow",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Is this dependency vulnerable and what does the upgrade expose",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write an exploit for this endpoint",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Explain how TLS handshakes work",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Should we build the export feature first",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "the logs have emails in them and go to a third party",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a personal-data exposure described plainly"
+    }
+  ]
+}

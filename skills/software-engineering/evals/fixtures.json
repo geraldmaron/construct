@@ -1,0 +1,51 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A pull request changes the retry loop in the payment client and adds two unit tests.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "what the tests prove and what they do not",
+          "the rollback path",
+          "dependency and version notes"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Rename a variable in one file.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A migration adds a nullable column and a backfill job that runs for hours.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "reversibility of the backfill",
+          "operability while it runs"
+        ],
+        "escalate": true
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "The author says all tests pass; the CI log shows the test job was skipped.",
+      "expect": {
+        "engage": true,
+        "mustNotInclude": [
+          "tests pass"
+        ],
+        "mustInclude": [
+          "unverified"
+        ]
+      }
+    }
+  ]
+}

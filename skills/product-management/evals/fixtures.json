@@ -1,0 +1,52 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A PRD proposes a bulk export; it names no user segment and its success measure is 'customers are happier'.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "unobservable measure",
+          "who this is for",
+          "assumption"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Which charting library renders fastest?",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A roadmap ranks ten items by a stakeholder's preference with no data attached.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "priority evidence"
+        ],
+        "mustNotInclude": [
+          "ranked correctly"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "The document cites a customer study that the declared sources do not contain.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "unverified"
+        ],
+        "mustNotInclude": [
+          "the study shows"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "strategy-research",
+  "title": "Strategy and research",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "compare the strategy to the active work, the initiatives to the roadmap, the plan to capacity",
+    "review the strategy document: diagnosis, guiding policy, coherent actions",
+    "which initiatives have no owner, no work, no measure; what conflicts with what",
+    "research this market, this competitor, this claim before we bet on it"
+  ],
+  "standDown": [
+    "a single project plan with no strategy in view (program-delivery owns that)",
+    "what to build for one feature (product owns that)",
+    "a decision already funded and executing that only needs status"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "a strategy-to-execution review naming conflicts, unlinked work, infeasible commitments, capacity ranges, and recommended decisions",
+    "a research finding with sources classed and assumptions stated"
+  ],
+  "deliverableTypes": [
+    "review/strategy-execution",
+    "report/research"
+  ],
+  "inputs": [
+    "the strategy documents declared as sources",
+    "work-tracking, roadmap, and people or capacity sources, each with its declared authority",
+    "the confirmed owners and decision rights"
+  ],
+  "outputSchemas": [
+    "strategy-research/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every initiative, owner, allocation, and conflict cites the source and its authority for that claim type; capacity carries its assumptions; a similarity between two texts is never itself a finding",
+  "capabilities": [
+    "read_project_context",
+    "read_source",
+    "model_review"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [
+    {
+      "id": "investigative-research",
+      "range": "^0.3.0"
+    },
+    {
+      "id": "decision-framing",
+      "range": "^0.3.0"
+    }
+  ],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_velocity_as_capacity",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "recommended decisions are handed to the owners the constitution names; the pack decides nothing",
+    "an initiative whose authority for ownership is undeclared is reported as unowned in the record, not assigned"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

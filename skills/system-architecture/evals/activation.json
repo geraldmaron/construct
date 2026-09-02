@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Review the architecture for the new billing service boundaries",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write the architecture decision record for adopting the message queue",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What does this design make hard to undo and where is the coupling",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Should we split the monolith into these three services",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Review this diff for correctness",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "How does this ORM handle transactions",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which feature should we prioritize next quarter",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "two teams keep stepping on the same table and nobody knows who owns it",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a data ownership problem is an architecture question"
+    }
+  ]
+}

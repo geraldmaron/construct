@@ -44,7 +44,7 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     const boot = (await call(fx, 'bootstrap')) as Record<string, unknown>;
     assert.ok(JSON.stringify(boot).length < 4000, 'bootstrap stays bounded');
     assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
-    assert.equal((boot.registry as { skills: number }).skills, 8);
+    assert.equal((boot.registry as { skills: number }).skills, 17);
     assert.match(boot.next as string, /listen/);
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
     const cls = (await call(fx, 'classify_request', { text: 'What does this function do?' })) as { class: string };

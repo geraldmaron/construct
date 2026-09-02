@@ -1,0 +1,49 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A service launches with no alert on error rate and a runbook that says 'restart it'.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "not ready",
+          "alert",
+          "untested runbook"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Decide whether the export supports CSV or JSON first.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "An incident timeline shows the alert fired but nobody was paged because the rotation was empty.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "on-call rotation"
+        ],
+        "mustNotInclude": [
+          "blame"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "The team asserts 99.99% availability with no measurement in place.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "unmeasured"
+        ]
+      }
+    }
+  ]
+}

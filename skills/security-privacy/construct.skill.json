@@ -1,0 +1,82 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "security-privacy",
+  "title": "Security and privacy",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review this for security, threat model it, who can reach what",
+    "are secrets handled safely, is this data classified, how long do we keep it",
+    "privacy review, personal data, consent, retention, data flow across a boundary",
+    "is this dependency vulnerable, what does this change expose"
+  ],
+  "standDown": [
+    "write an exploit, bypass a control, evade detection",
+    "a plain question about a protocol with no system in view",
+    "feature scope with no boundary or data change",
+    "explain how the protocol, the handshake, works",
+    "should we build the feature first"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "a security and privacy review naming exposures, the paths that reach them, and the checks that would stop them"
+  ],
+  "deliverableTypes": [
+    "review/security-privacy"
+  ],
+  "inputs": [
+    "the system, change, or data flow under review",
+    "the declared data classifications and retention rules",
+    "dependency and configuration sources the project declares"
+  ],
+  "outputSchemas": [
+    "security-privacy/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every exposure names the path that reaches it and the control that is present or absent, cited to code, config, or a declared source",
+  "capabilities": [
+    "read_project_files",
+    "read_project_context",
+    "read_source"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "an exposure of authoritative or personal data with no control is fatal and is raised to the person immediately, not batched into a report",
+    "regulatory obligations that may apply are handed to governance-risk as issue spotting; this pack does not judge compliance"
+  ],
+  "licensedReviewBoundaries": [
+    "whether a data flow is lawful under a specific regulation is a qualified person's judgment; this pack spots the question"
+  ],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

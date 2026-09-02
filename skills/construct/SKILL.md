@@ -1,12 +1,10 @@
 ---
 name: construct
 description: >-
-  Construct is bound to this project. Use it whenever the person is working
-  in this session: to answer plainly without recording anything, to remember
-  something they ask to keep, to manage an outcome through a resolved
-  workflow and hand back a finished result, or to set up a standing outcome
-  that an external clock fires. Stand down when the person asks nothing of
-  Construct: a plain question gets a plain answer and nothing is written.
+  Construct is bound to this project. Use it to remember what the person
+  asks to keep, to manage an outcome through a resolved workflow, or to set
+  up a standing outcome an external clock fires. Answer plain questions
+  plainly and record nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
   version: 2.0.0

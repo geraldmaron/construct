@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Review the checkout flow for usability and accessibility",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Can people complete the signup task and what happens when it fails",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Does the new settings screen follow our design system",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What does the research say about how people use the dashboard",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which shade of blue looks nicer",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "How is the dropdown component implemented",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Change the database index",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "support keeps getting tickets from people who cannot find the export button",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a task-success problem stated as a support pattern"
+    }
+  ]
+}

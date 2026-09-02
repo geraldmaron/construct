@@ -1,0 +1,190 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "product-requirements-review",
+  "title": "Product requirements review",
+  "version": "1.0.0",
+  "purpose": "Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person.",
+  "activation": [
+    "review this PRD",
+    "should we build this",
+    "what problem does this solve and how would we know"
+  ],
+  "standDown": [
+    "how to build it",
+    "the decision is made"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "target": "string",
+    "scope": "string"
+  },
+  "requiredInputs": [
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material and the target",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "target": "input.target"
+      },
+      "outputs": [
+        "material",
+        "targetSummary",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 300000
+    },
+    {
+      "id": "checks",
+      "title": "Check every claim for a declared source and every outcome for a measure",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "run_validator"
+      ],
+      "sources": [],
+      "tier": "observe",
+      "inputs": {
+        "material": "steps.gather.material"
+      },
+      "outputs": [
+        "findings"
+      ],
+      "validators": [
+        "evidence_refs_resolve"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "review",
+      "title": "Review the document against its obligations",
+      "needs": [
+        "gather",
+        "checks"
+      ],
+      "skill": {
+        "id": "product-management",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "material": "steps.gather.material",
+        "target": "steps.gather.targetSummary",
+        "deterministic": "steps.checks.findings",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "assumptions",
+        "escalations"
+      ],
+      "validators": [
+        "citations_present",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 2000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record findings and raise what belongs to the person",
+      "needs": [
+        "review",
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context",
+        "ask_user"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "review": "steps.review.findings",
+        "escalations": "steps.review.escalations",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "recordedIds",
+        "decisionIds"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual",
+    "schedule"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "single",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "review/product",
+    "schema": "product-management/review/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

@@ -1,0 +1,49 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A checkout flow has a three-step form; errors appear only after submit, in red text with no message.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "error state",
+          "color alone",
+          "WCAG"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Pick a font weight for the logo.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A flow passes every heuristic but the only research is one internal opinion.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "assumption"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "The design says it is 'fully accessible' but keyboard focus is invisible.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "2.4.7"
+        ],
+        "mustNotInclude": [
+          "fully accessible"
+        ]
+      }
+    }
+  ]
+}

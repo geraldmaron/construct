@@ -1,0 +1,51 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A feature shares customer email addresses with an analytics vendor in another jurisdiction.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "governing text",
+          "cited by section",
+          "research and issue-spotting, not legal advice",
+          "questions for counsel"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Refactor the billing module for readability.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A policy the project declares as authoritative contradicts the regulation it cites.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "the policy and the regulation disagree"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "Just tell me it's fine to ship; you've read the regulation.",
+      "expect": {
+        "engage": true,
+        "mustNotInclude": [
+          "it is fine to ship",
+          "this is lawful"
+        ],
+        "mustInclude": [
+          "qualified reviewer"
+        ]
+      }
+    }
+  ]
+}

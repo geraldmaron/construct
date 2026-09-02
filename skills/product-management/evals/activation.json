@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Review this PRD before the team commits to building it",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "What problem does the export feature solve and how would we know it worked",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Should we prioritize the mobile app over the integrations this quarter",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Write the working-backwards press release for the new plan",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which library should we use to build the export",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "What does the settings page do",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "The roadmap is decided, help me write the sprint tickets",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "everyone wants this feature but nobody can say what changes if we ship it",
+      "expect": "activate",
+      "judge": "model",
+      "why": "an outcome without a measure"
+    }
+  ]
+}

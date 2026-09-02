@@ -1,0 +1,82 @@
+{
+  "format": "construct-skill",
+  "formatVersion": 1,
+  "id": "system-architecture",
+  "title": "System architecture",
+  "version": "1.0.0",
+  "category": "professional",
+  "owner": "geraldmaron/construct",
+  "activation": [
+    "review the architecture, the system design, the service boundaries",
+    "write or review the architecture decision record for this choice",
+    "what does this design make hard to undo, where is the coupling, who owns the data",
+    "should we split this service, introduce this queue, adopt this platform"
+  ],
+  "standDown": [
+    "review a diff or an implementation detail",
+    "a question about how a tool works",
+    "product scope or priority with no design in view",
+    "how does this library, this ORM, handle transactions",
+    "which feature should we prioritize next quarter"
+  ],
+  "interactionClasses": [
+    "manage",
+    "maintain"
+  ],
+  "outcomes": [
+    "an architecture review naming boundaries, coupling, failure modes, and reversibility",
+    "an architecture decision record a later reader can audit"
+  ],
+  "deliverableTypes": [
+    "review/architecture",
+    "record/adr"
+  ],
+  "inputs": [
+    "the design, diagram, or decision under review",
+    "the confirmed architectural boundaries and invariants",
+    "the systems and data the design touches"
+  ],
+  "outputSchemas": [
+    "system-architecture/review/v1"
+  ],
+  "requiredSourceTypes": [],
+  "minimumEvidence": "every boundary, dependency, and data-ownership claim cites a document, diagram, or code component; a claimed property nobody measured is marked unmeasured",
+  "capabilities": [
+    "read_project_files",
+    "read_project_context",
+    "read_source"
+  ],
+  "actionTiers": [
+    "observe",
+    "draft"
+  ],
+  "skillDependencies": [],
+  "workflowDependencies": [],
+  "qualityGates": [
+    {
+      "validator": "citations_present",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "no_uncited_material_findings",
+      "appliesTo": "deliverable",
+      "required": true
+    },
+    {
+      "validator": "deliverable_complete",
+      "appliesTo": "deliverable",
+      "required": true
+    }
+  ],
+  "escalation": [
+    "a design that changes who may reach what, or moves sensitive data, is handed to security-privacy",
+    "a decision whose reversal cost exceeds what the person has accepted is raised as a decision, not made"
+  ],
+  "licensedReviewBoundaries": [],
+  "observedOn": [],
+  "evals": [
+    "evals/activation.json",
+    "evals/fixtures.json"
+  ]
+}

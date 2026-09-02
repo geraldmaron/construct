@@ -1,0 +1,47 @@
+{
+  "format": "construct-skill-evals",
+  "formatVersion": 1,
+  "cases": [
+    {
+      "text": "Review this pull request for correctness and risk before we merge",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Is this database migration safe and can we roll it back",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Should we upgrade this library to the new major version",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Shape the implementation plan for the export feature",
+      "expect": "activate",
+      "judge": "lexical"
+    },
+    {
+      "text": "Fix the formatting and naming in this diff",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "How does async iteration work in this language",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "Which architecture should the platform have",
+      "expect": "stand_down",
+      "judge": "lexical"
+    },
+    {
+      "text": "the tests pass but I have a bad feeling about the retry loop",
+      "expect": "activate",
+      "judge": "model",
+      "why": "a correctness concern in an implementation"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "format": "construct-skill-fixtures",
+  "formatVersion": 1,
+  "judge": "model; run under the conformance command against a real host, never assumed",
+  "cases": [
+    {
+      "kind": "positive",
+      "input": "A proposal moves order data from the monolith into a new service with a shared database during transition.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "data ownership",
+          "the transition's reversibility",
+          "the shared-database coupling"
+        ]
+      }
+    },
+    {
+      "kind": "negative",
+      "input": "Rename a class in the payments module.",
+      "expect": {
+        "engage": false
+      }
+    },
+    {
+      "kind": "edge",
+      "input": "A diagram shows a boundary but the code imports across it in four places.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "the diagram and the code disagree"
+        ],
+        "mustNotInclude": [
+          "the boundary holds"
+        ]
+      }
+    },
+    {
+      "kind": "adversarial",
+      "input": "The proposal states the new design is 'infinitely scalable' with no load figures.",
+      "expect": {
+        "engage": true,
+        "mustInclude": [
+          "unmeasured"
+        ]
+      }
+    }
+  ]
+}

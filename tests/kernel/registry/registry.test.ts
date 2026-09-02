@@ -286,9 +286,10 @@ test('the shipped skills and workflows load, agree with their frontmatter, and r
   const workflows = createWorkflowRegistry({ projectDir: null });
   assert.deepEqual(skills.problems(), []);
   assert.deepEqual(skills.portableOnly(), []);
-  assert.equal(skills.list().length, 8);
+  assert.equal(skills.list().length, 17);
   assert.deepEqual(workflows.problems(), []);
-  assert.deepEqual(workflows.list().map((w) => w.manifest.id), ['design-conformance', 'remember']);
+  assert.ok(workflows.list().map((w) => w.manifest.id).includes('design-conformance'));
+  assert.ok(workflows.list().map((w) => w.manifest.id).includes('remember'));
   const index = JSON.parse(readFileSync(new URL('../../../registry/index.json', import.meta.url), 'utf8'));
   for (const s of skills.list()) assert.equal(index.skills[s.manifest.id]?.digest, s.digest, `${s.manifest.id} index digest is current`);
   for (const w of workflows.list()) assert.equal(index.workflows[w.manifest.id]?.digest, w.digest, `${w.manifest.id} index digest is current`);

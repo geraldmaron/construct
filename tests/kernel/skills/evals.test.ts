@@ -14,9 +14,9 @@ import { validateEvalFile, runActivationEvals, scoreActivation } from '../../../
 const skills = createSkillRegistry({ projectDir: null });
 
 test('every shipped skill names an eval file that validates and has both kinds of case', () => {
-  assert.equal(skills.list().length, 8);
+  assert.equal(skills.list().length, 17);
   for (const s of skills.list()) {
-    assert.deepEqual(s.manifest.evals, ['evals/activation.json'], s.manifest.id);
+    assert.ok(s.manifest.evals.includes('evals/activation.json'), s.manifest.id);
     const raw = JSON.parse(new TextDecoder().decode(s.files.includes('evals/activation.json') ? skills.file(s.manifest.id, 'evals/activation.json')! : readFileSync(join(s.dir, 'evals', 'activation.json'))));
     const file = validateEvalFile(raw, `${s.manifest.id}/evals/activation.json`);
     assert.ok(file.cases.some((c) => c.judge === 'model'), `${s.manifest.id} keeps at least one case only a model can judge`);
