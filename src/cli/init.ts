@@ -1,221 +1,164 @@
 /**
- * cli/init.ts — initialize a Construct project in place.
- *
- * Creates project-local config and format-v1 state. Safe initialization does
- * not require `--yes`. `--dry-run` previews without writing. Reconciles MCP for
- * an ambient host or an explicit `--client=` when that client has an
- * installable HostIntegrationAdapter.
+ * cli/init.ts — set a project up: files, one database, a drafted profile with
+ * provenance, the three onboarding questions (answered from flags when given),
+ * and the operational skill planted in the host the person is already in.
  */
 
 import { existsSync } from 'node:fs';
-import { UnsupportedAlphaStoreError } from '../kernel/state-v1/format.ts';
-import {
-  initializeProject,
-  STATE_GITIGNORE_PATTERN,
-} from '../kernel/project-v1/initialize.ts';
-import { resolveProjectContext } from '../kernel/project-v1/context.ts';
-import { projectConfigPath, projectDbPath } from '../kernel/project-v1/layout.ts';
-import { upsertIntegration } from '../kernel/state-v1/integrations.ts';
+import { gatherProjectMaterial } from '../hosts/repo/material.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import {
-  integrationAdapterFor,
-  integrationIsInstallable,
-} from '../hosts/integrations/registry.ts';
-import type { HostIntegrationAdapter } from '../kernel/integration/types.ts';
-import { gitRoot } from './settings-file.ts';
-import { packageVersion } from './runtime.ts';
-import { plantOperationalSkill } from './skills.ts';
-import {
-  resolveHostSkillsDir,
-  SKILLS_HOST_NAMES,
-  type SkillsHostName,
-} from '../kernel/paths.ts';
-import { OPERATIONAL_SKILL } from '../kernel/skills/library.ts';
+import { initializeProject } from '../kernel/project/initialize.ts';
+import { draftFromMaterial } from '../kernel/project/discovery.ts';
+import { applyDiscoveryDraft, applyOnboardingAnswers, composeConstitution, onboardingStatus } from '../kernel/project/onboarding.ts';
+import { saveConstitution } from '../kernel/project/constitution.ts';
+import { PROJECT_SCALES, type ProjectScale } from '../kernel/state/profile.ts';
+import { createSourceService } from '../kernel/source/service.ts';
+import { ensureSourceEntities } from '../kernel/source/entities.ts';
+import { listShippedSkills, readShippedSkill, plantSkill, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
+import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { createContext, initRootFor, type CliContext } from './context.ts';
+import { esc, say, writeJson, UsageError } from './output.ts';
+import { basename } from 'node:path';
 
-function flag(argv: string[], name: string): boolean {
-  return argv.includes(name);
-}
+export const INIT_SPEC: CommandSpec = {
+  path: ['init'],
+  gloss: 'set this project up: files, one database, a drafted profile, the operational skill in your host',
+  group: 'Setup',
+  positionals: [],
+  flags: [
+    { name: 'name', gloss: 'the project’s name (default: the directory or package name)', takesValue: true },
+    { name: 'purpose', gloss: 'what the project is for, in a sentence', takesValue: true },
+    { name: 'scale', gloss: `what this is to you: ${PROJECT_SCALES.join(' | ')}`, takesValue: true },
+    { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
+    { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
+    { name: 'client', gloss: `plant the operational skill for this host: ${SKILLS_HOST_NAMES.join(' | ')}`, takesValue: true },
+    { name: 'skills-dir', gloss: 'plant the operational skill into this directory instead of a host’s', takesValue: true },
+    { name: 'dry-run', gloss: 'say what would happen and write nothing', takesValue: false },
+  ],
+  readOnly: false,
+};
 
-function parseClientFlag(argv: string[]): string | undefined {
-  for (const arg of argv) {
-    if (arg.startsWith('--client=')) {
-      const value = arg.slice('--client='.length).trim();
-      return value === '' ? undefined : value;
+function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: string | null; readonly how: string } {
+  const explicit = stringFlag(args, 'skills-dir');
+  if (explicit) return { dir: explicit, how: '--skills-dir' };
+  const client = stringFlag(args, 'client');
+  if (client !== undefined) {
+    if (!(SKILLS_HOST_NAMES as readonly string[]).includes(client)) {
+      throw new UsageError(`--client must be one of ${SKILLS_HOST_NAMES.join(' | ')}`);
     }
+    return { dir: resolveHostSkillsDir(client as SkillsHostName, ctx.env), how: `--client=${client}` };
   }
-  const idx = argv.indexOf('--client');
-  if (idx >= 0 && typeof argv[idx + 1] === 'string' && !argv[idx + 1]!.startsWith('--')) {
-    return argv[idx + 1]!.trim();
-  }
-  return undefined;
-}
-
-function resolveIntegrationAdapter(
-  argv: string[],
-  env: NodeJS.ProcessEnv,
-): {
-  readonly adapter: HostIntegrationAdapter | null;
-  readonly source: 'flag' | 'ambient' | 'none';
-  readonly requested: string | null;
-} {
-  const clientFlag = parseClientFlag(argv);
-  if (clientFlag !== undefined) {
-    return {
-      adapter: integrationAdapterFor(clientFlag),
-      source: 'flag',
-      requested: clientFlag,
-    };
-  }
-  const ambient = detectAmbientHost(env);
-  if (ambient) {
-    return {
-      adapter: integrationAdapterFor(ambient.host),
-      source: 'ambient',
-      requested: ambient.host,
-    };
-  }
-  return { adapter: null, source: 'none', requested: null };
-}
-
-function resolveSkillsHost(
-  argv: string[],
-  env: NodeJS.ProcessEnv,
-): SkillsHostName | null {
-  const clientFlag = parseClientFlag(argv);
-  if (clientFlag !== undefined && (SKILLS_HOST_NAMES as readonly string[]).includes(clientFlag)) {
-    return clientFlag as SkillsHostName;
-  }
-  const ambient = detectAmbientHost(env);
+  const ambient = detectAmbientHost(ctx.env);
   if (ambient && (SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
-    return ambient.host as SkillsHostName;
+    return { dir: resolveHostSkillsDir(ambient.host as SkillsHostName, ctx.env), how: `detected ${ambient.host} (${ambient.marker})` };
   }
-  return null;
+  return { dir: null, how: 'no host detected; pass --client=<host> or --skills-dir=<dir>' };
 }
 
-/**
- * `construct init [--dry-run] [--client=<id>]`
- */
-export async function init(
-  argv: string[] = [],
-  cwd: string = process.cwd(),
-  env: NodeJS.ProcessEnv = process.env,
-): Promise<number> {
-  const dryRun = flag(argv, '--dry-run');
-  const ctx = resolveProjectContext({
-    gitRoot: gitRoot(cwd) ?? undefined,
-    cwd,
-    allowCwdFallback: true,
-  });
-
-  const configPath = projectConfigPath(ctx.root);
-  const dbPath = projectDbPath(ctx.root);
-  const { adapter, source, requested } = resolveIntegrationAdapter(argv, env);
-  const skillsHost = resolveSkillsHost(argv, env);
+export async function init(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
+  const scale = stringFlag(args, 'scale');
+  if (scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(scale)) {
+    throw new UsageError(`--scale must be one of ${PROJECT_SCALES.join(' | ')}`);
+  }
+  const root = initRootFor(ctx.cwd);
+  const material = gatherProjectMaterial(root);
+  const draft = draftFromMaterial(material);
+  const name = stringFlag(args, 'name') ?? draft.profile.find((p) => p.field === 'name')?.value ?? basename(root);
+  const skills = resolveSkillsDir(args, ctx);
+  const dryRun = boolFlag(args, 'dry-run');
 
   if (dryRun) {
-    process.stdout.write(`construct init (dry-run)\n`);
-    process.stdout.write(`  project root: ${ctx.root} (${ctx.rootSource})\n`);
-    process.stdout.write(
-      `  config: ${configPath}${existsSync(configPath) ? ' (exists)' : ' (would create)'}\n`,
-    );
-    process.stdout.write(
-      `  state:  ${dbPath}${existsSync(dbPath) ? ' (exists)' : ' (would create)'}\n`,
-    );
-    process.stdout.write(`  gitignore: ensure ${STATE_GITIGNORE_PATTERN}\n`);
-    if (skillsHost) {
-      process.stdout.write(
-        `  would install operational skill ${OPERATIONAL_SKILL} → ${resolveHostSkillsDir(skillsHost, env)}\n`,
-      );
-    } else {
-      process.stdout.write(
-        '  operational skill: skipped (no ambient/--client host with a skills directory)\n',
-      );
+    const record = {
+      root,
+      wouldWrite: ['.construct/project.json', '.construct/constitution.json', '.construct/sources.json', '.construct/registry.lock.json', '.construct/state/construct.sqlite'],
+      proposals: draft.statements.length + draft.profile.length + draft.ownership.length,
+      questions: draft.questions.map((q) => q.id),
+      operationalSkill: skills.dir ? `${skills.dir} (${skills.how})` : `skipped: ${skills.how}`,
+    };
+    if (args.json) {
+      writeJson(record);
+      return 0;
     }
-    if (adapter && integrationIsInstallable(adapter)) {
-      const plan = await adapter.plan(ctx.root);
-      for (const action of plan.actions) {
-        process.stdout.write(`  would ${action.kind}: ${action.path} (${action.reason})\n`);
-      }
-    } else if (adapter) {
-      process.stdout.write(
-        `  client: ${adapter.id} — native MCP install unsupported (maturity=${adapter.capabilities().maturity})\n`,
-      );
-    } else if (requested) {
-      process.stdout.write(`  client: ${requested} — no HostIntegrationAdapter\n`);
-    } else {
-      process.stdout.write(
-        '  client: none — pass --client=… or open from a supported host to reconcile MCP\n',
-      );
-    }
+    say(`construct init (dry run) in ${esc(root)}`);
+    say(`  would write: ${record.wouldWrite.join(', ')}`);
+    say(`  would propose ${String(record.proposals)} item(s) read from the project’s own files, each with its source`);
+    say(`  would ask: ${record.questions.join(', ')}`);
+    say(`  operational skill: ${esc(record.operationalSkill)}`);
+    say('Nothing was written.');
     return 0;
   }
 
+  const at = ctx.now();
+  const result = initializeProject({ root, projectId: ctx.nextId('proj'), name, at });
   try {
-    const result = initializeProject(ctx);
-    process.stdout.write(`Initialized Construct project at ${result.root}\n`);
-    process.stdout.write(
-      `  config: ${result.configPath}${result.createdConfig ? ' (created)' : ' (kept)'}\n`,
-    );
-    process.stdout.write(
-      `  state:  ${result.dbPath}${result.createdState ? ' (created)' : ' (opened)'}\n`,
-    );
-    if (result.ensuredGitignore) {
-      process.stdout.write(`  gitignore: added ${STATE_GITIGNORE_PATTERN}\n`);
-    }
+    const applied = applyDiscoveryDraft(result.store, { draft, at, nextId: ctx.nextId });
+    const answers = applyOnboardingAnswers(result.store, {
+      answers: {
+        name: stringFlag(args, 'name'),
+        purpose: stringFlag(args, 'purpose'),
+        scale: scale as ProjectScale | undefined,
+        primaryOutcome: stringFlag(args, 'outcome'),
+        protectedConstraints: listFlag(args, 'constraint'),
+      },
+      by: 'init',
+      at,
+      nextId: ctx.nextId,
+    });
+    saveConstitution(result.layout.constitutionFile, composeConstitution(result.store, result.constitution));
+    const sources = createSourceService(result.store, { readers: new Map() });
+    const synced = sources.syncDeclarations(result.sources, at);
+    ensureSourceEntities(result.store, at, ctx.nextId);
+    const status = onboardingStatus(result.store);
 
-    if (skillsHost) {
-      const skillsDir = resolveHostSkillsDir(skillsHost, env);
-      const planted = plantOperationalSkill(skillsDir);
-      process.stdout.write(
-        planted.ok
-          ? `  skill: ${planted.detail}\n`
-          : `  skill: skipped — ${planted.detail}\n`,
-      );
+    let skillLine: string;
+    let skillOk = false;
+    if (skills.dir) {
+      const skill = readShippedSkill(OPERATIONAL_SKILL);
+      if (!skill) {
+        skillLine = `skipped: this install ships no ${OPERATIONAL_SKILL} skill (${String(listShippedSkills().length)} skills found)`;
+      } else {
+        const planted = plantSkill(skill, skills.dir);
+        skillOk = planted.outcome !== 'refused';
+        skillLine = `${planted.outcome} at ${planted.path} (${planted.why}; ${skills.how})`;
+      }
     } else {
-      process.stdout.write(
-        '  skill: no host skills directory resolved — open from a supported host or pass --client=…\n',
-      );
+      skillLine = `skipped: ${skills.how}`;
     }
 
-    if (adapter && integrationIsInstallable(adapter)) {
-      await adapter.install(ctx.root);
-      const verification = await adapter.verify(ctx.root);
-      upsertIntegration(result.store, {
-        hostId: adapter.id,
-        status: verification.ok ? 'installed' : 'broken',
-        constructVersion: packageVersion(),
-        generationVersion: '1',
-        path: verification.checks[0]?.detail,
-        kind: 'mcp-project',
-        at: new Date().toISOString(),
-      });
-      process.stdout.write(
-        verification.ok
-          ? `  integration: ${adapter.id} installed (session-bound MCP)\n`
-          : `  integration: ${adapter.id} wrote but verify failed\n`,
-      );
-    } else if (adapter) {
-      process.stdout.write(
-        `  client: ${adapter.id} (${source}) — native MCP install unsupported; configure serve --client=${adapter.id} --project=<root> by hand\n`,
-      );
-    } else if (requested) {
-      process.stdout.write(`  client: ${requested} — no integration adapter\n`);
+    const record = {
+      root,
+      created: result.created,
+      gitignoreUpdated: result.gitignoreUpdated,
+      profile: { name: answers.profile.name, onboardingState: answers.profile.onboardingState, missing: answers.missing },
+      proposed: applied.proposedStatements.length,
+      openQuestions: status.openQuestions.map((q) => q.question),
+      sources: synced,
+      operationalSkill: skillLine,
+    };
+    if (args.json) {
+      writeJson(record);
+      return 0;
+    }
+    const fresh = Object.values(result.created).some(Boolean);
+    say(`${fresh ? 'Initialized' : 'Reconciled'} Construct project "${esc(String(answers.profile.name))}" at ${esc(root)}`);
+    say(`  files: .construct/{project,constitution,sources,registry.lock}.json${result.gitignoreUpdated ? '; .gitignore now ignores .construct/state/' : ''}`);
+    say(`  state: ${result.created.state ? 'created' : 'opened'} .construct/state/construct.sqlite`);
+    say(`  read from the project: ${String(applied.proposedStatements.length)} proposal(s), each with its source, waiting for your review`);
+    if (status.openQuestions.length > 0) {
+      say(`  still to answer (${String(status.openQuestions.length)}):`);
+      for (const q of status.openQuestions) say(`    - ${esc(q.question)}`);
     } else {
-      process.stdout.write(
-        '  client: none detected — open from a supported host or pass --client=… to reconcile MCP\n',
-      );
+      say('  onboarding: confirmed');
     }
-
-    result.store.close();
-    process.stdout.write(
-      'Use Construct from your agent session. Do not run construct work as an interactive protocol.\n',
-    );
+    say(`  operational skill: ${esc(skillLine)}`);
+    if (!skillOk && skills.dir) say('  (the skill was not planted; see above)');
+    say(status.openQuestions.length > 0
+      ? 'Next: answer the questions in your agent session, or pass --scale, --outcome, and --constraint to init.'
+      : 'Next: talk in your agent session. `construct status` shows where things stand.');
+    if (!existsSync(result.layout.lockFile)) say('  note: no registry lock was written');
     return 0;
-  } catch (error) {
-    if (error instanceof UnsupportedAlphaStoreError) {
-      process.stderr.write(`${error.message}\n`);
-      return 1;
-    }
-    throw error;
+  } finally {
+    result.store.close();
   }
 }

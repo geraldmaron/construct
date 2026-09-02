@@ -79,7 +79,7 @@ export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
     const notAuthoritativeFor = stringList(item, 'notAuthoritativeFor', where);
     const both = authoritativeFor.filter((t) => notAuthoritativeFor.includes(t));
     if (both.length) throw new ProjectFileError(where, `cannot be both authoritative and not for ${both.join(', ')}`);
-    const freshness = item.freshnessHours;
+    const freshness = item.freshnessHours ?? undefined;
     if (freshness !== undefined && (typeof freshness !== 'number' || !(freshness > 0))) {
       throw new ProjectFileError(where, '"freshnessHours" must be a positive number');
     }

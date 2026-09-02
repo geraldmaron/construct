@@ -1,455 +1,153 @@
 /**
- * cli/index.ts — the one CLI: the verb table and nothing else.
+ * cli/index.ts — the command line: setup, inspection, automation, recovery.
  *
- * Every command lives in its own module beside this one, and the kernel-grade
- * work each of them does lives behind the kernel seam. What stays here is the
- * part that is genuinely this file's: which word runs which command, the usage
- * line that names them all, and the two failures that belong to the process
- * rather than to any one verb — a reader that went away, and a store that
- * cannot be opened at all.
- *
- * Commands stay few; capability grows in packs and kernel libraries, not in
- * CLI surface.
+ * One registry describes every command; help, completions, flag checking, and
+ * the documentation lint read it. Ordinary use of Construct is conversational
+ * in the agent host; this surface is for setting up, looking, scripting, and
+ * recovering. Exit codes: 0 done, 1 could not complete, 2 the command line was
+ * wrong.
  */
 
-import { StoreUnavailableError } from '../kernel/store/open.ts';
-import { tuningStamp } from '../hosts/tuning.ts';
-import { packageVersion } from './runtime.ts';
-import { backup, doctor } from './maintenance.ts';
-import { roleServe, serve } from './serve.ts';
-import { skills } from './skills.ts';
-import { outcome } from './outcome.ts';
-import { ask } from './ask.ts';
-import { notes } from './notes.ts';
-import { review } from './review.ts';
-import { work } from './work.ts';
-import { inbox, log, show } from './show.ts';
-import { status } from './status.ts';
-import { lessons } from './lessons.ts';
-import { decide } from './decide.ts';
-import { corpus, verdict } from './verdict.ts';
-import { reconcile } from './reconcile.ts';
-import { revoke, waive } from './controls.ts';
-import { source } from './source.ts';
-import { record } from './record.ts';
-import { compose } from './compose.ts';
-import { plan } from './plan.ts';
-import { audit, propose } from './propose.ts';
-import { consent, mode, settings, trust } from './settings.ts';
-import { staff } from './staff.ts';
-import { routine } from './routine.ts';
-import { watch } from './watch.ts';
-import { completions } from './completions.ts';
-import { init } from './init.ts';
-import { reset } from './reset.ts';
-import { firstUnknownFlag, wantsHelp } from './flags.ts';
+import { readFileSync } from 'node:fs';
+import { commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { createContext, type CliContext } from './context.ts';
+import { reportFailure, say, warn, UsageError } from './output.ts';
+import { init, INIT_SPEC } from './init.ts';
+import { status, STATUS_SPEC } from './status.ts';
+import { doctor, DOCTOR_SPEC } from './doctor.ts';
+import { reset, RESET_SPEC } from './reset.ts';
+import { configCommand, CONFIG_SPECS } from './config.ts';
+import { projectCommand, PROJECT_SPECS } from './project.ts';
+import { sourceCommand, SOURCE_SPECS } from './source.ts';
+import { skillCommand, SKILL_SPECS } from './skill.ts';
+import { completionScript, SHELLS, type Shell } from './completions.ts';
 
-/**
- * The surface, re-exported. Tests and any other in-process caller reach a
- * command through this module rather than through the file it happens to live
- * in, so moving one between files is not a change to what Construct exposes.
- */
-export { HOST_NAMES } from './runtime.ts';
-export type { HostName } from './runtime.ts';
-export { backup, doctor } from './maintenance.ts';
-export { roleServe, serve } from './serve.ts';
-export { skills } from './skills.ts';
-export { outcome, parseOutcomeArgs, sessionOutcomeHandoff } from './outcome.ts';
-export type { OutcomeArgs } from './outcome.ts';
-export { ask, parseAskArgs } from './ask.ts';
-export type { AskArgs } from './ask.ts';
-export { DEFAULT_MAX_NOTES, notes, parseNotesArgs } from './notes.ts';
-export type { NotesArgs } from './notes.ts';
-export { parseReviewArgs, review } from './review.ts';
-export type { ReviewArgs } from './review.ts';
-export { work } from './work.ts';
-export { DEFAULT_SPEND_CEILING } from './spend.ts';
-export { inbox, log, reasonClause, show } from './show.ts';
-export { status } from './status.ts';
-export { lessons } from './lessons.ts';
-export { decide } from './decide.ts';
-export { corpus, corpusExport, parseVerdictArgs, verdict } from './verdict.ts';
-export type { VerdictArgs } from './verdict.ts';
-export { reconcile } from './reconcile.ts';
-export { revoke, waive } from './controls.ts';
-export { source } from './source.ts';
-export { record } from './record.ts';
-export { compose } from './compose.ts';
-export { plan } from './plan.ts';
-export { audit, propose } from './propose.ts';
-export { consent, mode, settings, trust } from './settings.ts';
-export { staff } from './staff.ts';
-export { routine } from './routine.ts';
-export { watch } from './watch.ts';
-export { completions } from './completions.ts';
-export { init } from './init.ts';
-export { reset } from './reset.ts';
+export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
+export const HELP_SPEC: CommandSpec = { path: ['help'], gloss: 'show every command', group: 'Help', positionals: [], flags: [], readOnly: true };
+export const COMPLETION_SPEC: CommandSpec = {
+  path: ['completion'],
+  gloss: 'print a shell completion script derived from this command list',
+  group: 'Help',
+  positionals: [],
+  flags: [{ name: 'shell', gloss: `one of ${SHELLS.join(' | ')} (default bash)`, takesValue: true }],
+  readOnly: true,
+};
 
-/**
- * Every verb a user may type, and the one source that answers the question.
- *
- * The usage line below is built from this array rather than written beside it,
- * so a verb cannot exist in the dispatch table while the help text denies it.
- * Documentation is checked against the same array, which is what stops a guide
- * teaching a command the CLI has never accepted.
- */
-export const VERBS: readonly string[] = Object.freeze([
-  'outcome', 'ask', 'work', 'notes', 'review', 'show', 'compose', 'plan',
-  'source', 'propose', 'audit', 'record', 'mode', 'consent',
-  'settings', 'trust', 'staff', 'routine', 'watch', 'skills', 'reconcile', 'waive', 'revoke', 'verdict',
-  'corpus', 'log', 'inbox', 'decide', 'lessons', 'serve', 'init', 'reset', 'doctor', 'backup',
-  'completions', 'status', 'version', 'help',
+/** Every command, in help order. The single source for help, completions, and the docs lint. */
+export const COMMANDS: readonly CommandSpec[] = Object.freeze([
+  INIT_SPEC,
+  ...PROJECT_SPECS.filter((s) => s.group === 'Setup'),
+  STATUS_SPEC,
+  DOCTOR_SPEC,
+  ...PROJECT_SPECS.filter((s) => s.group !== 'Setup'),
+  ...CONFIG_SPECS,
+  ...SOURCE_SPECS,
+  ...SKILL_SPECS,
+  RESET_SPEC,
+  COMPLETION_SPEC,
+  VERSION_SPEC,
+  HELP_SPEC,
 ]);
 
-/**
- * Dispatched to by the coordinator, never typed by a person, so it stays out
- * of the usage line while remaining a real verb the docs may name.
- */
-export const INTERNAL_VERBS: readonly string[] = Object.freeze(['role-serve']);
+export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Recover', 'Help']);
 
-/** The long flags a verb accepts, plus its one-line gloss — the material both
- * the grouped help and a single verb's `--help` are rendered from. The host
- * tuning quartet (`--host --model --binary --dir --timeout`) rides along on
- * every verb that can dispatch, so it is named once here and spread in. */
-const HOST_FLAGS = ['host', 'model', 'binary', 'dir', 'timeout'] as const;
+const INTRO: readonly string[] = [
+  'construct — a project-bound operating layer for the agent host you already use.',
+  '',
+  'Start here: construct init',
+  '  Then talk in your agent session. This command line is for setup,',
+  '  inspection, scripting, and recovery; the work itself happens in the host.',
+];
 
-interface VerbHelp {
-  readonly gloss: string;
-  /** Long-flag names this verb accepts. Empty means it takes none. */
-  readonly flags: readonly string[];
+/** Every command name as typed, one per line, for tooling. */
+export function commandNames(): readonly string[] {
+  return COMMANDS.map((c) => c.path.join(' '));
 }
 
-/**
- * Every verb's gloss and accepted flags, in one place. This is what a wrong
- * flag is checked against and what `construct <verb> --help` prints, so a verb
- * that grows a flag is described here or the flag is refused as unknown — the
- * same single-source discipline the dispatch table itself keeps.
- */
-const HELP: Readonly<Record<string, VerbHelp>> = Object.freeze({
-  outcome: { gloss: 'record what you want to happen and queue the work', flags: [...HOST_FLAGS, 'domains', 'workspace'] },
-  ask: { gloss: 'ask the staff one question and read the answer here', flags: [...HOST_FLAGS, 'workspace', 'ceiling'] },
-  work: {
-    gloss: 'headless claim/submit/status on init’d projects (requires --pin)',
-    flags: [
-      ...HOST_FLAGS,
-      'run',
-      'all',
-      'concurrency',
-      'ceiling',
-      'lease-minutes',
-      'allow-distant-ground',
-      'voice',
-      'pin',
-      'task',
-      'token',
-      'deliverable',
-      'note',
-    ],
-  },
-  notes: { gloss: 'drop after-call notes in and reason over each', flags: [...HOST_FLAGS, 'workspace', 'run', 'max-notes'] },
-  review: { gloss: 'review declared ground for contradictions', flags: [...HOST_FLAGS, 'workspace'] },
-  show: { gloss: 'show a run’s deliverables as a reader sees them', flags: ['run', 'record', 'json'] },
-  status: { gloss: 'summarize where the workspace stands right now', flags: ['json'] },
-  compose: { gloss: 'assemble a run’s work into one deliverable', flags: [...HOST_FLAGS, 'run', 'shape', 'record', 'no-close'] },
-  plan: { gloss: 'show the plan a run will work from', flags: ['json'] },
-  source: {
-    gloss: 'declare and manage the ground a workspace reads',
-    flags: ['kind', 'locator', 'as', 'authority', 'cap', 'emphasis', 'from', 'id', 'note', 'relevance', 'sensitive', 'not-sensitive', 'to', 'all', 'workspace', 'json'],
-  },
-  propose: {
-    gloss: 'propose an outward change from a run',
-    flags: [
-      ...HOST_FLAGS, 'run', 'source', 'task', 'workspace', 'dry-run', 'action', 'as', 'because', 'document', 'from', 'kind', 'live', 'note', 'to',
-      'was', 'was-file', 'at', 'at-file', 'now', 'now-file',
-    ],
-  },
-  audit: { gloss: 'audit a repository’s enablement and file findings', flags: ['source', 'workspace', 'dry-run'] },
-  record: { gloss: 'keep a workspace’s records of who it deals with', flags: ['kind', 'name', 'field', 'reason', 'workspace'] },
-  mode: { gloss: 'show or set how a workspace engages', flags: ['workspace', 'set'] },
-  consent: { gloss: 'legacy consent verb — prefer construct inbox', flags: ['workspace', 'set'] },
-  settings: { gloss: 'show every setting and where it lives, or set one', flags: ['scope', 'workspace'] },
-  trust: { gloss: 'legacy trust verb — prefer construct inbox', flags: ['ratify', 'revoke', 'task'] },
-  staff: {
-    gloss: 'StaffMember CRUD on init’d projects; unmet/propose for the staffing gate',
-    flags: ['file', 'run', 'id', 'name', 'title', 'mission'],
-  },
-  routine: {
-    gloss: 'create, list, enable, and run a Routine (headless pin required to run)',
-    flags: ['id', 'output', 'pin', 'skill'],
-  },
-  watch: {
-    gloss: 'declare source watches and run due structural sweeps (schedule --due yourself)',
-    flags: ['source', 'every', 'host', 'all', 'due'],
-  },
-  skills: { gloss: 'list, install, or remove the skills library', flags: [...HOST_FLAGS, 'all', 'force', 'out', 'uninstall'] },
-  reconcile: { gloss: 'reconcile the tracker against the repository', flags: ['absorb', 'live', 'tracker'] },
-  waive: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'challenge', 'reason'] },
-  revoke: { gloss: 'legacy — prefer construct inbox decide', flags: ['task', 'reason'] },
-  verdict: {
-    gloss: 'legacy — prefer construct inbox decide',
-    flags: ['run', 'confirm', 'dismiss', 'missed', 'source', 'task'],
-  },
-  corpus: { gloss: 'export the verdict corpus', flags: [] },
-  log: { gloss: 'read back what a run did, in whose name', flags: ['run', 'json'] },
-  inbox: {
-    gloss: 'typed decisions waiting on you (approve, trust, waive, judgments, …)',
-    flags: ['json'],
-  },
-  decide: { gloss: 'legacy decide verb — prefer construct inbox decide', flags: [...HOST_FLAGS, 'apply', 'approve', 'reject', 'pending', 'workspace'] },
-  lessons: { gloss: 'list and admit held run-derived lessons', flags: ['workspace', 'json', 'admit', 'by', 'detail'] },
-  serve: { gloss: 'put the spine inside your host over MCP, including in-session dispatch', flags: ['client', 'project'] },
-  init: {
-    gloss: 'initialize project-local Construct config, state, and host MCP',
-    flags: ['dry-run', 'client'],
-  },
-  reset: { gloss: 'wipe project runtime state and recreate format v1', flags: ['yes', 'wipe-config'] },
-  doctor: { gloss: 'report host presence, integration matrix, and store health', flags: [] },
-  backup: { gloss: 'copy the store into a directory outside it, checksum verified', flags: ['verify'] },
-  completions: { gloss: 'emit a shell completion script', flags: ['shell'] },
-  version: { gloss: 'print the version and tuning stamp', flags: [] },
-  help: { gloss: 'show this help', flags: [] },
-});
-
-/**
- * The grouped help surface. First-run is talk in the host you already have;
- * the terminal spine is the fallback, not beat two. Every verb in VERBS lives
- * in exactly one group; a verb added to the table and to no group here is
- * caught by the help-coverage test.
- */
-const HELP_GROUPS: readonly (readonly [string, readonly string[]])[] = Object.freeze([
-  ['Starting work', ['outcome', 'ask', 'routine']],
-  ['Running it', ['work', 'notes']],
-  ['Reading back', ['status', 'show', 'log', 'plan', 'inbox', 'corpus']],
-  ['Outward changes', ['propose', 'audit']],
-  ['Ground', ['source', 'watch', 'review']],
-  ['Staff and learning', ['staff', 'lessons']],
-  ['Workspace settings', ['mode', 'record', 'settings']],
-  ['Composition and reconciliation', ['compose', 'reconcile']],
-  ['Presence and hosts', ['serve', 'init', 'reset']],
-  ['Maintenance', ['doctor', 'backup', 'skills', 'completions', 'version', 'help']],
-  [
-    'Legacy aliases (prefer inbox / init)',
-    ['decide', 'waive', 'revoke', 'verdict', 'consent', 'trust'],
-  ],
-]);
-
-/**
- * Verbs that print their own `--help` and validate their own flags. The
- * dispatcher steps aside for these rather than answering over them, so the
- * richer usage each already carries is the one a user sees. The free-text
- * verbs are here because a leading `--flag` on them is a per-verb judgment
- * (is it a flag, or part of the sentence?) that belongs in the verb.
- */
-const SELF_HANDLED_HELP: ReadonlySet<string> = new Set(['outcome', 'ask', 'notes', 'completions', 'reconcile']);
-
-/**
- * Verbs the dispatcher does not fail-closed on for unknown flags: the free-text
- * verbs police their own leading flag (words are legitimate there), and
- * `settings` accepts arbitrary keys as file-layer overrides, so an unrecognized
- * one is data, not a typo.
- */
-const OPEN_FLAGS: ReadonlySet<string> = new Set(['outcome', 'ask', 'notes', 'settings']);
-
-/**
- * One verb's help: its gloss and the flags it takes.
- *
- * Deliberately not phrased as a `usage: construct <verb>` line. The surface
- * probe (scripts/lib/cli-surface.mjs) reads exactly that phrase to learn a
- * verb's subcommands from its own output, and a flags-only synopsis printed
- * over a subcommand-bearing verb would teach the probe the verb has no
- * subcommands. Leaving the phrase to the verb's own usage keeps the probe
- * reading behavior rather than this summary.
- */
-export function verbHelp(verb: string): string {
-  const spec = HELP[verb];
-  if (!spec) return `construct ${verb}\n`;
-  const flags = spec.flags.length > 0 ? `\n  flags: ${spec.flags.map((f) => `--${f}`).join('  ')}` : '';
-  return `construct ${verb} — ${spec.gloss}${flags}\n  the whole surface: construct help\n`;
+export function packageVersion(): string {
+  const raw = readFileSync(new URL('../../package.json', import.meta.url), 'utf8');
+  return (JSON.parse(raw) as { version: string }).version;
 }
 
-/** Flags a verb accepts, from the same table `construct <verb> --help` prints. */
-export function acceptedFlags(verb: string): readonly string[] {
-  return HELP[verb]?.flags ?? [];
-}
-
-/** The whole help surface, grouped, with first-run named up front. */
-export function groupedHelp(): string {
-  const width = Math.max(...VERBS.map((v) => v.length));
-  const lines: string[] = [
-    'construct — an outcome engine. Talk in the host you already have.',
-    '',
-    'Start here: construct init',
-    '  Then talk in the host you already have. Session-bound MCP and the',
-    '  operational construct skill are what init reconciles when it can.',
-    '',
-    'From a plain terminal: init → outcome (--domains or --host) → show → inbox',
-    '  Interactive work is MCP next_work / submit_work in the host session.',
-    '  Headless work needs an initialized project and --pin.',
-    '  Legacy verbs (decide/waive/…) still run — prefer inbox.',
-    '',
-  ];
-  for (const [title, verbs] of HELP_GROUPS) {
-    lines.push(title);
-    for (const verb of verbs) {
-      lines.push(`  ${verb.padEnd(width)}  ${HELP[verb]?.gloss ?? ''}`);
-    }
-    lines.push('');
-  }
-  lines.push('One verb in depth: construct <verb> --help');
-  return `${lines.join('\n')}\n`;
-}
-
-/**
- * Async because `work` dispatches to a host, and `outcome --host=…` may
- * consult one. The other commands stay synchronous — awaiting a number costs
- * nothing and keeps one entry point.
- */
-export async function main(argv: string[] = process.argv.slice(2)): Promise<number> {
-  // `construct outcome … | head -1` closes the pipe while the command is still
-  // writing, and an unhandled write to a closed stdout throws an 'error' event
-  // that Node reports as a crash with a full stack. Piping into head, less, or
-  // grep -m1 is ordinary use, and a stack trace on it reads as a broken tool.
-  // A reader that has gone away is a normal end for a CLI, not a failure, so
-  // the process stops quietly at that point rather than reporting one.
+export async function main(argv: string[] = process.argv.slice(2), ctx: CliContext = createContext()): Promise<number> {
   const quitOnClosedOutput = (error: NodeJS.ErrnoException): void => {
     if (error.code === 'EPIPE') process.exit(0);
     throw error;
   };
   process.stdout.on('error', quitOnClosedOutput);
   process.stderr.on('error', quitOnClosedOutput);
+  return run(argv, ctx);
+}
 
+export async function run(argv: readonly string[], ctx: CliContext = createContext()): Promise<number> {
+  if (argv.length === 0 || argv[0] === 'help' || argv[0] === '--help' || argv[0] === '-h') {
+    process.stdout.write(groupedHelp(COMMANDS, HELP_GROUPS, INTRO));
+    return 0;
+  }
+  if (argv[0] === '--version' || argv[0] === '-v') {
+    say(packageVersion());
+    return 0;
+  }
+  const matched = matchCommand(COMMANDS, argv);
+  if (!matched) {
+    const known = COMMANDS.filter((c) => c.path[0] === argv[0]);
+    if (known.length > 0 && known.every((c) => c.path.length > 1)) {
+      const asked = argv[1];
+      warn(`construct ${argv[0]!}: ${asked !== undefined && !asked.startsWith('-') ? `no subcommand "${asked}"` : 'needs a subcommand'}: ${known.map((c) => c.path[1]).join(' | ')}`);
+      return 2;
+    }
+    warn(`construct: unknown command ${JSON.stringify(argv[0])}`);
+    process.stdout.write(groupedHelp(COMMANDS, HELP_GROUPS, INTRO));
+    return 2;
+  }
+  const { spec, rest } = matched;
+  const name = spec.path.join(' ');
+  let args: ParsedArgs;
   try {
-    return await run(argv);
+    args = parseArgs(spec, rest);
   } catch (error) {
-    // Only this class. Every other throw keeps its stack, because a defect that
-    // reads as a tidy one-liner is a defect nobody reports.
-    if (!(error instanceof StoreUnavailableError)) throw error;
-    process.stderr.write(`construct: ${error.message}\n`);
-    return 1;
+    return reportFailure(name, error, false);
+  }
+  if (args.help) {
+    process.stdout.write(commandHelp(spec));
+    return 0;
+  }
+  try {
+    return await dispatch(spec, args, rest, ctx);
+  } catch (error) {
+    return reportFailure(name, error, args.debug);
   }
 }
 
-async function run(argv: string[]): Promise<number> {
-  const command = argv[0] ?? 'help';
-
-  // The whole surface, before any verb acts. `help`, and the two flag spellings
-  // of it, answer the same question — which word runs which command — so they
-  // answer it identically.
-  if (command === 'help' || command === '--help' || command === '-h') {
-    process.stdout.write(groupedHelp());
-    return 0;
-  }
-
-  // `--help`/`-h` on a verb is answered here, before that verb reads its
-  // arguments, so `construct outcome --help` prints usage and records nothing —
-  // the alternative filed `--help` as the outcome text into an append-only log
-  // nobody could edit back out. Verbs that carry their own richer usage are
-  // left to print it; the rest are answered from the one table above.
-  const rest = argv.slice(1);
-  if (VERBS.includes(command)) {
-    if (!SELF_HANDLED_HELP.has(command) && wantsHelp(rest)) {
-      process.stdout.write(verbHelp(command));
+async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly string[], ctx: CliContext): Promise<number> {
+  const [noun, verb] = spec.path;
+  switch (noun) {
+    case 'init':
+      return init(args, ctx);
+    case 'status':
+      return status(args, ctx);
+    case 'doctor':
+      return doctor(args, ctx);
+    case 'reset':
+      return reset(args, ctx);
+    case 'config':
+      return configCommand(verb!, args, rest, ctx);
+    case 'project':
+      return projectCommand(verb!, args, ctx);
+    case 'source':
+      return sourceCommand(verb!, args, ctx);
+    case 'skill':
+      return skillCommand(verb!, args, ctx);
+    case 'completion': {
+      const shell = (args.flags.shell as string | undefined) ?? 'bash';
+      if (!(SHELLS as readonly string[]).includes(shell)) throw new UsageError(`--shell must be one of ${SHELLS.join(' | ')}`);
+      process.stdout.write(completionScript(shell as Shell, COMMANDS));
       return 0;
     }
-    // An unknown flag is a typo or a misremembered surface, never a silent
-    // no-op: a verb that took `--drt-run` and did the wet run said nothing
-    // about the difference. Free-text and settings police their own flags.
-    if (!OPEN_FLAGS.has(command)) {
-      const known = new Set(HELP[command]?.flags ?? []);
-      const bad = firstUnknownFlag(rest, known);
-      if (bad !== undefined) {
-        process.stderr.write(`construct ${command}: unknown flag ${bad}\n${verbHelp(command)}`);
-        return 2;
-      }
-    }
-  }
-
-  switch (command) {
-    case 'review':
-      return review(argv.slice(1));
-    case 'record':
-      return record(argv.slice(1));
-    case 'compose':
-      return compose(argv.slice(1));
-    case 'notes':
-      return notes(argv.slice(1));
-    case 'outcome':
-      return outcome(argv.slice(1));
-    case 'ask':
-      return ask(argv.slice(1));
-    case 'work':
-      return work(argv.slice(1));
-    case 'reconcile':
-      return reconcile(argv.slice(1));
-    case 'waive':
-      return waive(argv.slice(1));
-    case 'verdict':
-      return verdict(argv.slice(1));
-    case 'corpus':
-      return corpus(argv.slice(1));
-    case 'log':
-      return log(argv.slice(1));
-    case 'show':
-      return show(argv.slice(1));
-    case 'status':
-      return status(argv.slice(1));
-    case 'plan':
-      return plan(argv.slice(1));
-    case 'source':
-      return source(argv.slice(1));
-    case 'propose':
-      return propose(argv.slice(1));
-    case 'audit':
-      return audit(argv.slice(1));
-    case 'mode':
-      return mode(argv.slice(1));
-    case 'consent':
-      return consent(argv.slice(1));
-    case 'settings':
-      return settings(argv.slice(1));
-    case 'trust':
-      return trust(argv.slice(1));
-    case 'staff':
-      return staff(argv.slice(1));
-    case 'routine':
-      return routine(argv.slice(1));
-    case 'watch':
-      return watch(argv.slice(1));
-    case 'skills':
-      return skills(argv.slice(1));
-    case 'inbox':
-      return inbox(argv.slice(1));
-    case 'decide':
-      return decide(argv.slice(1));
-    case 'lessons':
-      return lessons(argv.slice(1));
-    case 'serve':
-      return serve(argv.slice(1));
-    case 'init':
-      return await init(argv.slice(1));
-    case 'reset':
-      return reset(argv.slice(1));
-    case 'role-serve':
-      return roleServe();
-    case 'revoke':
-      return revoke(argv.slice(1));
-    case 'doctor':
-      return await doctor();
-    case 'backup':
-      return backup(argv.slice(1));
-    case 'completions':
-      return completions(argv.slice(1));
     case 'version':
-    case '--version':
-    case '-v':
-      process.stdout.write(`${packageVersion()}\n`);
-      process.stdout.write(`${tuningStamp()}\n`);
+      say(packageVersion());
       return 0;
     default:
-      // Say the word was refused, then show the surface. Help alone looked like
-      // success (and the packaged smoke needs the refusal to name itself).
-      process.stderr.write(`construct: unknown command ${JSON.stringify(command)}\n`);
-      process.stdout.write(groupedHelp());
-      return 2;
+      throw new UsageError(`unknown command ${noun!}`);
   }
 }

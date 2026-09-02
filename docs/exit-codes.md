@@ -1,27 +1,27 @@
 # Exit codes
 
-Every `construct` verb returns one of three codes, and no verb has ever
+Every `construct` command returns one of three codes, and no command has ever
 returned a fourth. A script driving Construct needs only these three branches.
 
 | Code | Meaning | Examples |
 | ---- | ------- | -------- |
-| `0` | Succeeded, including an honestly empty result. An empty answer is not a failure — `construct log` on a *real* run with no entries yet, `construct lessons` on a workspace with none recorded, and `construct show --run <id> --json` on a *real* run with no tasks yet all return `0`. `construct status` on a workspace with no runs at all also returns `0` — an empty workspace is a valid state, not an error. |
-| `1` | The command's grammar was accepted, but the operation itself could not complete. A store could not be opened, an id named on the command line does not exist, a write was refused by a downstream check, a host errored while a command tried to reach it. A run id `show`, `log`, or `plan` was given that this store never recorded is exactly this case — it is what tells that failure apart from the merely-empty result above, since both would otherwise print the same "nothing here" line. |
+| `0` | Succeeded, including an honestly empty result. An empty answer is not a failure — `construct source list` on a project that has declared none, and `construct status` on a project with nothing in flight, both return `0`; an empty project is a valid state, not an error. `construct reset` without `--confirm` returns `0` too: it named its targets and removed nothing, which is what it was asked. |
+| `1` | The command's grammar was accepted, but the operation itself could not complete. No project could be found from here, the state database could not be opened or is in a format this version does not read, a file from an earlier alpha is in the way, an id named on the command line does not exist (`construct source show <id>` for a source never declared), a source could not be reached on `construct source refresh`, or `construct doctor` found a failing check. |
 | `2` | The command line itself was wrong before anything was attempted — a required flag or argument is missing, a value is not one of the accepted ones, two flags on the same invocation contradict each other. |
 
-`construct <verb> --json`, wherever a verb offers it, follows the same three
+`construct <command> --json`, which every read accepts, follows the same three
 codes: `--json` changes what a successful call prints, not what "successful"
 means.
 
 ## The one exception
 
 `main()` in `src/cli/index.ts` calls `process.exit(0)` directly, bypassing a
-verb's own return value, exactly once: when a write hits a reader that has
-already gone away (`EPIPE` — `construct outcome … | head -1` closes the pipe
+command's own return value, exactly once: when a write hits a reader that has
+already gone away (`EPIPE` — `construct help | head -1` closes the pipe
 mid-write). A reader disappearing is a normal end for a CLI, not a failure, so
 the process stops quietly rather than reporting the stack trace an unhandled
 write error would otherwise produce. No other exit path exists outside a
-verb's own `0`/`1`/`2` return.
+command's own `0`/`1`/`2` return.
 
 ## Keeping this honest
 

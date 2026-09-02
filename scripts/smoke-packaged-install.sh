@@ -1,18 +1,11 @@
 #!/usr/bin/env bash
-# smoke-packaged-install.sh — the consumer's experience, tested before any
-# consumer exists. v2's history is full of packaging defects (missing files
-# in the tarball, broken postinstall) found only after users hit them.
-# `npm pack` -> install the tarball into a scratch project -> run the CLI.
+# smoke-packaged-install.sh — the consumer's experience from packaged bytes.
+# npm pack -> install the tarball into a scratch project -> run the CLI there.
 #
-# It exercises the spine (outcome, log, inbox, decide) and not just the Phase 0
-# surface, because the spine is the only code path that opens node:sqlite and
-# writes to the state dir — exactly the packaging-defect class this script says
-# it exists to catch. doctor and version load almost nothing by comparison, so a
-# tarball missing dist/kernel/store could pass the old script comfortably.
-#
-# Every command below runs under an isolated HOME. That is not tidiness: `doctor`
-# inspects the user's real state directory, so before the isolation was added
-# this script's own runs were reading the developer's ~/.construct.
+# It runs the spine that opens node:sqlite and writes the project's one state
+# database, because that is the code path a packaging defect breaks: a tarball
+# missing dist/kernel/state passes `version` comfortably and fails here.
+# Every command runs under an isolated HOME so nothing reads the developer's.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -40,159 +33,118 @@ echo "== packing =="
 tarball="$(npm pack --silent --pack-destination "$scratch")"
 tarball_path="$scratch/$tarball"
 
-echo "== installing into scratch project =="
+echo "== installing into a scratch project =="
 project="$scratch/project"
 mkdir -p "$project"
 cd "$project"
 npm init -y --silent >/dev/null
 npm install --silent "$tarball_path"
+git init -q .
+printf '# Scratch\n\nA scratch project for the packaged smoke.\n' > README.md
 
-# From here on the packaged CLI sees a home of its own. Set after `npm install`,
-# which needs the real one for its cache and registry config. XDG_* are pinned
-# rather than unset so a machine that already exports them cannot escape.
 export HOME="$scratch/home"
 export XDG_CONFIG_HOME="$HOME/.config"
 export XDG_STATE_HOME="$HOME/.local/state"
 export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_CACHE_HOME="$HOME/.cache"
-# Whoever runs this script is itself very likely a detected host. In-session
-# outcome does not staff from the keyword map; this smoke is the terminal-first
-# packaged path and must not inherit the runner's session markers.
 unset CLAUDECODE CLAUDE_CODE_ENTRYPOINT CURSOR_AGENT CURSOR_CLI BOB_SHELL_CLI_IDE_SERVER_PORT
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME"
-store="$XDG_DATA_HOME/construct/construct.db"
 
-echo "== running construct doctor from the packaged install =="
-npx --no-install construct doctor
-
-echo "== running construct version =="
+echo "== version =="
 npx --no-install construct version
 
-# The skills ship inside the tarball, so a consumer who never touches git can
-# still install one into a host's skills directory. The path from the built
-# `dist/` back to `skills/` is the thing that breaks silently: it resolves
-# relative to the module, and the checkout and the package lay out differently.
-# So this installs a real skill from the packaged install and compares bytes.
-echo "== the packaged install carries the skills and can plant one =="
-skills_list="$(npx --no-install construct skills list 2>&1)" \
-  || fail "skills list exited non-zero" "$skills_list"
-printf '%s\n' "$skills_list"
-case "$skills_list" in
-  *"carries no skill files"*) fail "the packaged install found no skills" "$skills_list" ;;
-esac
-expect_contains "skills list" "$skills_list" "investigative-research"
-
-host_skills="$scratch/host-skills"
-install_out="$(npx --no-install construct skills install investigative-research --dir="$host_skills" 2>&1)" \
-  || fail "skills install exited non-zero" "$install_out"
-printf '%s\n' "$install_out"
-planted="$host_skills/investigative-research/SKILL.md"
-[ -f "$planted" ] || fail "skills install wrote no SKILL.md" "$install_out"
-cmp -s "$planted" "$repo_root/skills/investigative-research/SKILL.md" \
-  || fail "the planted skill is not byte-identical to the one this repository ships"
-
-installed_out="$(npx --no-install construct skills installed --dir="$host_skills" 2>&1)" \
-  || fail "skills installed exited non-zero" "$installed_out"
-expect_contains "skills installed" "$installed_out" "current"
-
-echo "== doctor from the packaged install =="
-doctor_out="$(npx --no-install construct doctor 2>&1)" \
-  || fail "construct doctor exited non-zero" "$doctor_out"
-printf '%s\n' "$doctor_out"
-expect_contains "construct doctor" "$doctor_out" "node"
-
-echo "== recording an outcome from the packaged install =="
-outcome_out="$(npx --no-install construct outcome \
-  --domains=privacy,commerce-tax,program-sequencing,product-scoping \
-  'launch a paid beta to EU users next month')" \
-  || fail "construct outcome exited non-zero" "$outcome_out"
-printf '%s\n' "$outcome_out"
-
-run_id="$(printf '%s\n' "$outcome_out" | awk '/^run /{print $2; exit}')"
-[ -n "$run_id" ] || fail "construct outcome printed no run id" "$outcome_out"
-expect_contains "construct outcome" "$outcome_out" "implicated domains"
-
-# The point of the whole addition: the store has to exist, on disk, written by
-# the tarball's own copy of node:sqlite. A dist/ or files[] change that drops
-# the store module fails here and nowhere earlier.
-[ -f "$store" ] || fail "the spine did not create its store at $store"
-
-echo "== reading the run back =="
-log_out="$(npx --no-install construct log --run "$run_id")" \
-  || fail "construct log exited non-zero" "$log_out"
-printf '%s\n' "$log_out"
-expect_contains "construct log" "$log_out" "entries (append-only)"
-case "$log_out" in
-  *"no work log entries"*) fail "the run was not recorded — construct log read back nothing" ;;
-esac
-
-echo "== reading the decision inbox =="
-inbox_out="$(npx --no-install construct inbox)" \
-  || fail "construct inbox exited non-zero" "$inbox_out"
-printf '%s\n' "$inbox_out"
-# Empty is the correct state: no roles have been dispatched, so nothing has
-# disagreed yet. Asserting the empty message rather than just the exit code is
-# what makes this a read of the store instead of a read of nothing.
-expect_contains "construct inbox" "$inbox_out" "decision inbox: empty"
-
-echo "== resolving a decision that does not exist =="
-# `decide` needs a decision, and raising one needs roles to have disagreed —
-# which needs a host, which this script deliberately does not have. So the
-# command is exercised against a missing id. That still proves what this script
-# is for: the command loaded, opened the store from the tarball, queried it, and
-# failed for the one reason it should. A packaging defect fails differently.
+echo "== doctor before init refuses to call a missing project healthy =="
 set +e
-decide_out="$(npx --no-install construct decide no-such-decision 'ship it' 2>&1)"
-decide_status=$?
+predoctor="$(npx --no-install construct doctor 2>&1)"
+predoctor_status=$?
 set -e
-printf '%s\n' "$decide_out"
-[ "$decide_status" -ne 0 ] || fail "construct decide accepted a decision that does not exist"
-expect_contains "construct decide" "$decide_out" "no open decision no-such-decision"
+[ "$predoctor_status" -ne 0 ] || fail "doctor exited 0 with no project" "$predoctor"
+expect_contains "doctor" "$predoctor" "FAIL project"
 
-echo "== a state dir the CLI cannot write =="
-# A past regression lived here: doctor called an unwritable data dir
-# healthy, and the next command died with a node:sqlite stack trace. chmod does
-# not bind root, so under a root CI container the check would pass vacuously —
-# skip it out loud instead.
+echo "== init from the packaged install =="
+skills_dir="$scratch/host-skills"
+init_out="$(npx --no-install construct init --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' --skills-dir="$skills_dir" 2>&1)" \
+  || fail "construct init exited non-zero" "$init_out"
+printf '%s\n' "$init_out"
+expect_contains "init" "$init_out" "Initialized Construct project"
+[ -f "$project/.construct/project.json" ] || fail "init wrote no project.json"
+[ -f "$project/.construct/constitution.json" ] || fail "init wrote no constitution.json"
+[ -f "$project/.construct/sources.json" ] || fail "init wrote no sources.json"
+[ -f "$project/.construct/registry.lock.json" ] || fail "init wrote no registry.lock.json"
+[ -f "$project/.construct/state/construct.sqlite" ] || fail "the spine did not create its database"
+[ "$(ls "$project/.construct/state" | wc -l | tr -d ' ')" = "1" ] || fail "more than one file under .construct/state"
+[ -f "$skills_dir/construct/SKILL.md" ] || fail "init did not plant the operational skill" "$init_out"
+cmp -s "$skills_dir/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
+  || fail "the planted operational skill is not byte-identical to the shipped one"
+grep -q '^\.construct/state/$' "$project/.gitignore" || fail "init did not ignore .construct/state/"
+[ ! -e "$XDG_DATA_HOME/construct" ] || fail "init created a per-user data directory; project truth must stay in the project"
+
+echo "== status and doctor =="
+status_out="$(npx --no-install construct status 2>&1)" || fail "status exited non-zero" "$status_out"
+printf '%s\n' "$status_out"
+expect_contains "status" "$status_out" "setup: confirmed"
+doctor_out="$(npx --no-install construct doctor 2>&1)" || fail "doctor exited non-zero" "$doctor_out"
+printf '%s\n' "$doctor_out"
+expect_contains "doctor" "$doctor_out" "doctor: healthy"
+status_json="$(npx --no-install construct status --json)" || fail "status --json exited non-zero"
+node -e 'const r=JSON.parse(process.argv[1]); if (r.onboarding.state!=="confirmed") process.exit(1)' "$status_json" || fail "status --json did not report confirmed onboarding" "$status_json"
+
+echo "== configuration is explained =="
+explain_out="$(npx --no-install construct config explain locale)" || fail "config explain exited non-zero"
+expect_contains "config explain" "$explain_out" "built-in default"
+npx --no-install construct config set review.cadence weekly >/dev/null || fail "config set exited non-zero"
+get_out="$(npx --no-install construct config get review.cadence)"
+[ "$get_out" = "weekly" ] || fail "config get read back \"$get_out\", expected weekly"
+
+echo "== a directory source is declared, read, and re-read unchanged =="
+add_out="$(npx --no-install construct source add repo --kind=directory --purpose='the project files' --locator="$project" --authority=authoritative --authoritative-for=code_component 2>&1)" \
+  || fail "source add exited non-zero" "$add_out"
+refresh1="$(npx --no-install construct source refresh repo 2>&1)" || fail "source refresh exited non-zero" "$refresh1"
+expect_contains "source refresh" "$refresh1" "changed"
+refresh2="$(npx --no-install construct source refresh repo 2>&1)" || fail "second source refresh exited non-zero" "$refresh2"
+expect_contains "second source refresh" "$refresh2" "unchanged"
+list_out="$(npx --no-install construct source list)" || fail "source list exited non-zero"
+expect_contains "source list" "$list_out" "reachable"
+
+echo "== the packaged install carries the skills =="
+skills_list="$(npx --no-install construct skill list 2>&1)" || fail "skill list exited non-zero" "$skills_list"
+expect_contains "skill list" "$skills_list" "investigative-research"
+install_out="$(npx --no-install construct skill install investigative-research --dir="$skills_dir" 2>&1)" || fail "skill install exited non-zero" "$install_out"
+cmp -s "$skills_dir/investigative-research/SKILL.md" "$repo_root/skills/investigative-research/SKILL.md" \
+  || fail "the planted skill is not byte-identical to the one this repository ships"
+verify_out="$(npx --no-install construct skill verify --dir="$skills_dir" 2>&1)" || fail "skill verify exited non-zero" "$verify_out"
+expect_contains "skill verify" "$verify_out" "investigative-research: current"
+
+echo "== a database the CLI cannot open =="
 if [ "$(id -u)" -eq 0 ]; then
   echo "   skipped: running as root, chmod would not bind"
 else
-  closed="$scratch/closed"
-  mkdir -p "$closed"
-  chmod 500 "$closed"
-  trap 'chmod 700 "$closed" 2>/dev/null; rm -rf "$scratch"' EXIT
-
+  chmod 000 "$project/.construct/state/construct.sqlite"
   set +e
-  closed_doctor="$(XDG_DATA_HOME="$closed" npx --no-install construct doctor 2>&1)"
-  closed_doctor_status=$?
-  closed_outcome="$(XDG_DATA_HOME="$closed" npx --no-install construct outcome 'ship a thing' 2>&1)"
-  closed_outcome_status=$?
+  closed_status="$(npx --no-install construct status 2>&1)"
+  closed_code=$?
   set -e
-
-  [ "$closed_doctor_status" -ne 0 ] || fail "doctor exited 0 on a store it cannot open" "$closed_doctor"
-  expect_contains "construct doctor" "$closed_doctor" "FAIL store"
-  expect_contains "construct doctor" "$closed_doctor" "permission denied"
-
-  [ "$closed_outcome_status" -ne 0 ] || fail "outcome exited 0 with no store" "$closed_outcome"
-  expect_contains "construct outcome" "$closed_outcome" "cannot open the store at"
-  case "$closed_outcome" in
-    *"    at "*) fail "a permissions problem printed a stack trace" "$closed_outcome" ;;
-    *node:sqlite*) fail "the error named node:sqlite at the user" "$closed_outcome" ;;
+  chmod 600 "$project/.construct/state/construct.sqlite"
+  [ "$closed_code" -ne 0 ] || fail "status exited 0 on a database it cannot open" "$closed_status"
+  case "$closed_status" in
+    *"    at "*) fail "a permissions problem printed a stack trace" "$closed_status" ;;
   esac
-
-  chmod 700 "$closed"
-  trap 'rm -rf "$scratch"' EXIT
 fi
 
-# Cleanup (predecessor archaeology) is gone from the product. Prove the
-# packaged CLI refuses the retired verb rather than silently doing nothing.
-echo "== retired cleanup verb is refused =="
+echo "== reset previews, then removes exactly what it named =="
+preview="$(npx --no-install construct reset 2>&1)" || fail "reset preview exited non-zero" "$preview"
+expect_contains "reset" "$preview" "Nothing was removed"
+[ -f "$project/.construct/state/construct.sqlite" ] || fail "a reset preview removed the database"
+confirm_out="$(npx --no-install construct reset --confirm 2>&1)" || fail "reset --confirm exited non-zero" "$confirm_out"
+expect_contains "reset --confirm" "$confirm_out" "Fresh state"
+[ -f "$project/.construct/project.json" ] || fail "reset removed the committed project file without being asked to"
+
+echo "== unknown and retired commands are refused =="
 set +e
-retired_out="$(npx --no-install construct cleanup --dry-run 2>&1)"
+retired_out="$(npx --no-install construct outcome 'ship a thing' 2>&1)"
 retired_status=$?
 set -e
-printf '%s\n' "$retired_out"
-[ "$retired_status" -ne 0 ] || fail "construct cleanup should be unknown after the clean-slate cut"
-expect_contains "cleanup" "$retired_out" "unknown"
+[ "$retired_status" -ne 0 ] || fail "construct outcome should be unknown after the cutover"
+expect_contains "outcome" "$retired_out" "unknown command"
 
 echo "smoke-packaged-install: pass"

@@ -19,7 +19,7 @@ Construct is available in this project.
 - Use Construct MCP tools directly from this session.
 - Stay in the current interactive agent environment unless the user or project
   explicitly requests another executor.
-- Do not invoke `construct work`.
+- Do not run Construct’s command line from this session to do the work; the work happens here, through Construct’s tools.
 - Do not start another general-purpose coding agent merely because it is
   installed or authenticated.
 - Use Construct to record and coordinate the user's requested outcome.
