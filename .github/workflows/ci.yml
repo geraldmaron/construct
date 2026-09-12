@@ -23,47 +23,42 @@ permissions:
   contents: read
 
 jobs:
-  lint-typecheck:
+  # Two jobs, not four. lint-typecheck, test, sterile-readonly-home and
+  # packaged-install-smoke each got a fresh runner and its own `npm ci`, and GitHub bills
+  # every job rounded up to a whole minute — four jobs doing ~4.5 minutes of real work
+  # billed 6. The split kept below is the one that means something: the ordinary gate, and
+  # the two checks that assert something about the ENVIRONMENT the suite runs in. Those two
+  # stay together and apart from the ordinary run so a sterile-HOME failure is never
+  # confused with a plain test failure.
+  gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.18'
+          # Every job here runs `npm ci` against the same lockfile. Without this
+          # each one resolved and downloaded the tree from cold, five times a run.
+          cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22.18'
-      - run: npm ci
       - run: npm test
 
-  sterile-readonly-home:
+  environment-isolation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.18'
+          # Every job here runs `npm ci` against the same lockfile. Without this
+          # each one resolved and downloaded the tree from cold, five times a run.
+          cache: npm
       - run: npm ci
       - name: run suite with HOME pointed at a read-only directory
         run: |
           mkdir -p /tmp/readonly-home
           chmod 555 /tmp/readonly-home
           HOME=/tmp/readonly-home npm test
-
-  packaged-install-smoke:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22.18'
-      - run: npm ci
       - run: npm run smoke
