@@ -23,7 +23,8 @@ files, committed) and one runtime database under `.construct/state/`
 proposal naming where it came from, then asks three questions: what this
 project is to you, what result matters most now, and what must not be
 violated. Answer them in your agent session, or pass `--scale`, `--outcome`,
-and `--constraint` to init. The operational `construct` skill is planted into
+and `--constraint` to init. Proposed statements wait in `construct inbox`
+until you confirm or retire them. The operational `construct` skill is planted into
 the host you are in (`--client=<host>` or `--skills-dir=<dir>` chooses).
 
 After that, talk in your agent session. The command line is for setup,

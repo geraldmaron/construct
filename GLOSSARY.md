@@ -19,7 +19,10 @@ synonym appears in `src/`; a retired word surfacing there is a drift signal.
 | run | — | One execution of a workflow under an idempotency key, moving through preflight, blocked, ready, running, waiting for decision, succeeded, failed, cancelled. |
 | step | — | One unit of a run, leased under a fencing token, gated by the policy engine, validated on submission, retried by policy. |
 | deliverable | — | What a run produces, with a trust state of draft, validated, challenged, accepted, final, or rejected. Distinct from an artifact, which the project already owns. |
-| decision | — | A call that belongs to the person: a decision, an approval, a clarification, or a block, raised by a run and answered in the host. |
+| inbox item | — | A call that belongs to the person: an approval, a clarification, or a block, raised by a run or by setup and answered in the host. Distinct from a project decision. |
+| project decision | — | A governing choice remembered for the project: a statement plus a live graph entity that can supersede, contradict, and have dependents. |
+| decision | — | Two different things: an inbox item (waiting on the person) or a project decision (a live governing choice). Prefer the specific term. |
+| observation | — | Something noticed that persists without becoming work. Distinct from a work item and from executable backlog. |
 | grant | — | A scoped permission: action tier, target system and resource, workflow, executor, budget, window, revocation. A break-glass grant adds a reason, a short expiry, and an exact target. |
 | action tier | — | observe, draft, project_write, external_write, destructive, licensed_judgment. The last is never Construct's. |
 | trigger | — | A standing outcome's definition: schedule or event, adapter, overlap policy, permission boundary, delivery. Fired by an external clock under an idempotency key. |

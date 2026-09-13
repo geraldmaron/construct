@@ -45,6 +45,8 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `kind` | `decision`, `constraint`, `principle`, `note`, `outcome`, `non_goal`, `success_measure`, `unknown` | yes | What kind of thing this is. |
 | `text` | string | yes | The person’s wording, as they said it. |
+| `assumptions` | array | no | Load-bearing assumptions this governing record rests on. |
+| `replaces` | string | no | The id of a statement this one supersedes. |
 
 ### `workflows`
 
@@ -119,7 +121,7 @@ Surface: both. Reads only: yes.
 
 ### `inbox`
 
-Decisions waiting on the person. The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.
+Decisions waiting on the person. The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.
 
 Surface: interactive. Reads only: yes.
 

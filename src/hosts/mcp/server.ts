@@ -32,7 +32,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
           serverInfo: { name: SERVER_NAMES[surface], version: ctx.version },
           instructions:
             surface === 'interactive'
-              ? 'Construct is bound to this project. Call bootstrap once, then: answer plain questions without recording anything; use remember when the person asks to keep something; use classify_request and start_outcome for work; do each step here with claim_work and submit_work; surface inbox decisions in conversation and relay them with decide.'
+              ? 'Construct is bound to this project. Call bootstrap once. Answer plain questions without recording anything. Remember when asked to keep something. For work, classify_request then start_outcome and do each step here with claim_work and submit_work. Challenge consequential work when claim_work says so; do not wait to be asked. Do not invent unknown facts. Proposed statements wait in inbox; relay confirm or retire with decide. Observations are not work. Stay in this session; do not spawn another agent.'
               : 'This is Construct’s runner surface: claim pre-resolved steps, keep leases alive, submit output. It cannot change configuration, grant permissions, decide for the person, or finalize its own output.',
         });
       case 'notifications/initialized':

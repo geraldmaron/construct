@@ -1,5 +1,28 @@
 # Changelog
 
+## 3.0.0-alpha.25 — 2026-09-12
+
+- **Professional judgment on the ordinary path.** An ordinary managed
+  outcome with architectural or irreversible consequences is challenged
+  before it can be accepted; a private helper rename is not. Challenge is
+  selected from the request and the project's scale, not by naming a
+  review. `classify_request` and `claim_work` say so in ordinary language.
+- **Governing memory stays live.** Remembering a decision, constraint,
+  principle, outcome, or invariant mints a graph entity. A later
+  authoritative invalidation of an assumption, a supersession, or a
+  contradiction is visible as drift and blocks treating the work as a
+  trusted finished outcome. Notes stay notes.
+- **Backlog admission.** Observations persist without becoming work. A work
+  item needs a parent outcome, requirement, decision, or metric. Proposed
+  statements after init are in the inbox and can be confirmed or retired.
+  Session close files executable remaining work, not every discovery.
+- **Skill qualification follows the digest.** Qualification is computed
+  from the existing lock and evals. The same version with different bytes
+  does not inherit a prior quality claim. Untrusted skill or source text
+  cannot raise Construct's authority.
+- **A step's declared outputs are the contract** its validators check.
+  An imperative to produce a deliverable classifies as work to manage.
+
 ## 3.0.0-alpha.24 — 2026-09-02
 
 - **Skill routing by the person's words.** `classify_request` now ranks

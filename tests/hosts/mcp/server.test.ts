@@ -18,7 +18,9 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
     const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { serverInfo: { name: string }; protocolVersion: string; instructions: string } };
     assert.equal(init.result.serverInfo.name, 'construct');
     assert.match(init.result.protocolVersion, /^\d{4}-\d{2}-\d{2}$/);
-    assert.match(init.result.instructions, /answer plain questions without recording/);
+    assert.match(init.result.instructions, /answer plain questions without recording/i);
+    assert.match(init.result.instructions, /Challenge consequential work/);
+    assert.match(init.result.instructions, /Observations are not work/);
     assert.equal(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' }), null);
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string; inputSchema: { additionalProperties: boolean } }[] } };
     assert.deepEqual(list.result.tools.map((t) => t.name), toolsFor('interactive').map((t) => t.name));

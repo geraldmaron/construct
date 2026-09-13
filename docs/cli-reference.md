@@ -353,19 +353,19 @@ Reads only: no.
 
 ### `construct inbox list`
 
-decisions, approvals, and questions waiting on you
+approvals, questions, and proposed statements waiting on you
 
 Reads only: yes.
 
 ### `construct inbox show <id>`
 
-one decision with everything behind it
+one inbox item with everything behind it
 
 Reads only: yes.
 
 ### `construct inbox resolve <id> <answer>`
 
-answer a decision; an approval covers exactly the action asked about
+answer a decision or confirm or retire a proposal
 
 Reads only: no.
 
