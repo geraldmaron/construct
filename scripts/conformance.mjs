@@ -14,8 +14,11 @@
  *
  * `--live` additionally drives an installed host's own CLI with a prompt and
  * asks it to call bootstrap; that needs the host's credential and cannot run
- * from inside a host session. A missing host, a missing credential, or a
- * nested session is reported as untested with the reason, never as a pass.
+ * from inside a host session. OpenCode live also needs `--model=provider/model`
+ * because the conformance scratch HOME has no tool-capable default. Optional
+ * `--host=<id>` limits the run to one host. A missing host, a missing
+ * credential, a missing model where required, or a nested session is
+ * reported as untested with the reason, never as a pass.
  *
  * Output: a markdown table on stdout and a JSON report at --out (default
  * .tmp-conformance/report.json, ignored by git).
@@ -31,15 +34,24 @@ const LAUNCHER = join(ROOT, 'bin', 'construct.mjs');
 const live = process.argv.includes('--live');
 const outArg = process.argv.find((a) => a.startsWith('--out='));
 const OUT = outArg ? outArg.slice('--out='.length) : join(ROOT, '.tmp-conformance', 'report.json');
+const modelArg = process.argv.find((a) => a.startsWith('--model='));
+const MODEL = modelArg ? modelArg.slice('--model='.length) : null;
+const hostArg = process.argv.find((a) => a.startsWith('--host='));
+const HOST_FILTER = hostArg ? hostArg.slice('--host='.length) : null;
 
-const HOSTS = [
+const ALL_HOSTS = [
   { id: 'claude-code', binary: 'claude', skillsDir: (home) => join(home, '.claude', 'skills'), wire: true, liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json', '--max-turns', '3'] },
   { id: 'cursor', binary: 'cursor-agent', skillsDir: (home) => join(home, '.cursor', 'skills'), wire: true, liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json'] },
   { id: 'vscode', binary: 'code', skillsDir: null, wire: true, liveArgs: null },
-  { id: 'opencode', binary: 'opencode', skillsDir: (home) => join(home, '.config', 'opencode', 'skills'), wire: true, liveArgs: (prompt) => ['run', prompt] },
+  { id: 'opencode', binary: 'opencode', skillsDir: (home) => join(home, '.config', 'opencode', 'skills'), wire: true, liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
   { id: 'codex', binary: 'codex', skillsDir: (home) => join(home, '.agents', 'skills'), wire: false, liveArgs: (prompt) => ['exec', prompt] },
   { id: 'bob', binary: 'bob', skillsDir: (home) => join(home, '.bob', 'skills'), wire: false, liveArgs: null },
 ];
+const HOSTS = HOST_FILTER ? ALL_HOSTS.filter((h) => h.id === HOST_FILTER) : ALL_HOSTS;
+if (HOST_FILTER && HOSTS.length === 0) {
+  process.stderr.write(`conformance: unknown --host=${HOST_FILTER}\n`);
+  process.exit(2);
+}
 
 function which(binary) {
   const r = spawnSync('sh', ['-lc', `command -v ${binary}`], { encoding: 'utf8' });
@@ -191,9 +203,10 @@ async function checkHost(host) {
       if (!binary) record(host.id, 'live host call', 'untested', `${host.binary} is not installed`);
       else if (process.env.CLAUDECODE || process.env.CLAUDE_CODE_ENTRYPOINT || process.env.CURSOR_AGENT) record(host.id, 'live host call', 'untested', 'this conformance run is itself inside a host session; a live call would nest a host');
       else if (!host.liveArgs) record(host.id, 'live host call', 'untested', `${host.id} has no scripted prompt entry point`);
+      else if (host.needsModel && !MODEL) record(host.id, 'live host call', 'untested', `${host.id} live needs --model=provider/model; the scratch HOME has no tool-capable default`);
       else {
         const prompt = 'Call the construct MCP tool named bootstrap and reply with the value of its "next" field only.';
-        const r = spawnSync(binary, host.liveArgs(prompt), { cwd: project, env: { ...process.env, HOME: home }, encoding: 'utf8', timeout: 180000 });
+        const r = spawnSync(binary, host.liveArgs(prompt, MODEL), { cwd: project, env: { ...process.env, HOME: home }, encoding: 'utf8', timeout: 180000 });
         record(host.id, 'live host call', r.status === 0 && /listen|question|decision|run/.test(r.stdout) ? 'passed' : 'failed', r.status === 0 ? r.stdout.slice(0, 200).replace(/\s+/g, ' ') : (r.stderr || r.error?.message || 'no output').slice(0, 200));
       }
     } else {
@@ -215,5 +228,5 @@ process.stdout.write(['| Host | Check | Status | Detail |', '|---|---|---|---|',
 const summary = { passed: checks.filter((c) => c.status === 'passed').length, failed: checks.filter((c) => c.status === 'failed').length, untested: checks.filter((c) => c.status === 'untested').length };
 process.stdout.write(`\nconformance: ${summary.passed} passed, ${summary.failed} failed, ${summary.untested} untested${live ? ' (live)' : ' (static; pass --live for host calls)'}\n`);
 mkdirSync(join(OUT, '..'), { recursive: true });
-writeFileSync(OUT, `${JSON.stringify({ at: new Date().toISOString(), live, cwdHome: homedir(), summary, checks }, null, 2)}\n`);
+writeFileSync(OUT, `${JSON.stringify({ at: new Date().toISOString(), live, model: MODEL, hostFilter: HOST_FILTER, cwdHome: homedir(), summary, checks }, null, 2)}\n`);
 process.exit(summary.failed > 0 ? 1 : 0);

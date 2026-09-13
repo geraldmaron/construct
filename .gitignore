@@ -31,3 +31,5 @@ tmp/
 
 # Conformance reports are recorded in the changelog, not committed as files
 .tmp-conformance/
+# Construct runtime state
+.construct/state/
