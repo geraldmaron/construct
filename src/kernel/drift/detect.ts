@@ -13,6 +13,7 @@ import { listEntities, listRelations, listClaims, staleClaims, type Entity, type
 import { listSources, latestSnapshot, isAuthoritativeFor } from '../state/sources.ts';
 import { listStatements } from '../state/profile.ts';
 import { addDriftFinding, listDriftFindings, type DriftFinding, type DriftKind } from '../state/drift.ts';
+import { implicationsOf } from '../state/admission.ts';
 
 export interface DetectedDrift {
   readonly kind: DriftKind;
@@ -195,16 +196,41 @@ export function detectDrift(store: StateStore, options: DetectOptions): Detected
     }
   }
   for (const work of entities.filter((e) => e.kind === 'work_item' && active(e))) {
-    if (outgoing(relations, work.id, 'contributes_to').length + outgoing(relations, work.id, 'implements').length === 0) {
+    const parentActive = (r: Relation, end: 'from' | 'to') => {
+      const e = ids.get(end === 'to' ? r.toId : r.fromId);
+      return !!e && active(e);
+    };
+    const reasons =
+      outgoing(relations, work.id, 'contributes_to').filter((r) => parentActive(r, 'to')).length +
+      outgoing(relations, work.id, 'implements').filter((r) => parentActive(r, 'to')).length +
+      incoming(relations, work.id, 'governs').filter((r) => parentActive(r, 'from')).length;
+    if (reasons === 0) {
       out.push({
         kind: 'work_without_goal',
-        summary: `work item "${work.name}" is linked to no initiative or requirement`,
+        summary: `work item "${work.name}" is linked to no active outcome, requirement, or decision`,
         evidence: [{ ref: `entity:${work.id}`, note: work.name }],
         affected: [`entity:${work.id}`],
         confidence: 0.85,
-        repairPath: 'link it to the initiative or requirement it serves, or ask whether it should be stopped',
+        repairPath: 'link it to the initiative, requirement, or decision it serves, or ask whether it should be stopped',
       });
     }
+  }
+  for (const claim of listClaims(store, { claimType: 'assumption' }).filter((c) => c.status === 'superseded')) {
+    const subject = ids.get(claim.subjectId);
+    if (!subject || !active(subject)) continue;
+    const dependents = implicationsOf(store, subject.id);
+    out.push({
+      kind: 'stale_dependent_claims',
+      summary: `${subject.kind} "${subject.name}" rests on a superseded assumption: ${claim.statement}`,
+      evidence: [
+        { ref: `claim:${claim.id}`, note: claim.statement },
+        { ref: `entity:${subject.id}`, note: subject.name },
+        ...dependents.slice(0, 5).map((d) => ({ ref: `entity:${d.id}`, note: `${d.kind} ${d.name}` })),
+      ],
+      affected: [`entity:${subject.id}`, ...dependents.map((d) => `entity:${d.id}`)],
+      confidence: 0.9,
+      repairPath: `reconsider "${subject.name}" and its dependents, or record a successor decision`,
+    });
   }
   const byOwner = new Map<string, { initiative: Entity; allocation: number; claimId: string }[]>();
   for (const init of initiatives) {

@@ -19,7 +19,9 @@ import { createRun, getRun, getRunByKey, listActiveRuns, transitionRun, type Wor
 import { addStep, claimStep, completeStep, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
 import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
-import { addStatement, type Statement, type StatementKind } from '../state/profile.ts';
+import { addStatement, getProfile, getStatement, type Statement, type StatementKind } from '../state/profile.ts';
+import { addClaim, getEntity, listRelations } from '../state/graph.ts';
+import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
 import type { HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
@@ -29,6 +31,7 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
+import { assessConsequence, judgmentRequired, type Judgment } from './consequence.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
 
@@ -69,6 +72,7 @@ export interface Preflight {
   readonly approvalsAhead: readonly string[];
   readonly reasons: readonly { readonly code: string; readonly stepId: string | null; readonly message: string; readonly remedy: string }[];
   readonly flags: readonly string[];
+  readonly judgment: Judgment;
 }
 
 export interface WorkPacket {
@@ -78,6 +82,7 @@ export interface WorkPacket {
   readonly skill: { readonly id: string; readonly version: string; readonly digest: string; readonly body: () => string | null; readonly file: (relativePath: string) => Uint8Array | null } | null;
   readonly inputs: Readonly<Record<string, unknown>>;
   readonly instructions: readonly string[];
+  readonly judgment: Judgment;
 }
 
 export interface ClaimOutcome {
@@ -111,7 +116,13 @@ export interface RunView {
 
 export interface WorkflowService {
   classify(text: string): Classification;
-  remember(input: { readonly kind: StatementKind; readonly text: string; readonly by: string }): Statement;
+  remember(input: {
+    readonly kind: StatementKind;
+    readonly text: string;
+    readonly by: string;
+    readonly assumptions?: readonly string[];
+    readonly replaces?: string;
+  }): Statement;
   preflight(workflowId: string, input: Readonly<Record<string, unknown>>): { readonly resolution: Resolution; readonly preflight: Preflight };
   start(input: StartInput): StartResult;
   claimNext(input: { readonly runId?: string; readonly owner?: string; readonly leaseMs?: number }): ClaimOutcome;
@@ -158,18 +169,31 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
-  function preflightOf(resolution: Resolution): Preflight {
+  function judgmentFor(input: Readonly<Record<string, unknown>>): Judgment {
+    return assessConsequence(input, getProfile(store)?.scale ?? null);
+  }
+
+  function judgmentOf(run: WorkflowRun): Judgment {
+    const p = run.preflight as Preflight | null;
+    if (p?.judgment) return p.judgment;
+    return judgmentFor((run.input ?? {}) as Record<string, unknown>);
+  }
+
+  function preflightOf(resolution: Resolution, input: Readonly<Record<string, unknown>> = {}): Preflight {
     const flags: string[] = [];
     if (resolution.workflow?.manifest.onStaleData === 'proceed_flagged') {
       const stale = deps.sources().filter((s) => s.freshness === 'stale');
       if (stale.length) flags.push(`proceeding with stale sources: ${stale.map((s) => s.id).join(', ')}`);
     }
+    const judgment = judgmentFor(input);
+    if (judgment.challenge) flags.push(`challenge required: ${judgment.why}`);
     return {
       status: resolution.status,
       summary: resolution.summary,
       approvalsAhead: resolution.plan.filter((p) => p.needsApproval).map((p) => p.step.id),
       reasons: resolution.reasons.map((r) => ({ code: r.code, stepId: r.stepId, message: r.message, remedy: r.remedy })),
       flags,
+      judgment,
     };
   }
 
@@ -254,20 +278,42 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   return {
     classify: classifyInteraction,
 
-    remember({ kind, text, by }) {
+    remember({ kind, text, by, assumptions = [], replaces }) {
       const at = deps.now();
       const decision = evaluateAction(store, { tier: 'project_write', targetSystem: 'construct-state', targetResource: 'statements', operation: `remember: ${text}`, executorId: deps.host.executorId }, policyContext('remember', at));
       if (!decision.allowed) throw new Error(decision.denial.missing);
       return store.transaction(() => {
         const statement = addStatement(store, { id: deps.nextId('st'), kind, text, provenance: 'user', at });
-        appendActivity(store, { at, kind: 'remember', actor: by, payload: { statementId: statement.id, kind } });
+        const entity = isGoverningKind(kind) ? bindGoverningStatement(store, statement, at, deps.nextId) : null;
+        if (replaces) {
+          if (!getStatement(store, replaces)) throw new Error(`no statement ${replaces} to replace`);
+          supersedeGoverning(store, { olderId: replaces, successor: statement, at, nextId: deps.nextId });
+        }
+        if (entity) {
+          for (const assumption of assumptions) {
+            if (!assumption.trim()) continue;
+            addClaim(store, {
+              id: deps.nextId('claim'),
+              subjectId: entity.id,
+              claimType: 'assumption',
+              statement: assumption,
+              provenance: 'user',
+              authority: 'authoritative',
+              sensitivity: 'internal',
+              confidence: 1,
+              observedAt: at,
+              at,
+            });
+          }
+        }
+        appendActivity(store, { at, kind: 'remember', actor: by, payload: { statementId: statement.id, kind, entityId: entity?.id ?? null } });
         return statement;
       });
     },
 
     preflight(workflowId, input) {
       const resolution = resolutionFor(workflowId, input, deps.host.executorId);
-      return { resolution, preflight: preflightOf(resolution) };
+      return { resolution, preflight: preflightOf(resolution, input) };
     },
 
     start(input) {
@@ -288,13 +334,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const existingByKey = getRunByKey(store, key);
       if (existingByKey) {
         const resolution = resolutionFor(m.id, input.input, executorId);
-        return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution) };
+        return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution, input.input) };
       }
       if (m.concurrency === 'single') {
         const active = listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked');
         if (active) {
           const resolution = resolutionFor(m.id, input.input, executorId);
-          return { run: active, created: false, resolution, preflight: { ...preflightOf(resolution), flags: [...preflightOf(resolution).flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
+          const pf = preflightOf(resolution, input.input);
+          return { run: active, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
         }
       }
       let resolution = resolutionFor(m.id, input.input, executorId);
@@ -310,7 +357,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           };
         }
       }
-      const preflight = preflightOf(resolution);
+      const preflight = preflightOf(resolution, input.input);
       return store.transaction(() => {
         if (resolution.status === 'runnable' || resolution.status === 'outdated') {
           for (const stale of listActiveRuns(store).filter((r) => r.workflowId === m.id && r.state === 'blocked')) {
@@ -395,12 +442,20 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const step = manifestSteps.find((s) => s.id === leased.stepId)!;
         const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
         const registered = bound ? deps.skills.get(bound.id) : null;
+        const judgment = judgmentOf(fresh);
+        const workflowChallenge = deps.workflows.get(fresh.workflowId)?.manifest.deliverable.challenge ?? false;
+        const needsChallenge = judgmentRequired(workflowChallenge, judgment);
         const instructions = [
           `Step ${step.id}: ${step.title}.`,
           step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
           step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
           step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
           'Cite every source you read as evidence entries.',
+          needsChallenge
+            ? 'This work has architectural or irreversible consequences. Apply adversarial review before representing the result as strongly validated. Do not wait for the person to ask.'
+            : judgment.depth === 'light'
+              ? 'This is low-stakes reversible work. Do not run architecture ceremony or a full adversarial review.'
+              : '',
         ].filter(Boolean);
         return {
           packet: {
@@ -412,6 +467,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
               : null,
             inputs: inputsFor(fresh, step),
             instructions,
+            judgment,
           },
           waitingOn: null,
         };
@@ -457,10 +513,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence } });
         let deliverable: Deliverable | null = null;
         const isLast = workflow.manifest.steps[workflow.manifest.steps.length - 1]!.id === step.id;
+        const judgment = judgmentOf(run);
+        const needsChallenge = judgmentRequired(workflow.manifest.deliverable.challenge, judgment);
         if (isLast || step.challenge) {
           deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0) {
-            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation } });
+            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge } });
           }
         }
         return { step: done, validation, run: advance(run.id, at), deliverable };
@@ -547,9 +605,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             if (listSteps(store, runId).length === 0) {
               resolution.plan.forEach((bound, i) => addStep(store, { id: deps.nextId('step'), runId, stepId: bound.step.id, ordinal: i, permissionTier: bound.step.tier, maxAttempts: bound.step.retry.maxAttempts, input: { skill: bound.skill, needsApproval: bound.needsApproval }, ready: roots.has(bound.step.id), at }));
             }
-            return transitionRun(store, { id: runId, to: 'ready', at, reason: 'resolved on resume', preflight: preflightOf(resolution) });
+            return transitionRun(store, { id: runId, to: 'ready', at, reason: 'resolved on resume', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>) });
           }
-          return transitionRun(store, { id: runId, to: 'preflight', at, reason: 'still blocked', preflight: preflightOf(resolution) }) && transitionRun(store, { id: runId, to: 'blocked', at, reason: resolution.summary });
+          return transitionRun(store, { id: runId, to: 'preflight', at, reason: 'still blocked', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>) }) && transitionRun(store, { id: runId, to: 'blocked', at, reason: resolution.summary });
         }
         appendActivity(store, { at, kind: 'run.resumed', runId, payload: { from: run.state } });
         return advance(runId, at);
@@ -567,6 +625,27 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const current = getDeliverable(store, deliverableId);
       if (!current) throw new Error(`no deliverable ${deliverableId}`);
       if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
+      const run = getRun(store, current.runId);
+      if (run && (to === 'accepted' || to === 'final')) {
+        const workflow = deps.workflows.get(run.workflowId);
+        const needsChallenge = judgmentRequired(workflow?.manifest.deliverable.challenge ?? false, judgmentOf(run));
+        if (needsChallenge && to === 'accepted' && current.trustState !== 'challenged') {
+          throw new Error('this outcome has architectural or irreversible consequences; it is accepted only after a recorded challenge');
+        }
+        const openContradiction = listRelations(store, { kind: 'contradicts' }).some((r) => {
+          if (r.status === 'retired') return false;
+          const target = getEntity(store, r.toId);
+          return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
+        });
+        if (openContradiction) {
+          throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
+        }
+        const body = current.body && typeof current.body === 'object' ? (current.body as Record<string, unknown>) : null;
+        if (body) {
+          const facts = runValidators(['no_placeholder_facts'], { output: body, expectedKeys: [], evidence: [], resolvableRefs: new Set() });
+          if (facts[0] && !facts[0].ok) throw new Error(facts[0].problems.join('; '));
+        }
+      }
       return setTrustState(store, { id: deliverableId, trustState: to, actor: by, at, verification, reason });
     },
   };
