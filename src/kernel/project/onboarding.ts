@@ -23,6 +23,7 @@ import {
 } from '../state/profile.ts';
 import { addEntity, addRelation, findEntityByRef, listRelations } from '../state/graph.ts';
 import { listOpenDecisions, raiseDecision, resolveDecision, type Decision } from '../state/decisions.ts';
+import { bindGoverningStatement } from '../state/admission.ts';
 import type { Constitution } from './constitution.ts';
 import type { DiscoveryDraft, OnboardingQuestion } from './discovery.ts';
 
@@ -176,12 +177,79 @@ export function applyOnboardingAnswers(
 }
 
 /** A person accepts one proposed statement; nothing else can. */
-export function acceptProposal(store: StateStore, statementId: string, at: string): Statement {
-  return setStatementStatus(store, { id: statementId, status: 'confirmed', at });
+export function acceptProposal(
+  store: StateStore,
+  statementId: string,
+  at: string,
+  nextId: (prefix: string) => string,
+): Statement {
+  const statement = setStatementStatus(store, { id: statementId, status: 'confirmed', at });
+  bindGoverningStatement(store, statement, at, nextId);
+  return statement;
 }
 
 export function declineProposal(store: StateStore, statementId: string, at: string): Statement {
   return setStatementStatus(store, { id: statementId, status: 'retired', at });
+}
+
+export type InboxRow =
+  | {
+      readonly kind: 'inbox_item';
+      readonly id: string;
+      readonly decisionKind: Decision['kind'];
+      readonly question: string;
+      readonly options: readonly string[] | null;
+      readonly raisedAt: string;
+      readonly run: string | null;
+    }
+  | {
+      readonly kind: 'proposal';
+      readonly id: string;
+      readonly statementKind: Statement['kind'];
+      readonly question: string;
+      readonly options: readonly ['confirm', 'retire'];
+      readonly text: string;
+      readonly raisedAt: string;
+      readonly run: null;
+    };
+
+/** Decisions waiting on the person, plus proposed statements they have not reviewed. */
+export function listInbox(store: StateStore, runId?: string): InboxRow[] {
+  const decisions: InboxRow[] = listOpenDecisions(store, runId).map((d) => ({
+    kind: 'inbox_item',
+    id: d.id,
+    decisionKind: d.kind,
+    question: d.question,
+    options: d.options,
+    raisedAt: d.raisedAt,
+    run: d.runId,
+  }));
+  if (runId) return decisions;
+  const proposals: InboxRow[] = listStatements(store, { status: 'proposed' }).map((s) => ({
+    kind: 'proposal',
+    id: s.id,
+    statementKind: s.kind,
+    question: `Accept this ${s.kind.replace(/_/g, ' ')}?`,
+    options: ['confirm', 'retire'] as const,
+    text: s.text,
+    raisedAt: s.createdAt,
+    run: null,
+  }));
+  return [...decisions, ...proposals];
+}
+
+export function resolveProposal(
+  store: StateStore,
+  input: { readonly id: string; readonly resolution: string; readonly at: string; readonly nextId: (prefix: string) => string },
+): Statement {
+  const answer = input.resolution.trim().toLowerCase();
+  if (answer === 'confirm' || answer === 'accept' || answer === 'yes') {
+    return acceptProposal(store, input.id, input.at, input.nextId);
+  }
+  if (answer === 'retire' || answer === 'decline' || answer === 'no') {
+    return declineProposal(store, input.id, input.at);
+  }
+  throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
 }
 
 export interface OnboardingStatus {
@@ -196,7 +264,13 @@ export function onboardingStatus(store: StateStore): OnboardingStatus {
   return {
     state: profile?.onboardingState ?? 'incomplete',
     missing: missingProfileFields(profile),
-    openQuestions: listOpenDecisions(store).filter((d) => d.kind === 'clarification' && isOnboardingSubject(d.subject, 'scale') || isOnboardingSubject(d.subject, 'primary_outcome') || isOnboardingSubject(d.subject, 'protected_constraints')),
+    openQuestions: listOpenDecisions(store).filter(
+      (d) =>
+        d.kind === 'clarification' &&
+        (isOnboardingSubject(d.subject, 'scale') ||
+          isOnboardingSubject(d.subject, 'primary_outcome') ||
+          isOnboardingSubject(d.subject, 'protected_constraints')),
+    ),
     proposalsAwaitingReview: listStatements(store, { status: 'proposed' }).length,
   };
 }

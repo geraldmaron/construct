@@ -35,7 +35,7 @@ bd close <id>         # Complete work
 
 **MANDATORY WORKFLOW:**
 
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
+1. **File executable remaining work** - Observations, risks, and candidates persist as notes or observations, not as Beads. Only admitted, bounded execution with a parent outcome or defect becomes a Bead.
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
