@@ -53,7 +53,7 @@ export function validateBehaviorFile(raw: unknown, path: string): BehaviorFile {
 }
 
 const FORBIDS_INVENTION =
-  /do not invent|leave it unknown|unknowns stay unknown|ask, do not invent|do not mark a placeholder verified/i;
+  /do not invent|never invent|leave it unknown|unknowns stay unknown|ask, do not invent|do not mark a placeholder verified/i;
 
 export interface BehaviorEvalInput {
   readonly skill: RegisteredSkill;

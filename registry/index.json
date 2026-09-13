@@ -27,14 +27,14 @@
       "title": "Decision framing"
     },
     "experience-design": {
-      "version": "1.0.0",
-      "digest": "sha256:01984530a76059f4c3893aec4087b3520037b75fd2e59f0b800f31d7f4b656cd",
+      "version": "1.0.1",
+      "digest": "sha256:45d589440a87309faf5fc1feea401d025751cc5ee105077429cdd0bb1dfe043c",
       "category": "professional",
       "title": "Experience design"
     },
     "governance-risk": {
-      "version": "1.0.0",
-      "digest": "sha256:481e8e4dfa571fe937c43e54920a9ce91bf171bc7deb4df942fda85a7c572a6a",
+      "version": "1.0.1",
+      "digest": "sha256:1811a102ba8e9401b9668bef440c30b34ecbd1f3fd2c8e84ba0fb648171ee11f",
       "category": "professional",
       "title": "Governance and risk"
     },
@@ -51,20 +51,20 @@
       "title": "Investigative research"
     },
     "operations-reliability": {
-      "version": "1.0.0",
-      "digest": "sha256:da73fa958d830e7acdea4c0a485bf403619604d805703b6edcd5780bf801dbca",
+      "version": "1.0.1",
+      "digest": "sha256:3d49f56a15d153ee03fc9827823ec8bb7305d5eb51c92fe908b68d29ec987e94",
       "category": "professional",
       "title": "Operations and reliability"
     },
     "product-management": {
-      "version": "1.0.0",
-      "digest": "sha256:de40a475f22b9dfd7a28361d5d4a7e0fc321a4dca20bbc671d03a14632372d2d",
+      "version": "1.0.1",
+      "digest": "sha256:29676a6a5a21db396f8ee2f7ad60087b50ba72a899517f77027925d226860c78",
       "category": "professional",
       "title": "Product management"
     },
     "program-delivery": {
-      "version": "1.0.0",
-      "digest": "sha256:f96742351a2b3aa93132711a7e87278725b154424292848c3ae8cfbff777bcd7",
+      "version": "1.0.1",
+      "digest": "sha256:f74f69699592d695a78b9900e3e00f5418952cad1d1eaf13a7ff27c4408e7464",
       "category": "professional",
       "title": "Program delivery"
     },
@@ -75,26 +75,26 @@
       "title": "Requirements structuring"
     },
     "security-privacy": {
-      "version": "1.0.0",
-      "digest": "sha256:962bcae63d5272b8570c61ab795c8904bb899568e966fbda271c6ef045f0e274",
+      "version": "1.0.1",
+      "digest": "sha256:8731d1bdbc046eff94a2ba1aedcecaa503353aa687b597941b00e9313b1c7714",
       "category": "professional",
       "title": "Security and privacy"
     },
     "software-engineering": {
-      "version": "1.0.0",
-      "digest": "sha256:5509a72f05fb343eadb59183c42f5f1ebaa4253184cfc7c11faaac809e90b998",
+      "version": "1.0.1",
+      "digest": "sha256:e34bdfb5178e59311f1ae5ad718ce47701821256bbefc564c27243f3a5d9038b",
       "category": "professional",
       "title": "Software engineering"
     },
     "strategy-research": {
-      "version": "1.0.0",
-      "digest": "sha256:c36ccd0d894a7983e75ef7e7a52be8408fae09ecfb01995fb2114b45f4215d4f",
+      "version": "1.0.1",
+      "digest": "sha256:79e8d18b1657a94381778c991d1a802ced26acd4d8e190cf78686c5dd2b52498",
       "category": "professional",
       "title": "Strategy and research"
     },
     "system-architecture": {
-      "version": "1.0.0",
-      "digest": "sha256:591a50e0f006ae14ab4593f44e2fb9bd346a6031df29eefff084c4e53f42185a",
+      "version": "1.0.1",
+      "digest": "sha256:6f30a850e7c724f6ada51b2b6b135b61430f1a8e212dd69c66a45ddacf80b318",
       "category": "professional",
       "title": "System architecture"
     },

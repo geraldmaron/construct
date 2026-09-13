@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "strategy-research",
   "title": "Strategy and research",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
@@ -95,6 +95,7 @@
   "observedOn": [],
   "evals": [
     "evals/activation.json",
-    "evals/fixtures.json"
+    "evals/fixtures.json",
+    "evals/behavior.json"
   ]
 }

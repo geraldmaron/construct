@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "software-engineering",
   "title": "Software engineering",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [
@@ -22,7 +22,9 @@
     "style and naming on a diff, formatting, lint noise",
     "a question about how a language feature or library works",
     "a design or architecture question with no implementation in view",
-    "which architecture should the platform have"
+    "which architecture should the platform have",
+    "remember a decision or take a note with no change in view",
+    "thanks, ok, a plain acknowledgment with nothing to review"
   ],
   "interactionClasses": [
     "manage",
@@ -82,6 +84,7 @@
   "observedOn": [],
   "evals": [
     "evals/activation.json",
-    "evals/fixtures.json"
+    "evals/fixtures.json",
+    "evals/behavior.json"
   ]
 }
