@@ -4,7 +4,7 @@
   "evals": [],
   "id": "managed-outcome",
   "title": "Managed outcome with verification",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance.",
   "activation": [
     "do this piece of work and hand it back",
@@ -89,7 +89,8 @@
       ],
       "validators": [
         "citations_present",
-        "deliverable_complete"
+        "deliverable_complete",
+        "no_placeholder_facts"
       ],
       "loadBearing": true,
       "challenge": false,

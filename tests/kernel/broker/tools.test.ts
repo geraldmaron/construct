@@ -49,6 +49,9 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
     const cls = (await call(fx, 'classify_request', { text: 'What does this function do?' })) as { class: string };
     assert.equal(cls.class, 'answer');
+    const rewrite = (await call(fx, 'classify_request', { text: 'I want you to rewrite the X document, naming it Y.' })) as { class: string; suggestedWorkflows: { id: string }[]; judgment: { challenge: boolean } };
+    assert.equal(rewrite.class, 'manage');
+    assert.ok(rewrite.suggestedWorkflows.length > 0);
     assert.equal(listActivity(fx.broker.store).length, 0, 'classifying records nothing');
     const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as { remembered: { id: string }; nothingElseCreated: boolean };
     assert.equal(remembered.nothingElseCreated, true);

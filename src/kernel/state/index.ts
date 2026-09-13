@@ -10,6 +10,7 @@ export { appendActivity, listActivity, type ActivityEvent } from './activity.ts'
 export * from './profile.ts';
 export * from './sources.ts';
 export * from './graph.ts';
+export * from './admission.ts';
 export * from './staff.ts';
 export * from './resolved.ts';
 export * from './runs.ts';

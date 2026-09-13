@@ -8,20 +8,22 @@
  * own output. Descriptions speak plainly; plumbing stays out of them.
  */
 
-import { listStatements, getProfile, missingProfileFields } from '../state/profile.ts';
+import { listStatements, getProfile, getStatement, missingProfileFields } from '../state/profile.ts';
 import { listActiveRuns, listRuns } from '../state/runs.ts';
 import { getDecision, listOpenDecisions } from '../state/decisions.ts';
-import { applyOnboardingAnswers, type OnboardingAnswers } from '../project/onboarding.ts';
+import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, type OnboardingAnswers } from '../project/onboarding.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
 import { listEntities, listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
 import { getStep } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
+import { qualifySkill } from '../registry/qualification.ts';
 import { emptyLock } from '../project/lock.ts';
 import { constitutionCompleteness } from '../project/constitution.ts';
 import { TIER_POLICIES } from '../policy/lattice.ts';
 import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
 import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
+import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
@@ -48,6 +50,7 @@ const bootstrap = define<Record<string, never>, unknown>({
     const profile = getProfile(ctx.store);
     const open = listOpenDecisions(ctx.store);
     const onboarding = open.filter((d) => d.kind === 'clarification' && d.subject && typeof d.subject === 'object' && 'onboarding' in (d.subject as object));
+    const proposals = onboardingStatus(ctx.store).proposalsAwaitingReview;
     const runs = listActiveRuns(ctx.store);
     const sources = ctx.sources.summary(at);
     const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list());
@@ -56,13 +59,14 @@ const bootstrap = define<Record<string, never>, unknown>({
     const missing = missingProfileFields(profile);
     const next =
       onboarding.length > 0 ? `answer the ${String(onboarding.length)} setup question(s) with decide`
+      : proposals > 0 ? `review ${String(proposals)} proposed statement(s) with inbox`
       : open.length > 0 ? `${String(open.length)} decision(s) wait on the person; show them with inbox`
       : runs.length > 0 ? `${String(runs.length)} run(s) active; continue with claim_work`
       : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
       construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null } },
       session: { host: ctx.host.hostId, session: ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
-      profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })) },
+      profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })), proposals },
       sources,
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
       capabilities: { available: [...ctx.host.available].sort(), maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
@@ -110,7 +114,7 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
       case 'sources':
         return filter(ctx.sources.list(), (s) => `${s.id} ${s.kind} ${s.purpose}`).map((s) => ctx.sources.status(s.id, ctx.now()));
       case 'decisions':
-        return filter(listOpenDecisions(ctx.store), (d) => `${d.id} ${d.question}`);
+        return filter(listInbox(ctx.store), (d) => `${d.id} ${d.question} ${d.kind}`);
       case 'runs':
         return filter(listRuns(ctx.store, { limit: 200 }), (r) => `${r.id} ${r.workflowId} ${r.state}`);
       case 'entities':
@@ -129,7 +133,7 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
   },
 });
 
-const remember = define<{ kind: StatementKind; text: string }, unknown>({
+const remember = define<{ kind: StatementKind; text: string; assumptions: string[]; replaces?: string }, unknown>({
   name: 'remember',
   title: 'Remember one thing',
   description: 'Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff.',
@@ -140,13 +144,16 @@ const remember = define<{ kind: StatementKind; text: string }, unknown>({
     properties: {
       kind: { type: 'string', description: 'What kind of thing this is.', enum: ['decision', 'constraint', 'principle', 'note', 'outcome', 'non_goal', 'success_measure', 'unknown'] },
       text: { type: 'string', description: 'The person’s wording, as they said it.' },
+      assumptions: { type: 'array', description: 'Load-bearing assumptions this governing record rests on.', items: { type: 'string' } },
+      replaces: { type: 'string', description: 'The id of a statement this one supersedes.' },
     },
     required: ['kind', 'text'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')! };
+    const assumptions = list(raw, 'assumptions').filter((a): a is string => typeof a === 'string' && a.trim().length > 0);
+    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')!, assumptions, replaces: str(raw, 'replaces', { optional: true }) };
   },
   run(ctx, input) {
     const s = ctx.workflow.remember({ ...input, by: ctx.actor });
@@ -176,19 +183,31 @@ const classify = define<{ text: string }, unknown>({
         return { id: r.id, band: r.band, title: s.manifest.title, category: s.manifest.category, useWhen: s.description, nearestExample: r.nearestExample, workflows: workflowsUsing(ctx, r.id) };
       });
     const likely = skills.filter((s) => s.band === 'likely');
-    const workflowsForClass = ctx.workflows.list().filter((w) => w.manifest.interactionClass === c.class || (c.class === 'maintain' && w.manifest.triggers.includes('schedule')));
+    let classification = { ...c };
+    if (c.class === 'answer' && c.confidence < 0.8 && likely.some((s) => s.workflows.length > 0)) {
+      classification = {
+        class: 'manage',
+        confidence: Math.max(c.confidence, 0.6),
+        why: 'the request matches professional work even though it did not open with a work verb',
+        confirmBeforeProceeding: true,
+        rememberKind: null,
+      };
+    }
+    const workflowsForClass = ctx.workflows.list().filter((w) => w.manifest.interactionClass === classification.class || (classification.class === 'maintain' && w.manifest.triggers.includes('schedule')));
     const suggestedWorkflows = [...new Set([...likely.flatMap((s) => s.workflows), ...workflowsForClass.map((w) => w.manifest.id)])]
       .map((id) => ctx.workflows.get(id))
       .filter((w) => w !== null)
-      .filter((w) => c.class === 'answer' || c.class === 'remember' ? false : true)
+      .filter((w) => classification.class === 'answer' || classification.class === 'remember' ? false : true)
       .slice(0, 5)
       .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
+    const judgment = assessConsequence(text, getProfile(ctx.store)?.scale ?? null);
     const next =
-      c.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
-      : c.class === 'remember' ? 'call remember with the person’s wording'
+      classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
+      : classification.class === 'remember' ? 'call remember with the person’s wording'
       : likely.length === 0 ? 'no skill is a clear fit; answer, or ask one question about what the person wants produced'
+      : judgment.challenge ? 'read the likely skills in order; this work needs professional challenge before it is treated as strongly validated; then resolve the workflow that carries the skill'
       : 'read the likely skills in order and choose by their useWhen text, not by rank alone; ask one question only when two fit and the difference changes the work; then resolve the workflow that carries the skill';
-    return { ...c, next, skills, suggestedWorkflows };
+    return { ...classification, next, skills, suggestedWorkflows, judgment };
   },
 });
 
@@ -262,7 +281,16 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     if (!id) throw new Error('"id" is required for show');
     const s = ctx.skills.get(id);
     if (!s) throw new Error(`no skill "${id}"`);
-    return { ...s.manifest, origin: s.origin, digest: s.digest, files: s.files, body: includeBody ? ctx.skills.body(id) : undefined };
+    const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).find((r) => r.kind === 'skill' && r.id === id);
+    const body = ctx.skills.body(id);
+    return {
+      ...s.manifest,
+      origin: s.origin,
+      digest: s.digest,
+      files: s.files,
+      qualification: qualifySkill(s, lock, body),
+      body: includeBody ? body : undefined,
+    };
   },
 });
 
@@ -318,6 +346,7 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: includeSkillBody ? p.skill.body() : undefined } : null,
         inputs: p.inputs,
         instructions: p.instructions,
+        judgment: p.judgment,
       },
       waitingOn: null,
     };
@@ -389,7 +418,7 @@ const runStatus = define<{ runId: string }, unknown>({
 const inbox = define<{ runId?: string }, unknown>({
   name: 'inbox',
   title: 'Decisions waiting on the person',
-  description: 'The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.',
+  description: 'The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' } }, additionalProperties: false },
@@ -398,7 +427,7 @@ const inbox = define<{ runId?: string }, unknown>({
     return { runId: str(raw, 'runId', { optional: true }) };
   },
   run(ctx, { runId }) {
-    return listOpenDecisions(ctx.store, runId).map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options, raisedAt: d.raisedAt, run: d.runId }));
+    return listInbox(ctx.store, runId);
   },
 });
 
@@ -422,6 +451,12 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     // A setup question answered here is the same answer init would have taken
     // as a flag: it lands in the profile, and the question closes with it.
     const existing = getDecision(ctx.store, decisionId);
+    const proposed = existing ? null : getStatement(ctx.store, decisionId);
+    if (proposed?.status === 'proposed') {
+      const answer = Array.isArray(resolution) ? resolution.join(' ') : resolution;
+      const statement = resolveProposal(ctx.store, { id: decisionId, resolution: answer, at: ctx.now(), nextId: ctx.nextId });
+      return { decision: { id: statement.id, state: statement.status, resolvedBy: ctx.actor }, run: null, statement: { id: statement.id, kind: statement.kind, status: statement.status } };
+    }
     const onboarding = existing?.kind === 'clarification' && existing.state === 'open' ? onboardingAnswerFor(existing.subject, resolution) : null;
     if (onboarding) {
       const applied = applyOnboardingAnswers(ctx.store, { answers: onboarding, by: ctx.actor, at: ctx.now(), nextId: ctx.nextId });

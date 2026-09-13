@@ -43,6 +43,9 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   writeWorkflow(join(dirs.root, 'workflows'), 'sweep', workflowManifest('sweep', '1.0.0', [
     step('read', { capabilities: ['read_project_context'], sources: [{ kind: 'directory', freshness: 'fresh', required: true }], outputs: ['seen'] }),
   ], { triggers: ['schedule', 'manual'], onNoData: 'succeed_empty', onStaleData: 'block', concurrency: 'single', interactionClass: 'maintain', inputSchema: {}, requiredInputs: [] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'ship', workflowManifest('ship', '1.0.0', [
+    step('do', { outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
   const skills = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
   const workflows = createWorkflowRegistry({ builtinDir: join(dirs.root, 'workflows'), projectDir: null });
   const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;

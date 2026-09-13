@@ -218,3 +218,51 @@ test('project policy never: the project_write step asks instead of writing', () 
     fx.cleanup();
   }
 });
+
+test('architectural work is challenged without magic words; a helper rename is not', () => {
+  const fx = fixture();
+  try {
+    const arch = fx.service.start({ workflowId: 'ship', input: { request: 'Introduce a shared database for billing and identity' }, trigger: 'manual' });
+    assert.equal(arch.preflight.judgment.challenge, true);
+    const claimed = fx.service.claimNext({ runId: arch.run.id });
+    assert.match(claimed.packet!.instructions.join(' '), /adversarial review/);
+    const submitted = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'add postgres', findings: [] } });
+    assert.equal(submitted.deliverable?.trustState, 'validated');
+    assert.throws(
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      /recorded challenge/,
+    );
+    fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted' } });
+    const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' });
+    assert.equal(accepted.trustState, 'accepted');
+
+    const trivial = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    assert.equal(trivial.preflight.judgment.challenge, false);
+    const t1 = fx.service.claimNext({ runId: trivial.run.id });
+    assert.match(t1.packet!.instructions.join(' '), /low-stakes/);
+    const done = fx.service.submit({ leased: t1.packet!.leased, output: { summary: 'renamed', findings: [] } });
+    const trusted = fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald' });
+    assert.equal(trusted.trustState, 'accepted');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('unknowns stay unknown: a verified placeholder cannot be accepted', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper' }, trigger: 'manual' });
+    const c = fx.service.claimNext({ runId: started.run.id });
+    const invented = fx.service.submit({
+      leased: c.packet!.leased,
+      output: { summary: 'done', findings: ['lorem ipsum'], unknowns: ['the SLA'], verified: true, invented: true },
+    });
+    assert.equal(invented.deliverable?.trustState, 'validated');
+    assert.throws(
+      () => fx.service.promote({ deliverableId: invented.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      /invented/,
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
