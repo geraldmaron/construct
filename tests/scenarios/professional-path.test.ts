@@ -12,7 +12,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TOOLS } from '../../src/kernel/broker/tools.ts';
 import { record } from '../../src/kernel/broker/definition.ts';
-import { assessConsequence } from '../../src/kernel/workflow/consequence.ts';
 import { addStatement, upsertProfile } from '../../src/kernel/state/profile.ts';
 import { addClaim, addEntity, addRelation, findEntityByRef, listEntities, setEntityStatus, supersedeClaim } from '../../src/kernel/state/graph.ts';
 import { recordObservation, listObservations } from '../../src/kernel/state/drift.ts';
@@ -33,12 +32,15 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, unknown>;
 }
 
-test('1–2, 11–12: consequence, fresh session recovery, and scale', async () => {
+test('1–2, 11–12: consequence, fresh session recovery, and scale via classify_request', async () => {
   const fx = brokerFixture();
   try {
     const arch = (await call(fx, 'classify_request', { text: 'Introduce a shared database for billing and identity' })) as { class: string; judgment: { challenge: boolean } };
     assert.equal(arch.class, 'manage');
     assert.equal(arch.judgment.challenge, true, 'architecture is challenged without magic words');
+
+    const unusual = (await call(fx, 'classify_request', { text: 'Put identity and billing on the same postgres' })) as { judgment: { challenge: boolean } };
+    assert.equal(unusual.judgment.challenge, true, 'unusual phrasing of a shared store still challenges');
 
     const trivial = (await call(fx, 'classify_request', { text: 'Rename a private helper in the invoice formatter' })) as { judgment: { challenge: boolean; depth: string } };
     assert.equal(trivial.judgment.challenge, false);
@@ -58,9 +60,19 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale', async () 
     const entities = (await call(fx, 'project_context', { topic: 'entities', query: 'postgres' })) as unknown as { kind: string }[];
     assert.ok(entities.some((e) => e.kind === 'decision'), 'a fresh session recovers the governing decision');
 
+    const mid = 'Refactor the ownership of the billing reports';
     upsertProfile(fx.broker.store, { scale: 'side_project' }, fx.broker.now());
-    assert.equal(assessConsequence('Refactor the ownership of the billing reports', 'side_project').challenge, false);
-    assert.equal(assessConsequence('Refactor the ownership of the billing reports', 'multi_team').challenge, true);
+    const side = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    assert.equal(side.judgment.challenge, false, 'mid-weight stays light on a side project via classify_request');
+    assert.equal(side.judgment.depth, 'light');
+
+    upsertProfile(fx.broker.store, { scale: 'multi_team' }, fx.broker.now());
+    const team = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    assert.equal(team.judgment.challenge, true, 'same wording challenges after scale becomes multi_team');
+
+    upsertProfile(fx.broker.store, { scale: 'organization' }, fx.broker.now());
+    const org = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean } };
+    assert.equal(org.judgment.challenge, true);
   } finally {
     fx.cleanup();
   }

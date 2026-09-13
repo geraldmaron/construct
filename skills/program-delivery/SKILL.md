@@ -10,14 +10,14 @@ description: >-
   true to ship by then. Not for whether the strategy is right.
 license: Apache-2.0
 metadata:
-  version: 1.0.0
+  version: 1.0.1
   source: geraldmaron/construct
 ---
 # Program delivery
 
 A pack of obligations for plans and their truthfulness: which claims in a
 plan cannot all hold, what chain sets the date, what capacity really is,
-who owns each risk, and what a status update owes its reader. It decides
+who owns each risk, and what a status update owes its reader. Cite what a finding leans on and never invent an owner, a date, or a capacity figure. It decides
 neither what to build nor how.
 
 ## 1. Scope - and when to stand down

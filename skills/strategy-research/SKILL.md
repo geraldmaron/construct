@@ -10,7 +10,7 @@ description: >-
   on the right things. Velocity is never capacity.
 license: Apache-2.0
 metadata:
-  version: 1.0.0
+  version: 1.0.1
   source: geraldmaron/construct
 ---
 # Strategy and research

@@ -31,9 +31,18 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
-import { assessConsequence, judgmentRequired, type Judgment } from './consequence.ts';
+import { assessConsequence, judgmentRequired, type ConsequenceSignals, type Judgment } from './consequence.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
+import { createRouter } from '../skills/routing.ts';
+
+function activeContradictionCount(store: StateStore): number {
+  return listRelations(store, { kind: 'contradicts' }).filter((r) => {
+    if (r.status === 'retired') return false;
+    const target = getEntity(store, r.toId);
+    return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
+  }).length;
+}
 
 export interface WorkflowServiceDeps {
   readonly store: StateStore;
@@ -169,8 +178,30 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
-  function judgmentFor(input: Readonly<Record<string, unknown>>): Judgment {
-    return assessConsequence(input, getProfile(store)?.scale ?? null);
+  function likelySkillsFor(input: Readonly<Record<string, unknown>>): string[] {
+    const text = [input.request, input.target, input.scope, input.purpose, input.text]
+      .filter((x): x is string => typeof x === 'string')
+      .join(' ');
+    if (!text.trim()) return [];
+    const router = createRouter(
+      deps.skills.list().map((s) => ({
+        id: s.manifest.id,
+        description: s.description,
+        activation: s.manifest.activation,
+        standDown: s.manifest.standDown,
+        examples: s.examples,
+      })),
+    );
+    return router.route(text).filter((r) => r.band === 'likely').map((r) => r.id);
+  }
+
+  function judgmentFor(input: Readonly<Record<string, unknown>>, extra: ConsequenceSignals = {}): Judgment {
+    return assessConsequence(input, getProfile(store)?.scale ?? null, {
+      likelySkills: extra.likelySkills ?? likelySkillsFor(input),
+      workflowChallenge: extra.workflowChallenge,
+      stepTiers: extra.stepTiers,
+      activeContradictions: extra.activeContradictions ?? activeContradictionCount(store),
+    });
   }
 
   function judgmentOf(run: WorkflowRun): Judgment {
@@ -185,7 +216,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const stale = deps.sources().filter((s) => s.freshness === 'stale');
       if (stale.length) flags.push(`proceeding with stale sources: ${stale.map((s) => s.id).join(', ')}`);
     }
-    const judgment = judgmentFor(input);
+    const judgment = judgmentFor(input, {
+      workflowChallenge: resolution.workflow?.manifest.deliverable.challenge ?? false,
+      stepTiers: resolution.plan.map((p) => p.step.tier),
+    });
     if (judgment.challenge) flags.push(`challenge required: ${judgment.why}`);
     return {
       status: resolution.status,
@@ -632,12 +666,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (needsChallenge && to === 'accepted' && current.trustState !== 'challenged') {
           throw new Error('this outcome has architectural or irreversible consequences; it is accepted only after a recorded challenge');
         }
-        const openContradiction = listRelations(store, { kind: 'contradicts' }).some((r) => {
-          if (r.status === 'retired') return false;
-          const target = getEntity(store, r.toId);
-          return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
-        });
-        if (openContradiction) {
+        if (activeContradictionCount(store) > 0) {
           throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
         }
         const body = current.body && typeof current.body === 'object' ? (current.body as Record<string, unknown>) : null;

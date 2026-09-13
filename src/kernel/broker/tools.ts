@@ -13,7 +13,7 @@ import { listActiveRuns, listRuns } from '../state/runs.ts';
 import { getDecision, listOpenDecisions } from '../state/decisions.ts';
 import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, type OnboardingAnswers } from '../project/onboarding.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
-import { listEntities, listClaims, listRelations } from '../state/graph.ts';
+import { listEntities, listClaims, listRelations, getEntity } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
 import { getStep } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
@@ -200,7 +200,15 @@ const classify = define<{ text: string }, unknown>({
       .filter((w) => classification.class === 'answer' || classification.class === 'remember' ? false : true)
       .slice(0, 5)
       .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
-    const judgment = assessConsequence(text, getProfile(ctx.store)?.scale ?? null);
+    const activeContradictions = listRelations(ctx.store, { kind: 'contradicts' }).filter((r) => {
+      if (r.status === 'retired') return false;
+      const target = getEntity(ctx.store, r.toId);
+      return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
+    }).length;
+    const judgment = assessConsequence(text, getProfile(ctx.store)?.scale ?? null, {
+      likelySkills: likely.map((s) => s.id),
+      activeContradictions,
+    });
     const next =
       classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
       : classification.class === 'remember' ? 'call remember with the person’s wording'

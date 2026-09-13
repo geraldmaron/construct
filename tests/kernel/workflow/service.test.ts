@@ -237,6 +237,16 @@ test('architectural work is challenged without magic words; a helper rename is n
     const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' });
     assert.equal(accepted.trustState, 'accepted');
 
+    const unusual = fx.service.start({ workflowId: 'ship', input: { request: 'Put identity and billing on the same postgres' }, trigger: 'manual' });
+    assert.equal(unusual.preflight.judgment.challenge, true, 'unusual shared-store phrasing still requires challenge');
+    const u1 = fx.service.claimNext({ runId: unusual.run.id });
+    const uDone = fx.service.submit({ leased: u1.packet!.leased, output: { summary: 'split stores', findings: [] } });
+    assert.throws(
+      () => fx.service.promote({ deliverableId: uDone.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      /recorded challenge/,
+      'unusual phrasing cannot bypass promote to accepted',
+    );
+
     const trivial = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
     assert.equal(trivial.preflight.judgment.challenge, false);
     const t1 = fx.service.claimNext({ runId: trivial.run.id });
