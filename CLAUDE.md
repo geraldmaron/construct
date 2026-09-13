@@ -129,7 +129,7 @@ That line is the full gate; nothing is "done" without it. Pieces:
 
 - `npm test` — `node --test` over `tests/` (no framework dependency).
 - `npm run smoke` — `scripts/smoke-packaged-install.sh`: pack, install into a scratch project, run the spine as a consumer would.
-- `npm run probe:opencode -- --binary /opt/homebrew/bin/opencode --model <model> --tool-model <model>` — host conformance against the pinned OpenCode version. OpenCode reaches no subscription-backed model (the sourcing rule below), so both flags are required; the probe refuses rather than choosing one for you.
+- `npm run conformance` — static host conformance (no credentials). Add `--live` outside a host session; OpenCode live also needs `--model=provider/model` (use OpenRouter or another subscription-reachable provider, never local Ollama for development probes). Optional `--host=<id>` limits the run.
 - `scripts/hooks/repo-gate.mjs` runs the same checks at commit time and never blocks; treat its output as CI arriving early.
 
 ## Architecture Overview
