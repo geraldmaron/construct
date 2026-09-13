@@ -10,7 +10,8 @@ import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
 import { listGrants } from '../../../src/kernel/state/grants.ts';
 import { listAttempts } from '../../../src/kernel/state/steps.ts';
-import { fixture } from './support.ts';
+import { addEntity, addRelation } from '../../../src/kernel/state/graph.ts';
+import { fixture, T0 } from './support.ts';
 
 test('answer creates nothing; remember creates one confirmed statement, no run, no tasks', () => {
   const fx = fixture();
@@ -261,6 +262,38 @@ test('unknowns stay unknown: a verified placeholder cannot be accepted', () => {
     assert.throws(
       () => fx.service.promote({ deliverableId: invented.deliverable!.id, to: 'accepted', by: 'gerald' }),
       /invented/,
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an active contradiction blocks trusted finish', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const claimed = fx.service.claimNext({ runId: started.run.id });
+    const submitted = fx.service.submit({
+      leased: claimed.packet!.leased,
+      output: { summary: 'renamed', findings: [] },
+    });
+    assert.equal(submitted.deliverable?.trustState, 'validated');
+
+    addEntity(fx.store, { id: 'dec-gov', kind: 'decision', name: 'Keep one postgres', at: T0 });
+    addEntity(fx.store, { id: 'code-db', kind: 'code_component', name: 'db.ts', at: T0 });
+    addRelation(fx.store, {
+      id: 'rel-contra',
+      kind: 'contradicts',
+      fromId: 'code-db',
+      toId: 'dec-gov',
+      basis: 'observed',
+      confidence: 0.9,
+      at: T0,
+    });
+
+    assert.throws(
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      /active contradiction/,
     );
   } finally {
     fx.cleanup();
