@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "adversarial-review",
   "title": "Adversarial review",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
@@ -74,6 +74,7 @@
   "licensedReviewBoundaries": [],
   "observedOn": [],
   "evals": [
-    "evals/activation.json"
+    "evals/activation.json",
+    "evals/behavior.json"
   ]
 }
