@@ -3,14 +3,14 @@
   "formatVersion": 1,
   "skills": {
     "adversarial-review": {
-      "version": "0.3.0",
-      "digest": "sha256:142171edebe35ea863c1b65e38e3393bd947482e673116ed17f433a17cb46a17",
+      "version": "0.3.1",
+      "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
       "category": "method",
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "2.0.0",
-      "digest": "sha256:697bb12420288f4f5c8074823862f946c61adb4c69d1eeb98286e353315b5000",
+      "version": "2.1.0",
+      "digest": "sha256:8b079f8f2dc4f0c4861a72b1c058c0266463ed2024a05f440d03c6f4f5a3530b",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -149,8 +149,8 @@
       "interactionClass": "manage"
     },
     "managed-outcome": {
-      "version": "1.0.0",
-      "digest": "sha256:d5e8a794b48ed54804058a60a60083d1359cde8d1fa5a95834a91babc979a759",
+      "version": "1.1.0",
+      "digest": "sha256:05eca0ea4a10f50db243b8d96642892ab6a06b0fb69f598143d80a37d38568af",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },

@@ -9,8 +9,8 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 
 | Skill | Version | Category | Engages when | Stands down when |
 |---|---|---|---|---|
-| `adversarial-review` | 0.3.0 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
-| `construct` | 2.0.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
+| `adversarial-review` | 0.3.1 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
+| `construct` | 2.1.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
 | `context-mapping` | 0.4.0 | method | I just inherited this codebase | you already hold the map, know the system, just implement |
 | `decision-framing` | 0.3.0 | method | buy or build, which one | the decision is already made, help execute the rollout |
 | `experience-design` | 1.0.0 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
@@ -38,7 +38,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `experience-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a screen or flow for task success, accessibility against WCAG 2.2, error states, consistency with the declared design system, and the evidence behind behavior claims; findings are recorded and unsupported claims are handed over as assumptions. |
 | `governance-issue-spotting` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Spot compliance, legal, and finance issues in a change, contract, data flow, or money flow: locate and quote the governing texts, state exposures and how they may apply as research, list expected controls and existing evidence, and prepare the questions and material a qualified reviewer needs; never advice or sign-off. |
 | `implementation-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a change, migration, or dependency proposal for correctness evidence, scope, reversibility, dependencies, and operability, cited against the project's confirmed principles; findings are recorded and anything that belongs to another pack or to the person is handed over. |
-| `managed-outcome` | 1.0.0 | manage | manual | plan → do → verify → record | Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance. |
+| `managed-outcome` | 1.1.0 | manage | manual | plan → do → verify → record | Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance. |
 | `operational-readiness-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a service or change for objectives, signals, on-call, runbooks, rollback, and capacity against the project's risk posture, citing configs and records; anything without a way to notice failure and a way back is reported as not ready. |
 | `product-requirements-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person. |
 | `project-bootstrap` | 1.0.0 | manage | manual, schedule | discover → review → record | Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow. |
@@ -70,6 +70,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 - `citations_present`
 - `no_uncited_material_findings`
 - `deliverable_complete`
+- `no_placeholder_facts`
 - `constitution_shape`
 - `no_velocity_as_capacity`
 - `evidence_refs_resolve`

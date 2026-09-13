@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Construct in this session
@@ -78,6 +78,20 @@ After `start_outcome`, loop:
 Stay in this session. Do not spawn another agent or run another host
 because one is installed. Do not run Construct's command line to do the
 work; the command line is for setup and inspection by the person.
+
+When `claim_work` says the work needs professional challenge, run that
+challenge before treating the result as strongly validated. Do not wait
+for the person to name a review. A private helper rename is not that.
+
+When a required fact cannot be established, leave it unknown. Do not
+invent it, and do not mark a placeholder verified. An inference is not a
+confirmed finding.
+
+Inbox may include proposed statements from setup. Put each to the
+person and relay confirm or retire with `decide`.
+
+Observations, risks, and candidates are not work. Do not open a tracker
+item for a discovery. Work needs a parent outcome and a bounded result.
 
 ## Finish and hand back
 

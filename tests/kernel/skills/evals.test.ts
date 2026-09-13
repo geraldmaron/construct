@@ -74,13 +74,13 @@ test('a request that asks nothing of any skill ranks nothing as likely', () => {
 
 test('the operational skill teaches the session what the directive requires and forbids', () => {
   const body = skills.body('construct')!;
-  for (const must of ['bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'Do not spawn another agent', 'promote_deliverable', 'licensed', 'classify_request']) {
+  for (const must of ['bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'Do not spawn another agent', 'promote_deliverable', 'licensed', 'classify_request', 'professional challenge', 'placeholder verified', 'Observations, risks']) {
     assert.ok(body.includes(must), `operational skill mentions ${must}`);
   }
   assert.doesNotMatch(body, /construct work|role-serve|MCP server|JSON-RPC/);
   assert.match(body, /Do not run Construct.s command line to do the\s+work/);
   const manifest = skills.get('construct')!.manifest;
-  assert.equal(manifest.version, '2.0.0');
+  assert.equal(manifest.version, '2.1.0');
   assert.deepEqual(manifest.interactionClasses, ['answer', 'remember', 'manage', 'maintain']);
 });
 
