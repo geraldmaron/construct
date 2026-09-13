@@ -2,6 +2,10 @@
  * tests/scenarios/professional-path.test.ts — the twelve acceptance
  * scenarios for professional judgment on the ordinary path, exercised
  * through the broker and the kernel, not types alone.
+ *
+ * Scenario 5's trusted-finish block and scenario 6 (unknown stays unknown)
+ * are asserted in tests/kernel/workflow/service.test.ts; this file covers
+ * contradiction visibility and the other ordinary-path cases.
  */
 
 import { test } from 'node:test';
@@ -29,7 +33,7 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, unknown>;
 }
 
-test('1–2, 6, 11–12: consequence, unknown facts, fresh session, and scale', async () => {
+test('1–2, 11–12: consequence, fresh session recovery, and scale', async () => {
   const fx = brokerFixture();
   try {
     const arch = (await call(fx, 'classify_request', { text: 'Introduce a shared database for billing and identity' })) as { class: string; judgment: { challenge: boolean } };
@@ -62,7 +66,7 @@ test('1–2, 6, 11–12: consequence, unknown facts, fresh session, and scale', 
   }
 });
 
-test('3–8: invalidated assumptions, supersession, contradiction, admission, lost purpose', () => {
+test('3–5, 7–8: invalidated assumptions, supersession, contradiction visibility, admission, lost purpose', () => {
   const fx = freshStore();
   const at = '2026-09-12T12:00:00.000Z';
   const later = '2026-09-13T12:00:00.000Z';
