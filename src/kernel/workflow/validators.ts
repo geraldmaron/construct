@@ -48,12 +48,40 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  deliverable_complete: ({ output }) => {
+  deliverable_complete: ({ output, expectedKeys }) => {
     if (!isRecord(output)) return ['deliverable is not an object'];
+    // A step that declared outputs is complete when those keys are present.
+    // Requiring summary/findings of a plan step is how the flagship path
+    // became unblockable except by guessing undeclared keys.
+    if (expectedKeys.length > 0) {
+      const problems: string[] = [];
+      for (const k of expectedKeys) {
+        if (!(k in output)) problems.push(`output lacks "${k}"`);
+        else if (typeof output[k] === 'string' && output[k].trim() === '') problems.push(`"${k}" is empty`);
+      }
+      if ('assumptions' in output && Array.isArray(output.assumptions) === false) problems.push('assumptions must be a list');
+      return problems;
+    }
     const problems: string[] = [];
     if (typeof output.summary !== 'string' || output.summary.trim() === '') problems.push('deliverable has no summary');
     if (!('findings' in output) && !('body' in output) && !('decisions' in output)) problems.push('deliverable has no findings, body, or decisions');
-    if (isRecord(output) && Array.isArray(output.assumptions) === false && 'assumptions' in output) problems.push('assumptions must be a list');
+    if (Array.isArray(output.assumptions) === false && 'assumptions' in output) problems.push('assumptions must be a list');
+    return problems;
+  },
+  no_placeholder_facts: ({ output }) => {
+    if (!isRecord(output)) return [];
+    const problems: string[] = [];
+    if (output.invented === true || output.fabricated === true) {
+      problems.push('output presents invented facts as if they were found');
+    }
+    const unknowns = Array.isArray(output.unknowns) ? output.unknowns.filter((x) => typeof x === 'string' && x.trim() !== '') : [];
+    if (output.verified === true && unknowns.length > 0) {
+      problems.push('required facts are still unknown; the work is not verified');
+    }
+    const blob = JSON.stringify(output.findings ?? output.body ?? '');
+    if (output.verified === true && /\b(lorem ipsum|\[insert |TKTK|TODO: fill)\b/i.test(blob)) {
+      problems.push('a placeholder was presented as verified');
+    }
     return problems;
   },
   constitution_shape: ({ output }) => {
