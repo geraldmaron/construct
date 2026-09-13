@@ -115,7 +115,7 @@ run_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).run.id)' "$w
 run_show="$(npx --no-install construct run show "$run_id" 2>&1)" || fail "run show exited non-zero" "$run_show"
 expect_contains "run show" "$run_show" "step gather: ready"
 inbox_out="$(npx --no-install construct inbox list 2>&1)" || fail "inbox list exited non-zero" "$inbox_out"
-expect_contains "inbox list" "$inbox_out" "nothing waits on you"
+expect_contains "inbox list" "$inbox_out" "proposal"
 cancel_out="$(npx --no-install construct run cancel "$run_id" 2>&1)" || fail "run cancel exited non-zero" "$cancel_out"
 expect_contains "run cancel" "$cancel_out" "cancelled"
 

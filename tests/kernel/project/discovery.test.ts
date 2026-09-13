@@ -159,7 +159,7 @@ test('applying a draft proposes; only answers and acceptances confirm; the file 
       assert.ok(status.proposalsAwaitingReview > 0);
 
       const principle = listStatements(store, { kind: 'principle', status: 'proposed' })[0]!;
-      acceptProposal(store, principle.id, AT);
+      acceptProposal(store, principle.id, AT, nextId);
       const c = composeConstitution(store, emptyConstitution());
       assert.equal(c.scale, 'team');
       assert.equal(c.primaryOutcome, 'ship v1 to the first paying team');
