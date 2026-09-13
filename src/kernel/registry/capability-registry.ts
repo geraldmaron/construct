@@ -27,6 +27,7 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'citations_present',
   'no_uncited_material_findings',
   'deliverable_complete',
+  'no_placeholder_facts',
   'constitution_shape',
   'no_velocity_as_capacity',
   'evidence_refs_resolve',
