@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.1.0
+  version: 2.2.0
 ---
 
 # Construct in this session
@@ -65,6 +65,8 @@ After `start_outcome`, loop:
   Follow the step's instructions and the skill's method.
 - Read only the sources the step names. Every material finding cites what
   it rests on.
+- For the project’s bounded work ledger, call `work` (list, ready, show,
+  claim, complete). Do not use an external tracker.
 - `submit_work` with the step's declared outputs and your evidence
   entries. Validators run; a failure comes back with what to fix, and the
   step is retried if its policy allows. Say `noData` when there was nothing
@@ -90,8 +92,8 @@ confirmed finding.
 Inbox may include proposed statements from setup. Put each to the
 person and relay confirm or retire with `decide`.
 
-Observations, risks, and candidates are not work. Do not open a tracker
-item for a discovery. Work needs a parent outcome and a bounded result.
+Observations, risks, and candidates are not work. Do not open a work item
+for a discovery. Work needs a parent outcome and a bounded result.
 
 ## Finish and hand back
 

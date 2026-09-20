@@ -178,8 +178,9 @@ test('Scenario E: the strategy review needs confirmed source authority, states c
     assert.equal(proposed.status, 'proposed', 'ownership read from Jira is a proposal');
     setRelationStatus(s, 'own', 'confirmed');
     addClaim(s, { id: 'hc', subjectId: 'team', claimType: 'headcount', statement: '5 people', value: 5, sourceId: 'hris', provenance: 'source', authority: 'authoritative', sensitivity: 'confidential', confidence: 1, observedAt: at, at });
-    const context = (await call(fx, 'project_context', { topic: 'claims', query: 'headcount' })) as unknown as unknown[];
-    assert.equal(context.length, 1);
+    const context = (await call(fx, 'project_context', { topic: 'claims', query: 'headcount' })) as { items: unknown[]; total: number };
+    assert.equal(context.total, 1);
+    assert.equal(context.items.length, 1);
   } finally {
     fx.cleanup();
   }

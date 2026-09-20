@@ -25,13 +25,13 @@ Surface: interactive. Reads only: yes.
 
 ### `project_context`
 
-Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, or remembered statements. Ask for one topic at a time; pass a query to narrow. Never returns everything at once.
+Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, or work. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `work` | yes | What to read. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
@@ -174,6 +174,20 @@ Surface: interactive. Reads only: no.
 | `to` | `draft`, `validated`, `challenged`, `accepted`, `final`, `rejected` | yes | The trust state to move to. |
 | `reason` | string | no | Why, in the person’s words. |
 
+### `work`
+
+Native work. Query, claim, complete, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string.
+
+Surface: interactive. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `action` | `list`, `ready`, `show`, `add`, `claim`, `complete`, `reopen` | yes | list, ready, show, add, claim, complete, or reopen. |
+| `id` | string | no | Work id or a preserved legacy id. |
+| `title` | string | no | Title, for add. |
+| `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
+| `reason` | string | no | Required for reopen; optional for complete. |
+
 ## Headless surface
 
 ### `bootstrap`
@@ -242,3 +256,4 @@ Surface: headless. Reads only: no.
 - `staff`
 - `claim_work`
 - `classify_request`
+- `work`

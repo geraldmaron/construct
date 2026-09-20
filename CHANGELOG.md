@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased — native work cutover
+
+- **Native work ledger.** Bounded work lives in Construct state format 3.
+  `construct work` and the `work` tool query, claim, complete, and restore
+  it. An external tracker is not part of the operating contract.
+- **Discovery admits conventions, not just filenames.** ADR directories and
+  architecture documents become governing proposals with locator, span, and
+  content digest. Quoted examples are not constraints. Caps report
+  continuation.
+- **Verification and review fail closed.** Empty, null, failed, and
+  old-revision evidence cannot pass. Frozen run bindings block silent
+  definition drift.
+- **Source refresh admits observed items** with content digests distinct
+  from inventory fingerprints.
+
 ## 3.0.0-alpha.25 — 2026-09-12
 
 - **Professional judgment on the ordinary path.** An ordinary managed

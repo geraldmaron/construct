@@ -96,6 +96,15 @@ npx --no-install construct config set review.cadence weekly >/dev/null || fail "
 get_out="$(npx --no-install construct config get review.cadence)"
 [ "$get_out" = "weekly" ] || fail "config get read back \"$get_out\", expected weekly"
 
+echo "== native work from packaged bytes =="
+work_add="$(npx --no-install construct work add --kind=task --description='prove the packaged ledger' 'Packaged work item' 2>&1)" \
+  || fail "work add exited non-zero" "$work_add"
+expect_contains "work add" "$work_add" "created"
+work_list="$(npx --no-install construct work list --status=open 2>&1)" || fail "work list exited non-zero" "$work_list"
+expect_contains "work list" "$work_list" "Packaged work item"
+work_ready="$(npx --no-install construct work ready 2>&1)" || fail "work ready exited non-zero" "$work_ready"
+expect_contains "work ready" "$work_ready" "Packaged work item"
+
 echo "== a directory source is declared, read, and re-read unchanged =="
 add_out="$(npx --no-install construct source add repo --kind=directory --purpose='the project files' --locator="$project" --authority=authoritative --authoritative-for=code_component 2>&1)" \
   || fail "source add exited non-zero" "$add_out"
@@ -140,7 +149,7 @@ for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call
 const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confirmed', 'onboarding confirmed after decisions');
 const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
 const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
-const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.length === 1, 'one statement remembered');
+const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.items.length === 1, 'one statement remembered');
 const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
 const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
@@ -165,6 +174,7 @@ expect_contains "serve --describe" "$serve_out" "would serve the interactive sur
 mcp_out="$(printf '%s\n%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | npx --no-install construct serve --client=cursor 2>/dev/null)" || fail "serve over stdio exited non-zero" "$mcp_out"
 expect_contains "serve initialize" "$mcp_out" '"name":"construct"'
 expect_contains "serve tools/list" "$mcp_out" '"name":"bootstrap"'
+expect_contains "serve tools/list" "$mcp_out" '"name":"work"'
 
 echo "== the packaged install carries the skills =="
 skills_list="$(npx --no-install construct skill list 2>&1)" || fail "skill list exited non-zero" "$skills_list"

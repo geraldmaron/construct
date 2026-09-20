@@ -55,10 +55,11 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
 
     const boot = (await call(fx, 'bootstrap')) as { next: string; profile: { proposals: number } };
     assert.ok(typeof boot.next === 'string');
-    const statements = (await call(fx, 'project_context', { topic: 'statements', query: 'postgres' })) as unknown as { text: string }[];
-    assert.ok(statements.some((s) => s.text.includes('postgres')));
-    const entities = (await call(fx, 'project_context', { topic: 'entities', query: 'postgres' })) as unknown as { kind: string }[];
-    assert.ok(entities.some((e) => e.kind === 'decision'), 'a fresh session recovers the governing decision');
+    const statements = (await call(fx, 'project_context', { topic: 'statements', query: 'postgres' })) as { items: { text: string }[]; total: number; truncated: boolean };
+    assert.ok(statements.items.some((s) => s.text.includes('postgres')));
+    assert.equal(statements.truncated, false);
+    const entities = (await call(fx, 'project_context', { topic: 'entities', query: 'postgres' })) as { items: { kind: string }[] };
+    assert.ok(entities.items.some((e) => e.kind === 'decision'), 'a fresh session recovers the governing decision');
 
     const mid = 'Refactor the ownership of the billing reports';
     upsertProfile(fx.broker.store, { scale: 'side_project' }, fx.broker.now());

@@ -1,5 +1,5 @@
 /**
- * kernel/state/index.ts — Construct state format 2.
+ * kernel/state/index.ts — Construct state format 3.
  */
 
 export { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UNSUPPORTED_STATE_MESSAGE, UnsupportedStateError } from './format.ts';
@@ -20,3 +20,4 @@ export * from './decisions.ts';
 export * from './grants.ts';
 export * from './drift.ts';
 export * from './triggers.ts';
+export { V2_REQUIRED_TABLES, migrateV2ToV3 } from './migrate.ts';

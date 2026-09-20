@@ -317,6 +317,114 @@ print the cron line or CI job that fires a trigger
 
 Reads only: yes.
 
+## Work
+
+### `construct work list`
+
+query work items
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--status` | yes | filter by status |
+| `--kind` | yes | filter by kind |
+| `--query` | yes | filter by text or id |
+| `--limit` | yes | page size (default 50) |
+
+Reads only: yes.
+
+### `construct work show <id>`
+
+one work item, including legacy-id lookup
+
+Reads only: yes.
+
+### `construct work ready`
+
+work that can be claimed now
+
+Reads only: yes.
+
+### `construct work add <title>`
+
+create a work item
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--kind` | yes | outcome, task, defect, or plan (default task) |
+| `--description` | yes | body of the item |
+
+Reads only: no.
+
+### `construct work claim <id>`
+
+claim a ready item for this session
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--until` | yes | ISO timestamp when the claim expires |
+| `--revision` | yes | expected revision |
+
+Reads only: no.
+
+### `construct work release <id> <token>`
+
+release a claim
+
+Reads only: no.
+
+### `construct work complete <id>`
+
+complete claimed or owned work
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is complete |
+| `--token` | yes | claim token if held |
+
+Reads only: no.
+
+### `construct work reopen <id>`
+
+reopen completed or cancelled work with a reason
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is open again |
+
+Reads only: no.
+
+### `construct work cancel <id>`
+
+cancel work with a reason
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is cancelled |
+
+Reads only: no.
+
+### `construct work export <file>`
+
+write a versioned snapshot of work (not live state)
+
+Reads only: yes.
+
+### `construct work restore <file>`
+
+restore a snapshot; never restores grants or live leases
+
+Reads only: no.
+
+### `construct work import-legacy <file>`
+
+one-way import of a frozen tracker JSONL snapshot
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--dry-run` | no | report mapping without writing |
+
+Reads only: no.
+
 ## Runs
 
 ### `construct run list`

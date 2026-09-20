@@ -33,7 +33,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   writeSkill(join(dirs.root, 'skills'), 'reader', '1.0.0');
   writeWorkflow(join(dirs.root, 'workflows'), 'review', workflowManifest('review', '1.0.0', [
     step('gather', { skill: { id: 'reader', range: '^1.0.0' }, capabilities: ['read_project_context'], outputs: ['notes'], validators: ['citations_present'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
-    step('write', { needs: ['gather'], tier: 'draft', capabilities: ['model_review'], inputs: { notes: 'steps.gather.notes' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'], loadBearing: true, challenge: true }),
+    step('write', { needs: ['gather'], tier: 'draft', capabilities: ['model_review'], inputs: { notes: 'steps.gather.notes' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'], loadBearing: true, challenge: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
     step('record', { needs: ['write'], tier: 'project_write', capabilities: ['write_project_context'], inputs: { summary: 'steps.write.summary' }, outputs: ['recorded'], validators: ['schema'] }),
   ], { triggers: ['manual', 'schedule'], concurrency: 'single', dedupeKey: ['target'], deliverable: { kind: 'review', schema: 'review/v1', challenge: true } }));
   writeWorkflow(join(dirs.root, 'workflows'), 'apply', workflowManifest('apply', '1.0.0', [

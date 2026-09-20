@@ -25,6 +25,7 @@ import { workflowCommand, WORKFLOW_SPECS } from './workflow.ts';
 import { runCommand, RUN_SPECS } from './run.ts';
 import { inboxCommand, INBOX_SPECS } from './inbox.ts';
 import { staffCommand, STAFF_SPECS } from './staff.ts';
+import { workCommand, WORK_SPECS } from './work.ts';
 import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -49,6 +50,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...SOURCE_SPECS,
   ...SKILL_SPECS,
   ...WORKFLOW_SPECS,
+  ...WORK_SPECS,
   ...RUN_SPECS,
   ...INBOX_SPECS,
   ...STAFF_SPECS,
@@ -59,7 +61,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   HELP_SPEC,
 ]);
 
-export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
+export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Work', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
 
 const INTRO: readonly string[] = [
   'construct — a project-bound operating layer for the agent host you already use.',
@@ -147,6 +149,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return inboxCommand(verb!, args, ctx);
     case 'staff':
       return staffCommand(verb!, args, ctx);
+    case 'work':
+      return workCommand(verb!, args, ctx);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':

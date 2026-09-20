@@ -36,6 +36,9 @@ export interface SnapshotReport {
   /** Whether code that ran produced this, or a host relayed a claim about running. */
   readonly evidence: 'witnessed' | 'reported';
   readonly items?: readonly SnapshotItem[];
+  readonly inventoryDigest?: string;
+  readonly contentDigest?: string;
+  readonly coverage?: Readonly<Record<string, unknown>>;
 }
 
 export interface SnapshotItem {

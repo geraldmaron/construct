@@ -33,3 +33,5 @@ tmp/
 .tmp-conformance/
 # Construct runtime state
 .construct/state/
+# Protected recovery material (legacy tracker snapshots, work exports)
+.construct/recovery/

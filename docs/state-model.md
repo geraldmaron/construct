@@ -11,19 +11,19 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 |---|---|
 | `meta` | key, value |
 | `project_profile` | id, name, purpose, scale, lifecycle_stage, primary_outcome, risk_posture, review_cadence, onboarding_state, updated_at |
-| `statements` | id, kind, text, term, status, provenance, source_id, run_id, superseded_by, created_at, updated_at |
+| `statements` | id, kind, text, term, status, provenance, source_id, run_id, superseded_by, locator, span_json, excerpt, source_revision, extractor_version, content_digest, coverage_json, quoted, created_at, updated_at |
 | `sources` | id, kind, origin, purpose, locator, authority_level, freshness_hours, sensitivity, retention, can_read, can_write, identity_mapping_json, reachability, last_snapshot_id, status, created_at, updated_at, retired_at |
 | `source_authority` | source_id, claim_type, authoritative |
-| `source_snapshots` | id, source_id, digest, summary, evidence_ref, taken_at |
+| `source_snapshots` | id, source_id, digest, summary, evidence_ref, inventory_digest, content_digest, item_count, coverage_json, taken_at |
 | `entities` | id, kind, name, external_ref, attributes_json, status, created_at, updated_at |
 | `relations` | id, kind, from_id, to_id, basis, confidence, source_id, status, created_at |
-| `claims` | id, subject_id, claim_type, statement, value_json, source_id, provenance, authority, sensitivity, confidence, status, observed_at, fresh_until, superseded_by, created_at, updated_at |
+| `claims` | id, subject_id, claim_type, statement, value_json, source_id, provenance, authority, sensitivity, confidence, status, observed_at, fresh_until, superseded_by, locator, span_json, excerpt, source_revision, extractor_version, content_digest, valid_at, created_at, updated_at |
 | `staff_members` | id, name, title, mission, status, created_at, updated_at |
 | `staff_capabilities` | staff_id, capability |
 | `staff_skills` | staff_id, skill_id |
 | `resolved_skills` | skill_id, version, digest, origin, resolved_at |
 | `resolved_workflows` | workflow_id, version, digest, origin, resolved_at |
-| `workflow_runs` | id, workflow_id, workflow_version, interaction_class, state, trigger_kind, idempotency_key, executor_kind, executor_id, host_id, session_id, input_json, preflight_json, state_reason, created_at, updated_at, finished_at |
+| `workflow_runs` | id, workflow_id, workflow_version, interaction_class, state, trigger_kind, idempotency_key, executor_kind, executor_id, host_id, session_id, input_json, preflight_json, state_reason, created_at, updated_at, finished_at, invocation_id, work_identity, work_id, workflow_digest, bindings_json, cancel_requested |
 | `step_runs` | id, run_id, step_id, ordinal, permission_tier, state, attempts, max_attempts, lease_owner, lease_until, input_json, output_json, state_reason, created_at, updated_at, finished_at |
 | `step_attempts` | id, step_run_id, attempt, owner, started_at, ended_at, outcome, error_json |
 | `deliverables` | id, run_id, step_run_id, kind, body_json, trust_state, verification_json, created_at, updated_at |
@@ -35,6 +35,13 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 | `triggers` | id, workflow_id, kind, schedule_expression, timezone, event_name, adapter, enabled, overlap, max_tier, delivery_json, input_json, last_fired_at, next_due_at, created_at, updated_at |
 | `trigger_firings` | id, trigger_id, idempotency_key, fired_at, run_id, outcome, reason |
 | `activity_events` | id, at, kind, run_id, step_run_id, actor, payload_json |
+| `work_items` | id, kind, title, description, status, scope_json, premises_json, acceptance_json, risk_json, entity_id, parent_id, superseded_by, revision, claim_owner, claim_token, claim_until, created_at, updated_at, completed_at, reason |
+| `work_dependencies` | id, from_id, to_id, kind, created_at |
+| `work_events` | id, work_id, at, kind, actor, expected_revision, payload_json |
+| `work_legacy_ids` | legacy_id, work_id, source, created_at |
+| `work_runs` | work_id, run_id, role, created_at |
+| `reviews` | id, subject_kind, subject_id, subject_revision, method, reviewer, evidence_json, objections_json, dispositions_json, unresolved_json, status, created_at, updated_at |
+| `run_bindings` | run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, policy_digest, frozen_at |
 
 ## Lifecycles
 
@@ -58,7 +65,7 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 | `pending` | `ready`, `skipped`, `cancelled` |
 | `ready` | `leased`, `waiting_for_decision`, `skipped`, `cancelled` |
 | `leased` | `succeeded`, `failed`, `ready`, `waiting_for_decision`, `cancelled` |
-| `waiting_for_decision` | `ready`, `failed`, `cancelled` |
+| `waiting_for_decision` | `ready`, `failed`, `cancelled`, `skipped` |
 | `succeeded` | (terminal) |
 | `failed` | (terminal) |
 | `skipped` | (terminal) |

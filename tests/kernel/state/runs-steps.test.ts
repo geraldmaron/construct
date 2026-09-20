@@ -10,7 +10,7 @@ import {
   createRun, getRun, transitionRun, listActiveRuns, RUN_STATES, RUN_TRANSITIONS,
 } from '../../../src/kernel/state/runs.ts';
 import {
-  addStep, claimStep, completeStep, failStep, getStep, listAttempts, transitionStep,
+  addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, listAttempts, transitionStep,
   countStepsByState, StaleLeaseError, STEP_TRANSITIONS,
 } from '../../../src/kernel/state/steps.ts';
 import { IllegalTransitionError } from '../../../src/kernel/state/rows.ts';
@@ -116,6 +116,29 @@ test('steps are leased in order with a fencing token; a stale holder cannot sett
     // The next claim is the second step; the finished one is not re-leased.
     const next = claimStep(fx.store, { owner: 'w2', now: '2026-09-02T10:00:50.000Z', leaseUntil: '2026-09-02T10:02:00.000Z' });
     assert.equal(next?.stepId, 'review');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an expired lease with remaining attempts returns to ready; a spent budget fails', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    createRun(fx.store, { ...base, id: 'run-retry', idempotencyKey: 'k-retry', at: at() });
+    addStep(fx.store, { id: 's-retry', runId: 'run-retry', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 2, at: at() });
+    claimStep(fx.store, { owner: 'w1', now: '2026-09-02T10:00:00.000Z', leaseUntil: '2026-09-02T10:00:30.000Z' });
+    assert.equal(expireDeadLeases(fx.store, '2026-09-02T10:00:31.000Z'), 1);
+    assert.equal(getStep(fx.store, 's-retry')?.state, 'ready');
+    const again = claimStep(fx.store, { owner: 'w2', now: '2026-09-02T10:00:32.000Z', leaseUntil: '2026-09-02T10:01:00.000Z' });
+    assert.equal(again?.token, 2);
+
+    createRun(fx.store, { ...base, id: 'run-spent', idempotencyKey: 'k-spent', at: at() });
+    addStep(fx.store, { id: 's-spent', runId: 'run-spent', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 1, at: at() });
+    claimStep(fx.store, { owner: 'w1', now: '2026-09-02T10:00:00.000Z', leaseUntil: '2026-09-02T10:00:30.000Z', runId: 'run-spent' });
+    assert.equal(expireDeadLeases(fx.store, '2026-09-02T10:00:31.000Z', 'run-spent'), 1);
+    assert.equal(getStep(fx.store, 's-spent')?.state, 'failed');
+    assert.equal(claimStep(fx.store, { owner: 'w2', now: '2026-09-02T10:00:32.000Z', leaseUntil: '2026-09-02T10:01:00.000Z', runId: 'run-spent' }), null);
   } finally {
     fx.cleanup();
   }

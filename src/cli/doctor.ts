@@ -94,7 +94,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         const store = openStateStore(layout.dbPath);
         try {
           const profile = getProfile(store);
-          checks.push({ name: 'state', ok: true, detail: `format 2 at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          checks.push({ name: 'state', ok: true, detail: `format 3 at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
         } finally {
           store.close();
         }

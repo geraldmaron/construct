@@ -11,6 +11,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
+import { isCompleteV2, migrateV2ToV3 } from './migrate.ts';
 
 export interface StateStore {
   readonly db: DatabaseSync;
@@ -35,9 +36,8 @@ function readMeta(db: DatabaseSync, key: string): string | null {
 }
 
 /**
- * Anything other than "meta says construct-state, format 2, and every
- * required table exists" is refused. Old stores are recognized only by the
- * absence of that stamp; their contents are never read.
+ * Format 3 is current. A complete format-2 store is upgraded in place (one
+ * way). Anything else is refused unread.
  */
 function verifyFormat(db: DatabaseSync): void {
   const names = tableNames(db);
@@ -49,11 +49,22 @@ function verifyFormat(db: DatabaseSync): void {
   const version = versionRaw === null ? null : Number(versionRaw);
   const versionOrNull = version !== null && Number.isFinite(version) ? version : null;
 
-  if (format !== STATE_FORMAT_ID || versionOrNull !== STATE_FORMAT_VERSION) {
+  if (format !== STATE_FORMAT_ID) throw new UnsupportedStateError(format, versionOrNull);
+  if (versionOrNull === 2) {
+    if (!isCompleteV2(db)) throw new UnsupportedStateError(format, versionOrNull);
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      migrateV2ToV3(db);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  } else if (versionOrNull !== STATE_FORMAT_VERSION) {
     throw new UnsupportedStateError(format, versionOrNull);
   }
   for (const table of REQUIRED_TABLES) {
-    if (!names.has(table)) throw new UnsupportedStateError(format, versionOrNull);
+    if (!tableNames(db).has(table)) throw new UnsupportedStateError(format, STATE_FORMAT_VERSION);
   }
 }
 

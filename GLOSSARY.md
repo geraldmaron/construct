@@ -22,6 +22,7 @@ synonym appears in `src/`; a retired word surfacing there is a drift signal.
 | inbox item | — | A call that belongs to the person: an approval, a clarification, or a block, raised by a run or by setup and answered in the host. Distinct from a project decision. |
 | project decision | — | A governing choice remembered for the project: a statement plus a live graph entity that can supersede, contradict, and have dependents. |
 | decision | — | Two different things: an inbox item (waiting on the person) or a project decision (a live governing choice). Prefer the specific term. |
+| native work | — | Bounded work in the project ledger: query, ready, claim, complete, reopen, export, restore. Readiness is computed from scope, premises, blocking dependencies, and unresolved blockers. |
 | observation | — | Something noticed that persists without becoming work. Distinct from a work item and from executable backlog. |
 | grant | — | A scoped permission: action tier, target system and resource, workflow, executor, budget, window, revocation. A break-glass grant adds a reason, a short expiry, and an exact target. |
 | action tier | — | observe, draft, project_write, external_write, destructive, licensed_judgment. The last is never Construct's. |
@@ -30,7 +31,7 @@ synonym appears in `src/`; a retired word surfacing there is a drift signal.
 | lesson | ring | A proposed learning that walks proposed, checked, approved, admitted, and later superseded or invalidated. A run never admits one. |
 | staff member | — | A named holder of capabilities and skills for the project. |
 | host | harness | The agent runtime the person is in (Claude Code, Cursor, VS Code, OpenCode, Codex, Bob). Construct speaks to it over MCP and does the work there. |
-| interactive surface | — | The broker tools a person's session uses: bootstrap, classify, context, remember, workflows, skills, start, claim, submit, status, inbox, decide, sources, staff, promote. |
+| interactive surface | — | The broker tools a person's session uses: bootstrap, classify, context, remember, workflows, skills, start, claim, submit, status, inbox, decide, sources, staff, promote, work. |
 | headless surface | — | The broker tools a configured runner uses: bootstrap, claim step, heartbeat, submit, status. It cannot decide, grant, remember, start, or finalize. |
 | classifier | namer | The rule that reads an ordinary-language request as answer, remember, manage, or maintain, and says when to confirm before choosing the bigger one. |
 | lockfile | — | `registry.lock.json`: the resolved skill and workflow versions, digests, and origins this project runs against. |

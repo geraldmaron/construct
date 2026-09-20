@@ -57,8 +57,9 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     assert.equal(remembered.nothingElseCreated, true);
     assert.equal(listStatements(fx.broker.store).filter((s) => s.kind === 'decision').length, 1);
     assert.equal((await call(fx, 'run_status', { runId: 'nope' }).catch((e: Error) => e.message)), 'no run nope');
-    const ctxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as unknown[];
-    assert.equal(ctxRead.length, 1);
+    const constCtxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as { items: unknown[]; total: number };
+    assert.equal(constCtxRead.items.length, 1);
+    assert.equal(constCtxRead.total, 1);
   } finally {
     fx.cleanup();
   }

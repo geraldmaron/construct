@@ -65,7 +65,21 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
     for (const s of draft.statements) {
       if (existing.some((e) => e.kind === s.kind && e.text === s.text)) continue;
       proposed.push(
-        addStatement(store, { id: nextId('st'), kind: s.kind, text: s.text, term: s.term, provenance: 'discovery', at }),
+        addStatement(store, {
+          id: nextId('st'),
+          kind: s.kind,
+          text: s.text,
+          term: s.term,
+          provenance: 'discovery',
+          locator: s.provenance.path,
+          span: { startLine: s.provenance.line },
+          excerpt: s.provenance.excerpt,
+          sourceRevision: s.provenance.contentDigest,
+          extractorVersion: s.provenance.extractorVersion,
+          contentDigest: s.provenance.contentDigest,
+          quoted: s.provenance.quoted === true,
+          at,
+        }),
       );
     }
     for (const c of draft.canonicalArtifacts) {

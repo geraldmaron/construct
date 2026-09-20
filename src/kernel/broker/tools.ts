@@ -27,6 +27,7 @@ import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
+import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, reopenWork } from '../work/service.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -79,12 +80,19 @@ const bootstrap = define<Record<string, never>, unknown>({
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements'] as const;
+const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'work'] as const;
+
+function page<T>(items: readonly T[], text: (t: T) => string, query: string | undefined, limit: number): { items: T[]; total: number; truncated: boolean; query: string | null } {
+  const q = query?.trim().toLowerCase();
+  const matched = q ? items.filter((i) => text(i).toLowerCase().includes(q)) : [...items];
+  const sliced = matched.slice(0, limit);
+  return { items: sliced, total: matched.length, truncated: sliced.length < matched.length, query: q ?? null };
+}
 
 const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number }, unknown>({
   name: 'project_context',
   title: 'Project context',
-  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, or remembered statements. Ask for one topic at a time; pass a query to narrow. Never returns everything at once.',
+  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, or work. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
@@ -102,31 +110,33 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
     return { topic: str(raw, 'topic', { oneOf: TOPICS }) as (typeof TOPICS)[number], query: str(raw, 'query', { optional: true }), limit: Math.max(1, Math.min(num(raw, 'limit') ?? 50, 200)) };
   },
   run(ctx, { topic, query, limit }) {
-    const q = query?.toLowerCase();
-    const filter = <T,>(items: readonly T[], text: (t: T) => string): T[] => (q ? items.filter((i) => text(i).toLowerCase().includes(q)) : [...items]).slice(0, limit);
     switch (topic) {
       case 'summary': {
         const c = ctx.files.constitution;
-        return { constitution: c ? { ...c, completeness: constitutionCompleteness(c) } : null, sources: ctx.sources.summary(ctx.now()), openDecisions: listOpenDecisions(ctx.store).length, activeRuns: listActiveRuns(ctx.store).length };
+        return { constitution: c ? { ...c, completeness: constitutionCompleteness(c) } : null, sources: ctx.sources.summary(ctx.now()), openDecisions: listOpenDecisions(ctx.store).length, activeRuns: listActiveRuns(ctx.store).length, readyWork: listReady(ctx.store, ctx.now()).length };
       }
       case 'constitution':
         return ctx.files.constitution;
-      case 'sources':
-        return filter(ctx.sources.list(), (s) => `${s.id} ${s.kind} ${s.purpose}`).map((s) => ctx.sources.status(s.id, ctx.now()));
+      case 'sources': {
+        const p = page(ctx.sources.list(), (s) => `${s.id} ${s.kind} ${s.purpose}`, query, limit);
+        return { ...p, items: p.items.map((s) => ctx.sources.status(s.id, ctx.now())) };
+      }
       case 'decisions':
-        return filter(listInbox(ctx.store), (d) => `${d.id} ${d.question} ${d.kind}`);
+        return page(listInbox(ctx.store), (d) => `${d.id} ${d.question} ${d.kind}`, query, limit);
       case 'runs':
-        return filter(listRuns(ctx.store, { limit: 200 }), (r) => `${r.id} ${r.workflowId} ${r.state}`);
+        return page(listRuns(ctx.store, { limit: 10_000 }), (r) => `${r.id} ${r.workflowId} ${r.state}`, query, limit);
       case 'entities':
-        return filter(listEntities(ctx.store, { limit: 500 }), (e) => `${e.id} ${e.kind} ${e.name}`);
+        return page(listEntities(ctx.store, { limit: 10_000 }), (e) => `${e.id} ${e.kind} ${e.name}`, query, limit);
       case 'claims':
-        return filter(listClaims(ctx.store), (c) => `${c.id} ${c.claimType} ${c.statement}`);
+        return page(listClaims(ctx.store), (c) => `${c.id} ${c.claimType} ${c.statement}`, query, limit);
       case 'relations':
-        return filter(listRelations(ctx.store), (r) => `${r.id} ${r.kind} ${r.fromId} ${r.toId}`);
+        return page(listRelations(ctx.store), (r) => `${r.id} ${r.kind} ${r.fromId} ${r.toId}`, query, limit);
       case 'drift':
-        return filter(listDriftFindings(ctx.store), (f) => `${f.id} ${f.kind} ${f.summary}`);
+        return page(listDriftFindings(ctx.store), (f) => `${f.id} ${f.kind} ${f.summary}`, query, limit);
       case 'statements':
-        return filter(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`);
+        return page(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`, query, limit);
+      case 'work':
+        return page(queryWork(ctx.store, { query, limit: 10_000 }).items, (w) => `${w.id} ${w.title} ${w.status} ${w.kind}`, query, limit);
       default:
         return null;
     }
@@ -553,6 +563,55 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
   },
 });
 
+const work = define<{ action: 'list' | 'ready' | 'show' | 'add' | 'claim' | 'complete' | 'reopen'; id?: string; title?: string; kind?: string; reason?: string }, unknown>({
+  name: 'work',
+  title: 'Native work',
+  description: 'Query, claim, complete, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string.',
+  surface: 'interactive',
+  readOnly: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      action: { type: 'string', description: 'list, ready, show, add, claim, complete, or reopen.', enum: ['list', 'ready', 'show', 'add', 'claim', 'complete', 'reopen'] },
+      id: { type: 'string', description: 'Work id or a preserved legacy id.' },
+      title: { type: 'string', description: 'Title, for add.' },
+      kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
+      reason: { type: 'string', description: 'Required for reopen; optional for complete.' },
+    },
+    required: ['action'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    return {
+      action: str(raw, 'action', { oneOf: ['list', 'ready', 'show', 'add', 'claim', 'complete', 'reopen'] }) as 'list' | 'ready' | 'show' | 'add' | 'claim' | 'complete' | 'reopen',
+      id: str(raw, 'id', { optional: true }),
+      title: str(raw, 'title', { optional: true }),
+      kind: str(raw, 'kind', { optional: true }),
+      reason: str(raw, 'reason', { optional: true }),
+    };
+  },
+  run(ctx, { action, id, title, kind, reason }) {
+    const at = ctx.now();
+    if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
+    if (action === 'ready') return listReady(ctx.store, at);
+    if (action === 'add') {
+      if (!title) throw new Error('"title" is required for add');
+      return createWork(ctx.store, { id: ctx.nextId('work'), kind: (kind as 'outcome' | 'task' | 'defect' | 'plan' | undefined) ?? 'task', title, description: title, at, actor: ctx.actor });
+    }
+    if (!id) throw new Error(`"id" is required for ${action}`);
+    const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
+    if (!item) throw new Error(`no work ${id}`);
+    if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at) };
+    if (action === 'claim') {
+      return claimWorkItem(ctx.store, { id: item.id, owner: ctx.actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at });
+    }
+    if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: ctx.actor, at, reason });
+    if (!reason) throw new Error('reopen needs a reason');
+    return reopenWork(ctx.store, { id: item.id, actor: ctx.actor, at, reason });
+  },
+});
+
 const heartbeat = define<{ stepRunId: string; owner: string; token: number }, unknown>({
   name: 'heartbeat',
   title: 'Keep a lease alive',
@@ -601,7 +660,7 @@ const claimStep = define<{ runId?: string }, unknown>({
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, claimStep, heartbeat,
+  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, work, claimStep, heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {
@@ -609,4 +668,4 @@ export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unk
 }
 
 /** What the headless surface must never be able to do, by tool name. */
-export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'skills', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request'];
+export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'skills', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work'];

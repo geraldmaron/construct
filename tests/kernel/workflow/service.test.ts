@@ -131,9 +131,10 @@ test('an external write pauses for the smallest approval; approval resumes exact
     const paused2 = fx.service.claimNext({ runId: second.run.id });
     assert.equal(paused2.waitingOn?.kind, 'decision');
     const declined = fx.service.decide({ decisionId: (paused2.waitingOn as { decision: { id: string } }).decision.id, resolution: 'decline', by: 'gerald' });
-    assert.equal(declined.run?.state, 'running');
+    assert.equal(declined.run?.state, 'cancelled');
     const after = fx.service.status(second.run.id)!;
     assert.equal(after.steps.find((s) => s.stepId === 'push')!.state, 'cancelled');
+    assert.equal(after.steps.find((s) => s.stepId === 'draft')!.state, 'succeeded');
   } finally {
     fx.cleanup();
   }
@@ -161,8 +162,9 @@ test('a lost lease is reclaimed without repeating finished work; cancel and no-d
     assert.equal(cancelled.state, 'running', 'cancellation after_step waits for the leased step');
     fx.service.fail({ leased: c2b.packet!.leased, error: {}, reason: 'stopped' });
     const view = fx.service.status(started.run.id)!;
-    assert.equal(view.run.state, 'failed');
+    assert.equal(view.run.state, 'cancelled', 'after-step cancel settles as cancelled once the leased step ends');
     assert.equal(view.steps.find((s) => s.stepId === 'record')!.state, 'cancelled');
+    assert.equal(view.steps.find((s) => s.stepId === 'write')!.state, 'failed');
 
     // No data on a workflow whose policy is block: a decision is raised; continue skips the step.
     const apply = fx.service.start({ workflowId: 'apply', input: { target: 'PROJ-1' }, trigger: 'manual' });

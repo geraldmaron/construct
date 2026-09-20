@@ -15,8 +15,8 @@
 import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
-import { createRun, getRun, getRunByKey, listActiveRuns, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
+import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
 import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
 import { addStatement, getProfile, getStatement, type Statement, type StatementKind } from '../state/profile.ts';
@@ -97,7 +97,7 @@ export interface WorkPacket {
 export interface ClaimOutcome {
   readonly packet: WorkPacket | null;
   /** Why nothing was handed out: a decision is open, the run is finished, or nothing is ready. */
-  readonly waitingOn: { readonly kind: 'decision'; readonly decision: Decision } | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] } | { readonly kind: 'nothing_ready' } | null;
+  readonly waitingOn: { readonly kind: 'decision'; readonly decision: Decision } | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] } | { readonly kind: 'nothing_ready' } | { readonly kind: 're_resolve'; readonly reason: string } | null;
 }
 
 export interface SubmitInput {
@@ -232,6 +232,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   }
 
   function stepsOf(run: WorkflowRun): readonly WorkflowStep[] {
+    const frozen = run.bindings as { steps?: readonly WorkflowStep[] } | null;
+    if (frozen && Array.isArray(frozen.steps) && frozen.steps.length > 0) return frozen.steps;
     return deps.workflows.get(run.workflowId)?.manifest.steps ?? [];
   }
 
@@ -240,6 +242,19 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return store.transaction(() => {
       const run = getRun(store, runId)!;
       if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return run;
+      if (run.cancelRequested) {
+        const stepRuns = listSteps(store, runId);
+        const leased = stepRuns.filter((s) => s.state === 'leased');
+        for (const s of stepRuns) {
+          if (s.state === 'pending' || s.state === 'ready' || s.state === 'waiting_for_decision') {
+            transitionStep(store, { id: s.id, to: 'cancelled', at, reason: run.stateReason ?? 'cancelled' });
+          }
+        }
+        if (leased.length === 0) {
+          return transitionRun(store, { id: runId, to: 'cancelled', at, reason: run.stateReason ?? 'cancelled' });
+        }
+        return run;
+      }
       const manifestSteps = stepsOf(run);
       const stepRuns = listSteps(store, runId);
       const done = new Set(stepRuns.filter((s) => s.state === 'succeeded' || s.state === 'skipped').map((s) => s.stepId));
@@ -252,6 +267,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (failed) {
         for (const s of after) if (s.state === 'pending' || s.state === 'ready') transitionStep(store, { id: s.id, to: 'cancelled', at, reason: `step ${failed.stepId} failed` });
         return transitionRun(store, { id: runId, to: 'failed', at, reason: `step ${failed.stepId} failed: ${failed.stateReason ?? 'no reason recorded'}` });
+      }
+      const cancelled = after.find((s) => s.state === 'cancelled');
+      if (cancelled && after.every((s) => ['succeeded', 'skipped', 'cancelled', 'failed'].includes(s.state))) {
+        return transitionRun(store, { id: runId, to: 'cancelled', at, reason: cancelled.stateReason ?? `step ${cancelled.stepId} cancelled` });
       }
       if (after.every((s) => s.state === 'succeeded' || s.state === 'skipped')) {
         return transitionRun(store, { id: runId, to: 'succeeded', at });
@@ -364,12 +383,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         throw new Error(`${m.id} is a ${m.interactionClass} workflow; it records or answers without a run`);
       }
       if (!m.triggers.includes(input.trigger)) throw new Error(`${m.id} does not accept ${input.trigger} triggers (it accepts ${m.triggers.join(', ')})`);
-      const key = input.idempotencyKey ?? idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
-      const existingByKey = getRunByKey(store, key);
-      if (existingByKey) {
-        const resolution = resolutionFor(m.id, input.input, executorId);
-        return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution, input.input) };
+      const keyExplicit = input.idempotencyKey;
+      const workIdentity = idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
+      if (keyExplicit) {
+        const existingByKey = getRunByKey(store, keyExplicit);
+        if (existingByKey) {
+          const resolution = resolutionFor(m.id, input.input, executorId);
+          return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution, input.input) };
+        }
+      } else {
+        const inFlight = findActiveByWorkIdentity(store, workIdentity);
+        if (inFlight) {
+          const resolution = resolutionFor(m.id, input.input, executorId);
+          return { run: inFlight, created: false, resolution, preflight: preflightOf(resolution, input.input) };
+        }
       }
+      const key = keyExplicit ?? `${workIdentity}:${deps.nextId('inv')}`;
       if (m.concurrency === 'single') {
         const active = listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked');
         if (active) {
@@ -410,8 +439,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           hostId: deps.host.hostId,
           sessionId: deps.host.sessionId ?? undefined,
           input: input.input,
+          invocationId: key,
+          workIdentity,
+          workflowDigest: workflow.digest,
+          bindings: { steps: m.steps, digest: workflow.digest, version: m.version },
           at,
         });
+        store.db.prepare(
+          `INSERT INTO run_bindings (run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, frozen_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(run.id, m.id, m.version, workflow.digest, JSON.stringify(resolution.plan.map((p) => p.skill)), at);
         if (resolution.status === 'blocked' || resolution.status === 'divergent') {
           const blocked = transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary, preflight });
           return { run: blocked, created: true, resolution, preflight };
@@ -439,6 +476,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     claimNext({ runId, owner, leaseMs: requested }) {
       const at = deps.now();
       const who = owner ?? deps.host.executorId;
+      expireDeadLeases(store, at, runId);
       const candidates = runId ? [getRun(store, runId)].filter((r): r is WorkflowRun => r !== null) : listActiveRuns(store);
       for (const run of candidates) {
         if (run.state === 'blocked') continue;
@@ -448,6 +486,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           transitionRun(store, { id: run.id, to: 'running', at });
         }
         if (['succeeded', 'failed', 'cancelled'].includes(run.state)) continue;
+        const currentWorkflow = deps.workflows.get(run.workflowId);
+        if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
+          return { packet: null, waitingOn: { kind: 're_resolve', reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing` } };
+        }
         advance(run.id, at);
         const manifestSteps = stepsOf(run);
         for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
@@ -469,6 +511,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           ranKernelStep = true;
         }
         if (ranKernelStep) advance(run.id, at);
+        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+          const boundSkill = (sr.input as { skill?: { id: string; digest: string } | null } | null)?.skill ?? null;
+          const registeredSkill = boundSkill ? deps.skills.get(boundSkill.id) : null;
+          if (boundSkill && registeredSkill && registeredSkill.digest !== boundSkill.digest) {
+            return { packet: null, waitingOn: { kind: 're_resolve', reason: `skill ${boundSkill.id} changed since this run was bound; re-resolve before continuing` } };
+          }
+        }
         const leased = claimStep(store, { owner: who, now: at, leaseUntil: new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString(), runId: run.id });
         if (!leased) continue;
         const fresh = getRun(store, run.id)!;
@@ -515,10 +564,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const at = deps.now();
       const run = getRun(store, leased.runId);
       if (!run) throw new Error(`no run ${leased.runId}`);
-      const workflow = deps.workflows.get(run.workflowId)!;
-      const step = workflow.manifest.steps.find((s) => s.id === leased.stepId)!;
+      const step = stepsOf(run).find((s) => s.id === leased.stepId);
+      if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
+      const currentWorkflow = deps.workflows.get(run.workflowId);
       if (noData) {
-        const policy = workflow.manifest.onNoData;
+        const policy = currentWorkflow?.manifest.onNoData ?? 'fail';
         return store.transaction(() => {
           if (policy === 'fail') {
             const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { noData: true }, reason: 'no data' });
@@ -546,11 +596,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence } });
         let deliverable: Deliverable | null = null;
-        const isLast = workflow.manifest.steps[workflow.manifest.steps.length - 1]!.id === step.id;
+        const frozenSteps = stepsOf(run);
+        const isLast = frozenSteps[frozenSteps.length - 1]?.id === step.id;
         const judgment = judgmentOf(run);
-        const needsChallenge = judgmentRequired(workflow.manifest.deliverable.challenge, judgment);
+        const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence }, at });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0) {
             deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge } });
           }
@@ -614,6 +665,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (!run) throw new Error(`no run ${runId}`);
         const workflow = deps.workflows.get(run.workflowId);
         const immediate = workflow?.manifest.cancellation !== 'after_step';
+        setCancelRequested(store, runId, at);
         for (const s of listSteps(store, runId)) {
           if (s.state === 'pending' || s.state === 'ready' || s.state === 'waiting_for_decision') transitionStep(store, { id: s.id, to: 'cancelled', at, reason });
           else if (s.state === 'leased' && immediate) transitionStep(store, { id: s.id, to: 'cancelled', at, reason });
