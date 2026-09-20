@@ -58,6 +58,44 @@ function wiringClientFor(args: ParsedArgs, ctx: CliContext): WirableClient | nul
   return clientWiring(id) ? (id as WirableClient) : null;
 }
 
+function flagAnswers(args: ParsedArgs): {
+  readonly name?: string;
+  readonly purpose?: string;
+  readonly scale?: ProjectScale;
+  readonly primaryOutcome?: string;
+  readonly protectedConstraints?: readonly string[];
+} {
+  const scale = stringFlag(args, 'scale');
+  return {
+    name: stringFlag(args, 'name'),
+    purpose: stringFlag(args, 'purpose'),
+    scale: scale as ProjectScale | undefined,
+    primaryOutcome: stringFlag(args, 'outcome'),
+    protectedConstraints: listFlag(args, 'constraint'),
+  };
+}
+
+function unansweredUnknowns(unknowns: readonly string[], answers: { readonly purpose?: string; readonly primaryOutcome?: string }): readonly string[] {
+  return unknowns.filter((u) => {
+    if (u === 'purpose' && answers.purpose) return false;
+    if (u === 'primary outcome' && answers.primaryOutcome) return false;
+    return true;
+  });
+}
+
+function describeAdmission(extracted: number, unanswered: readonly string[]): string[] {
+  const lines: string[] = [];
+  if (extracted > 0) {
+    lines.push(`  read from the project: ${String(extracted)} statement(s) extracted with source locators`);
+  } else {
+    lines.push('  read from the project: no statements extracted from project files');
+  }
+  if (unanswered.length > 0) {
+    lines.push(`  unanswered fields recorded as unknowns: ${unanswered.join('; ')}`);
+  }
+  return lines;
+}
+
 function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: string | null; readonly how: string } {
   const explicit = stringFlag(args, 'skills-dir');
   if (explicit) return { dir: explicit, how: '--skills-dir' };
@@ -87,11 +125,16 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
   const skills = resolveSkillsDir(args, ctx);
   const dryRun = boolFlag(args, 'dry-run');
 
+  const answers = flagAnswers(args);
+  const extracted = draft.statements.length + draft.canonicalArtifacts.length;
+  const unanswered = unansweredUnknowns(draft.unknowns, answers);
+
   if (dryRun) {
     const record = {
       root,
       wouldWrite: ['.construct/project.json', '.construct/constitution.json', '.construct/sources.json', '.construct/registry.lock.json', '.construct/state/construct.sqlite'],
-      proposals: draft.statements.length + draft.profile.length + draft.ownership.length,
+      extractedStatements: extracted,
+      unansweredFields: unanswered,
       questions: draft.questions.map((q) => q.id),
       operationalSkill: skills.dir ? `${skills.dir} (${skills.how})` : `skipped: ${skills.how}`,
       hostWiring: wiringClientFor(args, ctx),
@@ -102,7 +145,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     }
     say(`construct init (dry run) in ${esc(root)}`);
     say(`  would write: ${record.wouldWrite.join(', ')}`);
-    say(`  would propose ${String(record.proposals)} item(s) read from the project’s own files, each with its source`);
+    for (const line of describeAdmission(extracted, unanswered).map((l) => l.replace('read from the project:', 'would record:'))) say(line);
     say(`  would ask: ${record.questions.join(', ')}`);
     say(`  operational skill: ${esc(record.operationalSkill)}`);
     say(`  host wiring: ${record.hostWiring ? `would write MCP config for ${record.hostWiring}` : 'none'}`);
@@ -115,13 +158,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
   try {
     const applied = applyDiscoveryDraft(result.store, { draft, at, nextId: ctx.nextId });
     const answers = applyOnboardingAnswers(result.store, {
-      answers: {
-        name: stringFlag(args, 'name'),
-        purpose: stringFlag(args, 'purpose'),
-        scale: scale as ProjectScale | undefined,
-        primaryOutcome: stringFlag(args, 'outcome'),
-        protectedConstraints: listFlag(args, 'constraint'),
-      },
+      answers: flagAnswers(args),
       by: 'init',
       at,
       nextId: ctx.nextId,
@@ -153,12 +190,19 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       skillLine = `skipped: ${skills.how}`;
     }
 
+    const remainingUnknowns = unansweredUnknowns(
+      applied.proposedStatements.filter((s) => s.kind === 'unknown').map((s) => s.text),
+      flagAnswers(args),
+    );
+    const extractedApplied = applied.proposedStatements.filter((s) => s.kind !== 'unknown').length;
     const record = {
       root,
       created: result.created,
       gitignoreUpdated: result.gitignoreUpdated,
       profile: { name: answers.profile.name, onboardingState: answers.profile.onboardingState, missing: answers.missing },
-      proposed: applied.proposedStatements.length,
+      extractedStatements: extractedApplied,
+      unansweredFields: remainingUnknowns,
+      proposed: extractedApplied,
       openQuestions: status.openQuestions.map((q) => q.question),
       sources: synced,
       hostWiring: wiring ? { client: wiring.client, path: wiring.path, status: wiring.status } : null,
@@ -173,7 +217,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     say(`${fresh ? 'Initialized' : 'Reconciled'} Construct project "${esc(String(answers.profile.name))}" at ${esc(root)}`);
     say(`  files: .construct/{project,constitution,sources,registry.lock}.json${result.gitignoreUpdated ? '; .gitignore now ignores .construct/state/' : ''}`);
     say(`  state: ${result.created.state ? 'created' : 'opened'} .construct/state/construct.sqlite`);
-    say(`  read from the project: ${String(applied.proposedStatements.length)} proposal(s), each with its source, waiting for your review`);
+    for (const line of describeAdmission(extractedApplied, remainingUnknowns)) say(line);
     if (status.openQuestions.length > 0) {
       say(`  still to answer (${String(status.openQuestions.length)}):`);
       for (const q of status.openQuestions) say(`    - ${esc(q.question)}`);

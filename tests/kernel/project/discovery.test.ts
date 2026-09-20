@@ -175,6 +175,8 @@ test('applying a draft proposes; only answers and acceptances confirm; the file 
       assert.equal(c.primaryOutcome, 'ship v1 to the first paying team');
       assert.deepEqual(c.principles, [principle.text]);
       assert.deepEqual(c.constraints, ['Never change posting semantics']);
+      assert.equal(c.unknowns.includes('primary outcome'), false);
+      assert.equal(c.unknowns.includes('purpose'), false);
       assert.deepEqual(c.glossary, []);
       assert.equal(constitutionCompleteness(validateConstitution(c, 'constitution.json')).complete, true);
       assert.throws(() => applyOnboardingAnswers(store, { answers: { scale: 'huge' as never }, by: 'g', at: AT, nextId }), /scale must be one of/);
@@ -201,6 +203,10 @@ test('noninteractive answers with nothing supplied leave onboarding incomplete a
       const complete = applyOnboardingAnswers(init.store, { answers: { purpose: 'a tool', scale: 'solo', primaryOutcome: 'learn' }, by: 'ci', at: AT, nextId });
       assert.equal(complete.profile.onboardingState, 'confirmed');
       assert.equal(onboardingStatus(init.store).openQuestions.length, 1); // the constraints question stays open until answered
+      const constitution = composeConstitution(init.store, emptyConstitution());
+      assert.equal(constitution.purpose, 'a tool');
+      assert.equal(constitution.unknowns.includes('purpose'), false);
+      assert.equal(constitution.unknowns.includes('primary outcome'), false);
     } finally {
       init.store.close();
     }

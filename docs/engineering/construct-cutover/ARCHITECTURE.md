@@ -23,8 +23,9 @@ export as live truth.
 
 - Live tracker cutover needs exclusive snapshot of the embedded Dolt
   backend. An export-only import discloses coverage.
-- Custom JSON-RPC remains until the official MCP SDK is locked against
-  supported hosts; domain contracts stay in Construct.
+- Official MCP stdio framing is `@modelcontextprotocol/server` 2.0.0.
+  Domain tool contracts stay in Construct; `registerTool` was not adopted
+  because it requires Zod v4 schemas.
 - Routing evals are not outcome evals.
 
 ## Ownership map (compact)

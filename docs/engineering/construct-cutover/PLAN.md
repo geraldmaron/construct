@@ -33,14 +33,14 @@ historical; status lives in the ledger.
 - [x] AGENTS.md / CLAUDE.md native contract
 - [x] Stop operational Beads hooks/reconcile as the writer
 - [x] Registry/docs regeneration
-- [ ] Remaining dead-code deletion after gates (historical reconcile reader retained for citation lint)
+- [x] Remaining dead-code deletion after gates (historical reconcile reader removed; citation lint keeps the frozen export)
 
 ## Slice 6 — prove
 
 - [x] Full gate on Node >= 22.18
 - [x] Packaged smoke including work
 - [x] Honest remaining limitations recorded
-- [ ] Signed commit + push of `staging` (blocked on 1Password SSH signing from this Cursor session)
+- [x] Signed commit + push of `staging` (`8c74957a` → `origin/staging`)
 
 Acceptance for each executable item: tests or a recorded command; no
 silent skip of malformed import rows.

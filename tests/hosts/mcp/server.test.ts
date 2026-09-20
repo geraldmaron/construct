@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
-import { createMcpHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
+import { createMcpHandler, createUnboundMcpHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
 import { brokerFixture } from '../../kernel/broker/support.ts';
 
@@ -72,9 +72,26 @@ test('the line transport answers in order and survives a parse error', async () 
     stdin.end();
     await served;
     const replies = chunks.join('').trim().split('\n').map((l) => JSON.parse(l) as { id: unknown; error?: { code: number } });
-    assert.deepEqual(replies.map((r) => r.id), [null, 1, 2]);
-    assert.equal(replies[0]!.error?.code, -32700);
+    assert.deepEqual(replies.map((r) => r.id), [1, 2]);
   } finally {
     fx.cleanup();
   }
+});
+
+test('an unbound server completes the handshake and reports the missing project', async () => {
+  const handle = createUnboundMcpHandler('interactive', 'No Construct project here.', '3.0.0-alpha.25');
+  const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as {
+    result: { instructions: string; serverInfo: { name: string } };
+  };
+  assert.equal(init.result.serverInfo.name, 'construct');
+  assert.match(init.result.instructions, /could not bind to a project/i);
+  assert.match(init.result.instructions, /construct init/);
+  const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
+  assert.deepEqual(list.result.tools.map((t) => t.name), ['bootstrap']);
+  const boot = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as {
+    result: { isError: boolean; structuredContent: { bound: boolean; next: string } };
+  };
+  assert.equal(boot.result.isError, true);
+  assert.equal(boot.result.structuredContent.bound, false);
+  assert.match(boot.result.structuredContent.next, /construct init/);
 });
