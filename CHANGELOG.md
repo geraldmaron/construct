@@ -14,6 +14,12 @@
   definition drift.
 - **Source refresh admits observed items** with content digests distinct
   from inventory fingerprints.
+- **Official MCP stdio transport.** Framing uses `@modelcontextprotocol/server`
+  2.0.0. Domain tool contracts stay in Construct. A serve that cannot bind
+  a project still completes the handshake and reports the condition.
+- **Init wording matches what it stored.** Unanswered profile fields are
+  unknowns, not sourced proposals. Flags that fill a field retire the
+  matching unknown.
 
 ## 3.0.0-alpha.25 — 2026-09-12
 

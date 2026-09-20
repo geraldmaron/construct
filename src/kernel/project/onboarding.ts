@@ -140,6 +140,14 @@ function isOnboardingSubject(subject: unknown, id: OnboardingQuestion['id']): bo
   return subject !== null && typeof subject === 'object' && (subject as { onboarding?: string }).onboarding === id;
 }
 
+function unknownResolvedByProfile(text: string, profile: ProjectProfile | null, answers: OnboardingAnswers): boolean {
+  if (text === 'purpose' && Boolean(answers.purpose || profile?.purpose)) return true;
+  if (text === 'primary outcome' && Boolean(answers.primaryOutcome || profile?.primaryOutcome)) return true;
+  if (text === 'risk posture' && Boolean(profile?.riskPosture)) return true;
+  if (text === 'review cadence' && Boolean(profile?.reviewCadence)) return true;
+  return false;
+}
+
 export interface OnboardingAnswers {
   readonly scale?: ProjectScale;
   readonly primaryOutcome?: string;
@@ -174,6 +182,11 @@ export function applyOnboardingAnswers(
       confirmed.push(addStatement(store, { id: nextId('st'), kind: 'constraint', text: text.trim(), provenance: 'user', at }));
     }
     let profile = upsertProfile(store, patch, at);
+    for (const unknown of listStatements(store, { kind: 'unknown', status: 'proposed' })) {
+      if (unknownResolvedByProfile(unknown.text, profile, answers)) {
+        setStatementStatus(store, { id: unknown.id, status: 'retired', at });
+      }
+    }
     const missing = missingProfileFields(profile);
     if (missing.length === 0 && profile.onboardingState !== 'confirmed') {
       profile = upsertProfile(store, { onboardingState: 'confirmed' }, at);
@@ -306,7 +319,9 @@ const LIST_KINDS: ReadonlyArray<readonly [StatementKind, keyof Constitution]> = 
 export function composeConstitution(store: StateStore, base: Constitution): Constitution {
   const profile = getProfile(store);
   const confirmed = listStatements(store, { status: 'confirmed' });
-  const unknowns = listStatements(store, { kind: 'unknown' }).filter((s) => s.status !== 'retired' && s.status !== 'superseded');
+  const unknowns = listStatements(store, { kind: 'unknown' }).filter(
+    (s) => s.status !== 'retired' && s.status !== 'superseded' && !unknownResolvedByProfile(s.text, profile, {}),
+  );
   const out: Record<string, unknown> = { ...base };
   if (profile) {
     out.name = profile.name ?? base.name;

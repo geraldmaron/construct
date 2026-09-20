@@ -9,7 +9,7 @@ import { dirname } from 'node:path';
 export type McpServersKey = 'mcpServers' | 'servers' | 'mcp';
 
 export type MergeResult =
-  | { readonly ok: true; readonly created: boolean; readonly path: string }
+  | { readonly ok: true; readonly created: boolean; readonly path: string; readonly replaced: readonly string[] }
   | { readonly ok: false; readonly reason: string; readonly path: string };
 
 type ReadConfig = { readonly kind: 'absent' } | { readonly kind: 'problem'; readonly problem: string } | { readonly kind: 'config'; readonly config: Record<string, unknown> };
@@ -25,12 +25,36 @@ function readConfig(path: string): ReadConfig {
   }
 }
 
+function commandParts(entry: Record<string, unknown>): string[] {
+  const parts: string[] = [];
+  if (typeof entry.command === 'string') parts.push(entry.command);
+  else if (Array.isArray(entry.command)) parts.push(...entry.command.map(String));
+  if (Array.isArray(entry.args)) parts.push(...entry.args.map(String));
+  return parts;
+}
+
+/** True when this host entry launches this package's `serve`. */
+export function launchesConstructServe(entry: unknown): boolean {
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return false;
+  const parts = commandParts(entry as Record<string, unknown>);
+  const hasBin = parts.some((p) => /(?:^|[/\\])construct(?:\.mjs)?$/.test(p) || p === 'construct');
+  return hasBin && parts.includes('serve');
+}
+
 export function mergeMcpServerEntry(path: string, serverName: string, entry: Record<string, unknown>, opts: { readonly serversKey?: McpServersKey; readonly seed?: Record<string, unknown> } = {}): MergeResult {
   const key = opts.serversKey ?? 'mcpServers';
   const current = readConfig(path);
   if (current.kind === 'problem') return { ok: false, reason: current.problem, path };
   const existing: Record<string, unknown> = current.kind === 'config' ? current.config : { ...(opts.seed ?? {}) };
   const servers = existing[key] !== null && typeof existing[key] === 'object' && !Array.isArray(existing[key]) ? { ...(existing[key] as Record<string, unknown>) } : {};
+  const replaced: string[] = [];
+  for (const [name, candidate] of Object.entries(servers)) {
+    if (name === serverName) continue;
+    if (launchesConstructServe(candidate)) {
+      delete servers[name];
+      replaced.push(name);
+    }
+  }
   servers[serverName] = entry;
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify({ ...existing, [key]: servers }, null, 2)}\n`, 'utf8');
@@ -39,7 +63,7 @@ export function mergeMcpServerEntry(path: string, serverName: string, entry: Rec
   } catch {
     // platforms without modes
   }
-  return { ok: true, created: current.kind === 'absent', path };
+  return { ok: true, created: current.kind === 'absent', path, replaced };
 }
 
 export function readMcpServerEntry(path: string, serverName: string, opts: { readonly serversKey?: McpServersKey } = {}): Record<string, unknown> | null {

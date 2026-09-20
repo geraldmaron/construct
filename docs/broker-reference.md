@@ -3,7 +3,7 @@
 
 # Broker reference (MCP)
 
-The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person's session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.
+The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person's session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.
 
 ## Interactive surface
 

@@ -4,12 +4,14 @@
  */
 
 import { resolve } from 'node:path';
-import { serveMcp } from '../hosts/mcp/server.ts';
+import { serveMcp, serveUnboundMcp } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
+import { NoProjectError } from '../kernel/project/discover.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
-import { openBroker } from './broker-context.ts';
-import { say, writeJson } from './output.ts';
+import { bindingFor, openBroker } from './broker-context.ts';
+import { OperationError, say, writeJson } from './output.ts';
+import { packageVersion } from './version.ts';
 
 export const SERVE_SPEC: CommandSpec = {
   path: ['serve'],
@@ -29,9 +31,23 @@ export const SERVE_SPEC: CommandSpec = {
 export async function serve(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const projectFlag = stringFlag(args, 'project');
   const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag) } : ctx;
-  const { project, binding, broker } = openBroker(bound, { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') });
+  const flags = { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') };
+  const binding = bindingFor(bound, flags);
+  const describe = boolFlag(args, 'describe') || args.json;
+  let opened: ReturnType<typeof openBroker> | null = null;
   try {
-    if (boolFlag(args, 'describe') || args.json) {
+    opened = openBroker(bound, flags);
+  } catch (error) {
+    if (describe) throw error;
+    if (error instanceof NoProjectError || error instanceof OperationError) {
+      await serveUnboundMcp(binding.surface, error.message, packageVersion());
+      return 0;
+    }
+    throw error;
+  }
+  const { project, broker } = opened;
+  try {
+    if (describe) {
       const record = { surface: binding.surface, client: binding.client, executor: binding.executorId, project: project.root, capabilities: [...broker.host.available].sort(), maxTier: broker.host.maxTier };
       if (args.json) writeJson(record);
       else {
