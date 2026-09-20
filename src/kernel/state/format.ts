@@ -7,7 +7,7 @@
  */
 
 export const STATE_FORMAT_ID = 'construct-state';
-export const STATE_FORMAT_VERSION = 2;
+export const STATE_FORMAT_VERSION = 3;
 
 export const UNSUPPORTED_STATE_MESSAGE =
   'This Construct state was written by a format this version does not read.\n' +

@@ -437,6 +437,10 @@ export interface Claim {
   readonly observedAt: string;
   readonly freshUntil: string | null;
   readonly supersededBy: string | null;
+  readonly locator: string | null;
+  readonly excerpt: string | null;
+  readonly sourceRevision: string | null;
+  readonly contentDigest: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
 }
@@ -456,6 +460,10 @@ interface ClaimRow {
   readonly observed_at: string;
   readonly fresh_until: string | null;
   readonly superseded_by: string | null;
+  readonly locator: string | null;
+  readonly excerpt: string | null;
+  readonly source_revision: string | null;
+  readonly content_digest: string | null;
   readonly created_at: string;
   readonly updated_at: string;
 }
@@ -476,6 +484,10 @@ function toClaim(row: ClaimRow): Claim {
     observedAt: row.observed_at,
     freshUntil: row.fresh_until,
     supersededBy: row.superseded_by,
+    locator: row.locator,
+    excerpt: row.excerpt,
+    sourceRevision: row.source_revision,
+    contentDigest: row.content_digest,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -501,6 +513,10 @@ export function addClaim(
     readonly confidence: number;
     readonly observedAt: string;
     readonly freshUntil?: string;
+    readonly locator?: string;
+    readonly excerpt?: string;
+    readonly sourceRevision?: string;
+    readonly contentDigest?: string;
     readonly at: string;
   },
 ): Claim {
@@ -520,8 +536,9 @@ export function addClaim(
     .prepare(
       `INSERT INTO claims
          (id, subject_id, claim_type, statement, value_json, source_id, provenance, authority,
-          sensitivity, confidence, status, observed_at, fresh_until, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+          sensitivity, confidence, status, observed_at, fresh_until, locator, excerpt,
+          source_revision, content_digest, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(
       input.id,
@@ -537,6 +554,10 @@ export function addClaim(
       status,
       input.observedAt,
       input.freshUntil ?? null,
+      input.locator ?? null,
+      input.excerpt ?? null,
+      input.sourceRevision ?? null,
+      input.contentDigest ?? null,
       input.at,
       input.at,
     ) as unknown as ClaimRow;

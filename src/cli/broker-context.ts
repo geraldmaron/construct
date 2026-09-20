@@ -28,23 +28,42 @@ export interface BrokerBinding {
 
 /** What this session may do, described as capabilities rather than binaries. */
 export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null): HostCapabilities {
-  const available = new Set<string>(['read_project_files', 'read_project_context', 'write_project_context', 'run_validator', 'read_source:directory', 'run_tests', 'kernel']);
+  // A local Construct session always has the project checkout and the directory
+  // reader. Interactivity adds a person. Neither invents an external writer.
+  const declared = new Set<string>([
+    'read_project_context',
+    'write_project_context',
+    'run_validator',
+    'kernel',
+    'read_project_files',
+    'read_source:directory',
+  ]);
+  const permitted = new Set<string>(declared);
   if (binding.surface === 'interactive') {
-    available.add('model_review');
-    available.add('ask_user');
-    available.add('write_project_files');
-    // The session reads and writes the systems the person already has open, through its own tools;
-    // Construct records what was read as evidence and gates every write per step.
-    available.add('read_source');
-    available.add('write_source');
+    declared.add('ask_user');
+    declared.add('model_review');
+    permitted.add('ask_user');
+    permitted.add('model_review');
+    permitted.add('write_project_files');
+    permitted.add('run_tests');
   }
+  const unavailable = ['write_source', 'read_source (unscoped; directory reader is scoped)'];
+  if (binding.surface === 'headless') unavailable.push('ask_user', 'model_review', 'write_project_files');
   return {
     hostId: binding.client,
     sessionId,
     executorId: binding.executorId,
-    available,
+    available: permitted,
+    declared,
+    reported: [],
+    probed: [],
+    permitted,
+    unavailable,
+    exercised: new Set(),
     maxTier: binding.surface === 'interactive' ? 'external_write' : 'project_write',
-    restrictions: binding.surface === 'headless' ? ['no person is present: nothing that needs a decision proceeds'] : [],
+    restrictions: binding.surface === 'headless'
+      ? ['no person is present: nothing that needs a decision proceeds']
+      : ['write_source is not granted from interactivity alone; source reads are scoped to wired readers'],
     budgetCents: null,
   };
 }
@@ -52,7 +71,8 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
 export function bindingFor(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): BrokerBinding {
   const client = normalizeClient(flags.client ?? detectAmbientHost(ctx.env)?.host);
   const surface = flags.headless ? 'headless' : 'interactive';
-  const executorId = surface === 'headless' ? (flags.executor ?? 'runner') : `session:${client}`;
+  const sessionKey = `${client}:${String(process.pid)}`;
+  const executorId = surface === 'headless' ? (flags.executor ?? `runner:${String(process.pid)}`) : `session:${sessionKey}`;
   return { client, surface, executorId, actor: surface === 'headless' ? executorId : `person via ${client}` };
 }
 
@@ -60,7 +80,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
   const skills = createSkillRegistry({ projectDir: project.layout.skillsDir });
   const workflows = createWorkflowRegistry({ projectDir: project.layout.workflowsDir });
   const lock = project.files.lock ?? emptyLock();
-  const sessionId = binding.surface === 'interactive' ? `${binding.client}:${String(process.pid)}` : null;
+  const sessionId = binding.surface === 'interactive' ? binding.executorId : null;
   const host = hostCapabilitiesFor(binding, sessionId);
   const sources = createSourceService(project.store, { readers: new Map([['directory', readDirectorySource]]) });
   const projectWritePolicy = explainConfig(configInputs(ctx, project, {}), 'policy.projectWrite').effective.value as 'managed' | 'never';

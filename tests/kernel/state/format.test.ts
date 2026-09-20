@@ -1,6 +1,6 @@
 /**
- * tests/kernel/state/format.test.ts — format 2 is created fresh, refused when
- * foreign, and never migrated.
+ * tests/kernel/state/format.test.ts — format 3 is created fresh; format 2
+ * upgrades one way; anything else is refused unread.
  */
 
 import { test } from 'node:test';
@@ -27,7 +27,7 @@ function tmp(): { root: string; cleanup(): void } {
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test('a fresh open creates exactly one database file stamped format 2', () => {
+test('a fresh open creates exactly one database file stamped format 3', () => {
   const fx = freshStore();
   try {
     const meta = Object.fromEntries(
@@ -37,7 +37,7 @@ test('a fresh open creates exactly one database file stamped format 2', () => {
     );
     assert.equal(meta.format, STATE_FORMAT_ID);
     assert.equal(meta.format_version, String(STATE_FORMAT_VERSION));
-    assert.equal(STATE_FORMAT_VERSION, 2);
+    assert.equal(STATE_FORMAT_VERSION, 3);
     const files = readdirSync(dirname(fx.dbPath));
     assert.deepEqual(files, ['construct.sqlite']);
     const tables = new Set(
@@ -52,7 +52,7 @@ test('a fresh open creates exactly one database file stamped format 2', () => {
   }
 });
 
-test('reopening a format-2 store works and keeps its rows', () => {
+test('reopening a format-3 store works and keeps its rows', () => {
   const fx = freshStore();
   try {
     const at = clock();
@@ -185,6 +185,37 @@ test('foreign keys are enforced', () => {
           .run(),
       /FOREIGN KEY/,
     );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a complete format-2 store upgrades in place to format 3 and keeps its rows', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    addSource(fx.store, {
+      id: 'src-1', kind: 'repo', purpose: 'the code', authorityLevel: 'authoritative',
+      sensitivity: 'internal', canRead: true, canWrite: false, at: at(),
+    });
+    fx.store.close();
+    const db = new DatabaseSync(fx.dbPath);
+    db.exec('PRAGMA foreign_keys = OFF');
+    for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) {
+      db.exec(`DROP TABLE IF EXISTS ${table}`);
+    }
+    db.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
+    db.close();
+    const again = openStateStore(fx.dbPath);
+    const meta = again.db.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string };
+    assert.equal(meta.value, '3');
+    const tables = new Set(
+      (again.db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>).map((r) => r.name),
+    );
+    assert.ok(tables.has('work_items'));
+    const count = again.db.prepare('SELECT COUNT(*) AS n FROM sources').get() as { n: number };
+    assert.equal(count.n, 1);
+    again.close();
   } finally {
     fx.cleanup();
   }

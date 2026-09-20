@@ -27,8 +27,10 @@ import {
 } from '../state/sources.ts';
 import { recordObservation } from '../state/drift.ts';
 import type { DeclaredSource, SourcesFile } from '../project/sources-file.ts';
-import { locatorProblem } from './locators.ts';
+import { addEntity, addClaim, findEntityByRef } from '../state/graph.ts';
+import { markPremisesStale } from '../work/service.ts';
 import type { ReadOutcome, SourceReader } from './connector.ts';
+import { locatorProblem } from './locators.ts';
 
 export interface SourceStatus {
   readonly source: Source;
@@ -216,17 +218,57 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         digest: outcome.report.digest,
         summary: outcome.report.summary,
         evidenceRef: outcome.report.evidenceRef,
+        inventoryDigest: outcome.report.inventoryDigest,
+        contentDigest: outcome.report.contentDigest ?? outcome.report.digest,
+        itemCount: outcome.report.items?.length ?? 0,
+        coverage: outcome.report.coverage,
         at,
       });
+      setReachability(store, id, 'reachable', at);
+      if (outcome.report.items && outcome.report.items.length > 0) {
+        store.transaction(() => {
+          for (const item of outcome.report.items ?? []) {
+            const entity =
+              findEntityByRef(store, 'artifact', item.externalRef) ??
+              addEntity(store, {
+                id: nextId(),
+                kind: 'artifact',
+                name: item.name,
+                externalRef: item.externalRef,
+                attributes: item.attributes,
+                at,
+              });
+            addClaim(store, {
+              id: nextId(),
+              subjectId: entity.id,
+              claimType: item.kind,
+              statement: `${item.name} observed in ${id}`,
+              value: item.attributes ?? item,
+              sourceId: id,
+              provenance: 'source',
+              authority: source.authorityLevel,
+              sensitivity: source.sensitivity,
+              confidence: 1,
+              observedAt: at,
+              locator: item.externalRef,
+              excerpt: item.name,
+              sourceRevision: outcome.report.contentDigest ?? outcome.report.digest,
+              contentDigest: typeof item.attributes?.contentDigest === 'string' ? item.attributes.contentDigest : outcome.report.contentDigest,
+              at,
+            });
+          }
+        });
+      }
       if (changed) {
         recordObservation(store, {
           id: nextId(),
           sourceId: id,
           kind: 'source.changed',
           summary: `${id} changed: ${outcome.report.summary}`,
-          evidence: { digest: outcome.report.digest, evidence: outcome.report.evidence, items: outcome.report.items?.length ?? 0 },
+          evidence: { digest: outcome.report.digest, evidence: outcome.report.evidence, items: outcome.report.items?.length ?? 0, contentDigest: outcome.report.contentDigest, inventoryDigest: outcome.report.inventoryDigest },
           at,
         });
+        markPremisesStale(store, id, at);
       }
       return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot };
     },

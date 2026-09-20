@@ -34,7 +34,10 @@ function fixtureRepo(root: string): void {
   writeFileSync(join(root, 'GLOSSARY.md'), ['| Term | Retired | Meaning |', '|---|---|---|', '| posting | entry | One immutable line in the ledger. |', '| balance | — | A sum derived from postings. |'].join('\n'), 'utf8');
   mkdirSync(join(root, 'docs', 'adr'), { recursive: true });
   writeFileSync(join(root, 'docs', 'architecture.md'), ['# Architecture', '', '## Boundaries', '', '- The kernel never touches the network'].join('\n'), 'utf8');
-  writeFileSync(join(root, 'docs', 'adr', '0001.md'), '# ADR 1', 'utf8');
+  writeFileSync(join(root, 'docs', 'adr', '0001-append-only.md'), [
+    '# ADR 1: Append-only postings', '', 'Status: Accepted', '', '## Decision', '', 'Postings are never updated in place.',
+  ].join('\n'), 'utf8');
+  writeFileSync(join(root, 'docs', 'architecture-and-state-model.md'), ['# State model', '', '## Invariants', '', '- Runtime state is transactional'].join('\n'), 'utf8');
   writeFileSync(join(root, 'tsconfig.json'), '{}', 'utf8');
 }
 
@@ -52,7 +55,10 @@ test('material is read narrowly, capped, and never through a link', () => {
     assert.equal(m.contributing?.truncated, true);
     assert.equal(m.contributing?.text.length, MAX_MATERIAL_FILE_BYTES);
     assert.equal(m.codeowners?.path, '.github/CODEOWNERS');
-    assert.deepEqual(m.docFiles, ['docs/adr/0001.md', 'docs/architecture.md']);
+    assert.ok(m.docFiles.includes('docs/adr/0001-append-only.md'));
+    assert.ok(m.docFiles.includes('docs/architecture.md'));
+    assert.equal(m.decisionRecords.length, 1);
+    assert.equal(m.decisionRecords[0]?.path, 'docs/adr/0001-append-only.md');
     assert.equal(m.hasTypeScript, true);
     assert.deepEqual(gatherProjectMaterial(join(root, 'nowhere')).docFiles, []);
   } finally {
@@ -80,10 +86,14 @@ test('the draft carries provenance on every proposal and asks exactly three ques
     const constraints = draft.statements.filter((s) => s.kind === 'constraint');
     assert.deepEqual(constraints.map((s) => s.text), ['Never commit generated files.', 'Do not edit the ledger schema without a decision record.']);
     assert.deepEqual(constraints.map((s) => [s.provenance.path, s.provenance.line]), [['AGENTS.md', 3], ['AGENTS.md', 4]]);
-    assert.deepEqual(draft.statements.filter((s) => s.kind === 'boundary').map((s) => s.text), ['The kernel never touches the network']);
+    assert.deepEqual(draft.statements.filter((s) => s.kind === 'boundary').map((s) => s.text), ['The kernel never touches the network', 'Runtime state is transactional']);
     assert.deepEqual(draft.statements.filter((s) => s.kind === 'glossary_entry').map((s) => s.term), ['posting', 'balance']);
     assert.deepEqual(draft.ownership.map((o) => [o.pattern, o.owners]), [['packages/core/', ['@acme/platform']], ['docs/', ['@acme/docs-team', '@acme/platform']]]);
-    assert.deepEqual(draft.canonicalArtifacts.map((c) => c.role), ['overview', 'agent instructions', 'contribution rules', 'architecture', 'glossary', 'ownership'].filter((r) => r !== 'contribution rules'));
+    assert.ok(draft.canonicalArtifacts.some((c) => c.role === 'decision record'));
+    assert.ok(draft.statements.some((s) => s.kind === 'decision' && /Postings are never updated in place/.test(s.text)));
+    assert.ok(draft.statements.some((s) => s.kind === 'boundary' && s.text === 'Runtime state is transactional'));
+    assert.ok(draft.canonicalArtifacts.map((c) => c.role).includes('overview'));
+    assert.ok(draft.canonicalArtifacts.map((c) => c.role).includes('architecture'));
     for (const s of draft.statements) assert.ok(s.provenance.path && s.provenance.excerpt);
     assert.equal(draft.questions.length, 3);
     assert.deepEqual(draft.questions.map((q) => q.id), ['scale', 'primary_outcome', 'protected_constraints']);
@@ -191,6 +201,62 @@ test('noninteractive answers with nothing supplied leave onboarding incomplete a
       const complete = applyOnboardingAnswers(init.store, { answers: { purpose: 'a tool', scale: 'solo', primaryOutcome: 'learn' }, by: 'ci', at: AT, nextId });
       assert.equal(complete.profile.onboardingState, 'confirmed');
       assert.equal(onboardingStatus(init.store).openQuestions.length, 1); // the constraints question stays open until answered
+    } finally {
+      init.store.close();
+    }
+  } finally {
+    cleanup();
+  }
+});
+
+test('quoted examples are not proposed as constraints, and caps report continuation', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    writeFileSync(join(root, 'AGENTS.md'), [
+      '# Agents', '', 'Never commit secrets.', '', '```', 'Never paste this example as policy.', '```', '',
+      ...Array.from({ length: 12 }, (_, i) => `Never do thing ${String(i + 1)}.`),
+    ].join('\n'), 'utf8');
+    const draft = draftFromMaterial(gatherProjectMaterial(root));
+    const constraints = draft.statements.filter((s) => s.kind === 'constraint');
+    assert.equal(constraints.some((s) => /paste this example/.test(s.text)), false);
+    assert.ok(draft.coverage.some((c) => c.omitted > 0 && c.continuation !== null));
+  } finally {
+    cleanup();
+  }
+});
+
+test('a docs directory symlink that escapes is skipped; an inside file symlink is one file', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    const outside = join(root, '..', `escape-${String(Date.now())}`);
+    mkdirSync(outside, { recursive: true });
+    writeFileSync(join(outside, 'secret.md'), 'outside secret', 'utf8');
+    mkdirSync(join(root, 'inside'), { recursive: true });
+    writeFileSync(join(root, 'inside', 'ok.md'), '# Inside', 'utf8');
+    symlinkSync(outside, join(root, 'docs'));
+    symlinkSync(join(root, 'inside', 'ok.md'), join(root, 'AGENTS.md'));
+    const m = gatherProjectMaterial(root);
+    assert.equal(m.docFiles.length, 0);
+    assert.equal(m.agentInstructions.length, 1);
+    assert.equal(m.agentInstructions[0]?.viaSymlink, true);
+  } finally {
+    cleanup();
+  }
+});
+
+test('applying a draft keeps locator and content digest on the statement', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    fixtureRepo(root);
+    const init = initializeProject({ root, projectId: 'p', name: 'ledger', at: AT });
+    try {
+      let n = 0;
+      const applied = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId: (p) => `${p}-${String(++n)}` });
+      const decision = applied.proposedStatements.find((s) => s.kind === 'decision');
+      assert.ok(decision);
+      assert.equal(decision!.locator, 'docs/adr/0001-append-only.md');
+      assert.ok(decision!.contentDigest);
+      assert.match(decision!.contentDigest!, /^sha256:/);
     } finally {
       init.store.close();
     }

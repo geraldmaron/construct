@@ -31,6 +31,9 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'constitution_shape',
   'no_velocity_as_capacity',
   'evidence_refs_resolve',
+  'verification_result',
+  'review_complete',
+  'plan_complete',
 ]);
 
 export function capabilityDeclaration(name: CapabilityName): CapabilityDeclaration | null {
@@ -53,15 +56,32 @@ export interface HostCapabilities {
   readonly executorId: string;
   /** Capability names available, with scope where relevant (read_source:jira). */
   readonly available: ReadonlySet<CapabilityName>;
+  readonly declared?: ReadonlySet<CapabilityName>;
+  readonly reported?: readonly string[];
+  readonly probed?: readonly string[];
+  readonly permitted?: ReadonlySet<CapabilityName>;
+  readonly unavailable?: readonly string[];
+  readonly exercised?: ReadonlySet<CapabilityName>;
   /** Tiers this executor may reach at most, before grants. */
   readonly maxTier: ActionTier;
   readonly restrictions: readonly string[];
   readonly budgetCents: number | null;
 }
 
-/** Whether a required capability is provided, honoring scope: `read_source:jira` needs that exact scope or the unscoped name. */
+/**
+ * Whether a required capability is provided, honoring scope.
+ * `read_source:jira` needs that exact scope or the unscoped name.
+ * An unscoped requirement (`read_source`) is met by the unscoped grant or
+ * any scoped grant of the same base — a directory reader does not invent Jira.
+ */
 export function provides(host: HostCapabilities, required: CapabilityName): boolean {
   if (host.available.has(required)) return true;
   const base = required.includes(':') ? required.slice(0, required.indexOf(':')) : required;
-  return host.available.has(base);
+  if (host.available.has(base)) return true;
+  if (!required.includes(':')) {
+    for (const name of host.available) {
+      if (name.startsWith(`${required}:`)) return true;
+    }
+  }
+  return false;
 }

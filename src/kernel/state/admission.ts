@@ -57,7 +57,16 @@ export function bindGoverningStatement(
     kind,
     name: statement.text.length > 120 ? `${statement.text.slice(0, 117)}...` : statement.text,
     externalRef: ref,
-    attributes: { statementKind: statement.kind },
+    attributes: {
+      statementKind: statement.kind,
+      locator: statement.locator,
+      span: statement.span,
+      excerpt: statement.excerpt,
+      sourceRevision: statement.sourceRevision,
+      extractorVersion: statement.extractorVersion,
+      contentDigest: statement.contentDigest,
+      quoted: statement.quoted,
+    },
     at,
   });
 }

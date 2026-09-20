@@ -67,6 +67,11 @@ export interface WorkflowRun {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly finishedAt: string | null;
+  readonly invocationId: string | null;
+  readonly workIdentity: string | null;
+  readonly workflowDigest: string | null;
+  readonly cancelRequested: boolean;
+  readonly bindings: unknown;
 }
 
 interface Row {
@@ -87,6 +92,11 @@ interface Row {
   readonly created_at: string;
   readonly updated_at: string;
   readonly finished_at: string | null;
+  readonly invocation_id: string | null;
+  readonly work_identity: string | null;
+  readonly workflow_digest: string | null;
+  readonly cancel_requested: number | null;
+  readonly bindings_json: string | null;
 }
 
 function toRun(row: Row): WorkflowRun {
@@ -108,6 +118,11 @@ function toRun(row: Row): WorkflowRun {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     finishedAt: row.finished_at,
+    invocationId: row.invocation_id,
+    workIdentity: row.work_identity,
+    workflowDigest: row.workflow_digest,
+    cancelRequested: row.cancel_requested === 1,
+    bindings: parseJson(row.bindings_json),
   };
 }
 
@@ -123,6 +138,10 @@ export interface CreateRunInput {
   readonly hostId?: string;
   readonly sessionId?: string;
   readonly input: unknown;
+  readonly invocationId?: string;
+  readonly workIdentity?: string;
+  readonly workflowDigest?: string;
+  readonly bindings?: unknown;
   readonly at: string;
 }
 
@@ -150,8 +169,9 @@ export function createRun(
       .prepare(
         `INSERT INTO workflow_runs
            (id, workflow_id, workflow_version, interaction_class, state, trigger_kind, idempotency_key,
-            executor_kind, executor_id, host_id, session_id, input_json, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 'preflight', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+            executor_kind, executor_id, host_id, session_id, input_json, created_at, updated_at,
+            invocation_id, work_identity, workflow_digest, bindings_json)
+         VALUES (?, ?, ?, ?, 'preflight', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
       )
       .get(
         input.id,
@@ -167,6 +187,10 @@ export function createRun(
         toJson(input.input),
         input.at,
         input.at,
+        input.invocationId ?? input.idempotencyKey,
+        input.workIdentity ?? null,
+        input.workflowDigest ?? null,
+        input.bindings === undefined ? null : toJson(input.bindings),
       ) as unknown as Row;
     appendActivity(store, {
       at: input.at,
@@ -267,3 +291,15 @@ export function transitionRun(
     return getRun(store, input.id)!;
   });
 }
+
+export function setCancelRequested(store: StateStore, id: string, at: string): WorkflowRun {
+  requireInstant(at, 'run.at');
+  const result = store.db.prepare('UPDATE workflow_runs SET cancel_requested = 1, updated_at = ? WHERE id = ?').run(at, id);
+  if (result.changes === 0) throw new Error(`no run ${id}`);
+  return getRun(store, id)!;
+}
+
+export function findActiveByWorkIdentity(store: StateStore, workIdentity: string): WorkflowRun | null {
+  return listActiveRuns(store).find((r) => r.workIdentity === workIdentity) ?? null;
+}
+

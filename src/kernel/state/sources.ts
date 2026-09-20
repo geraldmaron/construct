@@ -351,6 +351,10 @@ export function recordSnapshot(
     readonly digest: string;
     readonly summary?: string;
     readonly evidenceRef?: string;
+    readonly inventoryDigest?: string;
+    readonly contentDigest?: string;
+    readonly itemCount?: number;
+    readonly coverage?: unknown;
     readonly at: string;
   },
 ): { readonly snapshot: SourceSnapshot; readonly changed: boolean } {
@@ -368,8 +372,8 @@ export function recordSnapshot(
     } else {
       const row = store.db
         .prepare(
-          `INSERT INTO source_snapshots (id, source_id, digest, summary, evidence_ref, taken_at)
-           VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
+      `INSERT INTO source_snapshots (id, source_id, digest, summary, evidence_ref, inventory_digest, content_digest, item_count, coverage_json, taken_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         )
         .get(
           input.id,
@@ -377,6 +381,10 @@ export function recordSnapshot(
           input.digest,
           input.summary ?? null,
           input.evidenceRef ?? null,
+          input.inventoryDigest ?? null,
+          input.contentDigest ?? null,
+          input.itemCount ?? null,
+          input.coverage === undefined ? null : JSON.stringify(input.coverage),
           input.at,
         ) as unknown as SnapshotRow;
       snapshot = toSnapshot(row);

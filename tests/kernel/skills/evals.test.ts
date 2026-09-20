@@ -80,7 +80,7 @@ test('the operational skill teaches the session what the directive requires and 
   assert.doesNotMatch(body, /construct work|role-serve|MCP server|JSON-RPC/);
   assert.match(body, /Do not run Construct.s command line to do the\s+work/);
   const manifest = skills.get('construct')!.manifest;
-  assert.equal(manifest.version, '2.1.0');
+  assert.equal(manifest.version, '2.2.0');
   assert.deepEqual(manifest.interactionClasses, ['answer', 'remember', 'manage', 'maintain']);
 });
 

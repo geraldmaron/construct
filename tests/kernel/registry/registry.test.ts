@@ -279,6 +279,8 @@ test('host capabilities honor scope', () => {
   assert.ok(provides(h, 'read_source:jira'));
   assert.ok(!provides(h, 'read_source:github'));
   assert.ok(provides(host({ available: new Set(['read_source']) }), 'read_source:github'));
+  assert.ok(provides(h, 'read_source'), 'an unscoped requirement is met by a scoped reader that exists');
+  assert.ok(!provides(host({ available: new Set(['read_source:directory']) }), 'read_source:jira'), 'a directory reader does not invent Jira');
 });
 
 test('the shipped skills and workflows load, agree with their frontmatter, and resolve', () => {
