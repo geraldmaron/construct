@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createBrokerContext, type BrokerBinding } from '../../src/cli/broker-context.ts';
+import { bindingFor, createBrokerContext, type BrokerBinding } from '../../src/cli/broker-context.ts';
 import { toolsFor } from '../../src/kernel/broker/tools.ts';
 import type { BrokerContext } from '../../src/kernel/broker/context.ts';
 import { addStep, claimStep, getStep, renewExecutorLeases } from '../../src/kernel/state/steps.ts';
@@ -83,6 +83,17 @@ test('claiming a step and walking away cannot fail it for everyone else', () => 
     const next = claimStep(store, { owner: 'session:cursor:ses_other', now: '2026-09-24T12:02:00.000Z', leaseUntil: '2026-09-24T12:03:00.000Z', runId: 'run-d' });
     assert.ok(next, 'the abandoned lease expired and the step went to the next session');
     assert.equal(getStep(store, 's-d')!.state, 'leased');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a runner cannot take an id Construct minted for another runner or session', () => {
+  const fx = brokerFixture();
+  try {
+    assert.throws(() => bindingFor(fx.ctx, { headless: true, executor: 'runner:ses_0f9c' }), /Construct mints for a runner started without one/);
+    assert.throws(() => bindingFor(fx.ctx, { headless: true, executor: 'session:claude-code:ses_1' }), /names an interactive session/);
+    assert.equal(bindingFor(fx.ctx, { headless: true, executor: 'runner:nightly' }).executorId, 'runner:nightly');
   } finally {
     fx.cleanup();
   }

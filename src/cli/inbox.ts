@@ -54,6 +54,7 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
       case 'resolve': {
         const [id, answer] = args.positionals as [string, string];
         const channel = channelFor(ctx.env, ctx.terminal);
+        project.store.attribution.channel = channel;
         const proposal = getStatement(project.store, id);
         if (proposal?.status === 'proposed') {
           const s = resolveProposal(project.store, { id, resolution: answer, at: broker.now(), nextId: broker.nextId, by: answeredBy(channel), channel });

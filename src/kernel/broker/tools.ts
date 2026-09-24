@@ -68,7 +68,7 @@ const bootstrap = define<Record<string, never>, unknown>({
       : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
       construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null, lane: ctx.lane } },
-      session: { host: ctx.host.hostId, session: ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
+      session: { host: ctx.host.hostId, session: ctx.sessionId ?? ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })), proposals },
       sources,
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
@@ -652,7 +652,7 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     }
     if (action === 'takeover') {
       if (!reason) throw new Error('takeover needs a reason');
-      return takeoverWork(ctx.store, { id: item.id, ...who, until, now: at, reason });
+      return takeoverWork(ctx.store, { id: item.id, ...who, until, now: at, reason, processAlive: ctx.processAlive });
     }
     if (!reason) throw new Error('reopen needs a reason');
     return reopenWork(ctx.store, { id: item.id, actor: ctx.actor, at, reason });

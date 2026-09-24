@@ -33,4 +33,9 @@ export interface BrokerContext {
   readonly nextId: (prefix: string) => string;
   /** Who acts, for the record: the model via its host on an interactive surface, the runner on a headless one. Never the person. */
   readonly actor: string;
+  /**
+   * Whether a process on `machine` still runs, when this caller can tell (it
+   * is the same machine); null when it cannot. Supplied by the adapter.
+   */
+  readonly processAlive?: (pid: number, machine: string) => boolean | null;
 }

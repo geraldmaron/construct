@@ -50,7 +50,7 @@ test('a live claim is settled only with its token; once it expires it protects n
     const a = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1) });
     assert.throws(() => completeWork(fx.store, { id: 'w-1', owner: 'ses-b/main', at: t(2) }), /held by ses-a\/main/);
     assert.throws(() => completeWork(fx.store, { id: 'w-1', owner: 'ses-a/main', at: t(2) }), /held by ses-a\/main/, 'the holder too needs its token');
-    assert.throws(() => completeWork(fx.store, { id: 'w-1', owner: 'ses-b/main', token: 'guess', at: t(2) }), /does not hold it/);
+    assert.throws(() => completeWork(fx.store, { id: 'w-1', owner: 'ses-b/main', token: 'guess', at: t(2) }), /do not hold it/);
     assert.equal(completeWork(fx.store, { id: 'w-1', owner: 'ses-a/main', token: a.claimToken, at: t(3) }).status, 'completed');
 
     claimWork(fx.store, { id: 'w-2', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(4) });
@@ -130,5 +130,48 @@ test('a snapshot never carries a live claim’s secret, and one from another pro
   } finally {
     fx.cleanup();
     other.cleanup();
+  }
+});
+
+test('a holder cannot be taken over by its own name; a session’s main agent may take work back from its own agent', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store, 'w-1');
+    session(fx.store, 'ses-a', 5);
+    const helper = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/helper', session: 'ses-a', agent: 'helper', until: t(60), now: t(1) });
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-a/helper', session: 'ses-a', agent: 'helper', until: t(90), now: t(2), reason: 'naming the holder' }), /you already hold/);
+    assert.throws(() => completeWork(fx.store, { id: 'w-1', owner: 'ses-b/main', token: helper.claimToken, at: t(2) }), /do not hold it/, 'the token alone does not settle it for another owner');
+    const back = takeoverWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', agent: 'main', until: t(90), now: t(3), reason: 'the helper stalled' });
+    assert.equal(back.claimOwner, 'ses-a/main');
+    const event = fx.store.db.prepare(`SELECT payload_json FROM work_events WHERE kind = 'taken_over'`).get() as { payload_json: string };
+    assert.match(event.payload_json, /the helper stalled/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a holder whose process has ended is gone at once, when the caller can tell', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store, 'w-1');
+    fx.store.db.prepare(`INSERT INTO sessions (id, host, surface, machine, pid, started_at, last_seen_at) VALUES ('ses-dead', 'cursor', 'interactive', 'here', 424242, ?, ?)`).run(t(0), t(10));
+    claimWork(fx.store, { id: 'w-1', owner: 'ses-dead/main', session: 'ses-dead', until: t(60), now: t(9) });
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(90), now: t(11), reason: 'r', processAlive: () => null }), /still active/, 'cannot tell: wait');
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(90), now: t(11), reason: 'r', processAlive: () => true }), /still active/);
+    assert.equal(takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(90), now: t(11), reason: 'its process ended', processAlive: (pid, machine) => (pid === 424242 && machine === 'here' ? false : null) }).claimOwner, 'ses-b/main');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a claim with no session waits for its term; takeover says so', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store, 'w-1');
+    claimWork(fx.store, { id: 'w-1', owner: 'person via cli', until: t(60), now: t(1) });
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(90), now: t(2), reason: 'r' }), /no session to check; it frees itself then/);
+    assert.equal(takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(90), now: t(61), reason: 'expired' }).claimOwner, 'ses-b/main');
+  } finally {
+    fx.cleanup();
   }
 });

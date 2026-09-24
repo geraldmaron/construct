@@ -22,6 +22,7 @@ import {
   type WorkStatus,
 } from '../kernel/work/service.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
+import { processAlive } from './broker-context.ts';
 import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
@@ -30,6 +31,9 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const group = 'Work';
+
+/** The longest a claim made from the command line may run, whatever --until asks. */
+const CLI_CLAIM_CEILING_MS = 24 * 60 * 60_000;
 
 export const WORK_SPECS: readonly CommandSpec[] = [
   { path: ['work', 'list'], gloss: 'query work items', group, positionals: [], flags: [
@@ -73,8 +77,21 @@ export const WORK_SPECS: readonly CommandSpec[] = [
 
 export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const at = ctx.now();
-  const actor = answeredBy(channelFor(ctx.env, ctx.terminal));
+  const channel = channelFor(ctx.env, ctx.terminal);
+  const actor = answeredBy(channel);
+  // A claim from the command line is the person's. A model runs work through
+  // its session's work tool, where the claim belongs to that session and agent;
+  // from here every model would share one name.
+  const personOnly = (what: string): void => {
+    if (channel !== 'tty_cli') {
+      throw new OperationError(
+        `${what} from the command line is the person's to do, and this is not a terminal of theirs`,
+        'A session claims and takes over work with the work tool, where the claim belongs to that session.',
+      );
+    }
+  };
   return withProject(ctx, (project) => {
+    project.store.attribution.channel = channel;
     switch (sub) {
       case 'list': {
         const page = queryWork(project.store, {
@@ -127,10 +144,13 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         return 0;
       }
       case 'claim': {
+        personOnly('Claiming work');
+        const requested = (args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString();
+        const ceiling = new Date(Date.parse(at) + CLI_CLAIM_CEILING_MS).toISOString();
         const w = claimWork(project.store, {
           id: args.positionals[0]!,
           owner: actor,
-          until: (args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString(),
+          until: requested > ceiling ? ceiling : requested,
           now: at,
           token: args.flags.token as string | undefined,
           expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
@@ -140,9 +160,10 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         return 0;
       }
       case 'takeover': {
+        personOnly('Taking over work');
         const reason = args.flags.reason as string | undefined;
         if (!reason) throw new UsageError('work takeover needs --reason');
-        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason });
+        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason, processAlive });
         if (args.json) writeJson(w);
         else say(`took over ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
         return 0;
