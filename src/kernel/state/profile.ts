@@ -183,6 +183,8 @@ export interface Statement {
   readonly quoted: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** How the person's words reached Construct: relayed by a model, or on a channel of their own. Null for inferred statements. */
+  readonly channel: string | null;
 }
 
 interface StatementRow {
@@ -204,6 +206,7 @@ interface StatementRow {
   readonly quoted: number | null;
   readonly created_at: string;
   readonly updated_at: string;
+  readonly channel: string | null;
 }
 
 function toStatement(row: StatementRow): Statement {
@@ -235,6 +238,7 @@ function toStatement(row: StatementRow): Statement {
     quoted: row.quoted === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    channel: row.channel ?? null,
   };
 }
 
@@ -259,6 +263,8 @@ export function addStatement(
     readonly extractorVersion?: string;
     readonly contentDigest?: string;
     readonly quoted?: boolean;
+    /** How the person's words arrived, for a statement they gave. */
+    readonly channel?: string;
     readonly at: string;
   },
 ): Statement {
@@ -275,8 +281,8 @@ export function addStatement(
     .prepare(
       `INSERT INTO statements
          (id, kind, text, term, status, provenance, source_id, run_id, locator, span_json, excerpt,
-          source_revision, extractor_version, content_digest, quoted, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+          source_revision, extractor_version, content_digest, quoted, created_at, updated_at, channel)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(
       input.id,
@@ -296,6 +302,7 @@ export function addStatement(
       input.quoted ? 1 : 0,
       input.at,
       input.at,
+      input.channel ?? null,
     ) as unknown as StatementRow;
   return toStatement(row);
 }

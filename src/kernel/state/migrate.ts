@@ -289,6 +289,7 @@ export const FORMAT4_COLUMNS: ReadonlyArray<readonly [table: string, column: str
   ['grants', 'run_id', 'TEXT'],
   ['grants', 'step_run_id', 'TEXT'],
   ['grants', 'channel', 'TEXT'],
+  ['statements', 'channel', 'TEXT'],
 ];
 
 /**

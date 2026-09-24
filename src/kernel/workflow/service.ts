@@ -154,6 +154,8 @@ export interface WorkflowService {
     readonly kind: StatementKind;
     readonly text: string;
     readonly by: string;
+    /** How the person's words arrived: relayed by the model unless they gave them on a channel of their own. */
+    readonly channel?: DecisionChannel;
     readonly assumptions?: readonly string[];
     readonly replaces?: string;
   }): Statement;
@@ -551,12 +553,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   return {
     classify: classifyInteraction,
 
-    remember({ kind, text, by, assumptions = [], replaces }) {
+    remember({ kind, text, by, channel = 'relay', assumptions = [], replaces }) {
       const at = deps.now();
       const decision = evaluateAction(store, { tier: 'project_write', targetSystem: 'construct-state', targetResource: 'statements', operation: `remember: ${text}`, executorId: deps.host.executorId }, policyContext('remember', at));
       if (!decision.allowed) throw new Error(decision.denial.missing);
       return store.transaction(() => {
-        const statement = addStatement(store, { id: deps.nextId('st'), kind, text, provenance: 'user', at });
+        const statement = addStatement(store, { id: deps.nextId('st'), kind, text, provenance: 'user', channel, at });
         const entity = isGoverningKind(kind) ? bindGoverningStatement(store, statement, at, deps.nextId) : null;
         if (replaces) {
           if (!getStatement(store, replaces)) throw new Error(`no statement ${replaces} to replace`);
