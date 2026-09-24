@@ -4,13 +4,14 @@
  */
 
 import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { planReset, applyReset } from '../kernel/project/reset.ts';
 import { initializeProject, readProjectFiles } from '../kernel/project/initialize.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
 import { findProjectRoot } from '../kernel/project/discover.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, gitRootOf, initRootFor, type CliContext } from './context.ts';
-import { esc, say, writeJson } from './output.ts';
+import { esc, OperationError, say, writeJson } from './output.ts';
 import { basename } from 'node:path';
 
 export const RESET_SPEC: CommandSpec = {
@@ -22,9 +23,22 @@ export const RESET_SPEC: CommandSpec = {
     { name: 'confirm', gloss: 'remove the named targets', takesValue: false },
     { name: 'include-project-files', gloss: 'also remove the committed .construct files, not only runtime state', takesValue: false },
     { name: 'keep-state', gloss: 'do not recreate state after removing', takesValue: false },
+    { name: 'force', gloss: 'remove the state even while another process has it open', takesValue: false },
   ],
   readOnly: false,
 };
+
+/**
+ * Other processes that have `path` open, by pid. SQLite cannot see an idle
+ * connection in another process, so this asks the operating system. Where the
+ * question cannot be asked (no lsof), the answer is none: the person confirmed
+ * the reset and named the targets.
+ */
+function processesHolding(path: string): number[] {
+  const r = spawnSync('lsof', ['-t', '--', path], { encoding: 'utf8' });
+  if (r.error || typeof r.stdout !== 'string') return [];
+  return r.stdout.split('\n').map((l) => Number(l.trim())).filter((pid) => Number.isInteger(pid) && pid > 0 && pid !== process.pid);
+}
 
 export function reset(args: ParsedArgs, ctx: CliContext = createContext()): number {
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
@@ -46,6 +60,14 @@ export function reset(args: ParsedArgs, ctx: CliContext = createContext()): numb
     return 0;
   }
 
+  const dbPath = projectLayout(root).dbPath;
+  const holders = existsSync(dbPath) ? processesHolding(dbPath) : [];
+  if (holders.length > 0 && !boolFlag(args, 'force')) {
+    throw new OperationError(
+      `the state database is open in ${String(holders.length)} other process(es) (pid ${holders.join(', ')}), most likely an agent session’s MCP server; removing it now would leave those sessions writing to a file that no longer exists`,
+      'Close those sessions (or stop their MCP servers), then run reset again. --force removes it anyway.',
+    );
+  }
   const removed = plan.targets.length === 0 ? [] : applyReset(plan, plan.targets.map((t) => t.path));
   let recreated: string | null = null;
   if (!boolFlag(args, 'keep-state')) {
