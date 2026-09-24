@@ -134,7 +134,13 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       const skill = readShippedSkill(OPERATIONAL_SKILL);
       if (skill) {
         const state = skillState(skill, dir);
-        checks.push({ name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir}: ${state.why}` });
+        const install = `construct skill install ${OPERATIONAL_SKILL} --client=${ambient.host}`;
+        const next = state.state === 'current'
+          ? ''
+          : state.state === 'diverged'
+            ? `; \`${install} --force\` replaces it with ${skill.version ?? 'the shipped copy'}, and any edits in it are lost`
+            : `; run \`${install}\` to plant ${skill.version ?? 'the shipped copy'}`;
+        checks.push({ name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir}: ${state.why}${next}` });
       }
     }
   } else {

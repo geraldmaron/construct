@@ -182,7 +182,7 @@ plant a shipped skill into a host’s skills directory, byte for byte
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
 | `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
-| `--force` | no | overwrite a copy that differs |
+| `--force` | no | overwrite a copy that someone changed; an earlier release is replaced without it |
 
 Reads only: no.
 

@@ -97,6 +97,11 @@ function describeAdmission(extracted: number, unanswered: readonly string[]): st
   return lines;
 }
 
+/** A path as one shell word: bare when it is plain, single-quoted otherwise. */
+function shellWord(path: string): string {
+  return /^[\w./~+-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
+}
+
 function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: string | null; readonly how: string } {
   const explicit = stringFlag(args, 'skills-dir');
   if (explicit) return { dir: explicit, how: '--skills-dir' };
@@ -195,7 +200,10 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       } else {
         const planted = plantSkill(skill, skills.dir);
         skillOk = planted.outcome !== 'refused';
-        skillLine = `${planted.outcome} at ${planted.path} (${planted.why}; ${skills.how})`;
+        const replace = planted.outcome === 'refused' && planted.found === 'diverged'
+          ? `; \`construct skill install ${OPERATIONAL_SKILL} --force --dir=${shellWord(skills.dir)}\` replaces it, and any edits in it are lost`
+          : '';
+        skillLine = `${planted.outcome} at ${planted.path} (${planted.why}${replace}; ${skills.how})`;
       }
     } else {
       skillLine = `skipped: ${skills.how}`;
