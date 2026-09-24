@@ -2,7 +2,7 @@
 
 ## Unreleased — native work cutover
 
-- **Native work ledger.** Bounded work lives in Construct state format 3.
+- **Native work ledger.** Bounded work lives in Construct state format 4.
   `construct work` and the `work` tool query, claim, complete, and restore
   it. An external tracker is not part of the operating contract.
 - **Discovery admits conventions, not just filenames.** ADR directories and

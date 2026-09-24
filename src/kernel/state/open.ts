@@ -20,7 +20,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
-import { isCompleteV2, migrateV2ToV3, migrateV3ToV4 } from './migrate.ts';
+import { isCompleteV2, isCompleteV3, migrateV2ToV3, migrateV3ToV4 } from './migrate.ts';
 
 /** How long one statement waits for another connection's lock. */
 export const BUSY_TIMEOUT_MS = 5000;
@@ -32,6 +32,13 @@ export interface OpenStateOptions {
   readonly readOnly?: boolean;
   /** Upgrade a complete store in the previous format. Only `construct migrate` asks. */
   readonly migrate?: boolean;
+  /**
+   * Called under the write lock with the format found, once the store is
+   * verified complete and before the upgrade writes anything. A throw leaves
+   * the store as it was. `construct migrate` takes its backup here, so the
+   * backup holds exactly the store the upgrade starts from.
+   */
+  readonly beforeUpgrade?: (found: number) => void;
   /** Per-statement lock wait. Defaults to BUSY_TIMEOUT_MS; tests shorten it. */
   readonly busyTimeoutMs?: number;
 }
@@ -120,11 +127,18 @@ function readMeta(db: DatabaseSync, key: string): string | null {
   return row?.value ?? null;
 }
 
+function isComplete(db: DatabaseSync, version: 2 | 3): boolean {
+  return version === 2 ? isCompleteV2(db) : isCompleteV3(db);
+}
+
 /**
  * Format 4 is current. A complete store in format 2 or 3 is upgraded in place
  * (one way, through each format in turn) when `migrate` is set, and refused as
- * older otherwise. A newer format is refused as newer, never with an
- * instruction that would discard it. Anything else is refused unread.
+ * older otherwise. A store missing one of its format's tables is refused
+ * unread. A newer format is refused as newer, never with an instruction that
+ * would discard it. Anything else is refused unread. The format is read again
+ * under the write lock, so a store another process changed meanwhile is
+ * judged as it now is.
  */
 function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions): number | null {
   const names = tableNames(db);
@@ -141,17 +155,25 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
     throw new UnsupportedStateError(format, versionOrNull, 'newer');
   }
   if (versionOrNull === 2 || versionOrNull === 3) {
-    if (versionOrNull === 2 && !isCompleteV2(db)) throw new UnsupportedStateError(format, versionOrNull);
+    if (!isComplete(db, versionOrNull)) throw new UnsupportedStateError(format, versionOrNull);
     if (!options.migrate || options.readOnly) throw new UnsupportedStateError(format, versionOrNull, 'older');
     let migrated: number | null = null;
     beginImmediate(db, path);
     try {
-      // Another process may have upgraded it while this one waited for the lock.
-      const found = Number(readMeta(db, 'format_version'));
-      if (found === 2) migrateV2ToV3(db);
-      if (found === 2 || found === 3) {
+      const nowFormat = readMeta(db, 'format');
+      const foundRaw = readMeta(db, 'format_version');
+      const found = foundRaw === null ? null : Number(foundRaw);
+      const foundOrNull = found !== null && Number.isFinite(found) ? found : null;
+      if (nowFormat !== STATE_FORMAT_ID) throw new UnsupportedStateError(nowFormat, foundOrNull);
+      if (foundOrNull !== null && foundOrNull > STATE_FORMAT_VERSION) throw new UnsupportedStateError(nowFormat, foundOrNull, 'newer');
+      if (foundOrNull === 2 || foundOrNull === 3) {
+        if (!isComplete(db, foundOrNull)) throw new UnsupportedStateError(nowFormat, foundOrNull);
+        options.beforeUpgrade?.(foundOrNull);
+        if (foundOrNull === 2) migrateV2ToV3(db);
         migrateV3ToV4(db);
-        migrated = found;
+        migrated = foundOrNull;
+      } else if (foundOrNull !== STATE_FORMAT_VERSION) {
+        throw new UnsupportedStateError(nowFormat, foundOrNull);
       }
       db.exec('COMMIT');
     } catch (err) {
