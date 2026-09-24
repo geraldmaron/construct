@@ -13,7 +13,7 @@ import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { stringFlag } from './commands.ts';
-import { bindProject, configInputs, createContext, type CliContext, type BoundProject } from './context.ts';
+import { bindProject, configInputs, createContext, requireMainCheckout, type CliContext, type BoundProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
@@ -126,6 +126,7 @@ export function configCommand(sub: string, args: ParsedArgs, argv: readonly stri
       const parsed = sub === 'set' ? spec.parse(value, `--${key}`) : undefined;
       if (scope === 'project') {
         if (!bound?.files.config) throw new NoProjectError(ctx.cwd);
+        requireMainCheckout(bound, `config ${sub} --scope=project`);
         const behavior = { ...bound.files.config.behavior };
         if (sub === 'set') behavior[key] = parsed;
         else delete behavior[key];
