@@ -3,13 +3,14 @@
  * (the native work ledger and provenance columns) and 3 to 4 (sessions, agent
  * attribution, fenced claims, path leases, and answer channels).
  *
- * Format 1 and anything else remain refused unread. Format 2 that is missing
- * a format-2 table is also refused: this migrator adds the native work
- * ledger and provenance columns, it does not repair a truncated database.
- * After native writes begin, rolling back to a format-2 snapshot would
- * drop them; that is why this upgrade is one-way.
+ * Format 1 and anything else remain refused unread. A format-2 or format-3
+ * store missing one of its format's tables is also refused unread: these
+ * upgrades add to a complete store, they do not repair a truncated one.
+ * After native writes begin, rolling back to an older snapshot would drop
+ * them; that is why each upgrade is one-way.
  */
 
+import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 
 export const V2_REQUIRED_TABLES = [
@@ -39,6 +40,18 @@ export const V2_REQUIRED_TABLES = [
   'triggers',
   'trigger_firings',
   'activity_events',
+] as const;
+
+/** Every table a complete format-3 store holds: format 2's and the native work ledger's. */
+export const V3_REQUIRED_TABLES = [
+  ...V2_REQUIRED_TABLES,
+  'work_items',
+  'work_dependencies',
+  'work_events',
+  'work_legacy_ids',
+  'work_runs',
+  'reviews',
+  'run_bindings',
 ] as const;
 
 const WORK_SQL = `
@@ -165,6 +178,11 @@ export function isCompleteV2(db: DatabaseSync): boolean {
   return V2_REQUIRED_TABLES.every((t) => names.has(t));
 }
 
+export function isCompleteV3(db: DatabaseSync): boolean {
+  const names = tableNames(db);
+  return V3_REQUIRED_TABLES.every((t) => names.has(t));
+}
+
 export function migrateV2ToV3(db: DatabaseSync): void {
   addColumn(db, 'statements', 'locator', 'TEXT');
   addColumn(db, 'statements', 'span_json', 'TEXT');
@@ -173,7 +191,7 @@ export function migrateV2ToV3(db: DatabaseSync): void {
   addColumn(db, 'statements', 'extractor_version', 'TEXT');
   addColumn(db, 'statements', 'content_digest', 'TEXT');
   addColumn(db, 'statements', 'coverage_json', 'TEXT');
-  addColumn(db, 'statements', 'quoted', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn(db, 'statements', 'quoted', 'INTEGER NOT NULL DEFAULT 0 CHECK (quoted IN (0, 1))');
 
   addColumn(db, 'claims', 'locator', 'TEXT');
   addColumn(db, 'claims', 'span_json', 'TEXT');
@@ -193,7 +211,7 @@ export function migrateV2ToV3(db: DatabaseSync): void {
   addColumn(db, 'workflow_runs', 'work_id', 'TEXT');
   addColumn(db, 'workflow_runs', 'workflow_digest', 'TEXT');
   addColumn(db, 'workflow_runs', 'bindings_json', 'TEXT');
-  addColumn(db, 'workflow_runs', 'cancel_requested', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn(db, 'workflow_runs', 'cancel_requested', 'INTEGER NOT NULL DEFAULT 0 CHECK (cancel_requested IN (0, 1))');
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS workflow_runs_invocation ON workflow_runs (invocation_id) WHERE invocation_id IS NOT NULL');
   db.exec('CREATE INDEX IF NOT EXISTS workflow_runs_work_identity ON workflow_runs (work_identity, state)');
@@ -276,9 +294,28 @@ export const FORMAT4_COLUMNS: ReadonlyArray<readonly [table: string, column: str
 /**
  * Format 3 to 4. Existing claims keep their owners and expire as they would
  * have; the new identity columns stay empty for rows written before them.
+ * Every held claim's token is replaced by a random nonce nobody holds: a
+ * format-3 token is derived from the claim's owner, time, and revision,
+ * which any reader can see, so no token issued before the upgrade settles
+ * anything after it. The item stays held until its claim expires.
+ *
+ * An upgraded store holds every table, column, constraint, index, and
+ * trigger a fresh store has, with two exceptions the upgrade tests pin:
+ * - In a store that was once format 2, the columns format 3 added to
+ *   statements, claims, and source_snapshots follow every column format 2
+ *   declared (a fresh store declares them before created_at, or taken_at),
+ *   because ALTER TABLE only appends. Rows are read by column name, never by
+ *   position.
+ * - A format-3 store whose statements.quoted and workflow_runs.cancel_requested
+ *   were added without their CHECK (0 or 1) keeps them without it: SQLite
+ *   cannot add a constraint to an existing column. Construct writes only 0
+ *   or 1 there.
  */
 export function migrateV3ToV4(db: DatabaseSync): void {
   for (const [table, column, decl] of FORMAT4_COLUMNS) addColumn(db, table, column, decl);
   db.exec(FORMAT4_TABLES_SQL);
+  const held = db.prepare('SELECT id FROM work_items WHERE claim_token IS NOT NULL').all() as Array<{ id: string }>;
+  const reissue = db.prepare('UPDATE work_items SET claim_token = ? WHERE id = ?');
+  for (const { id } of held) reissue.run(randomUUID(), id);
   db.prepare(`UPDATE meta SET value = '4' WHERE key = 'format_version'`).run();
 }
