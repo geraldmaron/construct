@@ -226,6 +226,24 @@ test('a server pinned to the main checkout refuses a session in a worktree whose
   }
 });
 
+test('reset in a worktree is refused, names the main checkout, and never starts a second store', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    assert.equal(cli(fx, r.main, ['work', 'add', 'kept']).status, 0);
+    for (const args of [['reset'], ['reset', '--confirm']]) {
+      const refused = cli(fx, r.external, args);
+      assert.notEqual(refused.status, 0, `${args.join(' ')}: ${refused.out}`);
+      assert.match(refused.out, /git worktree of/);
+      assert.match(refused.out, pathPattern(r.main));
+    }
+    assert.equal(existsSync(join(r.external, '.construct', 'state')), false);
+    assert.deepEqual(titles(fx, r.main), ['kept']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('worktrees of a bare repository are refused, never treated as projects of their own', () => {
   const fx = sterile();
   try {
@@ -324,6 +342,35 @@ test('a worktree keeps its binding when the main checkout moves to a commit with
     assert.match(refused.out, /Restore the \.construct files in/);
     assert.match(refused.out, pathPattern(r.main));
     assert.doesNotMatch(refused.out, /Run `construct init` in/, 'the advice never re-initializes a project a worktree already names');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('commands that edit committed project files are refused in a worktree; reading and state-only changes still work', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    assert.equal(cli(fx, r.main, ['source', 'add', 'docs', '--kind=directory', '--purpose=the docs', '--locator=.']).status, 0);
+    const committed = ['project.json', 'constitution.json', 'sources.json', 'registry.lock.json'].map((f) => join(r.main, '.construct', f));
+    const before = committed.map((f) => readFileSync(f, 'utf8'));
+    for (const args of [
+      ['config', 'set', 'sources.defaultFreshnessHours', '12'],
+      ['config', 'unset', 'sources.defaultFreshnessHours'],
+      ['source', 'add', 'notes', '--kind=directory', '--purpose=notes', '--locator=.'],
+      ['source', 'retire', 'docs'],
+      ['skill', 'update'],
+      ['project', 'refresh'],
+    ]) {
+      const refused = cli(fx, r.external, args);
+      assert.notEqual(refused.status, 0, `${args.join(' ')}: ${refused.out}`);
+      assert.match(refused.out, /edits the project's committed \.construct files/, args.join(' '));
+      assert.match(refused.out, pathPattern(r.main), args.join(' '));
+    }
+    assert.deepEqual(committed.map((f) => readFileSync(f, 'utf8')), before, 'the main checkout\'s committed files are untouched');
+    assert.equal(cli(fx, r.external, ['config', 'get', 'sources.defaultFreshnessHours']).status, 0);
+    assert.equal(cli(fx, r.external, ['skill', 'update', '--dry-run']).status, 0);
+    assert.equal(cli(fx, r.external, ['source', 'add', 'scratch', '--kind=directory', '--purpose=scratch', '--locator=.', '--local']).status, 0);
   } finally {
     fx.cleanup();
   }

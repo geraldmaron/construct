@@ -254,7 +254,10 @@ export interface BoundProject extends ProjectLocation {
   readonly files: ReturnType<typeof readProjectFiles>;
 }
 
-/** A linked worktree cannot be bound because the project it belongs to cannot be settled. */
+/**
+ * A linked worktree cannot do what was asked: the project it belongs to cannot
+ * be settled, or the act belongs to the project's main checkout.
+ */
 export class WorktreeBindingError extends OperationError {
   constructor(message: string, next: string) {
     super(message, next);
@@ -387,6 +390,19 @@ export function locateProject(ctx: CliContext): ProjectLocation {
 export function bindProject(ctx: CliContext): BoundProject {
   const located = locateProject(ctx);
   return { ...located, layout: projectLayout(located.root), files: readProjectFiles(located.root) };
+}
+
+/**
+ * Committed project files are edited only from the main checkout. A lane's
+ * copies may differ from the main checkout's, and editing another checkout's
+ * working tree would surprise whoever works there. `what` names the command.
+ */
+export function requireMainCheckout(bound: ProjectLocation, what: string): void {
+  if (bound.lane === null) return;
+  throw new WorktreeBindingError(
+    `${what} edits the project's committed .construct files, which are read from the main checkout (${bound.root}), and this runs in the git worktree ${bound.lane.checkout}`,
+    `Run it in ${bound.root}. To change them on this worktree's branch instead, edit ${join(bound.lane.root, '.construct')} and merge it.`,
+  );
 }
 
 /** The project exists and its store is intact, but another process held the write lock past every wait. */
