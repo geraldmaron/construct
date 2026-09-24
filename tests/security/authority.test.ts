@@ -107,3 +107,17 @@ test('tools that mint approvals, settle trust, or close work say so to the host'
   for (const name of ['decide', 'promote_deliverable', 'work']) assert.equal(byName.get(name)!.annotations.destructiveHint, true, name);
   for (const [name, tool] of byName) if (tool.annotations.readOnlyHint) assert.equal(tool.annotations.destructiveHint, false, name);
 });
+
+test('a workflow whose first step needs approval pauses cleanly and surfaces the question on every claim', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'direct', input: { target: 'PROJ-9' }, trigger: 'manual' });
+    const first = fx.service.claimNext({ runId: started.run.id });
+    assert.equal(first.waitingOn?.kind, 'decision');
+    assert.equal(fx.service.status(started.run.id)!.run.state, 'waiting_for_decision');
+    const again = fx.service.claimNext({ runId: started.run.id });
+    assert.equal(again.waitingOn?.kind, 'decision', 'a later claim still names the open question, not nothing_ready');
+  } finally {
+    fx.cleanup();
+  }
+});

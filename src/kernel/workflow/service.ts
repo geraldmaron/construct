@@ -342,19 +342,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return d.kind === 'approval' && d.state === 'resolved' && d.resolution === 'approve' && req !== undefined && req.executorId !== executorId;
     });
     if (approvedForAnother) return 'held';
-    const raised = raiseDecision(store, {
-      id: deps.nextId('decision'),
-      kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
-      question: decision.denial.stepUp.kind === 'approval' ? decision.denial.stepUp.description : `${decision.denial.missing}. ${decision.denial.stepUp.description}`,
-      runId: run.id,
-      stepRunId: stepRun.id,
-      options: decision.denial.stepUp.kind === 'approval' ? ['approve', 'decline'] : undefined,
-      subject: { request, stepUp: decision.denial.stepUp, attempted: decision.denial.attempted, safeNow: decision.denial.safeNow },
-      at,
+    // One unit: the question, the step's pause, and the run's pause land together
+    // or not at all. A run whose first step needs the question has started.
+    return store.transaction(() => {
+      const raised = raiseDecision(store, {
+        id: deps.nextId('decision'),
+        kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
+        question: decision.denial.stepUp.kind === 'approval' ? decision.denial.stepUp.description : `${decision.denial.missing}. ${decision.denial.stepUp.description}`,
+        runId: run.id,
+        stepRunId: stepRun.id,
+        options: decision.denial.stepUp.kind === 'approval' ? ['approve', 'decline'] : undefined,
+        subject: { request, stepUp: decision.denial.stepUp, attempted: decision.denial.attempted, safeNow: decision.denial.safeNow },
+        at,
+      });
+      if (stepRun.state === 'ready') transitionStep(store, { id: stepRun.id, to: 'waiting_for_decision', at, reason: 'awaiting approval' });
+      const current = getRun(store, run.id)!;
+      if (current.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+      if (current.state === 'ready' || current.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
+      return raised;
     });
-    if (stepRun.state === 'ready') transitionStep(store, { id: stepRun.id, to: 'waiting_for_decision', at, reason: 'awaiting approval' });
-    if (run.state === 'ready' || run.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
-    return raised;
   }
 
   /** Everything a trust move to `to` must satisfy, checked before the person is asked and again when it applies. */
@@ -480,6 +486,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       }
       const preflight = preflightOf(resolution, input.input);
       return store.transaction(() => {
+        // Another session may have started the same work between the checks
+        // above and this write lock; under the lock the answer is final.
+        const raced = keyExplicit
+          ? getRunByKey(store, keyExplicit)
+          : findActiveByWorkIdentity(store, workIdentity)
+            ?? (m.concurrency === 'single' ? listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked') ?? null : null);
+        if (raced) return { run: raced, created: false, resolution, preflight };
         if (resolution.status === 'runnable' || resolution.status === 'outdated') {
           for (const stale of listActiveRuns(store).filter((r) => r.workflowId === m.id && r.state === 'blocked')) {
             transitionRun(store, { id: stale.id, to: 'cancelled', at, reason: 'superseded by a run that resolved' });

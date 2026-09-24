@@ -40,6 +40,9 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     step('draft', { tier: 'draft', capabilities: ['model_review'], outputs: ['change'] }),
     step('push', { needs: ['draft'], tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], inputs: { change: 'steps.draft.change' }, outputs: ['applied'] }),
   ], { triggers: ['manual', 'event'], concurrency: 'per_input', cancellation: 'immediate', onNoData: 'block', dedupeKey: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'direct', workflowManifest('direct', '1.0.0', [
+    step('push', { tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['applied'] }),
+  ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
   writeWorkflow(join(dirs.root, 'workflows'), 'sweep', workflowManifest('sweep', '1.0.0', [
     step('read', { capabilities: ['read_project_context'], sources: [{ kind: 'directory', freshness: 'fresh', required: true }], outputs: ['seen'] }),
   ], { triggers: ['schedule', 'manual'], onNoData: 'succeed_empty', onStaleData: 'block', concurrency: 'single', interactionClass: 'maintain', inputSchema: {}, requiredInputs: [] }));
