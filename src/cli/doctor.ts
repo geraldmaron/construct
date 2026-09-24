@@ -89,7 +89,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         const detail = [
           `${String(rows.filter((r) => r.state === 'current').length)}/${String(rows.length)} current`,
           broken.length ? `${broken.map((r) => `${r.id} ${r.state}`).join(', ')}` : '',
-          behind.length ? `${String(behind.length)} outdated or unlocked (run init to lock)` : '',
+          behind.length ? `${String(behind.length)} outdated or unlocked (\`construct skill update\` locks them)` : '',
           problems.length ? `${String(problems.length)} bundle(s) failed to load: ${problems.map((p) => p.message).join('; ')}` : '',
         ].filter(Boolean).join('; ');
         checks.push({ name: 'registry', ok: broken.length === 0 && problems.length === 0, detail });
