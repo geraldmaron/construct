@@ -10,6 +10,13 @@ import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
 import { toolsFor } from '../../kernel/broker/tools.ts';
 import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
+import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
+import { renewSessionClaims } from '../../kernel/work/service.ts';
+
+/** How often a session's presence and claim terms are refreshed while it keeps calling. */
+const PRESENCE_INTERVAL_MS = 60_000;
+/** The term a work claim runs for, and is renewed to. */
+const CLAIM_TERM_MS = 30 * 60_000;
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import { failure, response, PROTOCOL_VERSION, type AsyncMessageHandler, type JsonRpcRequest, type JsonRpcResponse } from './jsonrpc.ts';
 
@@ -62,17 +69,44 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
     }
     return `the state database now carries format ${String(version)}, written by a different Construct build; this server reads format ${String(STATE_FORMAT_VERSION)} and has stopped writing. Restart the MCP server so the matching build binds.`;
   };
+  let lastPresence = 0;
+  /**
+   * Before each call: say who is acting, keep this session's presence fresh,
+   * and extend its claims past half their term, at most once a minute.
+   */
+  const beforeCall = (args: Record<string, unknown>): void => {
+    ctx.store.attribution.sessionId = ctx.sessionId;
+    ctx.store.attribution.agent = typeof args.agent === 'string' && args.agent.trim() ? args.agent.trim().slice(0, 80) : null;
+    ctx.store.attribution.channel = surface === 'interactive' ? 'relay' : null;
+    const now = Date.parse(ctx.now());
+    if (ctx.sessionId && now - lastPresence >= PRESENCE_INTERVAL_MS) {
+      lastPresence = now;
+      const at = new Date(now).toISOString();
+      touchSession(ctx.store, { id: ctx.sessionId, at });
+      renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS });
+    }
+  };
   return async (message: JsonRpcRequest) => {
     const { id, method, params } = message;
     const isNotification = id === undefined || id === null;
     switch (method) {
-      case 'initialize':
+      case 'initialize': {
+        const client = (record(params) as { clientInfo?: unknown }).clientInfo;
+        if (ctx.sessionId && client && typeof client === 'object') {
+          const info = client as { name?: unknown; version?: unknown };
+          try {
+            recordClient(ctx.store, { id: ctx.sessionId, name: typeof info.name === 'string' ? info.name : null, version: typeof info.version === 'string' ? info.version : null, at: ctx.now() });
+          } catch {
+            // Describing the client is a courtesy; the handshake never fails for it.
+          }
+        }
         return response(id, {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: SERVER_NAMES[surface], version: ctx.version },
           instructions: instructionsFor(surface, null),
         });
+      }
       case 'notifications/initialized':
       case 'notifications/cancelled':
         return null;
@@ -88,7 +122,9 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
         try {
           const stale = staleFormat();
           if (stale) return response(id, { ...text({ error: stale }), isError: true });
-          const input = tool.validate(record(p.arguments));
+          const args = record(p.arguments);
+          const input = tool.validate(args);
+          beforeCall(args);
           const result = await tool.run(ctx, input);
           return response(id, text(result));
         } catch (error) {

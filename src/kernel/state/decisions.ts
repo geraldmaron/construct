@@ -164,6 +164,7 @@ export function resolveDecision(
       stepRunId: current.stepRunId,
       actor: input.by,
       payload: { decisionId: input.id, kind: current.kind, channel: input.channel ?? null },
+      ...(input.channel !== undefined ? { channel: input.channel } : {}),
     });
     return getDecision(store, input.id)!;
   });

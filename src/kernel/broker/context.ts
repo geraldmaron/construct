@@ -18,6 +18,8 @@ export interface BrokerContext {
   readonly root: string;
   /** The git worktree this session works in, when it is not the project's main checkout. */
   readonly lane: { readonly root: string; readonly checkout: string; readonly branch: string | null; readonly head: string | null } | null;
+  /** The session Construct minted for this server process; null when a caller has none. */
+  readonly sessionId: string | null;
   readonly layout: ProjectLayout;
   readonly files: ReturnType<typeof readProjectFiles>;
   readonly store: StateStore;
@@ -29,6 +31,6 @@ export interface BrokerContext {
   readonly sources: SourceService;
   readonly now: () => string;
   readonly nextId: (prefix: string) => string;
-  /** The person's identity as the host reports it, for decisions and promotions. */
+  /** Who acts, for the record: the model via its host on an interactive surface, the runner on a headless one. Never the person. */
   readonly actor: string;
 }

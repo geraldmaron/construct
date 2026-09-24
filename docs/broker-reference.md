@@ -188,6 +188,7 @@ Surface: interactive. Reads only: no.
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
 | `reason` | string | no | Required for reopen and takeover; optional for complete. |
 | `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
+| `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
 
 ## Headless surface
 
