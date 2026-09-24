@@ -4,10 +4,11 @@
  */
 
 import { resolve } from 'node:path';
-import { serveLazyMcp, serveMcp, serveUnboundMcp } from '../hosts/mcp/server.ts';
+import { INIT_NEXT, serveLazyMcp, serveMcp, serveUnboundMcp, type BindFailure } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
-import { UnsupportedStateError } from '../kernel/state/format.ts';
+import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
+import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, ProjectBusyError, type CliContext } from './context.ts';
 import { bindingFor, openBroker } from './broker-context.ts';
@@ -29,6 +30,26 @@ export const SERVE_SPEC: CommandSpec = {
   readOnly: false,
 };
 
+/** How long launch waits for a lock before serving lazily, and how long each lazy bind attempt waits. */
+const LAUNCH_LOCK_WAIT_MS = 1000;
+const LAZY_LOCK_WAIT_MS = 250;
+
+/** The advice an unbound server gives, by why it could not bind. */
+export function bindFailureFor(error: unknown): BindFailure {
+  if (error instanceof ProjectBusyError || error instanceof StateBusyError) return { busy: true };
+  if (error instanceof UnsupportedStateError) {
+    const next = error.kind === 'newer'
+      ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
+      : error.kind === 'older'
+        ? 'Run `construct migrate` in the project (it backs the store up first), then restart this MCP server.'
+        : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
+    return { busy: false, reason: error.message.split('\n')[0]!, next };
+  }
+  if (error instanceof OperationError) return { busy: false, reason: error.message, next: error.next ?? INIT_NEXT };
+  const reason = error instanceof Error ? error.message.split('\n')[0]! : String(error);
+  return { busy: false, reason, next: INIT_NEXT };
+}
+
 export async function serve(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const projectFlag = stringFlag(args, 'project');
   const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag) } : ctx;
@@ -37,32 +58,26 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const describe = boolFlag(args, 'describe') || args.json;
   let opened: ReturnType<typeof openBroker> | null = null;
   try {
-    opened = openBroker(bound, flags);
+    opened = openBroker(describe ? bound : { ...bound, stateBusyTimeoutMs: LAUNCH_LOCK_WAIT_MS }, flags);
+    opened.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
   } catch (error) {
     if (describe) throw error;
-    if (error instanceof ProjectBusyError) {
+    const failed = bindFailureFor(error);
+    if (failed.busy) {
       let lazy: ReturnType<typeof openBroker> | null = null;
       try {
         await serveLazyMcp(binding.surface, () => {
-          lazy = openBroker(bound, flags);
+          lazy = openBroker({ ...bound, stateBusyTimeoutMs: LAZY_LOCK_WAIT_MS }, flags);
+          lazy.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
           return lazy.broker;
-        }, packageVersion());
+        }, packageVersion(), bindFailureFor);
       } finally {
         (lazy as ReturnType<typeof openBroker> | null)?.project.store.close();
       }
       return 0;
     }
-    if (error instanceof UnsupportedStateError) {
-      const next = error.kind === 'newer'
-        ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
-        : error.kind === 'older'
-          ? 'Run `construct migrate` in the project (it backs the store up first), then restart this MCP server.'
-          : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
-      await serveUnboundMcp(binding.surface, error.message.split('\n')[0]!, packageVersion(), next);
-      return 0;
-    }
-    if (error instanceof NoProjectError || error instanceof OperationError) {
-      await serveUnboundMcp(binding.surface, error.message, packageVersion());
+    if (error instanceof NoProjectError || error instanceof OperationError || error instanceof UnsupportedStateError) {
+      await serveUnboundMcp(binding.surface, failed.reason, packageVersion(), failed.next);
       return 0;
     }
     throw error;

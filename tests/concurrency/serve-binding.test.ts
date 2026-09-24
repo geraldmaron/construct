@@ -1,13 +1,18 @@
 /**
  * tests/concurrency/serve-binding.test.ts — a real `construct serve` process
- * binds to its project while another process holds the write lock, and a
- * store written by a newer build yields an unbound server whose advice is to
- * upgrade, never to initialize or reset.
+ * against a project other processes are using.
+ *
+ * The handshake is answered at once even while another process holds the
+ * write lock; a tool call during the lock says to call again and nothing else;
+ * the same call binds once the lock is gone. A store written by a newer, older,
+ * or foreign build yields an unbound server whose advice fits (upgrade,
+ * migrate, ask before reset), and a bound server stops writing when another
+ * build re-stamps the store's format.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,84 +33,170 @@ function envFor(fx: SterileFixture): NodeJS.ProcessEnv {
   };
 }
 
-function initProject(fx: SterileFixture): string {
-  const project = join(fx.root, 'project');
-  mkdirSync(project, { recursive: true });
+function initProject(fx: SterileFixture): { dir: string; db: string } {
+  const dir = join(fx.root, 'project');
+  mkdirSync(dir, { recursive: true });
   mkdirSync(join(fx.root, 'home'), { recursive: true });
-  const made = spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=binding', '--scale=solo'], { cwd: project, env: envFor(fx), encoding: 'utf8' });
+  const made = spawnSync(process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=binding', '--scale=solo'], { cwd: dir, env: envFor(fx), encoding: 'utf8' });
   assert.equal(made.status, 0, made.stderr);
-  return project;
+  return { dir, db: join(dir, '.construct', 'state', 'construct.sqlite') };
 }
 
-interface Handshake {
-  readonly instructions: string;
-  readonly bootstrap: { bound?: boolean; next?: string };
-  readonly ms: number;
+interface Reply {
+  readonly result?: { instructions?: string; isError?: boolean; structuredContent?: Record<string, unknown> };
+  readonly error?: { code: number; message: string };
 }
 
-function handshake(project: string, env: NodeJS.ProcessEnv): Promise<Handshake> {
-  return new Promise((resolve, reject) => {
-    const started = Date.now();
-    const child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=claude-code'], { cwd: project, env });
-    let buffer = '';
-    let instructions = '';
-    child.stdout.on('data', (d) => {
-      buffer += String(d);
-      for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
-        const line = buffer.slice(0, nl);
-        buffer = buffer.slice(nl + 1);
-        const msg = JSON.parse(line) as { id: number; result: { instructions?: string; structuredContent?: { bound?: boolean; next?: string } } };
-        if (msg.id === 1) instructions = msg.result.instructions ?? '';
-        if (msg.id === 2) {
-          child.stdin.end();
-          resolve({ instructions, bootstrap: msg.result.structuredContent ?? {}, ms: Date.now() - started });
-        }
+/** A serve process driven one request at a time. */
+class Session {
+  private readonly child: ChildProcessWithoutNullStreams;
+  private buffer = '';
+  private readonly waiting = new Map<number, (r: Reply) => void>();
+  private nextId = 1;
+
+  constructor(dir: string, env: NodeJS.ProcessEnv) {
+    this.child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=claude-code'], { cwd: dir, env });
+    this.child.stdout.on('data', (d) => {
+      this.buffer += String(d);
+      for (let nl = this.buffer.indexOf('\n'); nl >= 0; nl = this.buffer.indexOf('\n')) {
+        const line = this.buffer.slice(0, nl);
+        this.buffer = this.buffer.slice(nl + 1);
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line) as Reply & { id: number };
+        this.waiting.get(msg.id)?.(msg);
+        this.waiting.delete(msg.id);
       }
     });
-    child.on('error', reject);
-    const send = (m: unknown): boolean => child.stdin.write(`${JSON.stringify(m)}\n`);
-    send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'binding', version: '0' } } });
-    send({ jsonrpc: '2.0', method: 'notifications/initialized' });
-    send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } });
-  });
+  }
+
+  request(method: string, params: unknown = {}): Promise<Reply> {
+    const id = this.nextId++;
+    return new Promise((resolve) => {
+      this.waiting.set(id, resolve);
+      this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+    });
+  }
+
+  call(name: string, args: Record<string, unknown> = {}): Promise<Reply> {
+    return this.request('tools/call', { name, arguments: args });
+  }
+
+  close(): Promise<void> {
+    this.child.stdin.end();
+    return new Promise((resolve) => this.child.on('close', () => resolve()));
+  }
 }
 
-test('a server started while another process holds the write lock still binds', { timeout: 60_000 }, async () => {
+const INIT = { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'binding', version: '0' } };
+
+test('under another process’s write lock the handshake answers at once and a call binds once the lock is gone', { timeout: 60_000 }, async () => {
   const fx = sterile();
   try {
-    const project = initProject(fx);
+    const { dir, db } = initProject(fx);
     // A store an older build last wrote is in the rollback journal, where an
     // exclusive lock blocks readers too: the worst case for a starting server.
-    const holder = new DatabaseSync(join(project, '.construct', 'state', 'construct.sqlite'));
+    const holder = new DatabaseSync(db);
     holder.exec('PRAGMA journal_mode = DELETE');
     holder.exec('BEGIN EXCLUSIVE');
     holder.exec(`INSERT INTO meta (key, value) VALUES ('lock-probe', 'x')`);
-    const release = setTimeout(() => {
+    const lockedAt = Date.now();
+    const session = new Session(dir, envFor(fx));
+    try {
+      const init = await session.request('initialize', INIT);
+      const answeredAfter = Date.now() - lockedAt;
+      assert.ok(answeredAfter < 3000, `the handshake waited ${String(answeredAfter)} ms on a lock held for 4 s`);
+      assert.doesNotMatch(init.result?.instructions ?? '', /could not bind|construct init/);
+      const during = await session.call('bootstrap');
+      if (Date.now() - lockedAt < 3800) {
+        assert.equal(during.result?.isError, true, 'while the lock is held, a call is told to wait');
+        assert.match(String(during.result?.structuredContent?.next ?? ''), /call again/);
+      }
+      const wait = 4000 - (Date.now() - lockedAt);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       holder.exec('ROLLBACK');
       holder.close();
-    }, 1500);
-    const result = await handshake(project, envFor(fx));
-    clearTimeout(release);
-    assert.doesNotMatch(result.instructions, /could not bind|construct init/);
-    assert.notEqual(result.bootstrap.bound, false);
-    assert.ok(result.ms >= 1000, `the lock was held for 1.5 s, yet the server answered after ${String(result.ms)} ms`);
-    assert.ok(result.ms < 15_000, `bound after ${String(result.ms)} ms`);
+      const after = await session.call('bootstrap');
+      assert.notEqual(after.result?.isError, true, JSON.stringify(after.result?.structuredContent));
+      assert.ok(after.result?.structuredContent?.profile, 'a bound bootstrap reports the project profile');
+    } finally {
+      await session.close();
+    }
   } finally {
     fx.cleanup();
   }
 });
 
+async function unboundAdvice(fx: SterileFixture, dir: string): Promise<string> {
+  const session = new Session(dir, envFor(fx));
+  try {
+    const init = await session.request('initialize', INIT);
+    const boot = await session.call('bootstrap');
+    return `${init.result?.instructions ?? ''}\n${String(boot.result?.structuredContent?.next ?? '')}`;
+  } finally {
+    await session.close();
+  }
+}
+
 test('a store written by a newer build yields advice to upgrade, never to init or reset', { timeout: 60_000 }, async () => {
   const fx = sterile();
   try {
-    const project = initProject(fx);
-    const db = new DatabaseSync(join(project, '.construct', 'state', 'construct.sqlite'));
-    db.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
-    db.close();
-    const result = await handshake(project, envFor(fx));
-    assert.match(result.instructions, /newer version of Construct/);
-    assert.match(result.bootstrap.next ?? '', /Upgrade Construct/);
-    assert.doesNotMatch(`${result.instructions} ${result.bootstrap.next ?? ''}`, /construct init|run `construct reset`/i);
+    const { dir, db } = initProject(fx);
+    const d = new DatabaseSync(db);
+    d.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
+    d.close();
+    const advice = await unboundAdvice(fx, dir);
+    assert.match(advice, /newer version of Construct/);
+    assert.match(advice, /Upgrade Construct/);
+    assert.doesNotMatch(advice, /construct init|run `construct reset`/i);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an older store yields the migrate step; a foreign one says to ask the person before any reset', { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = initProject(fx);
+    const d = new DatabaseSync(db);
+    d.exec('PRAGMA foreign_keys = OFF');
+    for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) d.exec(`DROP TABLE IF EXISTS ${table}`);
+    d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
+    d.close();
+    assert.match(await unboundAdvice(fx, dir), /construct migrate/);
+
+    const f = new DatabaseSync(db);
+    f.prepare(`UPDATE meta SET value = 'someone-else' WHERE key = 'format'`).run();
+    f.close();
+    const foreign = await unboundAdvice(fx, dir);
+    assert.match(foreign, /Ask the person whether to run `construct reset`/);
+    assert.doesNotMatch(foreign, /construct init/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a bound server stops writing when another process re-stamps the store’s format', { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = initProject(fx);
+    const session = new Session(dir, envFor(fx));
+    try {
+      await session.request('initialize', INIT);
+      const first = await session.call('work', { action: 'add', title: 'before the other build' });
+      assert.notEqual(first.result?.isError, true);
+      const other = new DatabaseSync(db);
+      other.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
+      other.close();
+      const second = await session.call('work', { action: 'add', title: 'after the other build' });
+      assert.equal(second.result?.isError, true);
+      assert.match(String(second.result?.structuredContent?.error ?? ''), /Restart the MCP server/);
+    } finally {
+      await session.close();
+    }
+    const check = new DatabaseSync(db, { readOnly: true });
+    const titles = (check.prepare('SELECT title FROM work_items').all() as Array<{ title: string }>).map((r) => r.title);
+    check.close();
+    assert.deepEqual(titles, ['before the other build']);
   } finally {
     fx.cleanup();
   }

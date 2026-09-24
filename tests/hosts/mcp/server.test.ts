@@ -7,7 +7,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
-import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
+import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
+import { bindFailureFor } from '../../../src/cli/serve.ts';
+import { StateBusyError, UnsupportedStateError } from '../../../src/kernel/state/format.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
 import { brokerFixture } from '../../kernel/broker/support.ts';
 
@@ -111,9 +113,9 @@ test('a server whose store was busy at launch lists its real tools and binds on 
     let attempts = 0;
     const handle = createLazyMcpHandler('interactive', () => {
       attempts += 1;
-      if (attempts < 3) throw new Error('the state database is busy');
+      if (attempts < 2) throw new StateBusyError('/x/construct.sqlite');
       return fx.broker;
-    }, '3.0.0-alpha.25');
+    }, '3.0.0-alpha.25', bindFailureFor);
     const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { instructions: string } };
     assert.match(init.result.instructions, /bound to this project/);
     assert.doesNotMatch(init.result.instructions, /construct init/);
@@ -126,7 +128,7 @@ test('a server whose store was busy at launch lists its real tools and binds on 
     const bound = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { isError?: boolean; structuredContent: { next: string } } };
     assert.notEqual(bound.result.isError, true);
     assert.match(bound.result.structuredContent.next, /listen/);
-    assert.equal(attempts, 3);
+    assert.equal(attempts, 2, 'initialize and tools/list never touch the store; each call tries once');
   } finally {
     fx.cleanup();
   }
@@ -145,6 +147,69 @@ test('a server stops writing when another build changes the store format under i
     assert.match(after.result.structuredContent.error, /Restart the MCP server/);
     const titles = (fx.broker.store.db.prepare('SELECT title FROM work_items').all() as Array<{ title: string }>).map((r) => r.title);
     assert.deepEqual(titles, ['before']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a lazy server rejects an unknown tool without trying to bind', async () => {
+  let attempts = 0;
+  const handle = createLazyMcpHandler('interactive', () => {
+    attempts += 1;
+    throw new StateBusyError('/x/construct.sqlite');
+  }, '3.0.0-alpha.25', bindFailureFor);
+  const reply = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'claim_step', arguments: {} } })) as { error: { code: number } };
+  assert.equal(reply.error.code, -32602);
+  assert.equal(attempts, 0);
+});
+
+test('a lazy server that finds a newer store switches to the unbound surface with upgrade advice', async () => {
+  const handle = createLazyMcpHandler('interactive', () => {
+    throw new UnsupportedStateError('construct-state', 99, 'newer');
+  }, '3.0.0-alpha.25', bindFailureFor);
+  const first = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { structuredContent: { bound: boolean; next: string } } };
+  assert.equal(first.result.structuredContent.bound, false);
+  assert.match(first.result.structuredContent.next, /Upgrade Construct/);
+  assert.doesNotMatch(first.result.structuredContent.next, /call again|construct init/);
+  const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
+  assert.deepEqual(list.result.tools.map((t) => t.name), ['bootstrap'], 'from then on it is the unbound surface');
+});
+
+test('a message whose handling throws gets an error reply, and the server keeps answering', async () => {
+  const stdin = new PassThrough();
+  const stdout = new PassThrough();
+  const chunks: string[] = [];
+  stdout.on('data', (c: Buffer) => chunks.push(c.toString()));
+  const served = serveHandler(async (m) => {
+    if (m.method === 'explode') throw new Error('disk I/O error');
+    return { jsonrpc: '2.0', id: m.id ?? null, result: {} } as never;
+  }, stdin, stdout);
+  stdin.write('{"jsonrpc":"2.0","id":1,"method":"explode"}\n');
+  stdin.write('{"jsonrpc":"2.0","id":2,"method":"ping"}\n');
+  stdin.end();
+  await served;
+  const replies = chunks.join('').trim().split('\n').map((l) => JSON.parse(l) as { id: number; error?: { code: number; message: string } });
+  assert.deepEqual(replies.map((r) => r.id), [1, 2]);
+  assert.equal(replies[0]!.error?.code, -32603);
+  assert.match(replies[0]!.error?.message ?? '', /disk I\/O error/);
+});
+
+test('a store that fails under the format guard yields an error reply, not a crash', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const db = fx.broker.store.db as unknown as { prepare: unknown };
+    const prepare = db.prepare;
+    db.prepare = () => {
+      throw new Error('disk I/O error');
+    };
+    try {
+      const reply = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { isError: boolean; structuredContent: { error: string } } };
+      assert.equal(reply.result.isError, true);
+      assert.match(reply.result.structuredContent.error, /disk I\/O error/);
+    } finally {
+      db.prepare = prepare;
+    }
   } finally {
     fx.cleanup();
   }

@@ -9,7 +9,7 @@ import { Readable, Writable } from 'node:stream';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
 import { toolsFor } from '../../kernel/broker/tools.ts';
-import { STATE_FORMAT_VERSION } from '../../kernel/state/format.ts';
+import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import { failure, response, PROTOCOL_VERSION, type AsyncMessageHandler, type JsonRpcRequest, type JsonRpcResponse } from './jsonrpc.ts';
 
@@ -85,15 +85,18 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
         const name = typeof p.name === 'string' ? p.name : '';
         const tool = byName.get(name);
         if (!tool) return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" on the ${surface} surface`);
-        const stale = staleFormat();
-        if (stale) return response(id, { ...text({ error: stale }), isError: true });
         try {
+          const stale = staleFormat();
+          if (stale) return response(id, { ...text({ error: stale }), isError: true });
           const input = tool.validate(record(p.arguments));
           const result = await tool.run(ctx, input);
           return response(id, text(result));
         } catch (error) {
           const messageText = error instanceof Error ? error.message : String(error);
           if (error instanceof ToolInputError) return failure(id, -32602, messageText);
+          if (error instanceof UnsupportedStateError) {
+            return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
+          }
           return response(id, { ...text({ error: messageText }), isError: true });
         }
       }
@@ -160,7 +163,15 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
   let chain: Promise<void> = Promise.resolve();
   transport.onmessage = (message) => {
     chain = chain.then(async () => {
-      const reply = await handle(message as JsonRpcRequest);
+      const request = message as JsonRpcRequest;
+      let reply: JsonRpcResponse | null;
+      try {
+        reply = await handle(request);
+      } catch (error) {
+        // One failed message answers its own id and never stops the server.
+        const isNotification = request.id === undefined || request.id === null;
+        reply = isNotification ? null : failure(request.id, -32603, error instanceof Error ? error.message : String(error));
+      }
       if (reply) await transport.send(reply as never);
     });
   };
@@ -193,38 +204,44 @@ export function serveUnboundMcp(
   return serveHandler(createUnboundMcpHandler(surface, reason, version, next), stdin, stdout);
 }
 
+/** How a lazy server should treat a failed bind: wait and retry, or give up with this advice. */
+export type BindFailure = { readonly busy: true } | { readonly busy: false; readonly reason: string; readonly next: string };
+
 /**
  * A server whose project exists but whose store was busy at launch. The tool
- * list does not depend on the store, so the host gets the real surface at once;
- * each call tries to bind until one succeeds, then every later message goes to
- * the bound handler. A lock at startup therefore costs one retried call, not a
- * session spent unbound.
+ * list does not depend on the store, so the handshake and the tool list are
+ * answered at once without touching it. Each tool call tries to bind; a busy
+ * store answers "call again", and once a bind succeeds every later message goes
+ * to the bound handler. A bind that fails for any other reason (a newer,
+ * older, or foreign store) switches the server to the unbound surface with the
+ * advice that fits.
  */
 export function createLazyMcpHandler(
   surface: BrokerSurface,
   open: () => BrokerContext,
   version: string,
-  onBound: (ctx: BrokerContext) => void = () => {},
+  classify: (error: unknown) => BindFailure,
 ): AsyncMessageHandler {
   const tools = toolsFor(surface);
+  const names = new Set(tools.map((t) => t.name));
   let bound: AsyncMessageHandler | null = null;
-  const tryBind = (): string | null => {
-    if (bound) return null;
+  let gaveUp: AsyncMessageHandler | null = null;
+  let lastBusy = 'the state database is busy';
+  const tryBind = (): void => {
     try {
-      const ctx = open();
-      onBound(ctx);
-      bound = createMcpHandler(surface, ctx);
-      return null;
+      bound = createMcpHandler(surface, open());
     } catch (error) {
-      return error instanceof Error ? error.message : String(error);
+      const failed = classify(error);
+      if (failed.busy) lastBusy = error instanceof Error ? error.message : String(error);
+      else gaveUp = createUnboundMcpHandler(surface, failed.reason, version, failed.next);
     }
   };
   return async (message: JsonRpcRequest) => {
     if (bound) return bound(message);
-    const { id, method } = message;
+    if (gaveUp) return gaveUp(message);
+    const { id, method, params } = message;
     switch (method) {
       case 'initialize':
-        tryBind();
         return response(id, {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
@@ -234,12 +251,17 @@ export function createLazyMcpHandler(
       case 'tools/list':
         return response(id, { tools: tools.map(mcpTool) });
       case 'tools/call': {
-        const reason = tryBind();
+        const name = (record(params) as { name?: unknown }).name;
+        if (typeof name !== 'string' || !names.has(name)) {
+          return failure(id, -32602, `no tool named "${escapeForTerminal(String(name ?? ''))}" on the ${surface} surface`);
+        }
+        tryBind();
         if (bound) return (bound as AsyncMessageHandler)(message);
-        return response(id, { ...text({ bound: false, error: reason, next: 'The store is busy; call again in a moment. Nothing was recorded.' }), isError: true });
+        if (gaveUp) return (gaveUp as AsyncMessageHandler)(message);
+        return response(id, { ...text({ bound: false, error: lastBusy, next: 'The store is busy; call again in a moment. Nothing was recorded.' }), isError: true });
       }
       default:
-        return createUnboundMcpHandler(surface, 'the state database is busy', version)(message);
+        return createUnboundMcpHandler(surface, lastBusy, version)(message);
     }
   };
 }
@@ -248,9 +270,9 @@ export function serveLazyMcp(
   surface: BrokerSurface,
   open: () => BrokerContext,
   version: string,
-  onBound: (ctx: BrokerContext) => void = () => {},
+  classify: (error: unknown) => BindFailure,
   stdin: Readable = process.stdin,
   stdout: Writable = process.stdout,
 ): Promise<void> {
-  return serveHandler(createLazyMcpHandler(surface, open, version, onBound), stdin, stdout);
+  return serveHandler(createLazyMcpHandler(surface, open, version, classify), stdin, stdout);
 }

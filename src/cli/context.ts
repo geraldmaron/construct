@@ -25,6 +25,8 @@ export interface CliContext {
   readonly paths: Paths;
   /** Set for commands declared read-only: the state database is opened without write access. */
   readonly readOnly?: boolean;
+  /** How long opening the state database waits for another process's lock; the store's default when unset. */
+  readonly stateBusyTimeoutMs?: number;
   /**
    * What the terminal looks like, supplied only by tests. Production reads it
    * from the process itself; a subprocess cannot set this.
@@ -107,7 +109,7 @@ export function openProject(ctx: CliContext): OpenProject {
     );
   }
   try {
-    const store = openStateStore(bound.layout.dbPath, { readOnly: ctx.readOnly === true });
+    const store = openStateStore(bound.layout.dbPath, { readOnly: ctx.readOnly === true, busyTimeoutMs: ctx.stateBusyTimeoutMs });
     return { ...bound, store };
   } catch (error) {
     if (error instanceof UnsupportedStateError) throw error;
