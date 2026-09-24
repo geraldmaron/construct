@@ -11,7 +11,7 @@
  */
 
 export class HostRequestError extends Error {
-  readonly reason: 'timeout' | 'error' | 'closed' | 'detached';
+  readonly reason: 'timeout' | 'error' | 'closed' | 'detached' | 'cancelled';
 
   constructor(message: string, reason: HostRequestError['reason']) {
     super(message);
@@ -67,6 +67,15 @@ export class HostRequests {
     if (m.error) waiting.reject(new HostRequestError(`the host refused: ${String(m.error.message ?? 'no reason given')}`, 'error'));
     else waiting.resolve(m.result);
     return true;
+  }
+
+  /** Stop waiting on every request: the call that sent them was cancelled. */
+  cancelAll(): void {
+    for (const [id, waiting] of this.pending) {
+      clearTimeout(waiting.timer);
+      waiting.reject(new HostRequestError('the host cancelled the call waiting on this', 'cancelled'));
+      this.pending.delete(id);
+    }
   }
 
   /** Fail every request still waiting; the connection is gone. */

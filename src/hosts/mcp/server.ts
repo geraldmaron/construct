@@ -280,20 +280,38 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
   const transport = new StdioServerTransport(stdin, stdout);
   hostRequests?.attach((message) => transport.send(message as never));
   let chain: Promise<void> = Promise.resolve();
+  let running: unknown;
+  const cancelled = new Set<unknown>();
   transport.onmessage = (message) => {
     // The host's answer to one of this server's requests settles at once: the
     // call waiting on it holds the queue.
     if (hostRequests?.deliver(message)) return;
+    // So does a cancellation: a call not yet started never runs, and one
+    // waiting on the host stops waiting. Neither is answered.
+    const m = message as JsonRpcRequest;
+    if (m.method === 'notifications/cancelled') {
+      const target = (record(m.params) as { requestId?: unknown }).requestId;
+      if (target === undefined || target === null) return;
+      cancelled.add(target);
+      if (cancelled.size > 1000) cancelled.delete(cancelled.values().next().value);
+      if (target === running) hostRequests?.cancelAll();
+      return;
+    }
     chain = chain.then(async () => {
       const request = message as JsonRpcRequest;
+      const hasId = request.id !== undefined && request.id !== null;
+      if (hasId && cancelled.delete(request.id)) return;
       let reply: JsonRpcResponse | null;
+      running = hasId ? request.id : undefined;
       try {
         reply = await handle(request);
       } catch (error) {
         // One failed message answers its own id and never stops the server.
-        const isNotification = request.id === undefined || request.id === null;
-        reply = isNotification ? null : failure(request.id, -32603, error instanceof Error ? error.message : String(error));
+        reply = hasId ? failure(request.id, -32603, error instanceof Error ? error.message : String(error)) : null;
+      } finally {
+        running = undefined;
       }
+      if (hasId && cancelled.delete(request.id)) return;
       if (reply) await transport.send(reply as never);
     });
   };
