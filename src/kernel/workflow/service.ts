@@ -23,8 +23,9 @@ import { addStatement, getProfile, getStatement, type Statement, type StatementK
 import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
+import { tierAtLeast } from '../policy/lattice.ts';
 import { isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
-import type { HostCapabilities } from '../registry/capability-registry.ts';
+import { provides, type HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
 import type { RegisteredWorkflow, WorkflowStep } from '../registry/models.ts';
 import { resolveWorkflow, type Resolution, type SourceAvailability } from '../registry/resolver.ts';
@@ -95,10 +96,33 @@ export interface WorkPacket {
   readonly judgment: Judgment;
 }
 
+/** Why a claim handed nothing out. */
+export type WaitingOn =
+  | { readonly kind: 'decision'; readonly decision: Decision }
+  | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] }
+  /** The person approved the step for another executor, whose grant stands until `until`. */
+  | { readonly kind: 'held'; readonly runId: string; readonly stepId: string; readonly executorId: string; readonly until: string | null }
+  /** The step acts above what this executor may reach, or needs a capability it lacks. */
+  | { readonly kind: 'refused'; readonly runId: string; readonly stepId: string; readonly reason: string }
+  | { readonly kind: 'nothing_ready' }
+  | { readonly kind: 're_resolve'; readonly reason: string };
+
 export interface ClaimOutcome {
   readonly packet: WorkPacket | null;
-  /** Why nothing was handed out: a decision is open, the run is finished, or nothing is ready. */
-  readonly waitingOn: { readonly kind: 'decision'; readonly decision: Decision } | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] } | { readonly kind: 'nothing_ready' } | { readonly kind: 're_resolve'; readonly reason: string } | null;
+  readonly waitingOn: WaitingOn | null;
+}
+
+/** What gating one step for one claimer found. */
+type Gate =
+  | { readonly outcome: 'cleared' }
+  | { readonly outcome: 'decision'; readonly decision: Decision }
+  | { readonly outcome: 'held'; readonly executorId: string; readonly until: string | null };
+
+const CLEARED: Gate = { outcome: 'cleared' };
+
+/** Steps the kernel performs itself rather than handing to a claimer. */
+function performedByKernel(step: WorkflowStep): boolean {
+  return step.capabilities.includes('kernel:drift_detect');
 }
 
 export interface SubmitInput {
@@ -314,13 +338,23 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return out;
   }
 
+  /** Why this service's host may not perform `step`, or null when it may. */
+  function beyondHost(step: WorkflowStep): string | null {
+    if (!tierAtLeast(deps.host.maxTier, step.tier)) {
+      return `step ${step.id} acts at ${step.tier}; this executor may reach ${deps.host.maxTier} at most`;
+    }
+    const missing = step.capabilities.filter((c) => !provides(deps.host, c));
+    if (missing.length > 0) return `step ${step.id} needs ${missing.join(', ')}, which this executor does not have`;
+    return null;
+  }
+
   /**
    * Gate a step for the executor about to claim it. An approval covers the
    * executor it was given to, so a different session claiming the same step
    * gets its own decision rather than inheriting another session's grant.
    */
-  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string, executorId: string): Decision | 'held' | null {
-    if (step.tier === 'observe' || step.tier === 'draft') return null;
+  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string, executorId: string): Gate {
+    if (step.tier === 'observe' || step.tier === 'draft') return CLEARED;
     const request: ActionRequest = {
       tier: step.tier,
       targetSystem: deps.targetSystemFor ? deps.targetSystemFor(step) : (step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external')),
@@ -330,22 +364,26 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       executorId,
       runId: run.id,
     };
-    const decision = evaluateAction(store, request, policyContext(run.interactionClass, at));
-    if (decision.allowed) return null;
+    const context = policyContext(run.interactionClass, at);
+    const decision = evaluateAction(store, request, context);
+    if (decision.allowed) return CLEARED;
     const open = listOpenDecisions(store, run.id).find((d) => d.stepRunId === stepRun.id);
-    if (open) return open;
-    // The person approved this step for a different executor. It waits for that
-    // executor; another claimer neither inherits the approval nor gets to put a
-    // fresh question in front of the one the person already answered.
-    const approvedForAnother = listStepDecisions(store, stepRun.id).some((d) => {
-      const req = (d.subject as { request?: ActionRequest } | null)?.request;
-      return d.kind === 'approval' && d.state === 'resolved' && d.resolution === 'approve' && req !== undefined && req.executorId !== executorId;
-    });
-    if (approvedForAnother) return 'held';
+    if (open) return { outcome: 'decision', decision: open };
+    // The person approved this step for a different executor. While that
+    // executor's grant stands, the step waits for it: another claimer neither
+    // inherits the approval nor puts a fresh question in front of the person.
+    // Once the grant has lapsed it covers no one, and this claimer is asked.
+    for (const d of listStepDecisions(store, stepRun.id).reverse()) {
+      if (d.kind !== 'approval' || d.state !== 'resolved' || d.resolution !== 'approve') continue;
+      const approvedFor = (d.subject as { request?: ActionRequest } | null)?.request?.executorId;
+      if (!approvedFor || approvedFor === executorId) continue;
+      const theirs = evaluateAction(store, { ...request, executorId: approvedFor }, context);
+      if (theirs.allowed && theirs.grant) return { outcome: 'held', executorId: approvedFor, until: theirs.grant.endsAt };
+    }
     // One unit: the question, the step's pause, and the run's pause land together
     // or not at all. A run whose first step needs the question has started.
-    return store.transaction(() => {
-      const raised = raiseDecision(store, {
+    const raised = store.transaction(() => {
+      const question = raiseDecision(store, {
         id: deps.nextId('decision'),
         kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
         question: decision.denial.stepUp.kind === 'approval' ? decision.denial.stepUp.description : `${decision.denial.missing}. ${decision.denial.stepUp.description}`,
@@ -359,8 +397,126 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const current = getRun(store, run.id)!;
       if (current.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
       if (current.state === 'ready' || current.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
-      return raised;
+      return question;
     });
+    return { outcome: 'decision', decision: raised };
+  }
+
+  /** Perform a step the kernel runs itself: deterministic drift detection needs no host. */
+  function runKernelStep(run: WorkflowRun, sr: StepRun, step: WorkflowStep, at: string): void {
+    const leased = claimStep(store, { owner: 'kernel', now: at, leaseUntil: new Date(Date.parse(at) + 60_000).toISOString(), runId: run.id, stepRunId: sr.id });
+    if (!leased) return;
+    const detected = detectDrift(store, { at, requireDecisionForChanges: false });
+    const { recorded, alreadyOpen } = recordDrift(store, { runId: run.id, detected, at, nextId: deps.nextId });
+    completeStep(store, { id: leased.id, owner: 'kernel', token: leased.token, at, output: { findings: detected, recordedFindingIds: recorded.map((f) => f.id), alreadyOpen, noDrift: detected.length === 0, evidence: detected.flatMap((d) => d.evidence.map((e) => ({ ref: e.ref, excerpt: e.note }))) } });
+    appendActivity(store, { at, kind: 'step.kernel_ran', runId: run.id, stepRunId: sr.id, actor: 'kernel', payload: { stepId: step.id, findings: detected.length, recorded: recorded.length } });
+  }
+
+  /** What one run offers a claimer: a packet or a reason to stop, else the first hold or refusal met. */
+  interface RunClaim {
+    readonly outcome: ClaimOutcome | null;
+    readonly held: Extract<WaitingOn, { kind: 'held' }> | null;
+    readonly refused: Extract<WaitingOn, { kind: 'refused' }> | null;
+  }
+
+  /**
+   * Gate and lease within one run. The caller holds the write transaction, so
+   * no other session can make a step ready, or take one, between the gate
+   * clearing a step and this claimer leasing it; and only a cleared step is
+   * leased. A held or refused step is passed over, so the run's other ready
+   * steps stay claimable.
+   */
+  function claimInRun(runId: string, who: string, at: string, leaseUntil: string): RunClaim {
+    let held: RunClaim['held'] = null;
+    let refused: RunClaim['refused'] = null;
+    const stop = (waitingOn: WaitingOn): RunClaim => ({ outcome: { packet: null, waitingOn }, held, refused });
+    let run = getRun(store, runId);
+    if (!run || run.state === 'blocked') return { outcome: null, held, refused };
+    if (run.state === 'waiting_for_decision') {
+      const open = listOpenDecisions(store, run.id)[0];
+      if (open) return stop({ kind: 'decision', decision: open });
+      run = transitionRun(store, { id: run.id, to: 'running', at });
+    }
+    if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return { outcome: null, held, refused };
+    const currentWorkflow = deps.workflows.get(run.workflowId);
+    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
+      return stop({ kind: 're_resolve', reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing` });
+    }
+    advance(run.id, at);
+    const manifestSteps = stepsOf(run);
+    // A kernel step can make further steps ready; each pass gates what is ready now.
+    for (let pass = 0; pass <= manifestSteps.length; pass += 1) {
+      const cleared: { readonly sr: StepRun; readonly step: WorkflowStep }[] = [];
+      for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+        const step = manifestSteps.find((s) => s.id === sr.stepId)!;
+        const beyond = performedByKernel(step) ? null : beyondHost(step);
+        if (beyond) {
+          refused ??= { kind: 'refused', runId: run.id, stepId: step.id, reason: beyond };
+          continue;
+        }
+        const gate = gateStep(getRun(store, run.id)!, sr, step, at, who);
+        if (gate.outcome === 'decision') return stop({ kind: 'decision', decision: gate.decision });
+        if (gate.outcome === 'held') {
+          held ??= { kind: 'held', runId: run.id, stepId: step.id, executorId: gate.executorId, until: gate.until };
+          continue;
+        }
+        cleared.push({ sr, step });
+      }
+      const kernelSteps = cleared.filter((c) => performedByKernel(c.step));
+      if (kernelSteps.length > 0) {
+        for (const { sr, step } of kernelSteps) runKernelStep(run, sr, step, at);
+        advance(run.id, at);
+        continue;
+      }
+      for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+        const boundSkill = (sr.input as { skill?: { id: string; digest: string } | null } | null)?.skill ?? null;
+        const registeredSkill = boundSkill ? deps.skills.get(boundSkill.id) : null;
+        if (boundSkill && registeredSkill && registeredSkill.digest !== boundSkill.digest) {
+          return stop({ kind: 're_resolve', reason: `skill ${boundSkill.id} changed since this run was bound; re-resolve before continuing` });
+        }
+      }
+      const next = cleared[0];
+      if (!next) break;
+      const leased = claimStep(store, { owner: who, now: at, leaseUntil, runId: run.id, stepRunId: next.sr.id });
+      if (!leased) break;
+      const fresh = getRun(store, run.id)!;
+      if (fresh.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+      return { outcome: { packet: packetFor(leased, next.step), waitingOn: null }, held, refused };
+    }
+    return { outcome: null, held, refused };
+  }
+
+  /** Everything the claimer needs to do one leased step. */
+  function packetFor(leased: LeasedStep, step: WorkflowStep): WorkPacket {
+    const run = getRun(store, leased.runId)!;
+    const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
+    const registered = bound ? deps.skills.get(bound.id) : null;
+    const judgment = judgmentOf(run);
+    const workflowChallenge = deps.workflows.get(run.workflowId)?.manifest.deliverable.challenge ?? false;
+    const needsChallenge = judgmentRequired(workflowChallenge, judgment);
+    const instructions = [
+      `Step ${step.id}: ${step.title}.`,
+      step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
+      step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
+      'Cite every source you read as evidence entries.',
+      needsChallenge
+        ? 'This work has architectural or irreversible consequences. Apply adversarial review before representing the result as strongly validated. Do not wait for the person to ask.'
+        : judgment.depth === 'light'
+          ? 'This is low-stakes reversible work. Do not run architecture ceremony or a full adversarial review.'
+          : '',
+    ].filter(Boolean);
+    return {
+      leased,
+      run,
+      step,
+      skill: bound && registered
+        ? { id: bound.id, version: bound.version, digest: bound.digest, body: () => deps.skills.body(bound.id), file: (p) => deps.skills.file(bound.id, p) }
+        : null,
+      inputs: inputsFor(run, step),
+      instructions,
+      judgment,
+    };
   }
 
   /** Everything a trust move to `to` must satisfy, checked before the person is asked and again when it applies. */
@@ -547,93 +703,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     claimNext({ runId, owner, leaseMs: requested }) {
       const at = deps.now();
       const who = owner ?? deps.host.executorId;
+      const leaseUntil = new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString();
       expireDeadLeases(store, at, runId);
       const candidates = runId ? [getRun(store, runId)].filter((r): r is WorkflowRun => r !== null) : listActiveRuns(store);
-      for (const run of candidates) {
-        if (run.state === 'blocked') continue;
-        if (run.state === 'waiting_for_decision') {
-          const open = listOpenDecisions(store, run.id)[0];
-          if (open) return { packet: null, waitingOn: { kind: 'decision', decision: open } };
-          transitionRun(store, { id: run.id, to: 'running', at });
-        }
-        if (['succeeded', 'failed', 'cancelled'].includes(run.state)) continue;
-        const currentWorkflow = deps.workflows.get(run.workflowId);
-        if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
-          return { packet: null, waitingOn: { kind: 're_resolve', reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing` } };
-        }
-        advance(run.id, at);
-        const manifestSteps = stepsOf(run);
-        let heldForAnother = false;
-        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
-          const step = manifestSteps.find((s) => s.id === sr.stepId)!;
-          const decision = gateStep(getRun(store, run.id)!, sr, step, at, who);
-          if (decision === 'held') {
-            heldForAnother = true;
-            break;
-          }
-          if (decision) return { packet: null, waitingOn: { kind: 'decision', decision } };
-        }
-        if (heldForAnother) continue;
-        // Steps the kernel performs itself: deterministic drift detection needs no host.
-        let ranKernelStep = false;
-        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
-          const step = manifestSteps.find((s) => s.id === sr.stepId)!;
-          if (!step.capabilities.includes('kernel:drift_detect')) continue;
-          const leasedByKernel = claimStep(store, { owner: 'kernel', now: at, leaseUntil: new Date(Date.parse(at) + 60_000).toISOString(), runId: run.id });
-          if (!leasedByKernel || leasedByKernel.id !== sr.id) continue;
-          const detected = detectDrift(store, { at, requireDecisionForChanges: false });
-          const { recorded, alreadyOpen } = recordDrift(store, { runId: run.id, detected, at, nextId: deps.nextId });
-          completeStep(store, { id: leasedByKernel.id, owner: 'kernel', token: leasedByKernel.token, at, output: { findings: detected, recordedFindingIds: recorded.map((f) => f.id), alreadyOpen, noDrift: detected.length === 0, evidence: detected.flatMap((d) => d.evidence.map((e) => ({ ref: e.ref, excerpt: e.note }))) } });
-          appendActivity(store, { at, kind: 'step.kernel_ran', runId: run.id, stepRunId: sr.id, actor: 'kernel', payload: { stepId: step.id, findings: detected.length, recorded: recorded.length } });
-          ranKernelStep = true;
-        }
-        if (ranKernelStep) advance(run.id, at);
-        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
-          const boundSkill = (sr.input as { skill?: { id: string; digest: string } | null } | null)?.skill ?? null;
-          const registeredSkill = boundSkill ? deps.skills.get(boundSkill.id) : null;
-          if (boundSkill && registeredSkill && registeredSkill.digest !== boundSkill.digest) {
-            return { packet: null, waitingOn: { kind: 're_resolve', reason: `skill ${boundSkill.id} changed since this run was bound; re-resolve before continuing` } };
-          }
-        }
-        const leased = claimStep(store, { owner: who, now: at, leaseUntil: new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString(), runId: run.id });
-        if (!leased) continue;
-        const fresh = getRun(store, run.id)!;
-        if (fresh.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
-        const step = manifestSteps.find((s) => s.id === leased.stepId)!;
-        const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
-        const registered = bound ? deps.skills.get(bound.id) : null;
-        const judgment = judgmentOf(fresh);
-        const workflowChallenge = deps.workflows.get(fresh.workflowId)?.manifest.deliverable.challenge ?? false;
-        const needsChallenge = judgmentRequired(workflowChallenge, judgment);
-        const instructions = [
-          `Step ${step.id}: ${step.title}.`,
-          step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
-          step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
-          step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
-          'Cite every source you read as evidence entries.',
-          needsChallenge
-            ? 'This work has architectural or irreversible consequences. Apply adversarial review before representing the result as strongly validated. Do not wait for the person to ask.'
-            : judgment.depth === 'light'
-              ? 'This is low-stakes reversible work. Do not run architecture ceremony or a full adversarial review.'
-              : '',
-        ].filter(Boolean);
-        return {
-          packet: {
-            leased,
-            run: getRun(store, run.id)!,
-            step,
-            skill: bound && registered
-              ? { id: bound.id, version: bound.version, digest: bound.digest, body: () => deps.skills.body(bound.id), file: (p) => deps.skills.file(bound.id, p) }
-              : null,
-            inputs: inputsFor(fresh, step),
-            instructions,
-            judgment,
-          },
-          waitingOn: null,
-        };
+      let held: RunClaim['held'] = null;
+      let refused: RunClaim['refused'] = null;
+      for (const candidate of candidates) {
+        // Gate and lease under one write lock, per run.
+        const claim = store.transaction(() => claimInRun(candidate.id, who, at, leaseUntil));
+        if (claim.outcome) return claim.outcome;
+        held ??= claim.held;
+        refused ??= claim.refused;
       }
       const finished = runId ? getRun(store, runId) : null;
       if (finished && ['succeeded', 'failed', 'cancelled'].includes(finished.state)) return { packet: null, waitingOn: { kind: 'finished', state: finished.state } };
+      if (held) return { packet: null, waitingOn: held };
+      if (refused) return { packet: null, waitingOn: refused };
       return { packet: null, waitingOn: { kind: 'nothing_ready' } };
     },
 

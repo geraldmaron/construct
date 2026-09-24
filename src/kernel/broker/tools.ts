@@ -338,7 +338,7 @@ const startOutcome = define<{ workflowId: string; input: Record<string, unknown>
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it.',
+  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -655,7 +655,7 @@ const heartbeat = define<{ stepRunId: string; owner: string; token: number }, un
 const claimStep = define<{ runId?: string }, unknown>({
   name: 'claim_step',
   title: 'Claim a pre-resolved step',
-  description: 'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on.',
+  description: 'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.',
   surface: 'headless',
   readOnly: false,
   inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'A run id; omit for any active run.' } }, additionalProperties: false },
