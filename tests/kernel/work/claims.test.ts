@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { StateStore } from '../../../src/kernel/state/open.ts';
 import { freshStore } from '../state/support.ts';
-import { claimWork, completeWork, createWork, getWork, listReady, queryWork, renewSessionClaims, takeoverWork } from '../../../src/kernel/work/service.ts';
+import { claimWork, completeWork, createWork, exportWork, getWork, listReady, queryWork, renewSessionClaims, restoreWork, takeoverWork } from '../../../src/kernel/work/service.ts';
 
 const T0 = Date.parse('2026-09-24T12:00:00.000Z');
 const t = (minutes: number): string => new Date(T0 + minutes * 60_000).toISOString();
@@ -114,5 +114,21 @@ test('a holder that keeps calling keeps its claims: renewal extends claims past 
     assert.equal(renewSessionClaims(fx.store, { session: 'ses-b', now: t(20), termMs: 30 * 60_000 }), 0);
   } finally {
     fx.cleanup();
+  }
+});
+
+test('a snapshot never carries a live claim’s secret, and one from another project is refused', () => {
+  const fx = freshStore();
+  const other = freshStore();
+  try {
+    item(fx.store);
+    const claimed = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1) });
+    const dump = exportWork(fx.store, t(2), 'proj-a');
+    assert.doesNotMatch(JSON.stringify(dump), new RegExp(claimed.claimToken));
+    assert.throws(() => restoreWork(other.store, dump, t(3), 'proj-b'), /taken from project proj-a/);
+    assert.equal(restoreWork(other.store, dump, t(3), 'proj-a').imported, 1);
+  } finally {
+    fx.cleanup();
+    other.cleanup();
   }
 });

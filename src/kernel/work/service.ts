@@ -708,7 +708,8 @@ export function exportWork(store: StateStore, at: string, projectId: string | nu
     formatVersion: 1,
     exportedAt: at,
     projectId,
-    work: store.db.prepare('SELECT * FROM work_items ORDER BY created_at, id').all(),
+    // A snapshot is shared and kept; a live claim's secret never goes into one.
+    work: (store.db.prepare('SELECT * FROM work_items ORDER BY created_at, id').all() as Array<Record<string, unknown>>).map((row) => ({ ...row, claim_token: null })),
     dependencies: store.db.prepare('SELECT * FROM work_dependencies ORDER BY created_at, id').all(),
     events: store.db.prepare('SELECT work_id, at, kind, actor, expected_revision, payload_json FROM work_events ORDER BY id').all(),
     legacyIds: store.db.prepare('SELECT legacy_id, work_id, source, created_at FROM work_legacy_ids ORDER BY created_at').all(),
@@ -725,9 +726,12 @@ export interface RestoreReport {
  * Restore durable work and decisions. Grants, credentials, and live lease
  * ownership are never restored.
  */
-export function restoreWork(store: StateStore, dump: WorkExport, at: string): RestoreReport {
+export function restoreWork(store: StateStore, dump: WorkExport, at: string, projectId: string | null = null): RestoreReport {
   if (dump.format !== 'construct-work-export' || dump.formatVersion !== 1) {
     throw new Error('this is not a construct-work-export v1 snapshot');
+  }
+  if (projectId !== null && dump.projectId !== null && dump.projectId !== projectId) {
+    throw new Error(`this snapshot was taken from project ${dump.projectId}; this project is ${projectId}. Work moves between separate projects as new items, not as a restore.`);
   }
   const conflicts: string[] = [];
   let imported = 0;
