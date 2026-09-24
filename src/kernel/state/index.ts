@@ -2,8 +2,8 @@
  * kernel/state/index.ts — Construct state format 3.
  */
 
-export { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UNSUPPORTED_STATE_MESSAGE, UnsupportedStateError } from './format.ts';
-export { openStateStore, type StateStore } from './open.ts';
+export { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UNSUPPORTED_STATE_MESSAGE, OLDER_STATE_MESSAGE, NEWER_STATE_MESSAGE, StateBusyError, UnsupportedStateError, type UnsupportedStateKind } from './format.ts';
+export { BUSY_TIMEOUT_MS, isBusyError, openStateStore, type OpenStateOptions, type StateStore } from './open.ts';
 export { REQUIRED_TABLES } from './schema.ts';
 export { IllegalTransitionError } from './rows.ts';
 export { appendActivity, listActivity, type ActivityEvent } from './activity.ts';

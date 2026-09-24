@@ -27,7 +27,7 @@ function tmp(): { root: string; cleanup(): void } {
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test('a fresh open creates exactly one database file stamped format 3', () => {
+test('a fresh open creates one database stamped format 3, plus only its WAL sidecars', () => {
   const fx = freshStore();
   try {
     const meta = Object.fromEntries(
@@ -38,8 +38,8 @@ test('a fresh open creates exactly one database file stamped format 3', () => {
     assert.equal(meta.format, STATE_FORMAT_ID);
     assert.equal(meta.format_version, String(STATE_FORMAT_VERSION));
     assert.equal(STATE_FORMAT_VERSION, 3);
-    const files = readdirSync(dirname(fx.dbPath));
-    assert.deepEqual(files, ['construct.sqlite']);
+    const files = readdirSync(dirname(fx.dbPath)).sort();
+    assert.deepEqual(files.filter((f) => !/^construct\.sqlite-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
     const tables = new Set(
       (fx.store.db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>).map(
         (r) => r.name,
@@ -190,7 +190,7 @@ test('foreign keys are enforced', () => {
   }
 });
 
-test('a complete format-2 store upgrades in place to format 3 and keeps its rows', () => {
+test('a complete format-2 store upgrades only when asked, in place, and keeps its rows', () => {
   const fx = freshStore();
   try {
     const at = clock();
@@ -206,7 +206,9 @@ test('a complete format-2 store upgrades in place to format 3 and keeps its rows
     }
     db.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
     db.close();
-    const again = openStateStore(fx.dbPath);
+    assert.throws(() => openStateStore(fx.dbPath), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
+    assert.throws(() => openStateStore(fx.dbPath, { readOnly: true, migrate: true }), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
+    const again = openStateStore(fx.dbPath, { migrate: true });
     const meta = again.db.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string };
     assert.equal(meta.value, '3');
     const tables = new Set(

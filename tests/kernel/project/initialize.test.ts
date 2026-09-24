@@ -23,7 +23,7 @@ test('a fresh init writes exactly the committed files, one database, and the ign
     try {
       const layout = projectLayout(root);
       assert.deepEqual(readdirSync(layout.dir).sort(), ['constitution.json', 'project.json', 'registry.lock.json', 'sources.json', 'state']);
-      assert.deepEqual(readdirSync(layout.stateDir), ['construct.sqlite']);
+      assert.deepEqual(readdirSync(layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
       assert.deepEqual(result.created, { projectFile: true, constitution: true, sources: true, lock: true, state: true });
       assert.equal(result.gitignoreUpdated, true);
       assert.match(readFileSync(join(root, '.gitignore'), 'utf8'), new RegExp(STATE_GITIGNORE_PATTERN.replaceAll('/', '\\/')));
@@ -58,7 +58,7 @@ test('a second init keeps every existing file and reopens the same database', ()
       assert.deepEqual(second.created, { projectFile: false, constitution: false, sources: false, lock: false, state: false });
       assert.equal(second.config.id, 'proj-1');
       assert.equal(second.gitignoreUpdated, false);
-      assert.deepEqual(readdirSync(second.layout.stateDir), ['construct.sqlite']);
+      assert.deepEqual(readdirSync(second.layout.stateDir).filter((f) => !/-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
     } finally {
       second.store.close();
     }

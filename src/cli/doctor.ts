@@ -11,6 +11,7 @@ import { constitutionCompleteness } from '../kernel/project/constitution.ts';
 import { findProjectRoot } from '../kernel/project/discover.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
+import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
@@ -91,10 +92,17 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     } else {
       try {
         accessSync(layout.dbPath, constants.R_OK | constants.W_OK);
-        const store = openStateStore(layout.dbPath);
+        const store = openStateStore(layout.dbPath, { readOnly: true });
         try {
           const profile = getProfile(store);
-          checks.push({ name: 'state', ok: true, detail: `format 3 at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          checks.push({ name: 'state', ok: true, detail: `format ${STATE_FORMAT_VERSION} at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          checks.push({
+            name: 'state-concurrency',
+            ok: store.journalMode === 'wal',
+            detail: store.journalMode === 'wal'
+              ? 'WAL journal: concurrent sessions read while one writes'
+              : `${store.journalMode} journal: concurrent sessions queue for the file. The next command that writes switches it to WAL; if this persists, the filesystem refused WAL (a network or synced folder is the usual cause)`,
+          });
         } finally {
           store.close();
         }

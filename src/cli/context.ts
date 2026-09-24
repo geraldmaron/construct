@@ -15,13 +15,15 @@ import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { readJsonFile } from '../kernel/project/files.ts';
 import { validateUserDefaults, userDefaultsPath, type ResolveConfigInput } from '../kernel/project/config.ts';
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
-import { UnsupportedStateError } from '../kernel/state/format.ts';
+import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { OperationError } from './output.ts';
 
 export interface CliContext {
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
   readonly paths: Paths;
+  /** Set for commands declared read-only: the state database is opened without write access. */
+  readonly readOnly?: boolean;
   now(): string;
   nextId(prefix: string): string;
 }
@@ -71,11 +73,25 @@ export function bindProject(ctx: CliContext): BoundProject {
   return { root, layout: projectLayout(root), files: readProjectFiles(root) };
 }
 
+/** The project exists and its store is intact, but another process held the write lock past every wait. */
+export class ProjectBusyError extends OperationError {
+  constructor(message: string) {
+    super(message, 'Try again in a moment. The database is intact; another session is mid-write.');
+    this.name = 'ProjectBusyError';
+  }
+}
+
 export interface OpenProject extends BoundProject {
   readonly store: StateStore;
 }
 
-/** Bind and open the state database. Refuses foreign formats with the reset instruction. */
+/**
+ * Bind and open the state database. A read-only command opens it without
+ * write access, so inspecting a project never changes its format. A foreign
+ * format is refused with the reset instruction; an older one with the migrate
+ * instruction; a newer one with the upgrade instruction; a busy one with a
+ * retry, never with an instruction that would discard state.
+ */
 export function openProject(ctx: CliContext): OpenProject {
   const bound = bindProject(ctx);
   if (!existsSync(bound.layout.dbPath)) {
@@ -85,11 +101,12 @@ export function openProject(ctx: CliContext): OpenProject {
     );
   }
   try {
-    const store = openStateStore(bound.layout.dbPath);
+    const store = openStateStore(bound.layout.dbPath, { readOnly: ctx.readOnly === true });
     return { ...bound, store };
   } catch (error) {
     if (error instanceof UnsupportedStateError) throw error;
-    throw new OperationError(`cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`, 'Check the file’s permissions, or run `construct reset` to see what would be replaced.');
+    if (error instanceof StateBusyError) throw new ProjectBusyError(error.message);
+    throw new OperationError(`cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`, 'Check the file’s permissions and that this user owns it.');
   }
 }
 
