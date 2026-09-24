@@ -195,7 +195,8 @@ async function checkHost(host) {
       const boot = await s2.call('bootstrap');
       const q = boot.profile.openQuestions.find((x) => x.options);
       const decided = q ? await s2.call('decide', { decisionId: q.id, resolution: 'solo' }) : null;
-      record(host.id, 'decision relay', decided?.decision?.state === 'resolved' ? 'passed' : 'failed', q ? `question "${q.question.slice(0, 40)}…" resolved by the person` : 'no open question at bootstrap');
+      const relayed = decided?.decision?.state === 'resolved' && String(decided?.decision?.resolvedBy ?? '').startsWith('relayed via');
+      record(host.id, 'decision relay', relayed ? 'passed' : 'failed', q ? `question "${q.question.slice(0, 40)}…" ${relayed ? 'resolved and recorded as relayed, not as the person' : `recorded as ${String(decided?.decision?.resolvedBy)}`}` : 'no open question at bootstrap');
     } catch (error) {
       record(host.id, 'decision relay', 'failed', String(error instanceof Error ? error.message : error).slice(0, 300));
     } finally {

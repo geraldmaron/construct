@@ -791,7 +791,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           }
           if (subject.promote) throw new PersonChannelRequiredError(`Moving deliverable ${subject.promote.deliverableId} to ${subject.promote.to}`, decisionId);
         }
-        const resolved = resolveDecision(store, { id: decisionId, resolution, by, at });
+        const resolved = resolveDecision(store, { id: decisionId, resolution, by, at, channel });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
         if (decision.kind === 'approval' && subject.promote) {
           if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
