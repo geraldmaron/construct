@@ -4,7 +4,7 @@
  */
 
 import { hostname } from 'node:os';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { INIT_NEXT, serveLazyMcp, serveMcp, serveUnboundMcp, type BindFailure } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
@@ -13,7 +13,10 @@ import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
 import { endSession, registerSession } from '../kernel/state/sessions.ts';
 import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, ProjectBusyError, type CliContext } from './context.ts';
+import { createContext, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
+import { HostRequests } from '../hosts/mcp/outbound.ts';
+import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
+import { managedClaudeSettingsPath, resolveClaudeConfigDir } from '../kernel/paths.ts';
 import { bindingFor, openBroker } from './broker-context.ts';
 import { OperationError, say, writeJson } from './output.ts';
 import { packageVersion } from './version.ts';
@@ -53,9 +56,35 @@ export function bindFailureFor(error: unknown): BindFailure {
   return { busy: false, reason, next: INIT_NEXT };
 }
 
+/**
+ * Hook files on this machine that could answer a question the host shows the
+ * person: the project's (in the session's checkout and the main one), the
+ * user's, an administrator's, and installed plugins'.
+ */
+export function personPromptAnswerers(ctx: CliContext, cwd: string): string[] {
+  const checkouts = new Set<string>([cwd]);
+  const repo = resolveRepository(cwd);
+  if (repo) {
+    checkouts.add(repo.checkout);
+    const main = mainCheckoutOf(repo);
+    if (main) checkouts.add(main);
+  }
+  const claudeDir = resolveClaudeConfigDir(ctx.env);
+  const managed = managedClaudeSettingsPath();
+  return elicitationAnswerers([
+    ...[...checkouts].flatMap(projectHookFiles),
+    join(claudeDir, 'settings.json'),
+    join(claudeDir, 'settings.local.json'),
+    ...(managed ? [managed] : []),
+    ...pluginHookFiles(claudeDir),
+  ]);
+}
+
 export async function serve(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const projectFlag = stringFlag(args, 'project');
   const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag), sessionCwd: ctx.cwd } : ctx;
+  // A question shown to the person counts as theirs only when nothing here can answer it for them.
+  const hostOptions = { hostRequests: new HostRequests(), personPrompts: personPromptAnswerers(ctx, ctx.cwd).length === 0 };
   const flags = { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') };
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;
@@ -125,6 +154,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
           endOnSignal(o);
           return o.broker;
         }, packageVersion(), bindFailureFor, process.stdin, process.stdout, {
+          ...hostOptions,
           beforeEachCall: () => {
             if (lazy) register(lazy);
           },
@@ -159,7 +189,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     register(live);
     endOnSignal(live);
     try {
-      await serveMcp(binding.surface, broker, process.stdin, process.stdout, { beforeEachCall: () => register(live) });
+      await serveMcp(binding.surface, broker, process.stdin, process.stdout, { ...hostOptions, beforeEachCall: () => register(live) });
     } finally {
       end(live);
     }

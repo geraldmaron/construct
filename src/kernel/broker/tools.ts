@@ -22,7 +22,7 @@ import { emptyLock } from '../project/lock.ts';
 import { constitutionCompleteness } from '../project/constitution.ts';
 import { TIER_POLICIES } from '../policy/lattice.ts';
 import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
-import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
+import { getDeliverable, TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition, ToolInputError } from './definition.ts';
@@ -464,7 +464,7 @@ const inbox = define<{ runId?: string }, unknown>({
 const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
   title: 'Relay the person’s decision',
-  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly; relayed here it stays open and says how.',
+  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -478,7 +478,7 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     closed(raw, this.inputSchema);
     return { decisionId: str(raw, 'decisionId')!, resolution: str(raw, 'resolution')! };
   },
-  run(ctx, { decisionId, resolution }) {
+  async run(ctx, { decisionId, resolution }) {
     // Whatever arrives here was relayed by the model in the host, so it is
     // recorded as relayed through that host, never as the person.
     const by = `relayed via ${ctx.host.hostId}`;
@@ -502,10 +502,36 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
+      const asked = await askThePerson(ctx, decisionId, `Your assistant relayed "${Array.isArray(resolution) ? resolution.join(' ') : resolution}".`);
+      if (asked) return asked;
       return { decision: { id: decisionId, state: 'open' }, personRequired: true, next: error.message };
     }
   },
 });
+
+/**
+ * Put an open decision to the person directly, when the host can show it to
+ * them and nothing answers it for them. Their choice resolves the decision on
+ * the elicitation channel; no answer leaves it open, and says so. Null when
+ * the host cannot ask.
+ */
+async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: string | null): Promise<Record<string, unknown> | null> {
+  if (!ctx.askPerson) return null;
+  const decision = getDecision(ctx.store, decisionId);
+  if (!decision || decision.state !== 'open') return null;
+  const options = decision.options && decision.options.length > 0 ? decision.options.map(String) : ['approve', 'decline'];
+  const answer = await ctx.askPerson({
+    message: `Construct needs your own answer; your assistant cannot give it for you. ${decision.question}${relayed ? ` ${relayed}` : ''}`,
+    options,
+  });
+  if (!answer.answered) {
+    const why = { declined: 'the person declined the prompt', cancelled: 'the person closed the prompt', timeout: 'the person did not answer the prompt in time', unavailable: 'the host could not show the prompt' }[answer.why];
+    return { decision: { id: decisionId, state: 'open' }, personRequired: true, asked: why, next: personStepFor(decisionId) };
+  }
+  const by = `person via ${ctx.host.hostId} prompt`;
+  const r = ctx.workflow.decide({ decisionId, resolution: answer.choice, by, channel: 'elicitation' });
+  return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy, resolution: answer.choice }, channel: 'elicitation', run: r.run ? { id: r.run.id, state: r.run.state } : null };
+}
 
 function onboardingAnswerFor(subject: unknown, resolution: string | readonly string[]): OnboardingAnswers | null {
   const id = subject !== null && typeof subject === 'object' ? (subject as { onboarding?: unknown }).onboarding : undefined;
@@ -565,7 +591,7 @@ const staff = define<{ action: 'list' | 'show'; id?: string }, unknown>({
 const promote = define<{ deliverableId: string; to: TrustState; reason?: string }, unknown>({
   name: 'promote_deliverable',
   title: 'Move a deliverable’s trust',
-  description: 'After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: asked for here, they wait in the inbox for the person to give directly. A finished step never moves trust.',
+  description: 'After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. A finished step never moves trust.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -579,10 +605,15 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
     closed(raw, this.inputSchema);
     return { deliverableId: str(raw, 'deliverableId')!, to: str(raw, 'to', { oneOf: TRUST_STATES }) as TrustState, reason: str(raw, 'reason', { optional: true }) };
   },
-  run(ctx, { deliverableId, to, reason }) {
+  async run(ctx, { deliverableId, to, reason }) {
     if (PERSON_ONLY_TRUST.has(to)) {
       const pending = ctx.workflow.requestPromotion({ deliverableId, to, by: ctx.actor, reason });
-      return { deliverable: { id: deliverableId, trust: 'unchanged' }, pendingDecision: pending.id, personRequired: true, next: personStepFor(pending.id) };
+      const asked = await askThePerson(ctx, pending.id, null);
+      if (asked && (asked.decision as { state: string }).state !== 'open') {
+        const d = getDeliverable(ctx.store, deliverableId);
+        return { ...asked, deliverable: { id: deliverableId, trust: d?.trustState ?? 'unchanged' } };
+      }
+      return { deliverable: { id: deliverableId, trust: 'unchanged' }, pendingDecision: pending.id, personRequired: true, ...(asked ? { asked: asked.asked } : {}), next: personStepFor(pending.id) };
     }
     const d = ctx.workflow.promote({ deliverableId, to, by: ctx.actor, channel: 'relay', reason });
     return { deliverable: { id: d.id, trust: d.trustState } };

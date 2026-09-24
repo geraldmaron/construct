@@ -46,3 +46,21 @@ export class PersonChannelRequiredError extends Error {
     this.decisionId = decisionId;
   }
 }
+
+/** A question put to the person directly, through the host, with the answers they may give. */
+export interface PersonQuestion {
+  readonly message: string;
+  readonly options: readonly string[];
+}
+
+/** What came back: the person's choice, or why there is none. */
+export type PersonAnswer =
+  | { readonly answered: true; readonly choice: string }
+  | { readonly answered: false; readonly why: 'declined' | 'cancelled' | 'timeout' | 'unavailable' };
+
+/**
+ * Ask the person directly, bypassing the model. Supplied by a host adapter
+ * only when the host shows the question to the person and nothing on this
+ * machine is configured to answer it for them.
+ */
+export type AskPerson = (question: PersonQuestion) => Promise<PersonAnswer>;

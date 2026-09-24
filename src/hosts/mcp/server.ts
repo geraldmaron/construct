@@ -13,6 +13,8 @@ import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
 import { renewExecutorLeases } from '../../kernel/state/steps.ts';
 import { renewSessionClaims } from '../../kernel/work/service.ts';
+import { HostRequestError, HostRequests } from './outbound.ts';
+import type { AskPerson } from '../../kernel/policy/channels.ts';
 import { activityCursor, latestActivityId, peerDelta, setActivityCursor, type PeerDelta } from '../../kernel/coord/awareness.ts';
 
 /** How often a session's presence and claim terms are refreshed while it keeps calling. */
@@ -63,6 +65,42 @@ function storedFormatVersion(ctx: BrokerContext): number | null {
 export interface HandlerOptions {
   /** Runs before every tool call: the adapter finishes anything it could not do at launch. */
   readonly beforeEachCall?: () => void;
+  /** The channel for requests this server sends the host. */
+  readonly hostRequests?: HostRequests;
+  /**
+   * Whether a question the host shows the person counts as the person's own
+   * answer on this machine. The adapter says no when something is configured
+   * to answer such questions automatically.
+   */
+  readonly personPrompts?: boolean;
+  /** How long a question to the person waits before it is left in the inbox. */
+  readonly personPromptWaitMs?: number;
+}
+
+/** How long a question put to the person through the host waits for an answer. */
+export const PERSON_PROMPT_WAIT_MS = 60_000;
+
+/** Ask the person through the host's elicitation: one choice among the options, shown by the host, not the model. */
+function elicitor(requests: HostRequests, waitMs: number): AskPerson {
+  return async (question) => {
+    try {
+      const result = (await requests.request(
+        'elicitation/create',
+        {
+          message: question.message,
+          requestedSchema: { type: 'object', properties: { answer: { type: 'string', title: 'Your answer', enum: [...question.options] } }, required: ['answer'] },
+        },
+        waitMs,
+      )) as { action?: unknown; content?: { answer?: unknown } } | null;
+      if (result?.action === 'accept') {
+        const choice = result.content?.answer;
+        return typeof choice === 'string' && question.options.includes(choice) ? { answered: true, choice } : { answered: false, why: 'unavailable' };
+      }
+      return { answered: false, why: result?.action === 'decline' ? 'declined' : 'cancelled' };
+    } catch (error) {
+      return { answered: false, why: error instanceof HostRequestError && error.reason === 'timeout' ? 'timeout' : 'unavailable' };
+    }
+  };
 }
 
 export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, options: HandlerOptions = {}): AsyncMessageHandler {
@@ -103,6 +141,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
   };
+  let callCtx: BrokerContext = ctx;
   let cursor: number | null = null;
   /**
    * After a call: what other sessions and agents did to work since this
@@ -130,6 +169,10 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
     const isNotification = id === undefined || id === null;
     switch (method) {
       case 'initialize': {
+        const declared = (record(params) as { capabilities?: { elicitation?: unknown } }).capabilities;
+        if (surface === 'interactive' && options.hostRequests && options.personPrompts && declared && typeof declared === 'object' && declared.elicitation) {
+          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, options.personPromptWaitMs ?? PERSON_PROMPT_WAIT_MS) };
+        }
         const client = (record(params) as { clientInfo?: unknown }).clientInfo;
         if (ctx.sessionId && client && typeof client === 'object') {
           const info = client as { name?: unknown; version?: unknown };
@@ -164,7 +207,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           const args = record(p.arguments);
           const input = tool.validate(args);
           beforeCall(args);
-          const result = await tool.run(ctx, input);
+          const result = await tool.run(callCtx, input);
           return response(id, withPeers(result, peersAfter(tool.name)));
         } catch (error) {
           const messageText = error instanceof Error ? error.message : String(error);
@@ -233,10 +276,14 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
 }
 
 /** Official stdio transport: newline-delimited JSON-RPC, replies in arrival order. */
-export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = process.stdin, stdout: Writable = process.stdout): Promise<void> {
+export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = process.stdin, stdout: Writable = process.stdout, hostRequests?: HostRequests): Promise<void> {
   const transport = new StdioServerTransport(stdin, stdout);
+  hostRequests?.attach((message) => transport.send(message as never));
   let chain: Promise<void> = Promise.resolve();
   transport.onmessage = (message) => {
+    // The host's answer to one of this server's requests settles at once: the
+    // call waiting on it holds the queue.
+    if (hostRequests?.deliver(message)) return;
     chain = chain.then(async () => {
       const request = message as JsonRpcRequest;
       let reply: JsonRpcResponse | null;
@@ -254,6 +301,7 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
     () =>
       new Promise<void>((resolve) => {
         const done = () => {
+          hostRequests?.close();
           void chain.finally(() => {
             void transport.close().finally(resolve);
           });
@@ -265,7 +313,7 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
 }
 
 export function serveMcp(surface: BrokerSurface, ctx: BrokerContext, stdin: Readable = process.stdin, stdout: Writable = process.stdout, options: HandlerOptions = {}): Promise<void> {
-  return serveHandler(createMcpHandler(surface, ctx, options), stdin, stdout);
+  return serveHandler(createMcpHandler(surface, ctx, options), stdin, stdout, options.hostRequests);
 }
 
 export function serveUnboundMcp(
@@ -303,9 +351,13 @@ export function createLazyMcpHandler(
   let bound: AsyncMessageHandler | null = null;
   let gaveUp: AsyncMessageHandler | null = null;
   let lastBusy = 'the state database is busy';
-  const tryBind = (): void => {
+  let handshake: JsonRpcRequest | null = null;
+  const tryBind = async (): Promise<void> => {
     try {
-      bound = createMcpHandler(surface, open(), options);
+      const handler = createMcpHandler(surface, open(), options);
+      // The bound handler learns what the host said at the handshake it did not see.
+      if (handshake) await handler({ ...handshake, id: null });
+      bound = handler;
     } catch (error) {
       const failed = classify(error);
       if (failed.busy) lastBusy = error instanceof Error ? error.message : String(error);
@@ -318,6 +370,7 @@ export function createLazyMcpHandler(
     const { id, method, params } = message;
     switch (method) {
       case 'initialize':
+        handshake = message;
         return response(id, {
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
@@ -331,7 +384,7 @@ export function createLazyMcpHandler(
         if (typeof name !== 'string' || !names.has(name)) {
           return failure(id, -32602, `no tool named "${escapeForTerminal(String(name ?? ''))}" on the ${surface} surface`);
         }
-        tryBind();
+        await tryBind();
         if (bound) return (bound as AsyncMessageHandler)(message);
         if (gaveUp) return (gaveUp as AsyncMessageHandler)(message);
         return response(id, { ...text({ bound: false, error: lastBusy, next: 'The store is busy; call again in a moment. Nothing was recorded.' }), isError: true });
@@ -351,5 +404,5 @@ export function serveLazyMcp(
   stdout: Writable = process.stdout,
   options: HandlerOptions = {},
 ): Promise<void> {
-  return serveHandler(createLazyMcpHandler(surface, open, version, classify, options), stdin, stdout);
+  return serveHandler(createLazyMcpHandler(surface, open, version, classify, options), stdin, stdout, options.hostRequests);
 }
