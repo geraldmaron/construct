@@ -98,3 +98,23 @@ test('nothing a session writes over MCP is recorded as the person', { timeout: 6
     fx.cleanup();
   }
 });
+
+test('a server stopped by signal ends its session', { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = initProject(fx);
+    const s = new Session(dir, envFor(fx));
+    await s.request('initialize', INITIALIZE);
+    await s.ok('bootstrap');
+    await s.kill('SIGTERM');
+    const check = new DatabaseSync(db, { readOnly: true });
+    try {
+      const row = check.prepare('SELECT ended_at, end_reason FROM sessions').get() as { ended_at: string | null; end_reason: string | null };
+      assert.ok(row.ended_at, 'the session ended');
+    } finally {
+      check.close();
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
