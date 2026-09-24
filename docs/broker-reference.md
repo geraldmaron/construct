@@ -176,13 +176,13 @@ Surface: interactive. Reads only: no.
 
 ### `work`
 
-Native work. Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
+Native work. Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `ready`, `show`, `add`, `claim`, `check`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, show, add, claim, check, complete, release, takeover, reopen. |
+| `action` | `list`, `ready`, `offers`, `show`, `add`, `claim`, `check`, `handoff`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, offers, show, add, claim, check, handoff, accept, complete, release, takeover, reopen. |
 | `id` | string | no | Work id or a preserved legacy id. |
 | `title` | string | no | Title, for add. |
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
@@ -191,6 +191,8 @@ Surface: interactive. Reads only: no.
 | `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
 | `paths` | array | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |
 | `mode` | `exclusive`, `shared` | no | exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside. |
+| `packet` | object | no | For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths. |
+| `to` | string | no | For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept. |
 
 ### `heartbeat`
 

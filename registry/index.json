@@ -10,7 +10,7 @@
     },
     "construct": {
       "version": "2.4.0",
-      "digest": "sha256:4426e0eaeece8ca88dc2adfb5cbe3975edd995450a4d8f7b0ee6334099ed1551",
+      "digest": "sha256:ad066930e3dca13a7510bb58423fbeec3982fba81b12e45eb550988e85346a3c",
       "category": "operational",
       "title": "Construct operating skill"
     },

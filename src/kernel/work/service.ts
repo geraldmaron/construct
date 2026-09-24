@@ -10,6 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { normalizePacket, offeredTo, parseHandoff, type Handoff } from './handoff.ts';
 import { MAIN_LANE, findOverlaps, releasePaths, reservePaths, transferPaths, type CrossLanePolicy, type LeaseMode, type Overlap, type PathLease } from './leases.ts';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity } from '../state/activity.ts';
@@ -87,6 +88,7 @@ interface Row {
   readonly claim_session: string | null;
   readonly claim_agent: string | null;
   readonly claim_lane: string | null;
+  readonly handoff_json: string | null;
   readonly created_at: string;
   readonly updated_at: string;
   readonly completed_at: string | null;
@@ -529,6 +531,7 @@ export function claimWork(
     setClaim(store, input.id, input, token, input.until, input.now);
     // A new claim starts with no reservations: an expired holder's go with its claim.
     releasePaths(store, { workId: input.id, now: input.now, reason: 'claimed again' });
+    takeHandoff(store, row, input.owner, input.now, 'claim');
     recordEvent(store, input.id, input.now, 'claimed', input.owner, current.revision + 1, { until: input.until, session: input.session ?? null, agent: input.agent ?? null, lane: input.lane ?? null });
     const reserved = reserveFor(store, input);
     appendActivity(store, { at: input.now, kind: 'work.claimed', actor: input.owner, payload: { workId: input.id, until: input.until, paths: reserved.leases?.map((l) => l.path) ?? [] } });
@@ -614,6 +617,7 @@ export function takeoverWork(
     }
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
+    takeHandoff(store, row, input.owner, input.now, 'takeover');
     const leases = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until });
     recordEvent(store, input.id, input.now, 'taken_over', input.owner, current.revision + 1, { from: row.claim_owner, reason: input.reason });
     appendActivity(store, { at: input.now, kind: 'work.taken_over', actor: input.owner, payload: { workId: input.id, from: row.claim_owner, reason: input.reason } });
@@ -625,6 +629,126 @@ export function takeoverWork(
     const overlaps = findOverlaps(store, { paths: leases.map((l) => l.path), laneRoot: laneKey(input.lane), now: input.now, mode: leases[0]!.mode, excludeWorkId: input.id, owner: input.owner });
     return { ...claimed, leases, overlaps };
   });
+}
+
+/**
+ * How long an offered handoff holds the work and its reservations for the next
+ * holder. The offering session's own calls keep renewing it as usual.
+ */
+export const HANDOFF_HOLD_MS = 2 * 60 * 60_000;
+
+/** An offer still waiting: the claim is live, still the offerer's, and nobody has taken it. */
+function openOffer(row: Row, now: string): Handoff | null {
+  const h = parseHandoff(row.handoff_json);
+  if (!h || h.takenBy !== null || !liveClaim(row, now) || row.claim_owner !== h.from) return null;
+  return h;
+}
+
+/** Record who took on handed-off work when it was claimed or taken over rather than accepted. */
+function takeHandoff(store: StateStore, row: Row, owner: string, now: string, via: 'claim' | 'takeover'): void {
+  const h = parseHandoff(row.handoff_json);
+  if (!h || h.takenBy !== null) return;
+  store.db.prepare('UPDATE work_items SET handoff_json = ? WHERE id = ?').run(JSON.stringify({ ...h, takenBy: owner, takenAt: now, takenVia: via }), row.id);
+}
+
+/** The latest handoff recorded on a work item: offered, taken, or lapsed. */
+export function handoffOf(store: StateStore, id: string): Handoff | null {
+  const row = rowOf(store, id);
+  return row ? parseHandoff(row.handoff_json) : null;
+}
+
+/**
+ * Offer claimed work to the next holder with a packet saying where it stands.
+ * Only the holder, with its token, offers. The claim stays the holder's until
+ * someone accepts, and is held at least long enough for that; the holder can
+ * still settle it with its token. `to` names a claimant or a session; without
+ * it anyone in the project may accept.
+ */
+export function handoffWork(
+  store: StateStore,
+  input: { readonly id: string; readonly owner: string; readonly token: string; readonly packet: Record<string, unknown>; readonly to?: string | null; readonly now: string },
+): WorkItem & { readonly handoff: Handoff } {
+  requireInstant(input.now, 'work.handoff.now');
+  const packet = normalizePacket(input.packet);
+  const to = input.to?.trim() ? input.to.trim() : null;
+  if (to === input.owner) throw new Error('a handoff goes to someone else; you already hold this work');
+  return store.transaction(() => {
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
+    if (!liveClaim(row, input.now) || row.claim_owner !== input.owner || row.claim_token !== input.token) {
+      throw new Error(`work ${input.id} is not held by you under that token; only its holder hands it off`);
+    }
+    const hold = new Date(Date.parse(input.now) + HANDOFF_HOLD_MS).toISOString();
+    const until = row.claim_until! > hold ? row.claim_until! : hold;
+    const handoff: Handoff = { from: input.owner, to, offeredAt: input.now, packet, takenBy: null, takenAt: null, takenVia: null };
+    store.db
+      .prepare('UPDATE work_items SET handoff_json = ?, claim_until = ?, revision = revision + 1, updated_at = ? WHERE id = ?')
+      .run(JSON.stringify(handoff), until, input.now, input.id);
+    extendPaths(store, input.id, until);
+    recordEvent(store, input.id, input.now, 'handoff_offered', input.owner, current.revision + 1, { to });
+    appendActivity(store, { at: input.now, kind: 'work.handoff_offered', actor: input.owner, payload: { workId: input.id, to } });
+    return { ...getWork(store, input.id)!, handoff };
+  });
+}
+
+/**
+ * Accept an offered handoff: the claim, a new token, and the reservations move
+ * to the acceptor in one transaction, and the offerer's token stops working.
+ * Approvals and step leases never move with it; whatever the work needs next
+ * is asked for again by whoever holds it.
+ */
+export function acceptWork(
+  store: StateStore,
+  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly branch?: string | null },
+): ClaimedWork & { readonly handoff: Handoff } {
+  requireInstant(input.now, 'work.accept.now');
+  if (input.until <= input.now) throw new Error('claim.until must be after now');
+  return store.transaction(() => {
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
+    const h = openOffer(row, input.now);
+    if (!h) {
+      const left = parseHandoff(row.handoff_json);
+      if (left && left.takenBy === null && !liveClaim(row, input.now) && !TERMINAL.includes(current.status)) {
+        const how = row.status === 'claimed' ? 'lapsed with its claim' : 'was withdrawn when its holder released it';
+        throw new Error(`the handoff of ${input.id} ${how}; claim the work instead, and its packet comes with it`);
+      }
+      throw new Error(`work ${input.id} has no open handoff`);
+    }
+    if (h.from === input.owner) throw new Error(`you offered ${input.id}; release or settle it with your token instead`);
+    if (!offeredTo(h, input.owner, input.session)) throw new Error(`the handoff of ${input.id} is offered to ${h.to}`);
+    const token = randomUUID();
+    setClaim(store, input.id, input, token, input.until, input.now);
+    const taken: Handoff = { ...h, takenBy: input.owner, takenAt: input.now, takenVia: 'accept' };
+    store.db.prepare('UPDATE work_items SET handoff_json = ? WHERE id = ?').run(JSON.stringify(taken), input.id);
+    const leases = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until });
+    recordEvent(store, input.id, input.now, 'handoff_accepted', input.owner, current.revision + 1, { from: h.from });
+    appendActivity(store, { at: input.now, kind: 'work.handoff_accepted', actor: input.owner, payload: { workId: input.id, from: h.from } });
+    const claimed = { ...withToken(getWork(store, input.id)!, token), handoff: taken };
+    if (leases.length === 0) return claimed;
+    const overlaps = findOverlaps(store, { paths: leases.map((l) => l.path), laneRoot: laneKey(input.lane), now: input.now, mode: leases[0]!.mode, excludeWorkId: input.id, owner: input.owner });
+    return { ...claimed, leases, overlaps };
+  });
+}
+
+/**
+ * Handoffs waiting to be accepted. With a claimant, only those it may accept:
+ * offered to anyone, to it, or to its session, and not its own.
+ */
+export function listOffers(store: StateStore, now: string, who?: { readonly owner: string; readonly session?: string }): { readonly work: WorkItem; readonly handoff: Handoff }[] {
+  const rows = store.db
+    .prepare(`SELECT * FROM work_items WHERE status = 'claimed' AND claim_until > ? AND handoff_json IS NOT NULL ORDER BY updated_at, id`)
+    .all(now) as unknown as Row[];
+  const out: { work: WorkItem; handoff: Handoff }[] = [];
+  for (const row of rows) {
+    const h = openOffer(row, now);
+    if (!h) continue;
+    if (who && (h.from === who.owner || !offeredTo(h, who.owner, who.session))) continue;
+    out.push({ work: toWork(row), handoff: h });
+  }
+  return out;
 }
 
 /**

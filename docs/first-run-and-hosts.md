@@ -78,6 +78,12 @@ Construct keeps them from stepping on each other:
   Reservations end with the claim. `construct work check --paths=...` or
   `--staged` says what is reserved before you edit or commit, and exits 1 on
   a collision in this checkout.
+- Claimed work is passed on with a handoff: the holder offers it, with its
+  token, and a packet saying where the work stands, what comes next, what to
+  watch out for, and what is still open. Whoever accepts gets the claim, a new
+  token, and its reservations in one step; nobody else can accept it after.
+  A handoff never moves an approval. `construct work offers` lists what is
+  waiting, and the packet is always shown as its author's words.
 - Git worktrees of the project share its one store in the main checkout, so
   an agent in a worktree sees the same work. `construct init` in a worktree is
   refused, because it would start a second store.

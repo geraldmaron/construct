@@ -381,6 +381,35 @@ whether paths are reserved by other work; exits 1 on a collision in this checkou
 
 Reads only: yes.
 
+### `construct work handoff <id>`
+
+offer your claimed work to the next holder, saying where it stands
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--token` | yes | the token your claim returned |
+| `--state` | yes | where the work stands |
+| `--next` | yes | the next concrete step |
+| `--watch-out` | yes | something the next holder should know |
+| `--question` | yes | a question still open |
+| `--to` | yes | the claimant or session to offer it to (default: anyone) |
+| `--branch` | yes | the branch the work is on |
+| `--commit` | yes | the commit it stands at |
+
+Reads only: no.
+
+### `construct work accept <id>`
+
+accept a handoff: the claim and a new token become yours
+
+Reads only: no.
+
+### `construct work offers`
+
+handoffs waiting to be accepted
+
+Reads only: yes.
+
 ### `construct work takeover <id>`
 
 take over a claim whose holder expired, ended, or went quiet
