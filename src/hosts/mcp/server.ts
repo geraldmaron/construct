@@ -51,7 +51,12 @@ function storedFormatVersion(ctx: BrokerContext): number | null {
   return Number.isFinite(version) ? version : null;
 }
 
-export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): AsyncMessageHandler {
+export interface HandlerOptions {
+  /** Runs before every tool call: the adapter finishes anything it could not do at launch. */
+  readonly beforeEachCall?: () => void;
+}
+
+export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, options: HandlerOptions = {}): AsyncMessageHandler {
   const tools = toolsFor(surface);
   const byName = new Map(tools.map((t) => [t.name, t]));
   let cookie = schemaCookie(ctx);
@@ -76,6 +81,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
    * and extend its claims past half their term, at most once a minute.
    */
   const beforeCall = (args: Record<string, unknown>): void => {
+    options.beforeEachCall?.();
     ctx.store.attribution.sessionId = ctx.sessionId;
     ctx.store.attribution.agent = typeof args.agent === 'string' && args.agent.trim() ? args.agent.trim().slice(0, 80) : null;
     ctx.store.attribution.channel = surface === 'interactive' ? 'relay' : null;
@@ -227,8 +233,8 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
   );
 }
 
-export function serveMcp(surface: BrokerSurface, ctx: BrokerContext, stdin: Readable = process.stdin, stdout: Writable = process.stdout): Promise<void> {
-  return serveHandler(createMcpHandler(surface, ctx), stdin, stdout);
+export function serveMcp(surface: BrokerSurface, ctx: BrokerContext, stdin: Readable = process.stdin, stdout: Writable = process.stdout, options: HandlerOptions = {}): Promise<void> {
+  return serveHandler(createMcpHandler(surface, ctx, options), stdin, stdout);
 }
 
 export function serveUnboundMcp(
@@ -259,6 +265,7 @@ export function createLazyMcpHandler(
   open: () => BrokerContext,
   version: string,
   classify: (error: unknown) => BindFailure,
+  options: HandlerOptions = {},
 ): AsyncMessageHandler {
   const tools = toolsFor(surface);
   const names = new Set(tools.map((t) => t.name));
@@ -267,7 +274,7 @@ export function createLazyMcpHandler(
   let lastBusy = 'the state database is busy';
   const tryBind = (): void => {
     try {
-      bound = createMcpHandler(surface, open());
+      bound = createMcpHandler(surface, open(), options);
     } catch (error) {
       const failed = classify(error);
       if (failed.busy) lastBusy = error instanceof Error ? error.message : String(error);
@@ -311,6 +318,7 @@ export function serveLazyMcp(
   classify: (error: unknown) => BindFailure,
   stdin: Readable = process.stdin,
   stdout: Writable = process.stdout,
+  options: HandlerOptions = {},
 ): Promise<void> {
-  return serveHandler(createLazyMcpHandler(surface, open, version, classify), stdin, stdout);
+  return serveHandler(createLazyMcpHandler(surface, open, version, classify, options), stdin, stdout);
 }

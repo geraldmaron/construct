@@ -60,11 +60,19 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;
   let opened: ReturnType<typeof openBroker> | null = null;
-  /** Record this server as a session in the project it bound. */
+  /**
+   * Record this server as a session in the project it bound. A store too busy
+   * to take the row now gets it before a later call; the server never fails
+   * to start for it.
+   */
+  let registered = false;
   const register = (o: ReturnType<typeof openBroker>): void => {
+    o.project.store.attribution.sessionId = o.binding.sessionId;
+    if (registered) return;
     const identity = readHostIdentity(ctx.env);
     const lane = o.project.lane;
-    registerSession(o.project.store, {
+    try {
+      registerSession(o.project.store, {
       id: o.binding.sessionId,
       host: o.binding.client,
       surface: o.binding.surface,
@@ -77,8 +85,21 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       branch: lane?.branch ?? undefined,
       head: lane?.head ?? undefined,
       at: ctx.now(),
-    });
-    o.project.store.attribution.sessionId = o.binding.sessionId;
+      });
+      registered = true;
+    } catch (error) {
+      if (!(error instanceof StateBusyError)) throw error;
+    }
+  };
+  /** End the session when the host stops this server by signal, as it would by closing the connection. */
+  const endOnSignal = (o: ReturnType<typeof openBroker>): void => {
+    for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const) {
+      process.once(signal, () => {
+        end(o);
+        o.project.store.close();
+        process.exit(0);
+      });
+    }
   };
   const end = (o: ReturnType<typeof openBroker>): void => {
     try {
@@ -99,10 +120,15 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
         await serveLazyMcp(binding.surface, () => {
           const o = openBroker({ ...bound, stateBusyTimeoutMs: LAZY_LOCK_WAIT_MS }, flags);
           o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
-          register(o);
           lazy = o;
+          register(o);
+          endOnSignal(o);
           return o.broker;
-        }, packageVersion(), bindFailureFor);
+        }, packageVersion(), bindFailureFor, process.stdin, process.stdout, {
+          beforeEachCall: () => {
+            if (lazy) register(lazy);
+          },
+        });
       } finally {
         const done = lazy as ReturnType<typeof openBroker> | null;
         if (done) {
@@ -129,11 +155,13 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       }
       return 0;
     }
-    register(opened);
+    const live = opened;
+    register(live);
+    endOnSignal(live);
     try {
-      await serveMcp(binding.surface, broker);
+      await serveMcp(binding.surface, broker, process.stdin, process.stdout, { beforeEachCall: () => register(live) });
     } finally {
-      end(opened);
+      end(live);
     }
     return 0;
   } finally {

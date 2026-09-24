@@ -86,4 +86,12 @@ export class Session {
     this.child.stdin.end();
     return new Promise((resolve) => this.child.on('close', () => resolve()));
   }
+
+  /** Stop the server the way a host or the operating system would, by signal. */
+  kill(signal: NodeJS.Signals): Promise<void> {
+    return new Promise((resolve) => {
+      this.child.on('close', () => resolve());
+      this.child.kill(signal);
+    });
+  }
 }
