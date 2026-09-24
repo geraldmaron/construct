@@ -44,7 +44,10 @@ construct skill remove intake --dir=./.tmp-skills --confirm
 
 `init` plants only the operational skill. Install others by name when a
 host needs files on disk; `verify` compares installed copies with the shipped
-bytes.
+bytes. A copy is current, absent, outdated (this package's own earlier
+release of the skill, which `init` and `install` replace), or diverged (a
+copy someone changed, or one this package did not ship, which only
+`install --force` overwrites).
 
 ## Versions, digests, and the lock
 
