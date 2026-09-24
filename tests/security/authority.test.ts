@@ -46,7 +46,10 @@ test('a relayed approval of an external write mints no grant and leaves the deci
     assert.equal(getDecision(fx.store, decisionId)!.state, 'open');
     const person = fx.service.decide({ decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
     assert.equal(person.decision.state, 'resolved');
-    assert.equal(listGrants(fx.store).length, 1);
+    const grants = listGrants(fx.store);
+    assert.equal(grants.length, 1);
+    assert.equal(grants[0]!.channel, 'tty_cli', 'the grant says how the approval arrived');
+    assert.ok(grants[0]!.runId && grants[0]!.stepRunId, 'and which run and step it answered');
   } finally {
     fx.cleanup();
   }

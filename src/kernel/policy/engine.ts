@@ -204,6 +204,10 @@ export interface ApproveInput {
   readonly by: string;
   readonly at: string;
   readonly ttlMs?: number;
+  /** The step the approval answers, when it answers one. */
+  readonly stepRunId?: string;
+  /** How the approval reached Construct. */
+  readonly channel?: string;
 }
 
 /**
@@ -231,6 +235,9 @@ export function approveAction(store: StateStore, input: ApproveInput): Grant {
       startsAt: input.at,
       endsAt: new Date(Date.parse(input.at) + ttlMs).toISOString(),
       grantedBy: input.by,
+      runId: request.runId,
+      stepRunId: input.stepRunId,
+      channel: input.channel,
       at: input.at,
     });
     appendActivity(store, {

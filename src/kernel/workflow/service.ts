@@ -797,7 +797,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
         } else if (decision.kind === 'approval' && subject.request) {
           if (resolution === 'approve') {
-            approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at });
+            approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at, stepRunId: decision.stepRunId ?? undefined, channel });
             if (decision.stepRunId) transitionStep(store, { id: decision.stepRunId, to: 'ready', at });
           } else if (decision.stepRunId) {
             transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `declined by ${by}` });
