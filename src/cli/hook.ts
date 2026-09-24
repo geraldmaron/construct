@@ -78,8 +78,10 @@ function sessionStart(store: StateStore, sessionId: string | null, lane: string 
   const c = coordinationFor(store, { sessionId, laneRoot: lane, now });
   if (c.others === 0 && c.held.length === 0 && c.offers === 0) return '';
   const held = c.held.map((h) => `${h.work} by ${h.by}${h.paths.length ? ` (${h.paths.join(', ')})` : ''}`).join('; ');
+  // Without its own session's id, the hook cannot leave itself out of the count.
+  const counted = sessionId ? `${String(c.others)} other session(s) here, ${String(c.sameCheckout)} in this checkout.` : `${String(c.others)} session(s) here, ${String(c.sameCheckout)} in this checkout, possibly including this one.`;
   const parts = [
-    `Construct: ${String(c.others)} other session(s) here, ${String(c.sameCheckout)} in this checkout.`,
+    `Construct: ${counted}`,
     held ? `Held: ${held}${c.more ? ` and ${String(c.more)} more` : ''}.` : '',
     c.offers ? `${String(c.offers)} handoff(s) wait for you.` : '',
     c.sameCheckout > 0 ? 'Claim with paths before editing; do not switch branches or stash here.' : 'Claim with paths before editing.',
@@ -96,6 +98,21 @@ function editedPath(payload: Payload): string | null {
   return path && path.length < 4096 ? path : null;
 }
 
+/**
+ * Whether a claim might be this session's own. Known when the hook knows its
+ * session; otherwise any claim held by a session of this same host might be,
+ * and the hook stays quiet about it rather than tell an agent to stop editing
+ * its own file.
+ */
+function possiblyOwn(store: StateStore, workId: string, sessionId: string | null): boolean {
+  const row = store.db
+    .prepare('SELECT w.claim_session AS session, s.host AS host FROM work_items w LEFT JOIN sessions s ON s.id = w.claim_session WHERE w.id = ?')
+    .get(workId) as { session: string | null; host: string | null } | undefined;
+  if (!row?.session) return false;
+  if (sessionId) return row.session === sessionId;
+  return row.host === null || row.host === 'claude-code';
+}
+
 function postToolUse(store: StateStore, payload: Payload, cwd: string, sessionId: string | null, lane: string | null, now: string): string {
   const path = editedPath(payload);
   if (!path) return '';
@@ -103,8 +120,8 @@ function postToolUse(store: StateStore, payload: Payload, cwd: string, sessionId
   if (!top) return '';
   const rel = relative(top, isAbsolute(path) ? path : resolve(cwd, path));
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) return '';
-  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(rel)], laneRoot: lane ?? MAIN_LANE, now })
-    .filter((o) => o.kind === 'collision' && (sessionId === null || !o.holder.startsWith(`${sessionId}/`)));
+  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(rel, 'check')], laneRoot: lane ?? MAIN_LANE, now })
+    .filter((o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId));
   if (overlaps.length === 0) return '';
   const o = overlaps[0]!;
   return bounded(

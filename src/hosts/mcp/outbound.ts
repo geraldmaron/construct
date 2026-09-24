@@ -30,6 +30,8 @@ export class HostRequests {
   private send: ((message: unknown) => Promise<void>) | null = null;
   private readonly pending = new Map<string, Pending>();
   private next = 1;
+  /** The call now running was cancelled: it may not start waiting on the host. */
+  private callCancelled = false;
 
   /** Connect to the transport that carries messages to the host. */
   attach(send: (message: unknown) => Promise<void>): void {
@@ -40,6 +42,7 @@ export class HostRequests {
   request(method: string, params: unknown, timeoutMs: number): Promise<unknown> {
     const send = this.send;
     if (!send) return Promise.reject(new HostRequestError('no host is connected', 'detached'));
+    if (this.callCancelled) return Promise.reject(new HostRequestError('the host cancelled the call that would wait on this', 'cancelled'));
     const id = `construct-${String(this.next++)}`;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -69,8 +72,14 @@ export class HostRequests {
     return true;
   }
 
-  /** Stop waiting on every request: the call that sent them was cancelled. */
+  /** A new call starts: nothing about it has been cancelled yet. */
+  beginCall(): void {
+    this.callCancelled = false;
+  }
+
+  /** Stop waiting on every request, and send no more for the running call: it was cancelled. */
   cancelAll(): void {
+    this.callCancelled = true;
     for (const [id, waiting] of this.pending) {
       clearTimeout(waiting.timer);
       waiting.reject(new HostRequestError('the host cancelled the call waiting on this', 'cancelled'));

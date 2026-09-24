@@ -42,7 +42,6 @@ export interface Overlap {
   /** The reserved path it overlaps. */
   readonly heldPath: string;
   readonly workId: string;
-  readonly workTitle: string;
   /** Who holds it: the claim's owner. */
   readonly holder: string;
   readonly mode: LeaseMode;
@@ -59,7 +58,7 @@ export class PathLeaseConflictError extends Error {
   constructor(overlaps: readonly Overlap[]) {
     super(
       `these paths are reserved by other work: ${overlaps
-        .map((o) => `${o.path} (${o.heldPath}, held by ${o.holder} for ${o.workId} "${o.workTitle}" until ${o.until}${o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : ''})`)
+        .map((o) => `${o.path} (${o.heldPath}, held by ${o.holder} for ${o.workId} until ${o.until}${o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : ''})`)
         .join('; ')}`,
     );
     this.name = 'PathLeaseConflictError';
@@ -76,13 +75,26 @@ export function whereHeld(o: Pick<Overlap, 'laneRoot' | 'branch'>): string {
 /** How the main checkout is recorded as a reservation's lane. */
 export const MAIN_LANE = 'main';
 
+/** The longest reserved path, in bytes. */
+export const LEASE_PATH_MAX_BYTES = 512;
+
 /**
  * A repository-relative path in one spelling: forward slashes, no leading
  * `./`, no `..`, no absolute paths. A trailing `/` marks a directory.
+ *
+ * A path being reserved is shown to every other session, so it is held to a
+ * plain spelling: no whitespace, control, or formatting characters, and at
+ * most 512 bytes, which leaves no room for a sentence. A file whose name has
+ * spaces is reserved through its directory. A path only being checked is not
+ * shown to anyone else and keeps whatever spelling it has.
  */
-export function normalizeLeasePath(raw: string): string {
+export function normalizeLeasePath(raw: string, use: 'reserve' | 'check' = 'reserve'): string {
   const trimmed = raw.trim().replaceAll('\\', '/');
   if (!trimmed) throw new Error('a reserved path cannot be empty');
+  if (use === 'reserve') {
+    if (/[\s\p{C}]/u.test(trimmed)) throw new Error(`a reserved path is spelled without spaces or control characters; reserve the directory that holds it instead of ${JSON.stringify(trimmed.slice(0, 80))}`);
+    if (Buffer.byteLength(trimmed) > LEASE_PATH_MAX_BYTES) throw new Error(`a reserved path is at most ${String(LEASE_PATH_MAX_BYTES)} bytes; reserve a directory instead`);
+  }
   if (trimmed.startsWith('/') || /^[A-Za-z]:\//.test(trimmed)) throw new Error(`reserve paths relative to the repository, not ${trimmed}`);
   const directory = trimmed.endsWith('/');
   const parts = trimmed.split('/').filter((p) => p !== '' && p !== '.');
@@ -110,7 +122,6 @@ interface LiveRow {
   readonly path: string;
   readonly mode: LeaseMode;
   readonly created_at: string;
-  readonly title: string;
   readonly claim_owner: string;
   readonly claim_until: string;
 }
@@ -120,7 +131,7 @@ function liveRows(store: StateStore, now: string): LiveRow[] {
   return store.db
     .prepare(
       `SELECT l.id, l.work_id, l.session_id, l.agent, l.lane_root, l.branch, l.path, l.mode, l.created_at,
-              w.title, w.claim_owner, w.claim_until
+              w.claim_owner, w.claim_until
          FROM path_leases l JOIN work_items w ON w.id = l.work_id
         WHERE l.released_at IS NULL AND w.status = 'claimed' AND w.claim_until > ?
         ORDER BY l.created_at, l.id`,
@@ -136,27 +147,19 @@ export function listLiveLeases(store: StateStore, now: string): PathLease[] {
 /**
  * Where `paths` overlap live reservations held for other work. A reservation
  * in the same checkout is a collision when either side is exclusive; one in
- * another worktree is a merge risk. A holder's own reservations never stand in
- * its way: one claimant on two items is still one writer.
+ * another worktree is a merge risk. Overlap is judged per work item, never per
+ * owner: two agents a host cannot tell apart share an owner name and are still
+ * two writers.
  */
 export function findOverlaps(
   store: StateStore,
-  input: {
-    readonly paths: readonly string[];
-    readonly laneRoot: string;
-    readonly now: string;
-    readonly mode?: LeaseMode;
-    readonly excludeWorkId?: string;
-    /** The claimant asking; its own reservations are left out. */
-    readonly owner?: string;
-  },
+  input: { readonly paths: readonly string[]; readonly laneRoot: string; readonly now: string; readonly mode?: LeaseMode; readonly excludeWorkId?: string },
 ): Overlap[] {
-  const wanted = input.paths.map(normalizeLeasePath);
+  const wanted = input.paths.map((p) => normalizeLeasePath(p, 'check'));
   const mode = input.mode ?? 'exclusive';
   const out: Overlap[] = [];
   for (const row of liveRows(store, input.now)) {
     if (row.work_id === input.excludeWorkId) continue;
-    if (input.owner !== undefined && row.claim_owner === input.owner) continue;
     for (const path of wanted) {
       if (!pathsOverlap(path, row.path)) continue;
       const sameLane = row.lane_root === input.laneRoot;
@@ -165,7 +168,6 @@ export function findOverlaps(
         path,
         heldPath: row.path,
         workId: row.work_id,
-        workTitle: row.title,
         holder: row.claim_owner,
         mode: row.mode,
         until: row.claim_until,
@@ -188,8 +190,6 @@ export function reservePaths(
   store: StateStore,
   input: {
     readonly workId: string;
-    /** The claim's owner, whose other reservations never block it. */
-    readonly owner: string;
     readonly sessionId: string;
     readonly agent: string | null;
     readonly laneRoot: string;
@@ -201,9 +201,9 @@ export function reservePaths(
     readonly crossLane?: CrossLanePolicy;
   },
 ): { readonly leases: readonly PathLease[]; readonly mergeRisks: readonly Overlap[] } {
-  const paths = [...new Set(input.paths.map(normalizeLeasePath))];
+  const paths = [...new Set(input.paths.map((p) => normalizeLeasePath(p)))];
   if (paths.length === 0) return { leases: [], mergeRisks: [] };
-  const overlaps = findOverlaps(store, { paths, laneRoot: input.laneRoot, now: input.now, mode: input.mode, excludeWorkId: input.workId, owner: input.owner });
+  const overlaps = findOverlaps(store, { paths, laneRoot: input.laneRoot, now: input.now, mode: input.mode, excludeWorkId: input.workId });
   const blocking = overlaps.filter((o) => o.kind === 'collision' || input.crossLane === 'refuse');
   if (blocking.length > 0) throw new PathLeaseConflictError(blocking);
   releasePaths(store, { workId: input.workId, now: input.now, reason: 'claimed again' });
@@ -229,18 +229,31 @@ export function releasePaths(store: StateStore, input: { readonly workId: string
   );
 }
 
-/** Move a work item's reservations to a new holder, for a takeover or an accepted handoff. Returns them as they now stand. */
+/**
+ * Move a work item's reservations to a new holder, for a takeover or an
+ * accepted handoff. A reservation that would collide with another claim's in
+ * the new holder's checkout is released rather than moved, so no checkout
+ * ever has two exclusive holders of one path; those come back as `dropped`.
+ */
 export function transferPaths(
   store: StateStore,
-  input: { readonly workId: string; readonly sessionId: string; readonly agent: string | null; readonly laneRoot: string; readonly branch?: string | null; readonly until: string },
-): PathLease[] {
+  input: { readonly workId: string; readonly sessionId: string; readonly agent: string | null; readonly laneRoot: string; readonly branch?: string | null; readonly until: string; readonly now: string },
+): { readonly leases: PathLease[]; readonly dropped: Overlap[] } {
+  const dropped: Overlap[] = [];
+  const release = store.db.prepare(`UPDATE path_leases SET released_at = ?, release_reason = ? WHERE id = ?`);
+  for (const lease of leasesFor(store, input.workId)) {
+    const collisions = findOverlaps(store, { paths: [lease.path], laneRoot: input.laneRoot, now: input.now, mode: lease.mode, excludeWorkId: input.workId }).filter((o) => o.kind === 'collision');
+    if (collisions.length === 0) continue;
+    release.run(input.now, 'held by other work in the new checkout', lease.id);
+    dropped.push(...collisions);
+  }
   store.db
     .prepare(
       `UPDATE path_leases SET session_id = ?, agent = ?, lane_root = ?, branch = ?, until = ?
         WHERE work_id = ? AND released_at IS NULL`,
     )
     .run(input.sessionId, input.agent, input.laneRoot, input.branch ?? null, input.until, input.workId);
-  return leasesFor(store, input.workId);
+  return { leases: leasesFor(store, input.workId), dropped };
 }
 
 /** A work item's unreleased reservations. */

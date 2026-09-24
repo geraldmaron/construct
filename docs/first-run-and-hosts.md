@@ -75,7 +75,12 @@ Construct keeps them from stepping on each other:
   checkout, another claim cannot take a path someone holds exclusively; in
   another worktree the overlap comes back as a merge risk naming that
   checkout and branch, because each worktree has its own copy of the files.
-  Reservations end with the claim. `construct work check --paths=...` or
+  Reservations end with the claim, and are judged per work item: two agents
+  a host cannot tell apart are still two writers. A reserved path is spelled
+  plainly (no spaces, at most 512 bytes), so a file whose name has spaces is
+  reserved through its directory. Taking over or accepting work releases any
+  inherited reservation another claim already holds in the new checkout.
+  `construct work check --paths=...` or
   `--staged` says what is reserved before you edit or commit, and exits 1 on
   a collision in this checkout.
 - An agent that never calls Construct can still sweep a peer's file into a

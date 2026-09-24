@@ -245,3 +245,19 @@ test('a cancelled call stops waiting on the person at once, a queued one never r
     fx.cleanup();
   }
 });
+
+test('a call cancelled before it asks the person never sends the prompt', async () => {
+  const sent: unknown[] = [];
+  const requests = new HostRequests();
+  requests.attach(async (m) => {
+    sent.push(m);
+  });
+  requests.beginCall();
+  requests.cancelAll();
+  await assert.rejects(requests.request('elicitation/create', {}, 5_000), /cancelled the call/);
+  assert.deepEqual(sent, []);
+  requests.beginCall();
+  const next = requests.request('ping', {}, 50);
+  assert.equal(sent.length, 1, 'the next call may ask again');
+  await assert.rejects(next, /did not answer/);
+});

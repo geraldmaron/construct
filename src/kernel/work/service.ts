@@ -440,8 +440,12 @@ export type ClaimedWork = WorkItem & {
   readonly leases?: readonly PathLease[];
   /** Overlaps with reservations in other worktrees, accepted as merge risks. */
   readonly mergeRisks?: readonly Overlap[];
-  /** After a takeover: where the inherited reservations now meet other claims'. */
-  readonly overlaps?: readonly Overlap[];
+  /**
+   * After a takeover or an accepted handoff: reservations that were released
+   * rather than moved, because another claim holds those paths in the new
+   * holder's checkout.
+   */
+  readonly dropped?: readonly Overlap[];
 };
 
 /** What a claim reserves: repository paths, how exclusively, and in which checkout. */
@@ -520,9 +524,11 @@ export function claimWork(
       if (input.token !== row.claim_token) {
         throw new Error(`you already hold ${input.id} until ${row.claim_until}; pass the token your claim returned to renew it`);
       }
-      setClaim(store, input.id, input, row.claim_token!, input.until, input.now);
-      extendPaths(store, input.id, input.until);
-      recordEvent(store, input.id, input.now, 'renewed', input.owner, current.revision + 1, { until: input.until });
+      // An offered handoff keeps the longer hold it was given.
+      const until = openOffer(row, input.now) && row.claim_until! > input.until ? row.claim_until! : input.until;
+      setClaim(store, input.id, input, row.claim_token!, until, input.now);
+      extendPaths(store, input.id, until);
+      recordEvent(store, input.id, input.now, 'renewed', input.owner, current.revision + 1, { until });
       return { ...withToken(getWork(store, input.id)!, row.claim_token!), ...reserveFor(store, input) };
     }
     const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, input.now);
@@ -552,7 +558,6 @@ function reserveFor(
   if (!input.paths || input.paths.length === 0) return {};
   const r = reservePaths(store, {
     workId: input.id,
-    owner: input.owner,
     sessionId: input.session ?? input.owner,
     agent: input.agent ?? null,
     laneRoot: laneKey(input.lane),
@@ -594,7 +599,17 @@ export function takeoverWork(
     if (!row) throw new Error(`no work ${input.id}`);
     const current = toWork(row);
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
-    if (liveClaim(row, input.now)) {
+    const live = liveClaim(row, input.now);
+    const offer = openOffer(row, input.now);
+    if (offer && row.claim_owner !== input.owner) {
+      // An offered handoff is taken by accepting it, and only by whom it names, until its hold ends.
+      throw new Error(
+        offeredTo(offer, input.owner, input.session)
+          ? `work ${input.id} is offered to you as a handoff; accept it instead`
+          : `work ${input.id} is offered as a handoff to ${offer.to!} until ${row.claim_until}; only they may take it until then`,
+      );
+    }
+    if (live) {
       if (row.claim_owner === input.owner) {
         throw new Error(`you already hold ${input.id}; renew it with the token your claim returned rather than taking it over`);
       }
@@ -618,17 +633,28 @@ export function takeoverWork(
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
     takeHandoff(store, row, input.owner, input.now, 'takeover');
-    const leases = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until });
+    // A live holder's reservations move to the taker; an expired claim's ended with it.
+    const moved = live
+      ? transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until, now: input.now })
+      : { leases: [], dropped: [] };
+    if (!live) releasePaths(store, { workId: input.id, now: input.now, reason: 'claim expired before the takeover' });
     recordEvent(store, input.id, input.now, 'taken_over', input.owner, current.revision + 1, { from: row.claim_owner, reason: input.reason });
     appendActivity(store, { at: input.now, kind: 'work.taken_over', actor: input.owner, payload: { workId: input.id, from: row.claim_owner, reason: input.reason } });
-    const claimed = withToken(getWork(store, input.id)!, token);
-    if (leases.length === 0) return claimed;
-    // The reservations move with the work. Where they now meet another claim's
-    // in the taker's checkout, the taker is told rather than refused: the work
-    // was abandoned, and rescuing it is the point.
-    const overlaps = findOverlaps(store, { paths: leases.map((l) => l.path), laneRoot: laneKey(input.lane), now: input.now, mode: leases[0]!.mode, excludeWorkId: input.id, owner: input.owner });
-    return { ...claimed, leases, overlaps };
+    return withMoved(store, withToken(getWork(store, input.id)!, token), moved, laneKey(input.lane), input.now);
   });
+}
+
+/**
+ * A claim that inherited reservations, with what it now holds, what was
+ * released because another claim holds it in this checkout, and what overlaps
+ * reservations in other worktrees.
+ */
+function withMoved(store: StateStore, claimed: ClaimedWork, moved: { readonly leases: readonly PathLease[]; readonly dropped: readonly Overlap[] }, lane: string, now: string): ClaimedWork {
+  if (moved.leases.length === 0 && moved.dropped.length === 0) return claimed;
+  const mergeRisks = moved.leases.length === 0
+    ? []
+    : findOverlaps(store, { paths: moved.leases.map((l) => l.path), laneRoot: lane, now, mode: moved.leases[0]!.mode, excludeWorkId: claimed.id }).filter((o) => o.kind === 'merge_risk');
+  return { ...claimed, leases: moved.leases, dropped: moved.dropped, mergeRisks };
 }
 
 /**
@@ -723,13 +749,10 @@ export function acceptWork(
     setClaim(store, input.id, input, token, input.until, input.now);
     const taken: Handoff = { ...h, takenBy: input.owner, takenAt: input.now, takenVia: 'accept' };
     store.db.prepare('UPDATE work_items SET handoff_json = ? WHERE id = ?').run(JSON.stringify(taken), input.id);
-    const leases = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until });
+    const moved = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until, now: input.now });
     recordEvent(store, input.id, input.now, 'handoff_accepted', input.owner, current.revision + 1, { from: h.from });
     appendActivity(store, { at: input.now, kind: 'work.handoff_accepted', actor: input.owner, payload: { workId: input.id, from: h.from } });
-    const claimed = { ...withToken(getWork(store, input.id)!, token), handoff: taken };
-    if (leases.length === 0) return claimed;
-    const overlaps = findOverlaps(store, { paths: leases.map((l) => l.path), laneRoot: laneKey(input.lane), now: input.now, mode: leases[0]!.mode, excludeWorkId: input.id, owner: input.owner });
-    return { ...claimed, leases, overlaps };
+    return { ...withMoved(store, withToken(getWork(store, input.id)!, token), moved, laneKey(input.lane), input.now), handoff: taken };
   });
 }
 

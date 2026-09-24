@@ -65,6 +65,10 @@ test('the hook names peers at session start and a held file after an edit, and n
     assert.equal(hookResponse('post-tool-use', at({ tool_name: 'Edit', tool_input: { file_path: '/etc/hosts' } }), ctx), '', 'outside the repository');
     assert.equal(hookResponse('post-tool-use', at({ tool_name: 'Edit', tool_input: 'nonsense' }), ctx), '');
     assert.match(hookResponse('post-tool-use', { cwd: 'relative/path', tool_name: 'NotebookEdit', tool_input: { notebook_path: join(box.cwd, 'src', 'a', 'n.ipynb') } }, ctx), /reserved by ses_peer\/main/, 'a relative cwd falls back to where the hook runs');
+    const stranger = (p: Record<string, unknown>) => ({ cwd: box.cwd, session_id: 'a-session-construct-never-saw', ...p });
+    assert.equal(hookResponse('post-tool-use', stranger({ tool_name: 'Edit', tool_input: { file_path: join(box.cwd, 'src', 'mine.ts') } }), ctx), '', 'a claim that may be this session’s own says nothing');
+    assert.match(hookResponse('post-tool-use', stranger({ tool_name: 'Edit', tool_input: { file_path: join(box.cwd, 'src', 'a', 'lex.ts') } }), ctx), /reserved by ses_peer\/main/, 'another host’s claim still does');
+    assert.match(hookResponse('session-start', stranger({}), ctx), /2 session\(s\) here, 2 in this checkout, possibly including this one\./);
     const elsewhere = realpathSync(mkdtempSync(join(tmpdir(), 'construct-no-project-')));
     try {
       assert.equal(hookResponse('session-start', { cwd: elsewhere }, ctx), '', 'no project, nothing to say');

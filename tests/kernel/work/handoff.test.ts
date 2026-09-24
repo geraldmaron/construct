@@ -13,7 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { StateStore } from '../../../src/kernel/state/open.ts';
 import { freshStore } from '../state/support.ts';
-import { acceptWork, claimWork, completeWork, createWork, handoffOf, handoffWork, listOffers, releaseWork, HANDOFF_HOLD_MS } from '../../../src/kernel/work/service.ts';
+import { acceptWork, claimWork, completeWork, createWork, handoffOf, handoffWork, listOffers, releaseWork, takeoverWork, HANDOFF_HOLD_MS } from '../../../src/kernel/work/service.ts';
 import { HandoffPacketError, normalizePacket } from '../../../src/kernel/work/handoff.ts';
 import { leasesFor } from '../../../src/kernel/work/leases.ts';
 
@@ -135,6 +135,50 @@ test('a handoff moves no approval: grants stay with the session that was given t
     assert.equal(after.n, before.n);
     const touched = fx.store.db.prepare(`SELECT COUNT(*) AS n FROM step_runs WHERE lease_owner LIKE 'ses-b%'`).get() as { n: number };
     assert.equal(touched.n, 0, 'no step lease moved');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a handoff offered to someone is theirs even after the offerer’s session ends, until its hold lapses', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store);
+    fx.store.db.prepare(`INSERT INTO sessions (id, host, surface, machine, started_at, last_seen_at, ended_at) VALUES ('ses-a', 'claude-code', 'interactive', 'test', ?, ?, ?)`).run(t(0), t(3), t(3));
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1) });
+    handoffWork(fx.store, { id: 'w-1', owner: 'ses-a/main', token: a.claimToken, packet: PACKET, to: 'ses-b', now: t(2) });
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-c/main', session: 'ses-c', agent: 'main', until: t(60), now: t(5), reason: 'it looked abandoned' }), /offered as a handoff to ses-b .* only they may take it/);
+    assert.throws(() => takeoverWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', agent: 'main', until: t(60), now: t(5), reason: 'mine' }), /offered to you as a handoff; accept it instead/);
+    assert.equal(acceptWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', until: t(60), now: t(6) }).claimOwner, 'ses-b/main');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('the offerer renewing its claim keeps the handoff’s longer hold', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store);
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1) });
+    const offered = handoffWork(fx.store, { id: 'w-1', owner: 'ses-a/main', token: a.claimToken, packet: PACKET, now: t(2) });
+    const renewed = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', token: a.claimToken, until: t(33), now: t(3) });
+    assert.equal(renewed.claimUntil, offered.claimUntil);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('accepting a handoff releases, rather than imports, a reservation another claim holds in the acceptor’s checkout', () => {
+  const fx = freshStore();
+  try {
+    item(fx.store, 'w-1');
+    item(fx.store, 'w-2');
+    const a = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1), paths: ['src/x.ts', 'docs/x.md'] });
+    claimWork(fx.store, { id: 'w-2', owner: 'ses-c/main', session: 'ses-c', lane: '/lanes/b', until: t(60), now: t(1), paths: ['src/x.ts'] });
+    handoffWork(fx.store, { id: 'w-1', owner: 'ses-a/main', token: a.claimToken, packet: PACKET, now: t(2) });
+    const b = acceptWork(fx.store, { id: 'w-1', owner: 'ses-b/main', session: 'ses-b', lane: '/lanes/b', until: t(60), now: t(3) });
+    assert.deepEqual(b.leases!.map((l) => l.path), ['docs/x.md']);
+    assert.deepEqual(b.dropped!.map((o) => [o.workId, o.heldPath]), [['w-2', 'src/x.ts']]);
   } finally {
     fx.cleanup();
   }

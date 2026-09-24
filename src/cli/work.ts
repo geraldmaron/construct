@@ -39,11 +39,11 @@ import { spawnSync } from 'node:child_process';
 
 const group = 'Work';
 
-function pathsFlag(args: ParsedArgs): string[] | undefined {
+function pathsFlag(args: ParsedArgs, use: 'reserve' | 'check'): string[] | undefined {
   const raw = args.flags.paths as string | undefined;
   if (raw === undefined) return undefined;
   try {
-    return raw.split(',').map((p) => p.trim()).filter(Boolean).map(normalizeLeasePath);
+    return raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => normalizeLeasePath(p, use));
   } catch (e) {
     throw new UsageError((e as Error).message);
   }
@@ -53,7 +53,7 @@ function pathsFlag(args: ParsedArgs): string[] | undefined {
 function stagedPaths(cwd: string, env: NodeJS.ProcessEnv): string[] {
   const r = spawnSync('git', ['diff', '--cached', '--name-only', '-z'], { cwd, env, encoding: 'utf8' });
   if (r.status !== 0) throw new OperationError(`git could not list the staged files: ${(r.stderr || r.error?.message || '').trim()}`);
-  return r.stdout.split('\0').filter(Boolean).map(normalizeLeasePath);
+  return r.stdout.split('\0').filter(Boolean).map((p) => normalizeLeasePath(p, 'check'));
 }
 
 /** A handoff packet, printed as what it is: another claimant's words. */
@@ -69,7 +69,7 @@ function printPacket(from: string, p: HandoffPacket): void {
 
 function describeOverlap(o: Overlap): string {
   const where = o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : '';
-  return `${esc(o.path)} is under ${esc(o.heldPath)}, held by ${esc(o.holder)} for ${esc(o.workId)} "${esc(o.workTitle)}" until ${o.until}${where}`;
+  return `${esc(o.path)} is under ${esc(o.heldPath)}, held by ${esc(o.holder)} for ${esc(o.workId)} until ${o.until}${where}`;
 }
 
 /** The longest a claim made from the command line may run, whatever --until asks. */
@@ -222,7 +222,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
           now: at,
           token: args.flags.token as string | undefined,
           expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
-          paths: pathsFlag(args),
+          paths: pathsFlag(args, 'reserve'),
           mode: boolFlag(args, 'shared') ? 'shared' : 'exclusive',
         });
         if (args.json) writeJson(w);
@@ -234,7 +234,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         return 0;
       }
       case 'check': {
-        const paths = boolFlag(args, 'staged') ? stagedPaths(ctx.cwd, ctx.env) : pathsFlag(args);
+        const paths = boolFlag(args, 'staged') ? stagedPaths(ctx.cwd, ctx.env) : pathsFlag(args, 'check');
         if (!paths) throw new UsageError('work check needs --paths or --staged');
         const own = args.flags.work as string | undefined;
         const exclude = own ? (getWork(project.store, own) ?? getWorkByLegacyId(project.store, own))?.id ?? own : undefined;

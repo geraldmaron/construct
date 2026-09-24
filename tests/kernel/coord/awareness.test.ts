@@ -139,3 +139,19 @@ test('a session registered later starts watching from then; recent activity wrap
     fx.cleanup();
   }
 });
+
+test('both summaries fit their budget in bytes, whatever alphabet the paths use', () => {
+  const fx = freshStore();
+  try {
+    session(fx.store, 'ses_me', t(0));
+    session(fx.store, 'ses_peer', t(0));
+    const cursor = activityCursor(fx.store, 'ses_me');
+    for (let i = 0; i < 12; i += 1) claimAs(fx.store, 'ses_peer', `w-${String(i)}`, [`src/ñandú/ドキュメント/設計/${String(i)}/`, `docs/名前/${String(i)}.md`], t(1));
+    const c = coordinationFor(fx.store, { sessionId: 'ses_me', laneRoot: null, now: t(2) });
+    assert.ok(Buffer.byteLength(JSON.stringify(c)) <= AWARENESS_BUDGET, `${String(Buffer.byteLength(JSON.stringify(c)))} bytes`);
+    const d = peerDelta(fx.store, { sessionId: 'ses_me', cursor, now: t(2) }).delta!;
+    assert.ok(Buffer.byteLength(JSON.stringify(d)) <= AWARENESS_BUDGET, `${String(Buffer.byteLength(JSON.stringify(d)))} bytes`);
+  } finally {
+    fx.cleanup();
+  }
+});
