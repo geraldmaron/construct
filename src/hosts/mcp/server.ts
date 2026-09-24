@@ -13,6 +13,7 @@ import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
 import { renewExecutorLeases } from '../../kernel/state/steps.ts';
 import { renewSessionClaims } from '../../kernel/work/service.ts';
+import { activityCursor, latestActivityId, peerDelta, setActivityCursor, type PeerDelta } from '../../kernel/coord/awareness.ts';
 
 /** How often a session's presence and claim terms are refreshed while it keeps calling. */
 const PRESENCE_INTERVAL_MS = 60_000;
@@ -27,6 +28,14 @@ export const SERVER_NAMES: Readonly<Record<BrokerSurface, string>> = { interacti
 
 function text(payload: unknown): { content: Array<{ type: 'text'; text: string }>; structuredContent?: unknown } {
   return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }], structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined };
+}
+
+/** A tool result with what peers did since the session last looked, when they did anything. */
+function withPeers(payload: unknown, peers: PeerDelta | null): ReturnType<typeof text> {
+  if (!peers) return text(payload);
+  if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) return text({ ...payload, construct_peers: peers });
+  const plain = text(payload);
+  return { ...plain, content: [...plain.content, { type: 'text', text: JSON.stringify({ construct_peers: peers }) }] };
 }
 
 function instructionsFor(surface: BrokerSurface, unbound: { readonly reason: string; readonly next: string } | null): string {
@@ -94,6 +103,28 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
       renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
   };
+  let cursor: number | null = null;
+  /**
+   * After a call: what other sessions and agents did to work since this
+   * session last looked. Bootstrap already describes the present, so it only
+   * moves the cursor. Awareness is a courtesy; it never fails a call.
+   */
+  const peersAfter = (toolName: string): PeerDelta | null => {
+    if (surface !== 'interactive' || !ctx.sessionId) return null;
+    try {
+      cursor ??= activityCursor(ctx.store, ctx.sessionId);
+      if (toolName === 'bootstrap') {
+        const latest = latestActivityId(ctx.store);
+        if (latest > cursor) setActivityCursor(ctx.store, ctx.sessionId, (cursor = latest));
+        return null;
+      }
+      const seen = peerDelta(ctx.store, { sessionId: ctx.sessionId, cursor, now: ctx.now(), agent: ctx.store.attribution.agent });
+      if (seen.cursor > cursor) setActivityCursor(ctx.store, ctx.sessionId, (cursor = seen.cursor));
+      return seen.delta;
+    } catch {
+      return null;
+    }
+  };
   return async (message: JsonRpcRequest) => {
     const { id, method, params } = message;
     const isNotification = id === undefined || id === null;
@@ -134,7 +165,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           const input = tool.validate(args);
           beforeCall(args);
           const result = await tool.run(ctx, input);
-          return response(id, text(result));
+          return response(id, withPeers(result, peersAfter(tool.name)));
         } catch (error) {
           const messageText = error instanceof Error ? error.message : String(error);
           if (error instanceof ToolInputError) return failure(id, -32602, messageText);

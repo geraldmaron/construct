@@ -25,13 +25,13 @@ Surface: interactive. Reads only: yes.
 
 ### `project_context`
 
-Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, or work. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.
+Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, or recent activity. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `work` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `work`, `sessions`, `activity` | yes | What to read. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
