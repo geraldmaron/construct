@@ -733,7 +733,14 @@ export function exportWork(store: StateStore, at: string, projectId: string | nu
     // A snapshot is shared and kept; a live claim's secret never goes into one.
     work: (store.db.prepare('SELECT * FROM work_items ORDER BY created_at, id').all() as Array<Record<string, unknown>>).map((row) => ({ ...row, claim_token: null })),
     dependencies: store.db.prepare('SELECT * FROM work_dependencies ORDER BY created_at, id').all(),
-    events: store.db.prepare('SELECT work_id, at, kind, actor, expected_revision, payload_json FROM work_events ORDER BY id').all(),
+    // Claim events written before tokens were secrets carry the token in their
+    // payload; a snapshot keeps the event and drops the token.
+    events: (store.db.prepare('SELECT work_id, at, kind, actor, expected_revision, payload_json FROM work_events ORDER BY id').all() as Array<{ payload_json: string | null }>).map((row) => {
+      const payload = parseJson(row.payload_json);
+      if (!payload || typeof payload !== 'object' || !('token' in payload)) return row;
+      const { token: _token, ...rest } = payload as Record<string, unknown>;
+      return { ...row, payload_json: toJson(rest) };
+    }),
     legacyIds: store.db.prepare('SELECT legacy_id, work_id, source, created_at FROM work_legacy_ids ORDER BY created_at').all(),
   };
 }
