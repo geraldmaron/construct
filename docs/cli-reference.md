@@ -565,6 +565,7 @@ name the Construct-owned files that would be removed; with --confirm, remove exa
 | `--confirm` | no | remove the named targets |
 | `--include-project-files` | no | also remove the committed .construct files, not only runtime state |
 | `--keep-state` | no | do not recreate state after removing |
+| `--force` | no | remove the state even while another process has it open |
 
 Reads only: no.
 

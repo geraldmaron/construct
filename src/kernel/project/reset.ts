@@ -28,6 +28,11 @@ export function planReset(root: string, options: PlanResetOptions = {}): ResetPl
   const layout = projectLayout(root);
   const targets: LegacyTarget[] = [];
   if (existsSync(layout.dbPath)) targets.push({ path: layout.dbPath, what: 'this project’s runtime state database' });
+  // A store in WAL mode keeps recent writes beside it; left behind, they would be
+  // replayed into the fresh database and make it unreadable.
+  for (const [suffix, what] of [['-wal', 'the state database’s write-ahead log'], ['-shm', 'the state database’s shared-memory index']] as const) {
+    if (existsSync(`${layout.dbPath}${suffix}`)) targets.push({ path: `${layout.dbPath}${suffix}`, what });
+  }
   for (const legacy of detectLegacyProjectFiles(root)) targets.push(legacy);
   if (options.includeProjectFiles) {
     for (const [path, what] of [

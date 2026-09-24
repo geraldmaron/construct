@@ -6,8 +6,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
@@ -70,7 +70,7 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
     const record = JSON.parse(first.out.trim().split('\n').pop()!) as { migrated: boolean; from: number; backup: string };
     assert.equal(record.migrated, true);
     assert.equal(record.from, 2);
-    assert.ok(readdirSync(join(dir, '.construct', 'state')).some((f) => /^construct\.pre-v2-\d+\.sqlite$/.test(f)));
+    assert.ok(readdirSync(join(dir, '.construct', 'state')).some((f) => /^construct\.pre-v2-\d+-[0-9a-f]+\.sqlite$/.test(f)));
     const backup = new DatabaseSync(record.backup, { readOnly: true });
     assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '2');
     backup.close();
@@ -99,6 +99,83 @@ test('migrate refuses a newer store and leaves it as it was', () => {
     assert.match(r.out, /newer version of Construct/);
     assert.ok(readFileSync(db).equals(before));
     assert.equal(readdirSync(join(dir, '.construct', 'state')).filter((f) => f.includes('pre-v')).length, 0);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+function envOf(fx: SterileFixture): NodeJS.ProcessEnv {
+  return { PATH: process.env.PATH, HOME: join(fx.root, 'home'), XDG_CONFIG_HOME: fx.paths.configDir, XDG_STATE_HOME: fx.paths.stateDir, XDG_DATA_HOME: fx.paths.dataDir, XDG_CACHE_HOME: fx.paths.cacheDir, NO_COLOR: '1' };
+}
+
+function rowCounts(db: string, tables: readonly string[]): Record<string, number> {
+  const d = new DatabaseSync(db, { readOnly: true });
+  try {
+    return Object.fromEntries(tables.map((t) => [t, (d.prepare(`SELECT COUNT(*) AS n FROM "${t}"`).get() as { n: number }).n]));
+  } finally {
+    d.close();
+  }
+}
+
+test('every row an older store holds is still there after migrate', () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = project(fx);
+    toFormat2(db);
+    const d = new DatabaseSync(db, { readOnly: true });
+    const tables = (d.prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`).all() as Array<{ name: string }>).map((r) => r.name);
+    d.close();
+    const before = rowCounts(db, tables);
+    assert.ok(Object.values(before).some((n) => n > 0), 'the fixture carries rows');
+    assert.equal(cli(fx, dir, ['migrate']).status, 0);
+    const after = rowCounts(db, tables.filter((t) => t !== 'meta'));
+    for (const [table, n] of Object.entries(after)) assert.equal(n, before[table], `${table} rows`);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('migrates that race: all finish, exactly one upgrades, and one owner-only backup remains', async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = project(fx);
+    toFormat2(db);
+    const runs = await Promise.all(Array.from({ length: 3 }, () => new Promise<{ status: number | null; out: string }>((resolve) => {
+      const child = spawn(process.execPath, [LAUNCHER, 'migrate', '--json'], { cwd: dir, env: envOf(fx) });
+      let out = '';
+      child.stdout.on('data', (c) => (out += String(c)));
+      child.stderr.on('data', (c) => (out += String(c)));
+      child.on('close', (status) => resolve({ status, out }));
+    })));
+    for (const r of runs) assert.equal(r.status, 0, r.out);
+    const reports = runs.map((r) => JSON.parse(r.out.trim().split('\n').pop()!) as { migrated: boolean });
+    assert.equal(reports.filter((r) => r.migrated).length, 1);
+    const backups = readdirSync(join(dir, '.construct', 'state')).filter((f) => f.startsWith('construct.pre-v'));
+    assert.equal(backups.length, 1, backups.join(', '));
+    assert.equal(statSync(join(dir, '.construct', 'state', backups[0]!)).mode & 0o777, 0o600);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('reset refuses while another process has the store open, and --force leaves a fresh store with no stale log', async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = project(fx);
+    const holder = spawn(process.execPath, ['-e', `const { DatabaseSync } = require('node:sqlite'); const d = new DatabaseSync(${JSON.stringify(db)}); d.prepare('SELECT 1').get(); process.stdout.write('open\\n'); setTimeout(() => {}, 60000);`]);
+    await new Promise<void>((resolve) => holder.stdout.once('data', () => resolve()));
+    try {
+      const refused = cli(fx, dir, ['reset', '--confirm']);
+      assert.notEqual(refused.status, 0);
+      assert.match(refused.out, /open in 1 other process/);
+      assert.ok(existsSync(db), 'nothing removed');
+      const forced = cli(fx, dir, ['reset', '--confirm', '--force']);
+      assert.equal(forced.status, 0, forced.out);
+    } finally {
+      holder.kill();
+    }
+    assert.equal(cli(fx, dir, ['status']).status, 0, 'the recreated store is readable');
+    assert.equal(cli(fx, dir, ['work', 'add', 'after reset']).status, 0);
   } finally {
     fx.cleanup();
   }

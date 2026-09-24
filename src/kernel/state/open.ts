@@ -42,6 +42,8 @@ export interface StateStore {
   /** `wal` when the filesystem allowed it; otherwise the rollback journal mode in use. */
   readonly journalMode: string;
   readonly readOnly: boolean;
+  /** The format this open upgraded from, when it performed an upgrade; otherwise null. */
+  readonly migratedFrom: number | null;
   /**
    * Run `fn` atomically. A nested call runs as a savepoint inside the outer
    * transaction: its failure undoes only its own writes and is rethrown.
@@ -50,14 +52,15 @@ export interface StateStore {
   close(): void;
 }
 
-/** True when a node:sqlite error is SQLITE_BUSY or SQLITE_LOCKED, including extended codes. */
+/**
+ * True when a node:sqlite error is SQLITE_BUSY, including its extended codes:
+ * another connection holds the lock. SQLITE_LOCKED is a conflict inside this
+ * connection and surfaces unchanged.
+ */
 export function isBusyError(error: unknown): boolean {
   const code = (error as { errcode?: unknown } | null)?.errcode;
-  if (typeof code === 'number') {
-    const primary = code & 0xff;
-    return primary === 5 || primary === 6;
-  }
-  return /database (?:table )?is locked/i.test(error instanceof Error ? error.message : String(error));
+  if (typeof code === 'number') return (code & 0xff) === 5;
+  return /database is locked/i.test(error instanceof Error ? error.message : String(error));
 }
 
 /** State holds decisions, grants, and source content: owner-only. A file this user does not own is left alone. */
@@ -111,9 +114,9 @@ function readMeta(db: DatabaseSync, key: string): string | null {
  * is refused as newer, never with an instruction that would discard it.
  * Anything else is refused unread.
  */
-function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions): void {
+function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions): number | null {
   const names = tableNames(db);
-  if (names.size === 0) return; // an empty file: the create path stamps it
+  if (names.size === 0) return null; // an empty file: the create path stamps it
   if (!names.has('meta')) throw new UnsupportedStateError(null, null);
 
   const format = readMeta(db, 'format');
@@ -128,65 +131,107 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
   if (versionOrNull === 2) {
     if (!isCompleteV2(db)) throw new UnsupportedStateError(format, versionOrNull);
     if (!options.migrate || options.readOnly) throw new UnsupportedStateError(format, versionOrNull, 'older');
+    let migrated: number | null = null;
     beginImmediate(db, path);
     try {
-      if (readMeta(db, 'format_version') === '2') migrateV2ToV3(db);
+      // Another process may have upgraded it while this one waited for the lock.
+      if (readMeta(db, 'format_version') === '2') {
+        migrateV2ToV3(db);
+        migrated = 2;
+      }
       db.exec('COMMIT');
     } catch (err) {
       db.exec('ROLLBACK');
       throw err;
     }
+    for (const table of REQUIRED_TABLES) {
+      if (!tableNames(db).has(table)) throw new UnsupportedStateError(format, STATE_FORMAT_VERSION);
+    }
+    return migrated;
   } else if (versionOrNull !== STATE_FORMAT_VERSION) {
     throw new UnsupportedStateError(format, versionOrNull);
   }
   for (const table of REQUIRED_TABLES) {
     if (!tableNames(db).has(table)) throw new UnsupportedStateError(format, STATE_FORMAT_VERSION);
   }
+  return null;
 }
 
-/** Switch to WAL, retrying while another connection holds the lock. Returns the mode in effect. */
-function enableWal(db: DatabaseSync): string {
+/** How long each WAL switch attempt waits for the lock; a longer hold leaves the switch to a later open. */
+const WAL_SWITCH_WAIT_MS = 200;
+
+/**
+ * Switch to WAL, waiting only briefly for the exclusive access the switch
+ * needs. A mode other than WAL without a busy error is the filesystem refusing
+ * WAL, which a retry cannot change. Returns the mode in effect; WAL persists in
+ * the file, so a switch that could not happen now happens on a later open.
+ */
+function enableWal(db: DatabaseSync, busyTimeoutMs: number): string {
   let mode = 'delete';
-  for (let attempt = 0; attempt < BEGIN_ATTEMPTS; attempt += 1) {
-    try {
-      const row = db.prepare('PRAGMA journal_mode = WAL').get() as { journal_mode?: string } | undefined;
-      mode = String(row?.journal_mode ?? mode).toLowerCase();
-      if (mode === 'wal') return mode;
-    } catch (error) {
-      if (!isBusyError(error)) throw error;
+  db.exec(`PRAGMA busy_timeout = ${WAL_SWITCH_WAIT_MS}`);
+  try {
+    for (let attempt = 0; attempt < BEGIN_ATTEMPTS; attempt += 1) {
+      try {
+        const row = db.prepare('PRAGMA journal_mode = WAL').get() as { journal_mode?: string } | undefined;
+        mode = String(row?.journal_mode ?? mode).toLowerCase();
+        return mode;
+      } catch (error) {
+        if (!isBusyError(error)) throw error;
+      }
+      pause(jitter(attempt));
     }
-    pause(jitter(attempt));
+    return mode;
+  } finally {
+    db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
   }
-  return mode;
+}
+
+/** Whether a transaction is open on this connection; null when this Node cannot say. */
+function inTransaction(db: DatabaseSync): boolean | null {
+  const live = (db as { isTransaction?: unknown }).isTransaction;
+  return typeof live === 'boolean' ? live : null;
+}
+
+function currentJournalMode(db: DatabaseSync): string {
+  const row = db.prepare('PRAGMA journal_mode').get() as { journal_mode?: string } | undefined;
+  return String(row?.journal_mode ?? 'delete').toLowerCase();
+}
+
+/** The format a write transaction may commit into; anything else was written by another build meanwhile. */
+function assertCurrentFormat(db: DatabaseSync): void {
+  const version = Number(readMeta(db, 'format_version'));
+  if (version === STATE_FORMAT_VERSION) return;
+  throw new UnsupportedStateError(readMeta(db, 'format'), Number.isFinite(version) ? version : null, version > STATE_FORMAT_VERSION ? 'newer' : 'foreign');
 }
 
 export function openStateStore(dbPath: string, options: OpenStateOptions = {}): StateStore {
   const readOnly = options.readOnly === true;
-  const existed = existsSync(dbPath);
-  if (readOnly && !existed) throw new UnsupportedStateError(null, null);
-  if (!readOnly) {
-    const dir = dirname(dbPath);
-    mkdirSync(dir, { recursive: true, mode: 0o700 });
-    narrow(dir, 0o700);
-  }
+  const busyTimeoutMs = Math.max(0, Math.floor(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS));
+  if (readOnly && !existsSync(dbPath)) throw new Error(`no state database at ${dbPath}`);
+  if (!readOnly) mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(dbPath, { readOnly });
   let journalMode = 'delete';
+  let migratedFrom: number | null = null;
   try {
-    db.exec(`PRAGMA busy_timeout = ${Math.max(0, Math.floor(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS))}`);
+    db.exec(`PRAGMA busy_timeout = ${busyTimeoutMs}`);
     db.exec('PRAGMA foreign_keys = ON');
-    if (!readOnly) {
-      narrow(dbPath, 0o600);
-      journalMode = enableWal(db);
-      db.exec('PRAGMA synchronous = NORMAL');
-    } else {
-      const row = db.prepare('PRAGMA journal_mode').get() as { journal_mode?: string } | undefined;
-      journalMode = String(row?.journal_mode ?? journalMode).toLowerCase();
-    }
     if (tableNames(db).size === 0) {
-      if (readOnly) throw new UnsupportedStateError(null, null);
+      // Another process may be creating this store right now; a reader waits for it.
+      if (readOnly) throw new StateBusyError(dbPath);
+      journalMode = enableWal(db, busyTimeoutMs);
       stampFresh(db, dbPath);
     }
-    verifyFormat(db, dbPath, options);
+    // The format is settled before anything about the file changes, so a store
+    // this build refuses is left exactly as it was found.
+    migratedFrom = verifyFormat(db, dbPath, options);
+    if (!readOnly) {
+      narrow(dirname(dbPath), 0o700);
+      narrow(dbPath, 0o600);
+      journalMode = currentJournalMode(db) === 'wal' ? 'wal' : enableWal(db, busyTimeoutMs);
+      db.exec('PRAGMA synchronous = NORMAL');
+    } else {
+      journalMode = currentJournalMode(db);
+    }
   } catch (err) {
     db.close();
     if (isBusyError(err)) throw new StateBusyError(dbPath);
@@ -194,13 +239,17 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
   }
 
   let depth = 0;
+  /** Set when SQLite itself ended the transaction inside a nested call; the whole outer call then fails. */
+  let aborted: unknown = null;
   return {
     db,
     path: dbPath,
     journalMode,
     readOnly,
+    migratedFrom,
     transaction<T>(fn: () => T): T {
       if (depth > 0) {
+        if (aborted !== null) throw aborted;
         const savepoint = `nested_${depth}`;
         db.exec(`SAVEPOINT ${savepoint}`);
         depth += 1;
@@ -209,8 +258,28 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
           db.exec(`RELEASE ${savepoint}`);
           return out;
         } catch (err) {
-          db.exec(`ROLLBACK TO ${savepoint}`);
-          db.exec(`RELEASE ${savepoint}`);
+          const live = inTransaction(db);
+          let undone = false;
+          if (live !== false) {
+            try {
+              db.exec(`ROLLBACK TO ${savepoint}`);
+              db.exec(`RELEASE ${savepoint}`);
+              undone = true;
+            } catch {
+              // SQLite already ended the whole transaction; the outer call must fail.
+            }
+          }
+          if (!undone && aborted === null) {
+            aborted = err;
+            // Anything the outer call runs from here on joins this stand-in
+            // transaction and is rolled back with it, instead of committing
+            // one statement at a time.
+            try {
+              db.exec('BEGIN');
+            } catch {
+              // A transaction is somehow still open; the outer call rolls it back.
+            }
+          }
           throw err;
         } finally {
           depth -= 1;
@@ -218,20 +287,26 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
       }
       beginImmediate(db, dbPath);
       depth = 1;
+      aborted = null;
       try {
+        assertCurrentFormat(db);
         const out = fn();
+        if (aborted !== null) throw aborted;
         db.exec('COMMIT');
         return out;
       } catch (err) {
-        try {
-          db.exec('ROLLBACK');
-        } catch {
-          // COMMIT or fn already ended the transaction; nothing to undo.
+        if (inTransaction(db) !== false) {
+          try {
+            db.exec('ROLLBACK');
+          } catch {
+            // Nothing left to undo.
+          }
         }
         if (isBusyError(err)) throw new StateBusyError(dbPath);
         throw err;
       } finally {
         depth = 0;
+        aborted = null;
       }
     },
     close: () => db.close(),
