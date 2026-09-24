@@ -17,6 +17,7 @@ import type { BrokerContext } from '../kernel/broker/context.ts';
 import { normalizeClient, type ClientId } from '../hosts/wiring/clients.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { configInputs, openProject, type CliContext, type OpenProject } from './context.ts';
+import { UsageError } from './output.ts';
 import { packageVersion } from './version.ts';
 
 export interface BrokerBinding {
@@ -68,11 +69,19 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
   };
 }
 
+/** The prefix of an interactive session's executor id, which only `serve` itself mints. */
+const SESSION_EXECUTOR_PREFIX = 'session:';
+
 export function bindingFor(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): BrokerBinding {
   const client = normalizeClient(flags.client ?? detectAmbientHost(ctx.env)?.host);
   const surface = flags.headless ? 'headless' : 'interactive';
+  // Grants name their executor. A runner that took a session's id would act
+  // under the approvals the person gave that session.
+  if (surface === 'headless' && flags.executor?.startsWith(SESSION_EXECUTOR_PREFIX)) {
+    throw new UsageError(`--executor ${flags.executor} names an interactive session; a headless runner needs an id of its own (for example runner:nightly)`);
+  }
   const sessionKey = `${client}:${String(process.pid)}`;
-  const executorId = surface === 'headless' ? (flags.executor ?? `runner:${String(process.pid)}`) : `session:${sessionKey}`;
+  const executorId = surface === 'headless' ? (flags.executor ?? `runner:${String(process.pid)}`) : `${SESSION_EXECUTOR_PREFIX}${sessionKey}`;
   return { client, surface, executorId, actor: surface === 'headless' ? executorId : `person via ${client}` };
 }
 

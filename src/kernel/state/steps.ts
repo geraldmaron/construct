@@ -225,6 +225,8 @@ export function transitionStep(
 /**
  * Lease the next claimable step: one that is ready, or leased with an expired
  * lease. Attempts increments on every claim and doubles as the fencing token.
+ * With `stepRunId`, only that step is leased, so a caller that gated one step
+ * leases exactly the step it gated.
  */
 export function claimStep(
   store: StateStore,
@@ -233,6 +235,7 @@ export function claimStep(
     readonly now: string;
     readonly leaseUntil: string;
     readonly runId?: string;
+    readonly stepRunId?: string;
   },
 ): LeasedStep | null {
   requireNonEmpty(claim.owner, 'claim.owner');
@@ -249,12 +252,13 @@ export function claimStep(
              WHERE ((state = 'ready' AND attempts < max_attempts)
                  OR (state = 'leased' AND lease_until <= ? AND attempts < max_attempts))
                AND (? IS NULL OR run_id = ?)
+               AND (? IS NULL OR id = ?)
              ORDER BY ordinal, created_at, id
              LIMIT 1
           )
         RETURNING *`,
       )
-      .get(claim.owner, claim.leaseUntil, claim.now, claim.now, claim.runId ?? null, claim.runId ?? null) as
+      .get(claim.owner, claim.leaseUntil, claim.now, claim.now, claim.runId ?? null, claim.runId ?? null, claim.stepRunId ?? null, claim.stepRunId ?? null) as
       | Row
       | undefined;
     if (!row) return null;

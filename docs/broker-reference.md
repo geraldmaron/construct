@@ -85,7 +85,7 @@ Surface: interactive. Reads only: no.
 
 ### `claim_work`
 
-Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it.
+Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.
 
 Surface: interactive. Reads only: no.
 
@@ -224,7 +224,7 @@ Surface: both. Reads only: yes.
 
 ### `claim_step`
 
-Claim a pre-resolved step. A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on.
+Claim a pre-resolved step. A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.
 
 Surface: headless. Reads only: no.
 
