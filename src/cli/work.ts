@@ -190,7 +190,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'restore': {
         const dump = JSON.parse(readFileSync(args.positionals[0]!, 'utf8')) as ReturnType<typeof exportWork>;
-        const report = restoreWork(project.store, dump, at);
+        const report = restoreWork(project.store, dump, at, project.files.config?.id ?? null);
         if (args.json) writeJson(report);
         else say(`restored ${String(report.imported)}, skipped ${String(report.skipped)}, conflicts ${String(report.conflicts.length)}`);
         return 0;
