@@ -16,6 +16,7 @@ import { CONFIG_KEYS } from '../src/kernel/project/config.ts';
 import { createSkillRegistry } from '../src/kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../src/kernel/registry/workflow-registry.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from '../src/kernel/state/schema.ts';
+import { STATE_FORMAT_VERSION } from '../src/kernel/state/format.ts';
 import { RUN_TRANSITIONS } from '../src/kernel/state/runs.ts';
 import { STEP_TRANSITIONS } from '../src/kernel/state/steps.ts';
 import { TRUST_TRANSITIONS } from '../src/kernel/state/deliverables.ts';
@@ -82,7 +83,7 @@ function stateModel() {
     return [`\`${t}\``, cols.join(', ')];
   });
   const machine = (name, m) => [`### ${name}`, '', table(['From', 'To'], Object.entries(m).map(([k, v]) => [`\`${k}\``, v.length ? v.map((x) => `\`${x}\``).join(', ') : '(terminal)'])), ''].join('\n');
-  return [HEADER('src/kernel/state/schema.ts and the state machines'), '# State model', '', 'One SQLite database per project at `.construct/state/construct.sqlite`, format `construct-state` 2. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger, and any file not exactly this format is refused unread.', '', '## Tables', '', table(['Table', 'Columns'], tables), '', '## Lifecycles', '', machine('Run', RUN_TRANSITIONS), machine('Step', STEP_TRANSITIONS), machine('Deliverable trust', TRUST_TRANSITIONS), '## Action tiers', '', table(['Tier', 'Requirement', 'Meaning'], Object.values(TIER_POLICIES).map((p) => [`\`${p.tier}\``, p.requirement, p.description])), ''].join('\n');
+  return [HEADER('src/kernel/state/schema.ts and the state machines'), '# State model', '', `One SQLite database per project at \`.construct/state/construct.sqlite\`, format \`construct-state\` ${STATE_FORMAT_VERSION}. Foreign keys are on, multi-row transitions are transactional, the activity table is append-only by trigger. A complete store in format 2 or 3 is upgraded only by \`construct migrate\`, which needs every Construct session on the project stopped and backs the file up first; a store in a newer format is refused with the instruction to upgrade Construct; any other file is refused unread.`, '', '## Tables', '', table(['Table', 'Columns'], tables), '', '## Lifecycles', '', machine('Run', RUN_TRANSITIONS), machine('Step', STEP_TRANSITIONS), machine('Deliverable trust', TRUST_TRANSITIONS), '## Action tiers', '', table(['Tier', 'Requirement', 'Meaning'], Object.values(TIER_POLICIES).map((p) => [`\`${p.tier}\``, p.requirement, p.description])), ''].join('\n');
 }
 
 const pages = { 'cli-reference.md': cliReference(), 'broker-reference.md': brokerReference(), 'config-reference.md': configReference(), 'catalog.md': catalog(), 'state-model.md': stateModel() };

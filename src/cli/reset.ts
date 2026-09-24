@@ -4,7 +4,6 @@
  */
 
 import { existsSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import { planReset, applyReset } from '../kernel/project/reset.ts';
 import { initializeProject, readProjectFiles } from '../kernel/project/initialize.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
@@ -12,6 +11,7 @@ import { findProjectRoot } from '../kernel/project/discover.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, gitRootOf, initRootFor, type CliContext } from './context.ts';
 import { esc, OperationError, say, writeJson } from './output.ts';
+import { processesHolding } from './holders.ts';
 import { basename } from 'node:path';
 
 export const RESET_SPEC: CommandSpec = {
@@ -27,18 +27,6 @@ export const RESET_SPEC: CommandSpec = {
   ],
   readOnly: false,
 };
-
-/**
- * Other processes that have `path` open, by pid. SQLite cannot see an idle
- * connection in another process, so this asks the operating system. Where the
- * question cannot be asked (no lsof), the answer is none: the person confirmed
- * the reset and named the targets.
- */
-function processesHolding(path: string): number[] {
-  const r = spawnSync('lsof', ['-t', '--', path], { encoding: 'utf8' });
-  if (r.error || typeof r.stdout !== 'string') return [];
-  return r.stdout.split('\n').map((l) => Number(l.trim())).filter((pid) => Number.isInteger(pid) && pid > 0 && pid !== process.pid);
-}
 
 export function reset(args: ParsedArgs, ctx: CliContext = createContext()): number {
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;

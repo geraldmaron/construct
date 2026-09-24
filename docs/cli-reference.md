@@ -564,7 +564,11 @@ Reads only: no.
 
 ### `construct migrate`
 
-upgrade this project’s state from the previous format, after writing a backup beside it
+upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--force` | no | upgrade even while another process has the state open |
 
 Reads only: no.
 

@@ -39,8 +39,19 @@ file, broker, command, and database boundary.
 
 ## Formats
 
-State: `construct-state` 2. Project config: `construct-project` 2.
+State: `construct-state` 4. Project config: `construct-project` 2.
 Constitution: `construct-constitution` 2. Sources: `construct-sources` 2.
 Lock: `construct-registry-lock` 2. Skill manifest: `construct-skill` 1.
-Workflow manifest: `construct-workflow` 1. Nothing migrates; an unsupported
-format is refused with the reset instruction.
+Workflow manifest: `construct-workflow` 1.
+
+Only the state database migrates. A complete store in format 2 or 3 is
+upgraded, one way, by `construct migrate` and nothing else: stop every
+Construct session on the project first, since one still running an older
+Construct would go on writing to the store without format 4's protections.
+The command refuses while another process has the store open (`--force`
+upgrades anyway), backs the file up beside it under the upgrade's own write
+lock, and removes that backup again if the upgrade fails without changing
+the store. A store written by a newer Construct is refused with the
+instruction to upgrade Construct, never to reset. Any other state format, a
+store missing one of its format's tables, and every other file format above
+in an unsupported version are refused with the reset instruction.
