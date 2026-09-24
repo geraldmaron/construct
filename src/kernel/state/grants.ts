@@ -38,6 +38,11 @@ export interface Grant {
   readonly revokedAt: string | null;
   readonly revokedReason: string | null;
   readonly createdAt: string;
+  /** The run and step the approval was given for, when it answered one. */
+  readonly runId: string | null;
+  readonly stepRunId: string | null;
+  /** How the approval reached Construct: tty_cli, elicitation, host_prompted, or relay. */
+  readonly channel: string | null;
 }
 
 interface Row {
@@ -57,6 +62,9 @@ interface Row {
   readonly revoked_at: string | null;
   readonly revoked_reason: string | null;
   readonly created_at: string;
+  readonly run_id?: string | null;
+  readonly step_run_id?: string | null;
+  readonly channel?: string | null;
 }
 
 function toGrant(row: Row): Grant {
@@ -77,6 +85,9 @@ function toGrant(row: Row): Grant {
     revokedAt: row.revoked_at,
     revokedReason: row.revoked_reason,
     createdAt: row.created_at,
+    runId: row.run_id ?? null,
+    stepRunId: row.step_run_id ?? null,
+    channel: row.channel ?? null,
   };
 }
 
@@ -94,6 +105,9 @@ export interface CreateGrantInput {
   readonly grantedBy: string;
   readonly breakGlass?: boolean;
   readonly reason?: string;
+  readonly runId?: string;
+  readonly stepRunId?: string;
+  readonly channel?: string;
   readonly at: string;
 }
 
@@ -126,8 +140,8 @@ export function createGrant(store: StateStore, input: CreateGrantInput): Grant {
       .prepare(
         `INSERT INTO grants
            (id, action_tier, target_system, target_resource, workflow_id, executor_id, max_impact, budget_cents,
-            starts_at, ends_at, granted_by, break_glass, reason, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+            starts_at, ends_at, granted_by, break_glass, reason, created_at, run_id, step_run_id, channel)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
       )
       .get(
         input.id,
@@ -144,6 +158,9 @@ export function createGrant(store: StateStore, input: CreateGrantInput): Grant {
         breakGlass ? 1 : 0,
         input.reason ?? null,
         input.at,
+        input.runId ?? null,
+        input.stepRunId ?? null,
+        input.channel ?? null,
       ) as unknown as Row;
     appendActivity(store, {
       at: input.at,
