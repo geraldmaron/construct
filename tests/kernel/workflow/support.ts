@@ -10,6 +10,7 @@ import { updateLock } from '../../../src/kernel/registry/lockfile.ts';
 import { emptyLock } from '../../../src/kernel/project/lock.ts';
 import type { HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
 import type { SkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
+import type { ActionTier } from '../../../src/kernel/state/steps.ts';
 import { openStateStore, type StateStore } from '../../../src/kernel/state/open.ts';
 import type { SourceAvailability } from '../../../src/kernel/registry/resolver.ts';
 import { createWorkflowService, type WorkflowService } from '../../../src/kernel/workflow/service.ts';
@@ -40,7 +41,7 @@ export interface Fixture {
 
 export const T0 = '2026-09-02T12:00:00.000Z';
 
-export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never' } = {}): Fixture {
+export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never'; readonly maxTier?: ActionTier } = {}): Fixture {
   const fx = freshStore();
   const dirs = tmp();
   writeSkill(join(dirs.root, 'skills'), 'reader', '1.0.0');
@@ -65,6 +66,9 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     step('left', { tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['applied'] }),
     step('right', { tier: 'draft', capabilities: ['model_review'], outputs: ['notes'] }),
   ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'raze', workflowManifest('raze', '1.0.0', [
+    step('drop', { tier: 'destructive', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['dropped'] }),
+  ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
   writeWorkflow(join(dirs.root, 'workflows'), 'sweep', workflowManifest('sweep', '1.0.0', [
     step('read', { capabilities: ['read_project_context'], sources: [{ kind: 'directory', freshness: 'fresh', required: true }], outputs: ['seen'] }),
   ], { triggers: ['schedule', 'manual'], onNoData: 'succeed_empty', onStaleData: 'block', concurrency: 'single', interactionClass: 'maintain', inputSchema: {}, requiredInputs: [] }));
@@ -80,7 +84,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     sessionId: opts.interactive === false ? null : 'sess-1',
     executorId: opts.interactive === false ? 'runner:cron' : 'session:claude',
     available: new Set(['read_project_context', 'read_project_files', 'write_project_context', 'model_review', 'ask_user', 'write_source:jira', 'run_validator', 'run_tests']),
-    maxTier: 'external_write',
+    maxTier: opts.maxTier ?? 'external_write',
     restrictions: [],
     budgetCents: null,
   };

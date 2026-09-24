@@ -143,7 +143,7 @@ test('parallel command-line writers and MCP servers never fail for a lock', { ti
   }
 });
 
-function startOutcome(project: string, env: NodeJS.ProcessEnv): Promise<{ created: boolean; runId: string } | { error: string }> {
+function startOutcome(project: string, env: NodeJS.ProcessEnv, target = 'README.md'): Promise<{ created: boolean; runId: string } | { error: string }> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=cursor'], { cwd: project, env });
     let buffer = '';
@@ -163,7 +163,7 @@ function startOutcome(project: string, env: NodeJS.ProcessEnv): Promise<{ create
     const send = (m: unknown): boolean => child.stdin.write(`${JSON.stringify(m)}\n`);
     send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'race', version: '0' } } });
     send({ jsonrpc: '2.0', method: 'notifications/initialized' });
-    send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'start_outcome', arguments: { workflowId: 'design-conformance', input: { target: 'README.md' } } } });
+    send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'start_outcome', arguments: { workflowId: 'design-conformance', input: { target } } } });
   });
 }
 
@@ -179,6 +179,31 @@ test('sessions starting the same outcome at once get one run between them', { ti
     const runs = new Set(results.map((r) => ('runId' in r ? r.runId : '')));
     assert.equal(runs.size, 1, `one run for one piece of work, got ${JSON.stringify(results)}`);
     assert.equal(results.filter((r) => 'created' in r && r.created).length, 1);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('sessions starting a single-concurrency workflow on different targets at once get one run between them', { timeout: 120_000 }, async () => {
+  const fx = sterile();
+  try {
+    const project = initProject(fx);
+    const targets = ['README.md', 'docs/a.md', 'docs/b.md', 'docs/c.md'];
+    spawnSync('mkdir', ['-p', join(project, 'docs')]);
+    for (const target of targets) writeFileSync(join(project, target), `# ${target}\n`);
+    const env = envFor(fx);
+    const results = await Promise.all(targets.map((target) => startOutcome(project, env, target)));
+    const errors = results.filter((r) => 'error' in r);
+    assert.deepEqual(errors, []);
+    const runs = new Set(results.map((r) => ('runId' in r ? r.runId : '')));
+    assert.equal(runs.size, 1, `design-conformance runs one at a time, got ${JSON.stringify(results)}`);
+    assert.equal(results.filter((r) => 'created' in r && r.created).length, 1);
+    const db = new DatabaseSync(join(project, '.construct', 'state', 'construct.sqlite'), { readOnly: true });
+    try {
+      assert.equal((db.prepare(`SELECT COUNT(*) AS n FROM workflow_runs WHERE workflow_id = 'design-conformance'`).get() as { n: number }).n, 1);
+    } finally {
+      db.close();
+    }
   } finally {
     fx.cleanup();
   }

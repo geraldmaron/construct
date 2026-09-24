@@ -5,6 +5,8 @@
  * the command line through its shell tool, cannot; the decision stays open and
  * says how the person answers. An approval covers the executor it was given to:
  * another session claiming the step neither inherits it nor gets to stall it.
+ * Every answer is recorded with who gave it and on which channel, so a relayed
+ * answer is never on record as the person's.
  */
 
 import { test } from 'node:test';
@@ -17,8 +19,12 @@ import { PersonChannelRequiredError } from '../../src/kernel/policy/channels.ts'
 import { channelFor } from '../../src/cli/person-channel.ts';
 import { toolsFor } from '../../src/kernel/broker/tools.ts';
 import { mcpTool } from '../../src/kernel/broker/definition.ts';
+import { join } from 'node:path';
+import { openStateStore } from '../../src/kernel/state/open.ts';
+import { run } from '../../src/cli/index.ts';
 import { fixture } from '../kernel/workflow/support.ts';
 import { brokerFixture } from '../kernel/broker/support.ts';
+import { capture, inProject } from '../cli/support.ts';
 
 /** Run `apply` to its gated external-write step and return the approval it raises. */
 function pausedForApproval(fx: ReturnType<typeof fixture>, target = 'PROJ-14'): { runId: string; decisionId: string } {
@@ -170,4 +176,105 @@ test('a person-channel answer carries its channel into the activity record', () 
   } finally {
     fx.cleanup();
   }
+});
+
+test('the person accepts and finalizes a deliverable on their own channel; a relay can do neither', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const claimed = fx.service.claimNext({ runId: started.run.id });
+    const done = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } });
+    const deliverableId = done.deliverable!.id;
+    assert.equal(done.deliverable!.trustState, 'validated');
+
+    for (const to of ['accepted', 'final'] as const) {
+      assert.throws(() => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError, `relay to ${to}`);
+      assert.throws(() => fx.service.promote({ deliverableId, to, by: 'relayed via claude-code' }), PersonChannelRequiredError, `relay is the default, to ${to}`);
+    }
+
+    const asked = fx.service.requestPromotion({ deliverableId, to: 'accepted', by: 'relayed via claude-code', reason: 'the session asks the person to accept' });
+    assert.equal(asked.kind, 'approval');
+    assert.equal(fx.service.requestPromotion({ deliverableId, to: 'accepted', by: 'relayed via claude-code' }).id, asked.id, 'one open question, not one per ask');
+    assert.throws(() => fx.service.decide({ decisionId: asked.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
+    assert.equal(fx.service.status(started.run.id)!.deliverables.find((d) => d.id === deliverableId)!.trustState, 'validated', 'a relayed approval moves nothing');
+    assert.equal(getDecision(fx.store, asked.id)!.state, 'open');
+
+    const accepted = fx.service.decide({ decisionId: asked.id, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
+    assert.equal(accepted.decision.state, 'resolved');
+    assert.equal(fx.service.status(started.run.id)!.deliverables.find((d) => d.id === deliverableId)!.trustState, 'accepted');
+
+    assert.throws(() => fx.service.promote({ deliverableId, to: 'final', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
+    const final = fx.service.promote({ deliverableId, to: 'final', by: 'person via cli', channel: 'tty_cli' });
+    assert.equal(final.trustState, 'final');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a relayed approval of a destructive action mints nothing and leaves the step waiting for the person', () => {
+  const fx = fixture({ maxTier: 'destructive' });
+  try {
+    const started = fx.service.start({ workflowId: 'raze', input: { target: 'PROJ-99' }, trigger: 'manual' });
+    const asked = fx.service.claimNext({ runId: started.run.id });
+    assert.equal(asked.waitingOn?.kind, 'decision');
+    const decision = (asked.waitingOn as { decision: { id: string; subject: { request: { tier: string } } } }).decision;
+    assert.equal(decision.subject.request.tier, 'destructive');
+    assert.throws(() => fx.service.decide({ decisionId: decision.id, resolution: 'approve', by: 'relayed via claude-code', channel: 'relay' }), PersonChannelRequiredError);
+    assert.equal(listGrants(fx.store).length, 0);
+    assert.equal(getDecision(fx.store, decision.id)!.state, 'open');
+    assert.equal(fx.service.claimNext({ runId: started.run.id }).waitingOn?.kind, 'decision', 'the step still waits on the person');
+
+    fx.service.decide({ decisionId: decision.id, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
+    assert.equal(listGrants(fx.store).length, 1);
+    assert.equal(fx.service.claimNext({ runId: started.run.id }).packet?.step.id, 'drop');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('inbox resolve approves only from a terminal of the person’s own', async () => {
+  await inProject(async (ctx, box) => {
+    const store = openStateStore(join(box.cwd, '.construct', 'state', 'construct.sqlite'));
+    try {
+      raiseDecision(store, {
+        id: 'decision-cli',
+        kind: 'approval',
+        question: 'Approve exactly this: push PROJ-14',
+        options: ['approve', 'decline'],
+        subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+        at: ctx.now(),
+      });
+      addStatement(store, { id: 'st-cli-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at: ctx.now() });
+    } finally {
+      store.close();
+    }
+
+    const shellTool = { ...ctx, terminal: { interactive: false, agentAncestor: null } };
+    const refused = await capture(() => run(['inbox', 'resolve', 'decision-cli', 'approve'], shellTool));
+    assert.equal(refused.code, 1);
+    assert.match(refused.err, /decision-cli needs your own answer, and this command is not running in a terminal of yours/);
+    assert.match(refused.err, /next: Run the same command yourself in a terminal outside your agent host/);
+
+    const proposal = await capture(() => run(['inbox', 'resolve', 'st-cli-proposed', 'confirm'], shellTool));
+    assert.equal(proposal.code, 0, proposal.err);
+
+    const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
+    const approved = await capture(() => run(['inbox', 'resolve', 'decision-cli', 'approve'], person));
+    assert.equal(approved.code, 0, approved.err);
+    assert.match(approved.out, /recorded: decision-cli → approve/);
+
+    const after = openStateStore(join(box.cwd, '.construct', 'state', 'construct.sqlite'), { readOnly: true });
+    try {
+      assert.equal(getDecision(after, 'decision-cli')!.resolvedBy, 'person via cli');
+      assert.equal(listGrants(after).length, 1);
+      const events = listActivity(after);
+      const resolved = events.find((e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === 'decision-cli')!;
+      assert.equal((resolved.payload as { channel: string }).channel, 'tty_cli');
+      const confirmed = events.find((e) => e.kind === 'proposal.resolved')!;
+      assert.equal(confirmed.actor, 'relayed via cli (no person at a terminal)');
+      assert.equal((confirmed.payload as { channel: string }).channel, 'relay');
+    } finally {
+      after.close();
+    }
+  });
 });
