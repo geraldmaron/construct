@@ -12,6 +12,7 @@ import type { HostCapabilities } from '../registry/capability-registry.ts';
 import type { WorkflowService } from '../workflow/service.ts';
 import type { TriggerService } from '../workflow/triggers.ts';
 import type { SourceService } from '../source/service.ts';
+import type { AskPerson } from '../policy/channels.ts';
 
 export interface BrokerContext {
   readonly version: string;
@@ -38,4 +39,10 @@ export interface BrokerContext {
    * is the same machine); null when it cannot. Supplied by the adapter.
    */
   readonly processAlive?: (pid: number, machine: string) => boolean | null;
+  /**
+   * Put a question to the person directly, through the host, when the host
+   * can and nothing answers it for them. Absent otherwise; an answer then
+   * waits in the inbox for the person's own terminal.
+   */
+  readonly askPerson?: AskPerson;
 }

@@ -106,8 +106,13 @@ Construct keeps them from stepping on each other:
   refused, because it would start a second store.
 - Only you approve an action that leaves the project or destroys something,
   and only you accept or finalize a deliverable. A model relaying your words
-  cannot; the question waits in `construct inbox` for you to answer from a
-  terminal of your own.
+  cannot. When the host can show you a question from Construct itself (MCP
+  elicitation), Construct asks you there and waits a minute for your choice.
+  Otherwise, or if you decline or close it, the question waits in
+  `construct inbox` for you to answer from a terminal of your own. A host
+  hook that could answer such questions for you (Claude Code's `Elicitation`
+  or `ElicitationResult` hooks, in project, user, managed, or plugin
+  settings) turns the prompt off, because its answer would not be yours.
 
 ## Checking that it is bound
 

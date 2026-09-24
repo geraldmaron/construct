@@ -21,6 +21,7 @@ export interface PathsEnv {
   XDG_DATA_HOME?: string;
   XDG_CACHE_HOME?: string;
   HOME?: string;
+  CLAUDE_CONFIG_DIR?: string;
 }
 
 const APP = 'construct';
@@ -128,4 +129,24 @@ export function resolveHostSkillsDir(
 ): string {
   if (host === 'claude') return resolveSkillsDir(env, home);
   return join(home, ...OTHER_HOST_SKILLS_PATH[host]);
+}
+
+/**
+ * Claude Code's configuration directory: CLAUDE_CONFIG_DIR when set, else
+ * `.claude` under home. Read here for the same reason as every home-rooted
+ * path: a test that redirects HOME redirects this too.
+ */
+export function resolveClaudeConfigDir(
+  env: PathsEnv = process.env,
+  home: string = xdgBase(env.HOME, homedir()),
+): string {
+  const configured = env.CLAUDE_CONFIG_DIR;
+  return configured && configured.trim() ? configured : join(home, '.claude');
+}
+
+/** Where an administrator's managed Claude Code settings live on this platform, if anywhere. */
+export function managedClaudeSettingsPath(platform: NodeJS.Platform = process.platform): string | null {
+  if (platform === 'darwin') return '/Library/Application Support/ClaudeCode/managed-settings.json';
+  if (platform === 'linux') return '/etc/claude-code/managed-settings.json';
+  return null;
 }

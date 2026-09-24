@@ -131,7 +131,7 @@ Surface: interactive. Reads only: yes.
 
 ### `decide`
 
-Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly; relayed here it stays open and says how.
+Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
 
 Surface: interactive. Reads only: no.
 
@@ -164,7 +164,7 @@ Surface: interactive. Reads only: yes.
 
 ### `promote_deliverable`
 
-Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: asked for here, they wait in the inbox for the person to give directly. A finished step never moves trust.
+Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. A finished step never moves trust.
 
 Surface: interactive. Reads only: no.
 
