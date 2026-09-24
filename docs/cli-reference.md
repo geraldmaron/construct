@@ -35,7 +35,7 @@ Reads only: no.
 
 ### `construct status`
 
-where this project stands: setup, work, decisions, sources, registry, drift
+where this project stands: setup, work, decisions, sources, registry, drift, sessions
 
 Reads only: yes.
 

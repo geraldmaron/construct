@@ -89,14 +89,15 @@ export interface RegisterSessionInput {
   readonly head?: string;
 }
 
+/** Register a session. It starts watching other sessions' activity from now, not from the beginning. */
 export function registerSession(store: StateStore, input: RegisterSessionInput): SessionRecord {
   requireNonEmpty(input.id, 'session.id');
   requireInstant(input.at, 'session.at');
   return store.transaction(() => {
     store.db
       .prepare(
-        `INSERT INTO sessions (id, host, surface, host_session_id, host_session_source, machine, pid, serve_version, lane_root, branch, head, started_at, last_seen_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO sessions (id, host, surface, host_session_id, host_session_source, machine, pid, serve_version, lane_root, branch, head, started_at, last_seen_at, activity_cursor)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(id), 0) FROM activity_events))`,
       )
       .run(
         input.id, input.host, input.surface, input.hostSessionId ?? null, input.hostSessionSource ?? null, input.machine,

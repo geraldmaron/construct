@@ -84,6 +84,15 @@ Construct keeps them from stepping on each other:
   token, and its reservations in one step; nobody else can accept it after.
   A handoff never moves an approval. `construct work offers` lists what is
   waiting, and the packet is always shown as its author's words.
+- Sessions learn about each other on the calls they already make. Bootstrap
+  says how many other sessions are here, what they hold, and warns when one
+  works in the same checkout. After that, a result carries
+  `construct_peers` when another session or agent claimed, finished, handed
+  off, or took over work since the last call: ids, holders, paths, and times,
+  never anyone's notes. `construct status` lists the sessions present, and
+  the `sessions` and `activity` topics of project context show the detail.
+  Construct cannot interrupt a model mid-turn; a session that makes no calls
+  hears nothing until it does.
 - Git worktrees of the project share its one store in the main checkout, so
   an agent in a worktree sees the same work. `construct init` in a worktree is
   refused, because it would start a second store.

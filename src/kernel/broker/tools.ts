@@ -31,6 +31,7 @@ import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '..
 import { createRouter, type Router } from '../skills/routing.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
+import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
 import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
@@ -79,12 +80,13 @@ const bootstrap = define<Record<string, never>, unknown>({
       decisions: { open: open.length },
       runs: runs.map((r) => ({ id: r.id, workflow: r.workflowId, state: r.state })),
       drift: { open: drift.length },
+      coordination: coordinationFor(ctx.store, { sessionId: ctx.sessionId, laneRoot: ctx.lane?.root, now: at }),
       next,
     };
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'work'] as const;
+const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'work', 'sessions', 'activity'] as const;
 
 function page<T>(items: readonly T[], text: (t: T) => string, query: string | undefined, limit: number): { items: T[]; total: number; truncated: boolean; query: string | null } {
   const q = query?.trim().toLowerCase();
@@ -96,7 +98,7 @@ function page<T>(items: readonly T[], text: (t: T) => string, query: string | un
 const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number }, unknown>({
   name: 'project_context',
   title: 'Project context',
-  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, or work. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.',
+  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, or recent activity. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
@@ -141,6 +143,10 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
         return page(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`, query, limit);
       case 'work':
         return page(queryWork(ctx.store, { query, limit: 10_000 }).items, (w) => `${w.id} ${w.title} ${w.status} ${w.kind}`, query, limit);
+      case 'sessions':
+        return page(presentSessions(ctx.store, { now: ctx.now(), sessionId: ctx.sessionId }), (s) => `${s.id} ${s.host} ${s.client ?? ''} ${s.lane} ${s.branch ?? ''} ${s.agents.join(' ')}`, query, limit);
+      case 'activity':
+        return page(recentActivity(ctx.store, 500), (a) => `${a.kind} ${a.sessionId ?? ''} ${a.agent ?? ''} ${a.actor ?? ''} ${JSON.stringify(a.payload.content)}`, query, limit);
       default:
         return null;
     }
