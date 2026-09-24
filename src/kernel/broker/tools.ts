@@ -642,23 +642,38 @@ function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string):
 function claimantOf(ctx: BrokerContext, agent: string | undefined): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
   const where = { lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null };
   if (!ctx.sessionId) return { owner: ctx.actor, ...where };
-  const name = agent?.trim() ? agent.trim().slice(0, 80) : 'main';
+  const name = agent ?? 'main';
   return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, ...where };
 }
 
 const MAX_LEASE_PATHS = 200;
 
+/**
+ * An agent's name within its session. Other sessions see it in the holder of
+ * a claim, so it is an identifier, never a sentence.
+ */
+export const AGENT_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
+/** Whom a handoff is offered to: a session, or a session's agent. */
+const HANDOFF_TARGET = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}(?:\/[A-Za-z0-9][A-Za-z0-9._-]{0,39})?$/;
+
 function leasePaths(raw: Record<string, unknown>): string[] {
   const items = list(raw, 'paths');
   if (items.length > MAX_LEASE_PATHS) throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`);
+  const use = raw.action === 'claim' ? 'reserve' : 'check';
   return items.map((p) => {
     if (typeof p !== 'string' || !p.trim()) throw new ToolInputError('"paths" holds non-empty strings');
     try {
-      return normalizeLeasePath(p);
+      return normalizeLeasePath(p, use);
     } catch (e) {
       throw new ToolInputError((e as Error).message);
     }
   });
+}
+
+function matching(value: string | undefined, pattern: RegExp, message: string): string | undefined {
+  if (value === undefined) return undefined;
+  if (!pattern.test(value.trim())) throw new ToolInputError(message);
+  return value.trim();
 }
 
 /** Overlaps with other work's reservations, split into what blocks and what only risks a merge. */
@@ -706,11 +721,11 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       kind: str(raw, 'kind', { optional: true, oneOf: ['outcome', 'task', 'defect', 'plan'] }),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
-      agent: str(raw, 'agent', { optional: true }),
+      agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
       paths: raw.paths === undefined ? undefined : leasePaths(raw),
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
       packet: obj(raw, 'packet', { optional: true }),
-      to: str(raw, 'to', { optional: true }),
+      to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
     };
   },
   run(ctx, { action, id, title, kind, reason, token, agent, paths, mode, packet, to }) {
@@ -720,8 +735,7 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
       const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
-      const { owner } = claimantOf(ctx, agent);
-      return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude, owner }));
+      return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
     }
     if (action === 'ready') return listReady(ctx.store, at);
     if (action === 'add') {

@@ -38,6 +38,9 @@ test('a claim reserves paths, and work check reports the staged files it holds',
 
     const refused = await capture(() => run(['work', 'claim', id, '--paths=../outside'], person));
     assert.equal(refused.code, 2, 'a path outside the repository is a usage error');
+    const spaced = await capture(() => run(['work', 'claim', id, '--paths=docs/my notes.md'], person));
+    assert.equal(spaced.code, 2, 'a reserved path is spelled without spaces');
+    assert.match(spaced.err, /reserve the directory that holds it/);
 
     mkdirSync(join(box.cwd, 'src', 'parser'), { recursive: true });
     writeFileSync(join(box.cwd, 'src', 'parser', 'lex.ts'), 'export {};\n');
@@ -47,13 +50,16 @@ test('a claim reserves paths, and work check reports the staged files it holds',
     const relayed = { ...ctx, terminal: { interactive: false, agentAncestor: 'claude' } };
     const staged = await capture(() => run(['work', 'check', '--staged'], relayed));
     assert.equal(staged.code, 1, 'a staged file under another claim’s reservation in this checkout');
-    assert.match(staged.out, new RegExp(`reserved here: src/parser/lex\\.ts is under src/parser/, held by person via cli for ${id} "change the parser"`));
+    assert.match(staged.out, new RegExp(`reserved here: src/parser/lex\\.ts is under src/parser/, held by person via cli for ${id} until `));
+    assert.doesNotMatch(staged.out, /change the parser/, 'another claim’s title is not repeated');
     assert.doesNotMatch(staged.out, /NOTES/);
 
     const mine = await capture(() => run(['work', 'check', '--staged', `--work=${id}`, '--json'], relayed));
     assert.equal(mine.code, 0, mine.err);
     assert.deepEqual(last(mine.out), { clear: true, collisions: [], mergeRisks: [] });
 
+    const spacedCheck = await capture(() => run(['work', 'check', '--paths=docs/my notes.md'], relayed));
+    assert.equal(spacedCheck.code, 0, 'a path only being checked keeps its spelling');
     const clear = await capture(() => run(['work', 'check', '--paths=README.md'], relayed));
     assert.equal(clear.code, 0);
     assert.match(clear.out, /clear: 1 path/);

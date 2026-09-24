@@ -20,7 +20,7 @@ import { asPeerData, type PeerData } from '../work/handoff.ts';
 /** A session that called Construct within this window counts as present. */
 export const PRESENT_WITHIN_MS = 30 * 60_000;
 
-/** The most either summary may add to a result, serialized. */
+/** The most either summary may add to a result, in serialized bytes. */
 export const AWARENESS_BUDGET = 600;
 
 /** Work events other sessions should hear about. */
@@ -113,7 +113,7 @@ export function coordinationFor(store: StateStore, input: { readonly sessionId?:
       : {}),
   };
   let held = all.slice(0, 5);
-  const fits = (h: HeldWork[]): boolean => JSON.stringify({ ...base, held: h, more: all.length - h.length }).length <= AWARENESS_BUDGET;
+  const fits = (h: HeldWork[]): boolean => Buffer.byteLength(JSON.stringify({ ...base, held: h, more: all.length - h.length })) <= AWARENESS_BUDGET;
   while (held.length > 0 && !fits(held)) held = held.slice(0, -1);
   return { others: base.others, sameCheckout, held, more: all.length - held.length, offers, ...(base.warning ? { warning: base.warning } : {}) };
 }
@@ -174,7 +174,7 @@ export function peerDelta(
   });
   const offers = listOffers(store, input.now, { owner: `${input.sessionId}/main`, session: input.sessionId }).length;
   let shown = events.slice(-6);
-  const fits = (e: PeerEvent[]): boolean => JSON.stringify({ events: e, more: events.length - e.length, offers }).length <= AWARENESS_BUDGET;
+  const fits = (e: PeerEvent[]): boolean => Buffer.byteLength(JSON.stringify({ events: e, more: events.length - e.length, offers })) <= AWARENESS_BUDGET;
   while (shown.length > 0 && !fits(shown)) shown = shown.slice(1);
   return { delta: { events: shown, more: events.length - shown.length, offers }, cursor: latest };
 }

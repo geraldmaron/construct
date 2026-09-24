@@ -8,7 +8,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/server/stdio';
 import { Readable, Writable } from 'node:stream';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
-import { toolsFor } from '../../kernel/broker/tools.ts';
+import { AGENT_NAME, toolsFor } from '../../kernel/broker/tools.ts';
 import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
 import { renewExecutorLeases } from '../../kernel/state/steps.ts';
@@ -130,7 +130,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
   const beforeCall = (args: Record<string, unknown>): void => {
     options.beforeEachCall?.();
     ctx.store.attribution.sessionId = ctx.sessionId;
-    ctx.store.attribution.agent = typeof args.agent === 'string' && args.agent.trim() ? args.agent.trim().slice(0, 80) : null;
+    ctx.store.attribution.agent = typeof args.agent === 'string' && AGENT_NAME.test(args.agent.trim()) ? args.agent.trim() : null;
     ctx.store.attribution.channel = surface === 'interactive' ? 'relay' : null;
     const now = Date.parse(ctx.now());
     if (ctx.sessionId && now - lastPresence >= PRESENCE_INTERVAL_MS) {
@@ -303,6 +303,7 @@ export function serveHandler(handle: AsyncMessageHandler, stdin: Readable = proc
       if (hasId && cancelled.delete(request.id)) return;
       let reply: JsonRpcResponse | null;
       running = hasId ? request.id : undefined;
+      hostRequests?.beginCall();
       try {
         reply = await handle(request);
       } catch (error) {
