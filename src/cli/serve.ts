@@ -52,7 +52,7 @@ export function bindFailureFor(error: unknown): BindFailure {
 
 export async function serve(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const projectFlag = stringFlag(args, 'project');
-  const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag) } : ctx;
+  const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag), sessionCwd: ctx.cwd } : ctx;
   const flags = { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') };
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;
