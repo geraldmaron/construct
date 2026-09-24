@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, renameSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sterile, type SterileFixture } from '../harness/sterile.ts';
@@ -141,6 +141,9 @@ test('removing a worktree loses nothing, and a store copied into a worktree is n
     mkdirSync(join(r.nested, '.construct', 'state'), { recursive: true });
     copyFileSync(r.db, join(r.nested, '.construct', 'state', 'construct.sqlite'));
     assert.equal(cli(fx, r.nested, ['work', 'add', 'made in lane a after the copy']).status, 0);
+    const doctor = cli(fx, r.nested, ['doctor']);
+    assert.notEqual(doctor.status, 0, 'a store inside a worktree is not healthy, even though it is never opened');
+    assert.match(doctor.out, /FAIL worktree-store: .*\.claude\/worktrees\/a\/\.construct\/state\/construct\.sqlite is a store inside this worktree that Construct never opens/);
     assert.equal(sh(fx, r.main, 'git', ['worktree', 'remove', '--force', r.external]).status, 0);
     assert.deepEqual(titles(fx, r.main), ['made in lane a after the copy', 'made in lane b']);
   } finally {
@@ -205,6 +208,19 @@ test('a server started in a worktree binds the main store and reports its lane',
     assert.equal(realpathSync(pinned.lane!.checkout), realpathSync(r.nested), 'a pinned --project still reports the worktree the session runs in');
     const main = await bootstrapFrom(fx, r.main);
     assert.equal(main.lane, null);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a server pinned to the main checkout refuses a session in a worktree whose project file names a different project', { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    const file = join(r.nested, '.construct', 'project.json');
+    const project = JSON.parse(readFileSync(file, 'utf8')) as { id: string };
+    writeFileSync(file, JSON.stringify({ ...project, id: 'proj-someone-else' }, null, 2));
+    await assert.rejects(bootstrapFrom(fx, r.nested, [`--project=${r.main}`]), /names project proj-someone-else/);
   } finally {
     fx.cleanup();
   }
@@ -281,6 +297,52 @@ test('a worktree of a submodule binds to the submodule checkout; a separate git 
     assert.equal(existsSync(join(separateLane, '.construct', 'state')), false);
     git(fx, separate, ['config', 'core.worktree', separate]);
     assert.deepEqual(titles(fx, separateLane), ['in the separate clone']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a worktree keeps its binding when the main checkout moves to a commit without the project files', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    assert.equal(cli(fx, r.main, ['work', 'add', 'before the move']).status, 0);
+    git(fx, r.main, ['checkout', '-q', '-b', 'without-construct']);
+    git(fx, r.main, ['rm', '-r', '-q', '.construct']);
+    git(fx, r.main, ['commit', '-q', '-m', 'no project files']);
+    assert.equal(existsSync(join(r.main, '.construct', 'project.json')), false);
+    assert.equal(existsSync(r.db), true, 'the ignored store stays behind');
+
+    assert.deepEqual(titles(fx, r.external), ['before the move']);
+    const doctor = cli(fx, r.external, ['doctor']);
+    assert.notEqual(doctor.status, 0);
+    assert.match(doctor.out, /FAIL files: .*Restore the files in/);
+
+    renameSync(join(r.main, '.construct'), join(fx.root, 'moved-construct'));
+    const refused = cli(fx, r.external, ['work', 'list']);
+    assert.notEqual(refused.status, 0);
+    assert.match(refused.out, /Restore the \.construct files in/);
+    assert.match(refused.out, pathPattern(r.main));
+    assert.doesNotMatch(refused.out, /Run `construct init` in/, 'the advice never re-initializes a project a worktree already names');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('project validate in a worktree checks the configuration binding uses and names the files that differ', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    writeFileSync(join(r.main, '.construct', 'sources.json'), '{ not json');
+    const prose = cli(fx, r.external, ['project', 'validate']);
+    assert.equal(prose.status, 1, prose.out);
+    assert.match(prose.out, /problem: .*sources\.json/);
+    assert.match(prose.out, /this worktree's committed sources\.json differs from the main checkout's/);
+    const json = cli(fx, r.external, ['project', 'validate', '--json']);
+    const record = JSON.parse(json.out.trim().split('\n').pop()!) as { ok: boolean; differentInWorktree: string[] };
+    assert.equal(record.ok, false);
+    assert.deepEqual(record.differentInWorktree, ['sources.json']);
+    assert.equal(cli(fx, r.main, ['project', 'validate']).status, 1, 'the main checkout reports the same problem');
   } finally {
     fx.cleanup();
   }

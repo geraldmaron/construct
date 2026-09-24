@@ -10,10 +10,10 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { resolvePaths, type Paths } from '../kernel/paths.ts';
 import { findProjectRoot, hasProject, NoProjectError } from '../kernel/project/discover.ts';
-import { projectLayout, type ProjectLayout } from '../kernel/project/layout.ts';
+import { projectDbPath, projectFilePath, projectLayout, type ProjectLayout } from '../kernel/project/layout.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { readJsonFile } from '../kernel/project/files.ts';
-import { validateUserDefaults, userDefaultsPath, type ResolveConfigInput } from '../kernel/project/config.ts';
+import { validateProjectConfig, validateUserDefaults, userDefaultsPath, type ResolveConfigInput } from '../kernel/project/config.ts';
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { OperationError } from './output.ts';
@@ -241,13 +241,17 @@ export interface Lane {
   readonly head: string | null;
 }
 
-export interface BoundProject {
+/** Where a project lives and which lane the session works in, before its configuration is read. */
+export interface ProjectLocation {
   /** The project's directory in the main checkout: its configuration and its one store live here. */
   readonly root: string;
-  readonly layout: ProjectLayout;
-  readonly files: ReturnType<typeof readProjectFiles>;
   /** Set when the session works in a linked worktree of the project's repository. */
   readonly lane: Lane | null;
+}
+
+export interface BoundProject extends ProjectLocation {
+  readonly layout: ProjectLayout;
+  readonly files: ReturnType<typeof readProjectFiles>;
 }
 
 /** A linked worktree cannot be bound because the project it belongs to cannot be settled. */
@@ -277,6 +281,34 @@ export function mainCheckoutOf(repo: Repository): string {
   );
 }
 
+/** The id a project file names, or null when there is no project file. */
+function projectIdAt(root: string): string | null {
+  return readJsonFile(root, projectFilePath(root), validateProjectConfig)?.id ?? null;
+}
+
+/**
+ * One repository is one project: a lane whose project file names a different
+ * id than the main checkout's is refused. A lane without a project file, or a
+ * main checkout whose file is absent or unreadable (reported when the
+ * configuration is read), leaves nothing to compare.
+ */
+function requireSameProject(root: string, laneRoot: string): void {
+  const laneId = projectIdAt(laneRoot);
+  if (laneId === null) return;
+  let mainId: string | null;
+  try {
+    mainId = projectIdAt(root);
+  } catch {
+    mainId = null;
+  }
+  if (mainId !== null && laneId !== mainId) {
+    throw new WorktreeBindingError(
+      `this worktree's .construct/project.json (${laneRoot}) names project ${laneId}, but the main checkout's (${root}) names ${mainId}`,
+      'One repository is one project. Bring the worktree’s .construct/project.json back in line with the main checkout’s.',
+    );
+  }
+}
+
 /** The lane a session in `sessionCwd` works in, when that is a linked worktree of the repository holding `root`. */
 function laneFor(root: string, sessionCwd: string): Lane | null {
   const repo = resolveRepository(sessionCwd);
@@ -285,7 +317,9 @@ function laneFor(root: string, sessionCwd: string): Lane | null {
   // spelling of the same directory (macOS /var and /private/var) still matches.
   const rel = relative(realpathOr(repo.mainRoot), realpathOr(root));
   if (rel.startsWith('..') || isAbsolute(rel)) return null;
-  return { root: join(repo.checkout, rel), checkout: repo.checkout, branch: repo.branch, head: repo.head };
+  const lane: Lane = { root: join(repo.checkout, rel), checkout: repo.checkout, branch: repo.branch, head: repo.head };
+  requireSameProject(root, lane.root);
+  return lane;
 }
 
 function realpathOr(path: string): string {
@@ -296,41 +330,63 @@ function realpathOr(path: string): string {
   }
 }
 
+/** The nearest directory at or above `start`, up to `floor`, holding a project store. */
+function findStoreRoot(start: string, floor: string): string | null {
+  let dir = resolve(start);
+  const top = resolve(floor);
+  for (;;) {
+    if (existsSync(projectDbPath(dir))) return dir;
+    if (dir === top) return null;
+    const parent = dirname(dir);
+    if (parent === dir || relative(top, parent).startsWith('..')) return null;
+    dir = parent;
+  }
+}
+
 /**
- * Bind to the project this directory belongs to, never crossing a repository.
- * In a linked git worktree the project is the one in the main checkout: its
- * configuration and its single store are read there, and the worktree becomes
- * the session's lane. The worktree never gets a store of its own.
+ * Find the project this directory belongs to, never crossing a repository,
+ * without reading its configuration. In a linked git worktree the project is
+ * the one in the main checkout, and the worktree becomes the session's lane.
+ * When the main checkout's current commit carries no project files but the
+ * project's store is where they would be, the lane binds to that store.
  */
-export function bindProject(ctx: CliContext): BoundProject {
+export function locateProject(ctx: CliContext): ProjectLocation {
   const repo = resolveRepository(ctx.cwd);
   const mainRoot = repo === null ? null : mainCheckoutOf(repo);
   const floor = repo?.checkout ?? ctx.cwd;
   const here = findProjectRoot({ start: ctx.cwd, floor });
   if (repo === null || mainRoot === null || !repo.linked) {
     if (here === null) throw new NoProjectError(resolve(ctx.cwd));
-    return { root: here, layout: projectLayout(here), files: readProjectFiles(here), lane: laneFor(here, ctx.sessionCwd ?? ctx.cwd) };
+    return { root: here, lane: ctx.sessionCwd === undefined ? null : laneFor(here, ctx.sessionCwd) };
   }
   const sameRelative = (dir: string): string => join(mainRoot, relative(repo.checkout, dir));
-  const root = here !== null ? sameRelative(here) : findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot });
-  if (root === null || !hasProject(root)) {
+  const root = here !== null
+    ? sameRelative(here)
+    : findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot }) ?? findStoreRoot(sameRelative(ctx.cwd), mainRoot);
+  if (root === null || (!hasProject(root) && !existsSync(projectDbPath(root)))) {
+    if (here !== null) {
+      throw new WorktreeBindingError(
+        `this is a git worktree of ${mainRoot}, and that checkout has neither the project files nor the store of the project this worktree's .construct/project.json describes (expected at ${root})`,
+        `Restore the .construct files in ${mainRoot} (for example by checking out the branch that has them), then run \`construct init\` there if it still has no store. Running init before the files are back would give this project a new id.`,
+      );
+    }
     throw new WorktreeBindingError(
-      `this is a git worktree of ${mainRoot}, and that checkout has no Construct project${here !== null ? ` at ${sameRelative(here)}` : ''}`,
+      `this is a git worktree of ${mainRoot}, and that checkout has no Construct project`,
       `Run \`construct init\` in ${mainRoot}; its one store serves every worktree of the repository.`,
     );
   }
-  const files = readProjectFiles(root);
-  const laneFiles = here !== null ? readProjectFiles(here) : null;
-  const mainId = files.config?.id ?? null;
-  const laneId = laneFiles?.config?.id ?? null;
-  if (laneId !== null && mainId !== null && laneId !== mainId) {
-    throw new WorktreeBindingError(
-      `this worktree's .construct/project.json names project ${laneId}, but the main checkout's names ${mainId}`,
-      'One repository is one project. Bring the worktree’s .construct/project.json back in line with the main checkout’s.',
-    );
-  }
   const lane: Lane = { root: join(repo.checkout, relative(mainRoot, root)), checkout: repo.checkout, branch: repo.branch, head: repo.head };
-  return { root, layout: projectLayout(root), files, lane };
+  requireSameProject(root, lane.root);
+  return { root, lane };
+}
+
+/**
+ * Bind to the project this directory belongs to and read its configuration
+ * from the main checkout. The worktree never gets a store of its own.
+ */
+export function bindProject(ctx: CliContext): BoundProject {
+  const located = locateProject(ctx);
+  return { ...located, layout: projectLayout(located.root), files: readProjectFiles(located.root) };
 }
 
 /** The project exists and its store is intact, but another process held the write lock past every wait. */
@@ -357,7 +413,7 @@ export function openProject(ctx: CliContext): OpenProject {
   if (!existsSync(bound.layout.dbPath)) {
     throw new OperationError(
       `this project has no state database at ${bound.layout.dbPath}`,
-      'Run `construct init` to create it.',
+      bound.lane ? `Run \`construct init\` in ${bound.root} to create it; every worktree shares that one store.` : 'Run `construct init` to create it.',
     );
   }
   try {

@@ -8,11 +8,13 @@ import { draftFromMaterial } from '../kernel/project/discovery.ts';
 import { applyDiscoveryDraft, composeConstitution, onboardingStatus } from '../kernel/project/onboarding.ts';
 import { constitutionCompleteness, saveConstitution, emptyConstitution } from '../kernel/project/constitution.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
+import { readProjectFileBytes } from '../kernel/project/files.ts';
+import { projectLayout } from '../kernel/project/layout.ts';
 import { listStatements } from '../kernel/state/profile.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
-import { createContext, gitRootOf, withProject, type CliContext } from './context.ts';
-import { findProjectRoot, NoProjectError } from '../kernel/project/discover.ts';
+import { createContext, locateProject, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError } from './output.ts';
+import { basename } from 'node:path';
 
 const group = 'Inspect';
 
@@ -21,6 +23,30 @@ export const PROJECT_SPECS: readonly CommandSpec[] = [
   { path: ['project', 'validate'], gloss: 'check every committed .construct file', group, positionals: [], flags: [], readOnly: true },
   { path: ['project', 'refresh'], gloss: 're-read the project’s own files and propose updates; confirms nothing', group: 'Setup', positionals: [], flags: [], readOnly: false },
 ];
+
+/**
+ * The committed .construct files whose bytes differ between the main
+ * checkout's project and a worktree's copy of it. A file that cannot be read
+ * on either side counts as different.
+ */
+function differingInWorktree(root: string, laneRoot: string): string[] {
+  const read = (dir: string, file: string): string | null => {
+    try {
+      return readProjectFileBytes(dir, file)?.toString('base64') ?? null;
+    } catch (error) {
+      return `unreadable: ${(error as Error).message}`;
+    }
+  };
+  const main = projectLayout(root);
+  const lane = projectLayout(laneRoot);
+  const pairs = [
+    [main.projectFile, lane.projectFile],
+    [main.constitutionFile, lane.constitutionFile],
+    [main.sourcesFile, lane.sourcesFile],
+    [main.lockFile, lane.lockFile],
+  ] as const;
+  return pairs.filter(([m, l]) => read(root, m) !== read(laneRoot, l)).map(([m]) => basename(m));
+}
 
 export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): number {
   switch (sub) {
@@ -44,19 +70,24 @@ export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = 
         return 0;
       });
     case 'validate': {
-      const root = findProjectRoot({ start: ctx.cwd, floor: gitRootOf(ctx.cwd) ?? ctx.cwd });
-      if (root === null) throw new NoProjectError(ctx.cwd);
-      const bound = { root };
+      // The configuration every other command binds to: the main checkout's, even from a worktree.
+      const { root, lane } = locateProject(ctx);
       const problems: string[] = [];
       try {
-        const files = readProjectFiles(bound.root);
+        const files = readProjectFiles(root);
         for (const [name, value] of Object.entries(files)) if (value === null) problems.push(`${name} file is missing`);
       } catch (error) {
         problems.push((error as Error).message);
       }
-      if (args.json) writeJson({ root: bound.root, ok: problems.length === 0, problems });
-      else if (problems.length === 0) say(`every .construct file under ${esc(bound.root)} validates`);
-      else for (const p of problems) say(`problem: ${esc(p)}`);
+      const differing = lane ? differingInWorktree(root, lane.root) : [];
+      if (args.json) writeJson({ root, ok: problems.length === 0, problems, worktree: lane?.checkout ?? null, differentInWorktree: differing });
+      else {
+        if (problems.length === 0) say(`every .construct file under ${esc(root)} validates`);
+        else for (const p of problems) say(`problem: ${esc(p)}`);
+        if (lane && differing.length > 0) {
+          say(`note: this worktree's committed ${differing.join(', ')} ${differing.length === 1 ? 'differs' : 'differ'} from the main checkout's; every command reads the main checkout's, under ${esc(root)}`);
+        }
+      }
       return problems.length === 0 ? 0 : 1;
     }
     case 'refresh':
