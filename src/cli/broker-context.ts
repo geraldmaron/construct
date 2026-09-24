@@ -5,6 +5,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { hostname } from 'node:os';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import type { HostCapabilities } from '../kernel/registry/capability-registry.ts';
@@ -83,6 +84,11 @@ export function bindingFor(ctx: CliContext, flags: { readonly client?: string; r
   if (surface === 'headless' && flags.executor?.startsWith(SESSION_EXECUTOR_PREFIX)) {
     throw new UsageError(`--executor ${flags.executor} names an interactive session; a headless runner needs an id of its own (for example runner:nightly)`);
   }
+  // runner:ses_… is what Construct mints for a runner given no id; taking one
+  // would inherit the approvals given to that runner.
+  if (surface === 'headless' && flags.executor?.startsWith('runner:ses_')) {
+    throw new UsageError(`--executor ${flags.executor} is an id Construct mints for a runner started without one; choose a name of your own (for example runner:nightly)`);
+  }
   // Minted here, once per process, and never taken from anything a host or a
   // model supplies: a reused pid or a copied host id inherits nothing.
   const sessionId = `ses_${randomUUID()}`;
@@ -90,6 +96,17 @@ export function bindingFor(ctx: CliContext, flags: { readonly client?: string; r
   // What a session does is the model's act on the person's behalf; only an
   // answer on a person channel is recorded as the person.
   return { client, surface, sessionId, executorId, actor: surface === 'headless' ? executorId : `model via ${client}` };
+}
+
+/** Whether `pid` still runs, answerable only for this machine. */
+export function processAlive(pid: number, machine: string): boolean | null {
+  if (machine !== hostname()) return null;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === 'EPERM';
+  }
 }
 
 export function createBrokerContext(ctx: CliContext, project: OpenProject, binding: BrokerBinding): BrokerContext {
@@ -116,7 +133,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),
   });
   const triggers = createTriggerService({ store: project.store, workflows, workflowService: workflow, now: ctx.now, nextId: ctx.nextId, projectRoot: project.root });
-  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor };
+  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive };
 }
 
 export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {

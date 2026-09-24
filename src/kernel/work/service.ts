@@ -517,7 +517,18 @@ export function claimWork(
  */
 export function takeoverWork(
   store: StateStore,
-  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly reason: string; readonly quietCapMs?: number },
+  input: Claimant & {
+    readonly id: string;
+    readonly until: string;
+    readonly now: string;
+    readonly reason: string;
+    readonly quietCapMs?: number;
+    /**
+     * Whether the holder's process still runs, when the caller can tell (same
+     * machine); null when it cannot. A holder whose process is gone is gone.
+     */
+    readonly processAlive?: (pid: number, machine: string) => boolean | null;
+  },
 ): ClaimedWork {
   requireNonEmpty(input.reason, 'work.takeover.reason');
   requireInstant(input.now, 'work.takeover.now');
@@ -526,14 +537,25 @@ export function takeoverWork(
     if (!row) throw new Error(`no work ${input.id}`);
     const current = toWork(row);
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
-    if (liveClaim(row, input.now) && row.claim_owner !== input.owner) {
-      const holder = row.claim_session
-        ? (store.db.prepare('SELECT last_seen_at, ended_at FROM sessions WHERE id = ?').get(row.claim_session) as { last_seen_at: string; ended_at: string | null } | undefined)
-        : undefined;
-      const quietSince = holder ? Date.parse(input.now) - Date.parse(holder.last_seen_at) : 0;
-      const gone = holder !== undefined && (holder.ended_at !== null || quietSince > (input.quietCapMs ?? CLAIM_QUIET_CAP_MS));
-      if (!gone) {
-        throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}, and that session is still active; it cannot be taken over yet`);
+    if (liveClaim(row, input.now)) {
+      if (row.claim_owner === input.owner) {
+        throw new Error(`you already hold ${input.id}; renew it with the token your claim returned rather than taking it over`);
+      }
+      // A session's own main agent may take work back from one of its agents.
+      const parentReclaim = input.session !== undefined && row.claim_session === input.session && input.agent === 'main' && row.claim_agent !== 'main';
+      if (!parentReclaim) {
+        if (!row.claim_session) {
+          throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until} with no session to check; it frees itself then`);
+        }
+        const holder = store.db.prepare('SELECT last_seen_at, ended_at, pid, machine FROM sessions WHERE id = ?').get(row.claim_session) as
+          | { last_seen_at: string; ended_at: string | null; pid: number | null; machine: string }
+          | undefined;
+        const quietSince = holder ? Date.parse(input.now) - Date.parse(holder.last_seen_at) : 0;
+        const processGone = holder !== undefined && holder.pid !== null && input.processAlive?.(holder.pid, holder.machine) === false;
+        const gone = holder !== undefined && (holder.ended_at !== null || processGone || quietSince > (input.quietCapMs ?? CLAIM_QUIET_CAP_MS));
+        if (!gone) {
+          throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}, and that session is still active; it cannot be taken over yet`);
+        }
       }
     }
     const token = randomUUID();
@@ -666,8 +688,8 @@ function setTerminal(
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is already ${current.status}`);
     // A live claim is settled only with its token; a claim that expired no
     // longer protects anything.
-    if (liveClaim(row, input.at) && input.token !== row.claim_token) {
-      throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}; ${input.token ? 'that token does not hold it' : 'settle it with the token its claim returned, or take it over once it is free'}`);
+    if (liveClaim(row, input.at) && (input.token !== row.claim_token || input.owner !== row.claim_owner)) {
+      throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}; ${input.token ? 'that owner and token do not hold it' : 'settle it with the token its claim returned, or take it over once it is free'}`);
     }
     store.db
       .prepare(
