@@ -605,11 +605,12 @@ Reads only: no.
 
 ### `construct hooks install`
 
-install an opt-in hook: --git adds a pre-commit guard that warns about reserved paths
+install an opt-in hook: --git adds a pre-commit guard; --host=claude-code adds session-start and after-edit notes
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--git` | no | the git pre-commit guard (warns, never blocks) |
+| `--host` | yes | a host hook pack for this checkout: claude-code |
 
 Reads only: no.
 
@@ -620,12 +621,19 @@ remove a hook Construct installed, restoring what was there
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--git` | no | the git pre-commit guard |
+| `--host` | yes | the host hook pack for this checkout: claude-code |
 
 Reads only: no.
 
 ### `construct hooks list`
 
 the hooks Construct installed here, and whether each is intact
+
+Reads only: yes.
+
+### `construct hook <host> <event>`
+
+run by a host hook Construct installed; reads the event on stdin, always exits 0
 
 Reads only: yes.
 

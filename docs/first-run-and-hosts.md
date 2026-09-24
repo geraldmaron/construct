@@ -86,6 +86,16 @@ Construct keeps them from stepping on each other:
   Set `CONSTRUCT_HOOKS=off` to silence it. When git's hooks live in a
   committed directory, Construct leaves them alone; add
   `construct work check --staged || true` there yourself.
+- In Claude Code, `construct hooks install --host=claude-code` adds two hooks
+  to the checkout's `.claude/settings.local.json`, which stays out of git: at
+  session start the agent hears who else works here and what they hold, and
+  right after it edits a file another agent holds in this checkout, it hears
+  that too, even if it never called Construct. Neither hook can block
+  anything; each always succeeds within a second and a half, says at most one
+  short line of facts, and says nothing when anything is missing or broken.
+  Hooks already in the file stay, and `construct hooks uninstall
+  --host=claude-code` puts the file back as it was. Other hosts get a pack
+  once one has been verified against them.
 - Claimed work is passed on with a handoff: the holder offers it, with its
   token, and a packet saying where the work stands, what comes next, what to
   watch out for, and what is still open. Whoever accepts gets the claim, a new

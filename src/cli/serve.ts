@@ -15,6 +15,7 @@ import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
 import { HostRequests } from '../hosts/mcp/outbound.ts';
+import { refreshLauncher } from './hooks.ts';
 import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
 import { managedClaudeSettingsPath, resolveClaudeConfigDir } from '../kernel/paths.ts';
 import { bindingFor, openBroker } from './broker-context.ts';
@@ -151,6 +152,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
           o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
           lazy = o;
           register(o);
+          refreshLauncher(o.project.layout.stateDir);
           endOnSignal(o);
           return o.broker;
         }, packageVersion(), bindFailureFor, process.stdin, process.stdout, {
@@ -187,6 +189,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     }
     const live = opened;
     register(live);
+    refreshLauncher(project.layout.stateDir);
     endOnSignal(live);
     try {
       await serveMcp(binding.surface, broker, process.stdin, process.stdout, { ...hostOptions, beforeEachCall: () => register(live) });
