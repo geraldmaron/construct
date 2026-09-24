@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
-import { createMcpHandler, createUnboundMcpHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
+import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
 import { brokerFixture } from '../../kernel/broker/support.ts';
 
@@ -94,4 +94,58 @@ test('an unbound server completes the handshake and reports the missing project'
   assert.equal(boot.result.isError, true);
   assert.equal(boot.result.structuredContent.bound, false);
   assert.match(boot.result.structuredContent.next, /construct init/);
+});
+
+test('an unbound server gives the next step that fits the cause, not always init', async () => {
+  const handle = createUnboundMcpHandler('interactive', 'This Construct state was written by a newer version of Construct.', '3.0.0-alpha.25', 'Upgrade Construct, then restart this MCP server. Do not reset.');
+  const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { instructions: string } };
+  assert.match(init.result.instructions, /Upgrade Construct/);
+  assert.doesNotMatch(init.result.instructions, /construct init/);
+  const boot = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { structuredContent: { next: string } } };
+  assert.match(boot.result.structuredContent.next, /Do not reset/);
+});
+
+test('a server whose store was busy at launch lists its real tools and binds on a later call', async () => {
+  const fx = brokerFixture();
+  try {
+    let attempts = 0;
+    const handle = createLazyMcpHandler('interactive', () => {
+      attempts += 1;
+      if (attempts < 3) throw new Error('the state database is busy');
+      return fx.broker;
+    }, '3.0.0-alpha.25');
+    const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { instructions: string } };
+    assert.match(init.result.instructions, /bound to this project/);
+    assert.doesNotMatch(init.result.instructions, /construct init/);
+    const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
+    assert.deepEqual(list.result.tools.map((t) => t.name), toolsFor('interactive').map((t) => t.name));
+    const busy = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { isError: boolean; structuredContent: { bound: boolean; next: string } } };
+    assert.equal(busy.result.isError, true);
+    assert.equal(busy.result.structuredContent.bound, false);
+    assert.doesNotMatch(busy.result.structuredContent.next, /init|reset/);
+    const bound = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { isError?: boolean; structuredContent: { next: string } } };
+    assert.notEqual(bound.result.isError, true);
+    assert.match(bound.result.structuredContent.next, /listen/);
+    assert.equal(attempts, 3);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a server stops writing when another build changes the store format under it', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const before = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'work', arguments: { action: 'add', title: 'before' } } })) as { result: { isError?: boolean } };
+    assert.notEqual(before.result.isError, true);
+    fx.broker.store.db.exec(`CREATE TABLE newer_build_table (id TEXT)`);
+    fx.broker.store.db.prepare(`UPDATE meta SET value = '99' WHERE key = 'format_version'`).run();
+    const after = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'work', arguments: { action: 'add', title: 'after' } } })) as { result: { isError: boolean; structuredContent: { error: string } } };
+    assert.equal(after.result.isError, true);
+    assert.match(after.result.structuredContent.error, /Restart the MCP server/);
+    const titles = (fx.broker.store.db.prepare('SELECT title FROM work_items').all() as Array<{ title: string }>).map((r) => r.title);
+    assert.deepEqual(titles, ['before']);
+  } finally {
+    fx.cleanup();
+  }
 });

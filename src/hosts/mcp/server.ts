@@ -9,6 +9,7 @@ import { Readable, Writable } from 'node:stream';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.ts';
 import { toolsFor } from '../../kernel/broker/tools.ts';
+import { STATE_FORMAT_VERSION } from '../../kernel/state/format.ts';
 import { escapeForTerminal } from '../../kernel/render/terminal.ts';
 import { failure, response, PROTOCOL_VERSION, type AsyncMessageHandler, type JsonRpcRequest, type JsonRpcResponse } from './jsonrpc.ts';
 
@@ -20,18 +21,47 @@ function text(payload: unknown): { content: Array<{ type: 'text'; text: string }
   return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }], structuredContent: payload !== null && typeof payload === 'object' && !Array.isArray(payload) ? payload : undefined };
 }
 
-function instructionsFor(surface: BrokerSurface, unboundReason: string | null): string {
-  if (unboundReason) {
-    return `Construct could not bind to a project. ${unboundReason} Call bootstrap: it reports the same condition. Run \`construct init\` in the project, then restart this server. Do not invent a project or widen permission from this message.`;
+function instructionsFor(surface: BrokerSurface, unbound: { readonly reason: string; readonly next: string } | null): string {
+  if (unbound) {
+    return `Construct could not bind to a project. ${unbound.reason} Call bootstrap: it reports the same condition. ${unbound.next} Do not invent a project or widen permission from this message.`;
   }
   return surface === 'interactive'
     ? 'Construct is bound to this project. Call bootstrap once. Answer plain questions without recording anything. Remember when asked to keep something. For work, classify_request then start_outcome and do each step here with claim_work and submit_work. Challenge consequential work when claim_work says so; do not wait to be asked. Do not invent unknown facts. Proposed statements wait in inbox; relay confirm or retire with decide. Observations are not work. Stay in this session; do not spawn another agent.'
     : 'This is Construct’s runner surface: claim pre-resolved steps, keep leases alive, submit output. It cannot change configuration, grant permissions, decide for the person, or finalize its own output.';
 }
 
+/** The state database's schema cookie; it changes whenever any process alters the schema. */
+function schemaCookie(ctx: BrokerContext): number {
+  const row = ctx.store.db.prepare('PRAGMA schema_version').get() as { schema_version?: number } | undefined;
+  return Number(row?.schema_version ?? 0);
+}
+
+/** The format this store now carries, read fresh. */
+function storedFormatVersion(ctx: BrokerContext): number | null {
+  const row = ctx.store.db.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value?: string } | undefined;
+  const version = Number(row?.value);
+  return Number.isFinite(version) ? version : null;
+}
+
 export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): AsyncMessageHandler {
   const tools = toolsFor(surface);
   const byName = new Map(tools.map((t) => [t.name, t]));
+  let cookie = schemaCookie(ctx);
+  /**
+   * Another build may upgrade the store while this server runs. The schema
+   * cookie is one cheap read per call; only when it moves is the format read,
+   * and a store this build no longer understands is never written.
+   */
+  const staleFormat = (): string | null => {
+    const now = schemaCookie(ctx);
+    if (now === cookie) return null;
+    const version = storedFormatVersion(ctx);
+    if (version === STATE_FORMAT_VERSION) {
+      cookie = now;
+      return null;
+    }
+    return `the state database now carries format ${String(version)}, written by a different Construct build; this server reads format ${String(STATE_FORMAT_VERSION)} and has stopped writing. Restart the MCP server so the matching build binds.`;
+  };
   return async (message: JsonRpcRequest) => {
     const { id, method, params } = message;
     const isNotification = id === undefined || id === null;
@@ -55,6 +85,8 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
         const name = typeof p.name === 'string' ? p.name : '';
         const tool = byName.get(name);
         if (!tool) return failure(id, -32602, `no tool named "${escapeForTerminal(name)}" on the ${surface} surface`);
+        const stale = staleFormat();
+        if (stale) return response(id, { ...text({ error: stale }), isError: true });
         try {
           const input = tool.validate(record(p.arguments));
           const result = await tool.run(ctx, input);
@@ -73,11 +105,13 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
 }
 
 /** Handshake-capable server when no project is bound, so a host can show why. */
-export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, version: string): AsyncMessageHandler {
+export const INIT_NEXT = 'Run `construct init` in the project, then restart this MCP server.';
+
+export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, version: string, next: string = INIT_NEXT): AsyncMessageHandler {
   const payload = {
     bound: false,
     error: reason,
-    next: 'Run `construct init` in the project, then restart this MCP server.',
+    next,
   };
   return async (message: JsonRpcRequest) => {
     const { id, method, params } = message;
@@ -88,7 +122,7 @@ export function createUnboundMcpHandler(surface: BrokerSurface, reason: string, 
           protocolVersion: PROTOCOL_VERSION,
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: SERVER_NAMES[surface], version },
-          instructions: instructionsFor(surface, reason),
+          instructions: instructionsFor(surface, { reason, next }),
         });
       case 'notifications/initialized':
       case 'notifications/cancelled':
@@ -152,8 +186,71 @@ export function serveUnboundMcp(
   surface: BrokerSurface,
   reason: string,
   version: string,
+  next: string = INIT_NEXT,
   stdin: Readable = process.stdin,
   stdout: Writable = process.stdout,
 ): Promise<void> {
-  return serveHandler(createUnboundMcpHandler(surface, reason, version), stdin, stdout);
+  return serveHandler(createUnboundMcpHandler(surface, reason, version, next), stdin, stdout);
+}
+
+/**
+ * A server whose project exists but whose store was busy at launch. The tool
+ * list does not depend on the store, so the host gets the real surface at once;
+ * each call tries to bind until one succeeds, then every later message goes to
+ * the bound handler. A lock at startup therefore costs one retried call, not a
+ * session spent unbound.
+ */
+export function createLazyMcpHandler(
+  surface: BrokerSurface,
+  open: () => BrokerContext,
+  version: string,
+  onBound: (ctx: BrokerContext) => void = () => {},
+): AsyncMessageHandler {
+  const tools = toolsFor(surface);
+  let bound: AsyncMessageHandler | null = null;
+  const tryBind = (): string | null => {
+    if (bound) return null;
+    try {
+      const ctx = open();
+      onBound(ctx);
+      bound = createMcpHandler(surface, ctx);
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : String(error);
+    }
+  };
+  return async (message: JsonRpcRequest) => {
+    if (bound) return bound(message);
+    const { id, method } = message;
+    switch (method) {
+      case 'initialize':
+        tryBind();
+        return response(id, {
+          protocolVersion: PROTOCOL_VERSION,
+          capabilities: { tools: { listChanged: false } },
+          serverInfo: { name: SERVER_NAMES[surface], version },
+          instructions: instructionsFor(surface, null),
+        });
+      case 'tools/list':
+        return response(id, { tools: tools.map(mcpTool) });
+      case 'tools/call': {
+        const reason = tryBind();
+        if (bound) return (bound as AsyncMessageHandler)(message);
+        return response(id, { ...text({ bound: false, error: reason, next: 'The store is busy; call again in a moment. Nothing was recorded.' }), isError: true });
+      }
+      default:
+        return createUnboundMcpHandler(surface, 'the state database is busy', version)(message);
+    }
+  };
+}
+
+export function serveLazyMcp(
+  surface: BrokerSurface,
+  open: () => BrokerContext,
+  version: string,
+  onBound: (ctx: BrokerContext) => void = () => {},
+  stdin: Readable = process.stdin,
+  stdout: Writable = process.stdout,
+): Promise<void> {
+  return serveHandler(createLazyMcpHandler(surface, open, version, onBound), stdin, stdout);
 }

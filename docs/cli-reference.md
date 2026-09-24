@@ -550,6 +550,12 @@ Reads only: no.
 
 ## Recover
 
+### `construct migrate`
+
+upgrade this project’s state from the previous format, after writing a backup beside it
+
+Reads only: no.
+
 ### `construct reset`
 
 name the Construct-owned files that would be removed; with --confirm, remove exactly them and start clean

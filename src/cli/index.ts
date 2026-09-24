@@ -15,6 +15,7 @@ import { init, INIT_SPEC } from './init.ts';
 import { status, STATUS_SPEC } from './status.ts';
 import { doctor, DOCTOR_SPEC } from './doctor.ts';
 import { reset, RESET_SPEC } from './reset.ts';
+import { migrate, MIGRATE_SPEC } from './migrate.ts';
 import { configCommand, CONFIG_SPECS } from './config.ts';
 import { projectCommand, PROJECT_SPECS } from './project.ts';
 import { sourceCommand, SOURCE_SPECS } from './source.ts';
@@ -55,6 +56,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...INBOX_SPECS,
   ...STAFF_SPECS,
   SERVE_SPEC,
+  MIGRATE_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
   VERSION_SPEC,
@@ -128,7 +130,8 @@ export async function run(argv: readonly string[], ctx: CliContext = createConte
   }
 }
 
-async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly string[], ctx: CliContext): Promise<number> {
+async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly string[], invoked: CliContext): Promise<number> {
+  const ctx: CliContext = spec.readOnly ? { ...invoked, readOnly: true } : invoked;
   const [noun, verb] = spec.path;
   switch (noun) {
     case 'init':
@@ -137,6 +140,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return status(args, ctx);
     case 'doctor':
       return doctor(args, ctx);
+    case 'migrate':
+      return migrate(args, ctx);
     case 'reset':
       return reset(args, ctx);
     case 'serve':
