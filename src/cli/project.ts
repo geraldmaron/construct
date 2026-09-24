@@ -12,7 +12,7 @@ import { readProjectFileBytes } from '../kernel/project/files.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
 import { listStatements } from '../kernel/state/profile.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
-import { createContext, locateProject, withProject, type CliContext } from './context.ts';
+import { createContext, locateProject, requireMainCheckout, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError } from './output.ts';
 import { basename } from 'node:path';
 
@@ -91,7 +91,9 @@ export function projectCommand(sub: string, args: ParsedArgs, ctx: CliContext = 
       return problems.length === 0 ? 0 : 1;
     }
     case 'refresh':
-      return withProject(ctx, ({ root, files, layout, store }) => {
+      return withProject(ctx, (project) => {
+        const { root, files, layout, store } = project;
+        requireMainCheckout(project, 'project refresh');
         const at = ctx.now();
         const draft = draftFromMaterial(gatherProjectMaterial(root));
         const applied = applyDiscoveryDraft(store, { draft, at, nextId: ctx.nextId });
