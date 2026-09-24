@@ -59,6 +59,20 @@ class FakeHost {
   }
 
   private n = 0;
+  /** Send a request without waiting for its answer; returns its id. */
+  fire(method: string, params: unknown): number {
+    const id = ++this.n;
+    this.replies.set(id, (m) => this.late.push(m));
+    this.write({ jsonrpc: '2.0', id, method, params });
+    return id;
+  }
+
+  readonly late: Message[] = [];
+
+  notify(method: string, params: unknown): void {
+    this.write({ jsonrpc: '2.0', method, params });
+  }
+
   request(method: string, params: unknown): Promise<Message> {
     const id = ++this.n;
     return new Promise((resolve) => {
@@ -199,6 +213,34 @@ test('accepting a deliverable asks the person the same way', async () => {
     const no: AskPerson = async () => ({ answered: false, why: 'declined' });
     const r2 = (await promote.run({ ...ctx, askPerson: no } as BrokerContext, { deliverableId, to: 'final' })) as { deliverable: { trust: string }; personRequired: boolean; asked: string };
     assert.deepEqual([r2.deliverable.trust, r2.personRequired, r2.asked], ['unchanged', true, 'the person declined the prompt']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a cancelled call stops waiting on the person at once, a queued one never runs, and neither is answered', async () => {
+  const fx = brokerFixture();
+  try {
+    externalWrite(fx, 'decision-ext');
+    const { host, served } = await session(fx, { elicitation: true, personPrompts: true, waitMs: 30_000 });
+    host.answer = () => undefined;
+    const waiting = host.fire('tools/call', { name: 'decide', arguments: { decisionId: 'decision-ext', resolution: 'approve' } });
+    const queued = host.fire('tools/call', { name: 'work', arguments: { action: 'add', title: 'never recorded' } });
+    await new Promise((r) => setTimeout(r, 100));
+    assert.equal(host.asked.length, 1, 'the first call is waiting on the person');
+    host.notify('notifications/cancelled', { requestId: queued, reason: 'changed my mind' });
+    host.notify('notifications/cancelled', { requestId: waiting, reason: 'changed my mind' });
+    const started = Date.now();
+    const ping = await host.request('ping', {});
+    assert.deepEqual((ping as { result?: unknown }).result, {});
+    assert.ok(Date.now() - started < 5_000, 'the server did not wait out the prompt');
+    await new Promise((r) => setTimeout(r, 100));
+    assert.deepEqual(host.late, [], 'cancelled calls are not answered');
+    assert.equal(getDecision(fx.broker.store, 'decision-ext')!.state, 'open');
+    const titles = (fx.broker.store.db.prepare('SELECT title FROM work_items').all() as { title: string }[]).map((w) => w.title);
+    assert.ok(!titles.includes('never recorded'), 'the queued call never ran');
+    host.close();
+    await served;
   } finally {
     fx.cleanup();
   }
