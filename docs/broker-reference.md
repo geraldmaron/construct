@@ -176,17 +176,18 @@ Surface: interactive. Reads only: no.
 
 ### `work`
 
-Native work. Query, claim, complete, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string.
+Native work. Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `ready`, `show`, `add`, `claim`, `complete`, `reopen` | yes | list, ready, show, add, claim, complete, or reopen. |
+| `action` | `list`, `ready`, `show`, `add`, `claim`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, show, add, claim, complete, release, takeover, reopen. |
 | `id` | string | no | Work id or a preserved legacy id. |
 | `title` | string | no | Title, for add. |
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
-| `reason` | string | no | Required for reopen; optional for complete. |
+| `reason` | string | no | Required for reopen and takeover; optional for complete. |
+| `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
 
 ## Headless surface
 

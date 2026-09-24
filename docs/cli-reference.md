@@ -357,12 +357,23 @@ Reads only: no.
 
 ### `construct work claim <id>`
 
-claim a ready item for this session
+claim a ready item for this session; with --token, renew your claim
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--until` | yes | ISO timestamp when the claim expires |
 | `--revision` | yes | expected revision |
+| `--token` | yes | the token your earlier claim returned, to renew it |
+
+Reads only: no.
+
+### `construct work takeover <id>`
+
+take over a claim whose holder expired, ended, or went quiet
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why the claim is being taken over |
 
 Reads only: no.
 
@@ -400,6 +411,7 @@ cancel work with a reason
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--reason` | yes | why it is cancelled |
+| `--token` | yes | claim token, when the work is claimed |
 
 Reads only: no.
 

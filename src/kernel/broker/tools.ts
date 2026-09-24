@@ -28,7 +28,7 @@ import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
-import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, reopenWork } from '../work/service.ts';
+import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -575,21 +575,26 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
   },
 });
 
-const work = define<{ action: 'list' | 'ready' | 'show' | 'add' | 'claim' | 'complete' | 'reopen'; id?: string; title?: string; kind?: string; reason?: string }, unknown>({
+const WORK_ACTIONS = ['list', 'ready', 'show', 'add', 'claim', 'complete', 'release', 'takeover', 'reopen'] as const;
+type WorkAction = (typeof WORK_ACTIONS)[number];
+const WORK_CLAIM_TERM_MS = 30 * 60_000;
+
+const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string }, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'Query, claim, complete, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string.',
+  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
   inputSchema: {
     type: 'object',
     properties: {
-      action: { type: 'string', description: 'list, ready, show, add, claim, complete, or reopen.', enum: ['list', 'ready', 'show', 'add', 'claim', 'complete', 'reopen'] },
+      action: { type: 'string', description: WORK_ACTIONS.join(', ') + '.', enum: [...WORK_ACTIONS] },
       id: { type: 'string', description: 'Work id or a preserved legacy id.' },
       title: { type: 'string', description: 'Title, for add.' },
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
-      reason: { type: 'string', description: 'Required for reopen; optional for complete.' },
+      reason: { type: 'string', description: 'Required for reopen and takeover; optional for complete.' },
+      token: { type: 'string', description: 'The token your claim returned: renews a claim, completes or releases it.' },
     },
     required: ['action'],
     additionalProperties: false,
@@ -597,14 +602,15 @@ const work = define<{ action: 'list' | 'ready' | 'show' | 'add' | 'claim' | 'com
   validate(raw) {
     closed(raw, this.inputSchema);
     return {
-      action: str(raw, 'action', { oneOf: ['list', 'ready', 'show', 'add', 'claim', 'complete', 'reopen'] }) as 'list' | 'ready' | 'show' | 'add' | 'claim' | 'complete' | 'reopen',
+      action: str(raw, 'action', { oneOf: [...WORK_ACTIONS] }) as WorkAction,
       id: str(raw, 'id', { optional: true }),
       title: str(raw, 'title', { optional: true }),
-      kind: str(raw, 'kind', { optional: true }),
+      kind: str(raw, 'kind', { optional: true, oneOf: ['outcome', 'task', 'defect', 'plan'] }),
       reason: str(raw, 'reason', { optional: true }),
+      token: str(raw, 'token', { optional: true }),
     };
   },
-  run(ctx, { action, id, title, kind, reason }) {
+  run(ctx, { action, id, title, kind, reason, token }) {
     const at = ctx.now();
     if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
     if (action === 'ready') return listReady(ctx.store, at);
@@ -615,11 +621,18 @@ const work = define<{ action: 'list' | 'ready' | 'show' | 'add' | 'claim' | 'com
     if (!id) throw new Error(`"id" is required for ${action}`);
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
+    const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
     if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at) };
-    if (action === 'claim') {
-      return claimWorkItem(ctx.store, { id: item.id, owner: ctx.actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at });
+    if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, owner: ctx.actor, until, now: at, token });
+    if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: ctx.actor, token, at, reason });
+    if (action === 'release') {
+      if (!token) throw new Error('"token" is required for release: the one your claim returned');
+      return releaseWork(ctx.store, { id: item.id, owner: ctx.actor, token, at });
     }
-    if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: ctx.actor, at, reason });
+    if (action === 'takeover') {
+      if (!reason) throw new Error('takeover needs a reason');
+      return takeoverWork(ctx.store, { id: item.id, owner: ctx.actor, until, now: at, reason });
+    }
     if (!reason) throw new Error('reopen needs a reason');
     return reopenWork(ctx.store, { id: item.id, actor: ctx.actor, at, reason });
   },

@@ -9,6 +9,7 @@
  * string alone.
  */
 
+import { randomUUID } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity } from '../state/activity.ts';
 import { parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from '../state/rows.ts';
@@ -51,8 +52,14 @@ export interface WorkItem {
   readonly supersededBy: string | null;
   readonly revision: number;
   readonly claimOwner: string | null;
+  /** Never carried on a read: only the claim that minted it returns it (see ClaimedWork). */
   readonly claimToken: string | null;
   readonly claimUntil: string | null;
+  /** The Construct session holding the claim, and the agent inside it, when known. */
+  readonly claimSession: string | null;
+  readonly claimAgent: string | null;
+  /** The worktree the holder works in, when not the main checkout. */
+  readonly claimLane: string | null;
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly completedAt: string | null;
@@ -76,6 +83,9 @@ interface Row {
   readonly claim_owner: string | null;
   readonly claim_token: string | null;
   readonly claim_until: string | null;
+  readonly claim_session: string | null;
+  readonly claim_agent: string | null;
+  readonly claim_lane: string | null;
   readonly created_at: string;
   readonly updated_at: string;
   readonly completed_at: string | null;
@@ -98,8 +108,11 @@ function toWork(row: Row): WorkItem {
     supersededBy: row.superseded_by,
     revision: row.revision,
     claimOwner: row.claim_owner,
-    claimToken: row.claim_token,
+    claimToken: null,
     claimUntil: row.claim_until,
+    claimSession: row.claim_session,
+    claimAgent: row.claim_agent,
+    claimLane: row.claim_lane,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     completedAt: row.completed_at,
@@ -338,10 +351,11 @@ export function listReady(store: StateStore, at: string, limit = 50): WorkItem[]
   const rows = store.db
     .prepare(
       `SELECT * FROM work_items
-        WHERE status NOT IN ('completed', 'cancelled', 'superseded', 'historical', 'proposed', 'in_progress', 'claimed')
+        WHERE status NOT IN ('completed', 'cancelled', 'superseded', 'historical', 'proposed', 'in_progress')
+          AND (status <> 'claimed' OR claim_until IS NULL OR claim_until <= ?)
         ORDER BY updated_at DESC, id`,
     )
-    .all() as unknown as Row[];
+    .all(at) as unknown as Row[];
   const out: WorkItem[] = [];
   for (const row of rows) {
     const w = toWork(row);
@@ -416,38 +430,136 @@ export function updateWork(
   });
 }
 
+/** A work item as its claimer sees it: the only place the claim token appears. */
+export type ClaimedWork = WorkItem & { readonly claimToken: string };
+
+/** Who is claiming: the owner string of record, and the session, agent, and lane behind it. */
+export interface Claimant {
+  readonly owner: string;
+  readonly session?: string;
+  readonly agent?: string;
+  readonly lane?: string;
+}
+
+/** How long a holder may go without any Construct call before its claim can be taken over. */
+export const CLAIM_QUIET_CAP_MS = 2 * 60 * 60_000;
+
+function liveClaim(row: Row, now: string): boolean {
+  return row.status === 'claimed' && row.claim_owner !== null && row.claim_until !== null && row.claim_until > now;
+}
+
+function rowOf(store: StateStore, id: string): Row | null {
+  return (store.db.prepare('SELECT * FROM work_items WHERE id = ?').get(id) as Row | undefined) ?? null;
+}
+
+function withToken(item: WorkItem, token: string): ClaimedWork {
+  return { ...item, claimToken: token };
+}
+
+function setClaim(store: StateStore, id: string, who: Claimant, token: string, until: string, now: string): void {
+  store.db
+    .prepare(
+      `UPDATE work_items SET status = 'claimed', claim_owner = ?, claim_token = ?, claim_until = ?,
+          claim_session = ?, claim_agent = ?, claim_lane = ?, claim_touched_at = ?,
+          revision = revision + 1, updated_at = ?
+        WHERE id = ?`,
+    )
+    .run(who.owner, token, until, who.session ?? null, who.agent ?? null, who.lane ?? null, now, now, id);
+}
+
+/**
+ * Claim a work item. The claim is exclusive until it expires: another owner is
+ * refused, and so is the same owner without the token its first claim
+ * returned (with the token, the claim is renewed). The token is a random
+ * nonce returned only here; events, activity, and reads never carry it.
+ */
 export function claimWork(
   store: StateStore,
-  input: { readonly id: string; readonly owner: string; readonly until: string; readonly now: string; readonly expectedRevision?: number },
-): WorkItem {
+  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly token?: string; readonly expectedRevision?: number },
+): ClaimedWork {
   requireNonEmpty(input.owner, 'work.claim.owner');
   requireInstant(input.until, 'work.claim.until');
   requireInstant(input.now, 'work.claim.now');
   if (input.until <= input.now) throw new Error('claim.until must be after now');
   return store.transaction(() => {
-    const current = getWork(store, input.id);
-    if (!current) throw new Error(`no work ${input.id}`);
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
     if (input.expectedRevision !== undefined && current.revision !== input.expectedRevision) {
       throw new Error(`work ${input.id} is at revision ${String(current.revision)}; expected ${String(input.expectedRevision)}`);
     }
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
-    if (current.claimOwner && current.claimUntil && current.claimUntil > input.now && current.claimOwner !== input.owner) {
-      throw new Error(`work ${input.id} is claimed by ${current.claimOwner} until ${current.claimUntil}`);
+    if (liveClaim(row, input.now)) {
+      if (row.claim_owner !== input.owner) {
+        throw new Error(`work ${input.id} is claimed by ${row.claim_owner} until ${row.claim_until}`);
+      }
+      if (input.token !== row.claim_token) {
+        throw new Error(`you already hold ${input.id} until ${row.claim_until}; pass the token your claim returned to renew it`);
+      }
+      setClaim(store, input.id, input, row.claim_token!, input.until, input.now);
+      recordEvent(store, input.id, input.now, 'renewed', input.owner, current.revision + 1, { until: input.until });
+      return withToken(getWork(store, input.id)!, row.claim_token!);
     }
     const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, input.now);
     if (!ready.ready) throw new Error(`work ${input.id} is not ready: ${ready.blockers.join('; ')}`);
-    const token = `${input.owner}:${input.now}:${String(current.revision + 1)}`;
+    const token = randomUUID();
+    setClaim(store, input.id, input, token, input.until, input.now);
+    recordEvent(store, input.id, input.now, 'claimed', input.owner, current.revision + 1, { until: input.until, session: input.session ?? null, agent: input.agent ?? null, lane: input.lane ?? null });
+    appendActivity(store, { at: input.now, kind: 'work.claimed', actor: input.owner, payload: { workId: input.id, until: input.until } });
+    return withToken(getWork(store, input.id)!, token);
+  });
+}
+
+/**
+ * Take over a claim another holder no longer works: it expired, its session
+ * ended, or its session has made no Construct call within the quiet cap. A
+ * live, active holder's claim is never taken. The reason is recorded.
+ */
+export function takeoverWork(
+  store: StateStore,
+  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly reason: string; readonly quietCapMs?: number },
+): ClaimedWork {
+  requireNonEmpty(input.reason, 'work.takeover.reason');
+  requireInstant(input.now, 'work.takeover.now');
+  return store.transaction(() => {
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
+    if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}`);
+    if (liveClaim(row, input.now) && row.claim_owner !== input.owner) {
+      const holder = row.claim_session
+        ? (store.db.prepare('SELECT last_seen_at, ended_at FROM sessions WHERE id = ?').get(row.claim_session) as { last_seen_at: string; ended_at: string | null } | undefined)
+        : undefined;
+      const quietSince = holder ? Date.parse(input.now) - Date.parse(holder.last_seen_at) : 0;
+      const gone = holder !== undefined && (holder.ended_at !== null || quietSince > (input.quietCapMs ?? CLAIM_QUIET_CAP_MS));
+      if (!gone) {
+        throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}, and that session is still active; it cannot be taken over yet`);
+      }
+    }
+    const token = randomUUID();
+    setClaim(store, input.id, input, token, input.until, input.now);
+    recordEvent(store, input.id, input.now, 'taken_over', input.owner, current.revision + 1, { from: row.claim_owner, reason: input.reason });
+    appendActivity(store, { at: input.now, kind: 'work.taken_over', actor: input.owner, payload: { workId: input.id, from: row.claim_owner, reason: input.reason } });
+    return withToken(getWork(store, input.id)!, token);
+  });
+}
+
+/**
+ * Extend a session's live claims that are past half their term, so a holder
+ * that keeps calling Construct never loses work to expiry. Returns how many
+ * were extended.
+ */
+export function renewSessionClaims(store: StateStore, input: { readonly session: string; readonly now: string; readonly termMs: number }): number {
+  const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
+  const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
+  return Number(
     store.db
       .prepare(
-        `UPDATE work_items SET status = 'claimed', claim_owner = ?, claim_token = ?, claim_until = ?,
-            revision = revision + 1, updated_at = ?
-          WHERE id = ?`,
+        `UPDATE work_items SET claim_until = ?, claim_touched_at = ?
+          WHERE claim_session = ? AND status = 'claimed' AND claim_until > ? AND claim_until < ?`,
       )
-      .run(input.owner, token, input.until, input.now, input.id);
-    recordEvent(store, input.id, input.now, 'claimed', input.owner, current.revision + 1, { until: input.until, token });
-    appendActivity(store, { at: input.now, kind: 'work.claimed', actor: input.owner, payload: { workId: input.id, token } });
-    return getWork(store, input.id)!;
-  });
+      .run(until, input.now, input.session, input.now, halfway).changes,
+  );
 }
 
 export function releaseWork(
@@ -455,15 +567,16 @@ export function releaseWork(
   input: { readonly id: string; readonly owner: string; readonly token: string; readonly at: string },
 ): WorkItem {
   return store.transaction(() => {
-    const current = getWork(store, input.id);
-    if (!current) throw new Error(`no work ${input.id}`);
-    if (current.claimOwner !== input.owner || current.claimToken !== input.token) {
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
+    if (row.claim_owner !== input.owner || row.claim_token !== input.token) {
       throw new Error(`work ${input.id} is not held under that token`);
     }
     store.db
       .prepare(
         `UPDATE work_items SET status = 'open', claim_owner = NULL, claim_token = NULL, claim_until = NULL,
-            revision = revision + 1, updated_at = ?
+            claim_session = NULL, claim_agent = NULL, claim_lane = NULL, revision = revision + 1, updated_at = ?
           WHERE id = ?`,
       )
       .run(input.at, input.id);
@@ -481,9 +594,9 @@ export function completeWork(
 
 export function cancelWork(
   store: StateStore,
-  input: { readonly id: string; readonly actor: string; readonly at: string; readonly reason: string; readonly expectedRevision?: number },
+  input: { readonly id: string; readonly actor: string; readonly at: string; readonly reason: string; readonly token?: string; readonly expectedRevision?: number },
 ): WorkItem {
-  return setTerminal(store, { id: input.id, owner: input.actor, at: input.at, reason: input.reason, expectedRevision: input.expectedRevision, status: 'cancelled' });
+  return setTerminal(store, { id: input.id, owner: input.actor, token: input.token, at: input.at, reason: input.reason, expectedRevision: input.expectedRevision, status: 'cancelled' });
 }
 
 export function reopenWork(
@@ -544,19 +657,22 @@ function setTerminal(
 ): WorkItem {
   requireInstant(input.at, 'work.at');
   return store.transaction(() => {
-    const current = getWork(store, input.id);
-    if (!current) throw new Error(`no work ${input.id}`);
+    const row = rowOf(store, input.id);
+    if (!row) throw new Error(`no work ${input.id}`);
+    const current = toWork(row);
     if (input.expectedRevision !== undefined && current.revision !== input.expectedRevision) {
       throw new Error(`work ${input.id} is at revision ${String(current.revision)}; expected ${String(input.expectedRevision)}`);
     }
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is already ${current.status}`);
-    if (input.token && (current.claimOwner !== input.owner || current.claimToken !== input.token)) {
-      throw new Error(`work ${input.id} is not held under that token`);
+    // A live claim is settled only with its token; a claim that expired no
+    // longer protects anything.
+    if (liveClaim(row, input.at) && input.token !== row.claim_token) {
+      throw new Error(`work ${input.id} is held by ${row.claim_owner} until ${row.claim_until}; ${input.token ? 'that token does not hold it' : 'settle it with the token its claim returned, or take it over once it is free'}`);
     }
     store.db
       .prepare(
         `UPDATE work_items SET status = ?, completed_at = ?, reason = ?, claim_owner = NULL, claim_token = NULL, claim_until = NULL,
-            revision = revision + 1, updated_at = ? WHERE id = ?`,
+            claim_session = NULL, claim_agent = NULL, claim_lane = NULL, revision = revision + 1, updated_at = ? WHERE id = ?`,
       )
       .run(input.status, input.at, input.reason ?? null, input.at, input.id);
     recordEvent(store, input.id, input.at, input.status, input.owner, current.revision + 1, { reason: input.reason ?? null });

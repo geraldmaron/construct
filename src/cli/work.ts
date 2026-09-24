@@ -15,6 +15,7 @@ import {
   queryWork,
   readinessOf,
   releaseWork,
+  takeoverWork,
   reopenWork,
   restoreWork,
   type WorkKind,
@@ -42,9 +43,13 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     { name: 'kind', gloss: 'outcome, task, defect, or plan (default task)', takesValue: true },
     { name: 'description', gloss: 'body of the item', takesValue: true },
   ], readOnly: false },
-  { path: ['work', 'claim'], gloss: 'claim a ready item for this session', group, positionals: ['<id>'], flags: [
+  { path: ['work', 'claim'], gloss: 'claim a ready item for this session; with --token, renew your claim', group, positionals: ['<id>'], flags: [
     { name: 'until', gloss: 'ISO timestamp when the claim expires', takesValue: true },
     { name: 'revision', gloss: 'expected revision', takesValue: true },
+    { name: 'token', gloss: 'the token your earlier claim returned, to renew it', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'takeover'], gloss: 'take over a claim whose holder expired, ended, or went quiet', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'why the claim is being taken over', takesValue: true },
   ], readOnly: false },
   { path: ['work', 'release'], gloss: 'release a claim', group, positionals: ['<id>', '<token>'], flags: [], readOnly: false },
   { path: ['work', 'complete'], gloss: 'complete claimed or owned work', group, positionals: ['<id>'], flags: [
@@ -56,6 +61,7 @@ export const WORK_SPECS: readonly CommandSpec[] = [
   ], readOnly: false },
   { path: ['work', 'cancel'], gloss: 'cancel work with a reason', group, positionals: ['<id>'], flags: [
     { name: 'reason', gloss: 'why it is cancelled', takesValue: true },
+    { name: 'token', gloss: 'claim token, when the work is claimed', takesValue: true },
   ], readOnly: false },
   { path: ['work', 'export'], gloss: 'write a versioned snapshot of work (not live state)', group, positionals: ['<file>'], flags: [], readOnly: true },
   { path: ['work', 'restore'], gloss: 'restore a snapshot; never restores grants or live leases', group, positionals: ['<file>'], flags: [], readOnly: false },
@@ -125,10 +131,19 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
           owner: actor,
           until: (args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString(),
           now: at,
+          token: args.flags.token as string | undefined,
           expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
         });
         if (args.json) writeJson(w);
-        else say(`claimed ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken ?? '')}`);
+        else say(`claimed ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+        return 0;
+      }
+      case 'takeover': {
+        const reason = args.flags.reason as string | undefined;
+        if (!reason) throw new UsageError('work takeover needs --reason');
+        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason });
+        if (args.json) writeJson(w);
+        else say(`took over ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
         return 0;
       }
       case 'release': {
@@ -160,7 +175,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       case 'cancel': {
         const reason = args.flags.reason as string | undefined;
         if (!reason) throw new UsageError('work cancel needs --reason');
-        const w = cancelWork(project.store, { id: args.positionals[0]!, actor, at, reason });
+        const w = cancelWork(project.store, { id: args.positionals[0]!, actor, at, reason, token: args.flags.token as string | undefined });
         if (args.json) writeJson(w);
         else say(`cancelled ${esc(w.id)}`);
         return 0;
