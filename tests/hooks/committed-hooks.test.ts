@@ -58,11 +58,19 @@ function payloadFor(root: string): string {
   });
 }
 
-/** Run every committed hook command in `root` the way a host would. */
-function failingHooks(root: string): HookFailure[] {
+/** Hook files git tracks in `root`; an untracked local settings file is never run by this test. */
+function trackedHookFiles(root: string): string[] {
+  const r = spawnSync('git', ['ls-files', '--', ...HOOK_FILES], { cwd: root, encoding: 'utf8' });
+  if (r.status !== 0) return HOOK_FILES.filter((f) => existsSync(join(root, f)));
+  return r.stdout.split('\n').filter(Boolean);
+}
+
+/** Run every committed hook command in `root` the way a host would, with a sterile home. */
+function failingHooks(root: string, files: readonly string[] = trackedHookFiles(root)): HookFailure[] {
   const failures: HookFailure[] = [];
   const cwd = join(root, 'src');
-  for (const file of HOOK_FILES) {
+  const home = sterile();
+  for (const file of files) {
     const path = join(root, file);
     if (!existsSync(path)) continue;
     const parsed = JSON.parse(readFileSync(path, 'utf8')) as { hooks?: unknown };
@@ -72,18 +80,21 @@ function failingHooks(root: string): HookFailure[] {
         input: payloadFor(root),
         encoding: 'utf8',
         timeout: 10_000,
-        env: { ...process.env, CLAUDE_PROJECT_DIR: root },
+        env: { PATH: process.env.PATH, HOME: home.root, XDG_CONFIG_HOME: home.paths.configDir, XDG_STATE_HOME: home.paths.stateDir, XDG_DATA_HOME: home.paths.dataDir, XDG_CACHE_HOME: home.paths.cacheDir, CLAUDE_PROJECT_DIR: root },
       });
       if (run.status !== 0) {
         failures.push({ file, command, status: run.status, output: `${run.stdout ?? ''}${run.stderr ?? ''}`.slice(0, 400) });
       }
     }
   }
+  home.cleanup();
   return failures;
 }
 
-test('every committed host hook exits 0 from a subdirectory of the checkout', () => {
-  assert.deepEqual(failingHooks(REPO), []);
+test('every committed host hook exits 0 from a subdirectory of the checkout', (t) => {
+  const files = trackedHookFiles(REPO);
+  t.diagnostic(`host hook files tracked: ${files.length ? files.join(', ') : 'none'}`);
+  assert.deepEqual(failingHooks(REPO, files), []);
 });
 
 test('the checker catches a hook whose script imports a module that no longer exists', () => {
@@ -104,7 +115,7 @@ test('the checker catches a hook whose script imports a module that no longer ex
         },
       }),
     );
-    const failures = failingHooks(fixture.root);
+    const failures = failingHooks(fixture.root, ['.claude/settings.json']);
     assert.equal(failures.length, 1);
     assert.match(failures[0]!.output, /ERR_MODULE_NOT_FOUND|Cannot find module/);
   } finally {
@@ -123,7 +134,7 @@ test('the checker catches a hook that names its script relative to the checkout 
       join(fixture.root, '.claude', 'settings.json'),
       JSON.stringify({ hooks: { PostToolUse: [{ hooks: [{ type: 'command', command: 'node scripts/ok.mjs' }] }] } }),
     );
-    assert.equal(failingHooks(fixture.root).length, 1);
+    assert.equal(failingHooks(fixture.root, ['.claude/settings.json']).length, 1);
   } finally {
     fixture.cleanup();
   }
