@@ -17,6 +17,7 @@ import { validateUserDefaults, userDefaultsPath, type ResolveConfigInput } from 
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { OperationError } from './output.ts';
+import type { TerminalFacts } from './person-channel.ts';
 
 export interface CliContext {
   readonly cwd: string;
@@ -24,6 +25,11 @@ export interface CliContext {
   readonly paths: Paths;
   /** Set for commands declared read-only: the state database is opened without write access. */
   readonly readOnly?: boolean;
+  /**
+   * What the terminal looks like, supplied only by tests. Production reads it
+   * from the process itself; a subprocess cannot set this.
+   */
+  readonly terminal?: TerminalFacts;
   now(): string;
   nextId(prefix: string): string;
 }

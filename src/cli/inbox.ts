@@ -9,6 +9,8 @@ import { type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
 import { openBroker } from './broker-context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { answeredBy, channelFor } from './person-channel.ts';
+import { PersonChannelRequiredError } from '../kernel/policy/channels.ts';
 
 const group = 'Runs';
 
@@ -58,7 +60,19 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
           else say(`recorded: ${esc(id)} → ${esc(answer)} (${s.kind} is ${s.status})`);
           return 0;
         }
-        const r = broker.workflow.decide({ decisionId: id, resolution: answer, by: 'person via cli' });
+        const channel = channelFor(ctx.env, ctx.terminal);
+        let r: ReturnType<typeof broker.workflow.decide>;
+        try {
+          r = broker.workflow.decide({ decisionId: id, resolution: answer, by: answeredBy(channel), channel });
+        } catch (error) {
+          if (error instanceof PersonChannelRequiredError) {
+            throw new OperationError(
+              `${id} needs your own answer, and this command is not running in a terminal of yours`,
+              'Run the same command yourself in a terminal outside your agent host (not the host’s built-in terminal).',
+            );
+          }
+          throw error;
+        }
         if (args.json) writeJson(r);
         else say(`recorded: ${esc(id)} → ${esc(answer)}${r.run ? `; run ${esc(r.run.id)} is ${r.run.state}` : ''}`);
         return 0;

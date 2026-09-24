@@ -128,7 +128,7 @@ expect_contains "inbox list" "$inbox_out" "proposal"
 cancel_out="$(npx --no-install construct run cancel "$run_id" 2>&1)" || fail "run cancel exited non-zero" "$cancel_out"
 expect_contains "run cancel" "$cancel_out" "cancelled"
 
-echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, final deliverable =="
+echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, acceptance held for the person =="
 loop_project="$scratch/loop"
 mkdir -p "$loop_project" && cd "$loop_project" && git init -q . && printf '# Loop\n\nA project for the packaged loop.\n' > README.md && printf '# Design\n\n- Keep the kernel host-agnostic\n' > design.md
 npm init -y --silent >/dev/null && npm install --silent "$tarball_path"
@@ -158,13 +158,19 @@ for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: sta
 const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
 const validated = status.deliverables.find((d) => d.trust === 'validated'); must(validated, 'final deliverable validated');
 await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop' });
-await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'accepted by the person' });
-const fin = await call('promote_deliverable', { deliverableId: validated.id, to: 'final' }); must(fin.deliverable.trust === 'final', 'deliverable final');
+const asked = await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'the session asks the person to accept' }); must(asked.personRequired === true && typeof asked.pendingDecision === 'string', 'acceptance waits for the person');
+const relayed = await call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }); must(relayed.personRequired === true && relayed.decision.state === 'open', 'a relayed approval of acceptance is refused');
+const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers');
+console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → resolve → start → claim/submit ×4 → status → promote to final: ok');
+console.log('loop: bootstrap → decide ×3 → remember → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
 DRIVER
-node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct" || fail "the packaged loop over the MCP server failed"
+loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
+echo "$loop_out" | grep -v '^pending=' || true
+pending_id="$(echo "$loop_out" | sed -n 's/^pending=//p')"
+loop_inbox="$(cd "$loop_project" && npx --no-install construct inbox list 2>&1)" || fail "loop inbox list exited non-zero" "$loop_inbox"
+expect_contains "loop inbox list" "$loop_inbox" "$pending_id"
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "the loop created a per-user data directory"
 cd "$project"
 

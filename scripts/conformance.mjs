@@ -166,13 +166,18 @@ async function checkHost(host) {
       const status = await s.call('run_status', { runId: started.run.id });
       record(host.id, 'managed workflow execution', status.run.state === 'succeeded' ? 'passed' : 'failed', `${steps}/4 steps; run ${status.run.state}`);
       const validated = status.deliverables.find((d) => d.trust === 'validated');
-      let final = null;
+      // The session asks for acceptance; only the person gives it. A relayed
+      // approval of that ask is refused and the deliverable's trust is unchanged.
+      let handback = null;
       if (validated) {
         await s.call('promote_deliverable', { deliverableId: validated.id, to: 'challenged' });
-        await s.call('promote_deliverable', { deliverableId: validated.id, to: 'accepted' });
-        final = await s.call('promote_deliverable', { deliverableId: validated.id, to: 'final' });
+        const asked = await s.call('promote_deliverable', { deliverableId: validated.id, to: 'accepted' });
+        const relayed = asked?.pendingDecision ? await s.call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }) : null;
+        const after = await s.call('run_status', { runId: started.run.id });
+        const still = after.deliverables.find((d) => d.id === validated.id);
+        handback = { held: asked?.personRequired === true && relayed?.personRequired === true && relayed?.decision?.state === 'open' && still?.trust === 'challenged' };
       }
-      record(host.id, 'final handback', final?.deliverable?.trust === 'final' ? 'passed' : 'failed', final ? 'deliverable final after the person’s acceptance' : 'no validated deliverable');
+      record(host.id, 'final handback', handback?.held ? 'passed' : 'failed', handback ? (handback.held ? 'acceptance waits in the inbox for the person; a relayed approval is refused' : 'a relayed acceptance changed the deliverable’s trust') : 'no validated deliverable');
       // Decision relay: a fresh project with open onboarding questions, answered through decide.
       const list = await s.rpc('tools/list');
       record(host.id, 'no nested host spawn', !list.result.tools.some((t) => /spawn|launch|run_host/.test(t.name)) ? 'passed' : 'failed', 'no tool offers to start another host; the server and broker import no process spawning');

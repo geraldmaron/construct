@@ -18,11 +18,12 @@ import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
 import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
-import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
+import { getDecision, listOpenDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
 import { addStatement, getProfile, getStatement, type Statement, type StatementKind } from '../state/profile.ts';
 import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
+import { isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
 import type { HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
 import type { RegisteredWorkflow, WorkflowStep } from '../registry/models.ts';
@@ -137,12 +138,27 @@ export interface WorkflowService {
   claimNext(input: { readonly runId?: string; readonly owner?: string; readonly leaseMs?: number }): ClaimOutcome;
   submit(input: SubmitInput): SubmitResult;
   fail(input: { readonly leased: LeasedStep; readonly error: unknown; readonly reason: string }): StepRun;
-  decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string }): { readonly decision: Decision; readonly run: WorkflowRun | null };
+  /**
+   * Resolve an open decision. `channel` says how the answer arrived; a relay
+   * (the default) cannot approve an external or destructive action or accept
+   * a deliverable, and such an approval leaves the decision open.
+   */
+  decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string; readonly channel?: DecisionChannel }): { readonly decision: Decision; readonly run: WorkflowRun | null };
   cancel(input: { readonly runId: string; readonly by: string; readonly reason: string }): WorkflowRun;
   resume(runId: string): WorkflowRun;
   status(runId: string): RunView | null;
-  /** Trust promotions a person or a challenge performs; steps never do. */
-  promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly verification?: unknown; readonly reason?: string }): Deliverable;
+  /** Trust promotions a person or a challenge performs; steps never do. Accepted and final need a person channel. */
+  promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly channel?: DecisionChannel; readonly verification?: unknown; readonly reason?: string }): Deliverable;
+  /** Ask the person to accept or finalize a deliverable: an inbox approval they answer directly. Reuses an open one. */
+  requestPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly reason?: string }): Decision;
+}
+
+/** What an approval to move a deliverable's trust carries. */
+interface PromotionSubject {
+  readonly deliverableId: string;
+  readonly to: TrustState;
+  readonly reason: string | null;
+  readonly requestedBy: string;
 }
 
 function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>, trigger: string): string {
@@ -298,7 +314,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return out;
   }
 
-  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string): Decision | null {
+  /**
+   * Gate a step for the executor about to claim it. An approval covers the
+   * executor it was given to, so a different session claiming the same step
+   * gets its own decision rather than inheriting another session's grant.
+   */
+  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string, executorId: string): Decision | 'held' | null {
     if (step.tier === 'observe' || step.tier === 'draft') return null;
     const request: ActionRequest = {
       tier: step.tier,
@@ -306,13 +327,21 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       targetResource: step.tier === 'project_write' ? run.id : ((run.input as Record<string, unknown> | null)?.target as string | undefined) ?? `${run.workflowId}:${step.id}`,
       operation: `${step.title} (${run.workflowId}/${step.id})`,
       workflowId: run.workflowId,
-      executorId: run.executorId,
+      executorId,
       runId: run.id,
     };
     const decision = evaluateAction(store, request, policyContext(run.interactionClass, at));
     if (decision.allowed) return null;
     const open = listOpenDecisions(store, run.id).find((d) => d.stepRunId === stepRun.id);
     if (open) return open;
+    // The person approved this step for a different executor. It waits for that
+    // executor; another claimer neither inherits the approval nor gets to put a
+    // fresh question in front of the one the person already answered.
+    const approvedForAnother = listStepDecisions(store, stepRun.id).some((d) => {
+      const req = (d.subject as { request?: ActionRequest } | null)?.request;
+      return d.kind === 'approval' && d.state === 'resolved' && d.resolution === 'approve' && req !== undefined && req.executorId !== executorId;
+    });
+    if (approvedForAnother) return 'held';
     const raised = raiseDecision(store, {
       id: deps.nextId('decision'),
       kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
@@ -326,6 +355,35 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (stepRun.state === 'ready') transitionStep(store, { id: stepRun.id, to: 'waiting_for_decision', at, reason: 'awaiting approval' });
     if (run.state === 'ready' || run.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
     return raised;
+  }
+
+  /** Everything a trust move to `to` must satisfy, checked before the person is asked and again when it applies. */
+  function assertPromotable(deliverableId: string, to: TrustState): Deliverable {
+    const current = getDeliverable(store, deliverableId);
+    if (!current) throw new Error(`no deliverable ${deliverableId}`);
+    if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
+    const run = getRun(store, current.runId);
+    if (run && (to === 'accepted' || to === 'final')) {
+      const workflow = deps.workflows.get(run.workflowId);
+      const needsChallenge = judgmentRequired(workflow?.manifest.deliverable.challenge ?? false, judgmentOf(run));
+      if (needsChallenge && to === 'accepted' && current.trustState !== 'challenged') {
+        throw new Error('this outcome has architectural or irreversible consequences; it is accepted only after a recorded challenge');
+      }
+      if (activeContradictionCount(store) > 0) {
+        throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
+      }
+      const body = current.body && typeof current.body === 'object' ? (current.body as Record<string, unknown>) : null;
+      if (body) {
+        const facts = runValidators(['no_placeholder_facts'], { output: body, expectedKeys: [], evidence: [], resolvableRefs: new Set() });
+        if (facts[0] && !facts[0].ok) throw new Error(facts[0].problems.join('; '));
+      }
+    }
+    return current;
+  }
+
+  function applyPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly at: string; readonly verification?: unknown; readonly reason?: string | null }): Deliverable {
+    assertPromotable(input.deliverableId, input.to);
+    return setTrustState(store, { id: input.deliverableId, trustState: input.to, actor: input.by, at: input.at, verification: input.verification, reason: input.reason ?? undefined });
   }
 
   return {
@@ -492,11 +550,17 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         advance(run.id, at);
         const manifestSteps = stepsOf(run);
+        let heldForAnother = false;
         for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
           const step = manifestSteps.find((s) => s.id === sr.stepId)!;
-          const decision = gateStep(getRun(store, run.id)!, sr, step, at);
+          const decision = gateStep(getRun(store, run.id)!, sr, step, at, who);
+          if (decision === 'held') {
+            heldForAnother = true;
+            break;
+          }
           if (decision) return { packet: null, waitingOn: { kind: 'decision', decision } };
         }
+        if (heldForAnother) continue;
         // Steps the kernel performs itself: deterministic drift detection needs no host.
         let ranKernelStep = false;
         for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
@@ -617,15 +681,23 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return failed;
     },
 
-    decide({ decisionId, resolution, by }) {
+    decide({ decisionId, resolution, by, channel = 'relay' }) {
       const at = deps.now();
       return store.transaction(() => {
         const decision = getDecision(store, decisionId);
         if (!decision) throw new Error(`no decision ${decisionId}`);
+        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject };
+        if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
+          if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {
+            throw new PersonChannelRequiredError(`Approving ${subject.request.tier} (${subject.request.operation})`, decisionId);
+          }
+          if (subject.promote) throw new PersonChannelRequiredError(`Moving deliverable ${subject.promote.deliverableId} to ${subject.promote.to}`, decisionId);
+        }
         const resolved = resolveDecision(store, { id: decisionId, resolution, by, at });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean };
-        if (decision.kind === 'approval' && subject.request) {
+        if (decision.kind === 'approval' && subject.promote) {
+          if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
+        } else if (decision.kind === 'approval' && subject.request) {
           if (resolution === 'approve') {
             approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at });
             if (decision.stepRunId) transitionStep(store, { id: decision.stepRunId, to: 'ready', at });
@@ -706,28 +778,32 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return { run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
     },
 
-    promote({ deliverableId, to, by, verification, reason }) {
-      const at = deps.now();
-      const current = getDeliverable(store, deliverableId);
-      if (!current) throw new Error(`no deliverable ${deliverableId}`);
-      if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
-      const run = getRun(store, current.runId);
-      if (run && (to === 'accepted' || to === 'final')) {
-        const workflow = deps.workflows.get(run.workflowId);
-        const needsChallenge = judgmentRequired(workflow?.manifest.deliverable.challenge ?? false, judgmentOf(run));
-        if (needsChallenge && to === 'accepted' && current.trustState !== 'challenged') {
-          throw new Error('this outcome has architectural or irreversible consequences; it is accepted only after a recorded challenge');
-        }
-        if (activeContradictionCount(store) > 0) {
-          throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
-        }
-        const body = current.body && typeof current.body === 'object' ? (current.body as Record<string, unknown>) : null;
-        if (body) {
-          const facts = runValidators(['no_placeholder_facts'], { output: body, expectedKeys: [], evidence: [], resolvableRefs: new Set() });
-          if (facts[0] && !facts[0].ok) throw new Error(facts[0].problems.join('; '));
-        }
+    promote({ deliverableId, to, by, channel = 'relay', verification, reason }) {
+      if (PERSON_ONLY_TRUST.has(to) && !isPersonChannel(channel)) {
+        throw new PersonChannelRequiredError(`Moving deliverable ${deliverableId} to ${to}`, null);
       }
-      return setTrustState(store, { id: deliverableId, trustState: to, actor: by, at, verification, reason });
+      return applyPromotion({ deliverableId, to, by, at: deps.now(), verification, reason });
+    },
+
+    requestPromotion({ deliverableId, to, by, reason }) {
+      const at = deps.now();
+      return store.transaction(() => {
+        const current = assertPromotable(deliverableId, to);
+        const open = listOpenDecisions(store, current.runId).find((d) => {
+          const p = (d.subject as { promote?: PromotionSubject } | null)?.promote;
+          return d.kind === 'approval' && p?.deliverableId === deliverableId && p.to === to;
+        });
+        if (open) return open;
+        return raiseDecision(store, {
+          id: deps.nextId('decision'),
+          kind: 'approval',
+          question: `Move deliverable ${deliverableId} (${current.kind}) from ${current.trustState} to ${to}?`,
+          runId: current.runId,
+          options: ['approve', 'decline'],
+          subject: { promote: { deliverableId, to, reason: reason ?? null, requestedBy: by } satisfies PromotionSubject },
+          at,
+        });
+      });
     },
   };
 }
