@@ -364,8 +364,22 @@ claim a ready item for this session; with --token, renew your claim
 | `--until` | yes | ISO timestamp when the claim expires |
 | `--revision` | yes | expected revision |
 | `--token` | yes | the token your earlier claim returned, to renew it |
+| `--paths` | yes | comma-separated files or directories (ending in /) to reserve, relative to the repository root |
+| `--shared` | no | reserve the paths shared rather than exclusive |
 
 Reads only: no.
+
+### `construct work check`
+
+whether paths are reserved by other work; exits 1 on a collision in this checkout
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--paths` | yes | comma-separated files or directories, relative to the repository root |
+| `--staged` | no | check the files staged for commit |
+| `--work` | yes | your own work item, left out of the check |
+
+Reads only: yes.
 
 ### `construct work takeover <id>`
 

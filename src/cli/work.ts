@@ -1,6 +1,6 @@
 /**
- * cli/work.ts — native work ledger: query, ready, claim, complete, reopen,
- * export, restore, and one-way import of a frozen legacy tracker snapshot.
+ * cli/work.ts — native work ledger: query, ready, claim, check reserved
+ * paths, complete, reopen, export, restore, and one-way import of a frozen legacy tracker snapshot.
  */
 
 import {
@@ -21,6 +21,7 @@ import {
   type WorkKind,
   type WorkStatus,
 } from '../kernel/work/service.ts';
+import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type Overlap } from '../kernel/work/leases.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
 import { processAlive } from './broker-context.ts';
 import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
@@ -29,8 +30,31 @@ import { createContext, type CliContext } from './context.ts';
 import { withProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 const group = 'Work';
+
+function pathsFlag(args: ParsedArgs): string[] | undefined {
+  const raw = args.flags.paths as string | undefined;
+  if (raw === undefined) return undefined;
+  try {
+    return raw.split(',').map((p) => p.trim()).filter(Boolean).map(normalizeLeasePath);
+  } catch (e) {
+    throw new UsageError((e as Error).message);
+  }
+}
+
+/** The files staged for commit in the checkout holding `cwd`, relative to its top level. */
+function stagedPaths(cwd: string, env: NodeJS.ProcessEnv): string[] {
+  const r = spawnSync('git', ['diff', '--cached', '--name-only', '-z'], { cwd, env, encoding: 'utf8' });
+  if (r.status !== 0) throw new OperationError(`git could not list the staged files: ${(r.stderr || r.error?.message || '').trim()}`);
+  return r.stdout.split('\0').filter(Boolean).map(normalizeLeasePath);
+}
+
+function describeOverlap(o: Overlap): string {
+  const where = o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : '';
+  return `${esc(o.path)} is under ${esc(o.heldPath)}, held by ${esc(o.holder)} for ${esc(o.workId)} "${esc(o.workTitle)}" until ${o.until}${where}`;
+}
 
 /** The longest a claim made from the command line may run, whatever --until asks. */
 const CLI_CLAIM_CEILING_MS = 24 * 60 * 60_000;
@@ -52,7 +76,14 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     { name: 'until', gloss: 'ISO timestamp when the claim expires', takesValue: true },
     { name: 'revision', gloss: 'expected revision', takesValue: true },
     { name: 'token', gloss: 'the token your earlier claim returned, to renew it', takesValue: true },
+    { name: 'paths', gloss: 'comma-separated files or directories (ending in /) to reserve, relative to the repository root', takesValue: true },
+    { name: 'shared', gloss: 'reserve the paths shared rather than exclusive', takesValue: false },
   ], readOnly: false },
+  { path: ['work', 'check'], gloss: 'whether paths are reserved by other work; exits 1 on a collision in this checkout', group, positionals: [], flags: [
+    { name: 'paths', gloss: 'comma-separated files or directories, relative to the repository root', takesValue: true },
+    { name: 'staged', gloss: 'check the files staged for commit', takesValue: false },
+    { name: 'work', gloss: 'your own work item, left out of the check', takesValue: true },
+  ], readOnly: true },
   { path: ['work', 'takeover'], gloss: 'take over a claim whose holder expired, ended, or went quiet', group, positionals: ['<id>'], flags: [
     { name: 'reason', gloss: 'why the claim is being taken over', takesValue: true },
   ], readOnly: false },
@@ -113,12 +144,14 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         const w = getWork(project.store, id) ?? getWorkByLegacyId(project.store, id);
         if (!w) throw new OperationError(`no work ${id}`);
         const ready = readinessOf(project.store, w, at);
-        if (args.json) writeJson({ ...w, readiness: ready });
+        const leases = leasesFor(project.store, w.id);
+        if (args.json) writeJson({ ...w, readiness: ready, leases });
         else {
           say(`${esc(w.id)}  ${w.status}  ${w.kind}  rev ${String(w.revision)}`);
           say(esc(w.title));
           if (w.description) say(esc(w.description));
           if (!ready.ready) say(`not ready: ${ready.blockers.map(esc).join('; ')}`);
+          if (leases.length > 0) say(`reserves (${leases[0]!.mode}): ${leases.map((l) => esc(l.path)).join(', ')}`);
         }
         return 0;
       }
@@ -150,20 +183,40 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         const w = claimWork(project.store, {
           id: args.positionals[0]!,
           owner: actor,
+          lane: project.lane?.root,
+          branch: project.lane?.branch ?? null,
           until: requested > ceiling ? ceiling : requested,
           now: at,
           token: args.flags.token as string | undefined,
           expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
+          paths: pathsFlag(args),
+          mode: boolFlag(args, 'shared') ? 'shared' : 'exclusive',
         });
         if (args.json) writeJson(w);
-        else say(`claimed ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+        else {
+          say(`claimed ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+          if (w.leases?.length) say(`reserved: ${w.leases.map((l) => esc(l.path)).join(', ')}`);
+          for (const o of w.mergeRisks ?? []) say(`merge risk: ${describeOverlap(o)}`);
+        }
         return 0;
+      }
+      case 'check': {
+        const paths = boolFlag(args, 'staged') ? stagedPaths(ctx.cwd, ctx.env) : pathsFlag(args);
+        if (!paths) throw new UsageError('work check needs --paths or --staged');
+        const own = args.flags.work as string | undefined;
+        const exclude = own ? (getWork(project.store, own) ?? getWorkByLegacyId(project.store, own))?.id ?? own : undefined;
+        const overlaps = paths.length === 0 ? [] : findOverlaps(project.store, { paths, laneRoot: project.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: exclude });
+        const collisions = overlaps.filter((o) => o.kind === 'collision');
+        if (args.json) writeJson({ clear: collisions.length === 0, collisions, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') });
+        else if (overlaps.length === 0) say(`clear: ${String(paths.length)} path(s), none reserved by other work`);
+        else for (const o of overlaps) say(`${o.kind === 'collision' ? 'reserved here' : 'merge risk'}: ${describeOverlap(o)}`);
+        return collisions.length === 0 ? 0 : 1;
       }
       case 'takeover': {
         personOnly('Taking over work');
         const reason = args.flags.reason as string | undefined;
         if (!reason) throw new UsageError('work takeover needs --reason');
-        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason, processAlive });
+        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason, processAlive });
         if (args.json) writeJson(w);
         else say(`took over ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
         return 0;
