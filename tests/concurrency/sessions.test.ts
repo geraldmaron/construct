@@ -65,3 +65,36 @@ test('two sessions of one host hold separate identities, and a claim is theirs a
     fx.cleanup();
   }
 });
+
+test('nothing a session writes over MCP is recorded as the person', { timeout: 60_000 }, async () => {
+  const fx = sterile();
+  try {
+    const { dir, db } = initProject(fx);
+    const s = new Session(dir, envFor(fx));
+    try {
+      await s.request('initialize', INITIALIZE);
+      const boot = await s.ok('bootstrap');
+      const question = (boot.profile as { openQuestions: Array<{ id: string; options: string[] | null }> }).openQuestions.find((q) => q.options);
+      if (question) await s.ok('decide', { decisionId: question.id, resolution: question.options![0] });
+      await s.ok('remember', { kind: 'decision', text: 'We keep one store per project.' });
+      const added = await s.ok('work', { action: 'add', title: 'attributed item' });
+      const claimed = await s.ok('work', { action: 'claim', id: added.id, agent: 'helper' });
+      await s.ok('work', { action: 'complete', id: added.id, token: claimed.claimToken, agent: 'helper' });
+    } finally {
+      await s.close();
+    }
+    const check = new DatabaseSync(db, { readOnly: true });
+    try {
+      const asPerson = check.prepare(`SELECT kind, actor, channel FROM activity_events WHERE session_id IS NOT NULL AND actor LIKE '%person%' AND (channel IS NULL OR channel <> 'tty_cli')`).all();
+      assert.deepEqual(asPerson, [], 'no MCP-written row names the person without a person channel');
+      const byHelper = check.prepare(`SELECT COUNT(*) AS n FROM activity_events WHERE agent = 'helper'`).get() as { n: number };
+      assert.ok(byHelper.n >= 1, 'an agent that names itself is recorded on its rows');
+      const agent = check.prepare(`SELECT attestation FROM session_agents WHERE agent = 'helper'`).get() as { attestation: string };
+      assert.equal(agent.attestation, 'reported');
+    } finally {
+      check.close();
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
