@@ -10,6 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { MAIN_LANE, findOverlaps, releasePaths, reservePaths, transferPaths, type CrossLanePolicy, type LeaseMode, type Overlap, type PathLease } from './leases.ts';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity } from '../state/activity.ts';
 import { parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from '../state/rows.ts';
@@ -431,7 +432,28 @@ export function updateWork(
 }
 
 /** A work item as its claimer sees it: the only place the claim token appears. */
-export type ClaimedWork = WorkItem & { readonly claimToken: string };
+export type ClaimedWork = WorkItem & {
+  readonly claimToken: string;
+  /** The paths this claim reserved, when it named any. */
+  readonly leases?: readonly PathLease[];
+  /** Overlaps with reservations in other worktrees, accepted as merge risks. */
+  readonly mergeRisks?: readonly Overlap[];
+  /** After a takeover: where the inherited reservations now meet other claims'. */
+  readonly overlaps?: readonly Overlap[];
+};
+
+/** What a claim reserves: repository paths, how exclusively, and in which checkout. */
+export interface Reservation {
+  readonly paths?: readonly string[];
+  readonly mode?: LeaseMode;
+  readonly branch?: string | null;
+  readonly crossLane?: CrossLanePolicy;
+}
+
+/** The checkout a claimant works in, as reservations compare it: its worktree, or the main checkout. */
+function laneKey(lane: string | undefined): string {
+  return lane ?? MAIN_LANE;
+}
 
 /** Who is claiming: the owner string of record, and the session, agent, and lane behind it. */
 export interface Claimant {
@@ -475,7 +497,7 @@ function setClaim(store: StateStore, id: string, who: Claimant, token: string, u
  */
 export function claimWork(
   store: StateStore,
-  input: Claimant & { readonly id: string; readonly until: string; readonly now: string; readonly token?: string; readonly expectedRevision?: number },
+  input: Claimant & Reservation & { readonly id: string; readonly until: string; readonly now: string; readonly token?: string; readonly expectedRevision?: number },
 ): ClaimedWork {
   requireNonEmpty(input.owner, 'work.claim.owner');
   requireInstant(input.until, 'work.claim.until');
@@ -497,17 +519,48 @@ export function claimWork(
         throw new Error(`you already hold ${input.id} until ${row.claim_until}; pass the token your claim returned to renew it`);
       }
       setClaim(store, input.id, input, row.claim_token!, input.until, input.now);
+      extendPaths(store, input.id, input.until);
       recordEvent(store, input.id, input.now, 'renewed', input.owner, current.revision + 1, { until: input.until });
-      return withToken(getWork(store, input.id)!, row.claim_token!);
+      return { ...withToken(getWork(store, input.id)!, row.claim_token!), ...reserveFor(store, input) };
     }
     const ready = readinessOf(store, { ...current, claimOwner: null, claimUntil: null }, input.now);
     if (!ready.ready) throw new Error(`work ${input.id} is not ready: ${ready.blockers.join('; ')}`);
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
+    // A new claim starts with no reservations: an expired holder's go with its claim.
+    releasePaths(store, { workId: input.id, now: input.now, reason: 'claimed again' });
     recordEvent(store, input.id, input.now, 'claimed', input.owner, current.revision + 1, { until: input.until, session: input.session ?? null, agent: input.agent ?? null, lane: input.lane ?? null });
-    appendActivity(store, { at: input.now, kind: 'work.claimed', actor: input.owner, payload: { workId: input.id, until: input.until } });
-    return withToken(getWork(store, input.id)!, token);
+    const reserved = reserveFor(store, input);
+    appendActivity(store, { at: input.now, kind: 'work.claimed', actor: input.owner, payload: { workId: input.id, until: input.until, paths: reserved.leases?.map((l) => l.path) ?? [] } });
+    return { ...withToken(getWork(store, input.id)!, token), ...reserved };
   });
+}
+
+/** Keep a work item's reservations' recorded term in step with its claim. */
+function extendPaths(store: StateStore, workId: string, until: string): void {
+  store.db.prepare('UPDATE path_leases SET until = ? WHERE work_id = ? AND released_at IS NULL').run(until, workId);
+}
+
+/** Reserve the paths a claim names, if any; a collision throws and rolls the claim back. */
+function reserveFor(
+  store: StateStore,
+  input: Claimant & Reservation & { readonly id: string; readonly until: string; readonly now: string },
+): { leases?: readonly PathLease[]; mergeRisks?: readonly Overlap[] } {
+  if (!input.paths || input.paths.length === 0) return {};
+  const r = reservePaths(store, {
+    workId: input.id,
+    owner: input.owner,
+    sessionId: input.session ?? input.owner,
+    agent: input.agent ?? null,
+    laneRoot: laneKey(input.lane),
+    branch: input.branch ?? null,
+    paths: input.paths,
+    mode: input.mode ?? 'exclusive',
+    until: input.until,
+    now: input.now,
+    crossLane: input.crossLane,
+  });
+  return { leases: r.leases, mergeRisks: r.mergeRisks };
 }
 
 /**
@@ -522,6 +575,7 @@ export function takeoverWork(
     readonly until: string;
     readonly now: string;
     readonly reason: string;
+    readonly branch?: string | null;
     readonly quietCapMs?: number;
     /**
      * Whether the holder's process still runs, when the caller can tell (same
@@ -560,9 +614,16 @@ export function takeoverWork(
     }
     const token = randomUUID();
     setClaim(store, input.id, input, token, input.until, input.now);
+    const leases = transferPaths(store, { workId: input.id, sessionId: input.session ?? input.owner, agent: input.agent ?? null, laneRoot: laneKey(input.lane), branch: input.branch, until: input.until });
     recordEvent(store, input.id, input.now, 'taken_over', input.owner, current.revision + 1, { from: row.claim_owner, reason: input.reason });
     appendActivity(store, { at: input.now, kind: 'work.taken_over', actor: input.owner, payload: { workId: input.id, from: row.claim_owner, reason: input.reason } });
-    return withToken(getWork(store, input.id)!, token);
+    const claimed = withToken(getWork(store, input.id)!, token);
+    if (leases.length === 0) return claimed;
+    // The reservations move with the work. Where they now meet another claim's
+    // in the taker's checkout, the taker is told rather than refused: the work
+    // was abandoned, and rescuing it is the point.
+    const overlaps = findOverlaps(store, { paths: leases.map((l) => l.path), laneRoot: laneKey(input.lane), now: input.now, mode: leases[0]!.mode, excludeWorkId: input.id, owner: input.owner });
+    return { ...claimed, leases, overlaps };
   });
 }
 
@@ -574,7 +635,7 @@ export function takeoverWork(
 export function renewSessionClaims(store: StateStore, input: { readonly session: string; readonly now: string; readonly termMs: number }): number {
   const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
   const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
-  return Number(
+  const changed = Number(
     store.db
       .prepare(
         `UPDATE work_items SET claim_until = ?, claim_touched_at = ?
@@ -582,6 +643,15 @@ export function renewSessionClaims(store: StateStore, input: { readonly session:
       )
       .run(until, input.now, input.session, input.now, halfway).changes,
   );
+  if (changed > 0) {
+    store.db
+      .prepare(
+        `UPDATE path_leases SET until = ?
+          WHERE released_at IS NULL AND work_id IN (SELECT id FROM work_items WHERE claim_session = ? AND status = 'claimed' AND claim_until = ?)`,
+      )
+      .run(until, input.session, until);
+  }
+  return changed;
 }
 
 export function releaseWork(
@@ -602,6 +672,7 @@ export function releaseWork(
           WHERE id = ?`,
       )
       .run(input.at, input.id);
+    releasePaths(store, { workId: input.id, now: input.at, reason: 'released' });
     recordEvent(store, input.id, input.at, 'released', input.owner, current.revision + 1, {});
     return getWork(store, input.id)!;
   });
@@ -697,6 +768,7 @@ function setTerminal(
             claim_session = NULL, claim_agent = NULL, claim_lane = NULL, revision = revision + 1, updated_at = ? WHERE id = ?`,
       )
       .run(input.status, input.at, input.reason ?? null, input.at, input.id);
+    releasePaths(store, { workId: input.id, now: input.at, reason: input.status });
     recordEvent(store, input.id, input.at, input.status, input.owner, current.revision + 1, { reason: input.reason ?? null });
     appendActivity(store, { at: input.at, kind: `work.${input.status}`, actor: input.owner, payload: { workId: input.id } });
     return getWork(store, input.id)!;

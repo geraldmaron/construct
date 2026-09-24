@@ -29,6 +29,7 @@ import { bool, closed, list, num, obj, record, str, type ToolDefinition, ToolInp
 import { recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
+import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
@@ -581,7 +582,7 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
   },
 });
 
-const WORK_ACTIONS = ['list', 'ready', 'show', 'add', 'claim', 'complete', 'release', 'takeover', 'reopen'] as const;
+const WORK_ACTIONS = ['list', 'ready', 'show', 'add', 'claim', 'check', 'complete', 'release', 'takeover', 'reopen'] as const;
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
@@ -590,17 +591,45 @@ const WORK_CLAIM_TERM_MS = 30 * 60_000;
  * session are two claimants; an agent the host did not vouch for is recorded
  * as reported. Without a session (a caller with none) the actor stands in.
  */
-function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string): { owner: string; session?: string; agent?: string; lane?: string } {
-  if (!ctx.sessionId) return { owner: ctx.actor };
-  const name = agent?.trim() ? agent.trim().slice(0, 80) : 'main';
-  if (name !== 'main') recordAgent(ctx.store, { sessionId: ctx.sessionId, agent: name, attestation: 'reported', at, laneRoot: ctx.lane?.root });
-  return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, lane: ctx.lane?.root };
+function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
+  const who = claimantOf(ctx, agent);
+  if (who.session && who.agent !== 'main') recordAgent(ctx.store, { sessionId: who.session, agent: who.agent!, attestation: 'reported', at, laneRoot: ctx.lane?.root });
+  return who;
 }
 
-const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string }, unknown>({
+/** The claimant an agent of this session is, without recording anything. */
+function claimantOf(ctx: BrokerContext, agent: string | undefined): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
+  const where = { lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null };
+  if (!ctx.sessionId) return { owner: ctx.actor, ...where };
+  const name = agent?.trim() ? agent.trim().slice(0, 80) : 'main';
+  return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, ...where };
+}
+
+const MAX_LEASE_PATHS = 200;
+
+function leasePaths(raw: Record<string, unknown>): string[] {
+  const items = list(raw, 'paths');
+  if (items.length > MAX_LEASE_PATHS) throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`);
+  return items.map((p) => {
+    if (typeof p !== 'string' || !p.trim()) throw new ToolInputError('"paths" holds non-empty strings');
+    try {
+      return normalizeLeasePath(p);
+    } catch (e) {
+      throw new ToolInputError((e as Error).message);
+    }
+  });
+}
+
+/** Overlaps with other work's reservations, split into what blocks and what only risks a merge. */
+function overlapReport(overlaps: readonly Overlap[]): { clear: boolean; collisions: readonly Overlap[]; mergeRisks: readonly Overlap[] } {
+  const collisions = overlaps.filter((o) => o.kind === 'collision');
+  return { clear: collisions.length === 0, collisions, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') };
+}
+
+const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string; paths?: string[]; mode?: LeaseMode }, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
+  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -614,6 +643,8 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       reason: { type: 'string', description: 'Required for reopen and takeover; optional for complete.' },
       token: { type: 'string', description: 'The token your claim returned: renews a claim, completes or releases it.' },
       agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
+      paths: { type: 'array', items: { type: 'string' }, description: 'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.' },
+      mode: { type: 'string', description: 'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.', enum: [...LEASE_MODES] },
     },
     required: ['action'],
     additionalProperties: false,
@@ -628,11 +659,19 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
       agent: str(raw, 'agent', { optional: true }),
+      paths: raw.paths === undefined ? undefined : leasePaths(raw),
+      mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
     };
   },
-  run(ctx, { action, id, title, kind, reason, token, agent }) {
+  run(ctx, { action, id, title, kind, reason, token, agent, paths, mode }) {
     const at = ctx.now();
     if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
+    if (action === 'check') {
+      if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
+      const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
+      const { owner } = claimantOf(ctx, agent);
+      return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude, owner }));
+    }
     if (action === 'ready') return listReady(ctx.store, at);
     if (action === 'add') {
       if (!title) throw new Error('"title" is required for add');
@@ -643,8 +682,8 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
     const who = claimantFor(ctx, agent, at);
-    if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at) };
-    if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token });
+    if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at), leases: leasesFor(ctx.store, item.id) };
+    if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });
     if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: who.owner, token, at, reason });
     if (action === 'release') {
       if (!token) throw new Error('"token" is required for release: the one your claim returned');

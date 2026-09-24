@@ -71,6 +71,13 @@ Construct keeps them from stepping on each other:
   to renew, complete, or release it. Another session's claim is refused until
   it expires or that session goes quiet for two hours; taking it over records
   why.
+- A claim can reserve the files or directories it will change. In one
+  checkout, another claim cannot take a path someone holds exclusively; in
+  another worktree the overlap comes back as a merge risk naming that
+  checkout and branch, because each worktree has its own copy of the files.
+  Reservations end with the claim. `construct work check --paths=...` or
+  `--staged` says what is reserved before you edit or commit, and exits 1 on
+  a collision in this checkout.
 - Git worktrees of the project share its one store in the main checkout, so
   an agent in a worktree sees the same work. `construct init` in a worktree is
   refused, because it would start a second store.
