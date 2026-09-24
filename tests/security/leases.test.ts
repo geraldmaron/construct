@@ -72,3 +72,18 @@ test('a session that keeps calling has its leases extended past half their term'
     fx.cleanup();
   }
 });
+
+test('claiming a step and walking away cannot fail it for everyone else', () => {
+  const fx = brokerFixture();
+  try {
+    const store = fx.broker.store;
+    createRun(store, { workflowId: 'design-conformance', workflowVersion: '1.0.0', interactionClass: 'manage', triggerKind: 'manual', executorKind: 'interactive', executorId: 'session:claude-code', input: {}, id: 'run-d', idempotencyKey: 'k-d', at: '2026-09-24T12:00:00.000Z' });
+    addStep(store, { id: 's-d', runId: 'run-d', stepId: 'a', ordinal: 0, permissionTier: 'draft', ready: true, maxAttempts: 1, at: '2026-09-24T12:00:00.000Z' });
+    claimStep(store, { owner: 'session:claude-code:ses_careless', now: '2026-09-24T12:00:00.000Z', leaseUntil: '2026-09-24T12:01:00.000Z', runId: 'run-d' });
+    const next = claimStep(store, { owner: 'session:cursor:ses_other', now: '2026-09-24T12:02:00.000Z', leaseUntil: '2026-09-24T12:03:00.000Z', runId: 'run-d' });
+    assert.ok(next, 'the abandoned lease expired and the step went to the next session');
+    assert.equal(getStep(store, 's-d')!.state, 'leased');
+  } finally {
+    fx.cleanup();
+  }
+});

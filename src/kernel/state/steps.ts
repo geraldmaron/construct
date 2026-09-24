@@ -71,6 +71,24 @@ export interface StepRun {
   readonly finishedAt: string | null;
 }
 
+/**
+ * How many attempts may end with their lease running out before the step
+ * fails. A holder that crashes or walks away does not spend the retry budget
+ * the step's own failures do, but a step whose every holder crashes still ends.
+ */
+export const EXPIRED_ATTEMPTS_ALLOWED = 3;
+
+const FAILED = `(SELECT COUNT(*) FROM step_attempts a WHERE a.step_run_id = step_runs.id AND a.outcome = 'failed')`;
+const EXPIRED = `(SELECT COUNT(*) FROM step_attempts a WHERE a.step_run_id = step_runs.id AND a.outcome = 'expired')`;
+
+function failedAttempts(store: StateStore, stepRunId: string): number {
+  return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'failed'`).get(stepRunId) as { n: number }).n;
+}
+
+function expiredAttempts(store: StateStore, stepRunId: string): number {
+  return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'expired'`).get(stepRunId) as { n: number }).n;
+}
+
 export interface LeasedStep extends StepRun {
   readonly leaseOwner: string;
   readonly leaseUntil: string;
@@ -258,8 +276,8 @@ export function claimStep(
             SET state = 'leased', lease_owner = ?, lease_until = ?, lease_nonce = ?, attempts = attempts + 1, updated_at = ?
           WHERE id = (
             SELECT id FROM step_runs
-             WHERE ((state = 'ready' AND attempts < max_attempts)
-                 OR (state = 'leased' AND lease_until <= ? AND attempts < max_attempts))
+             WHERE ((state = 'ready' AND ${FAILED} < max_attempts AND ${EXPIRED} < ${EXPIRED_ATTEMPTS_ALLOWED})
+                 OR (state = 'leased' AND lease_until <= ? AND ${FAILED} < max_attempts AND ${EXPIRED} + 1 < ${EXPIRED_ATTEMPTS_ALLOWED}))
                AND (? IS NULL OR run_id = ?)
                AND (? IS NULL OR id = ?)
              ORDER BY ordinal, created_at, id
@@ -294,9 +312,10 @@ export function claimStep(
 }
 
 /**
- * Reclaim expired leases: fail when the attempt budget is spent, otherwise
- * return the step to `ready` so a later claim can start a new attempt.
- * Expiry counts; it does not reset the counter.
+ * Reclaim expired leases: return the step to `ready` so a later claim can
+ * start a new attempt, or fail it when its budget is spent. A lease that ran
+ * out is not the step's own failure, so it spends the expiry allowance, not
+ * the step's retry budget.
  */
 export function expireDeadLeases(store: StateStore, now: string, runId?: string): number {
   requireInstant(now, 'expire.now');
@@ -304,32 +323,32 @@ export function expireDeadLeases(store: StateStore, now: string, runId?: string)
     const spent = store.db
       .prepare(
         `SELECT * FROM step_runs
-          WHERE state = 'leased' AND lease_until <= ? AND attempts >= max_attempts
+          WHERE state = 'leased' AND lease_until <= ? AND (${FAILED} >= max_attempts OR ${EXPIRED} + 1 >= ${EXPIRED_ATTEMPTS_ALLOWED})
             AND (? IS NULL OR run_id = ?)`,
       )
       .all(now, runId ?? null, runId ?? null) as unknown as Row[];
     for (const row of spent) {
       const step = toStep(row);
-      closeAttempt(store, step.id, step.attempts, now, 'expired', { reason: 'lease expired and attempt budget spent' });
+      closeAttempt(store, step.id, step.attempts, now, 'expired', { reason: 'lease expired and the step’s budget is spent' });
       store.db
         .prepare(
           `UPDATE step_runs SET state = 'failed', lease_owner = NULL, lease_until = NULL, state_reason = ?, updated_at = ?, finished_at = ?
             WHERE id = ?`,
         )
-        .run('lease expired and attempt budget spent', now, now, step.id);
+        .run('lease expired and the step’s budget is spent', now, now, step.id);
       appendActivity(store, {
         at: now,
         kind: 'step.failed',
         runId: step.runId,
         stepRunId: step.id,
         actor: step.leaseOwner,
-        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired and attempt budget spent' },
+        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired and the step’s budget is spent' },
       });
     }
     const remaining = store.db
       .prepare(
         `SELECT * FROM step_runs
-          WHERE state = 'leased' AND lease_until <= ? AND attempts < max_attempts
+          WHERE state = 'leased' AND lease_until <= ? AND ${FAILED} < max_attempts AND ${EXPIRED} + 1 < ${EXPIRED_ATTEMPTS_ALLOWED}
             AND (? IS NULL OR run_id = ?)`,
       )
       .all(now, runId ?? null, runId ?? null) as unknown as Row[];
@@ -443,7 +462,7 @@ export function failStep(
   return store.transaction(() => {
     const current = getStep(store, failed.id);
     if (!current) throw new Error(`no step ${failed.id}`);
-    const retry = current.attempts < current.maxAttempts;
+    const retry = failedAttempts(store, failed.id) + 1 < current.maxAttempts && expiredAttempts(store, failed.id) < EXPIRED_ATTEMPTS_ALLOWED;
     return settle(store, failed, retry ? 'ready' : 'failed', {
       error: failed.error,
       reason: failed.reason,
