@@ -466,7 +466,7 @@ Adopted from the synthesis: the isolation-first base, grafted with the strongest
 
 ## Execution protocol
 
-1. **Branch and persist.** Before touching the shared checkout, check `ps` and `git reflog` for other live sessions. Work on `feat/multi-agent-coordination` off `staging`, in a worktree if another session is live. First commit: copy `synthesis.md` to `docs/engineering/multi-agent-coordination.md` and the condensed register to `docs/engineering/audit-2026-09-24.md`. Code comments never cite tracker ids.
+1. **Branch and persist.** Before touching the shared checkout, check `ps` and `git reflog` for other live sessions. Work on `feat/multi-agent-coordination` off `staging`, in a worktree if another session is live. First commit: copy `synthesis.md` to `docs/internal/multi-agent-coordination.md` and the condensed register to `docs/engineering/audit-2026-09-24.md`. Code comments never cite tracker ids.
 2. **Record the work.** File one native-ledger work item per phase slice (`construct work add`) with its acceptance criteria. Observations stay observations.
 3. **Order.**
    - Phase 0.
