@@ -21,6 +21,7 @@ import {
   type WorkKind,
   type WorkStatus,
 } from '../kernel/work/service.ts';
+import { answeredBy, channelFor } from './person-channel.ts';
 import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
@@ -72,7 +73,7 @@ export const WORK_SPECS: readonly CommandSpec[] = [
 
 export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const at = ctx.now();
-  const actor = 'person via cli';
+  const actor = answeredBy(channelFor(ctx.env, ctx.terminal));
   return withProject(ctx, (project) => {
     switch (sub) {
       case 'list': {

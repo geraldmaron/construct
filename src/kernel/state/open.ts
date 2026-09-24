@@ -36,8 +36,20 @@ export interface OpenStateOptions {
   readonly busyTimeoutMs?: number;
 }
 
+/**
+ * Who is acting through this connection right now: the Construct session, the
+ * agent inside it when one is named, and the channel its answers arrive on.
+ * The adapter sets it before each call; every activity row records it.
+ */
+export interface Attribution {
+  sessionId: string | null;
+  agent: string | null;
+  channel: string | null;
+}
+
 export interface StateStore {
   readonly db: DatabaseSync;
+  readonly attribution: Attribution;
   readonly path: string;
   /** `wal` when the filesystem allowed it; otherwise the rollback journal mode in use. */
   readonly journalMode: string;
@@ -249,6 +261,7 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
     journalMode,
     readOnly,
     migratedFrom,
+    attribution: { sessionId: null, agent: null, channel: null },
     transaction<T>(fn: () => T): T {
       if (depth > 0) {
         if (aborted !== null) throw aborted;

@@ -3,12 +3,15 @@
  * project and this session. A host launches it; a person rarely types it.
  */
 
+import { hostname } from 'node:os';
 import { resolve } from 'node:path';
 import { INIT_NEXT, serveLazyMcp, serveMcp, serveUnboundMcp, type BindFailure } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
+import { endSession, registerSession } from '../kernel/state/sessions.ts';
+import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, ProjectBusyError, type CliContext } from './context.ts';
 import { bindingFor, openBroker } from './broker-context.ts';
@@ -57,6 +60,33 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;
   let opened: ReturnType<typeof openBroker> | null = null;
+  /** Record this server as a session in the project it bound. */
+  const register = (o: ReturnType<typeof openBroker>): void => {
+    const identity = readHostIdentity(ctx.env);
+    const lane = o.project.lane;
+    registerSession(o.project.store, {
+      id: o.binding.sessionId,
+      host: o.binding.client,
+      surface: o.binding.surface,
+      machine: hostname(),
+      pid: process.pid,
+      serveVersion: packageVersion(),
+      hostSessionId: identity?.hostSessionId,
+      hostSessionSource: identity?.source,
+      laneRoot: lane?.root,
+      branch: lane?.branch ?? undefined,
+      head: lane?.head ?? undefined,
+      at: ctx.now(),
+    });
+    o.project.store.attribution.sessionId = o.binding.sessionId;
+  };
+  const end = (o: ReturnType<typeof openBroker>): void => {
+    try {
+      endSession(o.project.store, { id: o.binding.sessionId, at: ctx.now(), reason: 'the host closed the connection' });
+    } catch {
+      // The store is going away with this process; the session simply goes quiet.
+    }
+  };
   try {
     opened = openBroker(describe ? bound : { ...bound, stateBusyTimeoutMs: LAUNCH_LOCK_WAIT_MS }, flags);
     opened.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
@@ -67,12 +97,18 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       let lazy: ReturnType<typeof openBroker> | null = null;
       try {
         await serveLazyMcp(binding.surface, () => {
-          lazy = openBroker({ ...bound, stateBusyTimeoutMs: LAZY_LOCK_WAIT_MS }, flags);
-          lazy.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
-          return lazy.broker;
+          const o = openBroker({ ...bound, stateBusyTimeoutMs: LAZY_LOCK_WAIT_MS }, flags);
+          o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
+          register(o);
+          lazy = o;
+          return o.broker;
         }, packageVersion(), bindFailureFor);
       } finally {
-        (lazy as ReturnType<typeof openBroker> | null)?.project.store.close();
+        const done = lazy as ReturnType<typeof openBroker> | null;
+        if (done) {
+          end(done);
+          done.project.store.close();
+        }
       }
       return 0;
     }
@@ -93,7 +129,12 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       }
       return 0;
     }
-    await serveMcp(binding.surface, broker);
+    register(opened);
+    try {
+      await serveMcp(binding.surface, broker);
+    } finally {
+      end(opened);
+    }
     return 0;
   } finally {
     project.store.close();

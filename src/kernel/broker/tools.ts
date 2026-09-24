@@ -26,6 +26,7 @@ import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
+import { recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
 import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
@@ -582,7 +583,19 @@ const WORK_ACTIONS = ['list', 'ready', 'show', 'add', 'claim', 'complete', 'rele
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
-const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string }, unknown>({
+/**
+ * Who holds a claim: this session and the agent inside it. Two agents of one
+ * session are two claimants; an agent the host did not vouch for is recorded
+ * as reported. Without a session (a caller with none) the actor stands in.
+ */
+function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string): { owner: string; session?: string; agent?: string; lane?: string } {
+  if (!ctx.sessionId) return { owner: ctx.actor };
+  const name = agent?.trim() ? agent.trim().slice(0, 80) : 'main';
+  if (name !== 'main') recordAgent(ctx.store, { sessionId: ctx.sessionId, agent: name, attestation: 'reported', at, laneRoot: ctx.lane?.root });
+  return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, lane: ctx.lane?.root };
+}
+
+const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string }, unknown>({
   name: 'work',
   title: 'Native work',
   description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
@@ -598,6 +611,7 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
       reason: { type: 'string', description: 'Required for reopen and takeover; optional for complete.' },
       token: { type: 'string', description: 'The token your claim returned: renews a claim, completes or releases it.' },
+      agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
     },
     required: ['action'],
     additionalProperties: false,
@@ -611,9 +625,10 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       kind: str(raw, 'kind', { optional: true, oneOf: ['outcome', 'task', 'defect', 'plan'] }),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
+      agent: str(raw, 'agent', { optional: true }),
     };
   },
-  run(ctx, { action, id, title, kind, reason, token }) {
+  run(ctx, { action, id, title, kind, reason, token, agent }) {
     const at = ctx.now();
     if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
     if (action === 'ready') return listReady(ctx.store, at);
@@ -625,16 +640,17 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
+    const who = claimantFor(ctx, agent, at);
     if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at) };
-    if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, owner: ctx.actor, until, now: at, token });
-    if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: ctx.actor, token, at, reason });
+    if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token });
+    if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: who.owner, token, at, reason });
     if (action === 'release') {
       if (!token) throw new Error('"token" is required for release: the one your claim returned');
-      return releaseWork(ctx.store, { id: item.id, owner: ctx.actor, token, at });
+      return releaseWork(ctx.store, { id: item.id, owner: who.owner, token, at });
     }
     if (action === 'takeover') {
       if (!reason) throw new Error('takeover needs a reason');
-      return takeoverWork(ctx.store, { id: item.id, owner: ctx.actor, until, now: at, reason });
+      return takeoverWork(ctx.store, { id: item.id, ...who, until, now: at, reason });
     }
     if (!reason) throw new Error('reopen needs a reason');
     return reopenWork(ctx.store, { id: item.id, actor: ctx.actor, at, reason });
