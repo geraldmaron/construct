@@ -93,7 +93,8 @@ CREATE TABLE statements (
   coverage_json     TEXT,
   quoted            INTEGER NOT NULL DEFAULT 0 CHECK (quoted IN (0, 1)),
   created_at        TEXT NOT NULL,
-  updated_at        TEXT NOT NULL
+  updated_at        TEXT NOT NULL,
+  channel           TEXT
 );
 CREATE INDEX statements_kind_status ON statements (kind, status);
 CREATE UNIQUE INDEX statements_glossary_term ON statements (term)

@@ -11,7 +11,7 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 |---|---|
 | `meta` | key, value |
 | `project_profile` | id, name, purpose, scale, lifecycle_stage, primary_outcome, risk_posture, review_cadence, onboarding_state, updated_at |
-| `statements` | id, kind, text, term, status, provenance, source_id, run_id, superseded_by, locator, span_json, excerpt, source_revision, extractor_version, content_digest, coverage_json, quoted, created_at, updated_at |
+| `statements` | id, kind, text, term, status, provenance, source_id, run_id, superseded_by, locator, span_json, excerpt, source_revision, extractor_version, content_digest, coverage_json, quoted, created_at, updated_at, channel |
 | `sources` | id, kind, origin, purpose, locator, authority_level, freshness_hours, sensitivity, retention, can_read, can_write, identity_mapping_json, reachability, last_snapshot_id, status, created_at, updated_at, retired_at |
 | `source_authority` | source_id, claim_type, authoritative |
 | `source_snapshots` | id, source_id, digest, summary, evidence_ref, inventory_digest, content_digest, item_count, coverage_json, taken_at |

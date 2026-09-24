@@ -176,8 +176,9 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
     return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')!, assumptions, replaces: str(raw, 'replaces', { optional: true }) };
   },
   run(ctx, input) {
-    const s = ctx.workflow.remember({ ...input, by: ctx.actor });
-    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt }, nothingElseCreated: true };
+    // The person asked the model to keep this; the record says the model relayed it.
+    const s = ctx.workflow.remember({ ...input, by: ctx.actor, channel: 'relay' });
+    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt, channel: s.channel }, nothingElseCreated: true };
   },
 });
 
