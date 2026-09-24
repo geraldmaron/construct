@@ -11,6 +11,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { listGrants } from '../../src/kernel/state/grants.ts';
 import { getDecision, raiseDecision } from '../../src/kernel/state/decisions.ts';
+import { listActivity } from '../../src/kernel/state/activity.ts';
+import { addStatement, getStatement } from '../../src/kernel/state/profile.ts';
 import { PersonChannelRequiredError } from '../../src/kernel/policy/channels.ts';
 import { channelFor } from '../../src/cli/person-channel.ts';
 import { toolsFor } from '../../src/kernel/broker/tools.ts';
@@ -117,6 +119,54 @@ test('a workflow whose first step needs approval pauses cleanly and surfaces the
     assert.equal(fx.service.status(started.run.id)!.run.state, 'waiting_for_decision');
     const again = fx.service.claimNext({ runId: started.run.id });
     assert.equal(again.waitingOn?.kind, 'decision', 'a later claim still names the open question, not nothing_ready');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an answer relayed over MCP is recorded as relayed through its host, never as the person', async () => {
+  const fx = brokerFixture();
+  try {
+    const decision = raiseDecision(fx.broker.store, {
+      id: 'decision-relayed',
+      kind: 'approval',
+      question: 'Approve exactly this: push PROJ-14',
+      options: ['approve', 'decline'],
+      subject: { request: { tier: 'external_write', targetSystem: 'jira', targetResource: 'PROJ-14', operation: 'push PROJ-14', executorId: 'session:claude-code' } },
+      at: fx.broker.now(),
+    });
+    const decide = toolsFor('interactive').find((t) => t.name === 'decide')!;
+    const result = (await decide.run(fx.broker, { decisionId: decision.id, resolution: 'decline' })) as { decision: { state: string; resolvedBy: string } };
+    assert.equal(result.decision.state, 'resolved');
+    assert.match(result.decision.resolvedBy, /^relayed via claude-code$/);
+    assert.match(getDecision(fx.broker.store, decision.id)!.resolvedBy!, /^relayed via /);
+    const resolved = listActivity(fx.broker.store).find((e) => e.kind === 'decision.resolved' && (e.payload as { decisionId: string }).decisionId === decision.id)!;
+    assert.equal(resolved.actor, 'relayed via claude-code');
+    assert.equal((resolved.payload as { channel: string }).channel, 'relay');
+
+    // A proposed statement confirmed through the relay is confirmed, and the record says it was relayed.
+    const proposed = addStatement(fx.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at: fx.broker.now() });
+    assert.equal(proposed.status, 'proposed');
+    const confirmed = (await decide.run(fx.broker, { decisionId: proposed.id, resolution: 'confirm' })) as { decision: { resolvedBy: string }; statement: { status: string } };
+    assert.equal(confirmed.statement.status, 'confirmed');
+    assert.match(confirmed.decision.resolvedBy, /^relayed via /);
+    assert.equal(getStatement(fx.broker.store, proposed.id)!.status, 'confirmed');
+    const row = listActivity(fx.broker.store).find((e) => e.kind === 'proposal.resolved')!;
+    assert.equal(row.actor, 'relayed via claude-code');
+    assert.deepEqual(row.payload, { statementId: proposed.id, kind: 'principle', status: 'confirmed', channel: 'relay' });
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a person-channel answer carries its channel into the activity record', () => {
+  const fx = fixture();
+  try {
+    const { decisionId } = pausedForApproval(fx);
+    fx.service.decide({ decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
+    const resolved = listActivity(fx.store).find((e) => e.kind === 'decision.resolved')!;
+    assert.equal(resolved.actor, 'person via cli');
+    assert.equal((resolved.payload as { channel: string }).channel, 'tty_cli');
   } finally {
     fx.cleanup();
   }

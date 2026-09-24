@@ -53,14 +53,14 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
       }
       case 'resolve': {
         const [id, answer] = args.positionals as [string, string];
+        const channel = channelFor(ctx.env, ctx.terminal);
         const proposal = getStatement(project.store, id);
         if (proposal?.status === 'proposed') {
-          const s = resolveProposal(project.store, { id, resolution: answer, at: broker.now(), nextId: broker.nextId });
+          const s = resolveProposal(project.store, { id, resolution: answer, at: broker.now(), nextId: broker.nextId, by: answeredBy(channel), channel });
           if (args.json) writeJson(s);
           else say(`recorded: ${esc(id)} → ${esc(answer)} (${s.kind} is ${s.status})`);
           return 0;
         }
-        const channel = channelFor(ctx.env, ctx.terminal);
         let r: ReturnType<typeof broker.workflow.decide>;
         try {
           r = broker.workflow.decide({ decisionId: id, resolution: answer, by: answeredBy(channel), channel });

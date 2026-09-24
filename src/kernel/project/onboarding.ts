@@ -24,6 +24,8 @@ import {
 import { addEntity, addRelation, findEntityByRef, listRelations } from '../state/graph.ts';
 import { listOpenDecisions, raiseDecision, resolveDecision, type Decision } from '../state/decisions.ts';
 import { bindGoverningStatement } from '../state/admission.ts';
+import type { DecisionChannel } from '../policy/channels.ts';
+import { appendActivity } from '../state/activity.ts';
 import type { Constitution } from './constitution.ts';
 import type { DiscoveryDraft, OnboardingQuestion } from './discovery.ts';
 
@@ -164,9 +166,9 @@ export interface OnboardingAnswers {
  */
 export function applyOnboardingAnswers(
   store: StateStore,
-  input: { readonly answers: OnboardingAnswers; readonly by: string; readonly at: string; readonly nextId: (prefix: string) => string },
+  input: { readonly answers: OnboardingAnswers; readonly by: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly channel?: DecisionChannel },
 ): { readonly profile: ProjectProfile; readonly confirmed: readonly Statement[]; readonly missing: readonly string[] } {
-  const { answers, by, at, nextId } = input;
+  const { answers, by, at, nextId, channel } = input;
   if (answers.scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(answers.scale)) {
     throw new Error(`scale must be one of ${PROJECT_SCALES.join(' | ')}`);
   }
@@ -193,10 +195,10 @@ export function applyOnboardingAnswers(
     }
     for (const d of listOpenDecisions(store)) {
       if (d.kind !== 'clarification') continue;
-      if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at });
-      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at });
+      if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at, channel });
+      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at, channel });
       if (answers.protectedConstraints && answers.protectedConstraints.length > 0 && isOnboardingSubject(d.subject, 'protected_constraints')) {
-        resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at });
+        resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at, channel });
       }
     }
     return { profile, confirmed, missing };
@@ -265,18 +267,24 @@ export function listInbox(store: StateStore, runId?: string): InboxRow[] {
   return [...decisions, ...proposals];
 }
 
+/**
+ * Confirm or retire a proposed statement, recording who answered and on which
+ * channel. A relayed confirmation is allowed and recorded as relayed.
+ */
 export function resolveProposal(
   store: StateStore,
-  input: { readonly id: string; readonly resolution: string; readonly at: string; readonly nextId: (prefix: string) => string },
+  input: { readonly id: string; readonly resolution: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly by: string; readonly channel: DecisionChannel },
 ): Statement {
   const answer = input.resolution.trim().toLowerCase();
-  if (answer === 'confirm' || answer === 'accept' || answer === 'yes') {
-    return acceptProposal(store, input.id, input.at, input.nextId);
+  const confirm = answer === 'confirm' || answer === 'accept' || answer === 'yes';
+  if (!confirm && answer !== 'retire' && answer !== 'decline' && answer !== 'no') {
+    throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
   }
-  if (answer === 'retire' || answer === 'decline' || answer === 'no') {
-    return declineProposal(store, input.id, input.at);
-  }
-  throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
+  return store.transaction(() => {
+    const statement = confirm ? acceptProposal(store, input.id, input.at, input.nextId) : declineProposal(store, input.id, input.at);
+    appendActivity(store, { at: input.at, kind: 'proposal.resolved', actor: input.by, payload: { statementId: statement.id, kind: statement.kind, status: statement.status, channel: input.channel } });
+    return statement;
+  });
 }
 
 export interface OnboardingStatus {
