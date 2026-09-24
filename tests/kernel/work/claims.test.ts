@@ -123,8 +123,11 @@ test('a snapshot never carries a live claim’s secret, and one from another pro
   try {
     item(fx.store);
     const claimed = claimWork(fx.store, { id: 'w-1', owner: 'ses-a/main', session: 'ses-a', until: t(30), now: t(1) });
+    // A claim event from a build that logged tokens, as an upgraded store holds.
+    fx.store.db.prepare(`INSERT INTO work_events (work_id, at, kind, actor, expected_revision, payload_json) VALUES ('w-1', ?, 'claimed', 'old', 1, ?)`).run(t(1), JSON.stringify({ until: t(30), token: 'old-owner:2026:1' }));
     const dump = exportWork(fx.store, t(2), 'proj-a');
     assert.doesNotMatch(JSON.stringify(dump), new RegExp(claimed.claimToken));
+    assert.doesNotMatch(JSON.stringify(dump), /old-owner:2026:1/);
     assert.throws(() => restoreWork(other.store, dump, t(3), 'proj-b'), /taken from project proj-a/);
     assert.equal(restoreWork(other.store, dump, t(3), 'proj-a').imported, 1);
   } finally {
