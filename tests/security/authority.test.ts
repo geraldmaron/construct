@@ -63,7 +63,7 @@ test('an approval covers the executor it was given to; another claimer neither i
     fx.service.decide({ decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
     const intruder = fx.service.claimNext({ runId, owner: 'session:other' });
     assert.equal(intruder.packet, null, 'the approved step is not handed to a different session');
-    assert.notEqual(intruder.waitingOn?.kind, 'decision', 'and no new question is raised in front of the person');
+    assert.equal(intruder.waitingOn?.kind, 'held', 'it waits for the approved session, and no new question is raised in front of the person');
     const approved = fx.service.claimNext({ runId });
     assert.equal(approved.packet!.step.id, 'push', 'the session the person approved still gets its step');
   } finally {
