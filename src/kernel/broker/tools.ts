@@ -15,7 +15,7 @@ import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, t
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
 import { listEntities, listClaims, listRelations, getEntity } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
-import { getStep } from '../state/steps.ts';
+import { extendLease, getStep, heldLease } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
 import { qualifySkill } from '../registry/qualification.ts';
 import { emptyLock } from '../project/lock.ts';
@@ -25,7 +25,7 @@ import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
 import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
-import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
+import { bool, closed, list, num, obj, record, str, type ToolDefinition, ToolInputError } from './definition.ts';
 import { recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
@@ -359,7 +359,7 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
       work: {
         stepRunId: p.leased.id,
         owner: p.leased.leaseOwner,
-        token: p.leased.token,
+        token: p.leased.nonce,
         leaseUntil: p.leased.leaseUntil,
         run: { id: p.run.id, workflow: p.run.workflowId },
         step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators, capabilities: p.step.capabilities },
@@ -373,49 +373,51 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
   },
 });
 
-interface SubmitInput { stepRunId: string; owner: string; token: number; output: Record<string, unknown>; evidence: { ref: string; excerpt?: string }[]; noData: boolean }
+interface SubmitInput { stepRunId: string; token: string; output: Record<string, unknown>; evidence: { ref: string; excerpt?: string }[]; noData: boolean }
 
 const submitWork = define<SubmitInput, unknown>({
   name: 'submit_work',
   title: 'Submit a step’s result',
-  description: 'Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing.',
+  description: 'Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.',
   surface: 'both',
   readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
       stepRunId: { type: 'string', description: 'From claim_work.' },
-      owner: { type: 'string', description: 'From claim_work.' },
-      token: { type: 'number', description: 'From claim_work.' },
+      token: { type: 'string', description: 'From claim_work: the lease’s secret.' },
+      owner: { type: 'string', description: 'Ignored: the lease holder is the calling session.' },
       output: { type: 'object', description: 'The step’s result, with the keys it declared.' },
       evidence: { type: 'array', description: 'What was read: {ref, excerpt?} entries.', items: { type: 'object' } },
       noData: { type: 'boolean', description: 'The step found nothing to work on.' },
     },
-    required: ['stepRunId', 'owner', 'token', 'output'],
+    required: ['stepRunId', 'token', 'output'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    const token = num(raw, 'token');
-    if (token === undefined) throw new Error('"token" is required');
     const evidence = list(raw, 'evidence').map((e) => {
       const r = record(e);
       const ref = typeof r.ref === 'string' ? r.ref : '';
       return { ref, excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
     });
-    return { stepRunId: str(raw, 'stepRunId')!, owner: str(raw, 'owner')!, token, output: obj(raw, 'output')!, evidence, noData: bool(raw, 'noData', false) };
+    return { stepRunId: str(raw, 'stepRunId')!, token: leaseToken(raw), output: obj(raw, 'output')!, evidence, noData: bool(raw, 'noData', false) };
   },
   run(ctx, input) {
-    const step = getStep(ctx.store, input.stepRunId);
-    if (!step) throw new Error(`no step ${input.stepRunId}`);
-    if (step.state !== 'leased' || step.leaseOwner !== input.owner || step.attempts !== input.token) {
-      throw new Error(`step ${input.stepRunId} is not held under this owner and token; claim it again`);
-    }
-    const leased = { ...step, leaseOwner: input.owner, leaseUntil: step.leaseUntil ?? ctx.now(), token: input.token };
+    if (!getStep(ctx.store, input.stepRunId)) throw new Error(`no step ${input.stepRunId}`);
+    const leased = heldLease(ctx.store, { id: input.stepRunId, owner: ctx.host.executorId, nonce: input.token });
+    if (!leased) throw new Error(`step ${input.stepRunId} is not held by this session under that token; claim it again`);
     const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData });
     return { step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason }, validation: r.validation, run: { id: r.run.id, state: r.run.state }, deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null };
   },
 });
+
+/** A lease token as given: the claim's secret string. */
+function leaseToken(raw: Record<string, unknown>): string {
+  const token = raw.token;
+  if (typeof token !== 'string' || !token.trim()) throw new ToolInputError('"token" is required: the token claim_work returned');
+  return token.trim();
+}
 
 const runStatus = define<{ runId: string }, unknown>({
   name: 'run_status',
@@ -657,29 +659,32 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
   },
 });
 
-const heartbeat = define<{ stepRunId: string; owner: string; token: number }, unknown>({
+const heartbeat = define<{ stepRunId: string; token: string }, unknown>({
   name: 'heartbeat',
   title: 'Keep a lease alive',
-  description: 'A runner still working a step says so, so the lease is not taken over. Fails if the lease was already lost.',
-  surface: 'headless',
+  description: 'The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.',
+  surface: 'both',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { stepRunId: { type: 'string', description: 'From claim_step.' }, owner: { type: 'string', description: 'From claim_step.' }, token: { type: 'number', description: 'From claim_step.' } },
-    required: ['stepRunId', 'owner', 'token'],
+    properties: {
+      stepRunId: { type: 'string', description: 'From the claim.' },
+      token: { type: 'string', description: 'From the claim: the lease’s secret.' },
+      owner: { type: 'string', description: 'Ignored: the lease holder is the calling session.' },
+    },
+    required: ['stepRunId', 'token'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    const token = num(raw, 'token');
-    if (token === undefined) throw new Error('"token" is required');
-    return { stepRunId: str(raw, 'stepRunId')!, owner: str(raw, 'owner')!, token };
+    return { stepRunId: str(raw, 'stepRunId')!, token: leaseToken(raw) };
   },
-  run(ctx, { stepRunId, owner, token }) {
+  run(ctx, { stepRunId, token }) {
     const at = ctx.now();
     const until = new Date(Date.parse(at) + 30 * 60_000).toISOString();
-    const result = ctx.store.db.prepare(`UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ?`).run(until, at, stepRunId, owner, token);
-    if (result.changes === 0) throw new Error(`step ${stepRunId} is not held under this owner and token`);
+    if (!extendLease(ctx.store, { id: stepRunId, owner: ctx.host.executorId, nonce: token, until, at })) {
+      throw new Error(`step ${stepRunId} is not held by this session under that token`);
+    }
     return { leaseUntil: until };
   },
 });
@@ -699,7 +704,7 @@ const claimStep = define<{ runId?: string }, unknown>({
     const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.token, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, instructions: p.instructions }, waitingOn: null };
+    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, instructions: p.instructions }, waitingOn: null };
   },
 });
 

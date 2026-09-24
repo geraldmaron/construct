@@ -85,7 +85,7 @@ test('the interactive lifecycle: classify, start, claim, submit, status, promote
     const again = (await call(fx, 'claim_work', { runId: started.run.id })) as { work: { stepRunId: string; owner: string; token: number } };
     const ok = (await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: { principles: ['keep the kernel host-agnostic'], targetSummary: 'the state module', unknownPrinciples: [] }, evidence: [{ ref: 'docs/design.md' }] })) as { step: { state: string } };
     assert.equal(ok.step.state, 'succeeded');
-    assert.equal((await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: {} }).catch((e: Error) => e.message)), `step ${again.work.stepRunId} is not held under this owner and token; claim it again`);
+    assert.equal((await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: {} }).catch((e: Error) => e.message)), `step ${again.work.stepRunId} is not held by this session under that token; claim it again`);
     const status = (await call(fx, 'run_status', { runId: started.run.id })) as { run: { state: string }; steps: { step: string; state: string }[] };
     assert.equal(status.run.state, 'running');
     assert.equal(status.steps.find((s) => s.step === 'gather')!.state, 'succeeded');
@@ -105,7 +105,7 @@ test('the headless surface claims and submits but cannot decide, remember, or st
     assert.equal(claimed.work, null);
     assert.equal(claimed.waitingOn.kind, 'nothing_ready');
     for (const forbidden of HEADLESS_FORBIDDEN) assert.ok(!toolsFor('headless').some((t) => t.name === forbidden), forbidden);
-    assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', owner: 'runner:ci', token: 1 }).catch((e: Error) => e.message)), 'step x is not held under this owner and token');
+    assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', token: 'not-the-lease' }).catch((e: Error) => e.message)), 'step x is not held by this session under that token');
   } finally {
     fx.cleanup();
   }

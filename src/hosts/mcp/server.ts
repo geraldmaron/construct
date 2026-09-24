@@ -11,6 +11,7 @@ import { mcpTool, record, ToolInputError } from '../../kernel/broker/definition.
 import { toolsFor } from '../../kernel/broker/tools.ts';
 import { STATE_FORMAT_VERSION, UnsupportedStateError } from '../../kernel/state/format.ts';
 import { recordClient, touchSession } from '../../kernel/state/sessions.ts';
+import { renewExecutorLeases } from '../../kernel/state/steps.ts';
 import { renewSessionClaims } from '../../kernel/work/service.ts';
 
 /** How often a session's presence and claim terms are refreshed while it keeps calling. */
@@ -84,6 +85,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext): As
       const at = new Date(now).toISOString();
       touchSession(ctx.store, { id: ctx.sessionId, at });
       renewSessionClaims(ctx.store, { session: ctx.sessionId, now: at, termMs: CLAIM_TERM_MS });
+      renewExecutorLeases(ctx.store, { owner: ctx.host.executorId, now: at, termMs: CLAIM_TERM_MS });
     }
   };
   return async (message: JsonRpcRequest) => {

@@ -6,6 +6,7 @@
  * cannot overwrite the new holder's work. Every attempt is recorded.
  */
 
+import { randomUUID } from 'node:crypto';
 import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
 import {
@@ -75,6 +76,12 @@ export interface LeasedStep extends StepRun {
   readonly leaseUntil: string;
   /** Fencing token: the attempt number this lease was granted under. */
   readonly token: number;
+  /**
+   * The lease's secret: a random value only the claimer is given. A caller
+   * outside the kernel proves it holds the lease with this, never with the
+   * attempt number, which anyone can read.
+   */
+  readonly nonce: string;
 }
 
 export class StaleLeaseError extends Error {
@@ -97,6 +104,7 @@ interface Row {
   readonly max_attempts: number;
   readonly lease_owner: string | null;
   readonly lease_until: string | null;
+  readonly lease_nonce?: string | null;
   readonly input_json: string | null;
   readonly output_json: string | null;
   readonly state_reason: string | null;
@@ -242,11 +250,12 @@ export function claimStep(
   requireInstant(claim.now, 'claim.now');
   requireInstant(claim.leaseUntil, 'claim.leaseUntil');
   if (claim.leaseUntil <= claim.now) throw new Error('claim.leaseUntil must be after claim.now');
+  const nonce = randomUUID();
   return store.transaction(() => {
     const row = store.db
       .prepare(
         `UPDATE step_runs
-            SET state = 'leased', lease_owner = ?, lease_until = ?, attempts = attempts + 1, updated_at = ?
+            SET state = 'leased', lease_owner = ?, lease_until = ?, lease_nonce = ?, attempts = attempts + 1, updated_at = ?
           WHERE id = (
             SELECT id FROM step_runs
              WHERE ((state = 'ready' AND attempts < max_attempts)
@@ -258,7 +267,7 @@ export function claimStep(
           )
         RETURNING *`,
       )
-      .get(claim.owner, claim.leaseUntil, claim.now, claim.now, claim.runId ?? null, claim.runId ?? null, claim.stepRunId ?? null, claim.stepRunId ?? null) as
+      .get(claim.owner, claim.leaseUntil, nonce, claim.now, claim.now, claim.runId ?? null, claim.runId ?? null, claim.stepRunId ?? null, claim.stepRunId ?? null) as
       | Row
       | undefined;
     if (!row) return null;
@@ -280,7 +289,7 @@ export function claimStep(
       actor: claim.owner,
       payload: { stepId: step.stepId, attempt: step.attempts, leaseUntil: claim.leaseUntil },
     });
-    return { ...step, leaseOwner: claim.owner, leaseUntil: claim.leaseUntil, token: step.attempts };
+    return { ...step, leaseOwner: claim.owner, leaseUntil: claim.leaseUntil, token: step.attempts, nonce };
   });
 }
 
@@ -476,4 +485,36 @@ export function countStepsByState(store: StateStore, runId: string): Record<Step
   const counts = Object.fromEntries(STEP_STATES.map((s) => [s, 0])) as Record<StepState, number>;
   for (const step of listSteps(store, runId)) counts[step.state] += 1;
   return counts;
+}
+
+/** The lease a caller proves it holds with the step's secret, or null when it does not hold it. */
+export function heldLease(store: StateStore, input: { readonly id: string; readonly owner: string; readonly nonce: string }): LeasedStep | null {
+  const row = store.db
+    .prepare(`SELECT * FROM step_runs WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ?`)
+    .get(input.id, input.owner, input.nonce) as Row | undefined;
+  if (!row) return null;
+  const step = toStep(row);
+  return { ...step, leaseOwner: row.lease_owner!, leaseUntil: row.lease_until!, token: step.attempts, nonce: input.nonce };
+}
+
+/** Extend a held lease, proving it with the lease's secret. False when it is no longer held. */
+export function extendLease(store: StateStore, input: { readonly id: string; readonly owner: string; readonly nonce: string; readonly until: string; readonly at: string }): boolean {
+  const result = store.db
+    .prepare(`UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE id = ? AND state = 'leased' AND lease_owner = ? AND lease_nonce = ? AND lease_until > ?`)
+    .run(input.until, input.at, input.id, input.owner, input.nonce, input.at);
+  return Number(result.changes) > 0;
+}
+
+/**
+ * Extend every live lease `owner` holds that is past half its term, so an
+ * executor that keeps calling Construct does not lose a long step to expiry.
+ */
+export function renewExecutorLeases(store: StateStore, input: { readonly owner: string; readonly now: string; readonly termMs: number }): number {
+  const until = new Date(Date.parse(input.now) + input.termMs).toISOString();
+  const halfway = new Date(Date.parse(input.now) + input.termMs / 2).toISOString();
+  return Number(
+    store.db
+      .prepare(`UPDATE step_runs SET lease_until = ?, updated_at = ? WHERE state = 'leased' AND lease_owner = ? AND lease_until > ? AND lease_until < ?`)
+      .run(until, input.now, input.owner, input.now, halfway).changes,
+  );
 }

@@ -96,15 +96,15 @@ Surface: interactive. Reads only: no.
 
 ### `submit_work`
 
-Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing.
+Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.
 
 Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
-| `owner` | string | yes | From claim_work. |
-| `token` | number | yes | From claim_work. |
+| `token` | string | yes | From claim_work: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | array | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
@@ -190,6 +190,18 @@ Surface: interactive. Reads only: no.
 | `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
 | `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
 
+### `heartbeat`
+
+Keep a lease alive. The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.
+
+Surface: both. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `stepRunId` | string | yes | From the claim. |
+| `token` | string | yes | From the claim: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
+
 ## Headless surface
 
 ### `bootstrap`
@@ -200,15 +212,15 @@ Surface: both. Reads only: yes.
 
 ### `submit_work`
 
-Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing.
+Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.
 
 Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
-| `owner` | string | yes | From claim_work. |
-| `token` | number | yes | From claim_work. |
+| `token` | string | yes | From claim_work: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | array | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
@@ -235,15 +247,15 @@ Surface: headless. Reads only: no.
 
 ### `heartbeat`
 
-Keep a lease alive. A runner still working a step says so, so the lease is not taken over. Fails if the lease was already lost.
+Keep a lease alive. The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.
 
-Surface: headless. Reads only: no.
+Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `stepRunId` | string | yes | From claim_step. |
-| `owner` | string | yes | From claim_step. |
-| `token` | number | yes | From claim_step. |
+| `stepRunId` | string | yes | From the claim. |
+| `token` | string | yes | From the claim: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 
 ## Never on the headless surface
 
