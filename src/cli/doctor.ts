@@ -8,7 +8,7 @@ import { detectAmbientHost } from '../hosts/ambient.ts';
 import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
-import { findProjectRoot } from '../kernel/project/discover.ts';
+import { NoProjectError } from '../kernel/project/discover.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
@@ -21,7 +21,7 @@ import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '..
 import { inspectWiring } from '../hosts/wiring/wire.ts';
 import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
-import { createContext, gitRootOf, type CliContext } from './context.ts';
+import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
 
 export const DOCTOR_SPEC: CommandSpec = {
@@ -50,12 +50,22 @@ function nodeCheck(): Check {
 export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const checks: Check[] = [nodeCheck()];
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
-  const root = findProjectRoot({ start: ctx.cwd, floor });
+  let root: string | null = null;
+  let lane: Lane | null = null;
+  let bindProblem: string | null = null;
+  try {
+    const bound = bindProject(ctx);
+    root = bound.root;
+    lane = bound.lane;
+  } catch (error) {
+    if (error instanceof WorktreeBindingError) bindProblem = `${error.message}; ${error.next ?? ''}`.trim();
+    else if (!(error instanceof NoProjectError)) throw error;
+  }
 
   if (root === null) {
-    checks.push({ name: 'project', ok: false, detail: `no Construct project from ${ctx.cwd} up to ${floor}; run \`construct init\`` });
+    checks.push({ name: 'project', ok: false, detail: bindProblem ?? `no Construct project from ${ctx.cwd} up to ${floor}; run \`construct init\`` });
   } else {
-    checks.push({ name: 'project', ok: true, detail: root });
+    checks.push({ name: 'project', ok: true, detail: lane ? `${root} (this session works in the worktree ${lane.checkout}${lane.branch ? ` on ${lane.branch}` : ''}; it shares that project's store)` : root });
     const layout = projectLayout(root);
     const legacy = detectLegacyProjectFiles(root);
     if (legacy.length > 0) {

@@ -66,7 +66,7 @@ const bootstrap = define<Record<string, never>, unknown>({
       : runs.length > 0 ? `${String(runs.length)} run(s) active; continue with claim_work`
       : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
-      construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null } },
+      construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null, lane: ctx.lane } },
       session: { host: ctx.host.hostId, session: ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })), proposals },
       sources,

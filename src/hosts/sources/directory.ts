@@ -9,7 +9,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readdirSync, openSync, readSync, closeSync, constants } from 'node:fs';
+import { existsSync, readdirSync, openSync, readSync, closeSync, constants } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import type { ReadOutcome, SourceReader, SnapshotItem } from '../../kernel/source/connector.ts';
 import { inspectContained, isInside } from '../../kernel/safety/containment.ts';
@@ -70,6 +70,9 @@ function walk(root: string, dir: string, out: Entry[], skippedOutside: string[])
       continue;
     }
     if (inspect.stat.isDirectory()) {
+      // Another checkout nested here (a linked worktree, a submodule, a vendored
+      // repository) is its own tree, not this source's content.
+      if (existsSync(join(inspect.realPath, '.git'))) continue;
       walk(root, inspect.realPath, out, skippedOutside);
     } else if (inspect.stat.isFile()) {
       const content = readCapped(inspect.realPath, DIRECTORY_CONTENT_CAP);

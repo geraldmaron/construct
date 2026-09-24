@@ -6,10 +6,10 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { lstatSync, existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { resolvePaths, type Paths } from '../kernel/paths.ts';
-import { findProjectRoot, NoProjectError } from '../kernel/project/discover.ts';
+import { findProjectRoot, hasProject, NoProjectError } from '../kernel/project/discover.ts';
 import { projectLayout, type ProjectLayout } from '../kernel/project/layout.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { readJsonFile } from '../kernel/project/files.ts';
@@ -27,6 +27,12 @@ export interface CliContext {
   readonly readOnly?: boolean;
   /** How long opening the state database waits for another process's lock; the store's default when unset. */
   readonly stateBusyTimeoutMs?: number;
+  /**
+   * Where the session actually runs, when `cwd` was set to a project root on
+   * its behalf (`serve --project`). Used only to tell which git worktree the
+   * session works in; the project and its store still come from `cwd`.
+   */
+  readonly sessionCwd?: string;
   /**
    * What the terminal looks like, supplied only by tests. Production reads it
    * from the process itself; a subprocess cannot set this.
@@ -62,23 +68,146 @@ export function gitRootOf(cwd: string): string | null {
   }
 }
 
+/** A checkout and, when it is a linked git worktree, the main checkout it belongs to. */
+export interface Repository {
+  /** The directory holding this checkout's `.git` entry. */
+  readonly checkout: string;
+  /** The main checkout: equal to `checkout` unless this is a linked worktree. */
+  readonly mainRoot: string;
+  /** True when `.git` is a file pointing at a linked worktree's git directory. */
+  readonly linked: boolean;
+  readonly branch: string | null;
+  readonly head: string | null;
+}
+
+function readTrimmed(path: string): string | null {
+  try {
+    return readFileSync(path, 'utf8').trim();
+  } catch {
+    return null;
+  }
+}
+
+function headOf(gitDir: string): { branch: string | null; head: string | null } {
+  const head = readTrimmed(join(gitDir, 'HEAD'));
+  if (!head) return { branch: null, head: null };
+  const ref = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
+  return ref ? { branch: ref[1]!, head: null } : { branch: null, head };
+}
+
+/**
+ * The repository a directory belongs to, read from files alone (no git process,
+ * so hooks stay fast). A linked worktree's `.git` is a file naming its git
+ * directory, whose `commondir` names the main repository's `.git`; the main
+ * checkout is that directory's parent. A bare repository has no main checkout
+ * and is reported as its own, unlinked.
+ */
+export function resolveRepository(cwd: string): Repository | null {
+  const checkout = gitRootOf(cwd);
+  if (checkout === null) return null;
+  const dotGit = join(checkout, '.git');
+  let gitDir = dotGit;
+  let linked = false;
+  if (lstatSync(dotGit).isFile()) {
+    const pointer = /^gitdir:\s*(.+)$/m.exec(readTrimmed(dotGit) ?? '');
+    if (pointer) {
+      gitDir = resolve(checkout, pointer[1]!);
+      const common = readTrimmed(join(gitDir, 'commondir'));
+      const commonDir = common ? resolve(gitDir, common) : null;
+      if (commonDir && basename(commonDir) === '.git' && existsSync(commonDir)) {
+        const { branch, head } = headOf(gitDir);
+        return { checkout, mainRoot: dirname(commonDir), linked: true, branch, head };
+      }
+    }
+  }
+  const { branch, head } = headOf(gitDir);
+  return { checkout, mainRoot: checkout, linked, branch, head };
+}
+
 /** Where init would put a project: the repository root, else cwd itself. */
 export function initRootFor(cwd: string): string {
   return gitRootOf(cwd) ?? resolve(cwd);
 }
 
+/** The git worktree a session works in, when it is not the project's main checkout. */
+export interface Lane {
+  /** The project's directory inside this worktree: where its files are read. */
+  readonly root: string;
+  readonly checkout: string;
+  readonly branch: string | null;
+  readonly head: string | null;
+}
+
 export interface BoundProject {
+  /** The project's directory in the main checkout: its configuration and its one store live here. */
   readonly root: string;
   readonly layout: ProjectLayout;
   readonly files: ReturnType<typeof readProjectFiles>;
+  /** Set when the session works in a linked worktree of the project's repository. */
+  readonly lane: Lane | null;
 }
 
-/** Bind to the project this directory belongs to, never crossing a repository. */
+/** A linked worktree cannot be bound because the project it belongs to cannot be settled. */
+export class WorktreeBindingError extends OperationError {
+  constructor(message: string, next: string) {
+    super(message, next);
+    this.name = 'WorktreeBindingError';
+  }
+}
+
+/** The lane a session in `sessionCwd` works in, when that is a linked worktree of the repository holding `root`. */
+function laneFor(root: string, sessionCwd: string): Lane | null {
+  const repo = resolveRepository(sessionCwd);
+  if (!repo?.linked) return null;
+  // Git records worktree paths resolved; compare real paths so an aliased
+  // spelling of the same directory (macOS /var and /private/var) still matches.
+  const rel = relative(realpathOr(repo.mainRoot), realpathOr(root));
+  if (rel.startsWith('..') || isAbsolute(rel)) return null;
+  return { root: join(repo.checkout, rel), checkout: repo.checkout, branch: repo.branch, head: repo.head };
+}
+
+function realpathOr(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
+  }
+}
+
+/**
+ * Bind to the project this directory belongs to, never crossing a repository.
+ * In a linked git worktree the project is the one in the main checkout: its
+ * configuration and its single store are read there, and the worktree becomes
+ * the session's lane. The worktree never gets a store of its own.
+ */
 export function bindProject(ctx: CliContext): BoundProject {
-  const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
-  const root = findProjectRoot({ start: ctx.cwd, floor });
-  if (root === null) throw new NoProjectError(resolve(ctx.cwd));
-  return { root, layout: projectLayout(root), files: readProjectFiles(root) };
+  const repo = resolveRepository(ctx.cwd);
+  const floor = repo?.checkout ?? ctx.cwd;
+  const here = findProjectRoot({ start: ctx.cwd, floor });
+  if (!repo?.linked) {
+    if (here === null) throw new NoProjectError(resolve(ctx.cwd));
+    return { root: here, layout: projectLayout(here), files: readProjectFiles(here), lane: laneFor(here, ctx.sessionCwd ?? ctx.cwd) };
+  }
+  const sameRelative = (dir: string): string => join(repo.mainRoot, relative(repo.checkout, dir));
+  const root = here !== null ? sameRelative(here) : findProjectRoot({ start: sameRelative(ctx.cwd), floor: repo.mainRoot });
+  if (root === null || !hasProject(root)) {
+    throw new WorktreeBindingError(
+      `this is a git worktree of ${repo.mainRoot}, and that checkout has no Construct project${here !== null ? ` at ${sameRelative(here)}` : ''}`,
+      `Run \`construct init\` in ${repo.mainRoot}; its one store serves every worktree of the repository.`,
+    );
+  }
+  const files = readProjectFiles(root);
+  const laneFiles = here !== null ? readProjectFiles(here) : null;
+  const mainId = files.config?.id ?? null;
+  const laneId = laneFiles?.config?.id ?? null;
+  if (laneId !== null && mainId !== null && laneId !== mainId) {
+    throw new WorktreeBindingError(
+      `this worktree's .construct/project.json names project ${laneId}, but the main checkout's names ${mainId}`,
+      'One repository is one project. Bring the worktree’s .construct/project.json back in line with the main checkout’s.',
+    );
+  }
+  const lane: Lane = { root: join(repo.checkout, relative(repo.mainRoot, root)), checkout: repo.checkout, branch: repo.branch, head: repo.head };
+  return { root, layout: projectLayout(root), files, lane };
 }
 
 /** The project exists and its store is intact, but another process held the write lock past every wait. */

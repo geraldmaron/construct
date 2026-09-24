@@ -16,6 +16,8 @@ import type { SourceService } from '../source/service.ts';
 export interface BrokerContext {
   readonly version: string;
   readonly root: string;
+  /** The git worktree this session works in, when it is not the project's main checkout. */
+  readonly lane: { readonly root: string; readonly checkout: string; readonly branch: string | null; readonly head: string | null } | null;
   readonly layout: ProjectLayout;
   readonly files: ReturnType<typeof readProjectFiles>;
   readonly store: StateStore;
