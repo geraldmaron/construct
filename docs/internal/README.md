@@ -14,3 +14,8 @@ documentation is one level up, in docs/.
 - `stakeholder-acceptance-phase-4.md`, `stakeholder-acceptance-phase-5.md`
   — the earlier program's acceptance packets.
 - `skill-runs/` — recorded real-work runs of method skills.
+- `multi-agent-coordination/` — the 2026-09-24 audit of concurrent sessions,
+  worktrees, authority, host residue, templates, and professional capability
+  (237 verified findings), the approved plan, and the recommended design for
+  several agent sessions from any host sharing one project. Its plan and design
+  describe commands the program is building.

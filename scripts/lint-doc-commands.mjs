@@ -30,12 +30,7 @@ const ROOT = process.argv[2] ? resolve(process.argv[2]) : fileURLToPath(new URL(
  * against the current registry would fail until the last phase and then
  * pass, which measures the calendar, not the document.
  */
-const DIRECTIVES = new Set([
-  'docs/internal/cutover-directive.md',
-  'docs/engineering/multi-agent-coordination/DESIGN.md',
-  'docs/engineering/multi-agent-coordination/PLAN.md',
-  'docs/engineering/multi-agent-coordination/FINDINGS.md',
-]);
+const DIRECTIVES = new Set(['docs/internal/cutover-directive.md']);
 
 const nouns = new Map(); // noun -> Set of subcommands ('' for a bare command)
 for (const spec of COMMANDS) {
