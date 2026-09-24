@@ -72,56 +72,159 @@ export function gitRootOf(cwd: string): string | null {
 export interface Repository {
   /** The directory holding this checkout's `.git` entry. */
   readonly checkout: string;
-  /** The main checkout: equal to `checkout` unless this is a linked worktree. */
-  readonly mainRoot: string;
-  /** True when `.git` is a file pointing at a linked worktree's git directory. */
+  /**
+   * The main checkout: equal to `checkout` unless this is a linked worktree.
+   * Null when there is none to bind to: the repository is bare, or it does
+   * not record where its main checkout is.
+   */
+  readonly mainRoot: string | null;
+  /** True when `.git` is a file naming a git directory that shares another repository's common directory. */
   readonly linked: boolean;
+  /** The repository's shared git directory (`.git` in an ordinary checkout). */
+  readonly commonDir: string;
+  /** True when the repository is bare, so no checkout of it is the main one. */
+  readonly bare: boolean;
   readonly branch: string | null;
   readonly head: string | null;
 }
 
-function readTrimmed(path: string): string | null {
+function readText(path: string): string | null {
   try {
-    return readFileSync(path, 'utf8').trim();
+    return readFileSync(path, 'utf8');
   } catch {
     return null;
   }
 }
 
-function headOf(gitDir: string): { branch: string | null; head: string | null } {
+function readTrimmed(path: string): string | null {
+  return readText(path)?.trim() ?? null;
+}
+
+/** One git config value: quotes removed, escapes applied, a trailing comment dropped. */
+function gitConfigValue(raw: string): string {
+  let out = '';
+  let quoted = false;
+  for (let i = 0; i < raw.length; i += 1) {
+    const c = raw[i]!;
+    if (c === '"') {
+      quoted = !quoted;
+    } else if (c === '\\' && i + 1 < raw.length) {
+      i += 1;
+      const e = raw[i]!;
+      out += e === 'n' ? '\n' : e === 't' ? '\t' : e === 'b' ? '\b' : e;
+    } else if (!quoted && (c === '#' || c === ';')) {
+      break;
+    } else {
+      out += c;
+    }
+  }
+  return out.trim();
+}
+
+function gitConfigBool(value: string | null): boolean | null {
+  if (value === null) return true;
+  const v = value.toLowerCase();
+  if (v === 'true' || v === 'yes' || v === 'on' || v === '1') return true;
+  if (v === 'false' || v === 'no' || v === 'off' || v === '0' || v === '') return false;
+  return null;
+}
+
+/**
+ * `core.bare` and `core.worktree` from git config files, read in order so a
+ * later file overrides an earlier one. Only these two keys are read; include
+ * directives are not followed.
+ */
+function readCoreConfig(files: readonly string[]): { readonly bare: boolean | null; readonly worktree: string | null } {
+  let bare: boolean | null = null;
+  let worktree: string | null = null;
+  for (const file of files) {
+    const text = readText(file);
+    if (text === null) continue;
+    let section = '';
+    for (const raw of text.split(/\r?\n/)) {
+      let line = raw.trim();
+      const header = /^\[([^\]"\s]+)(\s+"(?:[^"\\]|\\.)*")?\s*\](.*)$/.exec(line);
+      if (header) {
+        section = header[2] === undefined ? header[1]!.toLowerCase() : '';
+        line = header[3]!.trim();
+      }
+      if (section !== 'core' || line === '' || line.startsWith('#') || line.startsWith(';')) continue;
+      const entry = /^([A-Za-z][A-Za-z0-9-]*)\s*(?:=(.*))?$/.exec(line);
+      if (!entry) continue;
+      const key = entry[1]!.toLowerCase();
+      const value = entry[2] === undefined ? null : gitConfigValue(entry[2]);
+      if (key === 'bare') bare = gitConfigBool(value);
+      else if (key === 'worktree' && value !== null && value !== '') worktree = value;
+    }
+  }
+  return { bare, worktree };
+}
+
+const OBJECT_ID = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
+
+/**
+ * The commit a ref names, from a loose ref in the worktree's git directory or
+ * the shared one, then from packed-refs. Null for an unborn branch or a ref
+ * stored some other way (reftable).
+ */
+function resolveRef(name: string, gitDir: string, commonDir: string, depth = 0): string | null {
+  if (depth > 5 || !name.startsWith('refs/') || name.split('/').some((part) => part === '..' || part === '')) return null;
+  for (const dir of gitDir === commonDir ? [gitDir] : [gitDir, commonDir]) {
+    const loose = readTrimmed(join(dir, ...name.split('/')));
+    if (loose === null) continue;
+    const symbolic = /^ref:\s*(\S+)$/.exec(loose);
+    if (symbolic) return resolveRef(symbolic[1]!, gitDir, commonDir, depth + 1);
+    return OBJECT_ID.test(loose) ? loose : null;
+  }
+  for (const line of (readText(join(commonDir, 'packed-refs')) ?? '').split(/\r?\n/)) {
+    const packed = /^([0-9a-f]+) (\S+)$/.exec(line);
+    if (packed && packed[2] === name && OBJECT_ID.test(packed[1]!)) return packed[1]!;
+  }
+  return null;
+}
+
+function headOf(gitDir: string, commonDir: string): { branch: string | null; head: string | null } {
   const head = readTrimmed(join(gitDir, 'HEAD'));
   if (!head) return { branch: null, head: null };
-  const ref = /^ref:\s*refs\/heads\/(.+)$/.exec(head);
-  return ref ? { branch: ref[1]!, head: null } : { branch: null, head };
+  const ref = /^ref:\s*(\S+)$/.exec(head);
+  if (!ref) return { branch: null, head: OBJECT_ID.test(head) ? head : null };
+  const name = ref[1]!;
+  return { branch: name.startsWith('refs/heads/') ? name.slice('refs/heads/'.length) : null, head: resolveRef(name, gitDir, commonDir) };
 }
 
 /**
  * The repository a directory belongs to, read from files alone (no git process,
- * so hooks stay fast). A linked worktree's `.git` is a file naming its git
- * directory, whose `commondir` names the main repository's `.git`; the main
- * checkout is that directory's parent. A bare repository has no main checkout
- * and is reported as its own, unlinked.
+ * so hooks stay fast). When `.git` is a file naming a git directory that has a
+ * `commondir`, the checkout is a linked worktree, whatever the common directory
+ * is called. Its main checkout is `core.worktree` from the common config when
+ * set (a submodule's), else the common directory's parent when that directory
+ * is a non-bare `.git`. A bare repository has no main checkout, and a common
+ * directory named otherwise that sets no `core.worktree` (a separate git
+ * directory) does not say where its main checkout is; both leave `mainRoot`
+ * null. A `.git` file whose git directory has no `commondir` (a submodule, a
+ * separate git directory) marks that repository's own main checkout.
  */
 export function resolveRepository(cwd: string): Repository | null {
   const checkout = gitRootOf(cwd);
   if (checkout === null) return null;
   const dotGit = join(checkout, '.git');
   let gitDir = dotGit;
-  let linked = false;
   if (lstatSync(dotGit).isFile()) {
     const pointer = /^gitdir:\s*(.+)$/m.exec(readTrimmed(dotGit) ?? '');
-    if (pointer) {
-      gitDir = resolve(checkout, pointer[1]!);
-      const common = readTrimmed(join(gitDir, 'commondir'));
-      const commonDir = common ? resolve(gitDir, common) : null;
-      if (commonDir && basename(commonDir) === '.git' && existsSync(commonDir)) {
-        const { branch, head } = headOf(gitDir);
-        return { checkout, mainRoot: dirname(commonDir), linked: true, branch, head };
-      }
-    }
+    // A relative pointer is relative to where the .git file really is, not to the spelling that reached it.
+    if (pointer) gitDir = resolve(realpathOr(checkout), pointer[1]!.trim());
   }
-  const { branch, head } = headOf(gitDir);
-  return { checkout, mainRoot: checkout, linked, branch, head };
+  const common = gitDir === dotGit ? null : readTrimmed(join(gitDir, 'commondir'));
+  const commonDir = common ? resolve(gitDir, common) : gitDir;
+  const linked = Boolean(common);
+  const core = readCoreConfig([join(commonDir, 'config'), join(commonDir, 'config.worktree')]);
+  let mainRoot: string | null;
+  if (!linked) mainRoot = core.bare === true ? null : checkout;
+  else if (core.worktree !== null) mainRoot = resolve(commonDir, core.worktree);
+  else if (core.bare === true) mainRoot = null;
+  else mainRoot = basename(commonDir) === '.git' ? dirname(commonDir) : null;
+  const bare = mainRoot === null && core.bare === true;
+  return { checkout, mainRoot, linked, commonDir, bare, ...headOf(gitDir, commonDir) };
 }
 
 /** Where init would put a project: the repository root, else cwd itself. */
@@ -155,10 +258,29 @@ export class WorktreeBindingError extends OperationError {
   }
 }
 
+/**
+ * The repository's main checkout, or a refusal naming why there is none. A
+ * project keeps its one store in its main checkout, so a bare repository (and
+ * a worktree of one) is refused rather than treated as a project of its own.
+ */
+export function mainCheckoutOf(repo: Repository): string {
+  if (repo.mainRoot !== null) return repo.mainRoot;
+  if (repo.bare) {
+    throw new WorktreeBindingError(
+      `${repo.linked ? `this is a git worktree of the bare repository ${repo.commonDir}` : `this directory's git repository, ${repo.commonDir}, is bare`}, which has no main checkout; Construct keeps a project's one store in its main checkout, so it does not work in bare repository layouts`,
+      'Use Construct from an ordinary (non-bare) clone of the repository; every worktree of that clone shares its store.',
+    );
+  }
+  throw new WorktreeBindingError(
+    `this is a git worktree of ${repo.commonDir}, which does not record where its main checkout is (the directory is not named .git and sets no core.worktree); Construct keeps a project's one store in the main checkout`,
+    'Work from the main checkout, or record it there with `git config core.worktree <path of the main checkout>`.',
+  );
+}
+
 /** The lane a session in `sessionCwd` works in, when that is a linked worktree of the repository holding `root`. */
 function laneFor(root: string, sessionCwd: string): Lane | null {
   const repo = resolveRepository(sessionCwd);
-  if (!repo?.linked) return null;
+  if (!repo?.linked || repo.mainRoot === null) return null;
   // Git records worktree paths resolved; compare real paths so an aliased
   // spelling of the same directory (macOS /var and /private/var) still matches.
   const rel = relative(realpathOr(repo.mainRoot), realpathOr(root));
@@ -182,18 +304,19 @@ function realpathOr(path: string): string {
  */
 export function bindProject(ctx: CliContext): BoundProject {
   const repo = resolveRepository(ctx.cwd);
+  const mainRoot = repo === null ? null : mainCheckoutOf(repo);
   const floor = repo?.checkout ?? ctx.cwd;
   const here = findProjectRoot({ start: ctx.cwd, floor });
-  if (!repo?.linked) {
+  if (repo === null || mainRoot === null || !repo.linked) {
     if (here === null) throw new NoProjectError(resolve(ctx.cwd));
     return { root: here, layout: projectLayout(here), files: readProjectFiles(here), lane: laneFor(here, ctx.sessionCwd ?? ctx.cwd) };
   }
-  const sameRelative = (dir: string): string => join(repo.mainRoot, relative(repo.checkout, dir));
-  const root = here !== null ? sameRelative(here) : findProjectRoot({ start: sameRelative(ctx.cwd), floor: repo.mainRoot });
+  const sameRelative = (dir: string): string => join(mainRoot, relative(repo.checkout, dir));
+  const root = here !== null ? sameRelative(here) : findProjectRoot({ start: sameRelative(ctx.cwd), floor: mainRoot });
   if (root === null || !hasProject(root)) {
     throw new WorktreeBindingError(
-      `this is a git worktree of ${repo.mainRoot}, and that checkout has no Construct project${here !== null ? ` at ${sameRelative(here)}` : ''}`,
-      `Run \`construct init\` in ${repo.mainRoot}; its one store serves every worktree of the repository.`,
+      `this is a git worktree of ${mainRoot}, and that checkout has no Construct project${here !== null ? ` at ${sameRelative(here)}` : ''}`,
+      `Run \`construct init\` in ${mainRoot}; its one store serves every worktree of the repository.`,
     );
   }
   const files = readProjectFiles(root);
@@ -206,7 +329,7 @@ export function bindProject(ctx: CliContext): BoundProject {
       'One repository is one project. Bring the worktree’s .construct/project.json back in line with the main checkout’s.',
     );
   }
-  const lane: Lane = { root: join(repo.checkout, relative(repo.mainRoot, root)), checkout: repo.checkout, branch: repo.branch, head: repo.head };
+  const lane: Lane = { root: join(repo.checkout, relative(mainRoot, root)), checkout: repo.checkout, branch: repo.branch, head: repo.head };
   return { root, layout: projectLayout(root), files, lane };
 }
 

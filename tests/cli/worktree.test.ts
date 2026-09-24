@@ -6,16 +6,19 @@
  * hosts do). Every worktree binds to the project in the main checkout and uses
  * its single store; the worktree becomes the session's lane. Nothing ever
  * creates a second store, removing a worktree loses nothing, and a worktree
- * that claims to be a different project is refused.
+ * that claims to be a different project is refused. A worktree of a submodule
+ * binds to the submodule's checkout; a bare repository has no main checkout,
+ * so its worktrees are refused rather than treated as projects of their own.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sterile, type SterileFixture } from '../harness/sterile.ts';
+import { resolveRepository } from '../../src/cli/context.ts';
 
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 
@@ -42,6 +45,17 @@ function sh(fx: SterileFixture, cwd: string, cmd: string, args: string[]): { sta
 
 function cli(fx: SterileFixture, cwd: string, args: string[]): { status: number | null; out: string } {
   return sh(fx, cwd, process.execPath, [LAUNCHER, ...args]);
+}
+
+function git(fx: SterileFixture, cwd: string, args: string[]): string {
+  const r = sh(fx, cwd, 'git', args);
+  assert.equal(r.status, 0, `git ${args.join(' ')}: ${r.out}`);
+  return r.out.trim();
+}
+
+/** A pattern matching a path however the temp directory is spelled (macOS /var or /private/var). */
+function pathPattern(path: string): RegExp {
+  return new RegExp(realpathSync(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/^\/private/, '(?:/private)?'));
 }
 
 interface Repo {
@@ -112,7 +126,7 @@ test('doctor in a worktree reports the shared project, and init there is refused
     const refused = cli(fx, r.external, ['init', '--no-wire']);
     assert.notEqual(refused.status, 0);
     assert.match(refused.out, /git worktree of/);
-    assert.match(refused.out, new RegExp(realpathSync(r.main).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/^\/private/, '(?:/private)?')));
+    assert.match(refused.out, pathPattern(r.main));
     assert.equal(existsSync(join(r.external, '.construct', 'state')), false);
   } finally {
     fx.cleanup();
@@ -149,7 +163,13 @@ test('a worktree whose project file names a different project is refused', () =>
   }
 });
 
-function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): Promise<{ root: string; lane: { checkout: string; branch: string | null } | null }> {
+interface BootstrapLane {
+  readonly checkout: string;
+  readonly branch: string | null;
+  readonly head: string | null;
+}
+
+function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): Promise<{ root: string; lane: BootstrapLane | null }> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=claude-code', ...extra], { cwd, env: envFor(fx) });
     let buffer = '';
@@ -158,11 +178,11 @@ function bootstrapFrom(fx: SterileFixture, cwd: string, extra: string[] = []): P
       for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
         const line = buffer.slice(0, nl);
         buffer = buffer.slice(nl + 1);
-        const msg = JSON.parse(line) as { id: number; result?: { structuredContent?: { construct?: { project?: { root: string; lane: { checkout: string; branch: string | null } | null } } } } };
+        const msg = JSON.parse(line) as { id: number; result?: { structuredContent?: { construct?: { project?: { root: string; lane: BootstrapLane | null } } } } };
         if (msg.id !== 2) continue;
         child.stdin.end();
         const project = msg.result?.structuredContent?.construct?.project;
-        if (!project) return reject(new Error(`no project in bootstrap: ${line.slice(0, 300)}`));
+        if (!project) return reject(new Error(`no project in bootstrap: ${line}`));
         resolve(project);
       }
     });
@@ -179,11 +199,124 @@ test('a server started in a worktree binds the main store and reports its lane',
     assert.equal(realpathSync(fromLane.root), realpathSync(r.main));
     assert.equal(realpathSync(fromLane.lane!.checkout), realpathSync(r.external));
     assert.equal(fromLane.lane!.branch, 'lane-b');
+    assert.equal(fromLane.lane!.head, git(fx, r.external, ['rev-parse', 'HEAD']), 'a lane on a branch reports the commit it is at');
     const pinned = await bootstrapFrom(fx, r.nested, [`--project=${r.main}`]);
     assert.equal(realpathSync(pinned.root), realpathSync(r.main));
     assert.equal(realpathSync(pinned.lane!.checkout), realpathSync(r.nested), 'a pinned --project still reports the worktree the session runs in');
     const main = await bootstrapFrom(fx, r.main);
     assert.equal(main.lane, null);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('worktrees of a bare repository are refused, never treated as projects of their own', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    const bare = join(fx.root, 'bare.git');
+    git(fx, fx.root, ['clone', '-q', '--bare', r.main, bare]);
+    const bareLane = join(fx.root, 'bare-lane');
+    git(fx, bare, ['worktree', 'add', '-q', '-b', 'lane', bareLane]);
+    // The .bare layout: a bare repository beside a .git file that points at it.
+    const container = join(fx.root, 'container');
+    mkdirSync(container);
+    git(fx, fx.root, ['clone', '-q', '--bare', r.main, join(container, '.bare')]);
+    writeFileSync(join(container, '.git'), 'gitdir: ./.bare\n');
+    const containerLane = join(container, 'main');
+    git(fx, container, ['worktree', 'add', '-q', containerLane]);
+
+    for (const lane of [bareLane, containerLane]) {
+      const found = resolveRepository(lane);
+      assert.equal(found?.linked, true, lane);
+      assert.equal(found?.bare, true, lane);
+      assert.equal(found?.mainRoot, null, lane);
+    }
+    for (const dir of [bareLane, containerLane, container]) {
+      for (const args of [['init', '--no-wire'], ['work', 'list']]) {
+        const refused = cli(fx, dir, args);
+        assert.notEqual(refused.status, 0, `${args.join(' ')} in ${dir}: ${refused.out}`);
+        assert.match(refused.out, /bare/);
+        assert.doesNotMatch(refused.out, /`construct init`/, 'the advice never sets up a store in a bare layout');
+      }
+      assert.equal(existsSync(join(dir, '.construct', 'state')), false, `no store is created in ${dir}`);
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a worktree of a submodule binds to the submodule checkout; a separate git directory binds once it records its checkout', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    const superproject = join(fx.root, 'super');
+    mkdirSync(superproject);
+    git(fx, superproject, ['init', '-q', '-b', 'main']);
+    git(fx, superproject, ['-c', 'protocol.file.allow=always', 'submodule', 'add', '-q', r.main, 'sub']);
+    git(fx, superproject, ['commit', '-q', '-m', 'sub']);
+    const sub = join(superproject, 'sub');
+    assert.equal(resolveRepository(sub)?.linked, false, 'the submodule checkout itself is a main checkout');
+    assert.equal(cli(fx, sub, ['init', '--no-wire']).status, 0);
+    assert.equal(cli(fx, sub, ['work', 'add', 'in the submodule']).status, 0);
+    const subLane = join(fx.root, 'sub-lane');
+    git(fx, sub, ['worktree', 'add', '-q', '-b', 'lane', subLane]);
+    assert.equal(realpathSync(resolveRepository(subLane)!.mainRoot!), realpathSync(sub));
+    assert.deepEqual(titles(fx, subLane), ['in the submodule']);
+    const init = cli(fx, subLane, ['init', '--no-wire']);
+    assert.notEqual(init.status, 0);
+    assert.match(init.out, pathPattern(sub));
+    assert.equal(existsSync(join(subLane, '.construct', 'state')), false);
+
+    const separate = join(fx.root, 'separate');
+    git(fx, fx.root, ['clone', '-q', `--separate-git-dir=${join(fx.root, 'separate.git')}`, r.main, separate]);
+    assert.equal(cli(fx, separate, ['init', '--no-wire']).status, 0);
+    assert.equal(cli(fx, separate, ['work', 'add', 'in the separate clone']).status, 0);
+    const separateLane = join(fx.root, 'separate-lane');
+    git(fx, separate, ['worktree', 'add', '-q', '-b', 'lane', separateLane]);
+    const unrecorded = cli(fx, separateLane, ['work', 'list']);
+    assert.notEqual(unrecorded.status, 0, unrecorded.out);
+    assert.match(unrecorded.out, /does not record where its main checkout is/);
+    assert.match(unrecorded.out, /core\.worktree/);
+    assert.equal(existsSync(join(separateLane, '.construct', 'state')), false);
+    git(fx, separate, ['config', 'core.worktree', separate]);
+    assert.deepEqual(titles(fx, separateLane), ['in the separate clone']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a lane on a branch reports its commit from a loose or a packed ref', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    const head = git(fx, r.external, ['rev-parse', 'HEAD']);
+    assert.equal(resolveRepository(r.external)?.head, head);
+    git(fx, r.main, ['pack-refs', '--all']);
+    assert.equal(existsSync(join(r.main, '.git', 'refs', 'heads', 'lane-b')), false, 'the branch now lives only in packed-refs');
+    assert.equal(resolveRepository(r.external)?.head, head);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a worktree with a relative gitdir pointer is linked even when reached through a symlink', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    // What `git worktree add --relative-paths` writes: a pointer relative to the worktree's real location.
+    const gitDir = realpathSync(join(r.main, '.git', 'worktrees', 'repo-b'));
+    writeFileSync(join(r.external, '.git'), `gitdir: ${relative(realpathSync(r.external), gitDir)}\n`);
+    assert.equal(git(fx, r.external, ['rev-parse', '--abbrev-ref', 'HEAD']), 'lane-b', 'git still reads the rewritten pointer');
+    const alias = join(fx.root, 'aliases', 'lane');
+    mkdirSync(dirname(alias));
+    symlinkSync(r.external, alias);
+    const found = resolveRepository(alias);
+    assert.equal(found?.linked, true);
+    assert.equal(realpathSync(found!.mainRoot!), realpathSync(r.main));
+    const described = cli(fx, fx.root, ['serve', '--describe', '--client=claude-code', `--project=${alias}`]);
+    assert.equal(described.status, 0, described.out);
+    assert.match(described.out, new RegExp(`bound to ${pathPattern(r.main).source}\\s`));
   } finally {
     fx.cleanup();
   }
