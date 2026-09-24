@@ -9,7 +9,7 @@
  * leaves the connection exactly as it was, so the next transaction is still a
  * transaction.
  *
- * Refuses any file that is not exactly this format. A store in the previous
+ * Refuses any file that is not exactly this format. A store in an earlier
  * format is upgraded only when the caller asks for it; a read never changes
  * the file's format. Foreign keys are always on. Multi-row transitions run
  * inside `transaction`, which is the only place BEGIN and COMMIT appear.
@@ -20,7 +20,7 @@ import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
-import { isCompleteV2, migrateV2ToV3 } from './migrate.ts';
+import { isCompleteV2, migrateV2ToV3, migrateV3ToV4 } from './migrate.ts';
 
 /** How long one statement waits for another connection's lock. */
 export const BUSY_TIMEOUT_MS = 5000;
@@ -109,10 +109,10 @@ function readMeta(db: DatabaseSync, key: string): string | null {
 }
 
 /**
- * Format 3 is current. A complete format-2 store is upgraded in place (one
- * way) when `migrate` is set, and refused as older otherwise. A newer format
- * is refused as newer, never with an instruction that would discard it.
- * Anything else is refused unread.
+ * Format 4 is current. A complete store in format 2 or 3 is upgraded in place
+ * (one way, through each format in turn) when `migrate` is set, and refused as
+ * older otherwise. A newer format is refused as newer, never with an
+ * instruction that would discard it. Anything else is refused unread.
  */
 function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions): number | null {
   const names = tableNames(db);
@@ -128,16 +128,18 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
   if (versionOrNull !== null && versionOrNull > STATE_FORMAT_VERSION) {
     throw new UnsupportedStateError(format, versionOrNull, 'newer');
   }
-  if (versionOrNull === 2) {
-    if (!isCompleteV2(db)) throw new UnsupportedStateError(format, versionOrNull);
+  if (versionOrNull === 2 || versionOrNull === 3) {
+    if (versionOrNull === 2 && !isCompleteV2(db)) throw new UnsupportedStateError(format, versionOrNull);
     if (!options.migrate || options.readOnly) throw new UnsupportedStateError(format, versionOrNull, 'older');
     let migrated: number | null = null;
     beginImmediate(db, path);
     try {
       // Another process may have upgraded it while this one waited for the lock.
-      if (readMeta(db, 'format_version') === '2') {
-        migrateV2ToV3(db);
-        migrated = 2;
+      const found = Number(readMeta(db, 'format_version'));
+      if (found === 2) migrateV2ToV3(db);
+      if (found === 2 || found === 3) {
+        migrateV3ToV4(db);
+        migrated = found;
       }
       db.exec('COMMIT');
     } catch (err) {
@@ -314,7 +316,7 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
 }
 
 /**
- * Stamp an empty file as format 3 under the write lock. Another process may
+ * Stamp an empty file in the current format under the write lock. Another process may
  * have stamped it between the emptiness check and the lock; the check is
  * repeated inside the transaction so the second opener only verifies.
  */

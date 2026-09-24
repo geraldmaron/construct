@@ -1,6 +1,7 @@
 /**
- * kernel/state/migrate.ts — one-way additive upgrade from construct-state 2
- * to construct-state 3.
+ * kernel/state/migrate.ts — one-way additive upgrades: construct-state 2 to 3
+ * (the native work ledger and provenance columns) and 3 to 4 (sessions, agent
+ * attribution, fenced claims, path leases, and answer channels).
  *
  * Format 1 and anything else remain refused unread. Format 2 that is missing
  * a format-2 table is also refused: this migrator adds the native work
@@ -199,4 +200,85 @@ export function migrateV2ToV3(db: DatabaseSync): void {
 
   db.exec(WORK_SQL);
   db.prepare(`UPDATE meta SET value = '3' WHERE key = 'format_version'`).run();
+}
+
+const FORMAT4_TABLES_SQL = `
+CREATE TABLE IF NOT EXISTS sessions (
+  id                  TEXT PRIMARY KEY,
+  host                TEXT NOT NULL,
+  surface             TEXT NOT NULL CHECK (surface IN ('interactive', 'headless', 'cli', 'hook')),
+  host_session_id     TEXT,
+  host_session_source TEXT,
+  client_name         TEXT,
+  client_version      TEXT,
+  model               TEXT,
+  model_source        TEXT,
+  machine             TEXT NOT NULL,
+  pid                 INTEGER,
+  serve_version       TEXT,
+  lane_root           TEXT,
+  branch              TEXT,
+  head                TEXT,
+  started_at          TEXT NOT NULL,
+  last_seen_at        TEXT NOT NULL,
+  ended_at            TEXT,
+  end_reason          TEXT,
+  activity_cursor     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS sessions_live ON sessions (ended_at, last_seen_at);
+CREATE TABLE IF NOT EXISTS session_agents (
+  session_id      TEXT NOT NULL REFERENCES sessions(id),
+  agent           TEXT NOT NULL,
+  host_agent_id   TEXT,
+  agent_type      TEXT,
+  parent_agent    TEXT,
+  attestation     TEXT NOT NULL CHECK (attestation IN ('host', 'reported')),
+  lane_root       TEXT,
+  first_seen_at   TEXT NOT NULL,
+  last_seen_at    TEXT NOT NULL,
+  PRIMARY KEY (session_id, agent)
+);
+CREATE TABLE IF NOT EXISTS path_leases (
+  id              TEXT PRIMARY KEY,
+  work_id         TEXT NOT NULL REFERENCES work_items(id),
+  session_id      TEXT NOT NULL,
+  agent           TEXT,
+  lane_root       TEXT NOT NULL,
+  branch          TEXT,
+  path            TEXT NOT NULL,
+  mode            TEXT NOT NULL CHECK (mode IN ('exclusive', 'shared')),
+  token           TEXT NOT NULL,
+  created_at      TEXT NOT NULL,
+  until           TEXT NOT NULL,
+  released_at     TEXT,
+  release_reason  TEXT
+);
+CREATE INDEX IF NOT EXISTS path_leases_live ON path_leases (released_at, until);
+`;
+
+/** Columns format 4 adds to format-3 tables, in the order the fresh schema declares them. */
+export const FORMAT4_COLUMNS: ReadonlyArray<readonly [table: string, column: string, decl: string]> = [
+  ['work_items', 'claim_session', 'TEXT'],
+  ['work_items', 'claim_agent', 'TEXT'],
+  ['work_items', 'claim_lane', 'TEXT'],
+  ['work_items', 'claim_touched_at', 'TEXT'],
+  ['work_items', 'handoff_json', 'TEXT'],
+  ['step_runs', 'lease_nonce', 'TEXT'],
+  ['activity_events', 'session_id', 'TEXT'],
+  ['activity_events', 'agent', 'TEXT'],
+  ['activity_events', 'channel', 'TEXT'],
+  ['decisions', 'channel', 'TEXT'],
+  ['grants', 'run_id', 'TEXT'],
+  ['grants', 'step_run_id', 'TEXT'],
+  ['grants', 'channel', 'TEXT'],
+];
+
+/**
+ * Format 3 to 4. Existing claims keep their owners and expire as they would
+ * have; the new identity columns stay empty for rows written before them.
+ */
+export function migrateV3ToV4(db: DatabaseSync): void {
+  for (const [table, column, decl] of FORMAT4_COLUMNS) addColumn(db, table, column, decl);
+  db.exec(FORMAT4_TABLES_SQL);
+  db.prepare(`UPDATE meta SET value = '4' WHERE key = 'format_version'`).run();
 }

@@ -33,7 +33,7 @@ function project(fx: SterileFixture): { dir: string; db: string } {
   return { dir, db: join(dir, '.construct', 'state', 'construct.sqlite') };
 }
 
-/** Rewind a format-3 store to a complete format-2 store, as an earlier build left it. */
+/** Rewind a current store to a complete format-2 store, as an earlier build left it. */
 function toFormat2(db: string): void {
   const d = new DatabaseSync(db);
   d.exec('PRAGMA journal_mode = DELETE');
@@ -75,7 +75,7 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
     assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '2');
     backup.close();
     const upgraded = new DatabaseSync(db, { readOnly: true });
-    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '3');
+    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '4');
     upgraded.close();
     const second = cli(fx, dir, ['migrate', '--json']);
     assert.equal(second.status, 0);
