@@ -12,6 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
@@ -132,6 +133,47 @@ test('parallel command-line writers and MCP servers never fail for a lock', { ti
     } finally {
       db.close();
     }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+function startOutcome(project: string, env: NodeJS.ProcessEnv): Promise<{ created: boolean; runId: string } | { error: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [LAUNCHER, 'serve', '--client=cursor'], { cwd: project, env });
+    let buffer = '';
+    child.stdout.on('data', (d) => {
+      buffer += String(d);
+      for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
+        const line = buffer.slice(0, nl);
+        buffer = buffer.slice(nl + 1);
+        const msg = JSON.parse(line) as { id: number; result?: { isError?: boolean; structuredContent?: { created?: boolean; run?: { id: string }; error?: string } } };
+        if (msg.id !== 2) continue;
+        child.stdin.end();
+        const sc = msg.result?.structuredContent;
+        resolve(msg.result?.isError ? { error: sc?.error ?? 'error' } : { created: sc?.created === true, runId: sc?.run?.id ?? '' });
+      }
+    });
+    child.on('error', reject);
+    const send = (m: unknown): boolean => child.stdin.write(`${JSON.stringify(m)}\n`);
+    send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'race', version: '0' } } });
+    send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+    send({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'start_outcome', arguments: { workflowId: 'design-conformance', input: { target: 'README.md' } } } });
+  });
+}
+
+test('sessions starting the same outcome at once get one run between them', { timeout: 120_000 }, async () => {
+  const fx = sterile();
+  try {
+    const project = initProject(fx);
+    writeFileSync(join(project, 'README.md'), '# Race\n');
+    const env = envFor(fx);
+    const results = await Promise.all(Array.from({ length: 4 }, () => startOutcome(project, env)));
+    const errors = results.filter((r) => 'error' in r);
+    assert.deepEqual(errors, []);
+    const runs = new Set(results.map((r) => ('runId' in r ? r.runId : '')));
+    assert.equal(runs.size, 1, `one run for one piece of work, got ${JSON.stringify(results)}`);
+    assert.equal(results.filter((r) => 'created' in r && r.created).length, 1);
   } finally {
     fx.cleanup();
   }
