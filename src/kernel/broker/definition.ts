@@ -37,6 +37,12 @@ export interface ToolDefinition<C, I, O> {
   readonly description: string;
   readonly surface: Surface;
   readonly readOnly: boolean;
+  /**
+   * The tool can make a change a person would not want made without them:
+   * minting an approval, settling a trust state, or closing work. Hosts that
+   * key safeguards on MCP's destructiveHint then treat it accordingly.
+   */
+  readonly destructive?: boolean;
   readonly inputSchema: JsonSchema;
   validate(raw: Record<string, unknown>): I;
   run(ctx: C, input: I): Promise<O> | O;
@@ -102,6 +108,6 @@ export function mcpTool(def: ToolDefinition<unknown, unknown, unknown>): Record<
     title: def.title,
     description: def.description,
     inputSchema: def.inputSchema,
-    annotations: { title: def.title, readOnlyHint: def.readOnly, destructiveHint: false, openWorldHint: false },
+    annotations: { title: def.title, readOnlyHint: def.readOnly, destructiveHint: def.destructive === true, openWorldHint: false },
   };
 }

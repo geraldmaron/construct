@@ -26,6 +26,7 @@ import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
+import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
 import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, reopenWork } from '../work/service.ts';
 
@@ -452,9 +453,10 @@ const inbox = define<{ runId?: string }, unknown>({
 const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
   title: 'Relay the person’s decision',
-  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens.',
+  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly; relayed here it stays open and says how.',
   surface: 'interactive',
   readOnly: false,
+  destructive: true,
   inputSchema: {
     type: 'object',
     properties: { decisionId: { type: 'string', description: 'From inbox.' }, resolution: { type: 'string', description: 'The person’s answer, or one of the options.' } },
@@ -481,8 +483,13 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       const decision = getDecision(ctx.store, decisionId)!;
       return { decision: { id: decision.id, state: decision.state, resolvedBy: decision.resolvedBy }, run: null, profile: { onboarding: applied.profile.onboardingState, missing: applied.missing } };
     }
-    const r = ctx.workflow.decide({ decisionId, resolution, by: ctx.actor });
-    return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
+    try {
+      const r = ctx.workflow.decide({ decisionId, resolution, by: ctx.actor, channel: 'relay' });
+      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
+    } catch (error) {
+      if (!(error instanceof PersonChannelRequiredError)) throw error;
+      return { decision: { id: decisionId, state: 'open' }, personRequired: true, next: error.message };
+    }
   },
 });
 
@@ -544,9 +551,10 @@ const staff = define<{ action: 'list' | 'show'; id?: string }, unknown>({
 const promote = define<{ deliverableId: string; to: TrustState; reason?: string }, unknown>({
   name: 'promote_deliverable',
   title: 'Move a deliverable’s trust',
-  description: 'After the person has reviewed a deliverable: record a challenge verdict, their acceptance, or make it final. Only the person’s own judgment moves trust; a finished step never does.',
+  description: 'After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: asked for here, they wait in the inbox for the person to give directly. A finished step never moves trust.',
   surface: 'interactive',
   readOnly: false,
+  destructive: true,
   inputSchema: {
     type: 'object',
     properties: { deliverableId: { type: 'string', description: 'The deliverable id.' }, to: { type: 'string', description: 'The trust state to move to.', enum: TRUST_STATES }, reason: { type: 'string', description: 'Why, in the person’s words.' } },
@@ -558,7 +566,11 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
     return { deliverableId: str(raw, 'deliverableId')!, to: str(raw, 'to', { oneOf: TRUST_STATES }) as TrustState, reason: str(raw, 'reason', { optional: true }) };
   },
   run(ctx, { deliverableId, to, reason }) {
-    const d = ctx.workflow.promote({ deliverableId, to, by: ctx.actor, reason });
+    if (PERSON_ONLY_TRUST.has(to)) {
+      const pending = ctx.workflow.requestPromotion({ deliverableId, to, by: ctx.actor, reason });
+      return { deliverable: { id: deliverableId, trust: 'unchanged' }, pendingDecision: pending.id, personRequired: true, next: personStepFor(pending.id) };
+    }
+    const d = ctx.workflow.promote({ deliverableId, to, by: ctx.actor, channel: 'relay', reason });
     return { deliverable: { id: d.id, trust: d.trustState } };
   },
 });
@@ -569,6 +581,7 @@ const work = define<{ action: 'list' | 'ready' | 'show' | 'add' | 'claim' | 'com
   description: 'Query, claim, complete, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string.',
   surface: 'interactive',
   readOnly: false,
+  destructive: true,
   inputSchema: {
     type: 'object',
     properties: {

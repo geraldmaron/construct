@@ -81,10 +81,10 @@ test('a managed run: idempotent start, ordered leases, validated outputs, a draf
     assert.deepEqual(view.steps.map((s) => s.state), ['succeeded', 'succeeded', 'succeeded']);
     assert.equal(view.deliverables.length, 2);
     const final = view.deliverables.find((d) => d.trustState === 'validated')!;
-    assert.throws(() => fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald' }), /only after it was accepted/);
+    assert.throws(() => fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' }), /only after it was accepted/);
     fx.service.promote({ deliverableId: final.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted with controls' } });
-    fx.service.promote({ deliverableId: final.id, to: 'accepted', by: 'gerald' });
-    const done = fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald' });
+    fx.service.promote({ deliverableId: final.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
+    const done = fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' });
     assert.equal(done.trustState, 'final');
     assert.deepEqual(fx.service.claimNext({ runId: first.run.id }).waitingOn, { kind: 'finished', state: 'succeeded' });
   } finally {
@@ -111,7 +111,7 @@ test('an external write pauses for the smallest approval; approval resumes exact
     const same = fx.service.claimNext({ runId: started.run.id });
     assert.equal(same.waitingOn?.kind === 'decision' ? same.waitingOn.decision.id : null, decision!.id, 'one question, not one per poll');
 
-    const resolved = fx.service.decide({ decisionId: decision!.id, resolution: 'approve', by: 'gerald' });
+    const resolved = fx.service.decide({ decisionId: decision!.id, resolution: 'approve', by: 'gerald', channel: 'tty_cli' });
     assert.equal(resolved.run?.state, 'running');
     const grants = listGrants(fx.store);
     assert.equal(grants.length, 1);
@@ -232,11 +232,11 @@ test('architectural work is challenged without magic words; a helper rename is n
     const submitted = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'add postgres', findings: [] } });
     assert.equal(submitted.deliverable?.trustState, 'validated');
     assert.throws(
-      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /recorded challenge/,
     );
     fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted' } });
-    const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' });
+    const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     assert.equal(accepted.trustState, 'accepted');
 
     const unusual = fx.service.start({ workflowId: 'ship', input: { request: 'Put identity and billing on the same postgres' }, trigger: 'manual' });
@@ -244,7 +244,7 @@ test('architectural work is challenged without magic words; a helper rename is n
     const u1 = fx.service.claimNext({ runId: unusual.run.id });
     const uDone = fx.service.submit({ leased: u1.packet!.leased, output: { summary: 'split stores', findings: [] } });
     assert.throws(
-      () => fx.service.promote({ deliverableId: uDone.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      () => fx.service.promote({ deliverableId: uDone.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /recorded challenge/,
       'unusual phrasing cannot bypass promote to accepted',
     );
@@ -254,7 +254,7 @@ test('architectural work is challenged without magic words; a helper rename is n
     const t1 = fx.service.claimNext({ runId: trivial.run.id });
     assert.match(t1.packet!.instructions.join(' '), /low-stakes/);
     const done = fx.service.submit({ leased: t1.packet!.leased, output: { summary: 'renamed', findings: [] } });
-    const trusted = fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald' });
+    const trusted = fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     assert.equal(trusted.trustState, 'accepted');
   } finally {
     fx.cleanup();
@@ -272,7 +272,7 @@ test('unknowns stay unknown: a verified placeholder cannot be accepted', () => {
     });
     assert.equal(invented.deliverable?.trustState, 'validated');
     assert.throws(
-      () => fx.service.promote({ deliverableId: invented.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      () => fx.service.promote({ deliverableId: invented.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /invented/,
     );
   } finally {
@@ -304,7 +304,7 @@ test('an active contradiction blocks trusted finish', () => {
     });
 
     assert.throws(
-      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald' }),
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /active contradiction/,
     );
   } finally {
