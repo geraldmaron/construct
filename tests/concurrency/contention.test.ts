@@ -21,10 +21,15 @@ import { sterile, type SterileFixture } from '../harness/sterile.ts';
 const LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
 const WORKER = fileURLToPath(new URL('./worker.ts', import.meta.url));
 
+/**
+ * The suite runs a light load. A person measuring the store can raise it:
+ * CONSTRUCT_CONTENTION_SCALE=5 runs 12 writers x 75 adds and 3 servers x 200 calls.
+ */
+const SCALE = Math.max(1, Number(process.env.CONSTRUCT_CONTENTION_SCALE ?? '1') || 1);
 const CLI_WORKERS = 12;
-const CLI_ADDS = 15;
+const CLI_ADDS = 15 * SCALE;
 const SERVERS = 3;
-const SERVER_CALLS = 40;
+const SERVER_CALLS = 40 * SCALE;
 
 function envFor(fx: SterileFixture): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
@@ -107,7 +112,7 @@ function runServer(project: string, env: NodeJS.ProcessEnv, label: string): Prom
   });
 }
 
-test('parallel command-line writers and MCP servers never fail for a lock', { timeout: 180_000 }, async () => {
+test('parallel command-line writers and MCP servers never fail for a lock', { timeout: 600_000 }, async () => {
   const fx = sterile();
   try {
     const project = initProject(fx);
