@@ -57,7 +57,7 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 ## Architecture
 
 - `src/kernel/` — host-agnostic core. Only `kernel/paths.ts` may read env
-  or home. Storage is built-in `node:sqlite`. State format 3.
+  or home. Storage is built-in `node:sqlite`. State format 4.
 - `src/kernel/work/` — native bounded work ledger.
 - `src/hosts/` — host adapters. OpenCode is pinned.
 - `src/cli/` — setup, inspection, scripting, recovery.

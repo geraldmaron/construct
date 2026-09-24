@@ -9,14 +9,14 @@
  */
 
 export const STATE_FORMAT_ID = 'construct-state';
-export const STATE_FORMAT_VERSION = 3;
+export const STATE_FORMAT_VERSION = 4;
 
 export const UNSUPPORTED_STATE_MESSAGE =
   'This Construct state was written by a format this version does not read.\n' +
   'Run `construct reset` to start fresh project state. Your project files are not touched.';
 
 export const OLDER_STATE_MESSAGE =
-  'This Construct state is one format older than this version reads.\n' +
+  'This Construct state is in an older format than this version reads.\n' +
   'Run `construct migrate` to upgrade it; the command backs the file up first.';
 
 export const NEWER_STATE_MESSAGE =

@@ -1,5 +1,5 @@
 /**
- * kernel/state/schema.ts — Construct state format 3.
+ * kernel/state/schema.ts — Construct state format 4.
  *
  * One database per project. Columns that take part in policy, selection,
  * uniqueness, or a state transition are normalized and CHECKed here; JSON
@@ -42,6 +42,9 @@ export const REQUIRED_TABLES = [
   'work_runs',
   'reviews',
   'run_bindings',
+  'sessions',
+  'session_agents',
+  'path_leases',
 ] as const;
 
 export const SCHEMA_SQL = `
@@ -293,6 +296,7 @@ CREATE TABLE step_runs (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   finished_at     TEXT,
+  lease_nonce     TEXT,
   UNIQUE (run_id, step_id)
 );
 CREATE INDEX step_runs_claimable ON step_runs (state, lease_until);
@@ -338,7 +342,8 @@ CREATE TABLE decisions (
   resolution_json TEXT,
   raised_at       TEXT NOT NULL,
   resolved_at     TEXT,
-  resolved_by     TEXT
+  resolved_by     TEXT,
+  channel         TEXT
 );
 CREATE INDEX decisions_open ON decisions (state, raised_at);
 
@@ -363,6 +368,9 @@ CREATE TABLE grants (
   revoked_at      TEXT,
   revoked_reason  TEXT,
   created_at      TEXT NOT NULL,
+  run_id          TEXT,
+  step_run_id     TEXT,
+  channel         TEXT,
   CHECK (break_glass = 0 OR (reason IS NOT NULL AND ends_at IS NOT NULL AND target_resource IS NOT NULL AND executor_id IS NOT NULL)),
   CHECK (action_tier <> 'licensed_judgment')
 );
@@ -457,7 +465,10 @@ CREATE TABLE activity_events (
   run_id       TEXT,
   step_run_id  TEXT,
   actor        TEXT,
-  payload_json TEXT NOT NULL
+  payload_json TEXT NOT NULL,
+  session_id      TEXT,
+  agent           TEXT,
+  channel         TEXT
 );
 CREATE INDEX activity_run ON activity_events (run_id, id);
 CREATE TRIGGER activity_events_no_update BEFORE UPDATE ON activity_events
@@ -492,7 +503,12 @@ CREATE TABLE work_items (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   completed_at    TEXT,
-  reason          TEXT
+  reason          TEXT,
+  claim_session   TEXT,
+  claim_agent     TEXT,
+  claim_lane      TEXT,
+  claim_touched_at TEXT,
+  handoff_json    TEXT
 );
 CREATE INDEX work_items_status ON work_items (status, updated_at);
 CREATE INDEX work_items_parent ON work_items (parent_id);
@@ -570,4 +586,64 @@ CREATE TABLE run_bindings (
   policy_digest       TEXT,
   frozen_at           TEXT NOT NULL
 );
+
+-- Every host session, command-line invocation, and runner that opened this
+-- store. Construct mints the id; what a host reports about itself is kept as
+-- attributes labeled by source and never grants anything.
+CREATE TABLE sessions (
+  id                  TEXT PRIMARY KEY,
+  host                TEXT NOT NULL,
+  surface             TEXT NOT NULL CHECK (surface IN ('interactive', 'headless', 'cli', 'hook')),
+  host_session_id     TEXT,
+  host_session_source TEXT,
+  client_name         TEXT,
+  client_version      TEXT,
+  model               TEXT,
+  model_source        TEXT,
+  machine             TEXT NOT NULL,
+  pid                 INTEGER,
+  serve_version       TEXT,
+  lane_root           TEXT,
+  branch              TEXT,
+  head                TEXT,
+  started_at          TEXT NOT NULL,
+  last_seen_at        TEXT NOT NULL,
+  ended_at            TEXT,
+  end_reason          TEXT,
+  activity_cursor     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX sessions_live ON sessions (ended_at, last_seen_at);
+
+-- Agents seen inside a session (subagents, parallel agents). Attestation says
+-- whether the host vouched for the id or the agent only reported it.
+CREATE TABLE session_agents (
+  session_id      TEXT NOT NULL REFERENCES sessions(id),
+  agent           TEXT NOT NULL,
+  host_agent_id   TEXT,
+  agent_type      TEXT,
+  parent_agent    TEXT,
+  attestation     TEXT NOT NULL CHECK (attestation IN ('host', 'reported')),
+  lane_root       TEXT,
+  first_seen_at   TEXT NOT NULL,
+  last_seen_at    TEXT NOT NULL,
+  PRIMARY KEY (session_id, agent)
+);
+
+-- Advisory reservations of repository paths, held for a work item.
+CREATE TABLE path_leases (
+  id              TEXT PRIMARY KEY,
+  work_id         TEXT NOT NULL REFERENCES work_items(id),
+  session_id      TEXT NOT NULL,
+  agent           TEXT,
+  lane_root       TEXT NOT NULL,
+  branch          TEXT,
+  path            TEXT NOT NULL,
+  mode            TEXT NOT NULL CHECK (mode IN ('exclusive', 'shared')),
+  token           TEXT NOT NULL,
+  created_at      TEXT NOT NULL,
+  until           TEXT NOT NULL,
+  released_at     TEXT,
+  release_reason  TEXT
+);
+CREATE INDEX path_leases_live ON path_leases (released_at, until);
 `;
