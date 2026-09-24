@@ -1,0 +1,26 @@
+{
+  "format": "construct-constitution",
+  "formatVersion": 2,
+  "name": "construct",
+  "purpose": "A project-bound, capability-aware operating layer for agent hosts: it learns what a project is, remembers authoritative context and constraints, resolves the skills and workflows an outcome needs, detects drift, and does permitted work through the host you already use.",
+  "scale": null,
+  "lifecycleStage": null,
+  "primaryOutcome": null,
+  "successMeasures": [],
+  "principles": [],
+  "constraints": [],
+  "nonGoals": [],
+  "canonicalArtifacts": [],
+  "owners": [],
+  "boundaries": [],
+  "riskPosture": null,
+  "reviewCadence": null,
+  "glossary": [],
+  "unknowns": [
+    "ownership and decision rights",
+    "risk posture",
+    "primary outcome",
+    "success measures",
+    "review cadence"
+  ]
+}
