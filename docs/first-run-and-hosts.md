@@ -58,6 +58,27 @@ another executor because one is installed. Work happens in the session you
 are in. A headless runner exists only when you configure one, and it cannot
 decide, grant, remember, or finalize anything.
 
+## Several agents in one project
+
+You can work in one project from several sessions at once, in the same host
+or different ones, and a host can run several agents inside one session.
+Construct keeps them from stepping on each other:
+
+- Every session is recorded under an id Construct gives it, and what it does
+  is recorded against that session, as the model acting, never as you.
+- A work item is claimed before it is edited. A claim belongs to one session
+  and one agent, returns a token only that claimant sees, and needs the token
+  to renew, complete, or release it. Another session's claim is refused until
+  it expires or that session goes quiet for two hours; taking it over records
+  why.
+- Git worktrees of the project share its one store in the main checkout, so
+  an agent in a worktree sees the same work. `construct init` in a worktree is
+  refused, because it would start a second store.
+- Only you approve an action that leaves the project or destroys something,
+  and only you accept or finalize a deliverable. A model relaying your words
+  cannot; the question waits in `construct inbox` for you to answer from a
+  terminal of your own.
+
 ## Checking that it is bound
 
 ```bash
