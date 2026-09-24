@@ -78,6 +78,14 @@ Construct keeps them from stepping on each other:
   Reservations end with the claim. `construct work check --paths=...` or
   `--staged` says what is reserved before you edit or commit, and exits 1 on
   a collision in this checkout.
+- An agent that never calls Construct can still sweep a peer's file into a
+  commit. `construct hooks install --git` adds a pre-commit guard that warns
+  when a staged file is reserved by other work in the same checkout. It never
+  blocks a commit, keeps any pre-commit hook you already had running after
+  it, and `construct hooks uninstall --git` puts that hook back exactly.
+  Set `CONSTRUCT_HOOKS=off` to silence it. When git's hooks live in a
+  committed directory, Construct leaves them alone; add
+  `construct work check --staged || true` there yourself.
 - Claimed work is passed on with a handoff: the holder offers it, with its
   token, and a packet saying where the work stands, what comes next, what to
   watch out for, and what is still open. Whoever accepts gets the claim, a new

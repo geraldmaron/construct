@@ -27,6 +27,7 @@ import { runCommand, RUN_SPECS } from './run.ts';
 import { inboxCommand, INBOX_SPECS } from './inbox.ts';
 import { staffCommand, STAFF_SPECS } from './staff.ts';
 import { workCommand, WORK_SPECS } from './work.ts';
+import { hooksCommand, HOOKS_SPECS } from './hooks.ts';
 import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -56,6 +57,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...INBOX_SPECS,
   ...STAFF_SPECS,
   SERVE_SPEC,
+  ...HOOKS_SPECS,
   MIGRATE_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
@@ -156,6 +158,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return staffCommand(verb!, args, ctx);
     case 'work':
       return workCommand(verb!, args, ctx);
+    case 'hooks':
+      return hooksCommand(verb!, args, ctx);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':
