@@ -9,11 +9,21 @@ import { createWorkflowRegistry } from '../../../src/kernel/registry/workflow-re
 import { updateLock } from '../../../src/kernel/registry/lockfile.ts';
 import { emptyLock } from '../../../src/kernel/project/lock.ts';
 import type { HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
+import type { SkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
+import type { ActionTier } from '../../../src/kernel/state/steps.ts';
+import { openStateStore, type StateStore } from '../../../src/kernel/state/open.ts';
 import type { SourceAvailability } from '../../../src/kernel/registry/resolver.ts';
 import { createWorkflowService, type WorkflowService } from '../../../src/kernel/workflow/service.ts';
 import { createTriggerService, type TriggerService } from '../../../src/kernel/workflow/triggers.ts';
 import { freshStore } from '../state/support.ts';
 import { tmp, writeSkill, writeWorkflow, workflowManifest, step } from '../registry/support.ts';
+
+/** Another session on the same project: its own connection to the store file, and its own service. */
+export interface Peer {
+  readonly store: StateStore;
+  readonly service: WorkflowService;
+  close(): void;
+}
 
 export interface Fixture {
   readonly store: ReturnType<typeof freshStore>['store'];
@@ -21,13 +31,17 @@ export interface Fixture {
   readonly triggers: TriggerService;
   readonly host: HostCapabilities;
   sources: SourceAvailability[];
+  /** Called whenever a service looks a skill up; a test sets it to act at that moment. */
+  onSkillLookup: (() => void) | null;
   tick(ms?: number): void;
+  /** Open another session on this store, with a lock wait and host of its own. */
+  peer(opts?: { readonly busyTimeoutMs?: number; readonly host?: Partial<HostCapabilities> }): Peer;
   cleanup(): void;
 }
 
 export const T0 = '2026-09-02T12:00:00.000Z';
 
-export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never' } = {}): Fixture {
+export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never'; readonly maxTier?: ActionTier } = {}): Fixture {
   const fx = freshStore();
   const dirs = tmp();
   writeSkill(join(dirs.root, 'skills'), 'reader', '1.0.0');
@@ -43,13 +57,26 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   writeWorkflow(join(dirs.root, 'workflows'), 'direct', workflowManifest('direct', '1.0.0', [
     step('push', { tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['applied'] }),
   ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'fork', workflowManifest('fork', '1.0.0', [
+    step('a', { tier: 'draft', capabilities: ['model_review'], outputs: ['change'] }),
+    step('b', { needs: ['a'], tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], inputs: { change: 'steps.a.change' }, outputs: ['applied'] }),
+    step('c', { tier: 'draft', skill: { id: 'reader', range: '^1.0.0' }, capabilities: ['read_project_context'], outputs: ['notes'] }),
+  ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'twin', workflowManifest('twin', '1.0.0', [
+    step('left', { tier: 'external_write', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['applied'] }),
+    step('right', { tier: 'draft', capabilities: ['model_review'], outputs: ['notes'] }),
+  ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'raze', workflowManifest('raze', '1.0.0', [
+    step('drop', { tier: 'destructive', capabilities: ['write_source:jira'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['dropped'] }),
+  ], { triggers: ['manual'], concurrency: 'per_input', onNoData: 'block', dedupeKey: ['target'] }));
   writeWorkflow(join(dirs.root, 'workflows'), 'sweep', workflowManifest('sweep', '1.0.0', [
     step('read', { capabilities: ['read_project_context'], sources: [{ kind: 'directory', freshness: 'fresh', required: true }], outputs: ['seen'] }),
   ], { triggers: ['schedule', 'manual'], onNoData: 'succeed_empty', onStaleData: 'block', concurrency: 'single', interactionClass: 'maintain', inputSchema: {}, requiredInputs: [] }));
   writeWorkflow(join(dirs.root, 'workflows'), 'ship', workflowManifest('ship', '1.0.0', [
     step('do', { outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] }),
   ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
-  const skills = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
+  const registry = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
+  const skills: SkillRegistry = { ...registry, get: (id) => (self.onSkillLookup?.(), registry.get(id)) };
   const workflows = createWorkflowRegistry({ builtinDir: join(dirs.root, 'workflows'), projectDir: null });
   const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
   const host: HostCapabilities = {
@@ -57,7 +84,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     sessionId: opts.interactive === false ? null : 'sess-1',
     executorId: opts.interactive === false ? 'runner:cron' : 'session:claude',
     available: new Set(['read_project_context', 'read_project_files', 'write_project_context', 'model_review', 'ask_user', 'write_source:jira', 'run_validator', 'run_tests']),
-    maxTier: 'external_write',
+    maxTier: opts.maxTier ?? 'external_write',
     restrictions: [],
     budgetCents: null,
   };
@@ -69,14 +96,33 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     { kind: 'jira', id: 'jira', reachability: 'reachable', freshness: 'no_expectation' },
     { kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'fresh' },
   ];
+  const serviceOn = (store: StateStore, on: HostCapabilities): WorkflowService =>
+    createWorkflowService({ store, skills, workflows, lock, host: on, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' });
+  const peers: StateStore[] = [];
   const self: Fixture = {
     store: fx.store,
-    service: createWorkflowService({ store: fx.store, skills, workflows, lock, host, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' }),
+    service: serviceOn(fx.store, host),
     triggers: null as unknown as TriggerService,
     host,
     sources,
+    onSkillLookup: null,
     tick: (ms = 1000) => { t += ms; },
-    cleanup: () => { fx.cleanup(); dirs.cleanup(); },
+    peer: (peerOpts = {}) => {
+      const store = openStateStore(fx.dbPath, { busyTimeoutMs: peerOpts.busyTimeoutMs });
+      peers.push(store);
+      return { store, service: serviceOn(store, { ...host, ...peerOpts.host }), close: () => store.close() };
+    },
+    cleanup: () => {
+      for (const p of peers) {
+        try {
+          p.close();
+        } catch {
+          // closed by the test
+        }
+      }
+      fx.cleanup();
+      dirs.cleanup();
+    },
   };
   (self as { triggers: TriggerService }).triggers = createTriggerService({ store: fx.store, workflows, workflowService: self.service, now, nextId, projectRoot: '/repo' });
   return self;

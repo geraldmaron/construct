@@ -338,7 +338,7 @@ const startOutcome = define<{ workflowId: string; input: Record<string, unknown>
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it.',
+  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -468,23 +468,26 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     return { decisionId: str(raw, 'decisionId')!, resolution: str(raw, 'resolution')! };
   },
   run(ctx, { decisionId, resolution }) {
+    // Whatever arrives here was relayed by the model in the host, so it is
+    // recorded as relayed through that host, never as the person.
+    const by = `relayed via ${ctx.host.hostId}`;
     // A setup question answered here is the same answer init would have taken
     // as a flag: it lands in the profile, and the question closes with it.
     const existing = getDecision(ctx.store, decisionId);
     const proposed = existing ? null : getStatement(ctx.store, decisionId);
     if (proposed?.status === 'proposed') {
       const answer = Array.isArray(resolution) ? resolution.join(' ') : resolution;
-      const statement = resolveProposal(ctx.store, { id: decisionId, resolution: answer, at: ctx.now(), nextId: ctx.nextId });
-      return { decision: { id: statement.id, state: statement.status, resolvedBy: ctx.actor }, run: null, statement: { id: statement.id, kind: statement.kind, status: statement.status } };
+      const statement = resolveProposal(ctx.store, { id: decisionId, resolution: answer, at: ctx.now(), nextId: ctx.nextId, by, channel: 'relay' });
+      return { decision: { id: statement.id, state: statement.status, resolvedBy: by }, run: null, statement: { id: statement.id, kind: statement.kind, status: statement.status } };
     }
     const onboarding = existing?.kind === 'clarification' && existing.state === 'open' ? onboardingAnswerFor(existing.subject, resolution) : null;
     if (onboarding) {
-      const applied = applyOnboardingAnswers(ctx.store, { answers: onboarding, by: ctx.actor, at: ctx.now(), nextId: ctx.nextId });
+      const applied = applyOnboardingAnswers(ctx.store, { answers: onboarding, by, at: ctx.now(), nextId: ctx.nextId, channel: 'relay' });
       const decision = getDecision(ctx.store, decisionId)!;
       return { decision: { id: decision.id, state: decision.state, resolvedBy: decision.resolvedBy }, run: null, profile: { onboarding: applied.profile.onboardingState, missing: applied.missing } };
     }
     try {
-      const r = ctx.workflow.decide({ decisionId, resolution, by: ctx.actor, channel: 'relay' });
+      const r = ctx.workflow.decide({ decisionId, resolution, by, channel: 'relay' });
       return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
@@ -668,7 +671,7 @@ const heartbeat = define<{ stepRunId: string; owner: string; token: number }, un
 const claimStep = define<{ runId?: string }, unknown>({
   name: 'claim_step',
   title: 'Claim a pre-resolved step',
-  description: 'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on.',
+  description: 'A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.',
   surface: 'headless',
   readOnly: false,
   inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'A run id; omit for any active run.' } }, additionalProperties: false },

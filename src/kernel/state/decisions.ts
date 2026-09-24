@@ -8,6 +8,7 @@
 import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
 import { assertTransition, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from './rows.ts';
+import type { DecisionChannel } from '../policy/channels.ts';
 
 export const DECISION_KINDS = ['decision', 'approval', 'clarification', 'blocked'] as const;
 export type DecisionKind = (typeof DECISION_KINDS)[number];
@@ -135,9 +136,10 @@ export function listOpenDecisions(store: StateStore, runId?: string): Decision[]
   return rows.map(toDecision);
 }
 
+/** Record the answer. `channel` says how it reached Construct and lands in the activity row; null when unknown. */
 export function resolveDecision(
   store: StateStore,
-  input: { readonly id: string; readonly resolution: unknown; readonly by: string; readonly at: string },
+  input: { readonly id: string; readonly resolution: unknown; readonly by: string; readonly at: string; readonly channel?: DecisionChannel },
 ): Decision {
   requireNonEmpty(input.by, 'decision.by');
   requireInstant(input.at, 'decision.at');
@@ -161,7 +163,7 @@ export function resolveDecision(
       runId: current.runId,
       stepRunId: current.stepRunId,
       actor: input.by,
-      payload: { decisionId: input.id, kind: current.kind },
+      payload: { decisionId: input.id, kind: current.kind, channel: input.channel ?? null },
     });
     return getDecision(store, input.id)!;
   });
