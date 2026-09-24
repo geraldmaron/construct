@@ -10,7 +10,7 @@ import { initializeProject, readProjectFiles } from '../kernel/project/initializ
 import { projectLayout } from '../kernel/project/layout.ts';
 import { findProjectRoot } from '../kernel/project/discover.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, gitRootOf, initRootFor, type CliContext } from './context.ts';
+import { createContext, gitRootOf, initRootFor, mainCheckoutOf, resolveRepository, WorktreeBindingError, type CliContext } from './context.ts';
 import { esc, OperationError, say, writeJson } from './output.ts';
 import { basename } from 'node:path';
 
@@ -41,6 +41,16 @@ function processesHolding(path: string): number[] {
 }
 
 export function reset(args: ParsedArgs, ctx: CliContext = createContext()): number {
+  // A worktree shares its main checkout's one store, so a reset there would
+  // either reach every worktree's state or start a second store; it is refused.
+  const repo = resolveRepository(ctx.cwd);
+  const mainRoot = repo === null ? null : mainCheckoutOf(repo);
+  if (repo?.linked && mainRoot !== null) {
+    throw new WorktreeBindingError(
+      `this is a git worktree of ${mainRoot}; a project keeps one store, in its main checkout, for every worktree`,
+      `Run \`construct reset\` in ${mainRoot}; it resets the one store every worktree of the repository shares.`,
+    );
+  }
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
   const root = findProjectRoot({ start: ctx.cwd, floor }) ?? initRootFor(ctx.cwd);
   const plan = planReset(root, { includeProjectFiles: boolFlag(args, 'include-project-files'), paths: ctx.paths });

@@ -8,8 +8,8 @@
  * wrong.
  */
 
-import { commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, type CliContext } from './context.ts';
+import { boolFlag, commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { bindProject, createContext, requireMainCheckout, type CliContext } from './context.ts';
 import { reportFailure, say, warn, UsageError } from './output.ts';
 import { init, INIT_SPEC } from './init.ts';
 import { status, STATUS_SPEC } from './status.ts';
@@ -163,6 +163,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
     case 'source':
       return sourceCommand(verb!, args, ctx);
     case 'skill':
+      // `skill update` writes the committed registry lock, so like every edit of a committed project file it runs only in the main checkout.
+      if (verb === 'update' && !boolFlag(args, 'dry-run')) requireMainCheckout(bindProject(ctx), 'skill update');
       return skillCommand(verb!, args, ctx);
     case 'completion': {
       const shell = (args.flags.shell as string | undefined) ?? 'bash';

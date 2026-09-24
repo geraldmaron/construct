@@ -3,13 +3,13 @@
  * looked at and what it found. A missing or broken project is never healthy.
  */
 
-import { existsSync, accessSync, constants } from 'node:fs';
+import { existsSync, accessSync, constants, realpathSync } from 'node:fs';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
-import { projectLayout } from '../kernel/project/layout.ts';
+import { projectDbPath, projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
@@ -41,6 +41,14 @@ interface Check {
 
 const NODE_FLOOR = [22, 18] as const;
 
+function sameFile(a: string, b: string): boolean {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch {
+    return false;
+  }
+}
+
 function nodeCheck(): Check {
   const [major, minor] = process.versions.node.split('.').map(Number);
   const ok = major! > NODE_FLOOR[0] || (major === NODE_FLOOR[0] && minor! >= NODE_FLOOR[1]);
@@ -67,6 +75,12 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   } else {
     checks.push({ name: 'project', ok: true, detail: lane ? `${root} (this session works in the worktree ${lane.checkout}${lane.branch ? ` on ${lane.branch}` : ''}; it shares that project's store)` : root });
     const layout = projectLayout(root);
+    if (lane) {
+      const laneStore = projectDbPath(lane.root);
+      if (existsSync(laneStore) && !sameFile(laneStore, layout.dbPath)) {
+        checks.push({ name: 'worktree-store', ok: false, detail: `${laneStore} is a store inside this worktree that Construct never opens; every worktree uses ${layout.dbPath}. Remove it once its contents are not needed.` });
+      }
+    }
     const legacy = detectLegacyProjectFiles(root);
     if (legacy.length > 0) {
       checks.push({ name: 'legacy-files', ok: false, detail: `${legacy.map((t) => t.path).join(', ')}: earlier alpha files; run \`construct reset\`` });
@@ -74,7 +88,16 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     try {
       const files = readProjectFiles(root);
       const missing = (['config', 'constitution', 'sources', 'lock'] as const).filter((k) => files[k] === null);
-      checks.push({ name: 'files', ok: missing.length === 0, detail: missing.length === 0 ? 'project, constitution, sources, and lock files validate' : `missing ${missing.join(', ')}` });
+      const orphaned = lane !== null && files.config === null;
+      checks.push({
+        name: 'files',
+        ok: missing.length === 0,
+        detail: missing.length === 0
+          ? 'project, constitution, sources, and lock files validate'
+          : orphaned
+            ? `missing ${missing.join(', ')}: the main checkout has no .construct/project.json (its current commit may not carry the project files), so this worktree uses the store at ${layout.dbPath} without the project's configuration. Restore the files in ${root}, for example by checking out the branch that has them; \`construct init\` there first would give the project a new id`
+            : `missing ${missing.join(', ')}`,
+      });
       if (files.constitution) {
         const c = constitutionCompleteness(files.constitution);
         checks.push({ name: 'constitution', ok: true, detail: c.complete ? 'complete' : `incomplete: ${c.missing.join(', ')} not yet answered` });
@@ -98,7 +121,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       checks.push({ name: 'files', ok: false, detail: (error as Error).message });
     }
     if (!existsSync(layout.dbPath)) {
-      checks.push({ name: 'state', ok: false, detail: `${layout.dbPath} does not exist; run \`construct init\`` });
+      checks.push({ name: 'state', ok: false, detail: `${layout.dbPath} does not exist; run \`construct init\`${lane ? ` in ${root}` : ''}` });
     } else {
       try {
         accessSync(layout.dbPath, constants.R_OK | constants.W_OK);

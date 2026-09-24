@@ -24,7 +24,7 @@ import { clientWiring, normalizeClient, WIRABLE_CLIENTS, type WirableClient } fr
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { hasProject } from '../kernel/project/discover.ts';
-import { createContext, initRootFor, resolveRepository, WorktreeBindingError, type CliContext } from './context.ts';
+import { createContext, initRootFor, mainCheckoutOf, resolveRepository, WorktreeBindingError, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError } from './output.ts';
 import { basename } from 'node:path';
 
@@ -120,13 +120,14 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     throw new UsageError(`--scale must be one of ${PROJECT_SCALES.join(' | ')}`);
   }
   const repo = resolveRepository(ctx.cwd);
-  if (repo?.linked) {
-    const shared = hasProject(repo.mainRoot);
+  const mainRoot = repo === null ? null : mainCheckoutOf(repo);
+  if (repo?.linked && mainRoot !== null) {
+    const shared = hasProject(mainRoot);
     throw new WorktreeBindingError(
-      `this is a git worktree of ${repo.mainRoot}; a project keeps one store, in its main checkout, for every worktree`,
+      `this is a git worktree of ${mainRoot}; a project keeps one store, in its main checkout, for every worktree`,
       shared
-        ? `Nothing to set up here: ${repo.mainRoot} is already a Construct project, and this worktree uses its store.`
-        : `Run \`construct init\` in ${repo.mainRoot}.`,
+        ? `Nothing to set up here: ${mainRoot} is already a Construct project, and this worktree uses its store.`
+        : `Run \`construct init\` in ${mainRoot}.`,
     );
   }
   const root = initRootFor(ctx.cwd);
