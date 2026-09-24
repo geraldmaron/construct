@@ -603,6 +603,32 @@ speak MCP over stdio for the host that launched it, bound to this project
 
 Reads only: no.
 
+### `construct hooks install`
+
+install an opt-in hook: --git adds a pre-commit guard that warns about reserved paths
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--git` | no | the git pre-commit guard (warns, never blocks) |
+
+Reads only: no.
+
+### `construct hooks uninstall`
+
+remove a hook Construct installed, restoring what was there
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--git` | no | the git pre-commit guard |
+
+Reads only: no.
+
+### `construct hooks list`
+
+the hooks Construct installed here, and whether each is intact
+
+Reads only: yes.
+
 ## Recover
 
 ### `construct migrate`
