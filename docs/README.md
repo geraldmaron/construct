@@ -19,7 +19,7 @@ moment someone decides it is documentation rather than a record.
 - [`permissions-and-autonomy.md`](permissions-and-autonomy.md) — the action lattice, approvals, standing grants, break-glass, the headless runner.
 - [`recurring-operation.md`](recurring-operation.md) — standing outcomes fired by an external clock.
 - [`connectors-and-semantics.md`](connectors-and-semantics.md) — what a connector declares, locators, credentials.
-- [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, reset, blocked runs, registry skew, host wiring.
+- [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, state in an older format and `construct migrate`, reset, blocked runs, registry skew, host wiring.
 
 ## Reference (generated from the definitions)
 

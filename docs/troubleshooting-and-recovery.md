@@ -22,6 +22,26 @@ you pass `--include-project-files`.
 construct reset
 ```
 
+## The state is in an older format
+
+Every command refuses a store an older Construct wrote and names
+`construct migrate`. Stop every Construct session on this project first
+(close its agent sessions, or stop their MCP servers): a session still
+running an older Construct would go on writing to the store after the
+upgrade, without the new format's protections. Then:
+
+```bash
+construct migrate
+```
+
+It refuses while another process has the store open and names the process;
+`--force` upgrades anyway. It copies the store to
+`.construct/state/construct.pre-v<format>-<time>-<id>.sqlite` under the
+upgrade's own write lock, upgrades it in place, and prints the backup's path.
+If the upgrade fails without changing the store, the copy is removed and
+nothing is left to clean up. A store written by a newer Construct is never
+reset: upgrade Construct instead.
+
 ## The database cannot be opened
 
 `status` exits 1 with the path and the reason; `doctor` reports the state

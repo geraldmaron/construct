@@ -182,7 +182,7 @@ plant a shipped skill into a host’s skills directory, byte for byte
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
 | `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
-| `--force` | no | overwrite a copy that differs |
+| `--force` | no | overwrite a copy that someone changed; an earlier release is replaced without it |
 
 Reads only: no.
 
@@ -564,7 +564,11 @@ Reads only: no.
 
 ### `construct migrate`
 
-upgrade this project’s state from the previous format, after writing a backup beside it
+upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--force` | no | upgrade even while another process has the state open |
 
 Reads only: no.
 

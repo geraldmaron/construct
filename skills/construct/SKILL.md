@@ -10,7 +10,8 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.3.0
+  version: 2.3.1
+  source: geraldmaron/construct
 ---
 
 # Construct in this session

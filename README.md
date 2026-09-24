@@ -29,7 +29,9 @@ the host you are in (`--client=<host>` or `--skills-dir=<dir>` chooses).
 
 After that, talk in your agent session. The command line is for setup,
 inspection, scripting, and recovery: `construct status`, `construct doctor`,
-`construct config explain <key>`, `construct source add`, `construct reset`.
+`construct config explain <key>`, `construct source add`, `construct reset`,
+and `construct migrate` when an upgrade of Construct needs the state upgraded
+too (stop every Construct session on the project first).
 `construct help` lists everything.
 
 Limits that are load-bearing: legal, compliance, and other licensed
