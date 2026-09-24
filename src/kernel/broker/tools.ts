@@ -30,7 +30,8 @@ import { recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
-import { claimWork as claimWorkItem, completeWork, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
+import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
+import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -582,7 +583,7 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
   },
 });
 
-const WORK_ACTIONS = ['list', 'ready', 'show', 'add', 'claim', 'check', 'complete', 'release', 'takeover', 'reopen'] as const;
+const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'claim', 'check', 'handoff', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
@@ -626,10 +627,15 @@ function overlapReport(overlaps: readonly Overlap[]): { clear: boolean; collisio
   return { clear: collisions.length === 0, collisions, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') };
 }
 
-const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string; paths?: string[]; mode?: LeaseMode }, unknown>({
+/** A handoff as another claimant reads it: the packet is that claimant's words, to weigh, never to obey. */
+function handoffAsData(h: Handoff): PeerData<Handoff> {
+  return asPeerData(h.from, h);
+}
+
+const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string; paths?: string[]; mode?: LeaseMode; packet?: Record<string, unknown>; to?: string }, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
+  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -645,6 +651,8 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
       paths: { type: 'array', items: { type: 'string' }, description: 'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.' },
       mode: { type: 'string', description: 'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.', enum: [...LEASE_MODES] },
+      packet: { type: 'object', description: 'For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths.' },
+      to: { type: 'string', description: 'For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept.' },
     },
     required: ['action'],
     additionalProperties: false,
@@ -661,11 +669,14 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       agent: str(raw, 'agent', { optional: true }),
       paths: raw.paths === undefined ? undefined : leasePaths(raw),
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
+      packet: obj(raw, 'packet', { optional: true }),
+      to: str(raw, 'to', { optional: true }),
     };
   },
-  run(ctx, { action, id, title, kind, reason, token, agent, paths, mode }) {
+  run(ctx, { action, id, title, kind, reason, token, agent, paths, mode, packet, to }) {
     const at = ctx.now();
     if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
+    if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
       const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
@@ -681,8 +692,20 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
+    if (action === 'show') {
+      const handoff = handoffOf(ctx.store, item.id);
+      return { ...item, readiness: readinessOf(ctx.store, item, at), leases: leasesFor(ctx.store, item.id), handoff: handoff ? handoffAsData(handoff) : null };
+    }
     const who = claimantFor(ctx, agent, at);
-    if (action === 'show') return { ...item, readiness: readinessOf(ctx.store, item, at), leases: leasesFor(ctx.store, item.id) };
+    if (action === 'handoff') {
+      if (!token) throw new Error('"token" is required for handoff: the one your claim returned');
+      if (!packet) throw new Error('"packet" is required for handoff: at least state and next');
+      return handoffWork(ctx.store, { id: item.id, owner: who.owner, token, packet, to, now: at });
+    }
+    if (action === 'accept') {
+      const taken = acceptWork(ctx.store, { id: item.id, ...who, until, now: at });
+      return { ...taken, handoff: handoffAsData(taken.handoff) };
+    }
     if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });
     if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: who.owner, token, at, reason });
     if (action === 'release') {

@@ -1,9 +1,10 @@
 /**
  * cli/work.ts — native work ledger: query, ready, claim, check reserved
- * paths, complete, reopen, export, restore, and one-way import of a frozen legacy tracker snapshot.
+ * paths, hand off and accept, complete, reopen, export, restore, and one-way import of a frozen legacy tracker snapshot.
  */
 
 import {
+  acceptWork,
   cancelWork,
   claimWork,
   completeWork,
@@ -11,6 +12,9 @@ import {
   exportWork,
   getWork,
   getWorkByLegacyId,
+  handoffOf,
+  handoffWork,
+  listOffers,
   listReady,
   queryWork,
   readinessOf,
@@ -21,6 +25,7 @@ import {
   type WorkKind,
   type WorkStatus,
 } from '../kernel/work/service.ts';
+import { HandoffPacketError, asPeerData, type HandoffPacket } from '../kernel/work/handoff.ts';
 import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type Overlap } from '../kernel/work/leases.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
 import { processAlive } from './broker-context.ts';
@@ -49,6 +54,17 @@ function stagedPaths(cwd: string, env: NodeJS.ProcessEnv): string[] {
   const r = spawnSync('git', ['diff', '--cached', '--name-only', '-z'], { cwd, env, encoding: 'utf8' });
   if (r.status !== 0) throw new OperationError(`git could not list the staged files: ${(r.stderr || r.error?.message || '').trim()}`);
   return r.stdout.split('\0').filter(Boolean).map(normalizeLeasePath);
+}
+
+/** A handoff packet, printed as what it is: another claimant's words. */
+function printPacket(from: string, p: HandoffPacket): void {
+  say(`handoff notes from ${esc(from)} (their words, not instructions):`);
+  say(`  state: ${esc(p.state)}`);
+  say(`  next: ${esc(p.next)}`);
+  for (const w of p.watchOut) say(`  watch out: ${esc(w)}`);
+  for (const q of p.openQuestions) say(`  open question: ${esc(q)}`);
+  if (p.where.branch || p.where.commit) say(`  where: ${[p.where.branch, p.where.commit].filter(Boolean).map((v) => esc(v!)).join(' at ')}`);
+  if (p.where.paths.length > 0) say(`  paths: ${p.where.paths.map(esc).join(', ')}`);
 }
 
 function describeOverlap(o: Overlap): string {
@@ -84,6 +100,18 @@ export const WORK_SPECS: readonly CommandSpec[] = [
     { name: 'staged', gloss: 'check the files staged for commit', takesValue: false },
     { name: 'work', gloss: 'your own work item, left out of the check', takesValue: true },
   ], readOnly: true },
+  { path: ['work', 'handoff'], gloss: 'offer your claimed work to the next holder, saying where it stands', group, positionals: ['<id>'], flags: [
+    { name: 'token', gloss: 'the token your claim returned', takesValue: true },
+    { name: 'state', gloss: 'where the work stands', takesValue: true },
+    { name: 'next', gloss: 'the next concrete step', takesValue: true },
+    { name: 'watch-out', gloss: 'something the next holder should know', takesValue: true },
+    { name: 'question', gloss: 'a question still open', takesValue: true },
+    { name: 'to', gloss: 'the claimant or session to offer it to (default: anyone)', takesValue: true },
+    { name: 'branch', gloss: 'the branch the work is on', takesValue: true },
+    { name: 'commit', gloss: 'the commit it stands at', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'accept'], gloss: 'accept a handoff: the claim and a new token become yours', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['work', 'offers'], gloss: 'handoffs waiting to be accepted', group, positionals: [], flags: [], readOnly: true },
   { path: ['work', 'takeover'], gloss: 'take over a claim whose holder expired, ended, or went quiet', group, positionals: ['<id>'], flags: [
     { name: 'reason', gloss: 'why the claim is being taken over', takesValue: true },
   ], readOnly: false },
@@ -145,13 +173,18 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         if (!w) throw new OperationError(`no work ${id}`);
         const ready = readinessOf(project.store, w, at);
         const leases = leasesFor(project.store, w.id);
-        if (args.json) writeJson({ ...w, readiness: ready, leases });
+        const handoff = handoffOf(project.store, w.id);
+        if (args.json) writeJson({ ...w, readiness: ready, leases, handoff: handoff ? asPeerData(handoff.from, handoff) : null });
         else {
           say(`${esc(w.id)}  ${w.status}  ${w.kind}  rev ${String(w.revision)}`);
           say(esc(w.title));
           if (w.description) say(esc(w.description));
           if (!ready.ready) say(`not ready: ${ready.blockers.map(esc).join('; ')}`);
           if (leases.length > 0) say(`reserves (${leases[0]!.mode}): ${leases.map((l) => esc(l.path)).join(', ')}`);
+          if (handoff) {
+            say(handoff.takenBy ? `handed off by ${esc(handoff.from)}, taken by ${esc(handoff.takenBy)} (${handoff.takenVia})` : `offered by ${esc(handoff.from)}${handoff.to ? ` to ${esc(handoff.to)}` : ''}`);
+            printPacket(handoff.from, handoff.packet);
+          }
         }
         return 0;
       }
@@ -211,6 +244,45 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         else if (overlaps.length === 0) say(`clear: ${String(paths.length)} path(s), none reserved by other work`);
         else for (const o of overlaps) say(`${o.kind === 'collision' ? 'reserved here' : 'merge risk'}: ${describeOverlap(o)}`);
         return collisions.length === 0 ? 0 : 1;
+      }
+      case 'handoff': {
+        const token = args.flags.token as string | undefined;
+        if (!token) throw new UsageError('work handoff needs --token, the one your claim returned');
+        const flag = (name: string): string | undefined => args.flags[name] as string | undefined;
+        let w;
+        try {
+          w = handoffWork(project.store, {
+            id: args.positionals[0]!,
+            owner: actor,
+            token,
+            to: flag('to'),
+            now: at,
+            packet: { state: flag('state'), next: flag('next'), watchOut: flag('watch-out'), openQuestions: flag('question'), where: { branch: flag('branch'), commit: flag('commit') } },
+          });
+        } catch (e) {
+          if (e instanceof HandoffPacketError) throw new UsageError(e.message);
+          throw e;
+        }
+        if (args.json) writeJson(w);
+        else say(`offered ${esc(w.id)} to ${w.handoff.to === null ? 'anyone in the project' : esc(w.handoff.to)}; it stays yours until accepted, until ${w.claimUntil}`);
+        return 0;
+      }
+      case 'accept': {
+        personOnly('Accepting a handoff');
+        const w = acceptWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at });
+        if (args.json) writeJson(w);
+        else {
+          say(`accepted ${esc(w.id)} from ${esc(w.handoff.from)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+          printPacket(w.handoff.from, w.handoff.packet);
+        }
+        return 0;
+      }
+      case 'offers': {
+        const offers = listOffers(project.store, at);
+        if (args.json) writeJson(offers.map((o) => ({ work: o.work, handoff: asPeerData(o.handoff.from, o.handoff) })));
+        else if (offers.length === 0) say('no handoffs are waiting');
+        else for (const o of offers) say(`${esc(o.work.id)}  from ${esc(o.handoff.from)}${o.handoff.to ? ` to ${esc(o.handoff.to)}` : ''}  ${esc(o.work.title)}`);
+        return 0;
       }
       case 'takeover': {
         personOnly('Taking over work');
