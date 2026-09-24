@@ -185,7 +185,7 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
 const classify = define<{ text: string }, unknown>({
   name: 'classify_request',
   title: 'What kind of request is this',
-  description: 'Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.',
+  description: 'Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, a standing outcome to maintain, or a matter of working alongside other agents (which the work tool serves), and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'The request in the person’s words.' } }, required: ['text'], additionalProperties: false },
@@ -205,20 +205,21 @@ const classify = define<{ text: string }, unknown>({
       });
     const likely = skills.filter((s) => s.band === 'likely');
     let classification = { ...c };
-    if (c.class === 'answer' && c.confidence < 0.8 && likely.some((s) => s.workflows.length > 0)) {
+    if (c.class === 'answer' && c.confidence < 0.8 && !c.coordination && likely.some((s) => s.workflows.length > 0)) {
       classification = {
         class: 'manage',
         confidence: Math.max(c.confidence, 0.6),
         why: 'the request matches professional work even though it did not open with a work verb',
         confirmBeforeProceeding: true,
         rememberKind: null,
+        coordination: null,
       };
     }
     const workflowsForClass = ctx.workflows.list().filter((w) => w.manifest.interactionClass === classification.class || (classification.class === 'maintain' && w.manifest.triggers.includes('schedule')));
     const suggestedWorkflows = [...new Set([...likely.flatMap((s) => s.workflows), ...workflowsForClass.map((w) => w.manifest.id)])]
       .map((id) => ctx.workflows.get(id))
       .filter((w) => w !== null)
-      .filter((w) => classification.class === 'answer' || classification.class === 'remember' ? false : true)
+      .filter(() => !(classification.class === 'answer' || classification.class === 'remember' || classification.coordination))
       .slice(0, 5)
       .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
     const activeContradictions = listRelations(ctx.store, { kind: 'contradicts' }).filter((r) => {
@@ -231,7 +232,8 @@ const classify = define<{ text: string }, unknown>({
       activeContradictions,
     });
     const next =
-      classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
+      classification.coordination ? classification.coordination.next
+      : classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
       : classification.class === 'remember' ? 'call remember with the person’s wording'
       : likely.length === 0 ? 'no skill is a clear fit; answer, or ask one question about what the person wants produced'
       : judgment.challenge ? 'read the likely skills in order; this work needs professional challenge before it is treated as strongly validated; then resolve the workflow that carries the skill'
