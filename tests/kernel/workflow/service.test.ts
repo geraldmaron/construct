@@ -164,7 +164,9 @@ test('a lost lease is reclaimed without repeating finished work; cancel and no-d
     const view = fx.service.status(started.run.id)!;
     assert.equal(view.run.state, 'cancelled', 'after-step cancel settles as cancelled once the leased step ends');
     assert.equal(view.steps.find((s) => s.stepId === 'record')!.state, 'cancelled');
-    assert.equal(view.steps.find((s) => s.stepId === 'write')!.state, 'failed');
+    // The expired attempt did not spend write's budget, so its one failure left
+    // a retry, and the cancellation withdrew that retry.
+    assert.equal(view.steps.find((s) => s.stepId === 'write')!.state, 'cancelled');
 
     // No data on a workflow whose policy is block: a decision is raised; continue skips the step.
     const apply = fx.service.start({ workflowId: 'apply', input: { target: 'PROJ-1' }, trigger: 'manual' });
