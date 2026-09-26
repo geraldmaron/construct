@@ -25,7 +25,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `software-engineering` | 1.0.1 | professional | tests pass but I have a bad feeling about this code | style and naming on a diff, formatting, lint noise |
 | `strategy-research` | 1.0.1 | professional | three teams are building the same thing and leadership says we are aligned | a single project plan with no strategy in view (program-delivery owns that) |
 | `system-architecture` | 1.0.1 | professional | two teams keep writing to the same table | review a diff or an implementation detail |
-| `written-voice` | 0.4.0 | method | make this sound less like a robot wrote it | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
+| `written-voice` | 0.5.0 | method | make this sound less like a robot wrote it | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
 
 ## Workflows
 
