@@ -11,6 +11,7 @@ Verification record
 - Shape held:        answered - <genre> | dropped: <sections, or none>
 - One recommendation: answered - see <where> | not applicable: nothing recommended
 - Formatted by shape: answered - <the mix, one clause> | single-shape on purpose: <why>
+- Tells checked:     answered - voice-check.py ran | kept on purpose: <which, why> | not run: <reason>
 ```
 
 For a shipped document where the block would be noise (announcement,

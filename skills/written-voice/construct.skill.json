@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "written-voice",
   "title": "Written voice",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [
@@ -16,7 +16,8 @@
     "someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo",
     "write the announcement customers will read, draft the proposal with the decision at the top",
     "unify documents written by different people into one voice",
-    "a draft reads buried, hedged, or salesy; surface the decision"
+    "a draft reads buried, hedged, or salesy; surface the decision",
+    "this reads like AI wrote it, strip the tells before it goes out"
   ],
   "standDown": [
     "not a deliverable: a chat reply, a code comment, a commit message, a quick answer",
