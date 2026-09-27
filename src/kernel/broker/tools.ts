@@ -9,6 +9,7 @@
  */
 
 import { listStatements, getProfile, getStatement, missingProfileFields } from '../state/profile.ts';
+import { delegate } from './delegate.ts';
 import { listActiveRuns, listRuns } from '../state/runs.ts';
 import { getDecision, listOpenDecisions } from '../state/decisions.ts';
 import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, type OnboardingAnswers } from '../project/onboarding.ts';
@@ -826,7 +827,7 @@ const claimStep = define<{ runId?: string }, unknown>({
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, work, claimStep, heartbeat,
+  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, work, delegate, claimStep, heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {
@@ -834,4 +835,4 @@ export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unk
 }
 
 /** What the headless surface must never be able to do, by tool name. */
-export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'skills', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work'];
+export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'skills', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];

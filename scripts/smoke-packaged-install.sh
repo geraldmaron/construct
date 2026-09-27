@@ -143,6 +143,8 @@ const rpc = (method, params) => new Promise((resolve) => { const id = nextId++; 
 const call = async (name, args = {}) => { const r = await rpc('tools/call', { name, arguments: args }); if (r.error) throw new Error(`${name}: ${r.error.message}`); if (r.result.isError) throw new Error(`${name}: ${r.result.structuredContent?.error ?? r.result.content[0].text}`); return r.result.structuredContent ?? JSON.parse(r.result.content[0].text); };
 const must = (cond, what) => { if (!cond) throw new Error(`loop: ${what}`); };
 const init = await rpc('initialize', {}); must(init.result.serverInfo.name === 'construct', 'server name');
+const delegation = await call('delegate', { action: 'status' });
+must(delegation.executors.length === 3 && delegation.executors.every(executor => !executor.configured && !executor.liveVerified), 'packaged delegation is disabled without authorization');
 const boot = await call('bootstrap'); must(boot.profile.openQuestions.length === 3, 'three questions open at bootstrap'); must(/setup question/.test(boot.next), 'next action names the questions');
 const scale = boot.profile.openQuestions.find((q) => q.options); await call('decide', { decisionId: scale.id, resolution: 'solo' });
 for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call('decide', { decisionId: q.id, resolution: q.question.includes('result') ? 'prove the packaged loop' : 'never write outside this project' });

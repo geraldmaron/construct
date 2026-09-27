@@ -124,7 +124,8 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   /** End the session when the host stops this server by signal, as it would by closing the connection. */
   const endOnSignal = (o: ReturnType<typeof openBroker>): void => {
     for (const signal of ['SIGTERM', 'SIGINT', 'SIGHUP'] as const) {
-      process.once(signal, () => {
+      process.once(signal, async () => {
+        await o.broker.delegation?.close();
         end(o);
         o.project.store.close();
         process.exit(0);
@@ -164,6 +165,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
       } finally {
         const done = lazy as ReturnType<typeof openBroker> | null;
         if (done) {
+          await done.broker.delegation?.close();
           end(done);
           done.project.store.close();
         }
@@ -194,6 +196,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     try {
       await serveMcp(binding.surface, broker, process.stdin, process.stdout, { ...hostOptions, beforeEachCall: () => register(live) });
     } finally {
+      await broker.delegation?.close();
       end(live);
     }
     return 0;

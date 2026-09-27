@@ -82,3 +82,7 @@ export function redact(value: string): string {
   out = out.replace(TOKEN_CANDIDATE, (run) => (looksLikeToken(run) ? REDACTION_PLACEHOLDER : run));
   return out;
 }
+
+export function hasKnownSecret(value: string): boolean {
+  return KNOWN_SHAPES.some(shape => new RegExp(shape.source, shape.flags.replace('g', '')).test(value));
+}

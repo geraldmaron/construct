@@ -53,10 +53,11 @@ persistence, permissions, or side effects and your words did not settle it.
 
 ## The host that is in front of you wins
 
-Construct never switches hosts, spawns another agent, or spends through
-another executor because one is installed. Work happens in the session you
-are in. A headless runner exists only when you configure one, and it cannot
-decide, grant, remember, or finalize anything.
+Construct never switches the lead host or spends through another executor
+because one is installed. [Bounded local delegation](bounded-delegation.md)
+is opt-in and requires explicit executor/model configuration and matching
+live permission evidence. All adapters are disabled by default. A headless
+runner cannot decide, grant, remember, finalize, or recursively delegate.
 
 ## Several agents in one project
 

@@ -26,6 +26,19 @@ process identity, host discovery, and connectors live at the adapters
 declare capability requirements that the resolver binds to what the host
 provides.
 
+Bounded delegation follows the same direction. `src/kernel/delegation`
+owns dispatch, native child work and claims, limits, review dispositions,
+and integration eligibility. `src/hosts/delegation` owns CLI authentication
+probes, process supervision, isolated worktree snapshots, patch application,
+and configured validation commands. The kernel receives a driver interface;
+it never builds a vendor command or imports process-launching code.
+
+Execution snapshots are versioned `delegation.state.v1` records in the
+existing append-only `work_events` table, one child work item per attempt.
+Dispatch checks and writes run under the store's existing immediate
+transaction. Existing sessions, reservations, work/run links, activity, and
+reviews remain authoritative. There is no second database or schema upgrade.
+
 ## State
 
 The full table list, columns, lifecycle tables, and action tiers are

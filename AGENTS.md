@@ -10,8 +10,12 @@ ledger. Use `claim_work` / `submit_work` for a resolved outcome. Do not run
 `construct` to do the work; the command line is for setup, inspection, and
 recovery.
 
-Construct never starts another agent or switches hosts, and you do not do
-that on its behalf. This host may run several agents here, and other
+Construct may launch explicitly authorized local workers for bounded work
+through `delegate`. The current host remains the lead. Delegation is disabled
+until configured and live-verified; installation is not authorization. Workers
+receive scoped assignments, isolated snapshots, read-only tool permissions,
+and explicit stopping conditions. No recursive dispatch, commits, pushes,
+publishing, or sensitive actions are implied. This host may run several agents here, and other
 sessions may work in this project too. Each agent claims a work item with
 `work` (action `claim`, naming itself as `agent`) before it edits, and keeps
 the token it gets back to renew, complete, or release it. One writer per

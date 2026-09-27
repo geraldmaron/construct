@@ -6,6 +6,9 @@
 
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
+import { join } from 'node:path';
+import { createDelegationService } from '../kernel/delegation/service.ts';
+import { createDelegationDriver } from '../hosts/delegation/runtime.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import type { HostCapabilities } from '../kernel/registry/capability-registry.ts';
@@ -133,10 +136,15 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),
   });
   const triggers = createTriggerService({ store: project.store, workflows, workflowService: workflow, now: ctx.now, nextId: ctx.nextId, projectRoot: project.root });
-  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive };
+  const delegation = binding.surface === 'interactive' && projectWritePolicy !== 'never' ? createDelegationService({
+    store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
+    driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
+  }) : undefined;
+  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation };
 }
 
 export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {
+  if (ctx.env.CONSTRUCT_DELEGATED_WORKER) throw new UsageError('delegated workers receive only their supplied context, not another Construct surface');
   const project = openProject(ctx);
   const binding = bindingFor(ctx, flags);
   return { project, binding, broker: createBrokerContext(ctx, project, binding) };

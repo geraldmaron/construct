@@ -15,7 +15,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { redact, REDACTION_PLACEHOLDER } from '../../../src/kernel/render/redact.ts';
+import { hasKnownSecret, redact, REDACTION_PLACEHOLDER } from '../../../src/kernel/render/redact.ts';
 
 const BODY = 'abcdefghijklmnopqrstuvwxyz0123456789';
 
@@ -45,6 +45,8 @@ test('each named provider shape is caught', () => {
     'AIza' + BODY.slice(0, 35),
   ];
   for (const value of cases) {
+    assert.equal(hasKnownSecret(value), true);
+    assert.equal(hasKnownSecret(value), true);
     const out = redact(`prefix ${value} suffix`);
     assert.ok(!out.includes(value), `expected ${value} to be redacted, got: ${out}`);
     assert.equal(out, `prefix ${REDACTION_PLACEHOLDER} suffix`);
@@ -74,6 +76,7 @@ test('a plain error message survives intact', () => {
     'stdout is not a result envelope — version drift? Run npm run probe:claude.',
   ];
   for (const message of messages) {
+    assert.equal(hasKnownSecret(message), false);
     assert.equal(redact(message), message);
   }
 });
@@ -81,6 +84,7 @@ test('a plain error message survives intact', () => {
 test('a generic high-entropy token is redacted, a long ordinary word is not', () => {
   // A 40-char hex digest: long, mixed digits and letters, high entropy.
   const digest = 'a3f5c9d1b7e04628f1a9c3d5e7b90246f8a1c3d5';
+  assert.equal(hasKnownSecret(digest), false);
   const outDigest = redact(`unexpected object hash ${digest} on record`);
   assert.ok(outDigest.includes(REDACTION_PLACEHOLDER));
   assert.ok(!outDigest.includes(digest));
