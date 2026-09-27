@@ -54,6 +54,10 @@
     {
       "text": "tighten this up, it's three pages and says one thing",
       "expect": "activate"
+    },
+    {
+      "text": "this reads like AI wrote it, strip the tells before it goes out",
+      "expect": "activate"
     }
   ]
 }

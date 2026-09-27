@@ -59,8 +59,5 @@ precisely (same research line).
 ## Reads human
 
 Vary sentence length on purpose; uniform rhythm is a documented machine-text
-marker. Banned lexical tics with measured frequency spikes: delve,
-underscore, meticulous, intricate, commendable, realm. Formulaic
-transitions ("moreover," "it's important to note") and the reflexive
-rule-of-three go too (taste). Em dashes limited to rare deliberate use -
-house taste only; no science claim.
+marker. The full catalog of machine tells, their budgets, and the checker
+are in [ai-tells.md](ai-tells.md).

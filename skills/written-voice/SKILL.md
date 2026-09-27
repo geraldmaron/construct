@@ -9,7 +9,7 @@ description: >-
   Not for what the document decides, only how it says it.
 license: Apache-2.0
 metadata:
-  version: 0.4.0
+  version: 0.5.0
   source: geraldmaron/construct
 ---
 
@@ -86,6 +86,12 @@ Genre skeletons (spec, proposal, status, announcement, README, decision
 log, handoff):
 [references/genre-shapes.md](references/genre-shapes.md).
 
+Machine tells (negate-then-correct, grand closers, reflexive threes, tic
+words, filler adverbs, chat openers and sign-offs, dash and formatting
+habits), their budgets, and the checker that counts them:
+[references/ai-tells.md](references/ai-tells.md). Run that checker on every
+deliverable before calling it finished.
+
 ## 6. The unification pass
 
 When bringing existing prose into house voice:
@@ -107,7 +113,9 @@ When bringing existing prose into house voice:
 5. Shape held - genre skeleton; dropped sections on purpose.
 6. One recommendation where the document recommends.
 7. Formatted by shape - mix follows content; every screenful has an entry
-   point; banned tics absent.
+   point.
+8. Tells checked - the checker in references/ai-tells.md ran on the final
+   text, and every flagged line was fixed or kept on purpose.
 
 ## Closing record
 
