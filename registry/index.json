@@ -99,8 +99,8 @@
       "title": "System architecture"
     },
     "written-voice": {
-      "version": "0.4.0",
-      "digest": "sha256:d8f723e30238e70207b7095b29783d4c91212836837a12092b063dce844014ab",
+      "version": "0.5.0",
+      "digest": "sha256:73cc3d00a5f38796b109c82c3bbbac9e2f5c2ea35f362c476b920deb3f744347",
       "category": "method",
       "title": "Written voice"
     }
