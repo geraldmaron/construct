@@ -13,8 +13,10 @@ import type { WorkflowService } from '../workflow/service.ts';
 import type { TriggerService } from '../workflow/triggers.ts';
 import type { SourceService } from '../source/service.ts';
 import type { AskPerson } from '../policy/channels.ts';
+import type { DelegationService } from '../delegation/types.ts';
 
 export interface BrokerContext {
+  readonly delegation?: DelegationService;
   readonly version: string;
   readonly root: string;
   /** The git worktree this session works in, when it is not the project's main checkout. */

@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.4.0
+  version: 2.5.0
   source: geraldmaron/construct
 ---
 
@@ -80,8 +80,20 @@ After `start_outcome`, loop:
   destroys something is the person's own answer: relayed, it stays open,
   and `decide` says how they give it.
 
-Construct never starts another agent or switches hosts because one is
-installed, and you do not do that on its behalf. Your host may run several
+Construct never switches the lead host or launches a worker because one is
+installed. Explicitly authorized local subscription workers can be launched
+with `delegate` after configuration and live permission verification. Claim
+the parent work without reserving the workers' paths; each child obtains its
+own fenced claim and reservations. Use `start`, then `status`, `result`, or
+`cancel`. Workers read isolated snapshots and propose scoped patches; they
+receive no lead approvals or Construct tool surface. Validate, review the
+fixed implementation with a separate worker, and record each finding's
+disposition with `triage`. `integrate` applies reviewed changes serially and
+runs the configured combined-result gate. Failed validation or exhausted
+limits is blocked work, never acceptance. No commit or publication is implied.
+An unverified adapter stays disabled; do not substitute another launcher.
+
+Your host may run several
 agents in this project, and other sessions, in this host or another, may be
 working here too. Before an agent edits, it claims the work with `work`
 (action `claim`, naming itself as `agent` and the files or directories it

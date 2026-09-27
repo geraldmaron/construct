@@ -194,6 +194,30 @@ Surface: interactive. Reads only: no.
 | `packet` | object | no | For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths. |
 | `to` | string | no | For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept. |
 
+### `delegate`
+
+Bounded local delegation. Opt-in local subscription workers, owned by this lead session. Start returns an execution id immediately; status, result, and cancel supervise it. Implementation requires existing claimed work, scoped paths and acceptance checks. Review a fixed implementation with role review and subject. Triage every finding before serial local integration and combined validation. No recursive dispatch, commits, publication, approval inheritance, or automatic executor fallback. Disabled until explicit configuration and matching live evidence exist.
+
+Surface: interactive. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `action` | `start`, `status`, `result`, `cancel`, `triage`, `integrate` | yes | Execution lifecycle or lead-only review/integration action. |
+| `id` | string | no | Execution id; optional only for aggregate status. |
+| `workId` | string | no | Existing native work with an unexpired claim held by this lead. |
+| `requestKey` | string | no | Stable idempotency key, reused only for the identical assignment. |
+| `executor` | `claude`, `codex`, `cursor` | no | Explicitly configured local executor; installation alone grants nothing. |
+| `role` | `implement`, `review` | no | Implementation or read-only independent review. |
+| `instructions` | string | no | Bounded assignment, not the full lead conversation. |
+| `acceptance` | array | no | Observable acceptance checks. |
+| `paths` | array | no | Repository-relative files or directory prefixes ending in /. |
+| `couplingKeys` | array | no | Shared interface/schema keys that must execute serially despite disjoint paths. |
+| `timeoutMs` | number | no | Per-attempt bound; default 1200000, capped by personal configuration. |
+| `runId` | string | no | Existing workflow run to link to the child work. |
+| `subject` | string | no | Successful implementation execution to review at its fixed snapshot. |
+| `repairOf` | string | no | Successful implementation being repaired; bounded repair counter is inherited. |
+| `dispositions` | array | no | Exactly one {findingId, decision: accepted\|rejected\|deferred, rationale} per review finding. |
+
 ### `heartbeat`
 
 Keep a lease alive. The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.
@@ -275,3 +299,4 @@ Surface: both. Reads only: no.
 - `claim_work`
 - `classify_request`
 - `work`
+- `delegate`
