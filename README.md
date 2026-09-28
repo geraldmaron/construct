@@ -10,6 +10,25 @@ This is the `3.0.0` alpha line of `@geraldmaron/construct`, under
 architectural cutover. Alphas publish under the `alpha` tag; `latest` stays on
 the predecessor. Nothing here is promised stable.
 
+## Alpha.26
+
+- One native work ledger across project worktrees, with fenced claims, path
+  reservations, handoffs, and peer awareness.
+- Person-only approval and acceptance boundaries, explicit state upgrades,
+  and recovery that preserves existing work.
+- Opt-in bounded delegation through Claude, Codex, and Cursor adapter paths:
+  isolated patch proposals, independent review, cancellation, and serial
+  integration with combined-result validation.
+
+**Delegation remains disabled by default and is not live-verified across the
+three tools.** Synthetic tests exercise all six directions; real subscription,
+permission, and interoperability evidence is still required before enabling
+an executor. This alpha does not claim production-ready three-tool delegation.
+
+Read the [changelog](CHANGELOG.md), [delegation guide](docs/bounded-delegation.md),
+and [verification record](docs/internal/multi-agent-coordination/DELEGATION-VERIFICATION.md)
+for the shipped behavior and remaining release gates.
+
 ## First run
 
 ```bash
@@ -33,6 +52,12 @@ inspection, scripting, and recovery: `construct status`, `construct doctor`,
 and `construct migrate` when an upgrade of Construct needs the state upgraded
 too (stop every Construct session on the project first).
 `construct help` lists everything.
+
+When upgrading an existing project, stop its Construct sessions before running
+`construct migrate`. Alpha.26 uses state format 4; older state must be upgraded
+explicitly. Migration takes a backup under its upgrade lock. Run
+`construct doctor` afterward and follow any skill-update instructions before
+reopening agent sessions. Installing this package does not authorize workers.
 
 Limits that are load-bearing: legal, compliance, and other licensed
 judgments are research and preparation, never advice or sign-off. This alpha

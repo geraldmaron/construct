@@ -1,10 +1,10 @@
 # Bounded delegation: guarded implementation verification
 
-Recorded September 27, 2026.
+Implementation checkpoint recorded September 27, 2026, before release work.
 
 **Status: implementation and synthetic gates pass; live three-tool release is
-not verified.** All real executors remain disabled. No live model work,
-credential changes, commits, pushes, or publication were performed.
+not verified.** All real executors remain disabled. At this checkpoint, no live
+model work, credential changes, commits, pushes, or publication were performed.
 
 ## Scope and reuse
 

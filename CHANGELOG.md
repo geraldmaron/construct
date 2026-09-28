@@ -1,7 +1,39 @@
 # Changelog
 
-## Unreleased — native work cutover
+## 3.0.0-alpha.26 — 2026-09-27
 
+This alpha includes the previously unpublished alpha.25 development snapshot
+and the native work/coordination foundation. It publishes only under `alpha`;
+the stable `latest` tag remains unchanged.
+
+- **Bounded delegation, disabled by default.** The interactive `delegate`
+  tool adds start, status, result, cancel, triage, and integrate actions.
+  Attempts stay in native work events with separate child sessions and claims.
+  Claude, Codex, and Cursor adapters require explicit executor/model settings
+  and matching operator-recorded live evidence; installation grants nothing.
+- **Proposals before integration.** Workers receive read-only snapshots and
+  return scoped patches. Construct validates in isolation, requires review and
+  finding dispositions, applies changes serially, and validates the combined
+  result. Dirty user work is retained. No commit, push, publication, approval,
+  or deliverable acceptance is implied.
+- **Bounded supervision.** Idempotent dispatch, concurrency and repair limits,
+  cancellation, timeouts, process-group cleanup, and conservative restart
+  reconciliation prevent retries from silently multiplying work. Windows
+  execution remains blocked pending process-tree controls.
+- **Shared coordination.** Git worktrees share project state. Session-bound
+  claims, path reservations, handoffs, and peer awareness coordinate manual
+  sessions as well as delegated work. Person-only approval and acceptance
+  boundaries remain in force.
+- **Upgrade safety.** State format 4 migrations require stopped sessions,
+  back up under the upgrade lock, and refuse incomplete or newer stores.
+  Existing operational skills can be updated without overwriting local edits.
+- **Written voice 0.5.0.** The skill includes its tell checker and reference
+  catalog from staging; the operational Construct skill is now 2.5.0.
+- **Verification boundary.** The delegation implementation passes the full
+  local gate on Node 25.9.0 and the supported minimum 22.18.0. Synthetic MCP
+  tests cover all six directions. Real vendor interoperability, subscription
+  billing/permission behavior, and productivity comparisons remain unverified.
+  See the delegation verification record; this is not a live three-tool release.
 - **Native work ledger.** Bounded work lives in Construct state format 4.
   `construct work` and the `work` tool query, claim, complete, and restore
   it. An external tracker is not part of the operating contract.
@@ -21,7 +53,7 @@
   unknowns, not sourced proposals. Flags that fill a field retire the
   matching unknown.
 
-## 3.0.0-alpha.25 — 2026-09-12
+## 3.0.0-alpha.25 — 2026-09-12 (unpublished development snapshot)
 
 - **Professional judgment on the ordinary path.** An ordinary managed
   outcome with architectural or irreversible consequences is challenged
