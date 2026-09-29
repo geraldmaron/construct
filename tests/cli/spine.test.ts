@@ -131,8 +131,9 @@ test('config is explained tier by tier, set into the right file, and refused whe
     assert.equal(wrongScope.code, 1);
     assert.match(wrongScope.err, /cannot be set by project config/);
     const badValue = await capture(() => run(['config', 'set', 'review.cadence', 'hourly'], ctx));
-    assert.equal(badValue.code, 1);
-    assert.match(badValue.err, /must be one of weekly \| monthly/);
+    assert.equal(badValue.code, 2, 'a bad value on the command line is a usage error');
+    assert.match(badValue.err, /review\.cadence: must be one of weekly \| monthly/);
+    assert.doesNotMatch(badValue.err, /Fix the file/, 'no file is at fault for a value typed on the command line');
     const unknown = await capture(() => run(['config', 'get', 'nope'], ctx));
     assert.equal(unknown.code, 2);
     const unset = await capture(() => run(['config', 'unset', 'review.cadence'], ctx));
@@ -210,6 +211,10 @@ test('sources are declared into the committed file, read by digest, related, and
     assert.match(relate.out, /design governs tracker/);
     const badRelate = await capture(() => run(['source', 'relate', 'design', 'owns', 'tracker'], ctx));
     assert.equal(badRelate.code, 2);
+    const selfRelate = await capture(() => run(['source', 'relate', 'design', 'governs', 'design'], ctx));
+    assert.equal(selfRelate.code, 1);
+    assert.match(selfRelate.err, /a source cannot hold a governs relation to itself \(design\)/);
+    assert.doesNotMatch(selfRelate.err, /ent-/, 'the internal entity id stays out of a person-facing refusal');
 
     const show = await capture(() => run(['source', 'show', 'design'], ctx));
     assert.match(show.out, /settles requirement; must not settle capacity/);

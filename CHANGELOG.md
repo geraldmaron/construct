@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- **`config set` treats a bad value as a usage error.** A value typed on the
+  command line that fails validation (`construct config set review.cadence
+  hourly`) now exits 2 with the key named (`review.cadence: must be one of
+  ...`), like every other bad argument, instead of exiting 1 under a
+  `--review.cadence` flag that does not exist and a next step telling the
+  person to fix a file they never touched.
+- **Relating a source to itself reads as English and names the source.**
+  `construct source relate design governs design` now refuses with `a source
+  cannot hold a governs relation to itself (design)` and a next step, instead
+  of `an entity cannot governs itself (ent-...)`, which leaked the internal
+  entity id. The kernel's own message got the same grammar fix.
+
 ## 3.0.0-alpha.24 — 2026-09-02
 
 - **Skill routing by the person's words.** `classify_request` now ranks

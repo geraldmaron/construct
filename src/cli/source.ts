@@ -196,6 +196,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const to = svc.list().find((s) => s.id === toId);
         if (!from) throw new OperationError(`no active source ${fromId}`);
         if (!to) throw new OperationError(`no active source ${toId}`);
+        if (from.id === to.id) throw new OperationError(`a source cannot hold a ${relation} relation to itself (${fromId})`, 'Name two different sources: `construct source relate <from-id> <relation> <to-id>`.');
         const fromEntity = sourceEntity(store, from.id, from.kind)!;
         const toEntity = sourceEntity(store, to.id, to.kind)!;
         const rel = addRelation(store, { id: ctx.nextId('rel'), kind: relation as RelationKind, fromId: fromEntity.id, toId: toEntity.id, basis: 'declared', confidence: 1, confirmed: true, at });
