@@ -9,7 +9,7 @@ import {
   CONFIG_KEYS, CONFIG_KEY_NAMES, configKey, explainConfig, resolveConfig, configFlagsFrom,
   validateProjectConfig, validateUserDefaults, userDefaultsPath, USER_DEFAULTS_FORMAT, USER_DEFAULTS_VERSION,
 } from '../kernel/project/config.ts';
-import { readJsonFile, writeJsonFile } from '../kernel/project/files.ts';
+import { readJsonFile, writeJsonFile, ProjectFileError } from '../kernel/project/files.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { stringFlag } from './commands.ts';
@@ -18,6 +18,17 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
 const group = 'Configure';
+
+// A value typed on the command line is a usage problem, not a broken file: report it as one, named by its key.
+
+function parseValue(spec: NonNullable<ReturnType<typeof configKey>>, key: string, value: string | undefined): unknown {
+  try {
+    return spec.parse(value, key);
+  } catch (error) {
+    if (error instanceof ProjectFileError) throw new UsageError(error.message);
+    throw error;
+  }
+}
 const scopeFlag = { name: 'scope', gloss: 'which file to write: project or user (default: whichever may hold the key)', takesValue: true } as const;
 
 export const CONFIG_SPECS: readonly CommandSpec[] = [
@@ -123,7 +134,7 @@ export function configCommand(sub: string, args: ParsedArgs, argv: readonly stri
       if (!spec.settableBy.includes(tier)) {
         throw new OperationError(`${key} cannot be set by ${tier}; it is set by ${spec.settableBy.join(' or ')}`);
       }
-      const parsed = sub === 'set' ? spec.parse(value, `--${key}`) : undefined;
+      const parsed = sub === 'set' ? parseValue(spec, key, value) : undefined;
       if (scope === 'project') {
         if (!bound?.files.config) throw new NoProjectError(ctx.cwd);
         const behavior = { ...bound.files.config.behavior };

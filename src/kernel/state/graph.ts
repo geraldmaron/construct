@@ -292,7 +292,7 @@ export function validateRelationEndpoints(
   to: Entity,
 ): void {
   if (from.id === to.id) {
-    throw new InvalidRelationError(`an entity cannot ${kind} itself (${from.id})`);
+    throw new InvalidRelationError(`an entity cannot hold a ${kind} relation to itself (${from.id})`);
   }
   const rule = RELATION_ENDPOINTS[kind];
   if (!rule.from.includes(from.kind)) {
