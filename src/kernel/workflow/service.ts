@@ -16,9 +16,9 @@ import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, getRun, getRunByKey, listActiveRuns, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { addStep, claimStep, completeStep, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
-import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
+import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision, listDecisionsForStep } from '../state/decisions.ts';
 import { addStatement, type Statement, type StatementKind } from '../state/profile.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
 import type { HostCapabilities } from '../registry/capability-registry.ts';
@@ -82,6 +82,9 @@ export interface WorkPacket {
   readonly instructions: readonly string[];
 }
 
+/** What a person may answer when checks keep failing. */
+export const WAIVER_OPTIONS = ['accept with these problems', 'another attempt', 'stop'] as const;
+
 /** What each check needs from the output, said once to the host instead of discovered by failing. */
 const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   deliverable_complete: 'deliverable_complete needs a non-empty "summary" and one of "findings", "body", or "decisions".',
@@ -95,6 +98,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   evidence_witnessed: 'evidence_witnessed needs at least one citation Construct can open itself, not only references into systems the host reads.',
   superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
   decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
+  sources_diverse: 'sources_diverse needs citations from at least two independent places (different files, items, or web sites).',
   conflicts_declared: 'conflicts_declared needs a "conflicts" list (empty if none); each conflict gives "citations" naming at least the two sources that disagree.',
 };
 
@@ -159,6 +163,11 @@ function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
+  /** The person accepted this step's output despite failing checks. */
+  const acceptedWaiver = (stepRunId: string): boolean =>
+    listDecisionsForStep(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
+  /** Any step of the run went through on a waiver; its deliverable is then never called validated. */
+  const runHasWaiver = (runId: string): boolean => listSteps(store, runId).some((st) => Array.isArray((st.output as { waived?: unknown } | null)?.waived));
   /** Every distinct citation the run's finished steps made, plus this one's: what the deliverable rests on. */
   const runEvidence = (runId: string, current: readonly { readonly ref: string }[]): { ref: string }[] => {
     const refs = new Set(current.map((e) => e.ref));
@@ -436,6 +445,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
           step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
           ...validatorGuidance(step.validators),
+          acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
           'Cite every source you read as evidence entries.',
         ].filter(Boolean);
         return {
@@ -484,18 +494,39 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
-        if (failures.length > 0) {
+        const waived = failures.length > 0 && acceptedWaiver(leased.id);
+        if (failures.length > 0 && !waived) {
+          const current = getStep(store, leased.id)!;
+          if (current.attempts >= current.maxAttempts && step.loadBearing) {
+            // Retries are spent. Failing the run would throw away the work; the person decides instead.
+            const problems = failures.flatMap((f) => f.problems.map((p) => `${f.validator}: ${p}`));
+            raiseDecision(store, {
+              id: deps.nextId('decision'),
+              kind: 'decision',
+              question: `Step ${step.id} still fails ${String(failures.length)} check(s) after ${String(current.attempts)} attempt(s): ${problems.slice(0, 5).join('; ')}${problems.length > 5 ? ` (+${String(problems.length - 5)} more)` : ''}. Accept it with these problems, give it another attempt, or stop?`,
+              runId: run.id,
+              stepRunId: leased.id,
+              options: [...WAIVER_OPTIONS],
+              subject: { waiverFor: leased.id, problems },
+              at,
+            });
+            transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: 'checks still failing; waiting on the person' });
+            transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs the person's call on failing checks` });
+            appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), escalated: true } });
+            return { step: getStep(store, leased.id)!, validation, run: getRun(store, run.id)!, deliverable: null };
+          }
           const reason = failures.map((f) => `${f.validator}: ${f.problems.join('; ')}`).join(' | ');
           const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { validation }, reason });
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
           return { step: failed, validation, run: advance(run.id, at), deliverable: null };
         }
-        const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence } });
+        const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence, ...(waived ? { waived: failures.map((f) => ({ validator: f.validator, problems: f.problems })) } : {}) } });
+        if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
         let deliverable: Deliverable | null = null;
         const isLast = workflow.manifest.steps[workflow.manifest.steps.length - 1]!.id === step.id;
         if (isLast || step.challenge) {
           deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence }, at });
-          if (isLast && validation.every((v) => v.ok) && step.validators.length > 0) {
+          if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
             deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
@@ -517,9 +548,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (!decision) throw new Error(`no decision ${decisionId}`);
         const resolved = resolveDecision(store, { id: decisionId, resolution, by, at });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; driftFindingId?: string };
-        if (subject.driftFindingId) {
-          const finding = getDriftFinding(store, subject.driftFindingId);
+        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; driftFindingId?: string; driftFindingIds?: string[] };
+        for (const fid of [...(subject.driftFindingIds ?? []), ...(subject.driftFindingId ? [subject.driftFindingId] : [])]) {
+          const finding = getDriftFinding(store, fid);
           if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
             const to = resolution === 'dismiss' ? 'dismissed' : 'acknowledged';
             if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
@@ -537,6 +568,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
           } else {
             transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by}` });
+          }
+        } else if (decision.kind === 'decision' && (subject as { waiverFor?: string }).waiverFor && decision.stepRunId) {
+          // The checks kept failing. The person either takes the output with its named problems,
+          // gives the host another attempt, or stops; any of them is recorded against the step.
+          const said = String(resolution).toLowerCase();
+          const choice = said.startsWith('accept') ? WAIVER_OPTIONS[0] : said.startsWith('stop') ? WAIVER_OPTIONS[2] : WAIVER_OPTIONS[1];
+          if (choice === WAIVER_OPTIONS[2]) transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by} after checks kept failing` });
+          else {
+            grantExtraAttempt(store, { id: decision.stepRunId, at, by });
+            transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: choice === WAIVER_OPTIONS[0] ? `${by} accepted the output with its check failures` : `${by} asked for another attempt` });
           }
         } else if (decision.kind === 'clarification' && run) {
           const input = { ...((run.input ?? {}) as Record<string, unknown>) };

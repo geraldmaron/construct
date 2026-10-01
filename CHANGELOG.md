@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+**Breaking for project-authored workflows.** `evidence_refs_resolve` and
+`citations_present` now check that references resolve. A workflow that
+relied on the old pass-through will see steps sent back until its
+citations name real files, sources, items, records, or web pages. After
+upgrading, every directory source reports one change on its next read,
+because fingerprints moved from size and mtime to content; that first
+change opens no drift findings.
+
+- **People decide when checks keep failing.** A load-bearing step that
+  still fails after its last attempt waits on the person (accept with the
+  named problems, another attempt, or stop) instead of failing the run. A
+  waiver is recorded and its deliverable is never marked validated.
+- **Research.** `research-brief` answers a question from project sources
+  and the web, with `sources_diverse` asking for two independent places.
+  Web pages resolve as reported citations; research phrasings ("look
+  into", "find out", "dig into") count as work.
+- **Checks that match how people write.** Figures compare by value with
+  rounding allowed, dates and times are not figures, and figures the person
+  supplied in the request count as given. A symlink that leads outside the
+  project no longer resolves.
+- **A quieter inbox.** New files in a source raise one question per
+  refresh; changed cited items are still asked about per deliverable.
+- **Cheaper session start.** Directory reads reuse fingerprints from the
+  last recorded read when size and mtime match. `doctor` says when jira
+  sources read fixtures.
 - **Grounding is checked, not trusted.** Evidence references now resolve
   against the project as it stands (files inside the project or a directory
   source, declared sources and the items they reported, deliverables, and

@@ -19,22 +19,6 @@
       "expect": "activate"
     },
     {
-      "text": "What year was Node.js released",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Brainstorm some names for the feature",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Quick opinion, speed over certainty: is this library popular",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Draft a tweet about the launch",
-      "expect": "stand_down"
-    },
-    {
       "text": "Someone claims our competitor lost a big customer; is that true",
       "expect": "activate",
       "why": "a claim someone will rely on"
@@ -54,6 +38,34 @@
     {
       "text": "what's the actual history of this outage, the timeline in the ticket doesn't add up",
       "expect": "activate"
+    },
+    {
+      "text": "Research what customers and analysts say about webhooks versus polling and cite every source",
+      "expect": "activate"
+    },
+    {
+      "text": "Look into whether our competitors offer push notifications and back it up with links",
+      "expect": "activate"
+    },
+    {
+      "text": "Dig into the evidence on this and tell me what actually holds up",
+      "expect": "activate"
+    },
+    {
+      "text": "What year was Node.js released",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Brainstorm some names for the feature",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Quick opinion, speed over certainty: is this library popular",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Draft a tweet about the launch",
+      "expect": "stand_down"
     }
   ]
 }

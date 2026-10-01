@@ -16,7 +16,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `experience-design` | 1.0.0 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
 | `governance-risk` | 1.0.0 | professional | we started selling to a new country or industry | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
 | `intake` | 0.3.0 | method | the thing from Tuesday plus what he said minus the pricing part | a clear single-outcome request: add a button, rename the function, just do it |
-| `investigative-research` | 0.3.0 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
+| `investigative-research` | 0.3.1 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
 | `operations-reliability` | 1.0.0 | professional | we went live and nobody set up alerts | feature scope or priority |
 | `product-management` | 1.0.0 | professional | everyone loves this idea but nobody can say what it changes for the customer | how to build it, which library, which architecture |
 | `program-delivery` | 1.0.0 | professional | the plan says June but the vendor starts in July | what to build or why (product owns that) |
@@ -45,6 +45,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `project-bootstrap` | 1.0.0 | manage | manual, schedule | discover → review → record | Read what the project already says about itself, propose a profile and constitution with provenance, ask the three questions that only the person can answer, and review the resulting constitution for shape and contradictions; on a cadence, re-read and propose updates. Nothing inferred is confirmed by this workflow. |
 | `proposal-authoring` | 1.0.0 | manage | manual | gather → draft → challenge → record | Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back. |
 | `remember` | 1.0.0 | remember | manual | record | Record a decision, constraint, principle, note, or outcome in the person's own wording as one statement, with project binding, timestamp, and provenance. Nothing else is created. |
+| `research-brief` | 1.0.0 | manage | manual | gather → synthesize → challenge → record | Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back. |
 | `rfc-authoring` | 1.0.0 | manage | manual | gather → draft → challenge → record | Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back. |
 | `security-privacy-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk. |
 | `source-drift-review` | 1.0.0 | maintain | manual, schedule, event | refresh → detect → review → record | Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed. |
@@ -84,3 +85,4 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 - `evidence_witnessed`
 - `superseded_acknowledged`
 - `decision_ask_present`
+- `sources_diverse`

@@ -103,6 +103,8 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
           const parts = [`${String(active.length)} declared`];
           if (unreachable.length) parts.push(`unreachable: ${unreachable.join(', ')}`);
           if (neverRead.length) parts.push(`never read: ${neverRead.join(', ')}`);
+          const fixtures = ctx.env.CONSTRUCT_JIRA_FIXTURES;
+          if (fixtures) parts.push(`jira sources read test fixtures from ${fixtures} (CONSTRUCT_JIRA_FIXTURES), not a live tracker`);
           checks.push({ name: 'sources', ok: true, detail: parts.join('; ') + (unreachable.length || neverRead.length ? '; work that needs them will be blocked or flagged' : '') });
         } finally {
           store.close();

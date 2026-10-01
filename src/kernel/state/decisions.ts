@@ -118,6 +118,12 @@ export function getDecision(store: StateStore, id: string): Decision | null {
   return row ? toDecision(row) : null;
 }
 
+/** Every decision raised against one step, any state, oldest first. */
+export function listDecisionsForStep(store: StateStore, stepRunId: string): Decision[] {
+  const rows = store.db.prepare('SELECT * FROM decisions WHERE step_run_id = ? ORDER BY raised_at, id').all(stepRunId) as unknown as Row[];
+  return rows.map(toDecision);
+}
+
 export function listOpenDecisions(store: StateStore, runId?: string): Decision[] {
   const rows = store.db
     .prepare(
