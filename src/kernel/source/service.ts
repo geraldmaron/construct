@@ -211,7 +211,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         outcome = { outcome: 'unreachable', reason: `nothing in this session can read a ${source.kind} source; connect one through your host` };
       } else {
         try {
-          outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator });
+          outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator, previous: currentManifest(store, id) ?? undefined });
         } catch (error) {
           outcome = { outcome: 'unreachable', reason: (error as Error).message };
         }
@@ -258,7 +258,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const last = latestSnapshot(store, id);
       if (!last) return null;
       try {
-        const outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator });
+        const outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator, previous: currentManifest(store, id) ?? undefined });
         return outcome.outcome === 'read' ? outcome.report.digest !== last.digest : null;
       } catch {
         return null;

@@ -45,8 +45,8 @@
       "title": "Intake"
     },
     "investigative-research": {
-      "version": "0.3.0",
-      "digest": "sha256:4e05265ae3349d68499d74af0110e4683ba6de2da073ec04ae58daf2f764f61e",
+      "version": "0.3.1",
+      "digest": "sha256:71b7cf346df66474ec5fd3a04518dd9ca6205c859b094c7eca1915b977529364",
       "category": "method",
       "title": "Investigative research"
     },
@@ -189,6 +189,12 @@
       "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
       "title": "Remember one thing",
       "interactionClass": "remember"
+    },
+    "research-brief": {
+      "version": "1.0.0",
+      "digest": "sha256:a2e5e48c9dcadb017355363bad7f80d8e0e661ac56bc969335eaa295197e7841",
+      "title": "Research a question",
+      "interactionClass": "manage"
     },
     "rfc-authoring": {
       "version": "1.0.0",

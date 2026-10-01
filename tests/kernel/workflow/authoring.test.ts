@@ -91,3 +91,37 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     fx.cleanup();
   }
 });
+
+test('when checks keep failing the person decides: the work is kept, an accepted waiver is recorded, and the result is never called validated', async () => {
+  const fx = brokerFixture();
+  try {
+    const root = fx.broker.root;
+    writeFileSync(join(root, 'docs', 'notes.md'), 'Customers poll the jobs API.\n');
+    writeFileSync(join(root, 'docs', 'prd.md'), '# PRD\n## Problem\nPolling costs $9.9M a year.\n');
+    const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
+    const runId = started.run.id as string;
+    const step = async () => (await call(fx, 'claim_work', { runId })).work;
+    const submit = (w: any, output: Record<string, unknown>, evidence: { ref: string }[]) => call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
+    await submit(await step(), { summary: 's', findings: ['f'], material: [], conflicts: [], unknowns: [] }, [{ ref: 'docs/notes.md' }]);
+    const draft = { summary: 'draft', findings: ['cost'], artifact: 'docs/prd.md', derivations: [] };
+    let r: Record<string, any> = {};
+    for (let i = 0; i < 3; i++) r = await submit(await step(), draft, [{ ref: 'docs/notes.md' }]);
+    assert.equal(r.step.state, 'waiting_for_decision', 'the run is not thrown away when retries run out');
+    assert.equal(r.run.state, 'waiting_for_decision');
+    const inbox = (await call(fx, 'inbox')) as unknown as { id: string; question: string; options: string[] }[];
+    const q = inbox.find((d) => d.question.includes('still fails'))!;
+    assert.match(q.question, /9\.9m/);
+    assert.deepEqual(q.options, ['accept with these problems', 'another attempt', 'stop']);
+    await call(fx, 'decide', { decisionId: q.id, resolution: 'accept with these problems' });
+    const w = await step();
+    assert.ok(w.instructions.some((i: string) => i.includes('accepted this step despite')));
+    const accepted = await submit(w, draft, [{ ref: 'docs/notes.md' }]);
+    assert.equal(accepted.step.state, 'succeeded');
+    await submit(await step(), { verdict: 'figure unsupported, accepted by person', summary: 'c', findings: [] }, [{ ref: 'docs/prd.md' }]);
+    const done = await submit(await step(), { artifact: 'docs/prd.md', verdict: 'waived' }, [{ ref: 'docs/prd.md' }]);
+    assert.equal(done.run.state, 'succeeded');
+    assert.notEqual(done.deliverable?.trust, 'validated', 'a waived check never reads as a passed one');
+  } finally {
+    fx.cleanup();
+  }
+});

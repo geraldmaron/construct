@@ -91,8 +91,8 @@ test('a refresh names added, modified, and removed items, and content that chang
   }
 });
 
-async function runManaged(fx: ReturnType<typeof brokerFixture>, evidence: { ref: string; excerpt?: string }[], findings: string[]) {
-  const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'summarize the notes' } });
+async function runManaged(fx: ReturnType<typeof brokerFixture>, evidence: { ref: string; excerpt?: string }[], findings: string[], request = 'summarize the notes') {
+  const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request } });
   const runId = started.run.id as string;
   const submit = async (output: Record<string, unknown>, ev: { ref: string; excerpt?: string }[]) => {
     const w = (await call(fx, 'claim_work', { runId })).work;
@@ -139,7 +139,7 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     assert.equal(refreshed.staleDeliverables.length, 1, 'one finding per run, not one per draft');
     const finding = listDriftFindings(s, { status: 'open' })[0]!;
     assert.match(finding.summary, /pricing\.md/);
-    const question = listOpenDecisions(s).find((d) => (d.subject as { driftFindingId?: string } | null)?.driftFindingId === finding.id)!;
+    const question = listOpenDecisions(s).find((d) => (d.subject as { driftFindingIds?: string[] } | null)?.driftFindingIds?.includes(finding.id))!;
     assert.deepEqual(question.options, ['revise', 're-run', 'dismiss']);
     const boot = await call(fx, 'bootstrap');
     assert.match(boot.next, /decision/);
@@ -147,5 +147,51 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     assert.equal(listDriftFindings(s, { status: 'open' }).length, 0);
   } finally {
     fx.cleanup();
+  }
+});
+
+test('new files in a busy source raise one question for the refresh, not one per deliverable', async () => {
+  const fx = brokerFixture();
+  try {
+    const s = fx.broker.store;
+    const at = fx.ctx.now();
+    const dir = join(fx.broker.root, 'notes');
+    mkdirSync(dir);
+    writeFileSync(join(dir, 'a.md'), 'alpha');
+    addSource(s, { id: 'notes', kind: 'directory', locator: dir, purpose: 'notes', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'refresh', id: 'notes' });
+    for (const n of [1, 2]) {
+      const { runId } = await runManaged(fx, [{ ref: 'notes/a.md', excerpt: 'alpha' }], [`finding ${String(n)}`], `summarize the notes, pass ${String(n)}`);
+      for (const out of [{ verification: 'ok', passed: true }, { deliverableId: `d${String(n)}`, summary: 's', findings: ['f'] }]) {
+        const w = (await call(fx, 'claim_work', { runId })).work;
+        await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'notes/a.md' }] });
+      }
+    }
+    const before = listOpenDecisions(s).length;
+    writeFileSync(join(dir, 'b.md'), 'new');
+    writeFileSync(join(dir, 'c.md'), 'newer');
+    const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
+    assert.equal(r.staleDeliverables.length, 2);
+    assert.equal(listOpenDecisions(s).length - before, 1, 'one question covers both deliverables');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a later read reuses fingerprints of files that did not move, so a new session does not re-hash everything', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-reuse-'));
+  try {
+    writeFileSync(join(dir, 'old.md'), '# Old\nStatus: Superseded\n');
+    const first = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+    if (first.outcome !== 'read') throw new Error('unread');
+    const item = first.report.items![0]!;
+    const previous = [{ ref: item.externalRef, fingerprint: 'reused-fp', attributes: item.attributes }];
+    // A fresh process has an empty cache; simulate it by naming a fingerprint only the previous read could supply.
+    const { readDirectorySource: freshReader } = await import(`../../../src/hosts/sources/directory.ts?fresh=${String(Date.now())}`);
+    const second = await freshReader({ sourceId: 's', kind: 'directory', locator: dir, previous });
+    assert.equal(second.report.items[0].attributes.fingerprint, 'reused-fp');
+    assert.equal(second.report.items[0].attributes.supersededBy, '(the document says it is superseded)', 'what the file said about itself survives reuse');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 });

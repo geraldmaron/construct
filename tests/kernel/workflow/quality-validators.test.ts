@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runValidators, figuresIn, evaluateExpression, type ValidationSubject } from '../../../src/kernel/workflow/validators.ts';
@@ -100,4 +100,31 @@ test('a proposal ends in a decision that names who decides and by when', () => {
   assert.deepEqual(ok.decision_ask_present, []);
   const wrong = run(['decision_ask_present'], { output: { artifact: 'docs/proposal.md' }, input: { audience: 'Dana Okafor' } });
   assert.equal(wrong.decision_ask_present!.length, 1);
+});
+
+test('dates and times are not figures, but a figure after a month name still is', () => {
+  assert.deepEqual(figuresIn('Decision by Oct 15, 2026; launch 15 December; standup 10:30am; due 9/30'), []);
+  assert.deepEqual(figuresIn('June 1.6M, September 2.1M, May 40%'), ['1.6m', '2.1m', '40%']);
+});
+
+test('a figure written in another notation or rounded the way people write is still grounded; a different value is not', () => {
+  const r = run(['numbers_grounded'], { output: { summary: 'about 2M requests (2,100,000 exactly is in the snapshot as 2.1M)' }, evidence: [{ ref: 'docs/metrics.md' }] });
+  assert.deepEqual(r.numbers_grounded, []);
+  const off = run(['numbers_grounded'], { output: { summary: '3M requests' }, evidence: [{ ref: 'docs/metrics.md' }] });
+  assert.equal(off.numbers_grounded!.length, 1);
+  const asked = run(['numbers_grounded'], { output: { summary: 'budget of 250k as requested' }, evidence: [{ ref: 'docs/metrics.md' }], input: { request: 'plan within a 250k budget' } });
+  assert.deepEqual(asked.numbers_grounded, [], 'a figure the person gave is not invented');
+});
+
+test('a symlink out of the project does not resolve; a web page is accepted as reported', () => {
+  const outside = mkdtempSync(join(tmpdir(), 'construct-outside-'));
+  try {
+    writeFileSync(join(outside, 'secret.env'), 'API_KEY=x');
+    symlinkSync(join(outside, 'secret.env'), join(root, 'docs', 'link.md'));
+    assert.equal(resolve('docs/link.md'), null);
+    assert.equal(resolve('https://example.com/report#p2')?.provenance, 'reported');
+    assert.equal(resolve('https://example.com/report')?.kind, 'web');
+  } finally {
+    rmSync(outside, { recursive: true, force: true });
+  }
 });

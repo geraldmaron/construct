@@ -19,6 +19,8 @@ export interface ManifestEntry {
   readonly text?: string;
   /** Another item in the same source that declares it replaces this one. */
   readonly supersededBy?: string;
+  /** Reader-specific facts kept so the next read can skip unchanged items (size, mtime, what it supersedes). */
+  readonly attributes?: Readonly<Record<string, unknown>>;
 }
 
 export interface ItemChanges {
@@ -38,6 +40,7 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
       fingerprint: typeof fp === 'string' ? fp : '',
       ...(typeof text === 'string' ? { text } : {}),
       ...(typeof by === 'string' ? { supersededBy: by } : {}),
+      ...(i.attributes && ('size' in i.attributes || 'supersedes' in i.attributes) ? { attributes: { size: i.attributes.size, mtimeMs: i.attributes.mtimeMs, supersedes: i.attributes.supersedes, declaredSupersededBy: i.attributes.declaredSupersededBy } } : {}),
     };
   });
 }

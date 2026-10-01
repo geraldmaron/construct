@@ -47,4 +47,5 @@ an `issues` list, each with a `key`. Every issue becomes an item a step can
 cite by key (`PLAT-101`), and its text is kept for checking excerpts and
 figures. Reads from a fixture are recorded as reported, not witnessed: a
 fixture says what a tracker would have said. Without the variable, a `jira`
-source is unreachable as before.
+source is unreachable as before. `construct doctor` says when jira sources
+are reading fixtures, so a forgotten variable cannot pass for a live tracker.

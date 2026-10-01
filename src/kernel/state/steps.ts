@@ -222,6 +222,17 @@ export function transitionStep(
   });
 }
 
+/** Give a step one more attempt than its policy allowed, because a person asked for it. */
+export function grantExtraAttempt(store: StateStore, input: { readonly id: string; readonly at: string; readonly by: string }): StepRun {
+  return store.transaction(() => {
+    const current = getStep(store, input.id);
+    if (!current) throw new Error(`no step ${input.id}`);
+    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts + 1), updated_at = ? WHERE id = ?').run(input.at, input.id);
+    appendActivity(store, { at: input.at, kind: 'step.attempt_granted', runId: current.runId, stepRunId: input.id, actor: input.by, payload: { stepId: current.stepId, attempts: current.attempts } });
+    return getStep(store, input.id)!;
+  });
+}
+
 /**
  * Lease the next claimable step: one that is ready, or leased with an expired
  * lease. Attempts increments on every claim and doubles as the fencing token.

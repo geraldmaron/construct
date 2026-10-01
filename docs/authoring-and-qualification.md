@@ -96,8 +96,24 @@ the same counts.
 | `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
 | `superseded_acknowledged` | a superseded document is used without saying so |
 | `decision_ask_present` | a proposal has no decision section naming who decides and by when |
+| `sources_diverse` | research rests on fewer than two independent places |
+
+Web pages (`https://…`) are cited as reported: Construct does not fetch
+them, so their excerpts stand as the host's word. Figures are compared by
+value, allowing for how they were rounded ("2M" is supported by a cited
+2,100,000; "3M" is not), dates and times are not figures, and a figure the
+person gave in the request is theirs, not invented. A symlink that leads
+out of the project does not resolve.
+
+When a load-bearing step still fails its checks after its last attempt,
+the run is not failed and the work is not thrown away: the person is asked
+to accept it with the named problems, give it another attempt, or stop. An
+accepted waiver is recorded on the step, and a deliverable that went
+through one is never marked validated.
 
 The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
-apply them in a gather, draft, challenge, record sequence. What none of
+apply them in a gather, draft, challenge, record sequence; `research-brief`
+answers a question from the project and the web in a gather, synthesize,
+challenge, record sequence and asks for at least two independent sources. What none of
 them can tell is whether a grounded claim is the right claim; that is the
 challenge step's and the person's.
