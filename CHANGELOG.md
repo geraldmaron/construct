@@ -10,6 +10,21 @@ upgrading, every directory source reports one change on its next read,
 because fingerprints moved from size and mtime to content; that first
 change opens no drift findings.
 
+- **Plain answers can be checked.** `check_answer` runs the grounding
+  checks on an answer before it is given and records nothing; the
+  operational skill (2.1.0) asks hosts to use it for facts about the project.
+- **Systems the host reads are tracked.** `sources` action `report` records
+  what the host read from a tracker or wiki; changes there flag the work
+  that cited them, quotes are checked against what was reported, and a
+  partial read never implies removal. `bootstrap` lists host-read sources
+  that need a report. Fixture and host-reported items now resolve as
+  reported, not witnessed.
+- **What the person settles governs.** Remembered decisions that say one
+  thing supersedes another are enforced like document headers, and
+  confirmed decisions and constraints reach every step that reads.
+- **Revisions, not restarts.** `revise-deliverable` revises a deliverable as
+  a linked revision with a change summary; answering revise or re-run on a
+  stale-work question returns the outcome to offer.
 - **People decide when checks keep failing.** A load-bearing step that
   still fails after its last attempt waits on the person (accept with the
   named problems, another attempt, or stop) instead of failing the run. A

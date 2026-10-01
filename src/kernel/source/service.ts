@@ -28,7 +28,8 @@ import {
 import { recordObservation } from '../state/drift.ts';
 import type { DeclaredSource, SourcesFile } from '../project/sources-file.ts';
 import { locatorProblem } from './locators.ts';
-import type { ReadOutcome, SourceReader } from './connector.ts';
+import { createHash } from 'node:crypto';
+import type { ReadOutcome, SnapshotReport, SourceReader } from './connector.ts';
 import { currentManifest, describeChanges, diffManifests, toManifest, type ItemChanges } from './manifest.ts';
 import { projectResolver } from './resolver.ts';
 import { flagStaleDeliverables } from '../drift/deliverables.ts';
@@ -68,6 +69,25 @@ export interface RefreshResult {
   readonly staleDeliverables?: readonly string[];
 }
 
+/** Text kept per reported item, enough to check quotes and figures against. */
+export const REPORTED_TEXT_CAP = 16 * 1024;
+
+export interface HostReportItem {
+  readonly ref: string;
+  readonly title?: string;
+  readonly kind?: string;
+  /** The system's own last-modified time, when it gives one. */
+  readonly updatedAt?: string;
+  /** What the host read; kept (capped) so excerpts and figures can be checked against it. */
+  readonly text?: string;
+  readonly fingerprint?: string;
+}
+
+export interface HostReport {
+  readonly items: readonly HostReportItem[];
+  readonly partial?: boolean;
+}
+
 export interface SourceService {
   /** Reconcile committed declarations into state. Local sources are untouched. */
   syncDeclarations(file: SourcesFile, at: string): SyncResult;
@@ -75,6 +95,13 @@ export interface SourceService {
   addLocal(input: Omit<DeclaredSource, 'read' | 'write'> & { readonly read?: boolean; readonly write?: boolean }, at: string): Source;
   setLocalLocator(id: string, locator: string, at: string): Source;
   refresh(id: string, at: string, nextId: () => string): Promise<RefreshResult>;
+  /**
+   * Record what the host read from a source Construct has no reader for (a live tracker, a wiki), so changes
+   * there are tracked like any other. A partial read updates only the items it names.
+   */
+  reportRead(id: string, report: HostReport, at: string, nextId: () => string): RefreshResult;
+  /** Whether Construct can read this source itself, or only record what the host reports. */
+  canRead(id: string): boolean;
   /** Read without recording: has the source moved since its last recorded read? Null when it cannot be read here. */
   peek(id: string): Promise<boolean | null>;
   status(id: string, at: string): SourceStatus;
@@ -145,6 +172,40 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
     for (const t of d.authoritativeFor) setAuthority(store, d.id, t, true);
     for (const t of d.notAuthoritativeFor) setAuthority(store, d.id, t, false);
     return 'updated';
+  }
+
+  function recordRead(id: string, report: SnapshotReport, partial: boolean, at: string, nextId: () => string): RefreshResult {
+    const { snapshot, changed } = recordSnapshot(store, {
+      id: nextId(),
+      sourceId: id,
+      digest: report.digest,
+      summary: report.summary,
+      evidenceRef: report.evidenceRef,
+      at,
+    });
+    let changes: ItemChanges | undefined;
+    let staleDeliverables: string[] | undefined;
+    if (changed) {
+      const manifest = report.items ? toManifest(report.items) : null;
+      const before = currentManifest(store, id);
+      changes = manifest ? diffManifests(before, manifest) : undefined;
+      // In a partial read, an item not reported is unknown, not removed.
+      if (changes && partial) changes = { ...changes, removed: [] };
+      const firstRead = before === null;
+      recordObservation(store, {
+        id: nextId(),
+        sourceId: id,
+        kind: 'source.changed',
+        summary: `${id} changed: ${report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
+        evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
+        at,
+      });
+      if (changes && !firstRead && deps.root) {
+        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence, partial });
+        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId }).map((f) => f.id);
+      }
+    }
+    return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
   }
 
   return {
@@ -221,35 +282,30 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
         return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
       }
-      const { snapshot, changed } = recordSnapshot(store, {
-        id: nextId(),
-        sourceId: id,
-        digest: outcome.report.digest,
-        summary: outcome.report.summary,
-        evidenceRef: outcome.report.evidenceRef,
-        at,
+      return recordRead(id, outcome.report, false, at, nextId);
+    },
+    reportRead(id, report, at, nextId) {
+      const source = getSource(store, id);
+      if (!source) throw new Error(`no source ${id}`);
+      if (source.status !== 'active') throw new Error(`source ${id} is retired`);
+      if (deps.readers.has(source.kind)) throw new Error(`source ${id} is read by Construct itself; refresh it instead of reporting it`);
+      const reported = report.items.map((i) => {
+        const text = typeof i.text === 'string' ? i.text.slice(0, REPORTED_TEXT_CAP) : undefined;
+        const basis = text ?? `${i.ref}\t${i.updatedAt ?? ''}\t${i.title ?? ''}`;
+        return { externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint: i.fingerprint ?? createHash('sha256').update(basis).digest('hex'), ...(text !== undefined ? { text } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}) } };
       });
-      let changes: ItemChanges | undefined;
-      let staleDeliverables: string[] | undefined;
-      if (changed) {
-        const manifest = outcome.report.items ? toManifest(outcome.report.items) : null;
-        const before = currentManifest(store, id);
-        changes = manifest ? diffManifests(before, manifest) : undefined;
-        const firstRead = before === null;
-        recordObservation(store, {
-          id: nextId(),
-          sourceId: id,
-          kind: 'source.changed',
-          summary: `${id} changed: ${outcome.report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
-          evidence: { digest: outcome.report.digest, evidence: outcome.report.evidence, items: outcome.report.items?.length ?? 0, ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
-          at,
-        });
-        if (changes && !firstRead && deps.root) {
-          const resolve = projectResolver(store, deps.root, { sourceId: id, manifest });
-          staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId }).map((f) => f.id);
-        }
-      }
-      return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
+      // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
+      const before = report.partial ? currentManifest(store, id) ?? [] : [];
+      const seen = new Set(reported.map((r) => r.externalRef));
+      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: e.text } : {}) } }));
+      const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
+      const digest = `sha256:${createHash('sha256').update(items.map((i) => `${i.externalRef}\t${String(i.attributes.fingerprint)}`).join('\n')).digest('hex')}`;
+      setReachability(store, id, 'reachable', at);
+      return recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId);
+    },
+    canRead(id) {
+      const source = getSource(store, id);
+      return source !== null && deps.readers.has(source.kind);
     },
     async peek(id) {
       const source = getSource(store, id);
