@@ -20,4 +20,5 @@ export * from './decisions.ts';
 export * from './grants.ts';
 export * from './drift.ts';
 export * from './triggers.ts';
+export { StoreProjectError, bindStoreToProject, storeHasProject, storeProjectId } from './identity.ts';
 export { V2_REQUIRED_TABLES, migrateV2ToV3 } from './migrate.ts';

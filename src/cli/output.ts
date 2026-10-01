@@ -10,6 +10,7 @@ import { LegacyProjectError } from '../kernel/project/initialize.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 import { ResetNotConfirmedError } from '../kernel/project/reset.ts';
 import { UnsupportedStateError } from '../kernel/state/format.ts';
+import { StoreProjectError } from '../kernel/state/identity.ts';
 
 export const esc = escapeForTerminal;
 
@@ -49,6 +50,7 @@ export class OperationError extends Error {
 
 function nextStepFor(error: unknown): string | null {
   if (error instanceof OperationError) return error.next;
+  if (error instanceof StoreProjectError) return error.next;
   if (error instanceof NoProjectError) return null; // its message already says
   if (error instanceof LegacyProjectError) return null;
   if (error instanceof UnsupportedStateError) return null;

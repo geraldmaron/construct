@@ -16,6 +16,7 @@ import { readJsonFile } from '../kernel/project/files.ts';
 import { validateProjectConfig, validateUserDefaults, userDefaultsPath, type ResolveConfigInput } from '../kernel/project/config.ts';
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
+import { StoreProjectError, bindStoreToProject } from '../kernel/state/identity.ts';
 import { OperationError } from './output.ts';
 import type { TerminalFacts } from './person-channel.ts';
 
@@ -289,6 +290,15 @@ function projectIdAt(root: string): string | null {
   return readJsonFile(root, projectFilePath(root), validateProjectConfig)?.id ?? null;
 }
 
+/** The id the lane's own project file names, when the main checkout's is gone; an unreadable file names nothing. */
+function laneProjectId(laneRoot: string): string | null {
+  try {
+    return projectIdAt(laneRoot);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * One repository is one project: a lane whose project file names a different
  * id than the main checkout's is refused. A lane without a project file, or a
@@ -359,7 +369,16 @@ export function locateProject(ctx: CliContext): ProjectLocation {
   const floor = repo?.checkout ?? ctx.cwd;
   const here = findProjectRoot({ start: ctx.cwd, floor });
   if (repo === null || mainRoot === null || !repo.linked) {
-    if (here === null) throw new NoProjectError(resolve(ctx.cwd));
+    if (here === null) {
+      const orphan = findStoreRoot(ctx.cwd, floor);
+      if (orphan !== null) {
+        throw new OperationError(
+          `${orphan} has a Construct store but no .construct/project.json (the current commit may not carry the project files)`,
+          `Restore the .construct files in ${orphan}, for example by checking out the commit that has them. Running \`construct init\` first would give this project a new id, so init refuses; \`construct reset\` discards the store instead.`,
+        );
+      }
+      throw new NoProjectError(resolve(ctx.cwd));
+    }
     return { root: here, lane: ctx.sessionCwd === undefined ? null : laneFor(here, ctx.sessionCwd) };
   }
   const sameRelative = (dir: string): string => join(mainRoot, relative(repo.checkout, dir));
@@ -434,9 +453,19 @@ export function openProject(ctx: CliContext): OpenProject {
   }
   try {
     const store = openStateStore(bound.layout.dbPath, { readOnly: ctx.readOnly === true, busyTimeoutMs: ctx.stateBusyTimeoutMs });
+    try {
+      if (bound.files.config) bindStoreToProject(store, bound.files.config.id);
+      else if (bound.lane) {
+        const laneId = laneProjectId(bound.lane.root);
+        if (laneId !== null) bindStoreToProject(store, laneId, { stamp: false });
+      }
+    } catch (error) {
+      store.close();
+      throw error;
+    }
     return { ...bound, store };
   } catch (error) {
-    if (error instanceof UnsupportedStateError) throw error;
+    if (error instanceof UnsupportedStateError || error instanceof StoreProjectError) throw error;
     if (error instanceof StateBusyError) throw new ProjectBusyError(error.message);
     throw new OperationError(`cannot open the state database at ${bound.layout.dbPath}: ${(error as Error).message}`, 'Check the file’s permissions and that this user owns it.');
   }

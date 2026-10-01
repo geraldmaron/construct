@@ -6,10 +6,12 @@
  * paths named, unparsed. One database, ignored by Git.
  */
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { openStateStore, type StateStore } from '../state/open.ts';
+import { StateBusyError } from '../state/format.ts';
 import { getProfile, upsertProfile } from '../state/profile.ts';
+import { StoreProjectError, bindStoreToProject, storeHasProject, storeProjectId } from '../state/identity.ts';
 import { readJsonFile, writeJsonFile } from './files.ts';
 import { newProjectConfig, validateProjectConfig, type ProjectConfig } from './config.ts';
 import { emptyConstitution, validateConstitution, type Constitution } from './constitution.ts';
@@ -97,6 +99,7 @@ export function initializeProject(input: InitializeProjectInput): InitializeProj
   const legacy = detectLegacyProjectFiles(input.root);
   if (legacy.length > 0) throw new LegacyProjectError(legacy);
 
+  refuseOrphanedStore(layout);
   mkdirSync(layout.dir, { recursive: true });
   mkdirSync(layout.stateDir, { recursive: true });
 
@@ -112,6 +115,12 @@ export function initializeProject(input: InitializeProjectInput): InitializeProj
 
   const stateExisted = existsSync(layout.dbPath);
   const store = openStateStore(layout.dbPath);
+  try {
+    bindStoreToProject(store, config.value.id);
+  } catch (error) {
+    store.close();
+    throw error;
+  }
   if (getProfile(store) === null) {
     upsertProfile(store, { name: config.value.name, onboardingState: 'incomplete' }, input.at);
   }
@@ -132,6 +141,37 @@ export function initializeProject(input: InitializeProjectInput): InitializeProj
     gitignoreUpdated,
     store,
   };
+}
+
+/**
+ * A store that already holds a project, beside a checkout with no project
+ * file, means the files were lost, not that the project is new. Minting an id
+ * here would bind the old store to a new project, so init refuses and says
+ * how to bring the files back.
+ */
+function refuseOrphanedStore(layout: ProjectLayout): void {
+  if (existsSync(layout.projectFile) || !existsSync(layout.dbPath) || statSync(layout.dbPath).size === 0) return;
+  let existing: StateStore;
+  try {
+    existing = openStateStore(layout.dbPath, { readOnly: true });
+  } catch (error) {
+    // A file with no tables yet holds nothing; the writable open below stamps it.
+    if (error instanceof StateBusyError) return;
+    throw error;
+  }
+  let owner: string | null;
+  let held: boolean;
+  try {
+    owner = storeProjectId(existing);
+    held = storeHasProject(existing);
+  } finally {
+    existing.close();
+  }
+  if (!held) return;
+  throw new StoreProjectError(
+    `${layout.dbPath} already holds ${owner === null ? 'a project' : `project ${owner}`}, but ${layout.projectFile} is missing; a new id here would orphan that store`,
+    'Restore the .construct files (for example by checking out the commit that has them), then run the command again. To start over instead, move the store aside first.',
+  );
 }
 
 /** Read the four committed files of an initialized project without touching state. */
