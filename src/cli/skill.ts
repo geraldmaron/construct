@@ -27,7 +27,7 @@ export const SKILL_SPECS: readonly CommandSpec[] = [
   { path: ['skill', 'impact'], gloss: 'how each skill version\'s steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back', group, positionals: [], flags: [{ name: 'skill', gloss: 'only this skill', takesValue: true }], readOnly: true },
   { path: ['skill', 'list'], gloss: 'the skills this install ships, with versions', group, positionals: [], flags: [], readOnly: true },
   { path: ['skill', 'show'], gloss: 'one skill’s description, version, and files', group, positionals: ['<name>'], flags: [], readOnly: true },
-  { path: ['skill', 'install'], gloss: 'plant a shipped skill into a host’s skills directory, byte for byte', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'force', gloss: 'overwrite a copy that differs', takesValue: false }], readOnly: false },
+  { path: ['skill', 'install'], gloss: 'plant a shipped skill into a host’s skills directory, byte for byte', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'force', gloss: 'overwrite a copy that someone changed; an earlier release is replaced without it', takesValue: false }], readOnly: false },
   { path: ['skill', 'verify'], gloss: 'compare installed skills with the shipped ones', group, positionals: [], flags: [dirFlag, clientFlag], readOnly: true },
   { path: ['skill', 'update'], gloss: 'bring the project’s registry lock up to the skills and workflows present; project-authored changes are locked only when named', group, positionals: [], flags: [{ name: 'confirm', gloss: 'a project-authored bundle id whose change may be locked (repeatable)', takesValue: true, repeatable: true }, { name: 'dry-run', gloss: 'report what would change', takesValue: false }], readOnly: false },
   { path: ['skill', 'remove'], gloss: 'remove an installed skill (needs --confirm)', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'confirm', gloss: 'actually remove it', takesValue: false }], readOnly: false },
@@ -96,7 +96,10 @@ export function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = cr
       const dir = installDir(args, ctx);
       const result = plantSkill(skill, dir, { force: boolFlag(args, 'force') });
       if (args.json) writeJson(result);
-      else say(`${skill.name}: ${result.outcome} at ${esc(result.path)} (${esc(result.why)})`);
+      else {
+        say(`${skill.name}: ${result.outcome} at ${esc(result.path)} (${esc(result.why)})`);
+        if (result.outcome === 'refused' && result.found === 'diverged') say('  --force overwrites it; any edits in it are lost.');
+      }
       return result.outcome === 'refused' ? 1 : 0;
     }
     case 'verify': {

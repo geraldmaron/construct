@@ -36,10 +36,10 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
   // Cited by the conformance scenario; evidence now has to name a file that exists.
   mkdirSync(join(box.cwd, 'src', 'kernel'), { recursive: true });
   writeFileSync(join(box.cwd, 'src', 'kernel', 'fetch.ts'), "import { connect } from 'node:net';\nexport const open = () => connect(80, 'example.com');\n", 'utf8');
-  const project = { root: box.cwd, layout: init.layout, files: readProjectFiles(box.cwd), store: init.store };
+  const project = { root: box.cwd, layout: init.layout, files: readProjectFiles(box.cwd), store: init.store, lane: null };
   const binding: BrokerBinding = surface === 'interactive'
-    ? { client: 'claude-code', surface: 'interactive', executorId: 'session:claude-code', actor: 'person via claude-code' }
-    : { client: 'unknown', surface: 'headless', executorId: 'runner:ci', actor: 'runner:ci' };
+    ? { client: 'claude-code', surface: 'interactive', sessionId: 'ses_fixture', executorId: 'session:claude-code', actor: 'person via claude-code' }
+    : { client: 'unknown', surface: 'headless', sessionId: 'ses_runner', executorId: 'runner:ci', actor: 'runner:ci' };
   const ctx = box.ctx;
   const broker = createBrokerContext(ctx, project, binding);
   return { box, ctx, broker, binding, cleanup: () => { init.store.close(); box.cleanup(); } };

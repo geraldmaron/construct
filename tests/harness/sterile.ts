@@ -11,7 +11,11 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Paths } from '../../src/kernel/paths.ts';
-import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
+import { AMBIENT_ENV_KEYS as HOST_MARKER_KEYS } from '../../src/hosts/ambient.ts';
+import { IDENTITY_ENV_KEYS } from '../../src/hosts/identity.ts';
+
+/** Every variable a host sets that Construct reads: presence markers and session ids. */
+const AMBIENT_ENV_KEYS = [...HOST_MARKER_KEYS, ...IDENTITY_ENV_KEYS] as const;
 
 export interface SterileFixture {
   readonly root: string;

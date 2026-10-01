@@ -12,7 +12,7 @@ import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities, sourceEntity } from '../kernel/source/entities.ts';
 import { hostReaders } from '../hosts/sources/readers.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, openProject, withProject, type CliContext } from './context.ts';
+import { createContext, openProject, requireMainCheckout, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { isAbsolute, resolve } from 'node:path';
 
@@ -126,7 +126,8 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
     }
     case 'add': {
       const id = args.positionals[0]!;
-      return withProject(ctx, ({ store, layout, files, root }) => {
+      return withProject(ctx, (project) => {
+        const { store, layout, files, root } = project;
         const declared = declaredFrom(id, args, root);
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
@@ -135,6 +136,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         } else {
           const current: SourcesFile = files.sources ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
           if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
+          requireMainCheckout(project, 'source add (without --local)');
           const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
           writeJsonFile(layout.sourcesFile, next);
           svc.syncDeclarations(next, at);
@@ -151,12 +153,14 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
     }
     case 'retire': {
       const id = args.positionals[0]!;
-      return withProject(ctx, ({ store, layout, files }) => {
+      return withProject(ctx, (project) => {
+        const { store, layout, files } = project;
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
         const source = svc.list().find((s) => s.id === id);
         if (!source) throw new OperationError(`no active source ${id}`);
         if (source.origin === 'declared') {
+          requireMainCheckout(project, 'source retire of a declared source');
           const current = files.sources!;
           const next = validateSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }, layout.sourcesFile);
           writeJsonFile(layout.sourcesFile, next);

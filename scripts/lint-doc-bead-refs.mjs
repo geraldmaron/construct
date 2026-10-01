@@ -86,9 +86,7 @@ function docFiles() {
  * Every id the tracker export carries. A missing export is a fatal,
  * loud-fail condition (it means nothing here is checkable, not that every
  * citation is rot), and a malformed line is skipped rather than failing the
- * whole lint: a memory record (`_type: "memory"`) carries no `id` at all,
- * and validating the export's own shape is reconcile-tracker's job, not
- * this one's.
+ * whole lint: a memory record (`_type: "memory"`) carries no `id` at all.
  */
 function trackerIds() {
   const path = join(ROOT, '.beads', 'issues.jsonl');

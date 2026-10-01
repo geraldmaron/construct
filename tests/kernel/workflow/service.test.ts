@@ -10,7 +10,8 @@ import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
 import { listGrants } from '../../../src/kernel/state/grants.ts';
 import { listAttempts } from '../../../src/kernel/state/steps.ts';
-import { fixture } from './support.ts';
+import { addEntity, addRelation } from '../../../src/kernel/state/graph.ts';
+import { fixture, T0 } from './support.ts';
 
 test('answer creates nothing; remember creates one confirmed statement, no run, no tasks', () => {
   const fx = fixture();
@@ -80,10 +81,10 @@ test('a managed run: idempotent start, ordered leases, validated outputs, a draf
     assert.deepEqual(view.steps.map((s) => s.state), ['succeeded', 'succeeded', 'succeeded']);
     assert.equal(view.deliverables.length, 2);
     const final = view.deliverables.find((d) => d.trustState === 'validated')!;
-    assert.throws(() => fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald' }), /only after it was accepted/);
+    assert.throws(() => fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' }), /only after it was accepted/);
     fx.service.promote({ deliverableId: final.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted with controls' } });
-    fx.service.promote({ deliverableId: final.id, to: 'accepted', by: 'gerald' });
-    const done = fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald' });
+    fx.service.promote({ deliverableId: final.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
+    const done = fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' });
     assert.equal(done.trustState, 'final');
     assert.deepEqual(fx.service.claimNext({ runId: first.run.id }).waitingOn, { kind: 'finished', state: 'succeeded' });
   } finally {
@@ -110,7 +111,7 @@ test('an external write pauses for the smallest approval; approval resumes exact
     const same = fx.service.claimNext({ runId: started.run.id });
     assert.equal(same.waitingOn?.kind === 'decision' ? same.waitingOn.decision.id : null, decision!.id, 'one question, not one per poll');
 
-    const resolved = fx.service.decide({ decisionId: decision!.id, resolution: 'approve', by: 'gerald' });
+    const resolved = fx.service.decide({ decisionId: decision!.id, resolution: 'approve', by: 'gerald', channel: 'tty_cli' });
     assert.equal(resolved.run?.state, 'running');
     const grants = listGrants(fx.store);
     assert.equal(grants.length, 1);
@@ -130,9 +131,10 @@ test('an external write pauses for the smallest approval; approval resumes exact
     const paused2 = fx.service.claimNext({ runId: second.run.id });
     assert.equal(paused2.waitingOn?.kind, 'decision');
     const declined = fx.service.decide({ decisionId: (paused2.waitingOn as { decision: { id: string } }).decision.id, resolution: 'decline', by: 'gerald' });
-    assert.equal(declined.run?.state, 'running');
+    assert.equal(declined.run?.state, 'cancelled');
     const after = fx.service.status(second.run.id)!;
     assert.equal(after.steps.find((s) => s.stepId === 'push')!.state, 'cancelled');
+    assert.equal(after.steps.find((s) => s.stepId === 'draft')!.state, 'succeeded');
   } finally {
     fx.cleanup();
   }
@@ -160,8 +162,11 @@ test('a lost lease is reclaimed without repeating finished work; cancel and no-d
     assert.equal(cancelled.state, 'running', 'cancellation after_step waits for the leased step');
     fx.service.fail({ leased: c2b.packet!.leased, error: {}, reason: 'stopped' });
     const view = fx.service.status(started.run.id)!;
-    assert.equal(view.run.state, 'failed');
+    assert.equal(view.run.state, 'cancelled', 'after-step cancel settles as cancelled once the leased step ends');
     assert.equal(view.steps.find((s) => s.stepId === 'record')!.state, 'cancelled');
+    // The expired attempt did not spend write's budget, so its one failure left
+    // a retry, and the cancellation withdrew that retry.
+    assert.equal(view.steps.find((s) => s.stepId === 'write')!.state, 'cancelled');
 
     // No data on a workflow whose policy is block: a decision is raised; continue skips the step.
     const apply = fx.service.start({ workflowId: 'apply', input: { target: 'PROJ-1' }, trigger: 'manual' });
@@ -214,6 +219,96 @@ test('project policy never: the project_write step asks instead of writing', () 
     const paused = fx.service.claimNext({ runId: started.run.id });
     assert.equal(paused.waitingOn?.kind, 'decision');
     assert.equal((paused.waitingOn as { decision: { kind: string } }).decision.kind, 'blocked');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('architectural work is challenged without magic words; a helper rename is not', () => {
+  const fx = fixture();
+  try {
+    const arch = fx.service.start({ workflowId: 'ship', input: { request: 'Introduce a shared database for billing and identity' }, trigger: 'manual' });
+    assert.equal(arch.preflight.judgment.challenge, true);
+    const claimed = fx.service.claimNext({ runId: arch.run.id });
+    assert.match(claimed.packet!.instructions.join(' '), /adversarial review/);
+    const submitted = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'add postgres', findings: [] } });
+    assert.equal(submitted.deliverable?.trustState, 'validated');
+    assert.throws(
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
+      /recorded challenge/,
+    );
+    fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted' } });
+    const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
+    assert.equal(accepted.trustState, 'accepted');
+
+    const unusual = fx.service.start({ workflowId: 'ship', input: { request: 'Put identity and billing on the same postgres' }, trigger: 'manual' });
+    assert.equal(unusual.preflight.judgment.challenge, true, 'unusual shared-store phrasing still requires challenge');
+    const u1 = fx.service.claimNext({ runId: unusual.run.id });
+    const uDone = fx.service.submit({ leased: u1.packet!.leased, output: { summary: 'split stores', findings: [] } });
+    assert.throws(
+      () => fx.service.promote({ deliverableId: uDone.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
+      /recorded challenge/,
+      'unusual phrasing cannot bypass promote to accepted',
+    );
+
+    const trivial = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    assert.equal(trivial.preflight.judgment.challenge, false);
+    const t1 = fx.service.claimNext({ runId: trivial.run.id });
+    assert.match(t1.packet!.instructions.join(' '), /low-stakes/);
+    const done = fx.service.submit({ leased: t1.packet!.leased, output: { summary: 'renamed', findings: [] } });
+    const trusted = fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
+    assert.equal(trusted.trustState, 'accepted');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('unknowns stay unknown: a verified placeholder cannot be accepted', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper' }, trigger: 'manual' });
+    const c = fx.service.claimNext({ runId: started.run.id });
+    const invented = fx.service.submit({
+      leased: c.packet!.leased,
+      output: { summary: 'done', findings: ['lorem ipsum'], unknowns: ['the SLA'], verified: true, invented: true },
+    });
+    assert.equal(invented.deliverable?.trustState, 'validated');
+    assert.throws(
+      () => fx.service.promote({ deliverableId: invented.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
+      /invented/,
+    );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an active contradiction blocks trusted finish', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const claimed = fx.service.claimNext({ runId: started.run.id });
+    const submitted = fx.service.submit({
+      leased: claimed.packet!.leased,
+      output: { summary: 'renamed', findings: [] },
+    });
+    assert.equal(submitted.deliverable?.trustState, 'validated');
+
+    addEntity(fx.store, { id: 'dec-gov', kind: 'decision', name: 'Keep one postgres', at: T0 });
+    addEntity(fx.store, { id: 'code-db', kind: 'code_component', name: 'db.ts', at: T0 });
+    addRelation(fx.store, {
+      id: 'rel-contra',
+      kind: 'contradicts',
+      fromId: 'code-db',
+      toId: 'dec-gov',
+      basis: 'observed',
+      confidence: 0.9,
+      at: T0,
+    });
+
+    assert.throws(
+      () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
+      /active contradiction/,
+    );
   } finally {
     fx.cleanup();
   }

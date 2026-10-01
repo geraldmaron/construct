@@ -1,15 +1,16 @@
 /**
- * kernel/state/index.ts — Construct state format 2.
+ * kernel/state/index.ts — Construct state format 4.
  */
 
-export { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UNSUPPORTED_STATE_MESSAGE, UnsupportedStateError } from './format.ts';
-export { openStateStore, type StateStore } from './open.ts';
+export { STATE_FORMAT_ID, STATE_FORMAT_VERSION, UNSUPPORTED_STATE_MESSAGE, OLDER_STATE_MESSAGE, NEWER_STATE_MESSAGE, StateBusyError, UnsupportedStateError, type UnsupportedStateKind } from './format.ts';
+export { BUSY_TIMEOUT_MS, isBusyError, openStateStore, type OpenStateOptions, type StateStore } from './open.ts';
 export { REQUIRED_TABLES } from './schema.ts';
 export { IllegalTransitionError } from './rows.ts';
 export { appendActivity, listActivity, type ActivityEvent } from './activity.ts';
 export * from './profile.ts';
 export * from './sources.ts';
 export * from './graph.ts';
+export * from './admission.ts';
 export * from './staff.ts';
 export * from './resolved.ts';
 export * from './runs.ts';
@@ -19,3 +20,5 @@ export * from './decisions.ts';
 export * from './grants.ts';
 export * from './drift.ts';
 export * from './triggers.ts';
+export { StoreProjectError, bindStoreToProject, storeHasProject, storeProjectId } from './identity.ts';
+export { V2_REQUIRED_TABLES, migrateV2ToV3 } from './migrate.ts';

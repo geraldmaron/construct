@@ -29,5 +29,10 @@ export function installWiring(client: WirableClient, projectRoot: string): Wirin
   const path = join(projectRoot, w.relativePath);
   const result = mergeMcpServerEntry(path, MCP_SERVER_NAME, w.entry(projectRoot), { serversKey: w.serversKey });
   if (!result.ok) return { client, path, status: 'broken', detail: `could not write ${w.relativePath}: ${result.reason}` };
-  return inspectWiring(client, projectRoot);
+  const inspected = inspectWiring(client, projectRoot);
+  if (inspected.status !== 'installed' || result.replaced.length === 0) return inspected;
+  return {
+    ...inspected,
+    detail: `${inspected.detail}; replaced duplicate ${result.replaced.join(', ')}`,
+  };
 }

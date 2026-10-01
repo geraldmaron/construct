@@ -17,9 +17,10 @@ moment someone decides it is documentation rather than a record.
 - [`skills-and-packs.md`](skills-and-packs.md) — method skills, professional packs, progressive loading, versions and the lock.
 - [`workflows-and-resolution.md`](workflows-and-resolution.md) — workflows, resolution before running, runs, deliverables and trust.
 - [`permissions-and-autonomy.md`](permissions-and-autonomy.md) — the action lattice, approvals, standing grants, break-glass, the headless runner.
+- [`bounded-delegation.md`](bounded-delegation.md) — opt-in local workers, review and integration, lifecycle limits, and the unverified release boundary.
 - [`recurring-operation.md`](recurring-operation.md) — standing outcomes fired by an external clock.
 - [`connectors-and-semantics.md`](connectors-and-semantics.md) — what a connector declares, locators, credentials.
-- [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, reset, blocked runs, registry skew, host wiring.
+- [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, state in an older format and `construct migrate`, reset, blocked runs, registry skew, host wiring.
 
 ## Reference (generated from the definitions)
 

@@ -32,6 +32,10 @@ test('the directive’s examples classify as it says', () => {
   assert.equal(none.class, 'answer');
   assert.equal(classifyInteraction('').class, 'answer');
   assert.equal(classifyInteraction('note: never deploy on Fridays').rememberKind, 'constraint');
+  const rewrite = classifyInteraction('I want you to rewrite the X document, naming it Y. I want it shorter, and I want it to consider A and B as inputs.');
+  assert.equal(rewrite.class, 'manage');
+  assert.ok(rewrite.confidence >= 0.8);
+  assert.equal(rewrite.confirmBeforeProceeding, false);
 });
 
 test('validators are deterministic and every shipped name has an implementation', () => {
@@ -48,6 +52,11 @@ test('validators are deterministic and every shipped name has an implementation'
   assert.match(velocity[0]!.problems.join(' '), /never capacity/);
   const capacityOk = runValidators(['no_velocity_as_capacity'], { ...base, output: { capacity: { range: [3, 5] }, assumptions: ['5 people at 80%'] } });
   assert.equal(capacityOk[0]!.ok, true);
+  const plan = runValidators(['deliverable_complete'], { expectedKeys: ['plan', 'assumptions', 'blockers'], evidence: [], resolvableRefs: new Set(), output: { plan: 'do the work', assumptions: [], blockers: [] } });
+  assert.ok(plan[0]!.ok, JSON.stringify(plan));
+  const invented = runValidators(['no_placeholder_facts'], { expectedKeys: [], evidence: [], resolvableRefs: new Set(), output: { summary: 'done', findings: [], unknowns: ['the SLA'], verified: true } });
+  assert.equal(invented[0]!.ok, false);
+  assert.match(invented[0]!.problems.join(' '), /unknown/);
   assert.equal(runValidators(['nope'], { ...base, output: {} })[0]!.ok, false);
 });
 

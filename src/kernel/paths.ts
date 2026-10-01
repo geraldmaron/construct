@@ -21,6 +21,7 @@ export interface PathsEnv {
   XDG_DATA_HOME?: string;
   XDG_CACHE_HOME?: string;
   HOME?: string;
+  CLAUDE_CONFIG_DIR?: string;
 }
 
 const APP = 'construct';
@@ -89,18 +90,6 @@ export function resolveScheduleDir(
 }
 
 /**
- * The repo-local root for the sqlite store when a ratified project settings
- * file declares `state: local`: inside the repository rather than under home.
- * Takes the repository root as an argument rather than discovering one —
- * finding a repository root means walking a checkout looking for its `.git`,
- * and this module stays the one that reads env or home, not the one that
- * walks a checkout.
- */
-export function localStateDataDir(repoRoot: string): string {
-  return join(repoRoot, '.construct', 'state');
-}
-
-/**
  * Every other host reachable by name reads its skills from a documented
  * directory of its own, each a fixed path segment list under home rather than
  * a computed one — a host's convention is a fact this module cites, not a
@@ -140,4 +129,24 @@ export function resolveHostSkillsDir(
 ): string {
   if (host === 'claude') return resolveSkillsDir(env, home);
   return join(home, ...OTHER_HOST_SKILLS_PATH[host]);
+}
+
+/**
+ * Claude Code's configuration directory: CLAUDE_CONFIG_DIR when set, else
+ * `.claude` under home. Read here for the same reason as every home-rooted
+ * path: a test that redirects HOME redirects this too.
+ */
+export function resolveClaudeConfigDir(
+  env: PathsEnv = process.env,
+  home: string = xdgBase(env.HOME, homedir()),
+): string {
+  const configured = env.CLAUDE_CONFIG_DIR;
+  return configured && configured.trim() ? configured : join(home, '.claude');
+}
+
+/** Where an administrator's managed Claude Code settings live on this platform, if anywhere. */
+export function managedClaudeSettingsPath(platform: NodeJS.Platform = process.platform): string | null {
+  if (platform === 'darwin') return '/Library/Application Support/ClaudeCode/managed-settings.json';
+  if (platform === 'linux') return '/etc/claude-code/managed-settings.json';
+  return null;
 }

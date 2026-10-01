@@ -5,7 +5,11 @@
  * Walks the tree the locator names, skipping version-control and dependency
  * directories and Construct's own state, and digests the sorted list of
  * relative path and content hash, so touching a file without changing it is
- * not a change. Each file is reported as an item, which lets a refresh say
+ * not a change. Inventory activity (path, size, mtime) is digested separately
+ * from that content digest. The walk is contained inside the locator: a link
+ * whose real path stays inside is followed, one that leaves is skipped and
+ * reported, a locator that itself escapes is unreachable, and another
+ * checkout nested inside (a linked worktree, a submodule) is not walked. Each file is reported as an item, which lets a refresh say
  * which files were added, removed, or modified. Files above the hashing cap
  * are identified by size and modification time instead.
  *
@@ -21,9 +25,10 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
 import type { PreviousItem, ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
+import { inspectContained, isInside } from '../../kernel/safety/containment.ts';
 
 export const DIRECTORY_ENTRY_CAP = 5000;
 /** Files larger than this are fingerprinted by size and mtime, not content. */
@@ -79,7 +84,12 @@ function fingerprintOf(path: string, previous?: PreviousItem): Fingerprint {
   return fp;
 }
 
-function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[], previous: ReadonlyMap<string, PreviousItem>): void {
+interface Walked {
+  readonly rel: string;
+  readonly fp: Fingerprint;
+}
+
+function walk(root: string, dir: string, out: Walked[], previous: ReadonlyMap<string, PreviousItem>, skippedOutside: string[]): void {
   if (out.length >= DIRECTORY_ENTRY_CAP) return;
   let entries: import('node:fs').Dirent[];
   try {
@@ -89,14 +99,22 @@ function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[]
   }
   for (const entry of entries) {
     if (out.length >= DIRECTORY_ENTRY_CAP) return;
-    if (entry.isSymbolicLink() || SKIP.has(entry.name)) continue;
+    if (SKIP.has(entry.name)) continue;
     const path = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      walk(root, path, out, previous);
-    } else if (entry.isFile()) {
+    const inspect = isInside(root, path) ? inspectContained(root, path) : null;
+    if (!inspect?.ok) {
+      skippedOutside.push(relative(root, path).split(sep).join('/'));
+      continue;
+    }
+    if (inspect.stat.isDirectory()) {
+      // Another checkout nested here (a linked worktree, a submodule, a vendored
+      // repository) is its own tree, not this source's content.
+      if (existsSync(join(inspect.realPath, '.git'))) continue;
+      walk(root, inspect.realPath, out, previous, skippedOutside);
+    } else if (inspect.stat.isFile()) {
       try {
-        const rel = relative(root, path).split(sep).join('/');
-        out.push({ rel, fp: fingerprintOf(path, previous.get(rel)) });
+        const rel = relative(root, inspect.realPath).split(sep).join('/');
+        out.push({ rel, fp: fingerprintOf(inspect.realPath, previous.get(rel)) });
       } catch {
         // a file that vanished mid-walk is not part of this read
       }
@@ -106,15 +124,19 @@ function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[]
 
 export const readDirectorySource: SourceReader = async ({ locator, previous }): Promise<ReadOutcome> => {
   if (locator === null) return { outcome: 'unreachable', reason: 'the source names no directory' };
+  let root: string;
   let st;
   try {
-    st = statSync(locator);
+    // Containment compares real paths, so the walk starts from the root's own (macOS spells /var as /private/var).
+    root = realpathSync(resolve(locator));
+    st = statSync(root);
   } catch (error) {
     return { outcome: 'unreachable', reason: `${locator}: ${(error as NodeJS.ErrnoException).code ?? 'cannot read'}` };
   }
   if (!st.isDirectory()) return { outcome: 'unreachable', reason: `${locator} is not a directory` };
-  const files: { rel: string; fp: Fingerprint }[] = [];
-  walk(locator, locator, files, new Map((previous ?? []).map((p) => [p.ref, p])));
+  const files: Walked[] = [];
+  const skippedOutside: string[] = [];
+  walk(root, root, files, new Map((previous ?? []).map((p) => [p.ref, p])), skippedOutside);
   files.sort((a, b) => a.rel.localeCompare(b.rel));
   // Resolve "Supersedes: x" in a newer document onto the older item it names (by path or by file name).
   const supersededBy = new Map<string, string>();
@@ -126,6 +148,7 @@ export const readDirectorySource: SourceReader = async ({ locator, previous }): 
     }
   }
   const digest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${f.fp.fingerprint}`).join('\n')).digest('hex')}`;
+  const inventoryDigest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${String(f.fp.size)}\t${String(Math.floor(f.fp.mtimeMs))}`).join('\n')).digest('hex')}`;
   const capped = files.length >= DIRECTORY_ENTRY_CAP ? ` (capped at ${String(DIRECTORY_ENTRY_CAP)})` : '';
   const items: SnapshotItem[] = files.map((f) => ({
     externalRef: f.rel,
@@ -135,6 +158,15 @@ export const readDirectorySource: SourceReader = async ({ locator, previous }): 
   }));
   return {
     outcome: 'read',
-    report: { digest, summary: `${String(files.length)} file(s) under ${locator}${capped}`, evidenceRef: locator, evidence: 'witnessed', items },
+    report: {
+      digest,
+      summary: `${String(files.length)} file(s) under ${locator}${capped}`,
+      evidenceRef: locator,
+      evidence: 'witnessed',
+      items,
+      inventoryDigest,
+      contentDigest: digest,
+      coverage: { capped: files.length >= DIRECTORY_ENTRY_CAP, skippedOutside, itemCount: files.length },
+    },
   };
 };

@@ -27,6 +27,8 @@ import {
 } from '../state/sources.ts';
 import { recordObservation } from '../state/drift.ts';
 import type { DeclaredSource, SourcesFile } from '../project/sources-file.ts';
+import { addEntity, addClaim, findEntityByRef } from '../state/graph.ts';
+import { markPremisesStale } from '../work/service.ts';
 import { locatorProblem } from './locators.ts';
 import { createHash } from 'node:crypto';
 import type { ReadOutcome, SnapshotReport, SourceReader } from './connector.ts';
@@ -186,8 +188,42 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       digest: report.digest,
       summary: report.summary,
       evidenceRef: report.evidenceRef,
+      inventoryDigest: report.inventoryDigest,
+      contentDigest: report.contentDigest ?? report.digest,
+      itemCount: report.items?.length ?? 0,
+      coverage: report.coverage,
       at,
     });
+    // What Construct read itself becomes observed claims, each with the content it saw; a host's report is its word.
+    const source = getSource(store, id);
+    if (source && report.evidence !== 'reported' && report.items && report.items.length > 0) {
+      store.transaction(() => {
+        for (const item of report.items ?? []) {
+          const entity =
+            findEntityByRef(store, 'artifact', item.externalRef) ??
+            addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: item.externalRef, attributes: item.attributes, at });
+          const attributes = item.attributes as { contentDigest?: unknown; fingerprint?: unknown } | undefined;
+          addClaim(store, {
+            id: nextId(),
+            subjectId: entity.id,
+            claimType: item.kind,
+            statement: `${item.name} observed in ${id}`,
+            value: item.attributes ?? item,
+            sourceId: id,
+            provenance: 'source',
+            authority: source.authorityLevel,
+            sensitivity: source.sensitivity,
+            confidence: 1,
+            observedAt: at,
+            locator: item.externalRef,
+            excerpt: item.name,
+            sourceRevision: report.contentDigest ?? report.digest,
+            contentDigest: typeof attributes?.contentDigest === 'string' ? attributes.contentDigest : typeof attributes?.fingerprint === 'string' ? attributes.fingerprint : report.contentDigest,
+            at,
+          });
+        }
+      });
+    }
     let changes: ItemChanges | undefined;
     let staleDeliverables: string[] | undefined;
     if (changed) {
@@ -203,9 +239,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         sourceId: id,
         kind: 'source.changed',
         summary: `${id} changed: ${report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
-        evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
+        evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, contentDigest: report.contentDigest, inventoryDigest: report.inventoryDigest, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
         at,
       });
+      markPremisesStale(store, id, at);
       if (changes && !firstRead && deps.root) {
         const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence, partial });
         staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root }).map((f) => f.id);
@@ -288,6 +325,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
         return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
       }
+      setReachability(store, id, 'reachable', at);
       return recordRead(id, outcome.report, false, at, nextId);
     },
     reportRead(id, report, at, nextId) {

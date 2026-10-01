@@ -33,7 +33,7 @@
       "needs": [],
       "skill": {
         "id": "written-voice",
-        "range": "^0.4.0"
+        "range": "^0.5.0"
       },
       "capabilities": [
         "read_project_context",

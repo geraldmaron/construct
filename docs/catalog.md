@@ -9,23 +9,23 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 
 | Skill | Version | Category | Engages when | Stands down when |
 |---|---|---|---|---|
-| `adversarial-review` | 0.3.0 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
-| `construct` | 2.2.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
+| `adversarial-review` | 0.3.1 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
+| `construct` | 2.7.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
 | `context-mapping` | 0.4.0 | method | I just inherited this codebase | you already hold the map, know the system, just implement |
 | `decision-framing` | 0.3.1 | method | buy or build, which one | the decision is already made, help execute the rollout |
-| `experience-design` | 1.0.0 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
-| `governance-risk` | 1.0.0 | professional | we started selling to a new country or industry | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
+| `experience-design` | 1.0.1 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
+| `governance-risk` | 1.0.1 | professional | we started selling to a new country or industry | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
 | `intake` | 0.3.0 | method | the thing from Tuesday plus what he said minus the pricing part | a clear single-outcome request: add a button, rename the function, just do it |
 | `investigative-research` | 0.3.1 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
-| `operations-reliability` | 1.0.0 | professional | we went live and nobody set up alerts | feature scope or priority |
-| `product-management` | 1.0.0 | professional | everyone loves this idea but nobody can say what it changes for the customer | how to build it, which library, which architecture |
-| `program-delivery` | 1.0.0 | professional | the plan says June but the vendor starts in July | what to build or why (product owns that) |
+| `operations-reliability` | 1.0.1 | professional | we went live and nobody set up alerts | feature scope or priority |
+| `product-management` | 1.0.1 | professional | everyone loves this idea but nobody can say what it changes for the customer | how to build it, which library, which architecture |
+| `program-delivery` | 1.0.1 | professional | the plan says June but the vendor starts in July | what to build or why (product owns that) |
 | `requirements-structuring` | 0.5.1 | method | we agree what we want but never wrote down what finished looks like | requirements already obvious and small: rename a flag, flip a config, a well-understood fix |
-| `security-privacy` | 1.0.0 | professional | our logs contain customer emails and go to a third party | write an exploit, bypass a control, evade detection |
-| `software-engineering` | 1.0.0 | professional | tests pass but I have a bad feeling about this code | style and naming on a diff, formatting, lint noise |
-| `strategy-research` | 1.0.0 | professional | three teams are building the same thing and leadership says we are aligned | a single project plan with no strategy in view (program-delivery owns that) |
+| `security-privacy` | 1.0.1 | professional | our logs contain customer emails and go to a third party | write an exploit, bypass a control, evade detection |
+| `software-engineering` | 1.0.1 | professional | tests pass but I have a bad feeling about this code | style and naming on a diff, formatting, lint noise |
+| `strategy-research` | 1.0.1 | professional | three teams are building the same thing and leadership says we are aligned | a single project plan with no strategy in view (program-delivery owns that) |
 | `system-architecture` | 1.0.1 | professional | two teams keep writing to the same table | review a diff or an implementation detail |
-| `written-voice` | 0.4.0 | method | make this sound less like a robot wrote it | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
+| `written-voice` | 0.5.0 | method | make this sound less like a robot wrote it | not a deliverable: a chat reply, a code comment, a commit message, a quick answer |
 
 ## Workflows
 
@@ -38,7 +38,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `experience-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a screen or flow for task success, accessibility against WCAG 2.2, error states, consistency with the declared design system, and the evidence behind behavior claims; findings are recorded and unsupported claims are handed over as assumptions. |
 | `governance-issue-spotting` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Spot compliance, legal, and finance issues in a change, contract, data flow, or money flow: locate and quote the governing texts, state exposures and how they may apply as research, list expected controls and existing evidence, and prepare the questions and material a qualified reviewer needs; never advice or sign-off. |
 | `implementation-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a change, migration, or dependency proposal for correctness evidence, scope, reversibility, dependencies, and operability, cited against the project's confirmed principles; findings are recorded and anything that belongs to another pack or to the person is handed over. |
-| `managed-outcome` | 1.1.0 | manage | manual | plan → do → verify → record | Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance. |
+| `managed-outcome` | 1.3.0 | manage | manual | plan → do → verify → record | Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance. |
 | `operational-readiness-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a service or change for objectives, signals, on-call, runbooks, rollback, and capacity against the project's risk posture, citing configs and records; anything without a way to notice failure and a way back is reported as not ready. |
 | `prd-authoring` | 1.0.0 | manage | manual | gather → draft → challenge → record | Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back. |
 | `product-requirements-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person. |
@@ -76,9 +76,13 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 - `citations_present`
 - `no_uncited_material_findings`
 - `deliverable_complete`
+- `no_placeholder_facts`
 - `constitution_shape`
 - `no_velocity_as_capacity`
 - `evidence_refs_resolve`
+- `verification_result`
+- `review_complete`
+- `plan_complete`
 - `artifacts_exist`
 - `numbers_grounded`
 - `template_conformance`

@@ -15,13 +15,17 @@
 import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
-import { createRun, getRun, getRunByKey, listActiveRuns, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
+import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
-import { getDecision, listOpenDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision, listDecisionsForStep } from '../state/decisions.ts';
-import { addStatement, type Statement, type StatementKind } from '../state/profile.ts';
+import { getDecision, listOpenDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
+import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
+import { addClaim, getEntity, listRelations } from '../state/graph.ts';
+import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
-import type { HostCapabilities } from '../registry/capability-registry.ts';
+import { tierAtLeast } from '../policy/lattice.ts';
+import { isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
+import { provides, type HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
 import type { RegisteredWorkflow, WorkflowStep } from '../registry/models.ts';
 import { resolveWorkflow, type Resolution, type SourceAvailability } from '../registry/resolver.ts';
@@ -29,14 +33,23 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
+import { assessConsequence, judgmentRequired, type ConsequenceSignals, type Judgment } from './consequence.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
-import { listStatements } from '../state/profile.ts';
 import { listSources } from '../state/sources.ts';
 import { settledTerms } from '../project/governance.ts';
 import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
+import { createRouter } from '../skills/routing.ts';
+
+function activeContradictionCount(store: StateStore): number {
+  return listRelations(store, { kind: 'contradicts' }).filter((r) => {
+    if (r.status === 'retired') return false;
+    const target = getEntity(store, r.toId);
+    return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
+  }).length;
+}
 
 export interface WorkflowServiceDeps {
   readonly store: StateStore;
@@ -75,6 +88,7 @@ export interface Preflight {
   readonly approvalsAhead: readonly string[];
   readonly reasons: readonly { readonly code: string; readonly stepId: string | null; readonly message: string; readonly remedy: string }[];
   readonly flags: readonly string[];
+  readonly judgment: Judgment;
 }
 
 export interface WorkPacket {
@@ -84,7 +98,19 @@ export interface WorkPacket {
   readonly skill: { readonly id: string; readonly version: string; readonly digest: string; readonly body: () => string | null; readonly file: (relativePath: string) => Uint8Array | null } | null;
   readonly inputs: Readonly<Record<string, unknown>>;
   readonly instructions: readonly string[];
+  readonly judgment: Judgment;
 }
+
+/** Why a claim handed nothing out. */
+export type WaitingOn =
+  | { readonly kind: 'decision'; readonly decision: Decision }
+  | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] }
+  /** The person approved the step for another executor, whose grant stands until `until`. */
+  | { readonly kind: 'held'; readonly runId: string; readonly stepId: string; readonly executorId: string; readonly until: string | null }
+  /** The step acts above what this executor may reach, or needs a capability it lacks. */
+  | { readonly kind: 'refused'; readonly runId: string; readonly stepId: string; readonly reason: string }
+  | { readonly kind: 'nothing_ready' }
+  | { readonly kind: 're_resolve'; readonly reason: string };
 
 /** What a person may answer when checks keep failing. */
 export const WAIVER_OPTIONS = ['accept with these problems', 'another attempt', 'stop'] as const;
@@ -116,8 +142,20 @@ function validatorGuidance(names: readonly string[]): string[] {
 
 export interface ClaimOutcome {
   readonly packet: WorkPacket | null;
-  /** Why nothing was handed out: a decision is open, the run is finished, or nothing is ready. */
-  readonly waitingOn: { readonly kind: 'decision'; readonly decision: Decision } | { readonly kind: 'finished'; readonly state: WorkflowRun['state'] } | { readonly kind: 'nothing_ready' } | null;
+  readonly waitingOn: WaitingOn | null;
+}
+
+/** What gating one step for one claimer found. */
+type Gate =
+  | { readonly outcome: 'cleared' }
+  | { readonly outcome: 'decision'; readonly decision: Decision }
+  | { readonly outcome: 'held'; readonly executorId: string; readonly until: string | null };
+
+const CLEARED: Gate = { outcome: 'cleared' };
+
+/** Steps the kernel performs itself rather than handing to a claimer. */
+function performedByKernel(step: WorkflowStep): boolean {
+  return step.capabilities.includes('kernel:drift_detect');
 }
 
 export interface SubmitInput {
@@ -147,18 +185,41 @@ export interface RunView {
 
 export interface WorkflowService {
   classify(text: string): Classification;
-  remember(input: { readonly kind: StatementKind; readonly text: string; readonly by: string }): Statement;
+  remember(input: {
+    readonly kind: StatementKind;
+    readonly text: string;
+    readonly by: string;
+    /** How the person's words arrived: relayed by the model unless they gave them on a channel of their own. */
+    readonly channel?: DecisionChannel;
+    readonly assumptions?: readonly string[];
+    readonly replaces?: string;
+  }): Statement;
   preflight(workflowId: string, input: Readonly<Record<string, unknown>>): { readonly resolution: Resolution; readonly preflight: Preflight };
   start(input: StartInput): StartResult;
   claimNext(input: { readonly runId?: string; readonly owner?: string; readonly leaseMs?: number }): ClaimOutcome;
   submit(input: SubmitInput): SubmitResult;
   fail(input: { readonly leased: LeasedStep; readonly error: unknown; readonly reason: string }): StepRun;
-  decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string }): { readonly decision: Decision; readonly run: WorkflowRun | null };
+  /**
+   * Resolve an open decision. `channel` says how the answer arrived; a relay
+   * (the default) cannot approve an external or destructive action or accept
+   * a deliverable, and such an approval leaves the decision open.
+   */
+  decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string; readonly channel?: DecisionChannel }): { readonly decision: Decision; readonly run: WorkflowRun | null };
   cancel(input: { readonly runId: string; readonly by: string; readonly reason: string }): WorkflowRun;
   resume(runId: string): WorkflowRun;
   status(runId: string): RunView | null;
-  /** Trust promotions a person or a challenge performs; steps never do. */
-  promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly verification?: unknown; readonly reason?: string }): Deliverable;
+  /** Trust promotions a person or a challenge performs; steps never do. Accepted and final need a person channel. */
+  promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly channel?: DecisionChannel; readonly verification?: unknown; readonly reason?: string }): Deliverable;
+  /** Ask the person to accept or finalize a deliverable: an inbox approval they answer directly. Reuses an open one. */
+  requestPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly reason?: string }): Decision;
+}
+
+/** What an approval to move a deliverable's trust carries. */
+interface PromotionSubject {
+  readonly deliverableId: string;
+  readonly to: TrustState;
+  readonly reason: string | null;
+  readonly requestedBy: string;
 }
 
 function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>, trigger: string): string {
@@ -203,7 +264,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   };
   /** The person accepted this step's output despite failing checks. */
   const acceptedWaiver = (stepRunId: string): boolean =>
-    listDecisionsForStep(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
+    listStepDecisions(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
   /** Any step of the run went through on a waiver; its deliverable is then never called validated. */
   const runHasWaiver = (runId: string): boolean => listSteps(store, runId).some((st) => Array.isArray((st.output as { waived?: unknown } | null)?.waived));
   /** Every distinct citation the run's finished steps made, plus this one's: what the deliverable rests on. */
@@ -240,22 +301,62 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
-  function preflightOf(resolution: Resolution): Preflight {
+  function likelySkillsFor(input: Readonly<Record<string, unknown>>): string[] {
+    const text = [input.request, input.target, input.scope, input.purpose, input.text]
+      .filter((x): x is string => typeof x === 'string')
+      .join(' ');
+    if (!text.trim()) return [];
+    const router = createRouter(
+      deps.skills.list().map((s) => ({
+        id: s.manifest.id,
+        description: s.description,
+        activation: s.manifest.activation,
+        standDown: s.manifest.standDown,
+        examples: s.examples,
+      })),
+    );
+    return router.route(text).filter((r) => r.band === 'likely').map((r) => r.id);
+  }
+
+  function judgmentFor(input: Readonly<Record<string, unknown>>, extra: ConsequenceSignals = {}): Judgment {
+    return assessConsequence(input, getProfile(store)?.scale ?? null, {
+      likelySkills: extra.likelySkills ?? likelySkillsFor(input),
+      workflowChallenge: extra.workflowChallenge,
+      stepTiers: extra.stepTiers,
+      activeContradictions: extra.activeContradictions ?? activeContradictionCount(store),
+    });
+  }
+
+  function judgmentOf(run: WorkflowRun): Judgment {
+    const p = run.preflight as Preflight | null;
+    if (p?.judgment) return p.judgment;
+    return judgmentFor((run.input ?? {}) as Record<string, unknown>);
+  }
+
+  function preflightOf(resolution: Resolution, input: Readonly<Record<string, unknown>> = {}): Preflight {
     const flags: string[] = [];
     if (resolution.workflow?.manifest.onStaleData === 'proceed_flagged') {
       const stale = deps.sources().filter((s) => s.freshness === 'stale');
       if (stale.length) flags.push(`proceeding with stale sources: ${stale.map((s) => s.id).join(', ')}`);
     }
+    const judgment = judgmentFor(input, {
+      workflowChallenge: resolution.workflow?.manifest.deliverable.challenge ?? false,
+      stepTiers: resolution.plan.map((p) => p.step.tier),
+    });
+    if (judgment.challenge) flags.push(`challenge required: ${judgment.why}`);
     return {
       status: resolution.status,
       summary: resolution.summary,
       approvalsAhead: resolution.plan.filter((p) => p.needsApproval).map((p) => p.step.id),
       reasons: resolution.reasons.map((r) => ({ code: r.code, stepId: r.stepId, message: r.message, remedy: r.remedy })),
       flags,
+      judgment,
     };
   }
 
   function stepsOf(run: WorkflowRun): readonly WorkflowStep[] {
+    const frozen = run.bindings as { steps?: readonly WorkflowStep[] } | null;
+    if (frozen && Array.isArray(frozen.steps) && frozen.steps.length > 0) return frozen.steps;
     return deps.workflows.get(run.workflowId)?.manifest.steps ?? [];
   }
 
@@ -264,6 +365,19 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return store.transaction(() => {
       const run = getRun(store, runId)!;
       if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return run;
+      if (run.cancelRequested) {
+        const stepRuns = listSteps(store, runId);
+        const leased = stepRuns.filter((s) => s.state === 'leased');
+        for (const s of stepRuns) {
+          if (s.state === 'pending' || s.state === 'ready' || s.state === 'waiting_for_decision') {
+            transitionStep(store, { id: s.id, to: 'cancelled', at, reason: run.stateReason ?? 'cancelled' });
+          }
+        }
+        if (leased.length === 0) {
+          return transitionRun(store, { id: runId, to: 'cancelled', at, reason: run.stateReason ?? 'cancelled' });
+        }
+        return run;
+      }
       const manifestSteps = stepsOf(run);
       const stepRuns = listSteps(store, runId);
       const done = new Set(stepRuns.filter((s) => s.state === 'succeeded' || s.state === 'skipped').map((s) => s.stepId));
@@ -276,6 +390,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (failed) {
         for (const s of after) if (s.state === 'pending' || s.state === 'ready') transitionStep(store, { id: s.id, to: 'cancelled', at, reason: `step ${failed.stepId} failed` });
         return transitionRun(store, { id: runId, to: 'failed', at, reason: `step ${failed.stepId} failed: ${failed.stateReason ?? 'no reason recorded'}` });
+      }
+      const cancelled = after.find((s) => s.state === 'cancelled');
+      if (cancelled && after.every((s) => ['succeeded', 'skipped', 'cancelled', 'failed'].includes(s.state))) {
+        return transitionRun(store, { id: runId, to: 'cancelled', at, reason: cancelled.stateReason ?? `step ${cancelled.stepId} cancelled` });
       }
       if (after.every((s) => s.state === 'succeeded' || s.state === 'skipped')) {
         return transitionRun(store, { id: runId, to: 'succeeded', at });
@@ -303,53 +421,258 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return out;
   }
 
-  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string): Decision | null {
-    if (step.tier === 'observe' || step.tier === 'draft') return null;
+  /** Why this service's host may not perform `step`, or null when it may. */
+  function beyondHost(step: WorkflowStep): string | null {
+    if (!tierAtLeast(deps.host.maxTier, step.tier)) {
+      return `step ${step.id} acts at ${step.tier}; this executor may reach ${deps.host.maxTier} at most`;
+    }
+    const missing = step.capabilities.filter((c) => !provides(deps.host, c));
+    if (missing.length > 0) return `step ${step.id} needs ${missing.join(', ')}, which this executor does not have`;
+    return null;
+  }
+
+  /**
+   * Gate a step for the executor about to claim it. An approval covers the
+   * executor it was given to, so a different session claiming the same step
+   * gets its own decision rather than inheriting another session's grant.
+   */
+  function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string, executorId: string): Gate {
+    if (step.tier === 'observe' || step.tier === 'draft') return CLEARED;
     const request: ActionRequest = {
       tier: step.tier,
       targetSystem: deps.targetSystemFor ? deps.targetSystemFor(step) : (step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external')),
       targetResource: step.tier === 'project_write' ? run.id : ((run.input as Record<string, unknown> | null)?.target as string | undefined) ?? `${run.workflowId}:${step.id}`,
       operation: `${step.title} (${run.workflowId}/${step.id})`,
       workflowId: run.workflowId,
-      executorId: run.executorId,
+      executorId,
       runId: run.id,
     };
-    const decision = evaluateAction(store, request, policyContext(run.interactionClass, at));
-    if (decision.allowed) return null;
+    const context = policyContext(run.interactionClass, at);
+    const decision = evaluateAction(store, request, context);
+    if (decision.allowed) return CLEARED;
     const open = listOpenDecisions(store, run.id).find((d) => d.stepRunId === stepRun.id);
-    if (open) return open;
-    const raised = raiseDecision(store, {
-      id: deps.nextId('decision'),
-      kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
-      question: decision.denial.stepUp.kind === 'approval' ? decision.denial.stepUp.description : `${decision.denial.missing}. ${decision.denial.stepUp.description}`,
-      runId: run.id,
-      stepRunId: stepRun.id,
-      options: decision.denial.stepUp.kind === 'approval' ? ['approve', 'decline'] : undefined,
-      subject: { request, stepUp: decision.denial.stepUp, attempted: decision.denial.attempted, safeNow: decision.denial.safeNow },
-      at,
+    if (open) return { outcome: 'decision', decision: open };
+    // The person approved this step for a different executor. While that
+    // executor's grant stands, the step waits for it: another claimer neither
+    // inherits the approval nor puts a fresh question in front of the person.
+    // Once the grant has lapsed it covers no one, and this claimer is asked.
+    for (const d of listStepDecisions(store, stepRun.id).reverse()) {
+      if (d.kind !== 'approval' || d.state !== 'resolved' || d.resolution !== 'approve') continue;
+      const approvedFor = (d.subject as { request?: ActionRequest } | null)?.request?.executorId;
+      if (!approvedFor || approvedFor === executorId) continue;
+      const theirs = evaluateAction(store, { ...request, executorId: approvedFor }, context);
+      if (theirs.allowed && theirs.grant) return { outcome: 'held', executorId: approvedFor, until: theirs.grant.endsAt };
+    }
+    // One unit: the question, the step's pause, and the run's pause land together
+    // or not at all. A run whose first step needs the question has started.
+    const raised = store.transaction(() => {
+      const question = raiseDecision(store, {
+        id: deps.nextId('decision'),
+        kind: decision.denial.stepUp.kind === 'approval' ? 'approval' : 'blocked',
+        question: decision.denial.stepUp.kind === 'approval' ? decision.denial.stepUp.description : `${decision.denial.missing}. ${decision.denial.stepUp.description}`,
+        runId: run.id,
+        stepRunId: stepRun.id,
+        options: decision.denial.stepUp.kind === 'approval' ? ['approve', 'decline'] : undefined,
+        subject: { request, stepUp: decision.denial.stepUp, attempted: decision.denial.attempted, safeNow: decision.denial.safeNow },
+        at,
+      });
+      if (stepRun.state === 'ready') transitionStep(store, { id: stepRun.id, to: 'waiting_for_decision', at, reason: 'awaiting approval' });
+      const current = getRun(store, run.id)!;
+      if (current.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+      if (current.state === 'ready' || current.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
+      return question;
     });
-    if (stepRun.state === 'ready') transitionStep(store, { id: stepRun.id, to: 'waiting_for_decision', at, reason: 'awaiting approval' });
-    if (run.state === 'ready' || run.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs a decision` });
-    return raised;
+    return { outcome: 'decision', decision: raised };
+  }
+
+  /** Perform a step the kernel runs itself: deterministic drift detection needs no host. */
+  function runKernelStep(run: WorkflowRun, sr: StepRun, step: WorkflowStep, at: string): void {
+    const leased = claimStep(store, { owner: 'kernel', now: at, leaseUntil: new Date(Date.parse(at) + 60_000).toISOString(), runId: run.id, stepRunId: sr.id });
+    if (!leased) return;
+    const detected = detectDrift(store, { at, requireDecisionForChanges: false });
+    const { recorded, alreadyOpen } = recordDrift(store, { runId: run.id, detected, at, nextId: deps.nextId });
+    completeStep(store, { id: leased.id, owner: 'kernel', token: leased.token, at, output: { findings: detected, recordedFindingIds: recorded.map((f) => f.id), alreadyOpen, noDrift: detected.length === 0, evidence: detected.flatMap((d) => d.evidence.map((e) => ({ ref: e.ref, excerpt: e.note }))) } });
+    appendActivity(store, { at, kind: 'step.kernel_ran', runId: run.id, stepRunId: sr.id, actor: 'kernel', payload: { stepId: step.id, findings: detected.length, recorded: recorded.length } });
+  }
+
+  /** What one run offers a claimer: a packet or a reason to stop, else the first hold or refusal met. */
+  interface RunClaim {
+    readonly outcome: ClaimOutcome | null;
+    readonly held: Extract<WaitingOn, { kind: 'held' }> | null;
+    readonly refused: Extract<WaitingOn, { kind: 'refused' }> | null;
+  }
+
+  /**
+   * Gate and lease within one run. The caller holds the write transaction, so
+   * no other session can make a step ready, or take one, between the gate
+   * clearing a step and this claimer leasing it; and only a cleared step is
+   * leased. A held or refused step is passed over, so the run's other ready
+   * steps stay claimable.
+   */
+  function claimInRun(runId: string, who: string, at: string, leaseUntil: string): RunClaim {
+    let held: RunClaim['held'] = null;
+    let refused: RunClaim['refused'] = null;
+    const stop = (waitingOn: WaitingOn): RunClaim => ({ outcome: { packet: null, waitingOn }, held, refused });
+    let run = getRun(store, runId);
+    if (!run || run.state === 'blocked') return { outcome: null, held, refused };
+    if (run.state === 'waiting_for_decision') {
+      const open = listOpenDecisions(store, run.id)[0];
+      if (open) return stop({ kind: 'decision', decision: open });
+      run = transitionRun(store, { id: run.id, to: 'running', at });
+    }
+    if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return { outcome: null, held, refused };
+    const currentWorkflow = deps.workflows.get(run.workflowId);
+    if (run.workflowDigest && currentWorkflow && currentWorkflow.digest !== run.workflowDigest) {
+      return stop({ kind: 're_resolve', reason: `workflow ${run.workflowId} changed since this run was bound; re-resolve before continuing` });
+    }
+    advance(run.id, at);
+    const manifestSteps = stepsOf(run);
+    // A kernel step can make further steps ready; each pass gates what is ready now.
+    for (let pass = 0; pass <= manifestSteps.length; pass += 1) {
+      const cleared: { readonly sr: StepRun; readonly step: WorkflowStep }[] = [];
+      for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+        const step = manifestSteps.find((s) => s.id === sr.stepId)!;
+        const beyond = performedByKernel(step) ? null : beyondHost(step);
+        if (beyond) {
+          refused ??= { kind: 'refused', runId: run.id, stepId: step.id, reason: beyond };
+          continue;
+        }
+        const gate = gateStep(getRun(store, run.id)!, sr, step, at, who);
+        if (gate.outcome === 'decision') return stop({ kind: 'decision', decision: gate.decision });
+        if (gate.outcome === 'held') {
+          held ??= { kind: 'held', runId: run.id, stepId: step.id, executorId: gate.executorId, until: gate.until };
+          continue;
+        }
+        cleared.push({ sr, step });
+      }
+      const kernelSteps = cleared.filter((c) => performedByKernel(c.step));
+      if (kernelSteps.length > 0) {
+        for (const { sr, step } of kernelSteps) runKernelStep(run, sr, step, at);
+        advance(run.id, at);
+        continue;
+      }
+      for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
+        const boundSkill = (sr.input as { skill?: { id: string; digest: string } | null } | null)?.skill ?? null;
+        const registeredSkill = boundSkill ? deps.skills.get(boundSkill.id) : null;
+        if (boundSkill && registeredSkill && registeredSkill.digest !== boundSkill.digest) {
+          return stop({ kind: 're_resolve', reason: `skill ${boundSkill.id} changed since this run was bound; re-resolve before continuing` });
+        }
+      }
+      const next = cleared[0];
+      if (!next) break;
+      const leased = claimStep(store, { owner: who, now: at, leaseUntil, runId: run.id, stepRunId: next.sr.id });
+      if (!leased) break;
+      const fresh = getRun(store, run.id)!;
+      if (fresh.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+      return { outcome: { packet: packetFor(leased, next.step), waitingOn: null }, held, refused };
+    }
+    return { outcome: null, held, refused };
+  }
+
+  /** Everything the claimer needs to do one leased step. */
+  function packetFor(leased: LeasedStep, step: WorkflowStep): WorkPacket {
+    const run = getRun(store, leased.runId)!;
+    const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
+    const registered = bound ? deps.skills.get(bound.id) : null;
+    const judgment = judgmentOf(run);
+    const workflowChallenge = deps.workflows.get(run.workflowId)?.manifest.deliverable.challenge ?? false;
+    const needsChallenge = judgmentRequired(workflowChallenge, judgment);
+    const instructions = [
+      `Step ${step.id}: ${step.title}.`,
+      step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
+      step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
+      ...validatorGuidance(step.validators),
+      ...governingInstructions(step.capabilities),
+      acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
+      'Cite every source you read as evidence entries.',
+      needsChallenge
+        ? 'This work has architectural or irreversible consequences. Apply adversarial review before representing the result as strongly validated. Do not wait for the person to ask.'
+        : judgment.depth === 'light'
+          ? 'This is low-stakes reversible work. Do not run architecture ceremony or a full adversarial review.'
+          : '',
+    ].filter(Boolean);
+    return {
+      leased,
+      run,
+      step,
+      skill: bound && registered
+        ? { id: bound.id, version: bound.version, digest: bound.digest, body: () => deps.skills.body(bound.id), file: (p) => deps.skills.file(bound.id, p) }
+        : null,
+      inputs: inputsFor(run, step),
+      instructions,
+      judgment,
+    };
+  }
+
+  /** Everything a trust move to `to` must satisfy, checked before the person is asked and again when it applies. */
+  function assertPromotable(deliverableId: string, to: TrustState): Deliverable {
+    const current = getDeliverable(store, deliverableId);
+    if (!current) throw new Error(`no deliverable ${deliverableId}`);
+    if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
+    const run = getRun(store, current.runId);
+    if (run && (to === 'accepted' || to === 'final')) {
+      const workflow = deps.workflows.get(run.workflowId);
+      const needsChallenge = judgmentRequired(workflow?.manifest.deliverable.challenge ?? false, judgmentOf(run));
+      if (needsChallenge && to === 'accepted' && current.trustState !== 'challenged') {
+        throw new Error('this outcome has architectural or irreversible consequences; it is accepted only after a recorded challenge');
+      }
+      if (activeContradictionCount(store) > 0) {
+        throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
+      }
+      const body = current.body && typeof current.body === 'object' ? (current.body as Record<string, unknown>) : null;
+      if (body) {
+        const facts = runValidators(['no_placeholder_facts'], { output: body, expectedKeys: [], evidence: [], resolvableRefs: new Set() });
+        if (facts[0] && !facts[0].ok) throw new Error(facts[0].problems.join('; '));
+      }
+    }
+    return current;
+  }
+
+  function applyPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly at: string; readonly verification?: unknown; readonly reason?: string | null }): Deliverable {
+    assertPromotable(input.deliverableId, input.to);
+    return setTrustState(store, { id: input.deliverableId, trustState: input.to, actor: input.by, at: input.at, verification: input.verification, reason: input.reason ?? undefined });
   }
 
   return {
     classify: classifyInteraction,
 
-    remember({ kind, text, by }) {
+    remember({ kind, text, by, channel = 'relay', assumptions = [], replaces }) {
       const at = deps.now();
       const decision = evaluateAction(store, { tier: 'project_write', targetSystem: 'construct-state', targetResource: 'statements', operation: `remember: ${text}`, executorId: deps.host.executorId }, policyContext('remember', at));
       if (!decision.allowed) throw new Error(decision.denial.missing);
       return store.transaction(() => {
-        const statement = addStatement(store, { id: deps.nextId('st'), kind, text, provenance: 'user', at });
-        appendActivity(store, { at, kind: 'remember', actor: by, payload: { statementId: statement.id, kind } });
+        const statement = addStatement(store, { id: deps.nextId('st'), kind, text, provenance: 'user', channel, at });
+        const entity = isGoverningKind(kind) ? bindGoverningStatement(store, statement, at, deps.nextId) : null;
+        if (replaces) {
+          if (!getStatement(store, replaces)) throw new Error(`no statement ${replaces} to replace`);
+          supersedeGoverning(store, { olderId: replaces, successor: statement, at, nextId: deps.nextId });
+        }
+        if (entity) {
+          for (const assumption of assumptions) {
+            if (!assumption.trim()) continue;
+            addClaim(store, {
+              id: deps.nextId('claim'),
+              subjectId: entity.id,
+              claimType: 'assumption',
+              statement: assumption,
+              provenance: 'user',
+              authority: 'authoritative',
+              sensitivity: 'internal',
+              confidence: 1,
+              observedAt: at,
+              at,
+            });
+          }
+        }
+        appendActivity(store, { at, kind: 'remember', actor: by, payload: { statementId: statement.id, kind, entityId: entity?.id ?? null } });
         return statement;
       });
     },
 
     preflight(workflowId, input) {
       const resolution = resolutionFor(workflowId, input, deps.host.executorId);
-      return { resolution, preflight: preflightOf(resolution) };
+      return { resolution, preflight: preflightOf(resolution, input) };
     },
 
     start(input) {
@@ -366,17 +689,28 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         throw new Error(`${m.id} is a ${m.interactionClass} workflow; it records or answers without a run`);
       }
       if (!m.triggers.includes(input.trigger)) throw new Error(`${m.id} does not accept ${input.trigger} triggers (it accepts ${m.triggers.join(', ')})`);
-      const key = input.idempotencyKey ?? idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
-      const existingByKey = getRunByKey(store, key);
-      if (existingByKey) {
-        const resolution = resolutionFor(m.id, input.input, executorId);
-        return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution) };
+      const keyExplicit = input.idempotencyKey;
+      const workIdentity = idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
+      if (keyExplicit) {
+        const existingByKey = getRunByKey(store, keyExplicit);
+        if (existingByKey) {
+          const resolution = resolutionFor(m.id, input.input, executorId);
+          return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution, input.input) };
+        }
+      } else {
+        const inFlight = findActiveByWorkIdentity(store, workIdentity);
+        if (inFlight) {
+          const resolution = resolutionFor(m.id, input.input, executorId);
+          return { run: inFlight, created: false, resolution, preflight: preflightOf(resolution, input.input) };
+        }
       }
+      const key = keyExplicit ?? `${workIdentity}:${deps.nextId('inv')}`;
       if (m.concurrency === 'single') {
         const active = listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked');
         if (active) {
           const resolution = resolutionFor(m.id, input.input, executorId);
-          return { run: active, created: false, resolution, preflight: { ...preflightOf(resolution), flags: [...preflightOf(resolution).flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
+          const pf = preflightOf(resolution, input.input);
+          return { run: active, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
         }
       }
       let resolution = resolutionFor(m.id, input.input, executorId);
@@ -392,8 +726,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           };
         }
       }
-      const preflight = preflightOf(resolution);
+      const preflight = preflightOf(resolution, input.input);
       return store.transaction(() => {
+        // Another session may have started the same work between the checks
+        // above and this write lock; under the lock the answer is final.
+        const raced = keyExplicit
+          ? getRunByKey(store, keyExplicit)
+          : findActiveByWorkIdentity(store, workIdentity)
+            ?? (m.concurrency === 'single' ? listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked') ?? null : null);
+        if (raced) return { run: raced, created: false, resolution, preflight };
         if (resolution.status === 'runnable' || resolution.status === 'outdated') {
           for (const stale of listActiveRuns(store).filter((r) => r.workflowId === m.id && r.state === 'blocked')) {
             transitionRun(store, { id: stale.id, to: 'cancelled', at, reason: 'superseded by a run that resolved' });
@@ -411,8 +752,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           hostId: deps.host.hostId,
           sessionId: deps.host.sessionId ?? undefined,
           input: input.input,
+          invocationId: key,
+          workIdentity,
+          workflowDigest: workflow.digest,
+          bindings: { steps: m.steps, digest: workflow.digest, version: m.version },
           at,
         });
+        store.db.prepare(
+          `INSERT INTO run_bindings (run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, frozen_at)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        ).run(run.id, m.id, m.version, workflow.digest, JSON.stringify(resolution.plan.map((p) => p.skill)), at);
         if (resolution.status === 'blocked' || resolution.status === 'divergent') {
           const blocked = transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary, preflight });
           return { run: blocked, created: true, resolution, preflight };
@@ -440,69 +789,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     claimNext({ runId, owner, leaseMs: requested }) {
       const at = deps.now();
       const who = owner ?? deps.host.executorId;
+      const leaseUntil = new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString();
+      expireDeadLeases(store, at, runId);
       const candidates = runId ? [getRun(store, runId)].filter((r): r is WorkflowRun => r !== null) : listActiveRuns(store);
-      for (const run of candidates) {
-        if (run.state === 'blocked') continue;
-        if (run.state === 'waiting_for_decision') {
-          const open = listOpenDecisions(store, run.id)[0];
-          if (open) return { packet: null, waitingOn: { kind: 'decision', decision: open } };
-          transitionRun(store, { id: run.id, to: 'running', at });
-        }
-        if (['succeeded', 'failed', 'cancelled'].includes(run.state)) continue;
-        advance(run.id, at);
-        const manifestSteps = stepsOf(run);
-        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
-          const step = manifestSteps.find((s) => s.id === sr.stepId)!;
-          const decision = gateStep(getRun(store, run.id)!, sr, step, at);
-          if (decision) return { packet: null, waitingOn: { kind: 'decision', decision } };
-        }
-        // Steps the kernel performs itself: deterministic drift detection needs no host.
-        let ranKernelStep = false;
-        for (const sr of listSteps(store, run.id).filter((s) => s.state === 'ready')) {
-          const step = manifestSteps.find((s) => s.id === sr.stepId)!;
-          if (!step.capabilities.includes('kernel:drift_detect')) continue;
-          const leasedByKernel = claimStep(store, { owner: 'kernel', now: at, leaseUntil: new Date(Date.parse(at) + 60_000).toISOString(), runId: run.id });
-          if (!leasedByKernel || leasedByKernel.id !== sr.id) continue;
-          const detected = detectDrift(store, { at, requireDecisionForChanges: false });
-          const { recorded, alreadyOpen } = recordDrift(store, { runId: run.id, detected, at, nextId: deps.nextId });
-          completeStep(store, { id: leasedByKernel.id, owner: 'kernel', token: leasedByKernel.token, at, output: { findings: detected, recordedFindingIds: recorded.map((f) => f.id), alreadyOpen, noDrift: detected.length === 0, evidence: detected.flatMap((d) => d.evidence.map((e) => ({ ref: e.ref, excerpt: e.note }))) } });
-          appendActivity(store, { at, kind: 'step.kernel_ran', runId: run.id, stepRunId: sr.id, actor: 'kernel', payload: { stepId: step.id, findings: detected.length, recorded: recorded.length } });
-          ranKernelStep = true;
-        }
-        if (ranKernelStep) advance(run.id, at);
-        const leased = claimStep(store, { owner: who, now: at, leaseUntil: new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString(), runId: run.id });
-        if (!leased) continue;
-        const fresh = getRun(store, run.id)!;
-        if (fresh.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
-        const step = manifestSteps.find((s) => s.id === leased.stepId)!;
-        const bound = (leased.input as { skill?: { id: string; version: string; digest: string } | null } | null)?.skill ?? null;
-        const registered = bound ? deps.skills.get(bound.id) : null;
-        const instructions = [
-          `Step ${step.id}: ${step.title}.`,
-          step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
-          step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
-          step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
-          ...validatorGuidance(step.validators),
-          ...governingInstructions(step.capabilities),
-          acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
-          'Cite every source you read as evidence entries.',
-        ].filter(Boolean);
-        return {
-          packet: {
-            leased,
-            run: getRun(store, run.id)!,
-            step,
-            skill: bound && registered
-              ? { id: bound.id, version: bound.version, digest: bound.digest, body: () => deps.skills.body(bound.id), file: (p) => deps.skills.file(bound.id, p) }
-              : null,
-            inputs: inputsFor(fresh, step),
-            instructions,
-          },
-          waitingOn: null,
-        };
+      let held: RunClaim['held'] = null;
+      let refused: RunClaim['refused'] = null;
+      for (const candidate of candidates) {
+        // Gate and lease under one write lock, per run.
+        const claim = store.transaction(() => claimInRun(candidate.id, who, at, leaseUntil));
+        if (claim.outcome) return claim.outcome;
+        held ??= claim.held;
+        refused ??= claim.refused;
       }
       const finished = runId ? getRun(store, runId) : null;
       if (finished && ['succeeded', 'failed', 'cancelled'].includes(finished.state)) return { packet: null, waitingOn: { kind: 'finished', state: finished.state } };
+      if (held) return { packet: null, waitingOn: held };
+      if (refused) return { packet: null, waitingOn: refused };
       return { packet: null, waitingOn: { kind: 'nothing_ready' } };
     },
 
@@ -510,10 +812,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const at = deps.now();
       const run = getRun(store, leased.runId);
       if (!run) throw new Error(`no run ${leased.runId}`);
-      const workflow = deps.workflows.get(run.workflowId)!;
-      const step = workflow.manifest.steps.find((s) => s.id === leased.stepId)!;
+      const step = stepsOf(run).find((s) => s.id === leased.stepId);
+      if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
+      const currentWorkflow = deps.workflows.get(run.workflowId);
       if (noData) {
-        const policy = workflow.manifest.onNoData;
+        const policy = currentWorkflow?.manifest.onNoData ?? 'fail';
         return store.transaction(() => {
           if (policy === 'fail') {
             const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { noData: true }, reason: 'no data' });
@@ -563,11 +866,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence, ...(waived ? { waived: failures.map((f) => ({ validator: f.validator, problems: f.problems })) } : {}) } });
         if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
         let deliverable: Deliverable | null = null;
-        const isLast = workflow.manifest.steps[workflow.manifest.steps.length - 1]!.id === step.id;
+        const frozenSteps = stepsOf(run);
+        const isLast = frozenSteps[frozenSteps.length - 1]?.id === step.id;
+        const judgment = judgmentOf(run);
+        const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}) }, at });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}) }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
-            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
+            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
         return { step: done, validation, run: advance(run.id, at), deliverable };
@@ -581,14 +887,20 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return failed;
     },
 
-    decide({ decisionId, resolution, by }) {
+    decide({ decisionId, resolution, by, channel = 'relay' }) {
       const at = deps.now();
       return store.transaction(() => {
         const decision = getDecision(store, decisionId);
         if (!decision) throw new Error(`no decision ${decisionId}`);
-        const resolved = resolveDecision(store, { id: decisionId, resolution, by, at });
+        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject; driftFindingId?: string; driftFindingIds?: string[] };
+        if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
+          if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {
+            throw new PersonChannelRequiredError(`Approving ${subject.request.tier} (${subject.request.operation})`, decisionId);
+          }
+          if (subject.promote) throw new PersonChannelRequiredError(`Moving deliverable ${subject.promote.deliverableId} to ${subject.promote.to}`, decisionId);
+        }
+        const resolved = resolveDecision(store, { id: decisionId, resolution, by, at, channel });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; driftFindingId?: string; driftFindingIds?: string[] };
         for (const fid of [...(subject.driftFindingIds ?? []), ...(subject.driftFindingId ? [subject.driftFindingId] : [])]) {
           const finding = getDriftFinding(store, fid);
           if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
@@ -596,9 +908,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
           }
         }
-        if (decision.kind === 'approval' && subject.request) {
+        if (decision.kind === 'approval' && subject.promote) {
+          if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
+        } else if (decision.kind === 'approval' && subject.request) {
           if (resolution === 'approve') {
-            approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at });
+            approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at, stepRunId: decision.stepRunId ?? undefined, channel });
             if (decision.stepRunId) transitionStep(store, { id: decision.stepRunId, to: 'ready', at });
           } else if (decision.stepRunId) {
             transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `declined by ${by}` });
@@ -646,6 +960,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (!run) throw new Error(`no run ${runId}`);
         const workflow = deps.workflows.get(run.workflowId);
         const immediate = workflow?.manifest.cancellation !== 'after_step';
+        setCancelRequested(store, runId, at);
         for (const s of listSteps(store, runId)) {
           if (s.state === 'pending' || s.state === 'ready' || s.state === 'waiting_for_decision') transitionStep(store, { id: s.id, to: 'cancelled', at, reason });
           else if (s.state === 'leased' && immediate) transitionStep(store, { id: s.id, to: 'cancelled', at, reason });
@@ -671,9 +986,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             if (listSteps(store, runId).length === 0) {
               resolution.plan.forEach((bound, i) => addStep(store, { id: deps.nextId('step'), runId, stepId: bound.step.id, ordinal: i, permissionTier: bound.step.tier, maxAttempts: bound.step.retry.maxAttempts, input: { skill: bound.skill, needsApproval: bound.needsApproval }, ready: roots.has(bound.step.id), at }));
             }
-            return transitionRun(store, { id: runId, to: 'ready', at, reason: 'resolved on resume', preflight: preflightOf(resolution) });
+            return transitionRun(store, { id: runId, to: 'ready', at, reason: 'resolved on resume', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>) });
           }
-          return transitionRun(store, { id: runId, to: 'preflight', at, reason: 'still blocked', preflight: preflightOf(resolution) }) && transitionRun(store, { id: runId, to: 'blocked', at, reason: resolution.summary });
+          return transitionRun(store, { id: runId, to: 'preflight', at, reason: 'still blocked', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>) }) && transitionRun(store, { id: runId, to: 'blocked', at, reason: resolution.summary });
         }
         appendActivity(store, { at, kind: 'run.resumed', runId, payload: { from: run.state } });
         return advance(runId, at);
@@ -686,12 +1001,32 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return { run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
     },
 
-    promote({ deliverableId, to, by, verification, reason }) {
+    promote({ deliverableId, to, by, channel = 'relay', verification, reason }) {
+      if (PERSON_ONLY_TRUST.has(to) && !isPersonChannel(channel)) {
+        throw new PersonChannelRequiredError(`Moving deliverable ${deliverableId} to ${to}`, null);
+      }
+      return applyPromotion({ deliverableId, to, by, at: deps.now(), verification, reason });
+    },
+
+    requestPromotion({ deliverableId, to, by, reason }) {
       const at = deps.now();
-      const current = getDeliverable(store, deliverableId);
-      if (!current) throw new Error(`no deliverable ${deliverableId}`);
-      if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
-      return setTrustState(store, { id: deliverableId, trustState: to, actor: by, at, verification, reason });
+      return store.transaction(() => {
+        const current = assertPromotable(deliverableId, to);
+        const open = listOpenDecisions(store, current.runId).find((d) => {
+          const p = (d.subject as { promote?: PromotionSubject } | null)?.promote;
+          return d.kind === 'approval' && p?.deliverableId === deliverableId && p.to === to;
+        });
+        if (open) return open;
+        return raiseDecision(store, {
+          id: deps.nextId('decision'),
+          kind: 'approval',
+          question: `Move deliverable ${deliverableId} (${current.kind}) from ${current.trustState} to ${to}?`,
+          runId: current.runId,
+          options: ['approve', 'decline'],
+          subject: { promote: { deliverableId, to, reason: reason ?? null, requestedBy: by } satisfies PromotionSubject },
+          at,
+        });
+      });
     },
   };
 }

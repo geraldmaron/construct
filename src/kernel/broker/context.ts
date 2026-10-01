@@ -12,10 +12,17 @@ import type { HostCapabilities } from '../registry/capability-registry.ts';
 import type { WorkflowService } from '../workflow/service.ts';
 import type { TriggerService } from '../workflow/triggers.ts';
 import type { SourceService } from '../source/service.ts';
+import type { AskPerson } from '../policy/channels.ts';
+import type { DelegationService } from '../delegation/types.ts';
 
 export interface BrokerContext {
+  readonly delegation?: DelegationService;
   readonly version: string;
   readonly root: string;
+  /** The git worktree this session works in, when it is not the project's main checkout. */
+  readonly lane: { readonly root: string; readonly checkout: string; readonly branch: string | null; readonly head: string | null } | null;
+  /** The session Construct minted for this server process; null when a caller has none. */
+  readonly sessionId: string | null;
   readonly layout: ProjectLayout;
   readonly files: ReturnType<typeof readProjectFiles>;
   readonly store: StateStore;
@@ -27,8 +34,19 @@ export interface BrokerContext {
   readonly sources: SourceService;
   readonly now: () => string;
   readonly nextId: (prefix: string) => string;
-  /** The person's identity as the host reports it, for decisions and promotions. */
+  /** Who acts, for the record: the model via its host on an interactive surface, the runner on a headless one. Never the person. */
   readonly actor: string;
+  /**
+   * Whether a process on `machine` still runs, when this caller can tell (it
+   * is the same machine); null when it cannot. Supplied by the adapter.
+   */
+  readonly processAlive?: (pid: number, machine: string) => boolean | null;
+  /**
+   * Put a question to the person directly, through the host, when the host
+   * can and nothing answers it for them. Absent otherwise; an answer then
+   * waits in the inbox for the person's own terminal.
+   */
+  readonly askPerson?: AskPerson;
   /** Effective policy settings the tools apply. */
   readonly policy?: { readonly hostReads: 'require' | 'accept'; readonly answerCheck: 'nudge' | 'off' };
 }

@@ -33,6 +33,10 @@ echo "== packing =="
 tarball="$(npm pack --silent --pack-destination "$scratch")"
 tarball_path="$scratch/$tarball"
 
+echo "== every packed module has a source =="
+orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' | while read -r m; do [ -f "src/$m.ts" ] || echo "dist/$m.js"; done)"
+[ -z "$orphans" ] || fail "the tarball ships compiled modules with no source (a stale dist)" "$orphans"
+
 echo "== installing into a scratch project =="
 project="$scratch/project"
 mkdir -p "$project"
@@ -96,6 +100,21 @@ npx --no-install construct config set review.cadence weekly >/dev/null || fail "
 get_out="$(npx --no-install construct config get review.cadence)"
 [ "$get_out" = "weekly" ] || fail "config get read back \"$get_out\", expected weekly"
 
+echo "== native work from packaged bytes: a session's unrooted work waits as proposed, with its structure =="
+outcome_json="$(npx --no-install construct work add --kind=outcome --json 'Packaged outcome' 2>/dev/null)" || fail "work add outcome exited non-zero" "$outcome_json"
+outcome_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).id)' "$outcome_json")"
+expect_contains "work add outcome" "$outcome_json" '"status":"proposed"'
+work_add="$(npx --no-install construct work add --kind=task --parent="$outcome_id" --accept='the ledger round-trips' --description='prove the packaged ledger' 'Packaged work item' 2>&1)" \
+  || fail "work add exited non-zero" "$work_add"
+expect_contains "work add" "$work_add" "proposed"
+expect_contains "work add" "$work_add" "construct work admit"
+work_list="$(npx --no-install construct work list --parent="$outcome_id" 2>&1)" || fail "work list exited non-zero" "$work_list"
+expect_contains "work list" "$work_list" "Packaged work item"
+work_ready="$(npx --no-install construct work ready 2>&1)" || fail "work ready exited non-zero" "$work_ready"
+case "$work_ready" in *"Packaged work item"*) fail "proposed work is listed as ready" "$work_ready" ;; esac
+work_show="$(npx --no-install construct work show "$outcome_id" 2>&1)" || fail "work show exited non-zero" "$work_show"
+expect_contains "work show" "$work_show" "children: 0 of 1 finished"
+
 echo "== a directory source is declared, read, and re-read unchanged =="
 add_out="$(npx --no-install construct source add repo --kind=directory --purpose='the project files' --locator="$project" --authority=authoritative --authoritative-for=code_component 2>&1)" \
   || fail "source add exited non-zero" "$add_out"
@@ -115,11 +134,11 @@ run_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).run.id)' "$w
 run_show="$(npx --no-install construct run show "$run_id" 2>&1)" || fail "run show exited non-zero" "$run_show"
 expect_contains "run show" "$run_show" "step gather: ready"
 inbox_out="$(npx --no-install construct inbox list 2>&1)" || fail "inbox list exited non-zero" "$inbox_out"
-expect_contains "inbox list" "$inbox_out" "nothing waits on you"
+expect_contains "inbox list" "$inbox_out" "proposal"
 cancel_out="$(npx --no-install construct run cancel "$run_id" 2>&1)" || fail "run cancel exited non-zero" "$cancel_out"
 expect_contains "run cancel" "$cancel_out" "cancelled"
 
-echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, final deliverable =="
+echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, acceptance held for the person =="
 loop_project="$scratch/loop"
 mkdir -p "$loop_project" && cd "$loop_project" && git init -q . && printf '# Loop\n\nA project for the packaged loop.\n' > README.md && printf '# Design\n\n- Keep the kernel host-agnostic\n' > design.md
 npm init -y --silent >/dev/null && npm install --silent "$tarball_path"
@@ -134,13 +153,19 @@ const rpc = (method, params) => new Promise((resolve) => { const id = nextId++; 
 const call = async (name, args = {}) => { const r = await rpc('tools/call', { name, arguments: args }); if (r.error) throw new Error(`${name}: ${r.error.message}`); if (r.result.isError) throw new Error(`${name}: ${r.result.structuredContent?.error ?? r.result.content[0].text}`); return r.result.structuredContent ?? JSON.parse(r.result.content[0].text); };
 const must = (cond, what) => { if (!cond) throw new Error(`loop: ${what}`); };
 const init = await rpc('initialize', {}); must(init.result.serverInfo.name === 'construct', 'server name');
+const delegation = await call('delegate', { action: 'status' });
+must(delegation.executors.length === 3 && delegation.executors.every(executor => !executor.configured && !executor.liveVerified), 'packaged delegation is disabled without authorization');
 const boot = await call('bootstrap'); must(boot.profile.openQuestions.length === 3, 'three questions open at bootstrap'); must(/setup question/.test(boot.next), 'next action names the questions');
 const scale = boot.profile.openQuestions.find((q) => q.options); await call('decide', { decisionId: scale.id, resolution: 'solo' });
 for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call('decide', { decisionId: q.id, resolution: q.question.includes('result') ? 'prove the packaged loop' : 'never write outside this project' });
 const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confirmed', 'onboarding confirmed after decisions');
 const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
 const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
-const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.length === 1, 'one statement remembered');
+const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.items.length === 1, 'one statement remembered');
+const rooted = await call('work', { action: 'add', kind: 'outcome', title: 'Hold schema changes until stable', serves: mem.remembered.id }); must(rooted.status === 'open' && rooted.admittedBy === 'serves', 'work serving a remembered decision is admitted');
+const sub = await call('work', { action: 'add', title: 'Guard the migration path', parent: rooted.id, acceptance: ['no migration runs before 1.0'] }); must(sub.status === 'open', 'a child of admitted work is admitted');
+const loose = await call('work', { action: 'add', title: 'An idea with no reason' }); must(loose.status === 'proposed', 'unrooted work from a session is proposed');
+const ready = await call('work', { action: 'ready' }); must(ready.some((w) => w.id === sub.id) && !ready.some((w) => w.id === loose.id), 'ready holds admitted work only');
 const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
 const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
@@ -149,13 +174,19 @@ for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: sta
 const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
 const validated = status.deliverables.find((d) => d.trust === 'validated'); must(validated, 'final deliverable validated');
 await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop' });
-await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'accepted by the person' });
-const fin = await call('promote_deliverable', { deliverableId: validated.id, to: 'final' }); must(fin.deliverable.trust === 'final', 'deliverable final');
+const asked = await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'the session asks the person to accept' }); must(asked.personRequired === true && typeof asked.pendingDecision === 'string', 'acceptance waits for the person');
+const relayed = await call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }); must(relayed.personRequired === true && relayed.decision.state === 'open', 'a relayed approval of acceptance is refused');
+const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers');
+console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → resolve → start → claim/submit ×4 → status → promote to final: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
 DRIVER
-node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct" || fail "the packaged loop over the MCP server failed"
+loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
+echo "$loop_out" | grep -v '^pending=' || true
+pending_id="$(echo "$loop_out" | sed -n 's/^pending=//p')"
+loop_inbox="$(cd "$loop_project" && npx --no-install construct inbox list 2>&1)" || fail "loop inbox list exited non-zero" "$loop_inbox"
+expect_contains "loop inbox list" "$loop_inbox" "$pending_id"
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "the loop created a per-user data directory"
 cd "$project"
 
@@ -165,6 +196,7 @@ expect_contains "serve --describe" "$serve_out" "would serve the interactive sur
 mcp_out="$(printf '%s\n%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | npx --no-install construct serve --client=cursor 2>/dev/null)" || fail "serve over stdio exited non-zero" "$mcp_out"
 expect_contains "serve initialize" "$mcp_out" '"name":"construct"'
 expect_contains "serve tools/list" "$mcp_out" '"name":"bootstrap"'
+expect_contains "serve tools/list" "$mcp_out" '"name":"work"'
 
 echo "== the packaged install carries the skills =="
 skills_list="$(npx --no-install construct skill list 2>&1)" || fail "skill list exited non-zero" "$skills_list"

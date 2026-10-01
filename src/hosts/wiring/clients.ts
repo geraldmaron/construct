@@ -18,6 +18,7 @@ export type WirableClient = (typeof WIRABLE_CLIENTS)[number];
 export const KNOWN_CLIENTS = [...WIRABLE_CLIENTS, 'codex', 'bob', 'unknown'] as const;
 export type ClientId = (typeof KNOWN_CLIENTS)[number];
 
+/** This install's command-line entry point. */
 export const LAUNCHER = fileURLToPath(new URL('../../../bin/construct.mjs', import.meta.url));
 
 export function serveArgs(client: ClientId, projectRoot: string): string[] {

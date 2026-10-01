@@ -95,7 +95,7 @@ online registry or marketplace.
 
 The cutover ran as six phases in one program, each landing with the full gate
 green and no later phase starting while an earlier one held two live truths:
-A the core (state format 2, project layout and configuration, constitution
+A the core (state format 3 with a one-way upgrade from format 2, project layout and configuration, constitution
 and discovery, sources and the context graph, the policy engine); B the
 deletion of the old universe with a minimal object command line; C the
 registries and the workflow service with triggers; D the typed broker with

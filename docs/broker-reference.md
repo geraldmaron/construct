@@ -3,7 +3,7 @@
 
 # Broker reference (MCP)
 
-The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person's session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.
+The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person's session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.
 
 ## Interactive surface
 
@@ -15,7 +15,7 @@ Surface: both. Reads only: yes.
 
 ### `classify_request`
 
-What kind of request is this. Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, or a standing outcome to maintain, and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.
+What kind of request is this. Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, a standing outcome to maintain, or a matter of working alongside other agents (which the work tool serves), and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.
 
 Surface: interactive. Reads only: yes.
 
@@ -25,13 +25,13 @@ Surface: interactive. Reads only: yes.
 
 ### `project_context`
 
-Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, or remembered statements. Ask for one topic at a time; pass a query to narrow. Never returns everything at once.
+Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, or recent activity. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality`, `work`, `sessions`, `activity` | yes | What to read. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
@@ -45,6 +45,8 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `kind` | `decision`, `constraint`, `principle`, `note`, `outcome`, `non_goal`, `success_measure`, `unknown` | yes | What kind of thing this is. |
 | `text` | string | yes | The person’s wording, as they said it. |
+| `assumptions` | array | no | Load-bearing assumptions this governing record rests on. |
+| `replaces` | string | no | The id of a statement this one supersedes. |
 | `contradicts` | array | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
 
 ### `workflows`
@@ -84,7 +86,7 @@ Surface: interactive. Reads only: no.
 
 ### `claim_work`
 
-Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it.
+Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.
 
 Surface: interactive. Reads only: no.
 
@@ -95,15 +97,15 @@ Surface: interactive. Reads only: no.
 
 ### `submit_work`
 
-Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing.
+Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.
 
 Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
-| `owner` | string | yes | From claim_work. |
-| `token` | number | yes | From claim_work. |
+| `token` | string | yes | From claim_work: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | array | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
@@ -120,7 +122,7 @@ Surface: both. Reads only: yes.
 
 ### `inbox`
 
-Decisions waiting on the person. The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned ones are included, since anyone may take them).
+Decisions waiting on the person. The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned items included).
 
 Surface: interactive. Reads only: yes.
 
@@ -131,7 +133,7 @@ Surface: interactive. Reads only: yes.
 
 ### `decide`
 
-Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens.
+Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
 
 Surface: interactive. Reads only: no.
 
@@ -177,7 +179,7 @@ Surface: interactive. Reads only: yes.
 
 ### `promote_deliverable`
 
-Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge verdict, their acceptance, or make it final. Only the person’s own judgment moves trust; a finished step never does.
+Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. A finished step never moves trust.
 
 Surface: interactive. Reads only: no.
 
@@ -186,6 +188,71 @@ Surface: interactive. Reads only: no.
 | `deliverableId` | string | yes | The deliverable id. |
 | `to` | `draft`, `validated`, `challenged`, `accepted`, `final`, `rejected` | yes | The trust state to move to. |
 | `reason` | string | no | Why, in the person’s words. |
+
+### `work`
+
+Native work. File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
+
+Surface: interactive. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `action` | `list`, `ready`, `offers`, `show`, `add`, `update`, `link`, `unlink`, `requalify`, `claim`, `check`, `handoff`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, offers, show, add, update, link, unlink, requalify, claim, check, handoff, accept, complete, release, takeover, reopen. |
+| `id` | string | no | Work id or a preserved legacy id. |
+| `title` | string | no | Title, for add and update. |
+| `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
+| `description` | string | no | For add and update: what the work is, in enough detail to pick it up cold. |
+| `parent` | string | no | For add and link: the work item this one is part of. |
+| `serves` | string | no | For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id. |
+| `blockedBy` | array | no | For add, link, and unlink: work that must finish before this is ready. |
+| `related` | array | no | For add, link, and unlink: work that gives context without blocking. |
+| `acceptance` | array | no | For add and update: observable criteria a finished item meets, one each. update replaces the list. |
+| `risk` | string | no | For add and update: what could go wrong. |
+| `sources` | array | no | For add and update: source ids whose refresh sends this work back for requalification. |
+| `removeParent` | boolean | no | For unlink: remove the parent. |
+| `reason` | string | no | Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met. |
+| `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
+| `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
+| `paths` | array | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |
+| `mode` | `exclusive`, `shared` | no | exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside. |
+| `packet` | object | no | For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths. |
+| `to` | string | no | For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept. |
+
+### `delegate`
+
+Bounded local delegation. Opt-in local subscription workers, owned by this lead session. Start returns an execution id immediately; status, result, and cancel supervise it. Implementation requires existing claimed work, scoped paths and acceptance checks. Review a fixed implementation with role review and subject. Triage every finding before serial local integration and combined validation. No recursive dispatch, commits, publication, approval inheritance, or automatic executor fallback. Disabled until explicit configuration and matching live evidence exist.
+
+Surface: interactive. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `action` | `start`, `status`, `result`, `cancel`, `triage`, `integrate` | yes | Execution lifecycle or lead-only review/integration action. |
+| `id` | string | no | Execution id; optional only for aggregate status. |
+| `workId` | string | no | Existing native work with an unexpired claim held by this lead. |
+| `requestKey` | string | no | Stable idempotency key, reused only for the identical assignment. |
+| `executor` | `claude`, `codex`, `cursor` | no | Explicitly configured local executor; installation alone grants nothing. |
+| `role` | `implement`, `review` | no | Implementation or read-only independent review. |
+| `instructions` | string | no | Bounded assignment, not the full lead conversation. |
+| `acceptance` | array | no | Observable acceptance checks. |
+| `paths` | array | no | Repository-relative files or directory prefixes ending in /. |
+| `couplingKeys` | array | no | Shared interface/schema keys that must execute serially despite disjoint paths. |
+| `timeoutMs` | number | no | Per-attempt bound; default 1200000, capped by personal configuration. |
+| `runId` | string | no | Existing workflow run to link to the child work. |
+| `subject` | string | no | Successful implementation execution to review at its fixed snapshot. |
+| `repairOf` | string | no | Successful implementation being repaired; bounded repair counter is inherited. |
+| `dispositions` | array | no | Exactly one {findingId, decision: accepted\|rejected\|deferred, rationale} per review finding. |
+
+### `heartbeat`
+
+Keep a lease alive. The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.
+
+Surface: both. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `stepRunId` | string | yes | From the claim. |
+| `token` | string | yes | From the claim: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 
 ## Headless surface
 
@@ -197,15 +264,15 @@ Surface: both. Reads only: yes.
 
 ### `submit_work`
 
-Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing.
+Submit a step’s result. Hand back what a claimed step produced, with the evidence you read. The result is checked by the step’s validators; a failure comes back with what to fix and the step is retried if its policy allows. Say noData when the step found nothing. Only the session that claimed the step, holding the token its claim returned, can submit it.
 
 Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `stepRunId` | string | yes | From claim_work. |
-| `owner` | string | yes | From claim_work. |
-| `token` | number | yes | From claim_work. |
+| `token` | string | yes | From claim_work: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
 | `evidence` | array | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
@@ -222,7 +289,7 @@ Surface: both. Reads only: yes.
 
 ### `claim_step`
 
-Claim a pre-resolved step. A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on.
+Claim a pre-resolved step. A configured runner takes the next ready step of a run that was already resolved and gated. Returns the step, inputs, bound skill, and instructions, or what the run waits on. A step above this runner’s tier or beyond its capabilities is refused, with why.
 
 Surface: headless. Reads only: no.
 
@@ -232,15 +299,15 @@ Surface: headless. Reads only: no.
 
 ### `heartbeat`
 
-Keep a lease alive. A runner still working a step says so, so the lease is not taken over. Fails if the lease was already lost.
+Keep a lease alive. The session working a claimed step says so, so its lease is not taken over. Any call from the session also extends its leases; this is for a long step with no other call. Fails if the lease was already lost.
 
-Surface: headless. Reads only: no.
+Surface: both. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `stepRunId` | string | yes | From claim_step. |
-| `owner` | string | yes | From claim_step. |
-| `token` | number | yes | From claim_step. |
+| `stepRunId` | string | yes | From the claim. |
+| `token` | string | yes | From the claim: the lease’s secret. |
+| `owner` | string | no | Ignored: the lease holder is the calling session. |
 
 ## Never on the headless surface
 
@@ -255,3 +322,5 @@ Surface: headless. Reads only: no.
 - `staff`
 - `claim_work`
 - `classify_request`
+- `work`
+- `delegate`

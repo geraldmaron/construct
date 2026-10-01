@@ -67,9 +67,11 @@ test('work resting on confidential sources carries that label, and publishing it
     assert.equal(p2.step.state, 'succeeded', JSON.stringify(p2.validation));
     const waiting = await call(fx, 'claim_work', { runId: cleared.run.id });
     assert.equal(waiting.work, null, 'the external write waits for the person');
-    const approval = (await call(fx, 'inbox')).find((d: { kind: string; run: string }) => d.kind === 'approval' && d.run === cleared.run.id);
+    const approval = (await call(fx, 'inbox')).find((d: { decisionKind?: string; run: string }) => d.decisionKind === 'approval' && d.run === cleared.run.id);
     assert.ok(approval, 'an approval for exactly this write is in the inbox');
-    await call(fx, 'decide', { decisionId: approval.id, resolution: 'approve' });
+    const relayed = await call(fx, 'decide', { decisionId: approval.id, resolution: 'approve' });
+    assert.equal(relayed.personRequired, true, 'a write that leaves the project is the person\'s own answer, never a relayed one');
+    fx.broker.workflow.decide({ decisionId: approval.id, resolution: 'approve', by: 'person via terminal', channel: 'tty_cli' });
     const pub = await step(fx, cleared.run.id);
     assert.equal(pub.step.id, 'publish');
     const noLoc = await submit(fx, pub, { summary: 'posted' }, []);
@@ -96,7 +98,7 @@ test('skill impact is measured from runs: first-pass rate, attempts, and which c
     assert.equal(q[0]!.meanAttempts, 2);
     assert.equal(q[0]!.failingChecks[0]!.validator, 'conflicts_declared');
     const viaTool = await call(fx, 'project_context', { topic: 'quality' });
-    assert.ok(viaTool.some((r: { skill: string }) => r.skill === 'context-mapping'));
+    assert.ok(viaTool.items.some((r: { skill: string }) => r.skill === 'context-mapping'), 'the quality topic pages like every other topic');
   } finally {
     fx.cleanup();
   }

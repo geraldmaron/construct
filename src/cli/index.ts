@@ -8,13 +8,14 @@
  * wrong.
  */
 
-import { commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, type CliContext } from './context.ts';
+import { boolFlag, commandHelp, groupedHelp, matchCommand, parseArgs, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { bindProject, createContext, requireMainCheckout, type CliContext } from './context.ts';
 import { reportFailure, say, warn, UsageError } from './output.ts';
 import { init, INIT_SPEC } from './init.ts';
 import { status, STATUS_SPEC } from './status.ts';
 import { doctor, DOCTOR_SPEC } from './doctor.ts';
 import { reset, RESET_SPEC } from './reset.ts';
+import { migrate, MIGRATE_SPEC } from './migrate.ts';
 import { configCommand, CONFIG_SPECS } from './config.ts';
 import { projectCommand, PROJECT_SPECS } from './project.ts';
 import { sourceCommand, SOURCE_SPECS } from './source.ts';
@@ -26,6 +27,8 @@ import { workflowCommand, WORKFLOW_SPECS } from './workflow.ts';
 import { runCommand, RUN_SPECS } from './run.ts';
 import { inboxCommand, INBOX_SPECS } from './inbox.ts';
 import { staffCommand, STAFF_SPECS } from './staff.ts';
+import { workCommand, WORK_SPECS } from './work.ts';
+import { hooksCommand, HOOKS_SPECS } from './hooks.ts';
 import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -50,18 +53,21 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...SOURCE_SPECS,
   ...SKILL_SPECS,
   ...WORKFLOW_SPECS,
+  ...WORK_SPECS,
   ...RUN_SPECS,
   ...INBOX_SPECS,
   ...STAFF_SPECS,
   SERVE_SPEC,
+  ...HOOKS_SPECS,
   HOOK_SPEC,
+  MIGRATE_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
   VERSION_SPEC,
   HELP_SPEC,
 ]);
 
-export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
+export const HELP_GROUPS: readonly string[] = Object.freeze(['Setup', 'Inspect', 'Configure', 'Sources', 'Skills', 'Workflows', 'Work', 'Runs', 'Staff', 'Host', 'Recover', 'Help']);
 
 const INTRO: readonly string[] = [
   'construct — a project-bound operating layer for the agent host you already use.',
@@ -128,7 +134,8 @@ export async function run(argv: readonly string[], ctx: CliContext = createConte
   }
 }
 
-async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly string[], ctx: CliContext): Promise<number> {
+async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly string[], invoked: CliContext): Promise<number> {
+  const ctx: CliContext = spec.readOnly ? { ...invoked, readOnly: true } : invoked;
   const [noun, verb] = spec.path;
   switch (noun) {
     case 'init':
@@ -137,12 +144,12 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return status(args, ctx);
     case 'doctor':
       return doctor(args, ctx);
+    case 'migrate':
+      return migrate(args, ctx);
     case 'reset':
       return reset(args, ctx);
     case 'serve':
       return serve(args, ctx);
-    case 'hook':
-      return hook(args, ctx);
     case 'workflow':
       return workflowCommand(verb!, args, ctx);
     case 'run':
@@ -151,6 +158,13 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return inboxCommand(verb!, args, ctx);
     case 'staff':
       return staffCommand(verb!, args, ctx);
+    case 'work':
+      return workCommand(verb!, args, ctx);
+    case 'hooks':
+      return hooksCommand(verb!, args, ctx);
+    case 'hook':
+      // A host hook: whatever happens, the host sees success and at most a line of context.
+      return hook(args, ctx).catch(() => 0);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':
@@ -158,6 +172,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
     case 'source':
       return sourceCommand(verb!, args, ctx);
     case 'skill':
+      // `skill update` writes the committed registry lock, so like every edit of a committed project file it runs only in the main checkout.
+      if (verb === 'update' && !boolFlag(args, 'dry-run')) requireMainCheckout(bindProject(ctx), 'skill update');
       return skillCommand(verb!, args, ctx);
     case 'completion': {
       const shell = (args.flags.shell as string | undefined) ?? 'bash';

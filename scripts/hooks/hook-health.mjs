@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 /**
- * hooks/hook-health.mjs — self-monitors the other hooks. A hook that fails
- * repeatedly gets recorded and surfaced via `construct doctor`; it is never
- * allowed to block tool use. This is the direct fix for the predecessor's
- * broken-hook outages, where a crashing hook wedged every tool call in the
- * session. Tracks failures in a per-repo state file, not global state.
+ * hooks/hook-health.mjs — records consecutive failures of this repository's
+ * own development hooks in a per-repo state file, never global state. A hook
+ * that records here never blocks tool use or a commit. Nothing reads the file
+ * automatically; it is a counter a person or a check can inspect.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';

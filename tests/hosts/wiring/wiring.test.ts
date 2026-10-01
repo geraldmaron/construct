@@ -39,6 +39,31 @@ test('every wirable client writes its documented file with a bound serve entry',
   }
 });
 
+test('a legacy-named construct serve entry is rewritten to the canonical name', () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-wiring-'));
+  try {
+    mkdirSync(join(root, '.cursor'));
+    writeFileSync(
+      join(root, '.cursor', 'mcp.json'),
+      JSON.stringify({
+        mcpServers: {
+          'construct-mcp': { command: 'node', args: ['/pkg/bin/construct.mjs', 'serve'] },
+          other: { command: 'x' },
+        },
+      }),
+      'utf8',
+    );
+    const state = installWiring('cursor', root);
+    assert.equal(state.status, 'installed');
+    assert.match(state.detail, /replaced duplicate construct-mcp/);
+    const file = JSON.parse(readFileSync(state.path, 'utf8')) as { mcpServers: Record<string, { args?: string[] }> };
+    assert.deepEqual(Object.keys(file.mcpServers).sort(), ['construct', 'other']);
+    assert.ok(file.mcpServers.construct!.args?.some((a) => a.startsWith('--project=')));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('other servers in the file survive; a malformed file is reported, not overwritten', () => {
   const root = mkdtempSync(join(tmpdir(), 'construct-wiring-'));
   try {

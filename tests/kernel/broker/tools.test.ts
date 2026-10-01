@@ -43,19 +43,23 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
   try {
     const boot = (await call(fx, 'bootstrap')) as Record<string, unknown>;
     assert.ok(JSON.stringify(boot).length < 4000, 'bootstrap stays bounded');
-    assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
+    assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'coordination', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
     assert.equal((boot.registry as { skills: number }).skills, 17);
     assert.match(boot.next as string, /listen/);
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
     const cls = (await call(fx, 'classify_request', { text: 'What does this function do?' })) as { class: string };
     assert.equal(cls.class, 'answer');
+    const rewrite = (await call(fx, 'classify_request', { text: 'I want you to rewrite the X document, naming it Y.' })) as { class: string; suggestedWorkflows: { id: string }[]; judgment: { challenge: boolean } };
+    assert.equal(rewrite.class, 'manage');
+    assert.ok(rewrite.suggestedWorkflows.length > 0);
     assert.equal(listActivity(fx.broker.store).length, 0, 'classifying records nothing');
     const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as { remembered: { id: string }; nothingElseCreated: boolean };
     assert.equal(remembered.nothingElseCreated, true);
     assert.equal(listStatements(fx.broker.store).filter((s) => s.kind === 'decision').length, 1);
     assert.equal((await call(fx, 'run_status', { runId: 'nope' }).catch((e: Error) => e.message)), 'no run nope');
-    const ctxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as unknown[];
-    assert.equal(ctxRead.length, 1);
+    const constCtxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as { items: unknown[]; total: number };
+    assert.equal(constCtxRead.items.length, 1);
+    assert.equal(constCtxRead.total, 1);
   } finally {
     fx.cleanup();
   }
@@ -81,7 +85,7 @@ test('the interactive lifecycle: classify, start, claim, submit, status, promote
     const again = (await call(fx, 'claim_work', { runId: started.run.id })) as { work: { stepRunId: string; owner: string; token: number } };
     const ok = (await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: { principles: ['keep the kernel host-agnostic'], targetSummary: 'the state module', unknownPrinciples: [] }, evidence: [{ ref: 'docs/design.md' }] })) as { step: { state: string } };
     assert.equal(ok.step.state, 'succeeded');
-    assert.equal((await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: {} }).catch((e: Error) => e.message)), `step ${again.work.stepRunId} is not held under this owner and token; claim it again`);
+    assert.equal((await call(fx, 'submit_work', { stepRunId: again.work.stepRunId, owner: again.work.owner, token: again.work.token, output: {} }).catch((e: Error) => e.message)), `step ${again.work.stepRunId} is not held by this session under that token; claim it again`);
     const status = (await call(fx, 'run_status', { runId: started.run.id })) as { run: { state: string }; steps: { step: string; state: string }[] };
     assert.equal(status.run.state, 'running');
     assert.equal(status.steps.find((s) => s.step === 'gather')!.state, 'succeeded');
@@ -101,7 +105,7 @@ test('the headless surface claims and submits but cannot decide, remember, or st
     assert.equal(claimed.work, null);
     assert.equal(claimed.waitingOn.kind, 'nothing_ready');
     for (const forbidden of HEADLESS_FORBIDDEN) assert.ok(!toolsFor('headless').some((t) => t.name === forbidden), forbidden);
-    assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', owner: 'runner:ci', token: 1 }).catch((e: Error) => e.message)), 'step x is not held under this owner and token');
+    assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', token: 'not-the-lease' }).catch((e: Error) => e.message)), 'step x is not held by this session under that token');
   } finally {
     fx.cleanup();
   }

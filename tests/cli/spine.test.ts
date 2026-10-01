@@ -29,7 +29,8 @@ test('init creates the exact layout, one database, the ignore rule, and plants t
     assert.match(readFileSync(join(box.cwd, '.gitignore'), 'utf8'), /\.construct\/state\//);
     assert.ok(existsSync(join(skillsDir, 'construct', 'SKILL.md')));
     assert.match(out, /still to answer \(3\)/);
-    assert.match(out, /proposal\(s\), each with its source/);
+    assert.match(out, /unanswered fields recorded as unknowns/);
+    assert.doesNotMatch(out, /each with its source/);
     assert.equal(existsSync(join(box.home, '.data')), false, 'no per-user data directory is created');
     const lock = JSON.parse(readFileSync(join(box.cwd, '.construct', 'registry.lock.json'), 'utf8'));
     assert.equal(Object.keys(lock.skills).length, 17);

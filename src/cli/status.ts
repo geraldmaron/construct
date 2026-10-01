@@ -1,6 +1,7 @@
 /**
  * cli/status.ts — where this project stands: completeness, work in flight,
- * decisions waiting, source health, registry lock, drift. One state universe.
+ * decisions waiting, source health, registry lock, drift, and the sessions
+ * present. One state universe.
  */
 
 import { listActiveRuns } from '../kernel/state/runs.ts';
@@ -16,10 +17,12 @@ import { emptyLock } from '../kernel/project/lock.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { createContext, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
+import { presentSessions } from '../kernel/coord/awareness.ts';
+import { MAIN_LANE } from '../kernel/work/leases.ts';
 
 export const STATUS_SPEC: CommandSpec = {
   path: ['status'],
-  gloss: 'where this project stands: setup, work, decisions, sources, registry, drift',
+  gloss: 'where this project stands: setup, work, decisions, sources, registry, drift, sessions',
   group: 'Inspect',
   positionals: [],
   flags: [],
@@ -34,6 +37,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     const runs = listActiveRuns(store);
     const decisions = listOpenDecisions(store);
     const drift = listDriftFindings(store, { status: 'open' });
+    const present = presentSessions(store, { now: at });
     const lock = files.lock;
     const rows = lockStatus(lock ?? emptyLock(), createSkillRegistry({ projectDir: layout.skillsDir }).list(), createWorkflowRegistry({ projectDir: layout.workflowsDir }).list());
     const skew = rows.filter((r) => r.state !== 'current');
@@ -46,6 +50,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       sources,
       registry: { skills: lock ? Object.keys(lock.skills).length : 0, workflows: lock ? Object.keys(lock.workflows).length : 0, skew: skew.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) },
       drift: { open: drift.length },
+      sessions: present.map((p) => ({ id: p.id, host: p.host, client: p.client, lane: p.lane, branch: p.branch, lastSeenAt: p.lastSeenAt, agents: p.agents, holds: p.holds })),
       habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
     };
     if (args.json) {
@@ -59,6 +64,11 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     say(`  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`);
     say(`  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`);
     say(`  drift: ${drift.length === 0 ? 'nothing open' : `${String(drift.length)} finding(s) open`}`);
+    say(`  sessions: ${present.length === 0 ? 'none present' : `${String(present.length)} present`}`);
+    for (const p of present) {
+      const where = p.lane === MAIN_LANE ? 'main checkout' : esc(p.lane);
+      say(`    ${esc(p.id)}  ${esc(p.client ?? p.host)}  ${where}${p.branch ? ` on ${esc(p.branch)}` : ''}  ${String(p.holds)} claim(s)  seen ${p.lastSeenAt}`);
+    }
     const h = record.habits;
     say(`  last 7 days: ${String(h.answersChecked)} answer(s) checked (${String(h.answersClean)} clean), ${String(h.uncheckedCaught)} unchecked answer(s) caught, ${String(h.readsRecorded)} host read(s) recorded, ${String(h.checksWaived)} check(s) waived`);
     return 0;

@@ -23,6 +23,9 @@ import {
 } from '../state/profile.ts';
 import { addEntity, addRelation, findEntityByRef, listRelations } from '../state/graph.ts';
 import { listOpenDecisions, raiseDecision, resolveDecision, type Decision } from '../state/decisions.ts';
+import { bindGoverningStatement } from '../state/admission.ts';
+import type { DecisionChannel } from '../policy/channels.ts';
+import { appendActivity } from '../state/activity.ts';
 import type { Constitution } from './constitution.ts';
 import type { DiscoveryDraft, OnboardingQuestion } from './discovery.ts';
 
@@ -64,7 +67,21 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
     for (const s of draft.statements) {
       if (existing.some((e) => e.kind === s.kind && e.text === s.text)) continue;
       proposed.push(
-        addStatement(store, { id: nextId('st'), kind: s.kind, text: s.text, term: s.term, provenance: 'discovery', at }),
+        addStatement(store, {
+          id: nextId('st'),
+          kind: s.kind,
+          text: s.text,
+          term: s.term,
+          provenance: 'discovery',
+          locator: s.provenance.path,
+          span: { startLine: s.provenance.line },
+          excerpt: s.provenance.excerpt,
+          sourceRevision: s.provenance.contentDigest,
+          extractorVersion: s.provenance.extractorVersion,
+          contentDigest: s.provenance.contentDigest,
+          quoted: s.provenance.quoted === true,
+          at,
+        }),
       );
     }
     for (const c of draft.canonicalArtifacts) {
@@ -145,6 +162,14 @@ function isOnboardingSubject(subject: unknown, id: OnboardingQuestion['id']): bo
   return subject !== null && typeof subject === 'object' && (subject as { onboarding?: string }).onboarding === id;
 }
 
+function unknownResolvedByProfile(text: string, profile: ProjectProfile | null, answers: OnboardingAnswers): boolean {
+  if (text === 'purpose' && Boolean(answers.purpose || profile?.purpose)) return true;
+  if (text === 'primary outcome' && Boolean(answers.primaryOutcome || profile?.primaryOutcome)) return true;
+  if (text === 'risk posture' && Boolean(profile?.riskPosture)) return true;
+  if (text === 'review cadence' && Boolean(profile?.reviewCadence)) return true;
+  return false;
+}
+
 export interface OnboardingAnswers {
   readonly scale?: ProjectScale;
   readonly primaryOutcome?: string;
@@ -161,9 +186,9 @@ export interface OnboardingAnswers {
  */
 export function applyOnboardingAnswers(
   store: StateStore,
-  input: { readonly answers: OnboardingAnswers; readonly by: string; readonly at: string; readonly nextId: (prefix: string) => string },
+  input: { readonly answers: OnboardingAnswers; readonly by: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly channel?: DecisionChannel },
 ): { readonly profile: ProjectProfile; readonly confirmed: readonly Statement[]; readonly missing: readonly string[] } {
-  const { answers, by, at, nextId } = input;
+  const { answers, by, at, nextId, channel } = input;
   if (answers.scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(answers.scale)) {
     throw new Error(`scale must be one of ${PROJECT_SCALES.join(' | ')}`);
   }
@@ -179,6 +204,11 @@ export function applyOnboardingAnswers(
       confirmed.push(addStatement(store, { id: nextId('st'), kind: 'constraint', text: text.trim(), provenance: 'user', at }));
     }
     let profile = upsertProfile(store, patch, at);
+    for (const unknown of listStatements(store, { kind: 'unknown', status: 'proposed' })) {
+      if (unknownResolvedByProfile(unknown.text, profile, answers)) {
+        setStatementStatus(store, { id: unknown.id, status: 'retired', at });
+      }
+    }
     retireAnsweredUnknowns(store, at);
     const missing = missingProfileFields(profile);
     if (missing.length === 0 && profile.onboardingState !== 'confirmed') {
@@ -186,10 +216,10 @@ export function applyOnboardingAnswers(
     }
     for (const d of listOpenDecisions(store)) {
       if (d.kind !== 'clarification') continue;
-      if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at });
-      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at });
+      if (answers.scale && isOnboardingSubject(d.subject, 'scale')) resolveDecision(store, { id: d.id, resolution: answers.scale, by, at, channel });
+      if (answers.primaryOutcome && isOnboardingSubject(d.subject, 'primary_outcome')) resolveDecision(store, { id: d.id, resolution: answers.primaryOutcome, by, at, channel });
       if (answers.protectedConstraints && answers.protectedConstraints.length > 0 && isOnboardingSubject(d.subject, 'protected_constraints')) {
-        resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at });
+        resolveDecision(store, { id: d.id, resolution: [...answers.protectedConstraints], by, at, channel });
       }
     }
     return { profile, confirmed, missing };
@@ -197,12 +227,85 @@ export function applyOnboardingAnswers(
 }
 
 /** A person accepts one proposed statement; nothing else can. */
-export function acceptProposal(store: StateStore, statementId: string, at: string): Statement {
-  return setStatementStatus(store, { id: statementId, status: 'confirmed', at });
+export function acceptProposal(
+  store: StateStore,
+  statementId: string,
+  at: string,
+  nextId: (prefix: string) => string,
+): Statement {
+  const statement = setStatementStatus(store, { id: statementId, status: 'confirmed', at });
+  bindGoverningStatement(store, statement, at, nextId);
+  return statement;
 }
 
 export function declineProposal(store: StateStore, statementId: string, at: string): Statement {
   return setStatementStatus(store, { id: statementId, status: 'retired', at });
+}
+
+export type InboxRow =
+  | {
+      readonly kind: 'inbox_item';
+      readonly id: string;
+      readonly decisionKind: Decision['kind'];
+      readonly question: string;
+      readonly options: readonly string[] | null;
+      readonly raisedAt: string;
+      readonly run: string | null;
+    }
+  | {
+      readonly kind: 'proposal';
+      readonly id: string;
+      readonly statementKind: Statement['kind'];
+      readonly question: string;
+      readonly options: readonly ['confirm', 'retire'];
+      readonly text: string;
+      readonly raisedAt: string;
+      readonly run: null;
+    };
+
+/** Decisions waiting on the person, plus proposed statements they have not reviewed. */
+export function listInbox(store: StateStore, runId?: string): InboxRow[] {
+  const decisions: InboxRow[] = listOpenDecisions(store, runId).map((d) => ({
+    kind: 'inbox_item',
+    id: d.id,
+    decisionKind: d.kind,
+    question: d.question,
+    options: d.options,
+    raisedAt: d.raisedAt,
+    run: d.runId,
+  }));
+  if (runId) return decisions;
+  const proposals: InboxRow[] = listStatements(store, { status: 'proposed' }).map((s) => ({
+    kind: 'proposal',
+    id: s.id,
+    statementKind: s.kind,
+    question: `Accept this ${s.kind.replace(/_/g, ' ')}?`,
+    options: ['confirm', 'retire'] as const,
+    text: s.text,
+    raisedAt: s.createdAt,
+    run: null,
+  }));
+  return [...decisions, ...proposals];
+}
+
+/**
+ * Confirm or retire a proposed statement, recording who answered and on which
+ * channel. A relayed confirmation is allowed and recorded as relayed.
+ */
+export function resolveProposal(
+  store: StateStore,
+  input: { readonly id: string; readonly resolution: string; readonly at: string; readonly nextId: (prefix: string) => string; readonly by: string; readonly channel: DecisionChannel },
+): Statement {
+  const answer = input.resolution.trim().toLowerCase();
+  const confirm = answer === 'confirm' || answer === 'accept' || answer === 'yes';
+  if (!confirm && answer !== 'retire' && answer !== 'decline' && answer !== 'no') {
+    throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
+  }
+  return store.transaction(() => {
+    const statement = confirm ? acceptProposal(store, input.id, input.at, input.nextId) : declineProposal(store, input.id, input.at);
+    appendActivity(store, { at: input.at, kind: 'proposal.resolved', actor: input.by, payload: { statementId: statement.id, kind: statement.kind, status: statement.status, channel: input.channel } });
+    return statement;
+  });
 }
 
 export interface OnboardingStatus {
@@ -217,7 +320,13 @@ export function onboardingStatus(store: StateStore): OnboardingStatus {
   return {
     state: profile?.onboardingState ?? 'incomplete',
     missing: missingProfileFields(profile),
-    openQuestions: listOpenDecisions(store).filter((d) => d.kind === 'clarification' && (isOnboardingSubject(d.subject, 'scale') || isOnboardingSubject(d.subject, 'primary_outcome') || isOnboardingSubject(d.subject, 'protected_constraints'))),
+    openQuestions: listOpenDecisions(store).filter(
+      (d) =>
+        d.kind === 'clarification' &&
+        (isOnboardingSubject(d.subject, 'scale') ||
+          isOnboardingSubject(d.subject, 'primary_outcome') ||
+          isOnboardingSubject(d.subject, 'protected_constraints')),
+    ),
     proposalsAwaitingReview: listStatements(store, { status: 'proposed' }).length,
   };
 }
@@ -240,7 +349,9 @@ export function composeConstitution(store: StateStore, base: Constitution): Cons
   const profile = getProfile(store);
   const confirmed = listStatements(store, { status: 'confirmed' });
   const answered = answeredUnknowns(profile, confirmed);
-  const unknowns = listStatements(store, { kind: 'unknown' }).filter((s) => s.status !== 'retired' && s.status !== 'superseded' && !answered.has(s.text));
+  const unknowns = listStatements(store, { kind: 'unknown' }).filter(
+    (s) => s.status !== 'retired' && s.status !== 'superseded' && !unknownResolvedByProfile(s.text, profile, {}) && !answered.has(s.text),
+  );
   const out: Record<string, unknown> = { ...base };
   if (profile) {
     out.name = profile.name ?? base.name;

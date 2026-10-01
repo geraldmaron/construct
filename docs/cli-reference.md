@@ -35,7 +35,7 @@ Reads only: no.
 
 ### `construct status`
 
-where this project stands: setup, work, decisions, sources, registry, drift
+where this project stands: setup, work, decisions, sources, registry, drift, sessions
 
 Reads only: yes.
 
@@ -192,7 +192,7 @@ plant a shipped skill into a host’s skills directory, byte for byte
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
 | `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
-| `--force` | no | overwrite a copy that differs |
+| `--force` | no | overwrite a copy that someone changed; an earlier release is replaced without it |
 
 Reads only: no.
 
@@ -327,6 +327,234 @@ print the cron line or CI job that fires a trigger
 
 Reads only: yes.
 
+## Work
+
+### `construct work list`
+
+query work items
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--status` | yes | filter by status |
+| `--parent` | yes | only the direct children of this work item |
+| `--kind` | yes | filter by kind |
+| `--query` | yes | filter by text or id |
+| `--limit` | yes | page size (default 50) |
+
+Reads only: yes.
+
+### `construct work show <id>`
+
+one work item, including legacy-id lookup
+
+Reads only: yes.
+
+### `construct work ready`
+
+work that can be claimed now
+
+Reads only: yes.
+
+### `construct work add <title>`
+
+file a work item; it is open when it has a reason, proposed otherwise
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--kind` | yes | outcome, task, defect, or plan (default task) |
+| `--description` | yes | body of the item |
+| `--parent` | yes | the work item this one is part of |
+| `--serves` | yes | the decision, requirement, initiative, or metric it serves (entity or statement id) |
+| `--blocked-by` | yes, repeatable | work that must finish before this is ready (repeatable) |
+| `--related` | yes, repeatable | work that gives context without blocking (repeatable) |
+| `--accept` | yes, repeatable | an acceptance criterion; repeat for each (update replaces the list) |
+| `--risk` | yes | what could go wrong |
+| `--source` | yes, repeatable | a source whose refresh sends this back for requalification (repeatable) |
+
+Reads only: no.
+
+### `construct work update <id>`
+
+change an item’s title, description, acceptance criteria, risk, or premise sources
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--title` | yes | new title |
+| `--description` | yes | new body |
+| `--accept` | yes, repeatable | an acceptance criterion; repeat for each (update replaces the list) |
+| `--risk` | yes | what could go wrong |
+| `--source` | yes, repeatable | a source whose refresh sends this back for requalification (repeatable) |
+| `--clear-accept` | no | remove every acceptance criterion |
+| `--revision` | yes | expected revision (default: the current one) |
+
+Reads only: no.
+
+### `construct work requalify <id>`
+
+clear a stale-premise mark once the work was checked against what changed
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | what was checked |
+
+Reads only: no.
+
+### `construct work link <id>`
+
+give an item a parent, a reason it serves, or dependencies; a proposed item that gains a reason is admitted
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--parent` | yes | the work item this one is part of |
+| `--serves` | yes | the decision, requirement, initiative, or metric it serves (entity or statement id) |
+| `--blocked-by` | yes, repeatable | work that must finish before this is ready (repeatable) |
+| `--related` | yes, repeatable | work that gives context without blocking (repeatable) |
+
+Reads only: no.
+
+### `construct work unlink <id>`
+
+remove an item’s parent or dependencies
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--parent` | no | remove the parent |
+| `--blocked-by` | yes, repeatable | a blocking item to remove (repeatable) |
+| `--related` | yes, repeatable | a related item to remove (repeatable) |
+
+Reads only: no.
+
+### `construct work admit <id>`
+
+move proposed work into the backlog; the person admits anything, others only work with a reason
+
+Reads only: no.
+
+### `construct work claim <id>`
+
+claim a ready item for this session; with --token, renew your claim
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--until` | yes | ISO timestamp when the claim expires |
+| `--revision` | yes | expected revision |
+| `--token` | yes | the token your earlier claim returned, to renew it |
+| `--paths` | yes | comma-separated files or directories (ending in /) to reserve, relative to the repository root |
+| `--shared` | no | reserve the paths shared rather than exclusive |
+
+Reads only: no.
+
+### `construct work check`
+
+whether paths are reserved by other work; exits 1 on a collision in this checkout
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--paths` | yes | comma-separated files or directories, relative to the repository root |
+| `--staged` | no | check the files staged for commit |
+| `--work` | yes | your own work item, left out of the check |
+
+Reads only: yes.
+
+### `construct work handoff <id>`
+
+offer your claimed work to the next holder, saying where it stands
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--token` | yes | the token your claim returned |
+| `--state` | yes | where the work stands |
+| `--next` | yes | the next concrete step |
+| `--watch-out` | yes | something the next holder should know |
+| `--question` | yes | a question still open |
+| `--to` | yes | the claimant or session to offer it to (default: anyone) |
+| `--branch` | yes | the branch the work is on |
+| `--commit` | yes | the commit it stands at |
+
+Reads only: no.
+
+### `construct work accept <id>`
+
+accept a handoff: the claim and a new token become yours
+
+Reads only: no.
+
+### `construct work offers`
+
+handoffs waiting to be accepted
+
+Reads only: yes.
+
+### `construct work takeover <id>`
+
+take over a claim whose holder expired, ended, or went quiet
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why the claim is being taken over |
+
+Reads only: no.
+
+### `construct work release <id> <token>`
+
+release a claim
+
+Reads only: no.
+
+### `construct work complete <id>`
+
+complete claimed or owned work
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is complete |
+| `--token` | yes | claim token if held |
+
+Reads only: no.
+
+### `construct work reopen <id>`
+
+reopen completed or cancelled work with a reason
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is open again |
+
+Reads only: no.
+
+### `construct work cancel <id>`
+
+cancel work with a reason
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | why it is cancelled |
+| `--token` | yes | claim token, when the work is claimed |
+
+Reads only: no.
+
+### `construct work export <file>`
+
+write a versioned snapshot of work (not live state)
+
+Reads only: yes.
+
+### `construct work restore <file>`
+
+restore a snapshot; never restores grants or live leases
+
+Reads only: no.
+
+### `construct work import-legacy <file>`
+
+one-way import of a frozen tracker JSONL snapshot
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--dry-run` | no | report mapping without writing |
+
+Reads only: no.
+
 ## Runs
 
 ### `construct run list`
@@ -363,19 +591,19 @@ Reads only: no.
 
 ### `construct inbox list`
 
-decisions, approvals, and questions waiting on you
+approvals, questions, and proposed statements waiting on you
 
 Reads only: yes.
 
 ### `construct inbox show <id>`
 
-one decision with everything behind it
+one inbox item with everything behind it
 
 Reads only: yes.
 
 ### `construct inbox resolve <id> <answer>`
 
-answer a decision; an approval covers exactly the action asked about
+answer a decision or confirm or retire a proposal
 
 Reads only: no.
 
@@ -450,18 +678,56 @@ speak MCP over stdio for the host that launched it, bound to this project
 
 Reads only: no.
 
-### `construct hook <event>`
+### `construct hooks install`
 
-handle a host lifecycle event (post-tool | stop | session-start); hosts run it, people rarely do
+install an opt-in hook: --git adds a pre-commit guard; --host=claude-code adds session-start and after-edit notes
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
-| `--client` | yes | which host sent the event (default: claude-code) |
-| `--project` | yes | the project root (default: the event's cwd, then the working directory) |
+| `--git` | no | the git pre-commit guard (warns, never blocks) |
+| `--host` | yes | a host hook pack for this checkout: claude-code |
+
+Reads only: no.
+
+### `construct hooks uninstall`
+
+remove a hook Construct installed, restoring what was there
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--git` | no | the git pre-commit guard |
+| `--host` | yes | the host hook pack for this checkout: claude-code |
+
+Reads only: no.
+
+### `construct hooks list`
+
+the hooks Construct installed here, and whether each is intact
+
+Reads only: yes.
+
+### `construct hook <host-or-event> [event]`
+
+run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--client` | yes | grounding hooks: which host sent the event (default: claude-code) |
+| `--project` | yes | grounding hooks: the project root (default: the event's cwd, then the working directory) |
 
 Reads only: no.
 
 ## Recover
+
+### `construct migrate`
+
+upgrade this project’s state from an older format, after writing a backup beside it; stop every Construct session on this project first
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--force` | no | upgrade even while another process has the state open |
+
+Reads only: no.
 
 ### `construct reset`
 
@@ -472,6 +738,7 @@ name the Construct-owned files that would be removed; with --confirm, remove exa
 | `--confirm` | no | remove the named targets |
 | `--include-project-files` | no | also remove the committed .construct files, not only runtime state |
 | `--keep-state` | no | do not recreate state after removing |
+| `--force` | no | remove the state even while another process has it open |
 
 Reads only: no.
 

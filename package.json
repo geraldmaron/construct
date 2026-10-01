@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "3.0.0-alpha.25",
+  "version": "3.0.0-alpha.26",
   "description": "A project-bound, capability-aware operating layer for agent hosts: it learns what a project is, remembers authoritative context and constraints, resolves the skills and workflows an outcome needs, detects drift, and does permitted work through the host you already use.",
   "type": "module",
   "license": "Apache-2.0",
@@ -46,10 +46,9 @@
     "test": "node --test \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "lint": "node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/lint-skill-spec.mjs && node scripts/lint-skill-policy.mjs && node scripts/lint-terminal-escape.mjs && node scripts/lint-docs-index.mjs && node scripts/lint-doc-commands.mjs && node scripts/lint-doc-bead-refs.mjs && node scripts/lint-lockfile-version.mjs && node scripts/generate-registry-index.mjs --check && node scripts/generate-docs.mjs --check",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json",
     "prepack": "npm run build",
     "smoke": "bash scripts/smoke-packaged-install.sh",
-    "reconcile": "node scripts/reconcile-tracker.mjs",
     "registry:index": "node scripts/generate-registry-index.mjs",
     "docs:generate": "node scripts/generate-docs.mjs",
     "conformance": "node scripts/conformance.mjs",
@@ -58,5 +57,8 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0"
   }
 }

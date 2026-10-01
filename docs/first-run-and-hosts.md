@@ -53,10 +53,82 @@ persistence, permissions, or side effects and your words did not settle it.
 
 ## The host that is in front of you wins
 
-Construct never switches hosts, spawns another agent, or spends through
-another executor because one is installed. Work happens in the session you
-are in. A headless runner exists only when you configure one, and it cannot
-decide, grant, remember, or finalize anything.
+Construct never switches the lead host or spends through another executor
+because one is installed. [Bounded local delegation](bounded-delegation.md)
+is opt-in and requires explicit executor/model configuration and matching
+live permission evidence. All adapters are disabled by default. A headless
+runner cannot decide, grant, remember, finalize, or recursively delegate.
+
+## Several agents in one project
+
+You can work in one project from several sessions at once, in the same host
+or different ones, and a host can run several agents inside one session.
+Construct keeps them from stepping on each other:
+
+- Every session is recorded under an id Construct gives it, and what it does
+  is recorded against that session, as the model acting, never as you.
+- A work item is claimed before it is edited. A claim belongs to one session
+  and one agent, returns a token only that claimant sees, and needs the token
+  to renew, complete, or release it. Another session's claim is refused until
+  it expires or that session goes quiet for two hours; taking it over records
+  why.
+- A claim can reserve the files or directories it will change. In one
+  checkout, another claim cannot take a path someone holds exclusively; in
+  another worktree the overlap comes back as a merge risk naming that
+  checkout and branch, because each worktree has its own copy of the files.
+  Reservations end with the claim, and are judged per work item: two agents
+  a host cannot tell apart are still two writers. A reserved path is spelled
+  plainly (no spaces, at most 512 bytes), so a file whose name has spaces is
+  reserved through its directory. Taking over or accepting work releases any
+  inherited reservation another claim already holds in the new checkout.
+  `construct work check --paths=...` or
+  `--staged` says what is reserved before you edit or commit, and exits 1 on
+  a collision in this checkout.
+- An agent that never calls Construct can still sweep a peer's file into a
+  commit. `construct hooks install --git` adds a pre-commit guard that warns
+  when a staged file is reserved by other work in the same checkout. It never
+  blocks a commit, keeps any pre-commit hook you already had running after
+  it, and `construct hooks uninstall --git` puts that hook back exactly.
+  Set `CONSTRUCT_HOOKS=off` to silence it. When git's hooks live in a
+  committed directory, Construct leaves them alone; add
+  `construct work check --staged || true` there yourself.
+- In Claude Code, `construct hooks install --host=claude-code` adds two hooks
+  to the checkout's `.claude/settings.local.json`, which stays out of git: at
+  session start the agent hears who else works here and what they hold, and
+  right after it edits a file another agent holds in this checkout, it hears
+  that too, even if it never called Construct. Neither hook can block
+  anything; each always succeeds within a second and a half, says at most one
+  short line of facts, and says nothing when anything is missing or broken.
+  Hooks already in the file stay, and `construct hooks uninstall
+  --host=claude-code` puts the file back as it was. Other hosts get a pack
+  once one has been verified against them.
+- Claimed work is passed on with a handoff: the holder offers it, with its
+  token, and a packet saying where the work stands, what comes next, what to
+  watch out for, and what is still open. Whoever accepts gets the claim, a new
+  token, and its reservations in one step; nobody else can accept it after.
+  A handoff never moves an approval. `construct work offers` lists what is
+  waiting, and the packet is always shown as its author's words.
+- Sessions learn about each other on the calls they already make. Bootstrap
+  says how many other sessions are here, what they hold, and warns when one
+  works in the same checkout. After that, a result carries
+  `construct_peers` when another session or agent claimed, finished, handed
+  off, or took over work since the last call: ids, holders, paths, and times,
+  never anyone's notes. `construct status` lists the sessions present, and
+  the `sessions` and `activity` topics of project context show the detail.
+  Construct cannot interrupt a model mid-turn; a session that makes no calls
+  hears nothing until it does.
+- Git worktrees of the project share its one store in the main checkout, so
+  an agent in a worktree sees the same work. `construct init` in a worktree is
+  refused, because it would start a second store.
+- Only you approve an action that leaves the project or destroys something,
+  and only you accept or finalize a deliverable. A model relaying your words
+  cannot. When the host can show you a question from Construct itself (MCP
+  elicitation), Construct asks you there and waits a minute for your choice.
+  Otherwise, or if you decline or close it, the question waits in
+  `construct inbox` for you to answer from a terminal of your own. A host
+  hook that could answer such questions for you (Claude Code's `Elicitation`
+  or `ElicitationResult` hooks, in project, user, managed, or plugin
+  settings) turns the prompt off, because its answer would not be yours.
 
 ## Checking that it is bound
 

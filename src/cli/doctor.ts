@@ -3,15 +3,17 @@
  * looked at and what it found. A missing or broken project is never healthy.
  */
 
-import { existsSync, accessSync, constants } from 'node:fs';
+import { existsSync, accessSync, constants, realpathSync } from 'node:fs';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
-import { findProjectRoot } from '../kernel/project/discover.ts';
-import { projectLayout } from '../kernel/project/layout.ts';
+import { NoProjectError } from '../kernel/project/discover.ts';
+import { projectDbPath, projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
+import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
+import { storeProjectId } from '../kernel/state/identity.ts';
 import { listSources } from '../kernel/state/sources.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
@@ -22,7 +24,7 @@ import { inspectWiring } from '../hosts/wiring/wire.ts';
 import { inspectHooks } from '../hosts/wiring/hooks.ts';
 import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
-import { createContext, gitRootOf, type CliContext } from './context.ts';
+import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
 
 export const DOCTOR_SPEC: CommandSpec = {
@@ -42,6 +44,14 @@ interface Check {
 
 const NODE_FLOOR = [22, 18] as const;
 
+function sameFile(a: string, b: string): boolean {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch {
+    return false;
+  }
+}
+
 function nodeCheck(): Check {
   const [major, minor] = process.versions.node.split('.').map(Number);
   const ok = major! > NODE_FLOOR[0] || (major === NODE_FLOOR[0] && minor! >= NODE_FLOOR[1]);
@@ -51,13 +61,29 @@ function nodeCheck(): Check {
 export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   const checks: Check[] = [nodeCheck()];
   const floor = gitRootOf(ctx.cwd) ?? ctx.cwd;
-  const root = findProjectRoot({ start: ctx.cwd, floor });
+  let root: string | null = null;
+  let lane: Lane | null = null;
+  let bindProblem: string | null = null;
+  try {
+    const bound = bindProject(ctx);
+    root = bound.root;
+    lane = bound.lane;
+  } catch (error) {
+    if (error instanceof WorktreeBindingError) bindProblem = `${error.message}; ${error.next ?? ''}`.trim();
+    else if (!(error instanceof NoProjectError)) throw error;
+  }
 
   if (root === null) {
-    checks.push({ name: 'project', ok: false, detail: `no Construct project from ${ctx.cwd} up to ${floor}; run \`construct init\`` });
+    checks.push({ name: 'project', ok: false, detail: bindProblem ?? `no Construct project from ${ctx.cwd} up to ${floor}; run \`construct init\`` });
   } else {
-    checks.push({ name: 'project', ok: true, detail: root });
+    checks.push({ name: 'project', ok: true, detail: lane ? `${root} (this session works in the worktree ${lane.checkout}${lane.branch ? ` on ${lane.branch}` : ''}; it shares that project's store)` : root });
     const layout = projectLayout(root);
+    if (lane) {
+      const laneStore = projectDbPath(lane.root);
+      if (existsSync(laneStore) && !sameFile(laneStore, layout.dbPath)) {
+        checks.push({ name: 'worktree-store', ok: false, detail: `${laneStore} is a store inside this worktree that Construct never opens; every worktree uses ${layout.dbPath}. Remove it once its contents are not needed.` });
+      }
+    }
     const legacy = detectLegacyProjectFiles(root);
     if (legacy.length > 0) {
       checks.push({ name: 'legacy-files', ok: false, detail: `${legacy.map((t) => t.path).join(', ')}: earlier alpha files; run \`construct reset\`` });
@@ -65,7 +91,16 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     try {
       const files = readProjectFiles(root);
       const missing = (['config', 'constitution', 'sources', 'lock'] as const).filter((k) => files[k] === null);
-      checks.push({ name: 'files', ok: missing.length === 0, detail: missing.length === 0 ? 'project, constitution, sources, and lock files validate' : `missing ${missing.join(', ')}` });
+      const orphaned = lane !== null && files.config === null;
+      checks.push({
+        name: 'files',
+        ok: missing.length === 0,
+        detail: missing.length === 0
+          ? 'project, constitution, sources, and lock files validate'
+          : orphaned
+            ? `missing ${missing.join(', ')}: the main checkout has no .construct/project.json (its current commit may not carry the project files), so this worktree uses the store at ${layout.dbPath} without the project's configuration. Restore the files in ${root}, for example by checking out the branch that has them; \`construct init\` there first would give the project a new id`
+            : `missing ${missing.join(', ')}`,
+      });
       if (files.constitution) {
         const c = constitutionCompleteness(files.constitution);
         checks.push({ name: 'constitution', ok: true, detail: c.complete ? 'complete' : `incomplete: ${c.missing.join(', ')} not yet answered` });
@@ -80,7 +115,7 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         const detail = [
           `${String(rows.filter((r) => r.state === 'current').length)}/${String(rows.length)} current`,
           broken.length ? `${broken.map((r) => `${r.id} ${r.state}`).join(', ')}` : '',
-          behind.length ? `${String(behind.length)} outdated or unlocked (run init to lock)` : '',
+          behind.length ? `${String(behind.length)} outdated or unlocked (\`construct skill update\` locks them)` : '',
           problems.length ? `${String(problems.length)} bundle(s) failed to load: ${problems.map((p) => p.message).join('; ')}` : '',
         ].filter(Boolean).join('; ');
         checks.push({ name: 'registry', ok: broken.length === 0 && problems.length === 0, detail });
@@ -89,14 +124,37 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       checks.push({ name: 'files', ok: false, detail: (error as Error).message });
     }
     if (!existsSync(layout.dbPath)) {
-      checks.push({ name: 'state', ok: false, detail: `${layout.dbPath} does not exist; run \`construct init\`` });
+      checks.push({ name: 'state', ok: false, detail: `${layout.dbPath} does not exist; run \`construct init\`${lane ? ` in ${root}` : ''}` });
     } else {
       try {
         accessSync(layout.dbPath, constants.R_OK | constants.W_OK);
-        const store = openStateStore(layout.dbPath);
+        const store = openStateStore(layout.dbPath, { readOnly: true });
         try {
           const profile = getProfile(store);
-          checks.push({ name: 'state', ok: true, detail: `format 2 at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          checks.push({ name: 'state', ok: true, detail: `format ${STATE_FORMAT_VERSION} at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          const stamped = storeProjectId(store);
+          let configId: string | null = null;
+          try {
+            configId = readProjectFiles(root).config?.id ?? null;
+          } catch {
+            // The files check above already reports an unreadable project file.
+          }
+          if (stamped !== null && configId !== null) {
+            checks.push({
+              name: 'state-project',
+              ok: stamped === configId,
+              detail: stamped === configId
+                ? `the store belongs to project ${stamped}`
+                : `the store belongs to project ${stamped}, but .construct/project.json names ${configId}; one store is one project`,
+            });
+          }
+          checks.push({
+            name: 'state-concurrency',
+            ok: store.journalMode === 'wal',
+            detail: store.journalMode === 'wal'
+              ? 'WAL journal: concurrent sessions read while one writes'
+              : `${store.journalMode} journal: concurrent sessions queue for the file. The next command that writes switches it to WAL; if this persists, the filesystem refused WAL (a network or synced folder is the usual cause)`,
+          });
           // Unreachable is a state Construct reports, not a broken install, so this never fails health; it does say it.
           const active = listSources(store, { status: 'active' });
           const unreachable = active.filter((x) => x.reachability === 'unreachable').map((x) => x.id);
@@ -133,7 +191,13 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       const skill = readShippedSkill(OPERATIONAL_SKILL);
       if (skill) {
         const state = skillState(skill, dir);
-        checks.push({ name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir}: ${state.why}` });
+        const install = `construct skill install ${OPERATIONAL_SKILL} --client=${ambient.host}`;
+        const next = state.state === 'current'
+          ? ''
+          : state.state === 'diverged'
+            ? `; \`${install} --force\` replaces it with ${skill.version ?? 'the shipped copy'}, and any edits in it are lost`
+            : `; run \`${install}\` to plant ${skill.version ?? 'the shipped copy'}`;
+        checks.push({ name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir}: ${state.why}${next}` });
       }
     }
   } else {

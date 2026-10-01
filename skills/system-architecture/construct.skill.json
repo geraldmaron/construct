@@ -83,6 +83,7 @@
   "observedOn": [],
   "evals": [
     "evals/activation.json",
-    "evals/fixtures.json"
+    "evals/fixtures.json",
+    "evals/behavior.json"
   ]
 }

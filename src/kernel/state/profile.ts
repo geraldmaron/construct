@@ -160,6 +160,10 @@ const STATEMENT_TRANSITIONS: Readonly<Record<StatementStatus, readonly Statement
   retired: [],
 };
 
+export interface StatementSpan {
+  readonly startLine: number | null;
+}
+
 export interface Statement {
   readonly id: string;
   readonly kind: StatementKind;
@@ -170,8 +174,17 @@ export interface Statement {
   readonly sourceId: string | null;
   readonly runId: string | null;
   readonly supersededBy: string | null;
+  readonly locator: string | null;
+  readonly span: StatementSpan | null;
+  readonly excerpt: string | null;
+  readonly sourceRevision: string | null;
+  readonly extractorVersion: string | null;
+  readonly contentDigest: string | null;
+  readonly quoted: boolean;
   readonly createdAt: string;
   readonly updatedAt: string;
+  /** How the person's words reached Construct: relayed by a model, or on a channel of their own. Null for inferred statements. */
+  readonly channel: string | null;
 }
 
 interface StatementRow {
@@ -184,11 +197,28 @@ interface StatementRow {
   readonly source_id: string | null;
   readonly run_id: string | null;
   readonly superseded_by: string | null;
+  readonly locator: string | null;
+  readonly span_json: string | null;
+  readonly excerpt: string | null;
+  readonly source_revision: string | null;
+  readonly extractor_version: string | null;
+  readonly content_digest: string | null;
+  readonly quoted: number | null;
   readonly created_at: string;
   readonly updated_at: string;
+  readonly channel: string | null;
 }
 
 function toStatement(row: StatementRow): Statement {
+  let span: StatementSpan | null = null;
+  if (row.span_json) {
+    try {
+      const parsed = JSON.parse(row.span_json) as { startLine?: number | null };
+      span = { startLine: parsed.startLine ?? null };
+    } catch {
+      span = null;
+    }
+  }
   return {
     id: row.id,
     kind: row.kind,
@@ -199,8 +229,16 @@ function toStatement(row: StatementRow): Statement {
     sourceId: row.source_id,
     runId: row.run_id,
     supersededBy: row.superseded_by,
+    locator: row.locator,
+    span,
+    excerpt: row.excerpt,
+    sourceRevision: row.source_revision,
+    extractorVersion: row.extractor_version,
+    contentDigest: row.content_digest,
+    quoted: row.quoted === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    channel: row.channel ?? null,
   };
 }
 
@@ -218,6 +256,15 @@ export function addStatement(
     readonly provenance: StatementProvenance;
     readonly sourceId?: string;
     readonly runId?: string;
+    readonly locator?: string;
+    readonly span?: StatementSpan;
+    readonly excerpt?: string;
+    readonly sourceRevision?: string;
+    readonly extractorVersion?: string;
+    readonly contentDigest?: string;
+    readonly quoted?: boolean;
+    /** How the person's words arrived, for a statement they gave. */
+    readonly channel?: string;
     readonly at: string;
   },
 ): Statement {
@@ -233,8 +280,9 @@ export function addStatement(
   const row = store.db
     .prepare(
       `INSERT INTO statements
-         (id, kind, text, term, status, provenance, source_id, run_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+         (id, kind, text, term, status, provenance, source_id, run_id, locator, span_json, excerpt,
+          source_revision, extractor_version, content_digest, quoted, created_at, updated_at, channel)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(
       input.id,
@@ -245,8 +293,16 @@ export function addStatement(
       input.provenance,
       input.sourceId ?? null,
       input.runId ?? null,
+      input.locator ?? null,
+      input.span ? JSON.stringify(input.span) : null,
+      input.excerpt ?? null,
+      input.sourceRevision ?? null,
+      input.extractorVersion ?? null,
+      input.contentDigest ?? null,
+      input.quoted ? 1 : 0,
       input.at,
       input.at,
+      input.channel ?? null,
     ) as unknown as StatementRow;
   return toStatement(row);
 }

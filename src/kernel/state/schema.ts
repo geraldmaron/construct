@@ -1,5 +1,5 @@
 /**
- * kernel/state/schema.ts — Construct state format 2.
+ * kernel/state/schema.ts — Construct state format 4.
  *
  * One database per project. Columns that take part in policy, selection,
  * uniqueness, or a state transition are normalized and CHECKed here; JSON
@@ -35,6 +35,16 @@ export const REQUIRED_TABLES = [
   'triggers',
   'trigger_firings',
   'activity_events',
+  'work_items',
+  'work_dependencies',
+  'work_events',
+  'work_legacy_ids',
+  'work_runs',
+  'reviews',
+  'run_bindings',
+  'sessions',
+  'session_agents',
+  'path_leases',
 ] as const;
 
 export const SCHEMA_SQL = `
@@ -73,9 +83,18 @@ CREATE TABLE statements (
   provenance      TEXT NOT NULL CHECK (provenance IN ('user', 'discovery', 'workflow')),
   source_id       TEXT REFERENCES sources(id),
   run_id          TEXT REFERENCES workflow_runs(id),
-  superseded_by   TEXT REFERENCES statements(id),
-  created_at      TEXT NOT NULL,
-  updated_at      TEXT NOT NULL
+  superseded_by     TEXT REFERENCES statements(id),
+  locator           TEXT,
+  span_json         TEXT,
+  excerpt           TEXT,
+  source_revision   TEXT,
+  extractor_version TEXT,
+  content_digest    TEXT,
+  coverage_json     TEXT,
+  quoted            INTEGER NOT NULL DEFAULT 0 CHECK (quoted IN (0, 1)),
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL,
+  channel           TEXT
 );
 CREATE INDEX statements_kind_status ON statements (kind, status);
 CREATE UNIQUE INDEX statements_glossary_term ON statements (term)
@@ -112,12 +131,16 @@ CREATE TABLE source_authority (
 );
 
 CREATE TABLE source_snapshots (
-  id          TEXT PRIMARY KEY,
-  source_id   TEXT NOT NULL REFERENCES sources(id),
-  digest      TEXT NOT NULL,
-  summary     TEXT,
-  evidence_ref TEXT,
-  taken_at    TEXT NOT NULL,
+  id               TEXT PRIMARY KEY,
+  source_id        TEXT NOT NULL REFERENCES sources(id),
+  digest           TEXT NOT NULL,
+  summary          TEXT,
+  evidence_ref     TEXT,
+  inventory_digest TEXT,
+  content_digest   TEXT,
+  item_count       INTEGER,
+  coverage_json    TEXT,
+  taken_at         TEXT NOT NULL,
   UNIQUE (source_id, digest)
 );
 CREATE INDEX source_snapshots_recent ON source_snapshots (source_id, taken_at);
@@ -169,11 +192,18 @@ CREATE TABLE claims (
   sensitivity     TEXT NOT NULL CHECK (sensitivity IN ('public', 'internal', 'confidential', 'restricted')),
   confidence      REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
   status          TEXT NOT NULL CHECK (status IN ('observed', 'inferred', 'confirmed', 'superseded')),
-  observed_at     TEXT NOT NULL,
-  fresh_until     TEXT,
-  superseded_by   TEXT REFERENCES claims(id),
-  created_at      TEXT NOT NULL,
-  updated_at      TEXT NOT NULL
+  observed_at       TEXT NOT NULL,
+  fresh_until       TEXT,
+  superseded_by     TEXT REFERENCES claims(id),
+  locator           TEXT,
+  span_json         TEXT,
+  excerpt           TEXT,
+  source_revision   TEXT,
+  extractor_version TEXT,
+  content_digest    TEXT,
+  valid_at          TEXT,
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL
 );
 CREATE INDEX claims_subject ON claims (subject_id, claim_type, status);
 
@@ -232,10 +262,18 @@ CREATE TABLE workflow_runs (
   state_reason      TEXT,
   created_at        TEXT NOT NULL,
   updated_at        TEXT NOT NULL,
-  finished_at       TEXT
+  finished_at       TEXT,
+  invocation_id     TEXT,
+  work_identity     TEXT,
+  work_id           TEXT,
+  workflow_digest   TEXT,
+  bindings_json     TEXT,
+  cancel_requested  INTEGER NOT NULL DEFAULT 0 CHECK (cancel_requested IN (0, 1))
 );
 CREATE INDEX workflow_runs_active ON workflow_runs (state, updated_at);
 CREATE INDEX workflow_runs_workflow ON workflow_runs (workflow_id, created_at);
+CREATE UNIQUE INDEX workflow_runs_invocation ON workflow_runs (invocation_id) WHERE invocation_id IS NOT NULL;
+CREATE INDEX workflow_runs_work_identity ON workflow_runs (work_identity, state);
 
 CREATE TABLE step_runs (
   id              TEXT PRIMARY KEY,
@@ -259,6 +297,7 @@ CREATE TABLE step_runs (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   finished_at     TEXT,
+  lease_nonce     TEXT,
   UNIQUE (run_id, step_id)
 );
 CREATE INDEX step_runs_claimable ON step_runs (state, lease_until);
@@ -304,7 +343,8 @@ CREATE TABLE decisions (
   resolution_json TEXT,
   raised_at       TEXT NOT NULL,
   resolved_at     TEXT,
-  resolved_by     TEXT
+  resolved_by     TEXT,
+  channel         TEXT
 );
 CREATE INDEX decisions_open ON decisions (state, raised_at);
 
@@ -329,6 +369,9 @@ CREATE TABLE grants (
   revoked_at      TEXT,
   revoked_reason  TEXT,
   created_at      TEXT NOT NULL,
+  run_id          TEXT,
+  step_run_id     TEXT,
+  channel         TEXT,
   CHECK (break_glass = 0 OR (reason IS NOT NULL AND ends_at IS NOT NULL AND target_resource IS NOT NULL AND executor_id IS NOT NULL)),
   CHECK (action_tier <> 'licensed_judgment')
 );
@@ -423,7 +466,10 @@ CREATE TABLE activity_events (
   run_id       TEXT,
   step_run_id  TEXT,
   actor        TEXT,
-  payload_json TEXT NOT NULL
+  payload_json TEXT NOT NULL,
+  session_id      TEXT,
+  agent           TEXT,
+  channel         TEXT
 );
 CREATE INDEX activity_run ON activity_events (run_id, id);
 CREATE TRIGGER activity_events_no_update BEFORE UPDATE ON activity_events
@@ -434,4 +480,171 @@ CREATE TRIGGER activity_events_no_delete BEFORE DELETE ON activity_events
 BEGIN
   SELECT RAISE(ABORT, 'activity_events is append-only');
 END;
+
+CREATE TABLE work_items (
+  id              TEXT PRIMARY KEY,
+  kind            TEXT NOT NULL CHECK (kind IN ('outcome', 'task', 'defect', 'plan')),
+  title           TEXT NOT NULL,
+  description     TEXT NOT NULL,
+  status          TEXT NOT NULL CHECK (status IN (
+                    'proposed', 'open', 'ready', 'claimed', 'in_progress', 'blocked',
+                    'completed', 'cancelled', 'superseded', 'historical'
+                  )),
+  scope_json      TEXT,
+  premises_json   TEXT,
+  acceptance_json TEXT,
+  risk_json       TEXT,
+  entity_id       TEXT REFERENCES entities(id),
+  parent_id       TEXT REFERENCES work_items(id),
+  superseded_by   TEXT REFERENCES work_items(id),
+  revision        INTEGER NOT NULL DEFAULT 1 CHECK (revision >= 1),
+  claim_owner     TEXT,
+  claim_token     TEXT,
+  claim_until     TEXT,
+  created_at      TEXT NOT NULL,
+  updated_at      TEXT NOT NULL,
+  completed_at    TEXT,
+  reason          TEXT,
+  claim_session   TEXT,
+  claim_agent     TEXT,
+  claim_lane      TEXT,
+  claim_touched_at TEXT,
+  handoff_json    TEXT
+);
+CREATE INDEX work_items_status ON work_items (status, updated_at);
+CREATE INDEX work_items_parent ON work_items (parent_id);
+
+CREATE TABLE work_dependencies (
+  id          TEXT PRIMARY KEY,
+  from_id     TEXT NOT NULL REFERENCES work_items(id),
+  to_id       TEXT NOT NULL REFERENCES work_items(id),
+  kind        TEXT NOT NULL CHECK (kind IN ('blocks', 'informs')),
+  created_at  TEXT NOT NULL,
+  CHECK (from_id <> to_id),
+  UNIQUE (kind, from_id, to_id)
+);
+CREATE INDEX work_deps_from ON work_dependencies (from_id, kind);
+CREATE INDEX work_deps_to ON work_dependencies (to_id, kind);
+
+CREATE TABLE work_events (
+  id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+  work_id            TEXT NOT NULL REFERENCES work_items(id),
+  at                 TEXT NOT NULL,
+  kind               TEXT NOT NULL,
+  actor              TEXT,
+  expected_revision  INTEGER,
+  payload_json       TEXT NOT NULL
+);
+CREATE INDEX work_events_work ON work_events (work_id, id);
+CREATE TRIGGER work_events_no_update BEFORE UPDATE ON work_events
+BEGIN
+  SELECT RAISE(ABORT, 'work_events is append-only');
+END;
+CREATE TRIGGER work_events_no_delete BEFORE DELETE ON work_events
+BEGIN
+  SELECT RAISE(ABORT, 'work_events is append-only');
+END;
+
+CREATE TABLE work_legacy_ids (
+  legacy_id   TEXT PRIMARY KEY,
+  work_id     TEXT NOT NULL REFERENCES work_items(id),
+  source      TEXT NOT NULL,
+  created_at  TEXT NOT NULL
+);
+CREATE INDEX work_legacy_work ON work_legacy_ids (work_id);
+
+CREATE TABLE work_runs (
+  work_id     TEXT NOT NULL REFERENCES work_items(id),
+  run_id      TEXT NOT NULL REFERENCES workflow_runs(id),
+  role        TEXT NOT NULL CHECK (role IN ('implements', 'verifies', 'reviews')),
+  created_at  TEXT NOT NULL,
+  PRIMARY KEY (work_id, run_id)
+);
+
+CREATE TABLE reviews (
+  id                TEXT PRIMARY KEY,
+  subject_kind      TEXT NOT NULL CHECK (subject_kind IN ('deliverable', 'work_item', 'artifact', 'claim', 'run')),
+  subject_id        TEXT NOT NULL,
+  subject_revision  TEXT NOT NULL,
+  method            TEXT NOT NULL,
+  reviewer          TEXT NOT NULL,
+  evidence_json     TEXT NOT NULL,
+  objections_json   TEXT NOT NULL,
+  dispositions_json TEXT NOT NULL,
+  unresolved_json   TEXT NOT NULL,
+  status            TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'invalidated')),
+  created_at        TEXT NOT NULL,
+  updated_at        TEXT NOT NULL
+);
+CREATE INDEX reviews_subject ON reviews (subject_kind, subject_id, status);
+
+CREATE TABLE run_bindings (
+  run_id              TEXT PRIMARY KEY REFERENCES workflow_runs(id),
+  workflow_id         TEXT NOT NULL,
+  workflow_version    TEXT NOT NULL,
+  workflow_digest     TEXT NOT NULL,
+  skill_bindings_json TEXT NOT NULL,
+  policy_digest       TEXT,
+  frozen_at           TEXT NOT NULL
+);
+
+-- Every host session, command-line invocation, and runner that opened this
+-- store. Construct mints the id; what a host reports about itself is kept as
+-- attributes labeled by source and never grants anything.
+CREATE TABLE sessions (
+  id                  TEXT PRIMARY KEY,
+  host                TEXT NOT NULL,
+  surface             TEXT NOT NULL CHECK (surface IN ('interactive', 'headless', 'cli', 'hook')),
+  host_session_id     TEXT,
+  host_session_source TEXT,
+  client_name         TEXT,
+  client_version      TEXT,
+  model               TEXT,
+  model_source        TEXT,
+  machine             TEXT NOT NULL,
+  pid                 INTEGER,
+  serve_version       TEXT,
+  lane_root           TEXT,
+  branch              TEXT,
+  head                TEXT,
+  started_at          TEXT NOT NULL,
+  last_seen_at        TEXT NOT NULL,
+  ended_at            TEXT,
+  end_reason          TEXT,
+  activity_cursor     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX sessions_live ON sessions (ended_at, last_seen_at);
+
+-- Agents seen inside a session (subagents, parallel agents). Attestation says
+-- whether the host vouched for the id or the agent only reported it.
+CREATE TABLE session_agents (
+  session_id      TEXT NOT NULL REFERENCES sessions(id),
+  agent           TEXT NOT NULL,
+  host_agent_id   TEXT,
+  agent_type      TEXT,
+  parent_agent    TEXT,
+  attestation     TEXT NOT NULL CHECK (attestation IN ('host', 'reported')),
+  lane_root       TEXT,
+  first_seen_at   TEXT NOT NULL,
+  last_seen_at    TEXT NOT NULL,
+  PRIMARY KEY (session_id, agent)
+);
+
+-- Advisory reservations of repository paths, held for a work item.
+CREATE TABLE path_leases (
+  id              TEXT PRIMARY KEY,
+  work_id         TEXT NOT NULL REFERENCES work_items(id),
+  session_id      TEXT NOT NULL,
+  agent           TEXT,
+  lane_root       TEXT NOT NULL,
+  branch          TEXT,
+  path            TEXT NOT NULL,
+  mode            TEXT NOT NULL CHECK (mode IN ('exclusive', 'shared')),
+  token           TEXT NOT NULL,
+  created_at      TEXT NOT NULL,
+  until           TEXT NOT NULL,
+  released_at     TEXT,
+  release_reason  TEXT
+);
+CREATE INDEX path_leases_live ON path_leases (released_at, until);
 `;

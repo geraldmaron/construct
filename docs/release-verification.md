@@ -29,9 +29,27 @@ an isolated home, and proves no per-user database appears.
    `npm run docs:generate`.
 3. Update `CHANGELOG.md`.
 4. Run the full gate on the bumped tree.
-5. Commit with the bead id. Tagging, pushing, and publishing happen only when
-   the person directs them; `npm publish --provenance --tag alpha` never
-   moves `latest`.
+5. Commit the scoped change with a plain-language invariant and no attribution
+   trailers. Push only when authorized, open a pull request to `main`, and wait
+   for its checks before merging. Confirm the merged commit's checks too.
+6. Tag that verified `main` commit with `v` followed by the package version.
+   Pushing the tag starts `.github/workflows/release.yml`: it repeats the gate
+   and publishes through npm trusted publishing using
+   `npm publish --provenance --tag alpha`. Do not publish from a different tree
+   or move `latest`.
+7. Confirm the workflow completed, npm's `alpha` tag names the new version,
+   and `latest` is unchanged. Inspect and smoke-test the published package,
+   not only a locally packed candidate.
+8. Create a GitHub prerelease for the existing tag with accurate release notes,
+   upgrade instructions, and remaining verification limits. Attach the verified
+   npm tarball and its checksum. Keep the repository README, About text,
+   changelog, and generated references consistent with the release.
+
+Tagging, pushing, merging, and publishing require the person's authorization.
+No GitHub Pages site is configured for this repository as of September 27,
+2026; its public landing surface is the repository README and release pages.
+An alpha that ships disabled adapter paths must not describe them as verified
+live cross-tool capability.
 
 ## Live host conformance
 

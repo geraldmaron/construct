@@ -103,16 +103,24 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
 
 test('the inbox lists what waits on the person and records their answer', async () => {
   await inProject(async (ctx, box) => {
-    // A fresh project with only flags answered has no open questions; a re-init without answers proposes none either.
-    const empty = await capture(() => run(['inbox', 'list'], ctx));
-    assert.match(empty.out, /nothing waits on you/);
+    // Flags answered the three questions; discovery proposals still wait.
+    const afterFlags = await capture(() => run(['inbox', 'list', '--json'], ctx));
+    const waiting = JSON.parse(afterFlags.out) as { id: string; kind: string; text?: string }[];
+    assert.ok(waiting.every((d) => d.kind === 'proposal'), 'no setup questions remain after flags');
+    assert.ok(waiting.length > 0, 'proposed statements are reachable');
+    const first = waiting[0]!;
+    const shown = await capture(() => run(['inbox', 'show', first.id], ctx));
+    assert.match(shown.out, /options: confirm \| retire/);
+    const accepted = await capture(() => run(['inbox', 'resolve', first.id, 'confirm'], ctx));
+    assert.equal(accepted.code, 0, accepted.err);
     // Reset the state and init without answers so the three onboarding questions are open.
     await capture(() => run(['reset', '--confirm'], ctx));
     await capture(() => run(['init', `--skills-dir=${join(box.home, 'skills')}`], ctx));
     const list = await capture(() => run(['inbox', 'list', '--json'], ctx));
-    const open = JSON.parse(list.out) as { id: string; question: string; options?: string[] }[];
-    assert.equal(open.length, 3);
-    const scale = open.find((d) => d.options)!;
+    const open = JSON.parse(list.out) as { id: string; kind: string; question: string; options?: string[] }[];
+    const questions = open.filter((d) => d.kind === 'inbox_item');
+    assert.equal(questions.length, 3, 'the three setup questions wait, even when proposals are also listed');
+    const scale = questions.find((d) => Array.isArray(d.options) && d.options.includes('solo'))!;
     const show = await capture(() => run(['inbox', 'show', scale.id], ctx));
     assert.match(show.out, /options: solo \| side_project/);
     const wrong = await capture(() => run(['inbox', 'resolve', scale.id, 'enormous'], ctx));
@@ -122,7 +130,7 @@ test('the inbox lists what waits on the person and records their answer', async 
     assert.equal(resolved.code, 0, resolved.err);
     assert.match(resolved.out, /recorded: /);
     const after = await capture(() => run(['inbox', 'list', '--json'], ctx));
-    assert.equal((JSON.parse(after.out) as unknown[]).length, 2);
+    assert.equal((JSON.parse(after.out) as { kind: string }[]).filter((d) => d.kind === 'inbox_item').length, 2);
     const missing = await capture(() => run(['inbox', 'show', 'nope'], ctx));
     assert.equal(missing.code, 1);
   });

@@ -1,0 +1,203 @@
+{
+  "format": "construct-registry-lock",
+  "formatVersion": 2,
+  "skills": {
+    "adversarial-review": {
+      "version": "0.3.1",
+      "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+      "origin": "builtin"
+    },
+    "construct": {
+      "version": "2.7.0",
+      "digest": "sha256:2f21097b9af050996002fbca89a26f87ec57c28e5b43ba0b2a3c1cc03d7f86fc",
+      "origin": "builtin"
+    },
+    "context-mapping": {
+      "version": "0.4.0",
+      "digest": "sha256:decff7cea183cca27095a4a848882a7da7db1129a10e468df9f4129ab5535dba",
+      "origin": "builtin"
+    },
+    "decision-framing": {
+      "version": "0.3.1",
+      "digest": "sha256:61daccfdd108504898557f85348ab4623f8419ea79076528e169bdcfbc4ad593",
+      "origin": "builtin"
+    },
+    "experience-design": {
+      "version": "1.0.1",
+      "digest": "sha256:45d589440a87309faf5fc1feea401d025751cc5ee105077429cdd0bb1dfe043c",
+      "origin": "builtin"
+    },
+    "governance-risk": {
+      "version": "1.0.1",
+      "digest": "sha256:1811a102ba8e9401b9668bef440c30b34ecbd1f3fd2c8e84ba0fb648171ee11f",
+      "origin": "builtin"
+    },
+    "intake": {
+      "version": "0.3.0",
+      "digest": "sha256:0c5763c6e98e8605bfa63d1dcbef645ed251329b8f38f01072f409259f6992e2",
+      "origin": "builtin"
+    },
+    "investigative-research": {
+      "version": "0.3.1",
+      "digest": "sha256:71b7cf346df66474ec5fd3a04518dd9ca6205c859b094c7eca1915b977529364",
+      "origin": "builtin"
+    },
+    "operations-reliability": {
+      "version": "1.0.1",
+      "digest": "sha256:3d49f56a15d153ee03fc9827823ec8bb7305d5eb51c92fe908b68d29ec987e94",
+      "origin": "builtin"
+    },
+    "product-management": {
+      "version": "1.0.1",
+      "digest": "sha256:29676a6a5a21db396f8ee2f7ad60087b50ba72a899517f77027925d226860c78",
+      "origin": "builtin"
+    },
+    "program-delivery": {
+      "version": "1.0.1",
+      "digest": "sha256:f74f69699592d695a78b9900e3e00f5418952cad1d1eaf13a7ff27c4408e7464",
+      "origin": "builtin"
+    },
+    "requirements-structuring": {
+      "version": "0.5.1",
+      "digest": "sha256:50ea1e66611967ad67973500fb0bd9307e8f673308e187fbc90f09a32f855c71",
+      "origin": "builtin"
+    },
+    "security-privacy": {
+      "version": "1.0.1",
+      "digest": "sha256:8731d1bdbc046eff94a2ba1aedcecaa503353aa687b597941b00e9313b1c7714",
+      "origin": "builtin"
+    },
+    "software-engineering": {
+      "version": "1.0.1",
+      "digest": "sha256:e34bdfb5178e59311f1ae5ad718ce47701821256bbefc564c27243f3a5d9038b",
+      "origin": "builtin"
+    },
+    "strategy-research": {
+      "version": "1.0.1",
+      "digest": "sha256:79e8d18b1657a94381778c991d1a802ced26acd4d8e190cf78686c5dd2b52498",
+      "origin": "builtin"
+    },
+    "system-architecture": {
+      "version": "1.0.1",
+      "digest": "sha256:de2c72905ba77b47c1005298f2fa98addd0c54d757c51fa2328074925305b5e3",
+      "origin": "builtin"
+    },
+    "written-voice": {
+      "version": "0.5.0",
+      "digest": "sha256:73cc3d00a5f38796b109c82c3bbbac9e2f5c2ea35f362c476b920deb3f744347",
+      "origin": "builtin"
+    }
+  },
+  "workflows": {
+    "adversarial-deliverable-review": {
+      "version": "1.0.0",
+      "digest": "sha256:29c282c876be7c652c576db28d7888139b5773a67ff9d8fcfe051a86bf444e20",
+      "origin": "builtin"
+    },
+    "architecture-decision-review": {
+      "version": "1.0.0",
+      "digest": "sha256:dd2222ff198aabf98609ddf1825fb93d8f5cd40408451088d56c03acafa189a8",
+      "origin": "builtin"
+    },
+    "delivery-plan-review": {
+      "version": "1.0.0",
+      "digest": "sha256:c52b6f212a2c0dffaab027041487c42738e987862ce0730db1f4c7eedff2e85e",
+      "origin": "builtin"
+    },
+    "design-conformance": {
+      "version": "1.0.0",
+      "digest": "sha256:8ba076e0162f895d63b7923c1afabe6341098a70aee7cffa2916023cca7e5be1",
+      "origin": "builtin"
+    },
+    "experience-review": {
+      "version": "1.0.0",
+      "digest": "sha256:9665c08782c18a43b91359131e649ed42441ac6da65aefc4043d3c5cd2f7151e",
+      "origin": "builtin"
+    },
+    "governance-issue-spotting": {
+      "version": "1.0.0",
+      "digest": "sha256:2fece2551c6bb4c217ce391827dbe5df69303d20ad81854aa9ef6cf17d62092d",
+      "origin": "builtin"
+    },
+    "implementation-review": {
+      "version": "1.0.0",
+      "digest": "sha256:0442e6f411cec53800166869b4edb4491f280f56986ca2883d284fc8c669952e",
+      "origin": "builtin"
+    },
+    "managed-outcome": {
+      "version": "1.3.0",
+      "digest": "sha256:fda3eae79344d15e6089aa3ba94de3c0cf6270f0bf6a53e3f9920d74b0379bd3",
+      "origin": "builtin"
+    },
+    "operational-readiness-review": {
+      "version": "1.0.0",
+      "digest": "sha256:2058bfd42b342a5a208279430c78f32d0b898a4c0393b3edfc33a12afa683255",
+      "origin": "builtin"
+    },
+    "prd-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:9646c279922b586d487e2182997705a8eccda49343642957dd03277178546bd1",
+      "origin": "builtin"
+    },
+    "product-requirements-review": {
+      "version": "1.0.0",
+      "digest": "sha256:a79b02d401582163283258f4d02944ff7977b86e5f25e8a964b16d7b1f8073c8",
+      "origin": "builtin"
+    },
+    "project-bootstrap": {
+      "version": "1.0.0",
+      "digest": "sha256:b080405d531050fdaced069d383cfecf4bce5894f312f04698804dd2f4fe2802",
+      "origin": "builtin"
+    },
+    "proposal-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:e44de7891112e1c9e1660a12ce89451dac12db3e039d1f60fc09a0ee724e2a5c",
+      "origin": "builtin"
+    },
+    "publish-deliverable": {
+      "version": "1.0.0",
+      "digest": "sha256:b3354daef0b46ff47cf0c73834ccc128b76798f3cb074477739b3117d88cbbbc",
+      "origin": "builtin"
+    },
+    "remember": {
+      "version": "1.0.0",
+      "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
+      "origin": "builtin"
+    },
+    "research-brief": {
+      "version": "1.0.0",
+      "digest": "sha256:74eae2e7cedb89cb55c359de280d1afdb5422b6c37c63400daadee8128038066",
+      "origin": "builtin"
+    },
+    "revise-deliverable": {
+      "version": "1.0.0",
+      "digest": "sha256:49a95b489d7df7ec6c7090cf9f0b8da9f42a3a51add9719ff43d1c4f577c5a4a",
+      "origin": "builtin"
+    },
+    "rfc-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:6d06a8d258fa137f33dfc97d09981bf61d3c0346b44e61d8ed27208a91cef954",
+      "origin": "builtin"
+    },
+    "security-privacy-review": {
+      "version": "1.0.0",
+      "digest": "sha256:1e3ef68e85223b99907c88d779ab9bc9e70beb00c9e33422d3e465b962732dbc",
+      "origin": "builtin"
+    },
+    "source-drift-review": {
+      "version": "1.0.0",
+      "digest": "sha256:71aee2891a9913acc2cdc7abf170d7624980ee678cc205ac45ab1506e2d99731",
+      "origin": "builtin"
+    },
+    "standing-review": {
+      "version": "1.0.0",
+      "digest": "sha256:2bcf938fc423f942a258c7221d4d961abffb155211d285d754b7c037044bbffb",
+      "origin": "builtin"
+    },
+    "strategy-execution-review": {
+      "version": "1.0.0",
+      "digest": "sha256:6e74f5909a7d41d46f2b6331479d0fecccee7cbaeefbfd1493dc3e628f5eb65b",
+      "origin": "builtin"
+    }
+  }
+}

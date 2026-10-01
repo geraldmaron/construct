@@ -1,19 +1,91 @@
 # Changelog
 
-## 3.0.0-alpha.25 — 2026-10-01
+## 3.0.0-alpha.26 — 2026-10-01
 
-Conformance for this version: `npm run conformance` (static, no
-credentials) 71 passed, 0 failed, 14 untested; live host calls were not
-run. The Claude Code hooks were exercised with Claude Code-shaped event
-payloads against a scratch project, not inside a live Claude Code session.
+The first published alpha since alpha.24. It adds coordination between agent
+sessions working in one project, bounded delegation (off by default), the
+native work ledger, and grounding that is checked rather than trusted: hooks
+that enforce host habits, citations that must resolve, and quality checks on
+deliverables. It also includes everything developed as 3.0.0-alpha.25, which
+was never published. It publishes under `alpha` only; `latest` stays on the
+predecessor.
 
-**Breaking for project-authored workflows.** `evidence_refs_resolve` and
-`citations_present` now check that references resolve. A workflow that
-relied on the old pass-through will see steps sent back until its
-citations name real files, sources, items, records, or web pages. After
-upgrading, every directory source reports one change on its next read,
-because fingerprints moved from size and mtime to content; that first
-change opens no drift findings.
+### Upgrading from alpha.24
+
+- **State format 4.** Stop every Construct session on the project, then run
+  `construct migrate`. It backs the store up under its upgrade lock first,
+  and refuses while another process holds the store. Read-only commands
+  refuse an older store and name the migrate step. They never upgrade it.
+- **Project-authored workflows (breaking).** `evidence_refs_resolve` and
+  `citations_present` now check that references resolve. A workflow that
+  relied on the old pass-through will see steps sent back until its
+  citations name real files, sources, items, records, or web pages.
+- **Directory sources re-fingerprint once.** Fingerprints moved from size
+  and mtime to content, so every directory source reports one change on its
+  next read; that first change opens no drift findings.
+- **Operational skill 2.7.0.** Run `construct doctor` after migrating and
+  follow its skill-update instruction before reopening agent sessions. An
+  installed copy you have not edited is replaced without `--force`.
+- **First runtime dependency.** MCP stdio framing now uses
+  `@modelcontextprotocol/server` 2.0.0 (MIT), pinned exactly. Tool contracts
+  stay in Construct.
+
+### Added
+
+- **Shared coordination across worktrees.** Every git worktree of a project
+  uses the main checkout's one store. Claims are fenced to the session that
+  holds them. A claim can reserve the paths it changes. Claimed work passes
+  on only through an accepted handoff. Sessions learn what their peers hold
+  on the calls they already make. An opt-in pre-commit guard warns about
+  reserved paths and never blocks a commit.
+- **Bounded delegation, disabled by default.** The `delegate` tool starts,
+  checks, cancels, triages, and integrates worker attempts. Workers get
+  read-only snapshots and return scoped patches. Construct validates each
+  patch in isolation, requires review, applies changes one at a time, and
+  validates the combined result. The Claude, Codex, and Cursor adapters need
+  explicit executor and model settings plus operator-recorded live evidence.
+  Installing the package enables nothing. Windows execution is blocked until
+  process-tree controls exist.
+- **Native work ledger.** `construct work` and the `work` tool query, claim,
+  complete, and restore bounded work in Construct state. An external tracker
+  is not part of the operating contract.
+- **Professional challenge on the ordinary path.** A managed outcome with
+  architectural or irreversible consequences is challenged before it can be
+  accepted. A private helper rename is not. Selection reads the request and
+  the project's scale, not a magic word.
+- **Governing memory stays live.** Remembering a decision, constraint,
+  principle, outcome, or invariant creates a graph entity. A later
+  invalidation, supersession, or contradiction shows as drift and blocks
+  treating the work as a trusted finished outcome.
+- **Backlog admission.** Work enters the backlog with a reason: an admitted,
+  unfinished parent item, an active decision, requirement, initiative, or
+  metric it serves, or the person filing it from their own terminal. A
+  session that files work without one, outcomes included, gets it back as
+  proposed: listed, but never ready or claimable until a link gives it a
+  reason or the person runs `construct work admit`. Admitting an item admits
+  its proposed children. A session roots its own work by remembering the
+  outcome or decision behind it, recorded as relayed, and serving that. Open
+  work filed before this release stays open. Observations persist without
+  becoming work, and proposed statements wait in the inbox to be confirmed
+  or retired.
+- **Structured work items.** `work add` and the `work` tool take a parent,
+  the reason the work serves, blocking and related work, acceptance
+  criteria, risk, and premise sources. `work link`, `unlink`, `update`, and
+  `admit` change them later, `work show` prints them, and
+  `work list --parent` lists an item's children. An item with open children
+  cannot be completed or cancelled, and completing work that has acceptance
+  criteria needs a reason saying how they were met. Delegated attempts are
+  cancelled with their parent; a running one holds the parent open. A
+  source refresh that changes a premise holds the work until
+  `work requalify` records what was checked; editing its sources does not
+  clear that.
+- **Convention discovery with provenance.** ADR directories and architecture
+  documents become governing proposals with locator, span, and content
+  digest. Quoted examples are not constraints. Caps report what they left
+  out.
+- **Written voice 0.5.0** ships a tell checker,
+  `skills/written-voice/scripts/voice-check.py`, and a catalog of the tells
+  it counts. The checker needs `python3`.
 
 - **Habits enforced, not hoped for.** `construct init --client=claude-code`
   installs hooks: tool results that contain issues from a declared Jira
@@ -36,36 +108,50 @@ change opens no drift findings.
   constitution's owners, and filters by owner.
 - **Plain answers can be checked.** `check_answer` runs the grounding
   checks on an answer before it is given and records nothing; the
-  operational skill (2.1.0) asks hosts to use it for facts about the project.
+  operational skill asks hosts to use it for facts about the project.
 - **Systems the host reads are tracked.** `sources` action `report` records
   what the host read from a tracker or wiki; changes there flag the work
   that cited them, quotes are checked against what was reported, and a
   partial read never implies removal. `bootstrap` lists host-read sources
   that need a report. Fixture and host-reported items now resolve as
   reported, not witnessed.
-- **What the person settles governs.** Remembered decisions that say one
-  thing supersedes another are enforced like document headers, and
-  confirmed decisions and constraints reach every step that reads.
-- **Revisions, not restarts.** `revise-deliverable` revises a deliverable as
-  a linked revision with a change summary; answering revise or re-run on a
-  stale-work question returns the outcome to offer.
-- **People decide when checks keep failing.** A load-bearing step that
-  still fails after its last attempt waits on the person (accept with the
-  named problems, another attempt, or stop) instead of failing the run. A
-  waiver is recorded and its deliverable is never marked validated.
 - **Research.** `research-brief` answers a question from project sources
   and the web, with `sources_diverse` asking for two independent places.
   Web pages resolve as reported citations; research phrasings ("look
   into", "find out", "dig into") count as work.
-- **Checks that match how people write.** Figures compare by value with
-  rounding allowed, dates and times are not figures, and figures the person
-  supplied in the request count as given. A symlink that leads outside the
-  project no longer resolves.
-- **A quieter inbox.** New files in a source raise one question per
-  refresh; changed cited items are still asked about per deliverable.
-- **Cheaper session start.** Directory reads reuse fingerprints from the
-  last recorded read when size and mtime match. `doctor` says when jira
-  sources read fixtures.
+- **Quality floors.** New validators: `excerpts_match`, `evidence_witnessed`,
+  `artifacts_exist`, `numbers_grounded` (figures must come from cited
+  sources, or be derived by arithmetic that holds over cited figures),
+  `template_conformance`, `conflicts_declared`, `superseded_acknowledged`,
+  and `decision_ask_present`. `claim_work` tells the host what each check
+  needs.
+- **Authoring workflows.** `prd-authoring`, `rfc-authoring`, and
+  `proposal-authoring` run gather, draft, challenge, record with those
+  checks. `managed-outcome` 1.3.0 checks its plan against its declared keys
+  and its work against resolvable, matching citations.
+- **Jira fixtures.** `CONSTRUCT_JIRA_FIXTURES` gives `jira` sources a reader
+  over JSON exports for testing and evaluation; reads are recorded as
+  reported.
+
+### Changed
+
+- **Only the person approves.** Accepting a deliverable, finalizing, and
+  approving an outward or destructive action need the person on every
+  surface. An answer relayed by a model is recorded as relayed, with its
+  channel. An editor's or agent host's terminal is never the person.
+- **Verification and review fail closed.** Empty, null, failed, and
+  old-revision evidence cannot pass. A step's declared outputs are the
+  contract its validators check. Frozen run bindings block silent
+  definition drift.
+- **Skill qualification follows the content digest.** The same version with
+  different bytes does not inherit an earlier quality claim.
+- **Source refresh records observed items** with content digests, separate
+  from inventory fingerprints.
+- **An MCP server answers the handshake at once,** binds when the store's
+  lock clears, and reports a project it cannot bind instead of exiting.
+- **Init says what it stored.** Unanswered profile fields are unknowns, not
+  sourced proposals. Flags that fill a field retire the matching unknown.
+
 - **Grounding is checked, not trusted.** Evidence references now resolve
   against the project as it stands (files inside the project or a directory
   source, declared sources and the items they reported, deliverables, and
@@ -76,16 +162,25 @@ change opens no drift findings.
   Citations carry provenance: witnessed (Construct opened it) or reported (a
   system only the host reads). `submit_work` returns the counts and a
   validated deliverable records them for the whole run.
-- **Quality floors.** New validators: `excerpts_match`, `evidence_witnessed`,
-  `artifacts_exist`, `numbers_grounded` (figures must come from cited
-  sources, or be derived by arithmetic that holds over cited figures),
-  `template_conformance`, `conflicts_declared`, `superseded_acknowledged`,
-  and `decision_ask_present`. `claim_work` tells the host what each check
-  needs.
-- **Authoring workflows.** `prd-authoring`, `rfc-authoring`, and
-  `proposal-authoring` run gather, draft, challenge, record with those
-  checks. `managed-outcome` 1.1.0 checks its plan against its declared keys
-  and its work against resolvable, matching citations.
+- **What the person settles governs.** Remembered decisions that say one
+  thing supersedes another are enforced like document headers, and
+  confirmed decisions and constraints reach every step that reads.
+- **Revisions, not restarts.** `revise-deliverable` revises a deliverable as
+  a linked revision with a change summary; answering revise or re-run on a
+  stale-work question returns the outcome to offer.
+- **People decide when checks keep failing.** A load-bearing step that
+  still fails after its last attempt waits on the person (accept with the
+  named problems, another attempt, or stop) instead of failing the run. A
+  waiver is recorded and its deliverable is never marked validated.
+- **Checks that match how people write.** Figures compare by value with
+  rounding allowed, dates and times are not figures, and figures the person
+  supplied in the request count as given. A symlink that leads outside the
+  project no longer resolves.
+- **A quieter inbox.** New files in a source raise one question per
+  refresh; changed cited items are still asked about per deliverable.
+- **Cheaper session start.** Directory reads reuse fingerprints from the
+  last recorded read when size and mtime match. `doctor` says when jira
+  sources read fixtures.
 - **Routing for documents.** A deliverable named as a bare noun ("PRD for
   webhooks") is work, not a question; a request with no stated output
   ("write something for Sam") confirms first. Requirements structuring,
@@ -98,12 +193,46 @@ change opens no drift findings.
   re-run, dismiss), one per run. `bootstrap` names directory sources that
   moved since their last read. A "Supersedes:" or "Status: Superseded" line
   marks a document inside a source as replaced.
-- **Jira fixtures.** `CONSTRUCT_JIRA_FIXTURES` gives `jira` sources a reader
-  over JSON exports for testing and evaluation; reads are recorded as
-  reported.
 - **Setup.** Answers given at init no longer remain listed as unknowns, and
   init reports the proposals left after them; `doctor` names unreachable and
   never-read sources.
+
+### Fixed
+
+- `construct init` no longer gives a project a new id when its project files
+  are missing but its store remains. The store records its project's id,
+  and every binding, `construct migrate`, and `construct doctor` check it.
+- Commands run in a main checkout whose current commit lacks the project
+  files now say to restore them, instead of suggesting `construct init`.
+- `status` and `doctor` read a store whose state directory this user cannot
+  write, when its write-ahead log is empty or a running session has the
+  store open. Otherwise they say what access the read needs.
+- A step lease that expires inside another session's call is recorded as the
+  kernel's act, not that session's. The holder that walked away is named.
+- The `work` tool stored a session's title as the description of work it
+  added. It now keeps the description it is given.
+- A hook able to answer a host prompt for the person is found however it is
+  written: hook files are read as JSON, so an escaped event name counts, a
+  file that cannot be read or parsed counts, and the check runs before every
+  question and again when its answer arrives, so a hook added while the
+  server runs stops the answer counting as the person's. Before, the check
+  matched raw text once at startup.
+
+### Known limitations
+
+- The Claude Code hooks were exercised with Claude Code-shaped event
+  payloads against a scratch project, not inside a live Claude Code session.
+- Two Claude Code hook packs share `construct hook`: coordination
+  (`construct hooks install --host=claude-code`, machine-local settings) and
+  grounding (`construct init --client=claude-code`, the project's
+  settings.json). Both work; they are not yet one pack, and other hosts get
+  neither until a live probe verifies their hook surfaces.
+
+- Delegation is not live-verified across Claude, Codex, and Cursor. Its six
+  directions are covered by synthetic MCP tests only.
+- Held-out live-host outcome evaluations were not run for this alpha.
+- Live host conformance is not part of CI or the release workflow. The
+  static conformance suite passes.
 
 ## 3.0.0-alpha.24 — 2026-09-02
 

@@ -1,0 +1,502 @@
+/**
+ * cli/work.ts — native work ledger: file work with its parent, reason,
+ * dependencies, and acceptance criteria; query, ready, claim, check reserved
+ * paths, hand off and accept, complete, reopen, export, restore, and one-way
+ * import of a frozen legacy tracker snapshot.
+ */
+
+import {
+  acceptWork,
+  cancelWork,
+  claimWork,
+  completeWork,
+  exportWork,
+  getWork,
+  getWorkByLegacyId,
+  handoffOf,
+  handoffWork,
+  listOffers,
+  listReady,
+  queryWork,
+  readinessOf,
+  releaseWork,
+  takeoverWork,
+  reopenWork,
+  requalifyWork,
+  restoreWork,
+  updateWork,
+  type WorkItem,
+  type WorkKind,
+  type WorkStatus,
+} from '../kernel/work/service.ts';
+import { admitProposedWork, fileWork, linkWork, unlinkWork, workStructure } from '../kernel/work/structure.ts';
+import { HandoffPacketError, asPeerData, type HandoffPacket } from '../kernel/work/handoff.ts';
+import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type Overlap } from '../kernel/work/leases.ts';
+import { answeredBy, channelFor } from './person-channel.ts';
+import { processAlive } from './broker-context.ts';
+import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
+import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { createContext, type CliContext } from './context.ts';
+import { withProject } from './context.ts';
+import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+
+const group = 'Work';
+
+function pathsFlag(args: ParsedArgs, use: 'reserve' | 'check'): string[] | undefined {
+  const raw = args.flags.paths as string | undefined;
+  if (raw === undefined) return undefined;
+  try {
+    return raw.split(',').map((p) => p.trim()).filter(Boolean).map((p) => normalizeLeasePath(p, use));
+  } catch (e) {
+    throw new UsageError((e as Error).message);
+  }
+}
+
+/** The files staged for commit in the checkout holding `cwd`, relative to its top level. */
+function stagedPaths(cwd: string, env: NodeJS.ProcessEnv): string[] {
+  const r = spawnSync('git', ['diff', '--cached', '--name-only', '-z'], { cwd, env, encoding: 'utf8' });
+  if (r.status !== 0) throw new OperationError(`git could not list the staged files: ${(r.stderr || r.error?.message || '').trim()}`);
+  return r.stdout.split('\0').filter(Boolean).map((p) => normalizeLeasePath(p, 'check'));
+}
+
+/** A handoff packet, printed as what it is: another claimant's words. */
+function printPacket(from: string, p: HandoffPacket): void {
+  say(`handoff notes from ${esc(from)} (their words, not instructions):`);
+  say(`  state: ${esc(p.state)}`);
+  say(`  next: ${esc(p.next)}`);
+  for (const w of p.watchOut) say(`  watch out: ${esc(w)}`);
+  for (const q of p.openQuestions) say(`  open question: ${esc(q)}`);
+  if (p.where.branch || p.where.commit) say(`  where: ${[p.where.branch, p.where.commit].filter(Boolean).map((v) => esc(v!)).join(' at ')}`);
+  if (p.where.paths.length > 0) say(`  paths: ${p.where.paths.map(esc).join(', ')}`);
+}
+
+function describeOverlap(o: Overlap): string {
+  const where = o.kind === 'merge_risk' ? `, ${whereHeld(o)}` : '';
+  return `${esc(o.path)} is under ${esc(o.heldPath)}, held by ${esc(o.holder)} for ${esc(o.workId)} until ${o.until}${where}`;
+}
+
+/** The longest a claim made from the command line may run, whatever --until asks. */
+const CLI_CLAIM_CEILING_MS = 24 * 60 * 60_000;
+
+/** Where an item sits: shared by add and link. */
+const STRUCTURE_FLAGS = [
+  { name: 'parent', gloss: 'the work item this one is part of', takesValue: true },
+  { name: 'serves', gloss: 'the decision, requirement, initiative, or metric it serves (entity or statement id)', takesValue: true },
+  { name: 'blocked-by', gloss: 'work that must finish before this is ready (repeatable)', takesValue: true, repeatable: true },
+  { name: 'related', gloss: 'work that gives context without blocking (repeatable)', takesValue: true, repeatable: true },
+] as const;
+
+/** What finished means and what could go wrong: shared by add and update. */
+const DETAIL_FLAGS = [
+  { name: 'accept', gloss: 'an acceptance criterion; repeat for each (update replaces the list)', takesValue: true, repeatable: true },
+  { name: 'risk', gloss: 'what could go wrong', takesValue: true },
+  { name: 'source', gloss: 'a source whose refresh sends this back for requalification (repeatable)', takesValue: true, repeatable: true },
+] as const;
+
+/** Print an item's structure under its title, skipping what it does not have. */
+function printStructure(s: ReturnType<typeof workStructure>): void {
+  const line = (w: Pick<WorkItem, 'id' | 'title' | 'status'>) => `${esc(w.id)} ${w.status} ${esc(w.title)}`;
+  if (s.admittedBy) say(`admitted: ${s.admittedBy === 'person' ? 'by the person' : `by its ${s.admittedBy === 'parent' ? 'parent' : 'reason'}`}`);
+  if (s.parent) say(`parent: ${line(s.parent)}`);
+  for (const r of s.serves) say(`serves: ${esc(r.id)} ${r.kind} ${esc(r.name)}`);
+  if (s.children.length > 0) {
+    const done = s.children.filter((c) => c.status === 'completed' || c.status === 'cancelled').length;
+    say(`children: ${String(done)} of ${String(s.children.length)} finished`);
+    for (const c of s.children) say(`  ${line(c)}`);
+  }
+  for (const b of s.blockedBy) say(`blocked by: ${line(b)}`);
+  for (const b of s.blocking) say(`blocks: ${line(b)}`);
+  for (const r of s.related) say(`related: ${line(r)}`);
+  for (const a of s.acceptance) say(`accept when: ${esc(a)}`);
+  if (s.risk) say(`risk: ${esc(s.risk)}`);
+  if (s.sources.length > 0) say(`premise sources: ${s.sources.map(esc).join(', ')}`);
+}
+
+export const WORK_SPECS: readonly CommandSpec[] = [
+  { path: ['work', 'list'], gloss: 'query work items', group, positionals: [], flags: [
+    { name: 'status', gloss: 'filter by status', takesValue: true },
+    { name: 'parent', gloss: 'only the direct children of this work item', takesValue: true },
+    { name: 'kind', gloss: 'filter by kind', takesValue: true },
+    { name: 'query', gloss: 'filter by text or id', takesValue: true },
+    { name: 'limit', gloss: 'page size (default 50)', takesValue: true },
+  ], readOnly: true },
+  { path: ['work', 'show'], gloss: 'one work item, including legacy-id lookup', group, positionals: ['<id>'], flags: [], readOnly: true },
+  { path: ['work', 'ready'], gloss: 'work that can be claimed now', group, positionals: [], flags: [], readOnly: true },
+  { path: ['work', 'add'], gloss: 'file a work item; it is open when it has a reason, proposed otherwise', group, positionals: ['<title>'], flags: [
+    { name: 'kind', gloss: 'outcome, task, defect, or plan (default task)', takesValue: true },
+    { name: 'description', gloss: 'body of the item', takesValue: true },
+    ...STRUCTURE_FLAGS,
+    ...DETAIL_FLAGS,
+  ], readOnly: false },
+  { path: ['work', 'update'], gloss: 'change an item’s title, description, acceptance criteria, risk, or premise sources', group, positionals: ['<id>'], flags: [
+    { name: 'title', gloss: 'new title', takesValue: true },
+    { name: 'description', gloss: 'new body', takesValue: true },
+    ...DETAIL_FLAGS,
+    { name: 'clear-accept', gloss: 'remove every acceptance criterion', takesValue: false },
+    { name: 'revision', gloss: 'expected revision (default: the current one)', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'requalify'], gloss: 'clear a stale-premise mark once the work was checked against what changed', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'what was checked', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'link'], gloss: 'give an item a parent, a reason it serves, or dependencies; a proposed item that gains a reason is admitted', group, positionals: ['<id>'], flags: [
+    ...STRUCTURE_FLAGS,
+  ], readOnly: false },
+  { path: ['work', 'unlink'], gloss: 'remove an item’s parent or dependencies', group, positionals: ['<id>'], flags: [
+    { name: 'parent', gloss: 'remove the parent', takesValue: false },
+    { name: 'blocked-by', gloss: 'a blocking item to remove (repeatable)', takesValue: true, repeatable: true },
+    { name: 'related', gloss: 'a related item to remove (repeatable)', takesValue: true, repeatable: true },
+  ], readOnly: false },
+  { path: ['work', 'admit'], gloss: 'move proposed work into the backlog; the person admits anything, others only work with a reason', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['work', 'claim'], gloss: 'claim a ready item for this session; with --token, renew your claim', group, positionals: ['<id>'], flags: [
+    { name: 'until', gloss: 'ISO timestamp when the claim expires', takesValue: true },
+    { name: 'revision', gloss: 'expected revision', takesValue: true },
+    { name: 'token', gloss: 'the token your earlier claim returned, to renew it', takesValue: true },
+    { name: 'paths', gloss: 'comma-separated files or directories (ending in /) to reserve, relative to the repository root', takesValue: true },
+    { name: 'shared', gloss: 'reserve the paths shared rather than exclusive', takesValue: false },
+  ], readOnly: false },
+  { path: ['work', 'check'], gloss: 'whether paths are reserved by other work; exits 1 on a collision in this checkout', group, positionals: [], flags: [
+    { name: 'paths', gloss: 'comma-separated files or directories, relative to the repository root', takesValue: true },
+    { name: 'staged', gloss: 'check the files staged for commit', takesValue: false },
+    { name: 'work', gloss: 'your own work item, left out of the check', takesValue: true },
+  ], readOnly: true },
+  { path: ['work', 'handoff'], gloss: 'offer your claimed work to the next holder, saying where it stands', group, positionals: ['<id>'], flags: [
+    { name: 'token', gloss: 'the token your claim returned', takesValue: true },
+    { name: 'state', gloss: 'where the work stands', takesValue: true },
+    { name: 'next', gloss: 'the next concrete step', takesValue: true },
+    { name: 'watch-out', gloss: 'something the next holder should know', takesValue: true },
+    { name: 'question', gloss: 'a question still open', takesValue: true },
+    { name: 'to', gloss: 'the claimant or session to offer it to (default: anyone)', takesValue: true },
+    { name: 'branch', gloss: 'the branch the work is on', takesValue: true },
+    { name: 'commit', gloss: 'the commit it stands at', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'accept'], gloss: 'accept a handoff: the claim and a new token become yours', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['work', 'offers'], gloss: 'handoffs waiting to be accepted', group, positionals: [], flags: [], readOnly: true },
+  { path: ['work', 'takeover'], gloss: 'take over a claim whose holder expired, ended, or went quiet', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'why the claim is being taken over', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'release'], gloss: 'release a claim', group, positionals: ['<id>', '<token>'], flags: [], readOnly: false },
+  { path: ['work', 'complete'], gloss: 'complete claimed or owned work', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'why it is complete', takesValue: true },
+    { name: 'token', gloss: 'claim token if held', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'reopen'], gloss: 'reopen completed or cancelled work with a reason', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'why it is open again', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'cancel'], gloss: 'cancel work with a reason', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'why it is cancelled', takesValue: true },
+    { name: 'token', gloss: 'claim token, when the work is claimed', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'export'], gloss: 'write a versioned snapshot of work (not live state)', group, positionals: ['<file>'], flags: [], readOnly: true },
+  { path: ['work', 'restore'], gloss: 'restore a snapshot; never restores grants or live leases', group, positionals: ['<file>'], flags: [], readOnly: false },
+  { path: ['work', 'import-legacy'], gloss: 'one-way import of a frozen tracker JSONL snapshot', group, positionals: ['<file>'], flags: [
+    { name: 'dry-run', gloss: 'report mapping without writing', takesValue: false },
+  ], readOnly: false },
+];
+
+export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
+  const at = ctx.now();
+  const channel = channelFor(ctx.env, ctx.terminal);
+  const actor = answeredBy(channel);
+  // A claim from the command line is the person's. A model runs work through
+  // its session's work tool, where the claim belongs to that session and agent;
+  // from here every model would share one name.
+  const personOnly = (what: string): void => {
+    if (channel !== 'tty_cli') {
+      throw new OperationError(
+        `${what} from the command line is the person's to do, and this is not a terminal of theirs`,
+        'A session claims and takes over work with the work tool, where the claim belongs to that session.',
+      );
+    }
+  };
+  return withProject(ctx, (project) => {
+    project.store.attribution.channel = channel;
+    switch (sub) {
+      case 'list': {
+        const page = queryWork(project.store, {
+          status: args.flags.status as WorkStatus | undefined,
+          kind: args.flags.kind as WorkKind | undefined,
+          query: args.flags.query as string | undefined,
+          parentId: stringFlag(args, 'parent'),
+          limit: args.flags.limit ? Number(args.flags.limit) : 50,
+        });
+        if (args.json) writeJson(page);
+        else if (page.items.length === 0) say('no work matches');
+        else {
+          for (const w of page.items) say(`${esc(w.id)}  ${w.status}  ${w.kind}  ${esc(w.title)}`);
+          if (page.truncated) say(`… ${String(page.total - page.items.length)} more (pass --limit and a query)`);
+        }
+        return 0;
+      }
+      case 'show': {
+        const id = args.positionals[0]!;
+        const w = getWork(project.store, id) ?? getWorkByLegacyId(project.store, id);
+        if (!w) throw new OperationError(`no work ${id}`);
+        const ready = readinessOf(project.store, w, at);
+        const leases = leasesFor(project.store, w.id);
+        const handoff = handoffOf(project.store, w.id);
+        const structure = workStructure(project.store, w);
+        if (args.json) writeJson({ ...w, readiness: ready, structure, leases, handoff: handoff ? asPeerData(handoff.from, handoff) : null });
+        else {
+          say(`${esc(w.id)}  ${w.status}  ${w.kind}  rev ${String(w.revision)}`);
+          say(esc(w.title));
+          if (w.description && w.description !== w.title) say(esc(w.description));
+          printStructure(structure);
+          if (!ready.ready) say(`not ready: ${ready.blockers.map(esc).join('; ')}`);
+          if (leases.length > 0) say(`reserves (${leases[0]!.mode}): ${leases.map((l) => esc(l.path)).join(', ')}`);
+          if (handoff) {
+            say(handoff.takenBy ? `handed off by ${esc(handoff.from)}, taken by ${esc(handoff.takenBy)} (${handoff.takenVia})` : `offered by ${esc(handoff.from)}${handoff.to ? ` to ${esc(handoff.to)}` : ''}`);
+            printPacket(handoff.from, handoff.packet);
+          }
+        }
+        return 0;
+      }
+      case 'ready': {
+        const items = listReady(project.store, at);
+        if (args.json) writeJson(items);
+        else if (items.length === 0) say('nothing is ready');
+        else for (const w of items) say(`${esc(w.id)}  ${w.kind}  ${esc(w.title)}`);
+        return 0;
+      }
+      case 'add': {
+        const title = args.positionals[0]!;
+        const filed = fileWork(project.store, {
+          id: ctx.nextId('work'),
+          kind: (args.flags.kind as WorkKind | undefined) ?? 'task',
+          title,
+          description: stringFlag(args, 'description'),
+          parentId: stringFlag(args, 'parent'),
+          serves: stringFlag(args, 'serves'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
+          acceptance: listFlag(args, 'accept'),
+          risk: stringFlag(args, 'risk'),
+          sources: listFlag(args, 'source'),
+          byPerson: channel === 'tty_cli',
+          at,
+          actor,
+          nextId: ctx.nextId,
+        });
+        if (args.json) writeJson({ ...filed.work, admitted: filed.admitted, admittedBy: filed.admittedBy, next: filed.next });
+        else {
+          say(`created ${esc(filed.work.id)}  ${filed.work.status}  ${esc(filed.work.title)}`);
+          if (filed.next) say(`  ${esc(filed.next)}`);
+        }
+        return 0;
+      }
+      case 'update': {
+        const id = args.positionals[0]!;
+        const current = getWork(project.store, id);
+        if (!current) throw new OperationError(`no work ${id}`);
+        const accept = listFlag(args, 'accept');
+        const sources = listFlag(args, 'source');
+        const risk = stringFlag(args, 'risk');
+        const w = updateWork(project.store, {
+          id,
+          expectedRevision: args.flags.revision ? Number(args.flags.revision) : current.revision,
+          at,
+          actor,
+          title: stringFlag(args, 'title'),
+          description: stringFlag(args, 'description'),
+          acceptance: boolFlag(args, 'clear-accept') ? [] : accept.length > 0 ? accept : undefined,
+          risk,
+          premises: sources.length > 0 ? { sources } : undefined,
+        });
+        if (args.json) writeJson(w);
+        else say(`updated ${esc(w.id)}  rev ${String(w.revision)}`);
+        return 0;
+      }
+      case 'requalify': {
+        const reason = stringFlag(args, 'reason');
+        if (!reason) throw new UsageError('work requalify needs --reason: what was checked');
+        const w = requalifyWork(project.store, { id: args.positionals[0]!, reason, at, actor });
+        if (args.json) writeJson(w);
+        else say(`requalified ${esc(w.id)}  ${w.status}`);
+        return 0;
+      }
+      case 'link': {
+        const w = linkWork(project.store, {
+          id: args.positionals[0]!,
+          parentId: stringFlag(args, 'parent'),
+          serves: stringFlag(args, 'serves'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
+          at,
+          actor,
+          nextId: ctx.nextId,
+        });
+        if (args.json) writeJson(w);
+        else say(`linked ${esc(w.id)}  ${w.status}`);
+        return 0;
+      }
+      case 'unlink': {
+        const w = unlinkWork(project.store, {
+          id: args.positionals[0]!,
+          parent: boolFlag(args, 'parent'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
+          at,
+          actor,
+        });
+        if (args.json) writeJson(w);
+        else say(`unlinked ${esc(w.id)}`);
+        return 0;
+      }
+      case 'admit': {
+        const w = admitProposedWork(project.store, { id: args.positionals[0]!, byPerson: channel === 'tty_cli', at, actor });
+        if (args.json) writeJson(w);
+        else say(`admitted ${esc(w.id)}  ${w.status}`);
+        return 0;
+      }
+      case 'claim': {
+        personOnly('Claiming work');
+        const requested = (args.flags.until as string | undefined) ?? new Date(Date.parse(at) + 30 * 60_000).toISOString();
+        const ceiling = new Date(Date.parse(at) + CLI_CLAIM_CEILING_MS).toISOString();
+        const w = claimWork(project.store, {
+          id: args.positionals[0]!,
+          owner: actor,
+          lane: project.lane?.root,
+          branch: project.lane?.branch ?? null,
+          until: requested > ceiling ? ceiling : requested,
+          now: at,
+          token: args.flags.token as string | undefined,
+          expectedRevision: args.flags.revision ? Number(args.flags.revision) : undefined,
+          paths: pathsFlag(args, 'reserve'),
+          mode: boolFlag(args, 'shared') ? 'shared' : 'exclusive',
+        });
+        if (args.json) writeJson(w);
+        else {
+          say(`claimed ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+          if (w.leases?.length) say(`reserved: ${w.leases.map((l) => esc(l.path)).join(', ')}`);
+          for (const o of w.mergeRisks ?? []) say(`merge risk: ${describeOverlap(o)}`);
+        }
+        return 0;
+      }
+      case 'check': {
+        const paths = boolFlag(args, 'staged') ? stagedPaths(ctx.cwd, ctx.env) : pathsFlag(args, 'check');
+        if (!paths) throw new UsageError('work check needs --paths or --staged');
+        const own = args.flags.work as string | undefined;
+        const exclude = own ? (getWork(project.store, own) ?? getWorkByLegacyId(project.store, own))?.id ?? own : undefined;
+        const overlaps = paths.length === 0 ? [] : findOverlaps(project.store, { paths, laneRoot: project.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: exclude });
+        const collisions = overlaps.filter((o) => o.kind === 'collision');
+        if (args.json) writeJson({ clear: collisions.length === 0, collisions, mergeRisks: overlaps.filter((o) => o.kind === 'merge_risk') });
+        else if (overlaps.length === 0) say(`clear: ${String(paths.length)} path(s), none reserved by other work`);
+        else for (const o of overlaps) say(`${o.kind === 'collision' ? 'reserved here' : 'merge risk'}: ${describeOverlap(o)}`);
+        return collisions.length === 0 ? 0 : 1;
+      }
+      case 'handoff': {
+        const token = args.flags.token as string | undefined;
+        if (!token) throw new UsageError('work handoff needs --token, the one your claim returned');
+        const flag = (name: string): string | undefined => args.flags[name] as string | undefined;
+        let w;
+        try {
+          w = handoffWork(project.store, {
+            id: args.positionals[0]!,
+            owner: actor,
+            token,
+            to: flag('to'),
+            now: at,
+            packet: { state: flag('state'), next: flag('next'), watchOut: flag('watch-out'), openQuestions: flag('question'), where: { branch: flag('branch'), commit: flag('commit') } },
+          });
+        } catch (e) {
+          if (e instanceof HandoffPacketError) throw new UsageError(e.message);
+          throw e;
+        }
+        if (args.json) writeJson(w);
+        else say(`offered ${esc(w.id)} to ${w.handoff.to === null ? 'anyone in the project' : esc(w.handoff.to)}; it stays yours until accepted, until ${w.claimUntil}`);
+        return 0;
+      }
+      case 'accept': {
+        personOnly('Accepting a handoff');
+        const w = acceptWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at });
+        if (args.json) writeJson(w);
+        else {
+          say(`accepted ${esc(w.id)} from ${esc(w.handoff.from)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+          printPacket(w.handoff.from, w.handoff.packet);
+        }
+        return 0;
+      }
+      case 'offers': {
+        const offers = listOffers(project.store, at);
+        if (args.json) writeJson(offers.map((o) => ({ work: o.work, handoff: asPeerData(o.handoff.from, o.handoff) })));
+        else if (offers.length === 0) say('no handoffs are waiting');
+        else for (const o of offers) say(`${esc(o.work.id)}  from ${esc(o.handoff.from)}${o.handoff.to ? ` to ${esc(o.handoff.to)}` : ''}  ${esc(o.work.title)}`);
+        return 0;
+      }
+      case 'takeover': {
+        personOnly('Taking over work');
+        const reason = args.flags.reason as string | undefined;
+        if (!reason) throw new UsageError('work takeover needs --reason');
+        const w = takeoverWork(project.store, { id: args.positionals[0]!, owner: actor, lane: project.lane?.root, branch: project.lane?.branch ?? null, until: new Date(Date.parse(at) + 30 * 60_000).toISOString(), now: at, reason, processAlive });
+        if (args.json) writeJson(w);
+        else say(`took over ${esc(w.id)} until ${w.claimUntil} token ${esc(w.claimToken)}`);
+        return 0;
+      }
+      case 'release': {
+        const w = releaseWork(project.store, { id: args.positionals[0]!, owner: actor, token: args.positionals[1]!, at });
+        if (args.json) writeJson(w);
+        else say(`released ${esc(w.id)}`);
+        return 0;
+      }
+      case 'complete': {
+        const w = completeWork(project.store, {
+          id: args.positionals[0]!,
+          owner: actor,
+          token: args.flags.token as string | undefined,
+          at,
+          reason: args.flags.reason as string | undefined,
+        });
+        if (args.json) writeJson(w);
+        else say(`completed ${esc(w.id)}`);
+        return 0;
+      }
+      case 'reopen': {
+        const reason = args.flags.reason as string | undefined;
+        if (!reason) throw new UsageError('work reopen needs --reason');
+        const w = reopenWork(project.store, { id: args.positionals[0]!, actor, at, reason });
+        if (args.json) writeJson(w);
+        else say(`reopened ${esc(w.id)}`);
+        return 0;
+      }
+      case 'cancel': {
+        const reason = args.flags.reason as string | undefined;
+        if (!reason) throw new UsageError('work cancel needs --reason');
+        const w = cancelWork(project.store, { id: args.positionals[0]!, actor, at, reason, token: args.flags.token as string | undefined });
+        if (args.json) writeJson(w);
+        else say(`cancelled ${esc(w.id)}`);
+        return 0;
+      }
+      case 'export': {
+        const dump = exportWork(project.store, at, project.files.config?.id ?? null);
+        writeFileSync(args.positionals[0]!, `${JSON.stringify(dump, null, 2)}\n`);
+        if (args.json) writeJson({ file: args.positionals[0], count: dump.work.length });
+        else say(`wrote ${String(dump.work.length)} work item(s) to ${esc(args.positionals[0]!)}`);
+        return 0;
+      }
+      case 'restore': {
+        const dump = JSON.parse(readFileSync(args.positionals[0]!, 'utf8')) as ReturnType<typeof exportWork>;
+        const report = restoreWork(project.store, dump, at, project.files.config?.id ?? null);
+        if (args.json) writeJson(report);
+        else say(`restored ${String(report.imported)}, skipped ${String(report.skipped)}, conflicts ${String(report.conflicts.length)}`);
+        return 0;
+      }
+      case 'import-legacy': {
+        const report = importLegacySnapshot(project.store, {
+          jsonl: readFileSync(args.positionals[0]!, 'utf8'),
+          at,
+          dryRun: boolFlag(args, 'dry-run'),
+          nextId: ctx.nextId,
+        });
+        if (args.json) writeJson(report);
+        else {
+          say(`legacy import: ${String(report.imported)} imported, ${String(report.skipped)} skipped, ${String(report.malformed.length)} malformed`);
+          for (const m of report.malformed.slice(0, 20)) say(`  malformed: ${esc(m)}`);
+        }
+        return 0;
+      }
+      default:
+        throw new UsageError(`work has no subcommand "${sub}"`);
+    }
+  });
+}
