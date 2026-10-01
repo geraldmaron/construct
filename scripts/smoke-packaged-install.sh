@@ -33,6 +33,10 @@ echo "== packing =="
 tarball="$(npm pack --silent --pack-destination "$scratch")"
 tarball_path="$scratch/$tarball"
 
+echo "== every packed module has a source =="
+orphans="$(tar -tzf "$tarball_path" | sed -n 's#^package/dist/\(.*\)\.js$#\1#p' | while read -r m; do [ -f "src/$m.ts" ] || echo "dist/$m.js"; done)"
+[ -z "$orphans" ] || fail "the tarball ships compiled modules with no source (a stale dist)" "$orphans"
+
 echo "== installing into a scratch project =="
 project="$scratch/project"
 mkdir -p "$project"
