@@ -18,7 +18,9 @@ import { listLiveDeliverables, type Deliverable } from '../state/deliverables.ts
 import { listSteps } from '../state/steps.ts';
 import { addDriftFinding, listDriftFindings, type DriftFinding } from '../state/drift.ts';
 import { raiseDecision } from '../state/decisions.ts';
-import type { RefResolver } from '../project/evidence.ts';
+import { stripLocator, type RefResolver } from '../project/evidence.ts';
+import { getSource } from '../state/sources.ts';
+import { join as joinPath, resolve as resolvePath } from 'node:path';
 import type { ItemChanges } from '../source/manifest.ts';
 
 function refsOf(store: StateStore, d: Deliverable): string[] {
@@ -34,12 +36,14 @@ function refsOf(store: StateStore, d: Deliverable): string[] {
 
 export function flagStaleDeliverables(
   store: StateStore,
-  input: { readonly sourceId: string; readonly changes: ItemChanges; readonly resolve: RefResolver; readonly at: string; readonly nextId: () => string },
+  input: { readonly sourceId: string; readonly changes: ItemChanges; readonly resolve: RefResolver; readonly at: string; readonly nextId: () => string; readonly root?: string },
 ): DriftFinding[] {
   const { sourceId, changes, resolve, at } = input;
   const touched = new Set([...changes.modified, ...changes.removed]);
   if (touched.size === 0 && changes.added.length === 0) return [];
   const open = listDriftFindings(store, { status: 'open' });
+  const source = getSource(store, sourceId);
+  const dirAbs = source?.kind === 'directory' && source.locator ? resolvePath(input.root ?? '', source.locator) : null;
   const out: DriftFinding[] = [];
   const addedOnly: DriftFinding[] = [];
   // One run can leave a challenged draft and then its final deliverable; only the latest speaks for the run.
@@ -55,8 +59,17 @@ export function flagStaleDeliverables(
       inSource.push(ref);
       if (touched.has(r.itemRef)) hit.push(r.itemRef);
     }
-    // A removed item no longer resolves; match it by its trailing path or key.
-    for (const ref of refsOf(store, d)) for (const gone of changes.removed) if (ref === gone || ref.endsWith(`/${gone}`) || ref.endsWith(`:${gone}`)) hit.push(gone);
+    // A removed item no longer resolves, so match it to this source explicitly: by "<source>:<item>", by a path
+    // that lands on the item inside this directory source, or by a bare key from a non-directory source.
+    for (const ref of refsOf(store, d)) {
+      const bare = stripLocator(ref);
+      for (const gone of changes.removed) {
+        const viaSource = bare === `${sourceId}:${gone}` || bare === `source:${sourceId}:${gone}`;
+        const viaPath = source?.kind === 'directory' && dirAbs !== null && resolvePath(input.root ?? '', bare.replace(/^file:/, '')) === joinPath(dirAbs, gone);
+        const viaKey = source !== null && source.kind !== 'directory' && bare === gone;
+        if (viaSource || viaPath || viaKey) hit.push(gone);
+      }
+    }
     const uniqueHit = [...new Set(hit)];
     let summary: string | null = null;
     let confidence = 0;

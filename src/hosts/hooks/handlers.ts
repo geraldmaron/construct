@@ -26,6 +26,7 @@ import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { appendActivity } from '../../kernel/state/activity.ts';
 import { listOpenDecisions } from '../../kernel/state/decisions.ts';
 import type { HostReportItem } from '../../kernel/source/service.ts';
+import { projectResolver } from '../../kernel/source/resolver.ts';
 
 export const HOOK_TEXT_CAP = 16 * 1024;
 
@@ -140,7 +141,13 @@ export function projectFactsIn(ctx: BrokerContext, text: string): string[] {
     if (s.kind === 'jira' && s.locator) for (const m of text.matchAll(new RegExp(`\\b${s.locator.replace(/[^A-Za-z0-9]/g, '')}-\\d+\\b`, 'g'))) out.add(m[0]);
     if (new RegExp(`\\b${s.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text) && s.id.length >= 4) out.add(s.id);
   }
-  for (const m of text.matchAll(/\b[\w./-]+\.(?:md|markdown|txt|csv|json)\b/g)) out.add(m[0]);
+  // A file name is a project fact only when it names a file this project actually holds: "package.json" in
+  // passing, or a dependency's README, is not.
+  const resolve = projectResolver(ctx.store, ctx.root);
+  for (const m of text.matchAll(/\b[\w./-]+\.(?:md|markdown|txt|csv|json)\b/g)) {
+    const r = resolve(m[0]);
+    if (r?.kind === 'file' && r.sourceId) out.add(m[0]);
+  }
   return [...out];
 }
 

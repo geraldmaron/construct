@@ -128,3 +128,12 @@ test('a symlink out of the project does not resolve; a web page is accepted as r
     rmSync(outside, { recursive: true, force: true });
   }
 });
+
+test('review findings: a derivation that only says where a figure came from is not a check of it, and a large artifact is not empty', () => {
+  const described = run(['numbers_grounded'], { output: { summary: 'Northwind is worth $2.4M', derivations: [{ value: '$2.4M', from: 'the finance team' }] }, evidence: [{ ref: 'docs/metrics.md' }] });
+  assert.ok(described.numbers_grounded!.some((p) => p.includes('gives no expression')));
+  writeFileSync(join(root, 'docs', 'big.md'), `# Big\n${'x'.repeat(1024 * 1024 + 10)}\n`);
+  assert.deepEqual(run(['artifacts_exist'], { output: { artifact: 'docs/big.md' } }).artifacts_exist, []);
+  writeFileSync(join(root, 'docs', 'blank.md'), '   \n');
+  assert.equal(run(['artifacts_exist'], { output: { artifact: 'docs/blank.md' } }).artifacts_exist!.length, 1);
+});

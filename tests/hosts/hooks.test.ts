@@ -75,6 +75,8 @@ test('an answer that names project facts without check_answer is sent back once;
     assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('PLAT-101 gates v1.', ['mcp__construct__check_answer'])]) }), null);
     assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Drafted the PRD from PLAT-101.', ['mcp__construct__submit_work'])]) }), null);
     assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Sure, here is a haiku about autumn.')]) }), null);
+    // A file name that is not one of the project's declared sources is not a project fact.
+    assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('Add it to package.json and see the README.md of the dependency.')]) }), null);
     // An earlier, already-answered turn does not count against the current one.
     assert.equal(onStop(fx.broker, { transcript_path: transcript(dir, [prompt, says('PLAT-101 gates v1.'), { type: 'user', message: { content: 'thanks, now a haiku' } }, says('Leaves fall.')]) }), null);
     assert.equal(onStop({ ...fx.broker, policy: { hostReads: 'require', answerCheck: 'off' } }, { transcript_path: unchecked }), null);

@@ -195,3 +195,28 @@ test('a later read reuses fingerprints of files that did not move, so a new sess
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('removing a file only flags work that cited that file in that source, not a same-named item elsewhere', async () => {
+  const fx = brokerFixture();
+  try {
+    const s = fx.broker.store;
+    const at = fx.ctx.now();
+    const dir = join(fx.broker.root, 'notes');
+    mkdirSync(dir);
+    writeFileSync(join(dir, 'plan.md'), 'notes plan');
+    writeFileSync(join(fx.broker.root, 'docs', 'plan.md'), 'docs plan');
+    addSource(s, { id: 'notes', kind: 'directory', locator: dir, purpose: 'notes', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'refresh', id: 'notes' });
+    const { runId } = await runManaged(fx, [{ ref: 'docs/plan.md' }, { ref: 'https://example.com/plan.md' }], ['other plan'], 'summarize the other plan');
+    for (const out of [{ verification: 'ok', passed: true }, { deliverableId: 'x', summary: 's', findings: ['f'] }]) {
+      const w = (await call(fx, 'claim_work', { runId })).work;
+      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'docs/plan.md' }] });
+    }
+    rmSync(join(dir, 'plan.md'));
+    const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
+    assert.deepEqual(r.changes.removed, ['plan.md']);
+    assert.equal((r.staleDeliverables ?? []).length, 0, 'docs/plan.md and a web page named plan.md are not notes/plan.md');
+  } finally {
+    fx.cleanup();
+  }
+});

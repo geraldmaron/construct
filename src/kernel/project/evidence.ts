@@ -48,6 +48,8 @@ export interface ResolvedRef {
   readonly itemRef?: string;
   /** What it says, when that is cheap to know: file text under the cap, a work item's text. */
   readonly text?: string;
+  /** Bytes on disk, for files. */
+  readonly size?: number;
   /** The document that says it replaces this one, when one does. */
   readonly supersededBy?: string;
 }
@@ -139,7 +141,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const common = { ref: original, path: abs, provenance: 'witnessed' as const, ...(ds ? { sourceId: ds.id, itemRef } : {}), ...(supersededBy ? { supersededBy } : {}) };
     if (st.isDirectory()) return { ...common, kind: 'directory' };
     if (!st.isFile()) return null;
-    return { ...common, kind: 'file', text: readText(real) };
+    return { ...common, kind: 'file', size: st.size, text: readText(real) };
   };
 
   const declared = input.supersessions ?? [];
