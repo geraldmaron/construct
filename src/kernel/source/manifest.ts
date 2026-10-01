@@ -19,6 +19,10 @@ export interface ManifestEntry {
   readonly text?: string;
   /** Another item in the same source that declares it replaces this one. */
   readonly supersededBy?: string;
+  /** The system's own last-updated time for a reported item, when it gave one. */
+  readonly updatedAt?: string;
+  /** Recorded from a passing sighting with no version; its fingerprint says nothing about content. */
+  readonly weak?: boolean;
   /** Reader-specific facts kept so the next read can skip unchanged items (size, mtime, what it supersedes). */
   readonly attributes?: Readonly<Record<string, unknown>>;
 }
@@ -41,6 +45,8 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
       ...(typeof text === 'string' ? { text } : {}),
       ...(typeof by === 'string' ? { supersededBy: by } : {}),
       ...(i.attributes && ('size' in i.attributes || 'supersedes' in i.attributes) ? { attributes: { size: i.attributes.size, mtimeMs: i.attributes.mtimeMs, supersedes: i.attributes.supersedes, declaredSupersededBy: i.attributes.declaredSupersededBy } } : {}),
+      ...(typeof i.attributes?.updatedAt === 'string' ? { updatedAt: i.attributes.updatedAt } : {}),
+      ...(i.attributes?.weak === true ? { weak: true } : {}),
     };
   });
 }

@@ -179,7 +179,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
     return 'updated';
   }
 
-  function recordRead(id: string, report: SnapshotReport, partial: boolean, at: string, nextId: () => string): RefreshResult {
+  function recordRead(id: string, report: SnapshotReport, partial: boolean, at: string, nextId: () => string, notChanged: ReadonlySet<string> = new Set()): RefreshResult {
     const { snapshot, changed } = recordSnapshot(store, {
       id: nextId(),
       sourceId: id,
@@ -196,6 +196,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       changes = manifest ? diffManifests(before, manifest) : undefined;
       // In a partial read, an item not reported is unknown, not removed.
       if (changes && partial) changes = { ...changes, removed: [] };
+      if (changes && notChanged.size > 0) changes = { ...changes, modified: changes.modified.filter((r) => !notChanged.has(r)) };
       const firstRead = before === null;
       recordObservation(store, {
         id: nextId(),
@@ -295,25 +296,31 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);
       if (deps.readers.has(source.kind)) throw new Error(`source ${id} is read by Construct itself; refresh it instead of reporting it`);
       const prior = new Map((currentManifest(store, id) ?? []).map((e) => [e.ref, e]));
+      const contentHash = (ref: string, text: string | undefined, title: string | undefined) => createHash('sha256').update(text ?? `${ref}\t${title ?? ''}`).digest('hex');
+      // Items whose fingerprint moves only because the basis did (an unversioned or passing sighting now read with a
+      // version), not because the item changed; the read records them without calling them modified.
+      const rebased = new Set<string>();
       const reported = report.items.flatMap((i) => {
         const text = typeof i.text === 'string' ? i.text.slice(0, REPORTED_TEXT_CAP) : undefined;
         const was = prior.get(i.ref);
         if (i.weak && was) return [];
         // The system's own last-updated time is the version when it is given; otherwise what was read is.
-        const basis = i.updatedAt ? `${i.ref}\t${i.updatedAt}` : text ?? `${i.ref}\t${i.title ?? ''}`;
-        const fingerprint = i.fingerprint ?? createHash('sha256').update(basis).digest('hex');
+        const fingerprint = i.fingerprint ?? (i.updatedAt ? createHash('sha256').update(`${i.ref}\t${i.updatedAt}`).digest('hex') : contentHash(i.ref, text, i.title));
+        if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
         // The same version seen again through a thinner view keeps the fuller text recorded before.
         const keepText = was && was.fingerprint === fingerprint && (was.text?.length ?? 0) > (text?.length ?? 0) ? was.text : text;
-        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint, ...(keepText !== undefined ? { text: keepText } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}) } }];
+        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint, ...(keepText !== undefined ? { text: keepText } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
       });
       // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
       const before = report.partial ? [...prior.values()] : [];
       const seen = new Set(reported.map((r) => r.externalRef));
-      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: e.text } : {}) } }));
+      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: e.text } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-      const digest = `sha256:${createHash('sha256').update(items.map((i) => `${i.externalRef}\t${String(i.attributes.fingerprint)}`).join('\n')).digest('hex')}`;
+      // The digest covers what was kept, not only versions, so fuller text for the same version is recorded; item
+      // changes are still judged by fingerprint, so that recording opens no drift.
+      const digest = `sha256:${createHash('sha256').update(items.map((i) => `${i.externalRef}\t${String(i.attributes.fingerprint)}\t${createHash('sha256').update(String((i.attributes as { text?: string }).text ?? '')).digest('hex')}`).join('\n')).digest('hex')}`;
       setReachability(store, id, 'reachable', at);
-      return recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId);
+      return recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
     },
     canRead(id) {
       const source = getSource(store, id);
