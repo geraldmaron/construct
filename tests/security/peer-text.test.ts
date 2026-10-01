@@ -60,10 +60,11 @@ test('planted instructions reach other sessions only as labelled data, and grant
     const gone = peer(fx, 'ses_gone');
     const watching = Number((fx.broker.store.db.prepare(`SELECT activity_cursor AS c FROM sessions WHERE id = 'ses_b'`).get() as { c: number }).c);
 
-    const labelled = (await call(a, 'work', { action: 'add', title: INJECT })) as { id: string };
+    const reason = ((await call(a, 'remember', { kind: 'outcome', text: 'Peers coordinate safely' })) as { remembered: { id: string } }).remembered.id;
+    const labelled = (await call(a, 'work', { action: 'add', serves: reason, title: INJECT })) as { id: string };
     const held = (await call(a, 'work', { action: 'claim', id: labelled.id, paths: ['src/'] })) as { claimToken: string };
     await call(a, 'work', { action: 'handoff', id: labelled.id, token: held.claimToken, packet: { state: INJECT, next: INJECT, watchOut: [INJECT], openQuestions: [INJECT] } });
-    const abandoned = (await call(gone, 'work', { action: 'add', title: 'abandoned' })) as { id: string };
+    const abandoned = (await call(gone, 'work', { action: 'add', serves: reason, title: 'abandoned' })) as { id: string };
     await call(gone, 'work', { action: 'claim', id: abandoned.id });
     endSession(fx.broker.store, { id: 'ses_gone', at, reason: 'closed' });
     await call(a, 'work', { action: 'takeover', id: abandoned.id, reason: INJECT });

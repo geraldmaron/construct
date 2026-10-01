@@ -18,6 +18,10 @@ import { brokerFixture, type BrokerFixture } from './support.ts';
 
 const work = TOOLS.find((t) => t.name === 'work')!;
 const call = (ctx: BrokerContext, args: Record<string, unknown>): unknown => work.run(ctx, work.validate(record(args)));
+const remember = TOOLS.find((t) => t.name === 'remember')!;
+/** A remembered outcome: the reason a session's work is admitted. */
+const reasonFor = (ctx: BrokerContext, text = 'The parser ships'): string =>
+  (remember.run(ctx, remember.validate(record({ kind: 'outcome', text }))) as { remembered: { id: string } }).remembered.id;
 
 function peer(fx: BrokerFixture, sessionId: string, lane: string | null): BrokerContext {
   const b = fx.broker;
@@ -31,9 +35,10 @@ test('sessions reserve paths through the work tool: one writer per path in a che
     const a = fx.broker;
     const b = peer(fx, 'ses_b', null);
     const c = peer(fx, 'ses_c', '/tmp/repo-lane');
-    const one = call(a, { action: 'add', title: 'parser' }) as { id: string };
-    const two = call(a, { action: 'add', title: 'lexer' }) as { id: string };
-    const three = call(a, { action: 'add', title: 'docs' }) as { id: string };
+    const reason = reasonFor(a);
+    const one = call(a, { action: 'add', serves: reason, title: 'parser' }) as { id: string };
+    const two = call(a, { action: 'add', serves: reason, title: 'lexer' }) as { id: string };
+    const three = call(a, { action: 'add', serves: reason, title: 'docs' }) as { id: string };
 
     const held = call(a, { action: 'claim', id: one.id, paths: ['src/parser/'] }) as { claimToken: string; leases: { path: string; sessionId: string }[] };
     assert.deepEqual(held.leases.map((l) => [l.path, l.sessionId]), [['src/parser/', 'ses_fixture']]);

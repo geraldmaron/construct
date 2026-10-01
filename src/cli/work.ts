@@ -1,6 +1,8 @@
 /**
- * cli/work.ts — native work ledger: query, ready, claim, check reserved
- * paths, hand off and accept, complete, reopen, export, restore, and one-way import of a frozen legacy tracker snapshot.
+ * cli/work.ts — native work ledger: file work with its parent, reason,
+ * dependencies, and acceptance criteria; query, ready, claim, check reserved
+ * paths, hand off and accept, complete, reopen, export, restore, and one-way
+ * import of a frozen legacy tracker snapshot.
  */
 
 import {
@@ -8,7 +10,6 @@ import {
   cancelWork,
   claimWork,
   completeWork,
-  createWork,
   exportWork,
   getWork,
   getWorkByLegacyId,
@@ -21,16 +22,20 @@ import {
   releaseWork,
   takeoverWork,
   reopenWork,
+  requalifyWork,
   restoreWork,
+  updateWork,
+  type WorkItem,
   type WorkKind,
   type WorkStatus,
 } from '../kernel/work/service.ts';
+import { admitProposedWork, fileWork, linkWork, unlinkWork, workStructure } from '../kernel/work/structure.ts';
 import { HandoffPacketError, asPeerData, type HandoffPacket } from '../kernel/work/handoff.ts';
 import { MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, whereHeld, type Overlap } from '../kernel/work/leases.ts';
 import { answeredBy, channelFor } from './person-channel.ts';
 import { processAlive } from './broker-context.ts';
 import { importLegacySnapshot } from '../kernel/work/legacy-import.ts';
-import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
 import { withProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
@@ -75,19 +80,75 @@ function describeOverlap(o: Overlap): string {
 /** The longest a claim made from the command line may run, whatever --until asks. */
 const CLI_CLAIM_CEILING_MS = 24 * 60 * 60_000;
 
+/** Where an item sits: shared by add and link. */
+const STRUCTURE_FLAGS = [
+  { name: 'parent', gloss: 'the work item this one is part of', takesValue: true },
+  { name: 'serves', gloss: 'the decision, requirement, initiative, or metric it serves (entity or statement id)', takesValue: true },
+  { name: 'blocked-by', gloss: 'work that must finish before this is ready (repeatable)', takesValue: true, repeatable: true },
+  { name: 'related', gloss: 'work that gives context without blocking (repeatable)', takesValue: true, repeatable: true },
+] as const;
+
+/** What finished means and what could go wrong: shared by add and update. */
+const DETAIL_FLAGS = [
+  { name: 'accept', gloss: 'an acceptance criterion; repeat for each (update replaces the list)', takesValue: true, repeatable: true },
+  { name: 'risk', gloss: 'what could go wrong', takesValue: true },
+  { name: 'source', gloss: 'a source whose refresh sends this back for requalification (repeatable)', takesValue: true, repeatable: true },
+] as const;
+
+/** Print an item's structure under its title, skipping what it does not have. */
+function printStructure(s: ReturnType<typeof workStructure>): void {
+  const line = (w: Pick<WorkItem, 'id' | 'title' | 'status'>) => `${esc(w.id)} ${w.status} ${esc(w.title)}`;
+  if (s.admittedBy) say(`admitted: ${s.admittedBy === 'person' ? 'by the person' : `by its ${s.admittedBy === 'parent' ? 'parent' : 'reason'}`}`);
+  if (s.parent) say(`parent: ${line(s.parent)}`);
+  for (const r of s.serves) say(`serves: ${esc(r.id)} ${r.kind} ${esc(r.name)}`);
+  if (s.children.length > 0) {
+    const done = s.children.filter((c) => c.status === 'completed' || c.status === 'cancelled').length;
+    say(`children: ${String(done)} of ${String(s.children.length)} finished`);
+    for (const c of s.children) say(`  ${line(c)}`);
+  }
+  for (const b of s.blockedBy) say(`blocked by: ${line(b)}`);
+  for (const b of s.blocking) say(`blocks: ${line(b)}`);
+  for (const r of s.related) say(`related: ${line(r)}`);
+  for (const a of s.acceptance) say(`accept when: ${esc(a)}`);
+  if (s.risk) say(`risk: ${esc(s.risk)}`);
+  if (s.sources.length > 0) say(`premise sources: ${s.sources.map(esc).join(', ')}`);
+}
+
 export const WORK_SPECS: readonly CommandSpec[] = [
   { path: ['work', 'list'], gloss: 'query work items', group, positionals: [], flags: [
     { name: 'status', gloss: 'filter by status', takesValue: true },
+    { name: 'parent', gloss: 'only the direct children of this work item', takesValue: true },
     { name: 'kind', gloss: 'filter by kind', takesValue: true },
     { name: 'query', gloss: 'filter by text or id', takesValue: true },
     { name: 'limit', gloss: 'page size (default 50)', takesValue: true },
   ], readOnly: true },
   { path: ['work', 'show'], gloss: 'one work item, including legacy-id lookup', group, positionals: ['<id>'], flags: [], readOnly: true },
   { path: ['work', 'ready'], gloss: 'work that can be claimed now', group, positionals: [], flags: [], readOnly: true },
-  { path: ['work', 'add'], gloss: 'create a work item', group, positionals: ['<title>'], flags: [
+  { path: ['work', 'add'], gloss: 'file a work item; it is open when it has a reason, proposed otherwise', group, positionals: ['<title>'], flags: [
     { name: 'kind', gloss: 'outcome, task, defect, or plan (default task)', takesValue: true },
     { name: 'description', gloss: 'body of the item', takesValue: true },
+    ...STRUCTURE_FLAGS,
+    ...DETAIL_FLAGS,
   ], readOnly: false },
+  { path: ['work', 'update'], gloss: 'change an item’s title, description, acceptance criteria, risk, or premise sources', group, positionals: ['<id>'], flags: [
+    { name: 'title', gloss: 'new title', takesValue: true },
+    { name: 'description', gloss: 'new body', takesValue: true },
+    ...DETAIL_FLAGS,
+    { name: 'clear-accept', gloss: 'remove every acceptance criterion', takesValue: false },
+    { name: 'revision', gloss: 'expected revision (default: the current one)', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'requalify'], gloss: 'clear a stale-premise mark once the work was checked against what changed', group, positionals: ['<id>'], flags: [
+    { name: 'reason', gloss: 'what was checked', takesValue: true },
+  ], readOnly: false },
+  { path: ['work', 'link'], gloss: 'give an item a parent, a reason it serves, or dependencies; a proposed item that gains a reason is admitted', group, positionals: ['<id>'], flags: [
+    ...STRUCTURE_FLAGS,
+  ], readOnly: false },
+  { path: ['work', 'unlink'], gloss: 'remove an item’s parent or dependencies', group, positionals: ['<id>'], flags: [
+    { name: 'parent', gloss: 'remove the parent', takesValue: false },
+    { name: 'blocked-by', gloss: 'a blocking item to remove (repeatable)', takesValue: true, repeatable: true },
+    { name: 'related', gloss: 'a related item to remove (repeatable)', takesValue: true, repeatable: true },
+  ], readOnly: false },
+  { path: ['work', 'admit'], gloss: 'move proposed work into the backlog; the person admits anything, others only work with a reason', group, positionals: ['<id>'], flags: [], readOnly: false },
   { path: ['work', 'claim'], gloss: 'claim a ready item for this session; with --token, renew your claim', group, positionals: ['<id>'], flags: [
     { name: 'until', gloss: 'ISO timestamp when the claim expires', takesValue: true },
     { name: 'revision', gloss: 'expected revision', takesValue: true },
@@ -157,6 +218,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
           status: args.flags.status as WorkStatus | undefined,
           kind: args.flags.kind as WorkKind | undefined,
           query: args.flags.query as string | undefined,
+          parentId: stringFlag(args, 'parent'),
           limit: args.flags.limit ? Number(args.flags.limit) : 50,
         });
         if (args.json) writeJson(page);
@@ -174,11 +236,13 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
         const ready = readinessOf(project.store, w, at);
         const leases = leasesFor(project.store, w.id);
         const handoff = handoffOf(project.store, w.id);
-        if (args.json) writeJson({ ...w, readiness: ready, leases, handoff: handoff ? asPeerData(handoff.from, handoff) : null });
+        const structure = workStructure(project.store, w);
+        if (args.json) writeJson({ ...w, readiness: ready, structure, leases, handoff: handoff ? asPeerData(handoff.from, handoff) : null });
         else {
           say(`${esc(w.id)}  ${w.status}  ${w.kind}  rev ${String(w.revision)}`);
           say(esc(w.title));
-          if (w.description) say(esc(w.description));
+          if (w.description && w.description !== w.title) say(esc(w.description));
+          printStructure(structure);
           if (!ready.ready) say(`not ready: ${ready.blockers.map(esc).join('; ')}`);
           if (leases.length > 0) say(`reserves (${leases[0]!.mode}): ${leases.map((l) => esc(l.path)).join(', ')}`);
           if (handoff) {
@@ -197,16 +261,92 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'add': {
         const title = args.positionals[0]!;
-        const w = createWork(project.store, {
+        const filed = fileWork(project.store, {
           id: ctx.nextId('work'),
           kind: (args.flags.kind as WorkKind | undefined) ?? 'task',
           title,
-          description: (args.flags.description as string | undefined) ?? title,
+          description: stringFlag(args, 'description'),
+          parentId: stringFlag(args, 'parent'),
+          serves: stringFlag(args, 'serves'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
+          acceptance: listFlag(args, 'accept'),
+          risk: stringFlag(args, 'risk'),
+          sources: listFlag(args, 'source'),
+          byPerson: channel === 'tty_cli',
+          at,
+          actor,
+          nextId: ctx.nextId,
+        });
+        if (args.json) writeJson({ ...filed.work, admitted: filed.admitted, admittedBy: filed.admittedBy, next: filed.next });
+        else {
+          say(`created ${esc(filed.work.id)}  ${filed.work.status}  ${esc(filed.work.title)}`);
+          if (filed.next) say(`  ${esc(filed.next)}`);
+        }
+        return 0;
+      }
+      case 'update': {
+        const id = args.positionals[0]!;
+        const current = getWork(project.store, id);
+        if (!current) throw new OperationError(`no work ${id}`);
+        const accept = listFlag(args, 'accept');
+        const sources = listFlag(args, 'source');
+        const risk = stringFlag(args, 'risk');
+        const w = updateWork(project.store, {
+          id,
+          expectedRevision: args.flags.revision ? Number(args.flags.revision) : current.revision,
+          at,
+          actor,
+          title: stringFlag(args, 'title'),
+          description: stringFlag(args, 'description'),
+          acceptance: boolFlag(args, 'clear-accept') ? [] : accept.length > 0 ? accept : undefined,
+          risk,
+          premises: sources.length > 0 ? { sources } : undefined,
+        });
+        if (args.json) writeJson(w);
+        else say(`updated ${esc(w.id)}  rev ${String(w.revision)}`);
+        return 0;
+      }
+      case 'requalify': {
+        const reason = stringFlag(args, 'reason');
+        if (!reason) throw new UsageError('work requalify needs --reason: what was checked');
+        const w = requalifyWork(project.store, { id: args.positionals[0]!, reason, at, actor });
+        if (args.json) writeJson(w);
+        else say(`requalified ${esc(w.id)}  ${w.status}`);
+        return 0;
+      }
+      case 'link': {
+        const w = linkWork(project.store, {
+          id: args.positionals[0]!,
+          parentId: stringFlag(args, 'parent'),
+          serves: stringFlag(args, 'serves'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
+          at,
+          actor,
+          nextId: ctx.nextId,
+        });
+        if (args.json) writeJson(w);
+        else say(`linked ${esc(w.id)}  ${w.status}`);
+        return 0;
+      }
+      case 'unlink': {
+        const w = unlinkWork(project.store, {
+          id: args.positionals[0]!,
+          parent: boolFlag(args, 'parent'),
+          blockedBy: listFlag(args, 'blocked-by'),
+          related: listFlag(args, 'related'),
           at,
           actor,
         });
         if (args.json) writeJson(w);
-        else say(`created ${esc(w.id)}  ${w.status}  ${esc(w.title)}`);
+        else say(`unlinked ${esc(w.id)}`);
+        return 0;
+      }
+      case 'admit': {
+        const w = admitProposedWork(project.store, { id: args.positionals[0]!, byPerson: channel === 'tty_cli', at, actor });
+        if (args.json) writeJson(w);
+        else say(`admitted ${esc(w.id)}  ${w.status}`);
         return 0;
       }
       case 'claim': {

@@ -2,13 +2,13 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity } from '../state/activity.ts';
 import { endSession, getSession, registerSession } from '../state/sessions.ts';
-import { associateRun, claimWork, createWork, getWork, releaseWork } from '../work/service.ts';
+import { DELEGATION_ATTEMPT_EVENT, associateRun, claimWork, createWork, getWork, releaseWork } from '../work/service.ts';
 import { normalizeLeasePath, pathsOverlap } from '../work/leases.ts';
 import { redact } from '../render/redact.ts';
 import { EXECUTORS, type Assignment, type DelegationDriver, type DelegationService, type Disposition, type Execution } from './types.ts';
 
 const ACTIVE = new Set(['queued', 'running', 'orphaned', 'integrating']);
-const EVENT = 'delegation.state.v1';
+const EVENT = DELEGATION_ATTEMPT_EVENT;
 
 export function executions(store: StateStore): Execution[] {
   const rows = store.db.prepare(`SELECT payload_json FROM work_events WHERE id IN

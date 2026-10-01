@@ -100,14 +100,20 @@ npx --no-install construct config set review.cadence weekly >/dev/null || fail "
 get_out="$(npx --no-install construct config get review.cadence)"
 [ "$get_out" = "weekly" ] || fail "config get read back \"$get_out\", expected weekly"
 
-echo "== native work from packaged bytes =="
-work_add="$(npx --no-install construct work add --kind=task --description='prove the packaged ledger' 'Packaged work item' 2>&1)" \
+echo "== native work from packaged bytes: a session's unrooted work waits as proposed, with its structure =="
+outcome_json="$(npx --no-install construct work add --kind=outcome --json 'Packaged outcome' 2>/dev/null)" || fail "work add outcome exited non-zero" "$outcome_json"
+outcome_id="$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).id)' "$outcome_json")"
+expect_contains "work add outcome" "$outcome_json" '"status":"proposed"'
+work_add="$(npx --no-install construct work add --kind=task --parent="$outcome_id" --accept='the ledger round-trips' --description='prove the packaged ledger' 'Packaged work item' 2>&1)" \
   || fail "work add exited non-zero" "$work_add"
-expect_contains "work add" "$work_add" "created"
-work_list="$(npx --no-install construct work list --status=open 2>&1)" || fail "work list exited non-zero" "$work_list"
+expect_contains "work add" "$work_add" "proposed"
+expect_contains "work add" "$work_add" "construct work admit"
+work_list="$(npx --no-install construct work list --parent="$outcome_id" 2>&1)" || fail "work list exited non-zero" "$work_list"
 expect_contains "work list" "$work_list" "Packaged work item"
 work_ready="$(npx --no-install construct work ready 2>&1)" || fail "work ready exited non-zero" "$work_ready"
-expect_contains "work ready" "$work_ready" "Packaged work item"
+case "$work_ready" in *"Packaged work item"*) fail "proposed work is listed as ready" "$work_ready" ;; esac
+work_show="$(npx --no-install construct work show "$outcome_id" 2>&1)" || fail "work show exited non-zero" "$work_show"
+expect_contains "work show" "$work_show" "children: 0 of 1 finished"
 
 echo "== a directory source is declared, read, and re-read unchanged =="
 add_out="$(npx --no-install construct source add repo --kind=directory --purpose='the project files' --locator="$project" --authority=authoritative --authoritative-for=code_component 2>&1)" \
@@ -156,6 +162,10 @@ const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confir
 const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
 const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
 const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.items.length === 1, 'one statement remembered');
+const rooted = await call('work', { action: 'add', kind: 'outcome', title: 'Hold schema changes until stable', serves: mem.remembered.id }); must(rooted.status === 'open' && rooted.admittedBy === 'serves', 'work serving a remembered decision is admitted');
+const sub = await call('work', { action: 'add', title: 'Guard the migration path', parent: rooted.id, acceptance: ['no migration runs before 1.0'] }); must(sub.status === 'open', 'a child of admitted work is admitted');
+const loose = await call('work', { action: 'add', title: 'An idea with no reason' }); must(loose.status === 'proposed', 'unrooted work from a session is proposed');
+const ready = await call('work', { action: 'ready' }); must(ready.some((w) => w.id === sub.id) && !ready.some((w) => w.id === loose.id), 'ready holds admitted work only');
 const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
 const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
@@ -170,7 +180,7 @@ const held = await call('run_status', { runId: started.run.id }); must(held.deli
 console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out" | grep -v '^pending=' || true
