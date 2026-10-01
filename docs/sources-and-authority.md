@@ -73,3 +73,13 @@ changed, or drew on a source that gained files, the refresh opens a drift
 finding against that deliverable and puts a question in the inbox: revise,
 re-run, or dismiss. `bootstrap` names directory sources that moved since
 their last read, so a session refreshes before relying on them.
+
+## What the person settles governs
+
+A remembered decision that says one thing replaces another ("INT-203
+supersedes ADR-004", "the 2025 platform strategy is outdated") marks the
+named document or item as superseded, with the same effect as a
+"Supersedes:" header: citing it without saying so is sent back. Confirmed
+decisions and constraints are also handed to every step that reads, with
+the instruction to list a source that disagrees with one under conflicts,
+citing the statement.

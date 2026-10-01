@@ -45,14 +45,27 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
   });
 }
 
-/** The manifest recorded at the source's most recent change, or null when none was ever recorded. */
-export function currentManifest(store: StateStore, sourceId: string): ManifestEntry[] | null {
+export interface CurrentManifest {
+  readonly entries: ManifestEntry[];
+  /** "witnessed" when Construct read the source itself; "reported" when a host or fixture said what it held. */
+  readonly provenance: 'witnessed' | 'reported';
+  /** Only some items were read; absence from the manifest is not evidence of absence. */
+  readonly partial: boolean;
+}
+
+/** The manifest recorded at the source's most recent change, with how it was obtained, or null when none was recorded. */
+export function currentManifestRecord(store: StateStore, sourceId: string): CurrentManifest | null {
   const changed = listObservations(store, { sourceId, limit: 2000 }).filter((o) => o.kind === 'source.changed');
   for (let i = changed.length - 1; i >= 0; i -= 1) {
-    const ev = changed[i]!.evidence as { manifest?: unknown } | null;
-    if (ev && Array.isArray(ev.manifest)) return ev.manifest as ManifestEntry[];
+    const ev = changed[i]!.evidence as { manifest?: unknown; evidence?: unknown; partial?: unknown } | null;
+    if (ev && Array.isArray(ev.manifest)) return { entries: ev.manifest as ManifestEntry[], provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', partial: ev.partial === true };
   }
   return null;
+}
+
+/** The manifest entries recorded at the source's most recent change, or null when none was ever recorded. */
+export function currentManifest(store: StateStore, sourceId: string): ManifestEntry[] | null {
+  return currentManifestRecord(store, sourceId)?.entries ?? null;
 }
 
 export function diffManifests(before: readonly ManifestEntry[] | null, after: readonly ManifestEntry[]): ItemChanges {

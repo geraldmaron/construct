@@ -30,6 +30,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ManifestEntry } from '../source/manifest.ts';
+import { supersessionFor, type DeclaredSupersession } from './governance.ts';
 
 export const EVIDENCE_TEXT_CAP_BYTES = 1024 * 1024;
 
@@ -58,6 +59,10 @@ export interface EvidenceSource {
   readonly kind: string;
   readonly locator: string | null;
   readonly manifest: readonly ManifestEntry[] | null;
+  /** How the manifest was obtained: read by Construct, or reported by the host or a fixture. */
+  readonly provenance?: Provenance;
+  /** The manifest covers only what the host happened to read; an item outside it is the host's word, not a miss. */
+  readonly partial?: boolean;
 }
 
 /** Kernel record kinds a step may cite by id. */
@@ -70,6 +75,8 @@ export interface ResolverInput {
   readonly deliverableIds?: ReadonlySet<string>;
   /** Whether Construct holds a record of this kind with this id. */
   readonly knows?: (kind: RecordKind, id: string) => boolean;
+  /** Documents or items the person has said are replaced. */
+  readonly supersessions?: readonly DeclaredSupersession[];
 }
 
 /** Names of Construct's own surfaces a step may cite as what it consulted. */
@@ -131,7 +138,14 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     return { ...common, kind: 'file', text: readText(real) };
   };
 
-  return (original: string): ResolvedRef | null => {
+  const declared = input.supersessions ?? [];
+  const govern = (r: ResolvedRef | null): ResolvedRef | null => {
+    if (!r || r.supersededBy || declared.length === 0 || (r.kind !== 'file' && r.kind !== 'item')) return r;
+    const hit = supersessionFor([r.itemRef ?? '', r.path ?? '', stripLocator(r.ref)].filter(Boolean), declared);
+    return hit ? { ...r, supersededBy: `${hit.by} (remembered decision ${hit.statementId})` } : r;
+  };
+  return (original: string): ResolvedRef | null => govern(resolveRaw(original));
+  function resolveRaw(original: string): ResolvedRef | null {
     if (typeof original !== 'string') return null;
     const ref = stripLocator(original);
     if (ref === '') return null;
@@ -146,19 +160,20 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     }
     if (input.deliverableIds?.has(ref)) return { ref: original, kind: 'deliverable', provenance: 'witnessed' };
     const sourceRef = head === 'source' ? rest : ref;
-    if (byId.has(sourceRef)) return { ref: original, kind: 'source', sourceId: sourceRef, provenance: byId.get(sourceRef)!.manifest ? 'witnessed' : 'reported' };
+    if (byId.has(sourceRef)) { const src = byId.get(sourceRef)!; return { ref: original, kind: 'source', sourceId: sourceRef, provenance: src.manifest ? (src.provenance ?? 'witnessed') : 'reported' }; }
     const s = head ? byId.get(head) : undefined;
     if (s && rest) {
       if (s.kind === 'directory' && s.locator) return asPath(rest, original, resolve(root, s.locator));
       // A source with no manifest is one Construct cannot read; the host's word is all there is.
       if (!s.manifest) return { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' };
       const hit = s.manifest.find((e) => e.ref === rest);
-      return hit ? { ref: original, kind: 'item', sourceId: s.id, itemRef: hit.ref, text: hit.text, provenance: 'witnessed' } : null;
+      if (hit) return { ref: original, kind: 'item', sourceId: s.id, itemRef: hit.ref, text: hit.text, provenance: s.provenance ?? 'witnessed', ...(hit.supersededBy ? { supersededBy: hit.supersededBy } : {}) };
+      return s.partial ? { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' } : null;
     }
     const item = itemIndex.get(ref);
-    if (item) return { ref: original, kind: 'item', sourceId: item.source.id, itemRef: item.entry.ref, text: item.entry.text, provenance: 'witnessed' };
+    if (item) return { ref: original, kind: 'item', sourceId: item.source.id, itemRef: item.entry.ref, text: item.entry.text, provenance: item.source.provenance ?? 'witnessed' };
     return asPath(ref, original);
-  };
+  }
 }
 
 /** How much of a step's evidence Construct could open itself. */

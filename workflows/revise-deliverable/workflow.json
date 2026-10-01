@@ -1,0 +1,225 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "revise-deliverable",
+  "title": "Revise a deliverable",
+  "version": "1.0.0",
+  "purpose": "Revise an earlier deliverable for a stated change (reviewer feedback, a stale-work finding, new material, a conversion to another form), keeping it linked to the version it revises, saying what changed and why, and holding the revision to the same grounding checks; challenged before it is handed back.",
+  "activation": [
+    "revise the PRD for this feedback",
+    "update the RFC now that the decision changed",
+    "turn this PRD into an RFC",
+    "the notes changed, update the doc"
+  ],
+  "standDown": [
+    "write a new document from scratch",
+    "just fix a typo"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "deliverable": "string",
+    "change": "string",
+    "target": "string",
+    "template": "string"
+  },
+  "requiredInputs": [
+    "deliverable",
+    "change",
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the deliverable being revised, the change, and what changed in its sources; name conflicts the change introduces",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "deliverable": "input.deliverable",
+        "change": "input.change",
+        "target": "input.target"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "conflicts",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "superseded_acknowledged",
+        "conflicts_declared",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "revise",
+      "title": "Write the revision to the target; keep what still holds, change what the change requires, and say what changed",
+      "needs": [
+        "gather"
+      ],
+      "skill": null,
+      "capabilities": [
+        "read_project_files",
+        "write_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "deliverable": "input.deliverable",
+        "change": "input.change",
+        "target": "input.target",
+        "template": "input.template",
+        "findings": "steps.gather.findings",
+        "conflicts": "steps.gather.conflicts"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "artifact",
+        "revises",
+        "changeSummary",
+        "derivations"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "artifacts_exist",
+        "numbers_grounded",
+        "template_conformance",
+        "superseded_acknowledged",
+        "revision_linked",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "challenge",
+      "title": "Challenge the revision: did the change land everywhere it applies, and did anything that still held get lost",
+      "needs": [
+        "revise"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "artifact": "steps.revise.artifact",
+        "changeSummary": "steps.revise.changeSummary"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 900000
+    },
+    {
+      "id": "record",
+      "title": "Record the revision, linked to what it revises, and hand it back",
+      "needs": [
+        "challenge",
+        "revise"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "artifact": "steps.revise.artifact",
+        "revises": "steps.revise.revises",
+        "changeSummary": "steps.revise.changeSummary",
+        "verdict": "steps.challenge.verdict"
+      },
+      "outputs": [
+        "artifact",
+        "revises",
+        "changeSummary",
+        "verdict"
+      ],
+      "validators": [
+        "schema",
+        "artifacts_exist",
+        "revision_linked"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "deliverable",
+    "change"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "document/revision",
+    "schema": "document/revision/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

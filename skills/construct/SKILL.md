@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.0.0
+  version: 2.1.0
 ---
 
 # Construct in this session
@@ -33,7 +33,10 @@ relay each answer with `decide`.
 ## Recognize the four kinds of request
 
 1. **Answer.** A question ("What does this function do?"). Answer it from
-   your own access. Record nothing. Do not start anything.
+   your own access. Record nothing. Do not start anything. When the answer
+   states facts about this project (status, figures, decisions, who owns
+   what), call `check_answer` with the answer and what it rests on first;
+   fix what it finds, or say plainly which parts you could not support.
 2. **Remember.** "Remember that…", "Record that…", "Note: …". Call `remember`
    with the person's wording and the kind it is (decision, constraint,
    principle, note, outcome). One record, nothing else: no run, no tasks,
@@ -64,7 +67,10 @@ After `start_outcome`, loop:
   Ask for the skill's text with `includeSkillBody` only for that step.
   Follow the step's instructions and the skill's method.
 - Read only the sources the step names. Every material finding cites what
-  it rests on.
+  it rests on. When you read a source Construct cannot read itself (a live
+  tracker, a wiki) through your own tools, record what you read with
+  `sources` action `report`, so later changes there are tracked and work
+  that cited them is flagged.
 - `submit_work` with the step's declared outputs and your evidence
   entries. Validators run; a failure comes back with what to fix, and the
   step is retried if its policy allows. Say `noData` when there was nothing
@@ -73,7 +79,13 @@ After `start_outcome`, loop:
   the person. Put the question to them in plain words with its options;
   relay their answer with `decide`. An approval covers exactly the action
   asked about and expires; never ask for more than the step needs, and
-  never assume an answer.
+  never assume an answer. When a step keeps failing its checks, the
+  question lists the problems; the person may accept the output with them,
+  ask for another attempt, or stop. An accepted output is never called
+  validated.
+- When a question about stale work is answered with revise or re-run,
+  `decide` returns the outcome that would do it; offer it, and start it only
+  if the person wants it.
 
 Stay in this session. Do not spawn another agent or run another host
 because one is installed. Do not run Construct's command line to do the
