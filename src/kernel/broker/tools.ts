@@ -33,7 +33,8 @@ import { createRouter, type Router } from '../skills/routing.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
 import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
-import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, createWork, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork } from '../work/service.ts';
+import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork } from '../work/service.ts';
+import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -624,7 +625,7 @@ const promote = define<{ deliverableId: string; to: TrustState; reason?: string 
   },
 });
 
-const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'claim', 'check', 'handoff', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
+const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'update', 'link', 'unlink', 'requalify', 'claim', 'check', 'handoff', 'accept', 'complete', 'release', 'takeover', 'reopen'] as const;
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
@@ -688,10 +689,41 @@ function handoffAsData(h: Handoff): PeerData<Handoff> {
   return asPeerData(h.from, h);
 }
 
-const work = define<{ action: WorkAction; id?: string; title?: string; kind?: string; reason?: string; token?: string; agent?: string; paths?: string[]; mode?: LeaseMode; packet?: Record<string, unknown>; to?: string }, unknown>({
+interface WorkToolInput {
+  action: WorkAction;
+  id?: string;
+  title?: string;
+  kind?: string;
+  description?: string;
+  parent?: string;
+  serves?: string;
+  blockedBy?: string[];
+  related?: string[];
+  acceptance?: string[];
+  risk?: string;
+  sources?: string[];
+  removeParent?: boolean;
+  reason?: string;
+  token?: string;
+  agent?: string;
+  paths?: string[];
+  mode?: LeaseMode;
+  packet?: Record<string, unknown>;
+  to?: string;
+}
+
+/** A list input that must hold only strings. */
+function strings(raw: Record<string, unknown>, key: string): string[] | undefined {
+  if (raw[key] === undefined) return undefined;
+  const values = list(raw, key);
+  if (values.some((v) => typeof v !== 'string')) throw new ToolInputError(`"${key}" must contain strings`);
+  return values as string[];
+}
+
+const work = define<WorkToolInput, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
+  description: 'File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -700,9 +732,18 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     properties: {
       action: { type: 'string', description: WORK_ACTIONS.join(', ') + '.', enum: [...WORK_ACTIONS] },
       id: { type: 'string', description: 'Work id or a preserved legacy id.' },
-      title: { type: 'string', description: 'Title, for add.' },
+      title: { type: 'string', description: 'Title, for add and update.' },
       kind: { type: 'string', description: 'outcome, task, defect, or plan.', enum: ['outcome', 'task', 'defect', 'plan'] },
-      reason: { type: 'string', description: 'Required for reopen and takeover; optional for complete.' },
+      description: { type: 'string', description: 'For add and update: what the work is, in enough detail to pick it up cold.' },
+      parent: { type: 'string', description: 'For add and link: the work item this one is part of.' },
+      serves: { type: 'string', description: 'For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id.' },
+      blockedBy: { type: 'array', items: { type: 'string' }, description: 'For add, link, and unlink: work that must finish before this is ready.' },
+      related: { type: 'array', items: { type: 'string' }, description: 'For add, link, and unlink: work that gives context without blocking.' },
+      acceptance: { type: 'array', items: { type: 'string' }, description: 'For add and update: observable criteria a finished item meets, one each. update replaces the list.' },
+      risk: { type: 'string', description: 'For add and update: what could go wrong.' },
+      sources: { type: 'array', items: { type: 'string' }, description: 'For add and update: source ids whose refresh sends this work back for requalification.' },
+      removeParent: { type: 'boolean', description: 'For unlink: remove the parent.' },
+      reason: { type: 'string', description: 'Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met.' },
       token: { type: 'string', description: 'The token your claim returned: renews a claim, completes or releases it.' },
       agent: { type: 'string', description: 'Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent.' },
       paths: { type: 'array', items: { type: 'string' }, description: 'Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held.' },
@@ -720,6 +761,15 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       id: str(raw, 'id', { optional: true }),
       title: str(raw, 'title', { optional: true }),
       kind: str(raw, 'kind', { optional: true, oneOf: ['outcome', 'task', 'defect', 'plan'] }),
+      description: str(raw, 'description', { optional: true }),
+      parent: str(raw, 'parent', { optional: true }),
+      serves: str(raw, 'serves', { optional: true }),
+      blockedBy: strings(raw, 'blockedBy'),
+      related: strings(raw, 'related'),
+      acceptance: strings(raw, 'acceptance'),
+      risk: str(raw, 'risk', { optional: true }),
+      sources: strings(raw, 'sources'),
+      removeParent: bool(raw, 'removeParent', false),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
       agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
@@ -729,9 +779,9 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
       to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
     };
   },
-  run(ctx, { action, id, title, kind, reason, token, agent, paths, mode, packet, to }) {
+  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, agent, paths, mode, packet, to }) {
     const at = ctx.now();
-    if (action === 'list') return queryWork(ctx.store, { query: title, limit: 50 });
+    if (action === 'list') return queryWork(ctx.store, { query: title, parentId: parent, limit: 50 });
     if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
@@ -741,7 +791,24 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     if (action === 'ready') return listReady(ctx.store, at);
     if (action === 'add') {
       if (!title) throw new Error('"title" is required for add');
-      return createWork(ctx.store, { id: ctx.nextId('work'), kind: (kind as 'outcome' | 'task' | 'defect' | 'plan' | undefined) ?? 'task', title, description: title, at, actor: ctx.actor });
+      const filed = fileWork(ctx.store, {
+        id: ctx.nextId('work'),
+        kind: (kind as 'outcome' | 'task' | 'defect' | 'plan' | undefined) ?? 'task',
+        title,
+        description,
+        parentId: parent,
+        serves,
+        blockedBy,
+        related,
+        acceptance,
+        risk,
+        sources,
+        byPerson: false,
+        at,
+        actor: ctx.actor,
+        nextId: ctx.nextId,
+      });
+      return { ...filed.work, admitted: filed.admitted, admittedBy: filed.admittedBy, next: filed.next };
     }
     if (!id) throw new Error(`"id" is required for ${action}`);
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
@@ -749,8 +816,27 @@ const work = define<{ action: WorkAction; id?: string; title?: string; kind?: st
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
     if (action === 'show') {
       const handoff = handoffOf(ctx.store, item.id);
-      return { ...item, readiness: readinessOf(ctx.store, item, at), leases: leasesFor(ctx.store, item.id), handoff: handoff ? handoffAsData(handoff) : null };
+      return { ...item, readiness: readinessOf(ctx.store, item, at), structure: workStructure(ctx.store, item), leases: leasesFor(ctx.store, item.id), handoff: handoff ? handoffAsData(handoff) : null };
     }
+    if (action === 'update') {
+      return updateWork(ctx.store, {
+        id: item.id,
+        expectedRevision: item.revision,
+        at,
+        actor: ctx.actor,
+        title,
+        description,
+        acceptance,
+        risk,
+        premises: sources ? { sources } : undefined,
+      });
+    }
+    if (action === 'requalify') {
+      if (!reason) throw new Error('requalify needs a reason: what was checked against the changed source');
+      return requalifyWork(ctx.store, { id: item.id, reason, at, actor: ctx.actor });
+    }
+    if (action === 'link') return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
+    if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
     const who = claimantFor(ctx, agent, at);
     if (action === 'handoff') {
       if (!token) throw new Error('"token" is required for handoff: the one your claim returned');

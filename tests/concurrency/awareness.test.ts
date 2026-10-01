@@ -33,7 +33,8 @@ test('a peer’s claim reaches the other session on its next call, and a quiet c
       const quiet = await b.ok('work', { action: 'list' });
       assert.equal(quiet.construct_peers, undefined, 'nothing happened yet');
 
-      const added = await a.ok('work', { action: 'add', title: 'parser' });
+      const reason = (await a.ok('remember', { kind: 'outcome', text: 'A faster parser' })) as { remembered: { id: string } };
+      const added = await a.ok('work', { action: 'add', serves: reason.remembered.id, title: 'parser' });
       await a.ok('work', { action: 'claim', id: added.id, paths: ['src/parser/'] });
       const heard = await b.ok('work', { action: 'list' });
       const peers = heard.construct_peers as { events: { kind: string; work: string; by: string; paths?: string[] }[] };

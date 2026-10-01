@@ -326,6 +326,7 @@ query work items
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--status` | yes | filter by status |
+| `--parent` | yes | only the direct children of this work item |
 | `--kind` | yes | filter by kind |
 | `--query` | yes | filter by text or id |
 | `--limit` | yes | page size (default 50) |
@@ -346,12 +347,76 @@ Reads only: yes.
 
 ### `construct work add <title>`
 
-create a work item
+file a work item; it is open when it has a reason, proposed otherwise
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--kind` | yes | outcome, task, defect, or plan (default task) |
 | `--description` | yes | body of the item |
+| `--parent` | yes | the work item this one is part of |
+| `--serves` | yes | the decision, requirement, initiative, or metric it serves (entity or statement id) |
+| `--blocked-by` | yes, repeatable | work that must finish before this is ready (repeatable) |
+| `--related` | yes, repeatable | work that gives context without blocking (repeatable) |
+| `--accept` | yes, repeatable | an acceptance criterion; repeat for each (update replaces the list) |
+| `--risk` | yes | what could go wrong |
+| `--source` | yes, repeatable | a source whose refresh sends this back for requalification (repeatable) |
+
+Reads only: no.
+
+### `construct work update <id>`
+
+change an item’s title, description, acceptance criteria, risk, or premise sources
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--title` | yes | new title |
+| `--description` | yes | new body |
+| `--accept` | yes, repeatable | an acceptance criterion; repeat for each (update replaces the list) |
+| `--risk` | yes | what could go wrong |
+| `--source` | yes, repeatable | a source whose refresh sends this back for requalification (repeatable) |
+| `--clear-accept` | no | remove every acceptance criterion |
+| `--revision` | yes | expected revision (default: the current one) |
+
+Reads only: no.
+
+### `construct work requalify <id>`
+
+clear a stale-premise mark once the work was checked against what changed
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--reason` | yes | what was checked |
+
+Reads only: no.
+
+### `construct work link <id>`
+
+give an item a parent, a reason it serves, or dependencies; a proposed item that gains a reason is admitted
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--parent` | yes | the work item this one is part of |
+| `--serves` | yes | the decision, requirement, initiative, or metric it serves (entity or statement id) |
+| `--blocked-by` | yes, repeatable | work that must finish before this is ready (repeatable) |
+| `--related` | yes, repeatable | work that gives context without blocking (repeatable) |
+
+Reads only: no.
+
+### `construct work unlink <id>`
+
+remove an item’s parent or dependencies
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--parent` | no | remove the parent |
+| `--blocked-by` | yes, repeatable | a blocking item to remove (repeatable) |
+| `--related` | yes, repeatable | a related item to remove (repeatable) |
+
+Reads only: no.
+
+### `construct work admit <id>`
+
+move proposed work into the backlog; the person admits anything, others only work with a reason
 
 Reads only: no.
 

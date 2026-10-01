@@ -176,17 +176,26 @@ Surface: interactive. Reads only: no.
 
 ### `work`
 
-Native work. Query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. Ready means current scope, premises, and blocking dependencies allow dispatch — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
+Native work. File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `ready`, `offers`, `show`, `add`, `claim`, `check`, `handoff`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, offers, show, add, claim, check, handoff, accept, complete, release, takeover, reopen. |
+| `action` | `list`, `ready`, `offers`, `show`, `add`, `update`, `link`, `unlink`, `requalify`, `claim`, `check`, `handoff`, `accept`, `complete`, `release`, `takeover`, `reopen` | yes | list, ready, offers, show, add, update, link, unlink, requalify, claim, check, handoff, accept, complete, release, takeover, reopen. |
 | `id` | string | no | Work id or a preserved legacy id. |
-| `title` | string | no | Title, for add. |
+| `title` | string | no | Title, for add and update. |
 | `kind` | `outcome`, `task`, `defect`, `plan` | no | outcome, task, defect, or plan. |
-| `reason` | string | no | Required for reopen and takeover; optional for complete. |
+| `description` | string | no | For add and update: what the work is, in enough detail to pick it up cold. |
+| `parent` | string | no | For add and link: the work item this one is part of. |
+| `serves` | string | no | For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id. |
+| `blockedBy` | array | no | For add, link, and unlink: work that must finish before this is ready. |
+| `related` | array | no | For add, link, and unlink: work that gives context without blocking. |
+| `acceptance` | array | no | For add and update: observable criteria a finished item meets, one each. update replaces the list. |
+| `risk` | string | no | For add and update: what could go wrong. |
+| `sources` | array | no | For add and update: source ids whose refresh sends this work back for requalification. |
+| `removeParent` | boolean | no | For unlink: remove the parent. |
+| `reason` | string | no | Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met. |
 | `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
 | `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
 | `paths` | array | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |

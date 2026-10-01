@@ -22,7 +22,8 @@ for (const [client, lead] of [['claude-code', 'claude'], ['codex', 'codex'], ['c
       session = new Session(fixture.root, fixture.env, [`--client=${client}`]);
       await session.request('initialize', INITIALIZE);
       await session.ok('bootstrap');
-      const parent = await session.ok('work', { action: 'add', title: 'Two independent fixture changes' });
+      const reason = (await session.ok('remember', { kind: 'outcome', text: 'Fixture changes land independently' })) as { remembered: { id: string } };
+      const parent = await session.ok('work', { action: 'add', serves: reason.remembered.id, title: 'Two independent fixture changes' });
       await session.ok('work', { action: 'claim', id: parent.id });
       const other = (['claude', 'codex', 'cursor'] as Executor[]).filter(executor => executor !== lead);
       const workers: Array<{ id: string; executor: Executor; paths: string[] }> = [];

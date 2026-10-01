@@ -38,8 +38,9 @@ test('four sessions racing to accept 250 handoffs take each exactly once', { tim
       await offerer.request('initialize', INITIALIZE);
       await Promise.all(racers.map((r) => r.request('initialize', INITIALIZE)));
       const ids: string[] = [];
+      const reason = (await offerer.ok('remember', { kind: 'outcome', text: 'Handoffs land exactly once' })) as { remembered: { id: string } };
       for (let i = 0; i < OFFERS; i += 1) {
-        const added = await offerer.ok('work', { action: 'add', title: `offer ${String(i)}` });
+        const added = await offerer.ok('work', { action: 'add', serves: reason.remembered.id, title: `offer ${String(i)}` });
         const claimed = await offerer.ok('work', { action: 'claim', id: added.id, paths: [`src/f${String(i)}.ts`] });
         await offerer.ok('work', { action: 'handoff', id: added.id, token: claimed.claimToken, packet: { state: `item ${String(i)} started`, next: 'finish it' } });
         ids.push(String(added.id));

@@ -4,9 +4,10 @@
  * Work items, blocking and informational dependencies, atomic claims with
  * fencing tokens, and versioned export/restore live here. Workflow runs stay
  * in kernel/state/runs.ts; a work item may have many runs without duplicating
- * its business meaning. Readiness is computed from current scope, premises,
- * blocking dependencies, claims, and unresolved blockers — not from a status
- * string alone.
+ * its business meaning. Readiness is computed from admission, blocking
+ * dependencies, live claims, and premises a source refresh marked stale —
+ * not from a status string alone. Parents, reasons, and admission live in
+ * structure.ts.
  */
 
 import { randomUUID } from 'node:crypto';
@@ -38,6 +39,12 @@ export const WORK_DEP_KINDS = ['blocks', 'informs'] as const;
 export type WorkDepKind = (typeof WORK_DEP_KINDS)[number];
 
 const TERMINAL: readonly WorkStatus[] = ['completed', 'cancelled', 'superseded', 'historical'];
+
+/**
+ * The work event a delegated attempt records on its child item. Those children
+ * are attempt records, not deliverables: they end with their parent.
+ */
+export const DELEGATION_ATTEMPT_EVENT = 'delegation.state.v1';
 
 export interface WorkItem {
   readonly id: string;
@@ -123,7 +130,7 @@ function toWork(row: Row): WorkItem {
   };
 }
 
-function recordEvent(
+export function recordEvent(
   store: StateStore,
   workId: string,
   at: string,
@@ -227,10 +234,23 @@ export function bindLegacyId(
     .run(input.legacyId, input.workId, input.source, input.at);
 }
 
+/** Items whose parent is `id`, oldest first. */
+export function childrenOf(store: StateStore, id: string): WorkItem[] {
+  const rows = store.db.prepare('SELECT * FROM work_items WHERE parent_id = ? ORDER BY created_at, id').all(id) as unknown as Row[];
+  return rows.map(toWork);
+}
+
+/** A work item's acceptance criteria, as the list of statements a finished item meets. */
+export function acceptanceOf(work: WorkItem): readonly string[] {
+  return Array.isArray(work.acceptance) ? work.acceptance.filter((c): c is string => typeof c === 'string' && c.trim() !== '') : [];
+}
+
 export interface WorkQuery {
   readonly status?: WorkStatus;
   readonly kind?: WorkKind;
   readonly query?: string;
+  /** Only the direct children of this work item. */
+  readonly parentId?: string;
   readonly limit?: number;
   readonly offset?: number;
 }
@@ -250,10 +270,10 @@ export function queryWork(store: StateStore, filter: WorkQuery = {}): WorkPage {
   const rows = store.db
     .prepare(
       `SELECT * FROM work_items
-        WHERE (? IS NULL OR status = ?) AND (? IS NULL OR kind = ?)
+        WHERE (? IS NULL OR status = ?) AND (? IS NULL OR kind = ?) AND (? IS NULL OR parent_id = ?)
         ORDER BY updated_at DESC, id`,
     )
-    .all(filter.status ?? null, filter.status ?? null, filter.kind ?? null, filter.kind ?? null) as unknown as Row[];
+    .all(filter.status ?? null, filter.status ?? null, filter.kind ?? null, filter.kind ?? null, filter.parentId ?? null, filter.parentId ?? null) as unknown as Row[];
   const matched = q
     ? rows.filter((r) => `${r.id} ${r.title} ${r.description}`.toLowerCase().includes(q))
     : rows;
@@ -282,6 +302,12 @@ export function addWorkDependency(
   store.db
     .prepare(`INSERT INTO work_dependencies (id, from_id, to_id, kind, created_at) VALUES (?, ?, ?, ?, ?)`)
     .run(input.id, input.fromId, input.toId, input.kind, input.at);
+}
+
+/** Remove one dependency; true when there was one to remove. */
+export function removeWorkDependency(store: StateStore, input: { readonly fromId: string; readonly toId: string; readonly kind: WorkDepKind }): boolean {
+  requireOneOf(input.kind, WORK_DEP_KINDS, 'work.dep.kind');
+  return store.db.prepare('DELETE FROM work_dependencies WHERE from_id = ? AND to_id = ? AND kind = ?').run(input.fromId, input.toId, input.kind).changes > 0;
 }
 
 export interface WorkDep {
@@ -343,11 +369,41 @@ export function readinessOf(store: StateStore, work: WorkItem, at: string): Read
   if (work.claimOwner && work.claimUntil && work.claimUntil > at && work.status === 'claimed') {
     blockers.push(`claimed by ${work.claimOwner} until ${work.claimUntil}`);
   }
-  const premises = work.premises;
-  if (premises && typeof premises === 'object' && premises !== null && 'stale' in premises && (premises as { stale?: boolean }).stale) {
-    blockers.push('premises changed; requalify before dispatch');
-  }
+  if (isStale(work.premises)) blockers.push('premises changed; requalify before dispatch');
+  else if (work.status === 'blocked') blockers.push('blocked');
   return { ready: blockers.length === 0, blockers };
+}
+
+function isStale(premises: unknown): boolean {
+  return premises !== null && typeof premises === 'object' && (premises as { stale?: unknown }).stale === true;
+}
+
+function staleMark(premises: unknown): { stale: true; staleSource: unknown; staleAt: unknown } {
+  const p = premises as { staleSource?: unknown; staleAt?: unknown };
+  return { stale: true, staleSource: p.staleSource ?? null, staleAt: p.staleAt ?? null };
+}
+
+/**
+ * Clear a stale-premise mark after the work was checked against what changed.
+ * The reason says what was checked; it is the only way the mark comes off.
+ */
+export function requalifyWork(
+  store: StateStore,
+  input: { readonly id: string; readonly reason: string; readonly at: string; readonly actor?: string },
+): WorkItem {
+  requireInstant(input.at, 'work.at');
+  requireNonEmpty(input.reason, 'work.requalify.reason');
+  return store.transaction(() => {
+    const current = getWork(store, input.id);
+    if (!current) throw new Error(`no work ${input.id}`);
+    if (!isStale(current.premises)) throw new Error(`work ${input.id} has no stale premises to requalify`);
+    const { stale: _stale, staleSource, staleAt: _staleAt, ...rest } = current.premises as { stale: boolean; staleSource?: unknown; staleAt?: unknown };
+    store.db
+      .prepare(`UPDATE work_items SET premises_json = ?, status = CASE WHEN status = 'blocked' THEN 'open' ELSE status END, revision = revision + 1, updated_at = ? WHERE id = ?`)
+      .run(toJson(rest), input.at, input.id);
+    recordEvent(store, input.id, input.at, 'requalified', input.actor ?? null, current.revision + 1, { reason: input.reason, staleSource: staleSource ?? null });
+    return getWork(store, input.id)!;
+  });
 }
 
 export function listReady(store: StateStore, at: string, limit = 50): WorkItem[] {
@@ -407,9 +463,15 @@ export function updateWork(
   return store.transaction(() => {
     const current = getWork(store, input.id);
     if (!current) throw new Error(`no work ${input.id}`);
+    if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is ${current.status}; reopen it before editing`);
     if (current.revision !== input.expectedRevision) {
       throw new Error(`work ${input.id} is at revision ${String(current.revision)}; expected ${String(input.expectedRevision)}`);
     }
+    // New premises never clear a stale mark: only requalifying does, with a reason.
+    const stale = isStale(current.premises) ? staleMark(current.premises) : null;
+    const premises = input.premises === undefined || stale === null || typeof input.premises !== 'object' || input.premises === null
+      ? input.premises
+      : { ...(input.premises as object), ...stale };
     store.db
       .prepare(
         `UPDATE work_items SET
@@ -421,7 +483,7 @@ export function updateWork(
         input.title ?? current.title,
         input.description ?? current.description,
         input.scope === undefined ? (current.scope === null ? null : toJson(current.scope)) : toJson(input.scope),
-        input.premises === undefined ? (current.premises === null ? null : toJson(current.premises)) : toJson(input.premises),
+        premises === undefined ? (current.premises === null ? null : toJson(current.premises)) : toJson(premises),
         input.acceptance === undefined ? (current.acceptance === null ? null : toJson(current.acceptance)) : toJson(input.acceptance),
         input.risk === undefined ? (current.risk === null ? null : toJson(current.risk)) : toJson(input.risk),
         input.reason ?? null,
@@ -474,6 +536,10 @@ export const CLAIM_QUIET_CAP_MS = 2 * 60 * 60_000;
 
 function liveClaim(row: Row, now: string): boolean {
   return row.status === 'claimed' && row.claim_owner !== null && row.claim_until !== null && row.claim_until > now;
+}
+
+function isDelegationAttempt(store: StateStore, id: string): boolean {
+  return store.db.prepare('SELECT 1 FROM work_events WHERE work_id = ? AND kind = ? LIMIT 1').get(id, DELEGATION_ATTEMPT_EVENT) !== undefined;
 }
 
 function rowOf(store: StateStore, id: string): Row | null {
@@ -904,6 +970,21 @@ function setTerminal(
       throw new Error(`work ${input.id} is at revision ${String(current.revision)}; expected ${String(input.expectedRevision)}`);
     }
     if (TERMINAL.includes(current.status)) throw new Error(`work ${input.id} is already ${current.status}`);
+    const unfinished = childrenOf(store, input.id).filter((c) => !TERMINAL.includes(c.status));
+    const attempts = unfinished.filter((c) => isDelegationAttempt(store, c.id));
+    const openChildren = unfinished.filter((c) => !attempts.includes(c));
+    if (openChildren.length > 0) {
+      throw new Error(
+        `work ${input.id} still has ${String(openChildren.length)} open child item(s): ${openChildren.slice(0, 5).map((c) => c.id).join(', ')}${openChildren.length > 5 ? ', …' : ''}; complete or cancel them first`,
+      );
+    }
+    const running = attempts.filter((c) => liveClaim(rowOf(store, c.id)!, input.at));
+    if (running.length > 0) {
+      throw new Error(`work ${input.id} has a delegated attempt still running (${running.map((c) => c.id).join(', ')}); cancel it or let it finish first`);
+    }
+    if (input.status === 'completed' && acceptanceOf(current).length > 0 && !input.reason?.trim()) {
+      throw new Error(`work ${input.id} has acceptance criteria; say how they were met in the reason`);
+    }
     // A live claim is settled only with its token; a claim that expired no
     // longer protects anything.
     if (liveClaim(row, input.at) && (input.token !== row.claim_token || input.owner !== row.claim_owner)) {
@@ -917,6 +998,15 @@ function setTerminal(
       .run(input.status, input.at, input.reason ?? null, input.at, input.id);
     releasePaths(store, { workId: input.id, now: input.at, reason: input.status });
     recordEvent(store, input.id, input.at, input.status, input.owner, current.revision + 1, { reason: input.reason ?? null });
+    for (const attempt of attempts) {
+      const ended = `its parent ${input.id} was ${input.status}`;
+      store.db
+        .prepare(`UPDATE work_items SET status = 'cancelled', completed_at = ?, reason = ?, claim_owner = NULL, claim_token = NULL, claim_until = NULL,
+            claim_session = NULL, claim_agent = NULL, claim_lane = NULL, revision = revision + 1, updated_at = ? WHERE id = ?`)
+        .run(input.at, ended, input.at, attempt.id);
+      releasePaths(store, { workId: attempt.id, now: input.at, reason: 'cancelled' });
+      recordEvent(store, attempt.id, input.at, 'cancelled', input.owner, attempt.revision + 1, { reason: ended });
+    }
     appendActivity(store, { at: input.at, kind: `work.${input.status}`, actor: input.owner, payload: { workId: input.id } });
     return getWork(store, input.id)!;
   });

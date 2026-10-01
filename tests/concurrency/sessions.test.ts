@@ -24,7 +24,8 @@ test('two sessions of one host hold separate identities, and a claim is theirs a
     try {
       await a.request('initialize', INITIALIZE);
       await b.request('initialize', INITIALIZE);
-      const added = await a.ok('work', { action: 'add', title: 'shared item' });
+      const reason = (await a.ok('remember', { kind: 'outcome', text: 'Sessions share one ledger' })) as { remembered: { id: string } };
+      const added = await a.ok('work', { action: 'add', serves: reason.remembered.id, title: 'shared item' });
       const claimed = await a.ok('work', { action: 'claim', id: added.id });
       assert.match(String(claimed.claimToken), /^[0-9a-f-]{36}$/);
       const holder = String(claimed.claimSession);
@@ -76,8 +77,8 @@ test('nothing a session writes over MCP is recorded as the person', { timeout: 6
       const boot = await s.ok('bootstrap');
       const question = (boot.profile as { openQuestions: Array<{ id: string; options: string[] | null }> }).openQuestions.find((q) => q.options);
       if (question) await s.ok('decide', { decisionId: question.id, resolution: question.options![0] });
-      await s.ok('remember', { kind: 'decision', text: 'We keep one store per project.' });
-      const added = await s.ok('work', { action: 'add', title: 'attributed item' });
+      const reason = (await s.ok('remember', { kind: 'decision', text: 'We keep one store per project.' })) as { remembered: { id: string } };
+      const added = await s.ok('work', { action: 'add', serves: reason.remembered.id, title: 'attributed item' });
       const claimed = await s.ok('work', { action: 'claim', id: added.id, agent: 'helper' });
       await s.ok('work', { action: 'complete', id: added.id, token: claimed.claimToken, agent: 'helper' });
     } finally {
