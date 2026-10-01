@@ -1,0 +1,25 @@
+# Update pull requests for the pinned workflow actions and the npm tree. They
+# target staging, like every other change, and reach main through promotion.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    target-branch: staging
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    # The MCP SDK is pinned exactly on purpose; its upgrades are deliberate.
+    ignore:
+      - dependency-name: '@modelcontextprotocol/*'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']

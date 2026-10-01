@@ -30,13 +30,23 @@ jobs:
   # the two checks that assert something about the ENVIRONMENT the suite runs in. Those two
   # stay together and apart from the ordinary run so a sterile-HOME failure is never
   # confused with a plain test failure.
+  #
+  # The ordinary gate runs on the declared minimum and on the current LTS: the two have
+  # behaved differently before (Node 22 prints a node:sqlite warning that Node 24 does not).
   gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.18', '24']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '22.18'
+          node-version: ${{ matrix.node }}
           # Every job here runs `npm ci` against the same lockfile. Without this
           # each one resolved and downloaded the tree from cold, five times a run.
           cache: npm
@@ -47,8 +57,11 @@ jobs:
 
   environment-isolation:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.18'
