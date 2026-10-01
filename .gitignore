@@ -35,3 +35,5 @@ tmp/
 .construct/state/
 # Protected recovery material (legacy tracker snapshots, work exports)
 .construct/recovery/
+# Browser-automation console logs written by the Playwright MCP server
+.playwright-mcp/
