@@ -19,6 +19,7 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { BUSY_TIMEOUT_MS, isBusyError, openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
+import { bindStoreToProject } from '../kernel/state/identity.ts';
 import { boolFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { bindProject, createContext, ProjectBusyError, type CliContext } from './context.ts';
 import { processesHolding } from './holders.ts';
@@ -134,7 +135,11 @@ export function migrate(args: ParsedArgs, ctx: CliContext = createContext()): nu
     throw openError;
   }
   const from = store.migratedFrom;
-  store.close();
+  try {
+    if (bound.files.config) bindStoreToProject(store, bound.files.config.id);
+  } finally {
+    store.close();
+  }
   if (from === null) {
     // Another process upgraded the store while this one waited for the lock,
     // and took its own backup first; the store is now this format, complete.

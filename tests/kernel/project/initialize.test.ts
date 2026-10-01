@@ -5,13 +5,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { initializeProject, LegacyProjectError, readProjectFiles } from '../../../src/kernel/project/initialize.ts';
 import { projectLayout, STATE_GITIGNORE_PATTERN } from '../../../src/kernel/project/layout.ts';
 import { ProjectFileError, UnsupportedProjectFileError } from '../../../src/kernel/project/files.ts';
 import { getProfile } from '../../../src/kernel/state/profile.ts';
 import { STATE_FORMAT_VERSION } from '../../../src/kernel/state/format.ts';
+import { StoreProjectError, storeProjectId } from '../../../src/kernel/state/identity.ts';
 import { tmpProject, AT } from './support.ts';
 
 const input = (root: string) => ({ root, projectId: 'proj-1', name: 'demo', at: AT });
@@ -154,6 +155,32 @@ test('readProjectFiles reads the committed set without touching state', () => {
     assert.equal(files.config?.id, 'proj-1');
     assert.equal(files.sources?.sources.length, 0);
     assert.deepEqual(files.lock?.skills, {});
+  } finally {
+    cleanup();
+  }
+});
+
+test('init stamps the store with its project, adopts an empty store file, and never binds the store to another id', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    const layout = projectLayout(root);
+    mkdirSync(layout.stateDir, { recursive: true });
+    writeFileSync(layout.dbPath, '');
+    const first = initializeProject(input(root));
+    assert.equal(storeProjectId(first.store), 'proj-1');
+    first.store.close();
+    const original = readFileSync(layout.projectFile, 'utf8');
+
+    rmSync(layout.projectFile);
+    assert.throws(() => initializeProject({ ...input(root), projectId: 'proj-2' }), (error: unknown) => {
+      assert.ok(error instanceof StoreProjectError);
+      assert.match(error.message, /already holds project proj-1/);
+      return true;
+    });
+    assert.equal(existsSync(layout.projectFile), false, 'no project file was written');
+
+    writeFileSync(layout.projectFile, original.replace('"proj-1"', '"proj-2"'));
+    assert.throws(() => initializeProject(input(root)), /belongs to project proj-1, but \.construct\/project\.json names proj-2/);
   } finally {
     cleanup();
   }

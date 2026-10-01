@@ -13,6 +13,7 @@ import { projectDbPath, projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
+import { storeProjectId } from '../kernel/state/identity.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
@@ -129,6 +130,22 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         try {
           const profile = getProfile(store);
           checks.push({ name: 'state', ok: true, detail: `format ${STATE_FORMAT_VERSION} at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          const stamped = storeProjectId(store);
+          let configId: string | null = null;
+          try {
+            configId = readProjectFiles(root).config?.id ?? null;
+          } catch {
+            // The files check above already reports an unreadable project file.
+          }
+          if (stamped !== null && configId !== null) {
+            checks.push({
+              name: 'state-project',
+              ok: stamped === configId,
+              detail: stamped === configId
+                ? `the store belongs to project ${stamped}`
+                : `the store belongs to project ${stamped}, but .construct/project.json names ${configId}; one store is one project`,
+            });
+          }
           checks.push({
             name: 'state-concurrency',
             ok: store.journalMode === 'wal',

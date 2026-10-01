@@ -347,6 +347,57 @@ test('a worktree keeps its binding when the main checkout moves to a commit with
   }
 });
 
+test('the main checkout without its project files says to restore them, and init refuses to mint a new id over the store', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    assert.equal(cli(fx, r.main, ['work', 'add', 'kept']).status, 0);
+    const id = (JSON.parse(readFileSync(join(r.main, '.construct', 'project.json'), 'utf8')) as { id: string }).id;
+    git(fx, r.main, ['checkout', '-q', '-b', 'without-construct']);
+    git(fx, r.main, ['rm', '-r', '-q', '.construct']);
+    git(fx, r.main, ['commit', '-q', '-m', 'no project files']);
+    assert.equal(existsSync(r.db), true, 'the ignored store stays behind');
+
+    const listed = cli(fx, r.main, ['work', 'list']);
+    assert.notEqual(listed.status, 0);
+    assert.match(listed.out, /has a Construct store but no \.construct\/project\.json/);
+    assert.match(listed.out, /Restore the \.construct files in/);
+
+    const init = cli(fx, r.main, ['init', '--no-wire', '--name=lanes', '--scale=solo']);
+    assert.notEqual(init.status, 0);
+    assert.match(init.out, new RegExp(`already holds project ${id}`));
+    assert.equal(existsSync(join(r.main, '.construct', 'project.json')), false, 'init wrote no project file');
+
+    git(fx, r.main, ['checkout', '-q', 'main']);
+    assert.deepEqual(titles(fx, r.main), ['kept']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a store stamped for one project is refused to a project file that names another', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    assert.equal(cli(fx, r.main, ['work', 'add', 'stamped']).status, 0);
+    git(fx, r.main, ['checkout', '-q', '-b', 'without-construct']);
+    git(fx, r.main, ['rm', '-r', '-q', '.construct']);
+    git(fx, r.main, ['commit', '-q', '-m', 'no project files']);
+
+    const laneFile = join(r.external, '.construct', 'project.json');
+    const config = JSON.parse(readFileSync(laneFile, 'utf8')) as { id: string };
+    const original = config.id;
+    config.id = `${original.slice(0, -1)}${original.endsWith('x') ? 'y' : 'x'}`;
+    writeFileSync(laneFile, `${JSON.stringify(config, null, 2)}\n`);
+
+    const refused = cli(fx, r.external, ['work', 'list']);
+    assert.notEqual(refused.status, 0);
+    assert.match(refused.out, new RegExp(`belongs to project ${original}, but \\.construct/project\\.json names ${config.id}`));
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('commands that edit committed project files are refused in a worktree; reading and state-only changes still work', () => {
   const fx = sterile();
   try {

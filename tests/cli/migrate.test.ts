@@ -45,6 +45,7 @@ function toFormat2(db: string): void {
   d.exec(`CREATE TABLE keep_work AS SELECT * FROM work_items`);
   for (const table of ['run_bindings', 'reviews', 'work_runs', 'work_legacy_ids', 'work_events', 'work_dependencies', 'work_items']) d.exec(`DROP TABLE IF EXISTS ${table}`);
   d.prepare(`UPDATE meta SET value = '2' WHERE key = 'format_version'`).run();
+  d.prepare(`DELETE FROM meta WHERE key = 'project_id'`).run();
   d.close();
 }
 
@@ -55,6 +56,7 @@ function toFormat3(db: string): void {
   for (const table of ['path_leases', 'session_agents', 'sessions']) d.exec(`DROP TABLE IF EXISTS ${table}`);
   for (const [table, column] of FORMAT4_COLUMNS) d.exec(`ALTER TABLE ${table} DROP COLUMN ${column}`);
   d.prepare(`UPDATE meta SET value = '3' WHERE key = 'format_version'`).run();
+  d.prepare(`DELETE FROM meta WHERE key = 'project_id'`).run();
   d.close();
 }
 
@@ -120,6 +122,8 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
     backup.close();
     const upgraded = new DatabaseSync(db, { readOnly: true });
     assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '4');
+    const projectId = (JSON.parse(readFileSync(join(dir, '.construct', 'project.json'), 'utf8')) as { id: string }).id;
+    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'project_id'`).get() as { value: string } | undefined)?.value, projectId, 'the upgrade stamps the store with its project');
     upgraded.close();
     const second = cli(fx, dir, ['migrate', '--json']);
     assert.equal(second.status, 0);
