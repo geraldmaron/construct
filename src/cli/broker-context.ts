@@ -15,7 +15,7 @@ import type { HostCapabilities } from '../kernel/registry/capability-registry.ts
 import { createWorkflowService } from '../kernel/workflow/service.ts';
 import { createTriggerService } from '../kernel/workflow/triggers.ts';
 import { createSourceService } from '../kernel/source/service.ts';
-import { readDirectorySource } from '../hosts/sources/directory.ts';
+import { hostReaders } from '../hosts/sources/readers.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
 import { explainConfig } from '../kernel/project/config.ts';
 import type { BrokerContext } from '../kernel/broker/context.ts';
@@ -35,28 +35,21 @@ export interface BrokerBinding {
 }
 
 /** What this session may do, described as capabilities rather than binaries. */
-export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null): HostCapabilities {
-  // A local Construct session always has the project checkout and the directory
-  // reader. Interactivity adds a person. Neither invents an external writer.
-  const declared = new Set<string>([
-    'read_project_context',
-    'write_project_context',
-    'run_validator',
-    'kernel',
-    'read_project_files',
-    'read_source:directory',
-  ]);
+export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null, readerKinds: readonly string[] = ['directory']): HostCapabilities {
+  // A local session always has the project checkout and the readers wired here. Interactivity adds a person and
+  // the host's own tools for the systems the person already has open: what they read is recorded as evidence, and
+  // every write to them is an external write that only the person approves, one action at a time.
+  const declared = new Set<string>(['read_project_context', 'write_project_context', 'run_validator', 'run_tests', 'kernel', 'read_project_files']);
+  for (const kind of readerKinds) declared.add(`read_source:${kind}`);
   const permitted = new Set<string>(declared);
   if (binding.surface === 'interactive') {
-    declared.add('ask_user');
-    declared.add('model_review');
-    permitted.add('ask_user');
-    permitted.add('model_review');
+    for (const c of ['ask_user', 'model_review', 'read_source', 'write_source']) {
+      declared.add(c);
+      permitted.add(c);
+    }
     permitted.add('write_project_files');
-    permitted.add('run_tests');
   }
-  const unavailable = ['write_source', 'read_source (unscoped; directory reader is scoped)'];
-  if (binding.surface === 'headless') unavailable.push('ask_user', 'model_review', 'write_project_files');
+  const unavailable = binding.surface === 'headless' ? ['ask_user', 'model_review', 'write_project_files', 'read_source', 'write_source'] : [];
   return {
     hostId: binding.client,
     sessionId,
@@ -71,7 +64,7 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
     maxTier: binding.surface === 'interactive' ? 'external_write' : 'project_write',
     restrictions: binding.surface === 'headless'
       ? ['no person is present: nothing that needs a decision proceeds']
-      : ['write_source is not granted from interactivity alone; source reads are scoped to wired readers'],
+      : ['writes to the person\'s systems go through the host\'s own tools and are external writes the person approves per action'],
     budgetCents: null,
   };
 }
@@ -117,9 +110,14 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
   const workflows = createWorkflowRegistry({ projectDir: project.layout.workflowsDir });
   const lock = project.files.lock ?? emptyLock();
   const sessionId = binding.surface === 'interactive' ? binding.executorId : null;
-  const host = hostCapabilitiesFor(binding, sessionId);
-  const sources = createSourceService(project.store, { readers: new Map([['directory', readDirectorySource]]) });
+  const readers = hostReaders(ctx.env);
+  const host = hostCapabilitiesFor(binding, sessionId, [...readers.keys()]);
+  const sources = createSourceService(project.store, { readers, root: project.root });
   const projectWritePolicy = explainConfig(configInputs(ctx, project, {}), 'policy.projectWrite').effective.value as 'managed' | 'never';
+  const policy = {
+    hostReads: explainConfig(configInputs(ctx, project, {}), 'policy.hostReads').effective.value as 'require' | 'accept',
+    answerCheck: explainConfig(configInputs(ctx, project, {}), 'policy.answerCheck').effective.value as 'nudge' | 'off',
+  };
   const workflow = createWorkflowService({
     store: project.store,
     skills,
@@ -140,7 +138,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
     driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
   }) : undefined;
-  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation };
+  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
 }
 
 export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {

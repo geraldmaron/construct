@@ -19,18 +19,6 @@
       "expect": "activate"
     },
     {
-      "text": "Review this diff for correctness",
-      "expect": "stand_down"
-    },
-    {
-      "text": "How does this ORM handle transactions",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Which feature should we prioritize next quarter",
-      "expect": "stand_down"
-    },
-    {
       "text": "two teams keep stepping on the same table and nobody knows who owns it",
       "expect": "activate",
       "why": "a data ownership problem is an architecture question"
@@ -50,6 +38,26 @@
     {
       "text": "every request goes through four hops, is that necessary",
       "expect": "activate"
+    },
+    {
+      "text": "Draft an RFC for the new event delivery design and its failure modes",
+      "expect": "activate"
+    },
+    {
+      "text": "Write the technical design doc for how these services should talk to each other",
+      "expect": "activate"
+    },
+    {
+      "text": "Review this diff for correctness",
+      "expect": "stand_down"
+    },
+    {
+      "text": "How does this ORM handle transactions",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Which feature should we prioritize next quarter",
+      "expect": "stand_down"
     }
   ]
 }

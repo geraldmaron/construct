@@ -1,42 +1,50 @@
 /**
- * cli/hook.ts — what Construct says from inside a host's hooks.
+ * cli/hook.ts — the command a host's lifecycle hooks run. It reads the host's
+ * event JSON on stdin, answers on stdout the way the host expects, and always
+ * exits 0: a hook must never be the error the person sees.
  *
- * A host runs `construct hook <host> <event>` with the event as JSON on stdin.
- * At session start it says who else is working in the project; after an edit
- * it says when the edited file is reserved by another claimant in the same
- * checkout. It says facts only (ids, holders, paths, times), never anyone's
- * notes, within 400 bytes.
+ * Two hook packs share this one command, told apart by how they call it:
  *
- * A hook must never be the error the person sees. This command always exits
- * 0, answers within its own budget however long the host would wait, opens
- * the store read-only with a short lock wait, and prints nothing when
- * anything is missing, locked, newer, older, or malformed. How each run went
- * is counted in the project's state directory, and counting is allowed to
- * fail too.
+ * - `construct hook <host> <event>` (installed by `construct hooks install
+ *   --host`): coordination. At session start it says who else is working in
+ *   the project; after an edit it says when the edited file is reserved by
+ *   another claimant in the same checkout. It opens the store read-only,
+ *   answers within its own budget, says facts only within 400 bytes, and
+ *   counts each run in the project's state directory.
+ * - `construct hook <event> --client=<host>` (installed by `construct init
+ *   --client`): grounding. After a tool runs it records what the host read
+ *   from host-only sources; at stop it sends back, once, a reply that stated
+ *   project facts unchecked; at session start it notes what waits.
  */
-
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { coordinationFor } from '../kernel/coord/awareness.ts';
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { findOverlaps, MAIN_LANE, normalizeLeasePath } from '../kernel/work/leases.ts';
 import { projectDbPath, projectStateDir } from '../kernel/project/layout.ts';
-import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { createContext, locateProject, resolveRepository, type CliContext } from './context.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
+import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
+import { UsageError } from './output.ts';
+import { openBroker } from './broker-context.ts';
+import { onPostTool, onSessionStart, onStop } from '../hosts/hooks/handlers.ts';
+
 export const HOOK_SPEC: CommandSpec = {
   path: ['hook'],
-  gloss: 'run by a host hook Construct installed; reads the event on stdin, always exits 0',
+  gloss: 'run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0',
   group: 'Host',
-  positionals: ['<host>', '<event>'],
-  flags: [],
-  readOnly: true,
+  positionals: ['<host-or-event>', '[event]'],
+  flags: [
+    { name: 'client', gloss: 'grounding hooks: which host sent the event (default: claude-code)', takesValue: true },
+    { name: 'project', gloss: 'grounding hooks: the project root (default: the event\'s cwd, then the working directory)', takesValue: true },
+  ],
+  readOnly: false,
 };
 
 export const HOOK_HOSTS = ['claude-code'] as const;
-export const HOOK_EVENTS = ['session-start', 'post-tool-use'] as const;
-export type HookEvent = (typeof HOOK_EVENTS)[number];
+export const COORDINATION_HOOK_EVENTS = ['session-start', 'post-tool-use'] as const;
+export type HookEvent = (typeof COORDINATION_HOOK_EVENTS)[number];
 
 /** The longest a hook process runs, from its start, whatever the host allows. */
 export const HOOK_BUDGET_MS = 1500;
@@ -202,12 +210,12 @@ function readStdin(): Promise<string> {
  * The command a host runs. It never returns a non-zero code, and it ends the
  * process when its budget runs out rather than let the host wait.
  */
-export async function hookCommand(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
+async function coordinationHook(args: ParsedArgs, ctx: CliContext): Promise<number> {
   // The budget runs from process start: loading Node and Construct spends it too.
   const timer = setTimeout(() => process.exit(0), Math.max(50, HOOK_BUDGET_MS - process.uptime() * 1000));
   timer.unref();
   const [host, event] = args.positionals;
-  if (!(HOOK_HOSTS as readonly string[]).includes(host ?? '') || !(HOOK_EVENTS as readonly string[]).includes(event ?? '')) return 0;
+  if (!(HOOK_HOSTS as readonly string[]).includes(host ?? '') || !(COORDINATION_HOOK_EVENTS as readonly string[]).includes(event ?? '')) return 0;
   let payload: Payload = {};
   try {
     const parsed = JSON.parse((await readStdin()) || '{}') as unknown;
@@ -225,4 +233,57 @@ export async function hookCommand(args: ParsedArgs, ctx: CliContext = createCont
     // No project, nothing to count.
   }
   return 0;
+}
+export const GROUNDING_HOOK_EVENTS = ['post-tool', 'stop', 'session-start'] as const;
+
+
+async function readAllStdin(): Promise<string> {
+  if (process.stdin.isTTY) return '';
+  const chunks: Buffer[] = [];
+  for await (const c of process.stdin) chunks.push(c as Buffer);
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+async function groundingHook(args: ParsedArgs, ctx: CliContext, stdin: () => Promise<string>): Promise<number> {
+  const event = args.positionals[0];
+  if (!event || !(GROUNDING_HOOK_EVENTS as readonly string[]).includes(event)) throw new UsageError(`event must be one of ${GROUNDING_HOOK_EVENTS.join(' | ')}`);
+  let input: Record<string, unknown> = {};
+  try {
+    const raw = await stdin();
+    input = raw.trim() ? (JSON.parse(raw) as Record<string, unknown>) : {};
+  } catch (error) {
+    process.stderr.write(`construct hook ${event}: unreadable event (${(error as Error).message}); carrying on\n`);
+    return 0;
+  }
+  let opened: ReturnType<typeof openBroker> | null = null;
+  try {
+    const project = stringFlag(args, 'project');
+    const bound = project ? { ...ctx, cwd: project } : typeof input.cwd === 'string' ? { ...ctx, cwd: input.cwd } : ctx;
+    opened = openBroker(bound, { client: stringFlag(args, 'client') ?? 'claude-code' });
+    const broker = opened.broker;
+    if (event === 'post-tool') {
+      onPostTool(broker, input);
+    } else if (event === 'stop') {
+      const verdict = onStop(broker, input);
+      if (verdict) process.stdout.write(JSON.stringify(verdict));
+    } else {
+      const note = await onSessionStart(broker);
+      if (note) process.stdout.write(note);
+    }
+  } catch (error) {
+    // Not a Construct project, a locked database, anything: the host's session matters more than this hook.
+    process.stderr.write(`construct hook ${event}: ${(error as Error).message}; carrying on\n`);
+  } finally {
+    opened?.project.store.close();
+  }
+  return 0;
+}
+
+/**
+ * Run the hook a host called. The first word names a host for the
+ * coordination pack and an event for the grounding pack.
+ */
+export async function hook(args: ParsedArgs, ctx: CliContext = createContext(), stdin: () => Promise<string> = readAllStdin): Promise<number> {
+  if ((HOOK_HOSTS as readonly string[]).includes(args.positionals[0] ?? '')) return coordinationHook(args, ctx);
+  return groundingHook(args, ctx, stdin);
 }

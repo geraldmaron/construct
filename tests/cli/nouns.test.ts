@@ -23,7 +23,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.equal(missing.code, 1);
     const validate = await capture(() => run(['workflow', 'validate'], ctx));
     assert.equal(validate.code, 0);
-    assert.match(validate.out, /17 skill\(s\) and 16 workflow\(s\) validate/);
+    assert.match(validate.out, /17 skill\(s\) and 22 workflow\(s\) validate/);
 
     const resolve = await capture(() => run(['workflow', 'resolve', 'design-conformance', '--input=target=src'], ctx));
     assert.equal(resolve.code, 0, resolve.out + resolve.err);
@@ -168,7 +168,7 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const current = await capture(() => run(['skill', 'update', '--dry-run'], ctx));
     assert.equal(current.code, 0, current.err);
     assert.match(current.out, /would update: nothing/);
-    assert.match(current.out, /33\/33 current/);
+    assert.match(current.out, /39\/39 current/);
     // A project-authored skill appears: unlocked, then locked.
     const dir = join(box.cwd, '.construct', 'skills', 'house-style');
     mkdirSync(dir, { recursive: true });
@@ -187,6 +187,6 @@ test('skill update reconciles the lock and leaves a changed project bundle alone
     const confirmed = await capture(() => run(['skill', 'update', '--confirm=house-style'], ctx));
     assert.match(confirmed.out, /updated: skill:house-style/);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
-    assert.match((JSON.parse(doctor.out).checks as { name: string; detail: string }[]).find((c) => c.name === 'registry')!.detail, /34\/34 current/);
+    assert.match((JSON.parse(doctor.out).checks as { name: string; detail: string }[]).find((c) => c.name === 'registry')!.detail, /40\/40 current/);
   });
 });

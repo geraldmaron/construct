@@ -3,10 +3,12 @@
 ## 3.0.0-alpha.26 — 2026-10-01
 
 The first published alpha since alpha.24. It adds coordination between agent
-sessions working in one project, bounded delegation (off by default), and the
-native work ledger. It also includes everything developed as 3.0.0-alpha.25,
-which was never published. It publishes under `alpha` only; `latest` stays on
-the predecessor.
+sessions working in one project, bounded delegation (off by default), the
+native work ledger, and grounding that is checked rather than trusted: hooks
+that enforce host habits, citations that must resolve, and quality checks on
+deliverables. It also includes everything developed as 3.0.0-alpha.25, which
+was never published. It publishes under `alpha` only; `latest` stays on the
+predecessor.
 
 ### Upgrading from alpha.24
 
@@ -14,7 +16,14 @@ the predecessor.
   `construct migrate`. It backs the store up under its upgrade lock first,
   and refuses while another process holds the store. Read-only commands
   refuse an older store and name the migrate step. They never upgrade it.
-- **Operational skill 2.6.0.** Run `construct doctor` after migrating and
+- **Project-authored workflows (breaking).** `evidence_refs_resolve` and
+  `citations_present` now check that references resolve. A workflow that
+  relied on the old pass-through will see steps sent back until its
+  citations name real files, sources, items, records, or web pages.
+- **Directory sources re-fingerprint once.** Fingerprints moved from size
+  and mtime to content, so every directory source reports one change on its
+  next read; that first change opens no drift findings.
+- **Operational skill 2.7.0.** Run `construct doctor` after migrating and
   follow its skill-update instruction before reopening agent sessions. An
   installed copy you have not edited is replaced without `--force`.
 - **First runtime dependency.** MCP stdio framing now uses
@@ -78,6 +87,52 @@ the predecessor.
   `skills/written-voice/scripts/voice-check.py`, and a catalog of the tells
   it counts. The checker needs `python3`.
 
+- **Habits enforced, not hoped for.** `construct init --client=claude-code`
+  installs hooks: tool results that contain issues from a declared Jira
+  project are recorded as host reads automatically; a reply that names
+  project facts without `check_answer` is sent back once
+  (`policy.answerCheck`); a session starts with a note of what waits. Hooks
+  fail open. Without hooks, `policy.hostReads: require` (default) makes a
+  citation into a never-read host source unresolvable. `construct status`
+  reports the last week's habits; `doctor` reports hook installation.
+- **Decisions that rule things out.** `remember` takes `contradicts` terms;
+  `settled_not_contradicted` checks answers and drafts against them.
+- **Sensitivity and publishing.** Deliverables carry the highest
+  sensitivity of what they cite. `publish-deliverable` requires clearance
+  for confidential or restricted material, an approved write, and a
+  recorded location.
+- **Skill impact.** `construct skill impact` and `project_context` topic
+  `quality` measure each skill version's first-pass rate, attempts,
+  waivers, and failing checks.
+- **Owner routing.** The inbox names who decides each question from the
+  constitution's owners, and filters by owner.
+- **Plain answers can be checked.** `check_answer` runs the grounding
+  checks on an answer before it is given and records nothing; the
+  operational skill asks hosts to use it for facts about the project.
+- **Systems the host reads are tracked.** `sources` action `report` records
+  what the host read from a tracker or wiki; changes there flag the work
+  that cited them, quotes are checked against what was reported, and a
+  partial read never implies removal. `bootstrap` lists host-read sources
+  that need a report. Fixture and host-reported items now resolve as
+  reported, not witnessed.
+- **Research.** `research-brief` answers a question from project sources
+  and the web, with `sources_diverse` asking for two independent places.
+  Web pages resolve as reported citations; research phrasings ("look
+  into", "find out", "dig into") count as work.
+- **Quality floors.** New validators: `excerpts_match`, `evidence_witnessed`,
+  `artifacts_exist`, `numbers_grounded` (figures must come from cited
+  sources, or be derived by arithmetic that holds over cited figures),
+  `template_conformance`, `conflicts_declared`, `superseded_acknowledged`,
+  and `decision_ask_present`. `claim_work` tells the host what each check
+  needs.
+- **Authoring workflows.** `prd-authoring`, `rfc-authoring`, and
+  `proposal-authoring` run gather, draft, challenge, record with those
+  checks. `managed-outcome` 1.3.0 checks its plan against its declared keys
+  and its work against resolvable, matching citations.
+- **Jira fixtures.** `CONSTRUCT_JIRA_FIXTURES` gives `jira` sources a reader
+  over JSON exports for testing and evaluation; reads are recorded as
+  reported.
+
 ### Changed
 
 - **Only the person approves.** Accepting a deliverable, finalizing, and
@@ -96,6 +151,51 @@ the predecessor.
   lock clears, and reports a project it cannot bind instead of exiting.
 - **Init says what it stored.** Unanswered profile fields are unknowns, not
   sourced proposals. Flags that fill a field retire the matching unknown.
+
+- **Grounding is checked, not trusted.** Evidence references now resolve
+  against the project as it stands (files inside the project or a directory
+  source, declared sources and the items they reported, deliverables, and
+  Construct's own records). Before this, `evidence_refs_resolve` passed
+  whenever it was given nothing to resolve against, which was always, and
+  `citations_present` accepted any non-empty string; a run citing a file
+  that did not exist could finish "validated". Both now fail closed.
+  Citations carry provenance: witnessed (Construct opened it) or reported (a
+  system only the host reads). `submit_work` returns the counts and a
+  validated deliverable records them for the whole run.
+- **What the person settles governs.** Remembered decisions that say one
+  thing supersedes another are enforced like document headers, and
+  confirmed decisions and constraints reach every step that reads.
+- **Revisions, not restarts.** `revise-deliverable` revises a deliverable as
+  a linked revision with a change summary; answering revise or re-run on a
+  stale-work question returns the outcome to offer.
+- **People decide when checks keep failing.** A load-bearing step that
+  still fails after its last attempt waits on the person (accept with the
+  named problems, another attempt, or stop) instead of failing the run. A
+  waiver is recorded and its deliverable is never marked validated.
+- **Checks that match how people write.** Figures compare by value with
+  rounding allowed, dates and times are not figures, and figures the person
+  supplied in the request count as given. A symlink that leads outside the
+  project no longer resolves.
+- **A quieter inbox.** New files in a source raise one question per
+  refresh; changed cited items are still asked about per deliverable.
+- **Cheaper session start.** Directory reads reuse fingerprints from the
+  last recorded read when size and mtime match. `doctor` says when jira
+  sources read fixtures.
+- **Routing for documents.** A deliverable named as a bare noun ("PRD for
+  webhooks") is work, not a question; a request with no stated output
+  ("write something for Sam") confirms first. Requirements structuring,
+  system architecture, and decision framing carry PRD, RFC, and proposal
+  phrasings; `classify_request` returns each suggested workflow's inputs.
+- **Change tracking.** Directory reads fingerprint content (cached by size
+  and mtime) and report items, so a refresh names files added, modified, or
+  removed; content that changes back is a change. A change to something
+  finished work cited opens a drift finding and an inbox question (revise,
+  re-run, dismiss), one per run. `bootstrap` names directory sources that
+  moved since their last read. A "Supersedes:" or "Status: Superseded" line
+  marks a document inside a source as replaced.
+- **Setup.** Answers given at init no longer remain listed as unknowns, and
+  init reports the proposals left after them; `doctor` names unreachable and
+  never-read sources.
 
 ### Fixed
 
@@ -119,6 +219,14 @@ the predecessor.
   matched raw text once at startup.
 
 ### Known limitations
+
+- The Claude Code hooks were exercised with Claude Code-shaped event
+  payloads against a scratch project, not inside a live Claude Code session.
+- Two Claude Code hook packs share `construct hook`: coordination
+  (`construct hooks install --host=claude-code`, machine-local settings) and
+  grounding (`construct init --client=claude-code`, the project's
+  settings.json). Both work; they are not yet one pack, and other hosts get
+  neither until a live probe verifies their hook surfaces.
 
 - Delegation is not live-verified across Claude, Codex, and Cursor. Its six
   directions are covered by synthetic MCP tests only.

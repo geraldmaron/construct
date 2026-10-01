@@ -53,3 +53,33 @@ match; several is ambiguous and nothing merges until a person chooses.
 Reporting lines, membership, and ownership read from any source are proposals
 until confirmed, and the organization view keeps formal structure, declared
 ownership, observed collaboration, and inference apart.
+
+## Documents inside a source go stale one at a time
+
+Authority is declared per source, but a source holds many documents and
+they age separately. A document that replaces another says so in its first
+lines, either `Supersedes: older.md` in the newer one or `Status:
+Superseded` / `Superseded by: newer.md` in the older one. A directory read
+records that on the item, a citation of the older document resolves with
+what replaced it, and the `superseded_acknowledged` check sends back any
+output that leans on it without saying so.
+
+## What changed, and what it touched
+
+A directory read fingerprints each file by content, so touching a file is
+not a change, and `construct source refresh <id>` reports which files were
+added, modified, or removed. When finished work cited a file that then
+changed, or drew on a source that gained files, the refresh opens a drift
+finding against that deliverable and puts a question in the inbox: revise,
+re-run, or dismiss. `bootstrap` names directory sources that moved since
+their last read, so a session refreshes before relying on them.
+
+## What the person settles governs
+
+A remembered decision that says one thing replaces another ("INT-203
+supersedes ADR-004", "the 2025 platform strategy is outdated") marks the
+named document or item as superseded, with the same effect as a
+"Supersedes:" header: citing it without saying so is sent back. Confirmed
+decisions and constraints are also handed to every step that reads, with
+the instruction to list a source that disagrees with one under conflicts,
+citing the statement.

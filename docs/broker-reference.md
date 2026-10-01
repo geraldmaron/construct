@@ -31,7 +31,7 @@ Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `work`, `sessions`, `activity` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality`, `work`, `sessions`, `activity` | yes | What to read. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
@@ -47,6 +47,7 @@ Surface: interactive. Reads only: no.
 | `text` | string | yes | The person’s wording, as they said it. |
 | `assumptions` | array | no | Load-bearing assumptions this governing record rests on. |
 | `replaces` | string | no | The id of a statement this one supersedes. |
+| `contradicts` | array | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
 
 ### `workflows`
 
@@ -121,13 +122,14 @@ Surface: both. Reads only: yes.
 
 ### `inbox`
 
-Decisions waiting on the person. The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.
+Decisions waiting on the person. The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned items included).
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `runId` | string | no | Only this run’s. |
+| `owner` | string | no | Only this owner’s, plus unowned ones. |
 
 ### `decide`
 
@@ -142,14 +144,27 @@ Surface: interactive. Reads only: no.
 
 ### `sources`
 
-Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed.
+Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `refresh` | yes | list, show, or refresh. |
-| `id` | string | no | The source id, for show and refresh. |
+| `action` | `list`, `show`, `refresh`, `report` | yes | list, show, refresh, or report. |
+| `id` | string | no | The source id, for show, refresh, and report. |
+| `items` | array | no | For report: {ref, title?, updatedAt?, text?, kind?} for each item you read. |
+| `partial` | boolean | no | For report: you read only some of the source; items you did not report are kept, not treated as removed. |
+
+### `check_answer`
+
+Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.
+
+Surface: interactive. Reads only: no.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `answer` | string | yes | The answer you are about to give, as you would give it. |
+| `citations` | array | no | What it rests on: {ref, excerpt?} entries. |
 
 ### `staff`
 

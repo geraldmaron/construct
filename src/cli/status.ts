@@ -6,6 +6,7 @@
 
 import { listActiveRuns } from '../kernel/state/runs.ts';
 import { listOpenDecisions } from '../kernel/state/decisions.ts';
+import { habitsSince } from '../kernel/state/activity.ts';
 import { listDriftFindings } from '../kernel/state/drift.ts';
 import { onboardingStatus } from '../kernel/project/onboarding.ts';
 import { createSourceService } from '../kernel/source/service.ts';
@@ -50,6 +51,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       registry: { skills: lock ? Object.keys(lock.skills).length : 0, workflows: lock ? Object.keys(lock.workflows).length : 0, skew: skew.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) },
       drift: { open: drift.length },
       sessions: present.map((p) => ({ id: p.id, host: p.host, client: p.client, lane: p.lane, branch: p.branch, lastSeenAt: p.lastSeenAt, agents: p.agents, holds: p.holds })),
+      habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
     };
     if (args.json) {
       writeJson(record);
@@ -67,6 +69,8 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       const where = p.lane === MAIN_LANE ? 'main checkout' : esc(p.lane);
       say(`    ${esc(p.id)}  ${esc(p.client ?? p.host)}  ${where}${p.branch ? ` on ${esc(p.branch)}` : ''}  ${String(p.holds)} claim(s)  seen ${p.lastSeenAt}`);
     }
+    const h = record.habits;
+    say(`  last 7 days: ${String(h.answersChecked)} answer(s) checked (${String(h.answersClean)} clean), ${String(h.uncheckedCaught)} unchecked answer(s) caught, ${String(h.readsRecorded)} host read(s) recorded, ${String(h.checksWaived)} check(s) waived`);
     return 0;
   });
 }

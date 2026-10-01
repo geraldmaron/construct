@@ -53,7 +53,14 @@ export type ReadOutcome =
   | { readonly outcome: 'unreachable'; readonly reason: string };
 
 /** A reader for one source kind: given a locator, what is there. */
-export type SourceReader = (input: { readonly sourceId: string; readonly kind: string; readonly locator: string | null }) => Promise<ReadOutcome>;
+/** What the last recorded read held, item by item; a reader may reuse it to avoid re-reading what has not moved. */
+export interface PreviousItem {
+  readonly ref: string;
+  readonly fingerprint: string;
+  readonly attributes?: Readonly<Record<string, unknown>>;
+}
+
+export type SourceReader = (input: { readonly sourceId: string; readonly kind: string; readonly locator: string | null; readonly previous?: readonly PreviousItem[] }) => Promise<ReadOutcome>;
 
 export const BUILTIN_CONNECTOR_DECLARATIONS: readonly ConnectorDeclaration[] = Object.freeze([
   {

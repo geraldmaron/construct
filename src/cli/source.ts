@@ -10,7 +10,7 @@ import { writeJsonFile } from '../kernel/project/files.ts';
 import { SOURCE_KINDS, locatorProblem } from '../kernel/source/locators.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities, sourceEntity } from '../kernel/source/entities.ts';
-import { readDirectorySource } from '../hosts/sources/directory.ts';
+import { hostReaders } from '../hosts/sources/readers.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, openProject, requireMainCheckout, withProject, type CliContext } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
@@ -53,7 +53,7 @@ export const SOURCE_SPECS: readonly CommandSpec[] = [
 ];
 
 function readers() {
-  return new Map([['directory', readDirectorySource]]);
+  return hostReaders();
 }
 
 function declaredFrom(id: string, args: ParsedArgs, root: string): DeclaredSource {
@@ -177,12 +177,17 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
       const id = args.positionals[0]!;
       const project = openProject(ctx);
       try {
-        const svc = createSourceService(project.store, { readers: readers() });
+        const svc = createSourceService(project.store, { readers: readers(), root: project.root });
         if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`);
         const result = await svc.refresh(id, ctx.now(), () => ctx.nextId('snap'));
         if (args.json) writeJson(result);
         else if (result.outcome === 'unreachable') say(`${esc(id)}: unreachable (${esc(result.reason ?? '')})`);
-        else say(`${esc(id)}: ${result.outcome}${result.snapshot ? ` (${esc(result.snapshot.summary ?? '')})` : ''}`);
+        else {
+          say(`${esc(id)}: ${result.outcome}${result.snapshot ? ` (${esc(result.snapshot.summary ?? '')})` : ''}`);
+          const c = result.changes;
+          if (c) for (const [label, refs] of [['added', c.added], ['modified', c.modified], ['removed', c.removed]] as const) if (refs.length > 0) say(`  ${label}: ${refs.map(esc).join(', ')}`);
+          if (result.staleDeliverables && result.staleDeliverables.length > 0) say(`  ${String(result.staleDeliverables.length)} drift finding(s): finished work cited what changed; \`construct inbox list\` shows what to decide.`);
+        }
         return result.outcome === 'unreachable' ? 1 : 0;
       } finally {
         project.store.close();

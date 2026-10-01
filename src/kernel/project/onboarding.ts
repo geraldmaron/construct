@@ -89,7 +89,9 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
       if (existing.some((e) => e.kind === 'canonical_artifact' && e.text === text)) continue;
       proposed.push(addStatement(store, { id: nextId('st'), kind: 'canonical_artifact', text, provenance: 'discovery', at }));
     }
+    const answered = answeredUnknowns(profile, existing.filter((e) => e.status === 'confirmed'));
     for (const u of draft.unknowns) {
+      if (answered.has(u)) continue;
       if (existing.some((e) => e.kind === 'unknown' && e.text === u)) continue;
       proposed.push(addStatement(store, { id: nextId('st'), kind: 'unknown', text: u, provenance: 'discovery', at }));
     }
@@ -136,6 +138,24 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
     }
     return { profile, proposedStatements: proposed, questions };
   });
+}
+
+/** Unknowns a profile field or a confirmed statement has since answered; they stop being unknown. */
+function answeredUnknowns(profile: ProjectProfile | null, confirmed: readonly Statement[]): Set<string> {
+  const out = new Set<string>();
+  if (profile?.purpose) out.add('purpose');
+  if (profile?.primaryOutcome) out.add('primary outcome');
+  if (profile?.riskPosture) out.add('risk posture');
+  if (profile?.reviewCadence) out.add('review cadence');
+  if (confirmed.some((s) => s.kind === 'success_measure')) out.add('success measures');
+  return out;
+}
+
+function retireAnsweredUnknowns(store: StateStore, at: string): void {
+  const answered = answeredUnknowns(getProfile(store), listStatements(store, { status: 'confirmed' }));
+  for (const u of listStatements(store, { kind: 'unknown' })) {
+    if (answered.has(u.text) && u.status !== 'retired' && u.status !== 'superseded') setStatementStatus(store, { id: u.id, status: 'retired', at });
+  }
 }
 
 function isOnboardingSubject(subject: unknown, id: OnboardingQuestion['id']): boolean {
@@ -189,6 +209,7 @@ export function applyOnboardingAnswers(
         setStatementStatus(store, { id: unknown.id, status: 'retired', at });
       }
     }
+    retireAnsweredUnknowns(store, at);
     const missing = missingProfileFields(profile);
     if (missing.length === 0 && profile.onboardingState !== 'confirmed') {
       profile = upsertProfile(store, { onboardingState: 'confirmed' }, at);
@@ -327,8 +348,9 @@ const LIST_KINDS: ReadonlyArray<readonly [StatementKind, keyof Constitution]> = 
 export function composeConstitution(store: StateStore, base: Constitution): Constitution {
   const profile = getProfile(store);
   const confirmed = listStatements(store, { status: 'confirmed' });
+  const answered = answeredUnknowns(profile, confirmed);
   const unknowns = listStatements(store, { kind: 'unknown' }).filter(
-    (s) => s.status !== 'retired' && s.status !== 'superseded' && !unknownResolvedByProfile(s.text, profile, {}),
+    (s) => s.status !== 'retired' && s.status !== 'superseded' && !unknownResolvedByProfile(s.text, profile, {}) && !answered.has(s.text),
   );
   const out: Record<string, unknown> = { ...base };
   if (profile) {

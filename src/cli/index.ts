@@ -22,13 +22,13 @@ import { sourceCommand, SOURCE_SPECS } from './source.ts';
 import { skillCommand, SKILL_SPECS } from './skill.ts';
 import { completionScript, SHELLS, type Shell } from './completions.ts';
 import { serve, SERVE_SPEC } from './serve.ts';
+import { hook, HOOK_SPEC } from './hook.ts';
 import { workflowCommand, WORKFLOW_SPECS } from './workflow.ts';
 import { runCommand, RUN_SPECS } from './run.ts';
 import { inboxCommand, INBOX_SPECS } from './inbox.ts';
 import { staffCommand, STAFF_SPECS } from './staff.ts';
 import { workCommand, WORK_SPECS } from './work.ts';
 import { hooksCommand, HOOKS_SPECS } from './hooks.ts';
-import { hookCommand, HOOK_SPEC } from './hook.ts';
 import { packageVersion } from './version.ts';
 
 export const VERSION_SPEC: CommandSpec = { path: ['version'], gloss: 'print the installed version', group: 'Help', positionals: [], flags: [], readOnly: true };
@@ -164,7 +164,7 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return hooksCommand(verb!, args, ctx);
     case 'hook':
       // A host hook: whatever happens, the host sees success and at most a line of context.
-      return hookCommand(args, ctx).catch(() => 0);
+      return hook(args, ctx).catch(() => 0);
     case 'config':
       return configCommand(verb!, args, rest, ctx);
     case 'project':

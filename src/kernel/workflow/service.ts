@@ -16,10 +16,10 @@ import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
 import { getDecision, listOpenDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
-import { addStatement, getProfile, getStatement, type Statement, type StatementKind } from '../state/profile.ts';
+import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
 import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
@@ -34,6 +34,11 @@ import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
 import { assessConsequence, judgmentRequired, type ConsequenceSignals, type Judgment } from './consequence.ts';
+import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { listSources } from '../state/sources.ts';
+import { settledTerms } from '../project/governance.ts';
+import { higherSensitivity } from './validators.ts';
+import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
 import { createRouter } from '../skills/routing.ts';
@@ -107,6 +112,34 @@ export type WaitingOn =
   | { readonly kind: 'nothing_ready' }
   | { readonly kind: 're_resolve'; readonly reason: string };
 
+/** What a person may answer when checks keep failing. */
+export const WAIVER_OPTIONS = ['accept with these problems', 'another attempt', 'stop'] as const;
+
+/** What each check needs from the output, said once to the host instead of discovered by failing. */
+const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
+  deliverable_complete: 'deliverable_complete needs a non-empty "summary" and one of "findings", "body", or "decisions".',
+  schema: 'schema needs every declared output key present.',
+  citations_present: 'citations_present needs evidence entries whose ref names a real project file (docs/a.md), a source id, a source item (PLAT-101), or a deliverable.',
+  evidence_refs_resolve: 'evidence_refs_resolve rejects any evidence ref that does not name something real.',
+  artifacts_exist: 'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty.',
+  numbers_grounded: 'numbers_grounded rejects any figure in the output or artifact that no cited source contains; list computed figures under "derivations" as {value, expression}, where expression is arithmetic over cited figures.',
+  template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
+  excerpts_match: 'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter).',
+  evidence_witnessed: 'evidence_witnessed needs at least one citation Construct can open itself, not only references into systems the host reads.',
+  superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
+  decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
+  sources_diverse: 'sources_diverse needs citations from at least two independent places (different files, items, or web sites).',
+  revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
+  settled_not_contradicted: 'settled_not_contradicted rejects stating a term the person settled against as if it were current; say it was decided against or name the conflict.',
+  sensitivity_cleared: 'sensitivity_cleared needs the person to clear confidential or restricted material for its audience (input clearedFor).',
+  published_location: 'published_location needs "location": the URL or provider:id where it was published.',
+  conflicts_declared: 'conflicts_declared needs a "conflicts" list (empty if none); each conflict gives "citations" naming at least the two sources that disagree.',
+};
+
+function validatorGuidance(names: readonly string[]): string[] {
+  return names.map((n) => VALIDATOR_GUIDANCE[n]).filter((x): x is string => typeof x === 'string');
+}
+
 export interface ClaimOutcome {
   readonly packet: WorkPacket | null;
   readonly waitingOn: WaitingOn | null;
@@ -131,6 +164,8 @@ export interface SubmitInput {
   readonly evidence?: readonly { readonly ref: string; readonly excerpt?: string }[];
   readonly noData?: boolean;
   readonly resolvableRefs?: ReadonlySet<string>;
+  /** Resolves evidence and artifact references; the broker always supplies one. */
+  readonly resolve?: RefResolver;
 }
 
 export interface SubmitResult {
@@ -197,6 +232,52 @@ function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
+  /**
+   * What the person has said is settled reaches every step that reads: a source that contradicts a remembered
+   * decision or constraint is a conflict to name, not a fact to adopt.
+   */
+  const governingInstructions = (capabilities: readonly string[]): string[] => {
+    if (!capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'))) return [];
+    const settled = listStatements(store, { status: 'confirmed' }).filter((st) => st.kind === 'decision' || st.kind === 'constraint');
+    if (settled.length === 0) return [];
+    const shown = settled.slice(-12).map((st) => `[${st.kind} ${st.id}] ${st.text.length > 200 ? `${st.text.slice(0, 200)}…` : st.text}`);
+    return [`Settled by the person (newest last${settled.length > 12 ? `, ${String(settled.length - 12)} older not shown; read them with project_context statements` : ''}): ${shown.join(' | ')}. Where a source disagrees with one of these, list it under conflicts and cite the statement as statement:<id>.`];
+  };
+  /** Terms the person settled against: constraints of the form Do not state "X" as current. */
+  const settled = () => settledTerms(listStatements(store, { kind: 'constraint', status: 'confirmed' }));
+  /** The highest sensitivity among the sources the whole run cited, and the deliverable it acts on, if any. */
+  const sensitivityFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): string | null => {
+    let level: string | null = null;
+    const input = (run.input ?? {}) as { deliverable?: unknown };
+    if (typeof input.deliverable === 'string') {
+      const d = getDeliverable(store, input.deliverable.replace(/^deliverable:/, ''));
+      const ds = (d?.body as { sensitivity?: unknown } | null)?.sensitivity;
+      if (typeof ds === 'string') level = higherSensitivity(level, ds);
+    }
+    if (!resolve) return level;
+    const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
+    for (const e of runEvidence(run.id, current)) {
+      const r = resolve(e.ref);
+      if (r?.sourceId) level = higherSensitivity(level, bySource.get(r.sourceId) ?? null);
+    }
+    return level;
+  };
+  /** The person accepted this step's output despite failing checks. */
+  const acceptedWaiver = (stepRunId: string): boolean =>
+    listStepDecisions(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
+  /** Any step of the run went through on a waiver; its deliverable is then never called validated. */
+  const runHasWaiver = (runId: string): boolean => listSteps(store, runId).some((st) => Array.isArray((st.output as { waived?: unknown } | null)?.waived));
+  /** Every distinct citation the run's finished steps made, plus this one's: what the deliverable rests on. */
+  const runEvidence = (runId: string, current: readonly { readonly ref: string }[]): { ref: string }[] => {
+    const refs = new Set(current.map((e) => e.ref));
+    for (const st of listSteps(store, runId)) {
+      if (st.state !== 'succeeded') continue;
+      const ev = (st.output as { evidence?: unknown } | null)?.evidence;
+      if (Array.isArray(ev)) for (const e of ev) if (e && typeof (e as { ref?: unknown }).ref === 'string') refs.add((e as { ref: string }).ref);
+    }
+    return [...refs].map((ref) => ({ ref }));
+  };
+
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
   const policyContext = (interactionClass: PolicyContext['interactionClass'], at: string): PolicyContext => ({
     at,
@@ -501,6 +582,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
+      ...validatorGuidance(step.validators),
+      ...governingInstructions(step.capabilities),
+      acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
       'Cite every source you read as evidence entries.',
       needsChallenge
         ? 'This work has architectural or irreversible consequences. Apply adversarial review before representing the result as strongly validated. Do not wait for the person to ask.'
@@ -724,7 +808,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return { packet: null, waitingOn: { kind: 'nothing_ready' } };
     },
 
-    submit({ leased, output, evidence = [], noData = false, resolvableRefs = new Set() }) {
+    submit({ leased, output, evidence = [], noData = false, resolvableRefs = new Set(), resolve }) {
       const at = deps.now();
       const run = getRun(store, leased.runId);
       if (!run) throw new Error(`no run ${leased.runId}`);
@@ -749,25 +833,47 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null };
         });
       }
-      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs });
+      const sensitivity = sensitivityFor(run, evidence, resolve);
+      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
-        if (failures.length > 0) {
+        const waived = failures.length > 0 && acceptedWaiver(leased.id);
+        if (failures.length > 0 && !waived) {
+          const current = getStep(store, leased.id)!;
+          if (current.attempts >= current.maxAttempts && step.loadBearing) {
+            // Retries are spent. Failing the run would throw away the work; the person decides instead.
+            const problems = failures.flatMap((f) => f.problems.map((p) => `${f.validator}: ${p}`));
+            raiseDecision(store, {
+              id: deps.nextId('decision'),
+              kind: 'decision',
+              question: `Step ${step.id} still fails ${String(failures.length)} check(s) after ${String(current.attempts)} attempt(s): ${problems.slice(0, 5).join('; ')}${problems.length > 5 ? ` (+${String(problems.length - 5)} more)` : ''}. Accept it with these problems, give it another attempt, or stop?`,
+              runId: run.id,
+              stepRunId: leased.id,
+              options: [...WAIVER_OPTIONS],
+              subject: { waiverFor: leased.id, problems },
+              at,
+            });
+            transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: 'checks still failing; waiting on the person' });
+            transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs the person's call on failing checks` });
+            appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), escalated: true } });
+            return { step: getStep(store, leased.id)!, validation, run: getRun(store, run.id)!, deliverable: null };
+          }
           const reason = failures.map((f) => `${f.validator}: ${f.problems.join('; ')}`).join(' | ');
           const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { validation }, reason });
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
           return { step: failed, validation, run: advance(run.id, at), deliverable: null };
         }
-        const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence } });
+        const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence, ...(waived ? { waived: failures.map((f) => ({ validator: f.validator, problems: f.problems })) } : {}) } });
+        if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
         let deliverable: Deliverable | null = null;
         const frozenSteps = stepsOf(run);
         const isLast = frozenSteps[frozenSteps.length - 1]?.id === step.id;
         const judgment = judgmentOf(run);
         const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence }, at });
-          if (isLast && validation.every((v) => v.ok) && step.validators.length > 0) {
-            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge } });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}) }, at });
+          if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
+            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
         return { step: done, validation, run: advance(run.id, at), deliverable };
@@ -786,7 +892,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return store.transaction(() => {
         const decision = getDecision(store, decisionId);
         if (!decision) throw new Error(`no decision ${decisionId}`);
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject };
+        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject; driftFindingId?: string; driftFindingIds?: string[] };
         if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
           if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {
             throw new PersonChannelRequiredError(`Approving ${subject.request.tier} (${subject.request.operation})`, decisionId);
@@ -795,6 +901,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         }
         const resolved = resolveDecision(store, { id: decisionId, resolution, by, at, channel });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
+        for (const fid of [...(subject.driftFindingIds ?? []), ...(subject.driftFindingId ? [subject.driftFindingId] : [])]) {
+          const finding = getDriftFinding(store, fid);
+          if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
+            const to = resolution === 'dismiss' ? 'dismissed' : 'acknowledged';
+            if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
+          }
+        }
         if (decision.kind === 'approval' && subject.promote) {
           if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
         } else if (decision.kind === 'approval' && subject.request) {
@@ -809,6 +922,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
           } else {
             transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by}` });
+          }
+        } else if (decision.kind === 'decision' && (subject as { waiverFor?: string }).waiverFor && decision.stepRunId) {
+          // The checks kept failing. The person either takes the output with its named problems,
+          // gives the host another attempt, or stops; any of them is recorded against the step.
+          const said = String(resolution).toLowerCase();
+          const choice = said.startsWith('accept') ? WAIVER_OPTIONS[0] : said.startsWith('stop') ? WAIVER_OPTIONS[2] : WAIVER_OPTIONS[1];
+          if (choice === WAIVER_OPTIONS[2]) transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by} after checks kept failing` });
+          else {
+            grantExtraAttempt(store, { id: decision.stepRunId, at, by });
+            transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: choice === WAIVER_OPTIONS[0] ? `${by} accepted the output with its check failures` : `${by} asked for another attempt` });
           }
         } else if (decision.kind === 'clarification' && run) {
           const input = { ...((run.input ?? {}) as Record<string, unknown>) };

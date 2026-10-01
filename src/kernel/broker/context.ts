@@ -47,4 +47,6 @@ export interface BrokerContext {
    * waits in the inbox for the person's own terminal.
    */
   readonly askPerson?: AskPerson;
+  /** Effective policy settings the tools apply. */
+  readonly policy?: { readonly hostReads: 'require' | 'accept'; readonly answerCheck: 'nudge' | 'off' };
 }
