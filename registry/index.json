@@ -9,8 +9,8 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "2.1.0",
-      "digest": "sha256:fc1ba6092ae01276128049ec6b44d594343909aaefb0bc975131d9b352fd9d95",
+      "version": "2.2.0",
+      "digest": "sha256:949b4f97252402ddfe61f4eb5bb2d51bf11f443f6a566b23d23fddc63eaa3260",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -162,7 +162,7 @@
     },
     "prd-authoring": {
       "version": "1.0.0",
-      "digest": "sha256:302647182bfeea0683bbe3f704c2d66cd0ab0eb2aec94d2c1277ccb17ca0506f",
+      "digest": "sha256:9646c279922b586d487e2182997705a8eccda49343642957dd03277178546bd1",
       "title": "Write a PRD",
       "interactionClass": "manage"
     },
@@ -180,8 +180,14 @@
     },
     "proposal-authoring": {
       "version": "1.0.0",
-      "digest": "sha256:5be3bc005f5b32e1f15e220eb238ab5579f03f7e1c7e2363259aa25cb3f68073",
+      "digest": "sha256:e44de7891112e1c9e1660a12ce89451dac12db3e039d1f60fc09a0ee724e2a5c",
       "title": "Write a proposal",
+      "interactionClass": "manage"
+    },
+    "publish-deliverable": {
+      "version": "1.0.0",
+      "digest": "sha256:1a9ef03f7b42037883b1d510de2c08aed541c6452032cefd5634076d8e5ebc22",
+      "title": "Publish a deliverable",
       "interactionClass": "manage"
     },
     "remember": {
@@ -192,19 +198,19 @@
     },
     "research-brief": {
       "version": "1.0.0",
-      "digest": "sha256:a2e5e48c9dcadb017355363bad7f80d8e0e661ac56bc969335eaa295197e7841",
+      "digest": "sha256:74eae2e7cedb89cb55c359de280d1afdb5422b6c37c63400daadee8128038066",
       "title": "Research a question",
       "interactionClass": "manage"
     },
     "revise-deliverable": {
       "version": "1.0.0",
-      "digest": "sha256:96c8a1ecff1b4c9f7bd1ceb3aa26272080d259c833a35224a6cde0f790491bfe",
+      "digest": "sha256:49a95b489d7df7ec6c7090cf9f0b8da9f42a3a51add9719ff43d1c4f577c5a4a",
       "title": "Revise a deliverable",
       "interactionClass": "manage"
     },
     "rfc-authoring": {
       "version": "1.0.0",
-      "digest": "sha256:f6e90140057ee68e8283b6b526218689c4ec0b86dfa573aa0564d97e305e1947",
+      "digest": "sha256:6d06a8d258fa137f33dfc97d09981bf61d3c0346b44e61d8ed27208a91cef954",
       "title": "Write an RFC",
       "interactionClass": "manage"
     },

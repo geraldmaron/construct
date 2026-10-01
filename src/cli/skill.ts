@@ -10,6 +10,8 @@ import { lockStatus, updateLock } from '../kernel/registry/lockfile.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
 import { bindProject } from './context.ts';
+import { openStateStore } from '../kernel/state/open.ts';
+import { skillQuality } from '../kernel/state/quality.ts';
 import { listFlag } from './commands.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
@@ -22,6 +24,7 @@ const dirFlag = { name: 'dir', gloss: 'the skills directory to use instead of th
 const clientFlag = { name: 'client', gloss: `the host whose skills directory to use: ${SKILLS_HOST_NAMES.join(' | ')}`, takesValue: true } as const;
 
 export const SKILL_SPECS: readonly CommandSpec[] = [
+  { path: ['skill', 'impact'], gloss: 'how each skill version\'s steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back', group, positionals: [], flags: [{ name: 'skill', gloss: 'only this skill', takesValue: true }], readOnly: true },
   { path: ['skill', 'list'], gloss: 'the skills this install ships, with versions', group, positionals: [], flags: [], readOnly: true },
   { path: ['skill', 'show'], gloss: 'one skill’s description, version, and files', group, positionals: ['<name>'], flags: [], readOnly: true },
   { path: ['skill', 'install'], gloss: 'plant a shipped skill into a host’s skills directory, byte for byte', group, positionals: ['<name>'], flags: [dirFlag, clientFlag, { name: 'force', gloss: 'overwrite a copy that differs', takesValue: false }], readOnly: false },
@@ -45,6 +48,23 @@ function installDir(args: ParsedArgs, ctx: CliContext): string {
 
 export function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): number {
   switch (sub) {
+    case 'impact': {
+      const project = bindProject(ctx);
+      const store = openStateStore(project.layout.dbPath);
+      try {
+        const rows = skillQuality(store, { skill: stringFlag(args, 'skill') });
+        if (args.json) { writeJson(rows); return 0; }
+        if (rows.length === 0) { say('no skill-bound steps have run yet'); return 0; }
+        for (const r of rows) {
+          const pct = r.steps ? Math.round((100 * r.firstPass) / r.steps) : 0;
+          say(`${esc(r.skill)}@${esc(r.version)}  ${String(r.steps)} step(s), ${String(pct)}% passed first time, ${String(r.meanAttempts)} attempts on average, ${String(r.waived)} waived, ${String(r.failedOrStopped)} failed or stopped`);
+          if (r.failingChecks.length) say(`  sent back by: ${r.failingChecks.slice(0, 5).map((c) => `${c.validator} ×${String(c.count)}`).join(', ')}`);
+        }
+        return 0;
+      } finally {
+        store.close();
+      }
+    }
     case 'list': {
       const skills = listShippedSkills();
       if (args.json) {

@@ -31,7 +31,7 @@ Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality` | yes | What to read. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
@@ -45,6 +45,7 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `kind` | `decision`, `constraint`, `principle`, `note`, `outcome`, `non_goal`, `success_measure`, `unknown` | yes | What kind of thing this is. |
 | `text` | string | yes | The person’s wording, as they said it. |
+| `contradicts` | array | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
 
 ### `workflows`
 
@@ -119,13 +120,14 @@ Surface: both. Reads only: yes.
 
 ### `inbox`
 
-Decisions waiting on the person. The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.
+Decisions waiting on the person. The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person's (unowned ones are included, since anyone may take them).
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `runId` | string | no | Only this run’s. |
+| `owner` | string | no | Only this owner’s, plus unowned ones. |
 
 ### `decide`
 
@@ -153,9 +155,9 @@ Surface: interactive. Reads only: no.
 
 ### `check_answer`
 
-Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It records nothing and starts nothing; fix what it finds or say plainly what you could not support.
+Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.
 
-Surface: interactive. Reads only: yes.
+Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|

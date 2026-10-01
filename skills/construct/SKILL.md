@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.1.0
+  version: 2.2.0
 ---
 
 # Construct in this session
@@ -41,6 +41,9 @@ relay each answer with `decide`.
    with the person's wording and the kind it is (decision, constraint,
    principle, note, outcome). One record, nothing else: no run, no tasks,
    no staff, no follow-up questions about roles or approvals.
+   When a decision rules something out ("not exactly-once"), pass the terms
+   the person named in `contradicts`, so later work that states them as
+   current is caught. Only terms they said; never infer them.
 3. **Manage an outcome.** "Review this against our design principles",
    "Write the requirements for…", or a situation described in the person's
    own words with no skill or workflow named. Call `classify_request` with
@@ -83,6 +86,12 @@ After `start_outcome`, loop:
   question lists the problems; the person may accept the output with them,
   ask for another attempt, or stop. An accepted output is never called
   validated.
+- Work that rests on confidential or restricted sources is labelled so. To
+  publish it, the person clears it for its audience (`clearedFor`) and
+  approves the exact write; give the location it went to.
+- Where the host supports hooks, Construct records what your tools read
+  from host-only sources and sends a reply back once if it stated project
+  facts unchecked. Treat that as a prompt to check, not as an error.
 - When a question about stale work is answered with revise or re-run,
   `decide` returns the outcome that would do it; offer it, and start it only
   if the person wants it.

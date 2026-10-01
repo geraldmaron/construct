@@ -1,0 +1,155 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "publish-deliverable",
+  "title": "Publish a deliverable",
+  "version": "1.0.0",
+  "purpose": "Put a finished deliverable where its readers are (a wiki page, a doc, a tracker), through the host's own connector, after the person approves the exact write and clears the material for its audience when it rests on confidential or restricted sources; record where it went.",
+  "activation": [
+    "publish the PRD to Confluence",
+    "put this in Notion for the team",
+    "post the brief to the project page"
+  ],
+  "standDown": [
+    "save it locally",
+    "I will share it myself"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "deliverable": "string",
+    "destination": "string",
+    "audience": "string",
+    "clearedFor": "string"
+  },
+  "requiredInputs": [
+    "deliverable",
+    "destination",
+    "audience"
+  ],
+  "steps": [
+    {
+      "id": "prepare",
+      "title": "Prepare the deliverable for the destination: format, title, and a line on what it rests on and how far it was checked",
+      "needs": [],
+      "skill": {
+        "id": "written-voice",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "deliverable": "input.deliverable",
+        "destination": "input.destination",
+        "audience": "input.audience"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "artifact"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "artifacts_exist",
+        "sensitivity_cleared",
+        "settled_not_contradicted",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "publish",
+      "title": "Write it to the destination through your connector, exactly as approved, and give the location",
+      "needs": [
+        "prepare"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_source"
+      ],
+      "sources": [],
+      "tier": "external_write",
+      "inputs": {
+        "artifact": "steps.prepare.artifact",
+        "destination": "input.destination"
+      },
+      "outputs": [
+        "location",
+        "summary"
+      ],
+      "validators": [
+        "published_location",
+        "sensitivity_cleared"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 2,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "record",
+      "title": "Record where it was published",
+      "needs": [
+        "publish"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "location": "steps.publish.location"
+      },
+      "outputs": [
+        "location"
+      ],
+      "validators": [
+        "schema",
+        "published_location"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "deliverable",
+    "destination",
+    "audience",
+    "clearedFor"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "publication",
+    "schema": "publication/v1",
+    "challenge": false
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

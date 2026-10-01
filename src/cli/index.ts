@@ -21,6 +21,7 @@ import { sourceCommand, SOURCE_SPECS } from './source.ts';
 import { skillCommand, SKILL_SPECS } from './skill.ts';
 import { completionScript, SHELLS, type Shell } from './completions.ts';
 import { serve, SERVE_SPEC } from './serve.ts';
+import { hook, HOOK_SPEC } from './hook.ts';
 import { workflowCommand, WORKFLOW_SPECS } from './workflow.ts';
 import { runCommand, RUN_SPECS } from './run.ts';
 import { inboxCommand, INBOX_SPECS } from './inbox.ts';
@@ -53,6 +54,7 @@ export const COMMANDS: readonly CommandSpec[] = Object.freeze([
   ...INBOX_SPECS,
   ...STAFF_SPECS,
   SERVE_SPEC,
+  HOOK_SPEC,
   RESET_SPEC,
   COMPLETION_SPEC,
   VERSION_SPEC,
@@ -139,6 +141,8 @@ async function dispatch(spec: CommandSpec, args: ParsedArgs, rest: readonly stri
       return reset(args, ctx);
     case 'serve':
       return serve(args, ctx);
+    case 'hook':
+      return hook(args, ctx);
     case 'workflow':
       return workflowCommand(verb!, args, ctx);
     case 'run':

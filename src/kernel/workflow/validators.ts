@@ -28,7 +28,22 @@ export interface ValidationSubject {
   readonly resolve?: RefResolver;
   /** The run's input, for checks that compare against what was asked (a named template). */
   readonly input?: unknown;
+  /** Terms the person has said must not be stated as current, each with the decision that settled it. */
+  readonly settled?: readonly { readonly term: string; readonly statementId: string }[];
+  /** The highest sensitivity among the sources this run (or the deliverable it acts on) cited. */
+  readonly sensitivity?: string | null;
 }
+
+const SENSITIVITY_ORDER = ['public', 'internal', 'confidential', 'restricted'] as const;
+
+/** The more sensitive of two labels; unknown labels rank as internal. */
+export function higherSensitivity(a: string | null | undefined, b: string | null | undefined): string | null {
+  const rank = (x: string | null | undefined) => (x ? Math.max(0, SENSITIVITY_ORDER.indexOf(x as (typeof SENSITIVITY_ORDER)[number])) : -1);
+  return rank(a) >= rank(b) ? (a ?? null) : (b ?? null);
+}
+
+/** Words that, in the same sentence, mean a settled-against term is being discussed rather than asserted. */
+const ACKNOWLEDGED = /supersed|no longer|reopen|re-open|conflict|contradict|instead of|rather than|rejected|replaced|previously|was decided against|not use|n't use|\bnot\b|\bnever\b/i;
 
 const YEAR = /^(?:19|20)\d\d$/;
 const NUMBER = /(?<![\w.\-/:#])[$€£]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|[kKmMbB]\b|ms\b|h\b|x\b))?(?![\w\-:])/g;
@@ -378,6 +393,33 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const said = typeof summary === 'string' ? summary.trim() : Array.isArray(summary) ? summary.filter((x) => typeof x === 'string' && x.trim() !== '').join(' ') : '';
     if (said === '') problems.push('the output has no "changeSummary" saying what changed from the version it revises and why');
     return problems;
+  },
+  settled_not_contradicted: ({ output, settled, resolve }) => {
+    if (!settled || settled.length === 0) return [];
+    const texts = strings(output);
+    for (const p of artifactPaths(output)) { const t = resolve?.(p)?.text; if (t) texts.push(t); }
+    const problems: string[] = [];
+    for (const { term, statementId } of settled) {
+      const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]')}\\b`, 'i');
+      for (const text of texts) {
+        const sentences = text.split(/(?<=[.!?\n])\s+/);
+        const hit = sentences.find((sn) => re.test(sn) && !ACKNOWLEDGED.test(sn) && !sn.includes(statementId));
+        if (hit) { problems.push(`"${term}" is stated as current, but the person settled against it (statement:${statementId}); say it was decided against, or name the conflict and cite the statement`); break; }
+      }
+    }
+    return problems;
+  },
+  sensitivity_cleared: ({ input, sensitivity }) => {
+    if (!sensitivity || (sensitivity !== 'confidential' && sensitivity !== 'restricted')) return [];
+    const cleared = isRecord(input) && typeof input.clearedFor === 'string' ? input.clearedFor : null;
+    return higherSensitivity(cleared, sensitivity) === cleared && cleared !== null
+      ? []
+      : [`this rests on ${sensitivity} sources; the person has to clear it for its audience first (start the outcome with clearedFor: "${sensitivity}")`];
+  },
+  published_location: ({ output }) => {
+    const loc = isRecord(output) && typeof output.location === 'string' ? output.location.trim() : '';
+    if (loc === '') return ['the output gives no "location" where it was published (a URL or a page id)'];
+    return /^https?:\/\/\S+|^[a-z][\w-]*:\S+/i.test(loc) ? [] : [`"${loc}" is not a URL or a provider:id location`];
   },
   conflicts_declared: ({ output }) => {
     if (!isRecord(output) || !Array.isArray(output.conflicts)) return ['the output has no "conflicts" list; give one, empty if the sources agree'];

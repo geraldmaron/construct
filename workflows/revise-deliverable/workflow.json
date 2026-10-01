@@ -114,6 +114,7 @@
         "template_conformance",
         "superseded_acknowledged",
         "revision_linked",
+        "settled_not_contradicted",
         "deliverable_complete"
       ],
       "loadBearing": true,

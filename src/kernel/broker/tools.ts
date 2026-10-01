@@ -27,12 +27,15 @@ import { bool, closed, list, num, obj, record, str, type ToolDefinition } from '
 import { createRouter, type Router } from '../skills/routing.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
+import { settledConstraintText, settledTerms } from '../project/governance.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
+import { appendActivity } from '../state/activity.ts';
+import { skillQuality } from '../state/quality.ts';
 import { projectResolver as resolverFor } from '../source/resolver.ts';
 
 /** What a step may cite in this project, as it stands now. */
 export function projectResolver(ctx: BrokerContext): RefResolver {
-  return resolverFor(ctx.store, ctx.root);
+  return resolverFor(ctx.store, ctx.root, null, { hostReads: ctx.policy?.hostReads ?? 'require' });
 }
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
@@ -95,7 +98,7 @@ const bootstrap = define<Record<string, never>, unknown>({
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements'] as const;
+const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'quality'] as const;
 
 const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number }, unknown>({
   name: 'project_context',
@@ -143,13 +146,15 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
         return filter(listDriftFindings(ctx.store), (f) => `${f.id} ${f.kind} ${f.summary}`);
       case 'statements':
         return filter(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`);
+      case 'quality':
+        return filter(skillQuality(ctx.store), (q) => `${q.skill} ${q.version}`);
       default:
         return null;
     }
   },
 });
 
-const remember = define<{ kind: StatementKind; text: string }, unknown>({
+const remember = define<{ kind: StatementKind; text: string; contradicts: string[] }, unknown>({
   name: 'remember',
   title: 'Remember one thing',
   description: 'Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff.',
@@ -160,17 +165,21 @@ const remember = define<{ kind: StatementKind; text: string }, unknown>({
     properties: {
       kind: { type: 'string', description: 'What kind of thing this is.', enum: ['decision', 'constraint', 'principle', 'note', 'outcome', 'non_goal', 'success_measure', 'unknown'] },
       text: { type: 'string', description: 'The person’s wording, as they said it.' },
+      contradicts: { type: 'array', items: { type: 'string' }, description: 'For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named.' },
     },
     required: ['kind', 'text'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')! };
+    const contradicts = list(raw, 'contradicts').filter((x): x is string => typeof x === 'string' && x.trim().length >= 3).map((x) => x.trim());
+    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')!, contradicts };
   },
   run(ctx, input) {
-    const s = ctx.workflow.remember({ ...input, by: ctx.actor });
-    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt }, nothingElseCreated: true };
+    const s = ctx.workflow.remember({ kind: input.kind, text: input.text, by: ctx.actor });
+    // Each ruled-out term becomes a checkable constraint tied to the decision; that is all that is created.
+    const rules = input.kind === 'decision' ? input.contradicts.map((term) => ctx.workflow.remember({ kind: 'constraint', text: settledConstraintText(term, s.id), by: ctx.actor })) : [];
+    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt }, rulesOut: rules.map((r) => ({ id: r.id, text: r.text })), nothingElseCreated: true };
   },
 });
 
@@ -415,21 +424,34 @@ const runStatus = define<{ runId: string }, unknown>({
   },
 });
 
-const inbox = define<{ runId?: string }, unknown>({
+const inbox = define<{ runId?: string; owner?: string }, unknown>({
   name: 'inbox',
   title: 'Decisions waiting on the person',
-  description: 'The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.',
+  description: 'The decisions, approvals, and questions that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person\'s (unowned ones are included, since anyone may take them).',
   surface: 'interactive',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' } }, additionalProperties: false },
+  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' }, owner: { type: 'string', description: 'Only this owner’s, plus unowned ones.' } }, additionalProperties: false },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { runId: str(raw, 'runId', { optional: true }) };
+    return { runId: str(raw, 'runId', { optional: true }), owner: str(raw, 'owner', { optional: true }) };
   },
-  run(ctx, { runId }) {
-    return listOpenDecisions(ctx.store, runId).map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options, raisedAt: d.raisedAt, run: d.runId }));
+  run(ctx, { runId, owner }) {
+    const owners = ctx.files.constitution?.owners ?? [];
+    return listOpenDecisions(ctx.store, runId)
+      .map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options, raisedAt: d.raisedAt, run: d.runId, owner: ownerFor(owners, `${d.question} ${JSON.stringify(d.subject ?? {})}`) }))
+      .filter((d) => !owner || d.owner === null || d.owner.toLowerCase() === owner.toLowerCase());
   },
 });
+
+/**
+ * Who decides a question, from the constitution's owners: the first owner one of whose "decides" areas the
+ * question names. Owners live in a committed file, so everyone on the project routes the same way.
+ */
+export function ownerFor(owners: readonly { readonly name: string; readonly decides: readonly string[] }[], text: string): string | null {
+  const t = text.toLowerCase();
+  for (const o of owners) for (const area of o.decides) if (area.trim().length >= 3 && t.includes(area.trim().toLowerCase())) return o.name;
+  return null;
+}
 
 const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
@@ -545,14 +567,14 @@ function listLiveDeliverablesFor(ctx: BrokerContext, id: string) {
 interface CheckAnswerInput { answer: string; citations: { ref: string; excerpt?: string }[] }
 
 /** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
-export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged'] as const;
+export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged', 'settled_not_contradicted'] as const;
 
 const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
-  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It records nothing and starts nothing; fix what it finds or say plainly what you could not support.',
+  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
   surface: 'interactive',
-  readOnly: true,
+  readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
@@ -572,8 +594,11 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
   },
   run(ctx, { answer, citations }) {
     const resolve = projectResolver(ctx);
-    const results = runValidators([...ANSWER_CHECKS], { output: { summary: answer }, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve });
+    const settled = settledTerms(listStatements(ctx.store, { kind: 'constraint', status: 'confirmed' }));
+    const results = runValidators([...ANSWER_CHECKS], { output: { summary: answer }, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled });
     const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
+    // Counted, so how often answers are checked is something a person can see, not something to hope for.
+    appendActivity(ctx.store, { at: ctx.now(), kind: 'answer.checked', actor: ctx.actor, payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length } });
     return {
       ok: problems.length === 0,
       problems,

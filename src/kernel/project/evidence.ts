@@ -63,6 +63,8 @@ export interface EvidenceSource {
   readonly provenance?: Provenance;
   /** The manifest covers only what the host happened to read; an item outside it is the host's word, not a miss. */
   readonly partial?: boolean;
+  /** Construct has never read this source and the host has never reported a read of it. */
+  readonly neverRead?: boolean;
 }
 
 /** Kernel record kinds a step may cite by id. */
@@ -77,6 +79,8 @@ export interface ResolverInput {
   readonly knows?: (kind: RecordKind, id: string) => boolean;
   /** Documents or items the person has said are replaced. */
   readonly supersessions?: readonly DeclaredSupersession[];
+  /** require: a citation into a host-read source that was never reported does not resolve. accept: it resolves as reported. */
+  readonly hostReads?: 'require' | 'accept';
 }
 
 /** Names of Construct's own surfaces a step may cite as what it consulted. */
@@ -165,7 +169,11 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     if (s && rest) {
       if (s.kind === 'directory' && s.locator) return asPath(rest, original, resolve(root, s.locator));
       // A source with no manifest is one Construct cannot read; the host's word is all there is.
-      if (!s.manifest) return { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' };
+      if (!s.manifest) {
+        // Nobody has recorded reading it: under "require", the host reports its read first, so the citation can be checked.
+        if (s.neverRead && input.hostReads !== 'accept') return null;
+        return { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' };
+      }
       const hit = s.manifest.find((e) => e.ref === rest);
       if (hit) return { ref: original, kind: 'item', sourceId: s.id, itemRef: hit.ref, text: hit.text, provenance: s.provenance ?? 'witnessed', ...(hit.supersededBy ? { supersededBy: hit.supersededBy } : {}) };
       return s.partial ? { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' } : null;

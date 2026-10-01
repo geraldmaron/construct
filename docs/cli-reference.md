@@ -162,6 +162,16 @@ Reads only: no.
 
 ## Skills
 
+### `construct skill impact`
+
+how each skill version's steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--skill` | yes | only this skill |
+
+Reads only: yes.
+
 ### `construct skill list`
 
 the skills this install ships, with versions
@@ -437,6 +447,17 @@ speak MCP over stdio for the host that launched it, bound to this project
 | `--headless` | no | serve the runner surface instead of the person’s session |
 | `--executor` | yes | the runner’s id, with --headless |
 | `--describe` | no | print the surface this would serve and exit |
+
+Reads only: no.
+
+### `construct hook <event>`
+
+handle a host lifecycle event (post-tool | stop | session-start); hosts run it, people rarely do
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--client` | yes | which host sent the event (default: claude-code) |
+| `--project` | yes | the project root (default: the event's cwd, then the working directory) |
 
 Reads only: no.
 

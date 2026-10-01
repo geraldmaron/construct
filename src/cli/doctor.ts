@@ -19,6 +19,7 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { inspectWiring } from '../hosts/wiring/wire.ts';
+import { inspectHooks } from '../hosts/wiring/hooks.ts';
 import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { createContext, gitRootOf, type CliContext } from './context.ts';
@@ -118,6 +119,11 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   const ambient = detectAmbientHost(ctx.env);
   if (root !== null) {
     const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
+    if (wired.some((w) => w.client === 'claude-code')) {
+      const h = inspectHooks(root);
+      // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing.
+      checks.push({ name: 'host-hooks', ok: h.status !== 'broken', detail: h.status === 'installed' ? h.detail : `${h.detail}; \`construct init --client=claude-code\` adds them` });
+    }
     checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
   }
   if (ambient) {

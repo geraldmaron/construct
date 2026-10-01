@@ -31,6 +31,9 @@ import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { listStatements } from '../state/profile.ts';
+import { listSources } from '../state/sources.ts';
+import { settledTerms } from '../project/governance.ts';
+import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
@@ -101,6 +104,9 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
   sources_diverse: 'sources_diverse needs citations from at least two independent places (different files, items, or web sites).',
   revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
+  settled_not_contradicted: 'settled_not_contradicted rejects stating a term the person settled against as if it were current; say it was decided against or name the conflict.',
+  sensitivity_cleared: 'sensitivity_cleared needs the person to clear confidential or restricted material for its audience (input clearedFor).',
+  published_location: 'published_location needs "location": the URL or provider:id where it was published.',
   conflicts_declared: 'conflicts_declared needs a "conflicts" list (empty if none); each conflict gives "citations" naming at least the two sources that disagree.',
 };
 
@@ -175,6 +181,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (settled.length === 0) return [];
     const shown = settled.slice(-12).map((st) => `[${st.kind} ${st.id}] ${st.text.length > 200 ? `${st.text.slice(0, 200)}…` : st.text}`);
     return [`Settled by the person (newest last${settled.length > 12 ? `, ${String(settled.length - 12)} older not shown; read them with project_context statements` : ''}): ${shown.join(' | ')}. Where a source disagrees with one of these, list it under conflicts and cite the statement as statement:<id>.`];
+  };
+  /** Terms the person settled against: constraints of the form Do not state "X" as current. */
+  const settled = () => settledTerms(listStatements(store, { kind: 'constraint', status: 'confirmed' }));
+  /** The highest sensitivity among the sources the whole run cited, and the deliverable it acts on, if any. */
+  const sensitivityFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): string | null => {
+    let level: string | null = null;
+    const input = (run.input ?? {}) as { deliverable?: unknown };
+    if (typeof input.deliverable === 'string') {
+      const d = getDeliverable(store, input.deliverable.replace(/^deliverable:/, ''));
+      const ds = (d?.body as { sensitivity?: unknown } | null)?.sensitivity;
+      if (typeof ds === 'string') level = higherSensitivity(level, ds);
+    }
+    if (!resolve) return level;
+    const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
+    for (const e of runEvidence(run.id, current)) {
+      const r = resolve(e.ref);
+      if (r?.sourceId) level = higherSensitivity(level, bySource.get(r.sourceId) ?? null);
+    }
+    return level;
   };
   /** The person accepted this step's output despite failing checks. */
   const acceptedWaiver = (stepRunId: string): boolean =>
@@ -505,7 +530,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null };
         });
       }
-      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input });
+      const sensitivity = sensitivityFor(run, evidence, resolve);
+      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
         const waived = failures.length > 0 && acceptedWaiver(leased.id);
@@ -539,7 +565,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         let deliverable: Deliverable | null = null;
         const isLast = workflow.manifest.steps[workflow.manifest.steps.length - 1]!.id === step.id;
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence }, at });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}) }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
             deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
