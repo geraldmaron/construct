@@ -8,8 +8,8 @@
       "origin": "builtin"
     },
     "construct": {
-      "version": "2.1.0",
-      "digest": "sha256:8b079f8f2dc4f0c4861a72b1c058c0266463ed2024a05f440d03c6f4f5a3530b",
+      "version": "2.6.0",
+      "digest": "sha256:120649fd10675ae159492780ab29f44ce087eacf16bb7344cf007ae06da4a61f",
       "origin": "builtin"
     },
     "context-mapping": {
@@ -83,8 +83,8 @@
       "origin": "builtin"
     },
     "written-voice": {
-      "version": "0.4.0",
-      "digest": "sha256:d8f723e30238e70207b7095b29783d4c91212836837a12092b063dce844014ab",
+      "version": "0.5.0",
+      "digest": "sha256:73cc3d00a5f38796b109c82c3bbbac9e2f5c2ea35f362c476b920deb3f744347",
       "origin": "builtin"
     }
   },
@@ -125,8 +125,8 @@
       "origin": "builtin"
     },
     "managed-outcome": {
-      "version": "1.1.0",
-      "digest": "sha256:05eca0ea4a10f50db243b8d96642892ab6a06b0fb69f598143d80a37d38568af",
+      "version": "1.2.0",
+      "digest": "sha256:030e7e4051fdc6e04ad1c983cf5e2f962027de6c1b9f648ce6b1a51436965067",
       "origin": "builtin"
     },
     "operational-readiness-review": {
