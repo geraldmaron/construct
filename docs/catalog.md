@@ -10,7 +10,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | Skill | Version | Category | Engages when | Stands down when |
 |---|---|---|---|---|
 | `adversarial-review` | 0.3.1 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
-| `construct` | 2.5.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
+| `construct` | 2.6.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
 | `context-mapping` | 0.4.0 | method | I just inherited this codebase | you already hold the map, know the system, just implement |
 | `decision-framing` | 0.3.0 | method | buy or build, which one | the decision is already made, help execute the rollout |
 | `experience-design` | 1.0.1 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |

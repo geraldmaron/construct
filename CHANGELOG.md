@@ -14,7 +14,7 @@ the predecessor.
   `construct migrate`. It backs the store up under its upgrade lock first,
   and refuses while another process holds the store. Read-only commands
   refuse an older store and name the migrate step. They never upgrade it.
-- **Operational skill 2.5.0.** Run `construct doctor` after migrating and
+- **Operational skill 2.6.0.** Run `construct doctor` after migrating and
   follow its skill-update instruction before reopening agent sessions. An
   installed copy you have not edited is replaced without `--force`.
 - **First runtime dependency.** MCP stdio framing now uses
@@ -48,9 +48,28 @@ the predecessor.
   principle, outcome, or invariant creates a graph entity. A later
   invalidation, supersession, or contradiction shows as drift and blocks
   treating the work as a trusted finished outcome.
-- **Backlog admission.** Observations persist without becoming work. A work
-  item needs a parent outcome, requirement, decision, or metric. Proposed
-  statements wait in the inbox to be confirmed or retired.
+- **Backlog admission.** Work enters the backlog with a reason: an admitted,
+  unfinished parent item, an active decision, requirement, initiative, or
+  metric it serves, or the person filing it from their own terminal. A
+  session that files work without one, outcomes included, gets it back as
+  proposed: listed, but never ready or claimable until a link gives it a
+  reason or the person runs `construct work admit`. Admitting an item admits
+  its proposed children. A session roots its own work by remembering the
+  outcome or decision behind it, recorded as relayed, and serving that. Open
+  work filed before this release stays open. Observations persist without
+  becoming work, and proposed statements wait in the inbox to be confirmed
+  or retired.
+- **Structured work items.** `work add` and the `work` tool take a parent,
+  the reason the work serves, blocking and related work, acceptance
+  criteria, risk, and premise sources. `work link`, `unlink`, `update`, and
+  `admit` change them later, `work show` prints them, and
+  `work list --parent` lists an item's children. An item with open children
+  cannot be completed or cancelled, and completing work that has acceptance
+  criteria needs a reason saying how they were met. Delegated attempts are
+  cancelled with their parent; a running one holds the parent open. A
+  source refresh that changes a premise holds the work until
+  `work requalify` records what was checked; editing its sources does not
+  clear that.
 - **Convention discovery with provenance.** ADR directories and architecture
   documents become governing proposals with locator, span, and content
   digest. Quoted examples are not constraints. Caps report what they left
@@ -90,6 +109,8 @@ the predecessor.
   store open. Otherwise they say what access the read needs.
 - A step lease that expires inside another session's call is recorded as the
   kernel's act, not that session's. The holder that walked away is named.
+- The `work` tool stored a session's title as the description of work it
+  added. It now keeps the description it is given.
 
 ### Known limitations
 
