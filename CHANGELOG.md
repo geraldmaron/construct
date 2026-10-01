@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.25 — 2026-10-01
+
+Conformance for this version: `npm run conformance` (static, no
+credentials) 71 passed, 0 failed, 14 untested; live host calls were not
+run. The Claude Code hooks were exercised with Claude Code-shaped event
+payloads against a scratch project, not inside a live Claude Code session.
 
 **Breaking for project-authored workflows.** `evidence_refs_resolve` and
 `citations_present` now check that references resolve. A workflow that
