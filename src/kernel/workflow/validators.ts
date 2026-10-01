@@ -45,11 +45,21 @@ function strings(v: unknown, out: string[] = []): string[] {
   return out;
 }
 
-/** Figures worth checking: not a lone digit, not a year, not a list or section number at the start of a line. */
+const MONTH = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const DATES = [
+  new RegExp(`\\b${MONTH}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b(?![.,]?\\d|\\s?(?:%|[kmb]\\b))`, 'gi'),
+  new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH}\\b`, 'gi'),
+  /\b\d{4}-\d{2}-\d{2}\b/g,
+  /\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g,
+  /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi,
+];
+
+/** Figures worth checking: not a lone digit, a year, a date or time, or a list or section number. */
 export function figuresIn(text: string): string[] {
   const out: string[] = [];
   for (const line of text.split('\n')) {
-    const body = line.replace(/^\s*(?:#+\s*)?(?:[-*]\s+)?\d+[.)]\s+/, '');
+    let body = line.replace(/^\s*(?:#+\s*)?(?:[-*]\s+)?\d+[.)]\s+/, '');
+    for (const d of DATES) body = body.replace(d, ' ');
     for (const m of body.matchAll(NUMBER)) {
       const f = normalizeFigure(m[0]);
       const digits = f.replace(/[^\d.]/g, '');
@@ -70,6 +80,25 @@ export function figureValue(raw: string): number | null {
   // A percentage is a fraction, so 1.6M * 50% is 0.8M and "18%" compares as 0.18.
   const scale = m[2] === 'k' ? 1e3 : m[2] === 'm' ? 1e6 : m[2] === 'b' ? 1e9 : m[2] === '%' ? 0.01 : 1;
   return n * scale;
+}
+
+/** The half-unit of a figure's last written digit: "2M" covers 1.5M to 2.5M, "2.1M" covers 2.05M to 2.15M. */
+function roundingTolerance(fig: string): number {
+  const f = normalizeFigure(fig);
+  const m = /^(\d+)(?:\.(\d+))?(%|k|m|b|ms|h|x)?$/.exec(f);
+  if (!m) return 0;
+  const decimals = m[2]?.length ?? 0;
+  const scale = m[3] === 'k' ? 1e3 : m[3] === 'm' ? 1e6 : m[3] === 'b' ? 1e9 : m[3] === '%' ? 0.01 : 1;
+  return (10 ** -decimals * scale) / 2;
+}
+
+/** A written figure is supported when a cited figure has the same value, allowing for how far it was rounded. */
+export function figureSupported(fig: string, cited: ReadonlySet<string>, citedValues: readonly number[]): boolean {
+  if (cited.has(fig)) return true;
+  const v = figureValue(fig);
+  if (v === null) return false;
+  const tol = roundingTolerance(fig);
+  return citedValues.some((c) => Math.abs(c - v) <= tol + 1e-9 * Math.max(1, Math.abs(c)));
 }
 
 /** Unit constants an expression may use without citing them: per-cent, per-mille, calendar and clock. */
@@ -213,14 +242,18 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  numbers_grounded: ({ output, evidence, resolve }) => {
+  numbers_grounded: ({ output, evidence, resolve, input }) => {
     const cited: string[] = [];
     for (const e of evidence) {
       if (e.excerpt) cited.push(e.excerpt);
       const r = resolve?.(e.ref);
       if (r?.text) cited.push(r.text);
     }
+    // What the person asked for counts as given: a figure in the request or inputs is theirs, not invented.
+    cited.push(...strings(input));
     const haystack = new Set(figuresIn(cited.join('\n')));
+    const citedValues = [...haystack].map(figureValue).filter((x): x is number => x !== null);
+    const supported = (f: string) => figureSupported(f, haystack, citedValues);
     const derived = new Set<string>();
     const problems: string[] = [];
     if (isRecord(output) && Array.isArray(output.derivations)) {
@@ -232,7 +265,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
         const value = String(d.value);
         if (typeof d.expression === 'string' && d.expression.trim() !== '') {
           // The figures it is computed from must themselves be grounded, and the arithmetic must hold.
-          for (const f of figuresIn(d.expression)) if (!haystack.has(f) && !CONSTANTS.has(f)) problems.push(`derivation of "${value}" uses "${f}", which no cited source contains`);
+          for (const f of figuresIn(d.expression)) if (!supported(f) && !CONSTANTS.has(f)) problems.push(`derivation of "${value}" uses "${f}", which no cited source contains`);
           const got = evaluateExpression(d.expression);
           const want = figureValue(value);
           if (got === null) problems.push(`derivation of "${value}": "${d.expression}" is not arithmetic over figures`);
@@ -251,7 +284,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       if (t) texts.push(t);
     }
     const unsupported = new Set<string>();
-    for (const f of figuresIn(texts.join('\n'))) if (!haystack.has(f) && !derived.has(f)) unsupported.add(f);
+    const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
+    for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
     return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it`)];
   },
   template_conformance: ({ output, input, resolve }) => {
@@ -317,6 +351,18 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (audience && !section.toLowerCase().includes(audience.toLowerCase())) problems.push(`the decision section does not name who decides (${audience})`);
     if (by ? !section.toLowerCase().includes(by.toLowerCase()) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
     return problems;
+  },
+  sources_diverse: ({ evidence, resolve }) => {
+    // Triangulation: a finding resting on one document is a quotation, not research.
+    const roots = new Set<string>();
+    for (const e of evidence) {
+      const r = resolve?.(e.ref);
+      if (!r) continue;
+      if (r.kind === 'web') {
+        try { roots.add(new URL(e.ref.trim()).hostname.replace(/^www\./, '')); } catch { /* unparseable stays uncounted */ }
+      } else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
+    }
+    return roots.size >= 2 ? [] : [`the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`];
   },
   conflicts_declared: ({ output }) => {
     if (!isRecord(output) || !Array.isArray(output.conflicts)) return ['the output has no "conflicts" list; give one, empty if the sources agree'];

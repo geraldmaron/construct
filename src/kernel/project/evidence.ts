@@ -18,10 +18,16 @@
  * Accepted shapes: `docs/a.md`, `./docs/a.md`, `/abs/inside/root.md`,
  * `docs/a.md#section`, `docs/a.md:12-30`, `source:<id>`, `<id>`,
  * `<sourceId>:<item or path>`, `PLAT-101`, `deliverable:<id>`,
- * `statement:<id>`, `claim:<id>`, `entity:<id>`, `decision:<id>`, `run:<id>`.
+ * `statement:<id>`, `claim:<id>`, `entity:<id>`, `decision:<id>`, `run:<id>`,
+ * and `https://…` for pages the host read on the web (reported: Construct
+ * does not fetch them, so their excerpts stand as the host's word).
+ *
+ * A path is judged by where it really lives: a symlink inside the project
+ * that points outside it does not resolve, so citing it cannot make
+ * Construct read a file the project does not hold.
  */
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import type { ManifestEntry } from '../source/manifest.ts';
 
@@ -31,7 +37,7 @@ export type Provenance = 'witnessed' | 'reported';
 
 export interface ResolvedRef {
   readonly ref: string;
-  readonly kind: 'file' | 'directory' | 'source' | 'item' | 'deliverable' | 'record';
+  readonly kind: 'file' | 'directory' | 'source' | 'item' | 'deliverable' | 'record' | 'web';
   readonly provenance: Provenance;
   /** Absolute path, for files and directories. */
   readonly path?: string;
@@ -103,17 +109,26 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     return text;
   };
   const sourceFor = (abs: string) => dirSources.find((d) => inside(d.abs, abs));
+  const realRoot = (() => { try { return realpathSync(root); } catch { return root; } })();
+  const realDirs = dirSources.map((d) => { try { return realpathSync(d.abs); } catch { return d.abs; } });
   const asPath = (raw: string, original: string, base = root): ResolvedRef | null => {
     const abs = resolve(base, raw.replace(/^file:/, ''));
     const ds = sourceFor(abs);
     if ((!inside(root, abs) && !ds) || !existsSync(abs)) return null;
+    let real: string;
+    try {
+      real = realpathSync(abs);
+    } catch {
+      return null;
+    }
+    if (!inside(realRoot, real) && !realDirs.some((d) => inside(d, real))) return null;
     const st = statSync(abs);
     const itemRef = ds ? relative(ds.abs, abs).split(sep).join('/') : undefined;
     const supersededBy = ds && itemRef ? ds.entries.get(itemRef)?.supersededBy : undefined;
     const common = { ref: original, path: abs, provenance: 'witnessed' as const, ...(ds ? { sourceId: ds.id, itemRef } : {}), ...(supersededBy ? { supersededBy } : {}) };
     if (st.isDirectory()) return { ...common, kind: 'directory' };
     if (!st.isFile()) return null;
-    return { ...common, kind: 'file', text: readText(abs) };
+    return { ...common, kind: 'file', text: readText(real) };
   };
 
   return (original: string): ResolvedRef | null => {
@@ -121,6 +136,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const ref = stripLocator(original);
     if (ref === '') return null;
     if (SURFACES.has(ref)) return { ref: original, kind: 'record', provenance: 'witnessed' };
+    if (/^https?:\/\/[^\s/]+\.[^\s]+/i.test(original.trim())) return { ref: original, kind: 'web', provenance: 'reported' };
     const colon = ref.indexOf(':');
     const head = colon > 0 ? ref.slice(0, colon) : '';
     const rest = colon > 0 ? ref.slice(colon + 1) : '';

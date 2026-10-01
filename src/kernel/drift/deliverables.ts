@@ -41,6 +41,7 @@ export function flagStaleDeliverables(
   if (touched.size === 0 && changes.added.length === 0) return [];
   const open = listDriftFindings(store, { status: 'open' });
   const out: DriftFinding[] = [];
+  const addedOnly: DriftFinding[] = [];
   // One run can leave a challenged draft and then its final deliverable; only the latest speaks for the run.
   const latest = new Map<string, Deliverable>();
   for (const d of listLiveDeliverables(store)) latest.set(d.runId, d);
@@ -79,15 +80,31 @@ export function flagStaleDeliverables(
         repairPath: 'review the changed material against the deliverable; revise or re-run it, or dismiss the finding if it does not bear',
         at,
       });
+    if (uniqueHit.length > 0) {
+      // Something it cited changed: that is worth asking about, deliverable by deliverable.
+      raiseDecision(store, {
+        id: `q-${input.nextId()}`,
+        kind: 'decision',
+        question: `${summary}. Revise it, re-run it, or dismiss this?`,
+        options: [...STALE_OPTIONS],
+        subject: { driftFindingIds: [finding.id], deliverableIds: [d.id] },
+        at,
+      });
+    } else {
+      addedOnly.push(finding);
+    }
+    out.push(finding);
+  }
+  if (addedOnly.length > 0) {
+    // New material only: one question for the whole refresh, so a busy folder does not flood the inbox.
     raiseDecision(store, {
       id: `q-${input.nextId()}`,
       kind: 'decision',
-      question: `${summary}. Revise it, re-run it, or dismiss this?`,
+      question: `${sourceId} gained ${changes.added.slice(0, 5).join(', ')}${changes.added.length > 5 ? ` (+${String(changes.added.length - 5)} more)` : ''}; ${String(addedOnly.length)} finished deliverable(s) drew on ${sourceId} before that (${addedOnly.map((f) => f.affected[0]).join(', ')}). Revise or re-run them, or dismiss?`,
       options: [...STALE_OPTIONS],
-      subject: { driftFindingId: finding.id, deliverableId: d.id },
+      subject: { driftFindingIds: addedOnly.map((f) => f.id), deliverableIds: addedOnly.map((f) => f.affected[0]) },
       at,
     });
-    out.push(finding);
   }
   return out;
 }

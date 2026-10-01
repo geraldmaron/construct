@@ -9,8 +9,9 @@
  * which files were added, removed, or modified. Files above the hashing cap
  * are identified by size and modification time instead.
  *
- * Hashes are cached per path by size and mtime, so a repeat read (bootstrap
- * checks every directory source) re-reads only what moved.
+ * Hashes are reused by size and mtime, from this process's cache or from the
+ * last recorded read, so a repeat read (bootstrap checks every directory
+ * source at the start of each session) re-reads only what moved.
  *
  * A document can say it replaces another: a header line "Supersedes:
  * other.md" in the newer one, or "Status: Superseded" / "Superseded by: X"
@@ -22,7 +23,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
-import type { ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
+import type { PreviousItem, ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
 
 export const DIRECTORY_ENTRY_CAP = 5000;
 /** Files larger than this are fingerprinted by size and mtime, not content. */
@@ -56,10 +57,16 @@ function headerFacts(text: string): { supersedes: string[]; supersededBy: string
   return { supersedes, supersededBy };
 }
 
-function fingerprintOf(path: string): Fingerprint {
+function fingerprintOf(path: string, previous?: PreviousItem): Fingerprint {
   const st = statSync(path);
   const hit = cache.get(path);
   if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit;
+  const a = previous?.attributes;
+  if (a && a.size === st.size && a.mtimeMs === st.mtimeMs && previous!.fingerprint) {
+    const reused: Fingerprint = { size: st.size, mtimeMs: st.mtimeMs, fingerprint: previous!.fingerprint, supersedes: Array.isArray(a.supersedes) ? (a.supersedes as string[]) : [], supersededBy: typeof a.declaredSupersededBy === 'string' ? a.declaredSupersededBy : null };
+    cache.set(path, reused);
+    return reused;
+  }
   let fp: Fingerprint;
   if (st.size <= DIRECTORY_HASH_CAP_BYTES) {
     const bytes = readFileSync(path);
@@ -72,7 +79,7 @@ function fingerprintOf(path: string): Fingerprint {
   return fp;
 }
 
-function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[]): void {
+function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[], previous: ReadonlyMap<string, PreviousItem>): void {
   if (out.length >= DIRECTORY_ENTRY_CAP) return;
   let entries: import('node:fs').Dirent[];
   try {
@@ -85,10 +92,11 @@ function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[]
     if (entry.isSymbolicLink() || SKIP.has(entry.name)) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) {
-      walk(root, path, out);
+      walk(root, path, out, previous);
     } else if (entry.isFile()) {
       try {
-        out.push({ rel: relative(root, path).split(sep).join('/'), fp: fingerprintOf(path) });
+        const rel = relative(root, path).split(sep).join('/');
+        out.push({ rel, fp: fingerprintOf(path, previous.get(rel)) });
       } catch {
         // a file that vanished mid-walk is not part of this read
       }
@@ -96,7 +104,7 @@ function walk(root: string, dir: string, out: { rel: string; fp: Fingerprint }[]
   }
 }
 
-export const readDirectorySource: SourceReader = async ({ locator }): Promise<ReadOutcome> => {
+export const readDirectorySource: SourceReader = async ({ locator, previous }): Promise<ReadOutcome> => {
   if (locator === null) return { outcome: 'unreachable', reason: 'the source names no directory' };
   let st;
   try {
@@ -106,7 +114,7 @@ export const readDirectorySource: SourceReader = async ({ locator }): Promise<Re
   }
   if (!st.isDirectory()) return { outcome: 'unreachable', reason: `${locator} is not a directory` };
   const files: { rel: string; fp: Fingerprint }[] = [];
-  walk(locator, locator, files);
+  walk(locator, locator, files, new Map((previous ?? []).map((p) => [p.ref, p])));
   files.sort((a, b) => a.rel.localeCompare(b.rel));
   // Resolve "Supersedes: x" in a newer document onto the older item it names (by path or by file name).
   const supersededBy = new Map<string, string>();
@@ -123,7 +131,7 @@ export const readDirectorySource: SourceReader = async ({ locator }): Promise<Re
     externalRef: f.rel,
     kind: 'file',
     name: f.rel.slice(f.rel.lastIndexOf('/') + 1),
-    attributes: { fingerprint: f.fp.fingerprint, ...(supersededBy.has(f.rel) ? { supersededBy: supersededBy.get(f.rel) } : {}) },
+    attributes: { fingerprint: f.fp.fingerprint, size: f.fp.size, mtimeMs: f.fp.mtimeMs, ...(f.fp.supersedes.length ? { supersedes: f.fp.supersedes } : {}), ...(f.fp.supersededBy ? { declaredSupersededBy: f.fp.supersededBy } : {}), ...(supersededBy.has(f.rel) ? { supersededBy: supersededBy.get(f.rel) } : {}) },
   }));
   return {
     outcome: 'read',
