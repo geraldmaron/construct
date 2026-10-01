@@ -5,6 +5,7 @@
 
 import { listActiveRuns } from '../kernel/state/runs.ts';
 import { listOpenDecisions } from '../kernel/state/decisions.ts';
+import { habitsSince } from '../kernel/state/activity.ts';
 import { listDriftFindings } from '../kernel/state/drift.ts';
 import { onboardingStatus } from '../kernel/project/onboarding.ts';
 import { createSourceService } from '../kernel/source/service.ts';
@@ -45,6 +46,7 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
       sources,
       registry: { skills: lock ? Object.keys(lock.skills).length : 0, workflows: lock ? Object.keys(lock.workflows).length : 0, skew: skew.map((r) => ({ kind: r.kind, id: r.id, state: r.state })) },
       drift: { open: drift.length },
+      habits: habitsSince(store, new Date(Date.parse(at) - 7 * 86_400_000).toISOString()),
     };
     if (args.json) {
       writeJson(record);
@@ -57,6 +59,8 @@ export function status(args: ParsedArgs, ctx: CliContext = createContext()): num
     say(`  sources: ${String(sources.total)} declared; ${String(sources.reachable)} reachable, ${String(sources.unreachable)} unreachable, ${String(sources.unknown)} never checked; ${String(sources.stale)} stale`);
     say(`  registry: ${lock ? `${String(Object.keys(lock.skills).length)} skill(s), ${String(Object.keys(lock.workflows).length)} workflow(s) locked` : 'no lockfile'}${skew.length ? `; ${String(skew.length)} not current (${skew.map((r) => `${r.id} ${r.state}`).join(', ')})` : '; all current'}`);
     say(`  drift: ${drift.length === 0 ? 'nothing open' : `${String(drift.length)} finding(s) open`}`);
+    const h = record.habits;
+    say(`  last 7 days: ${String(h.answersChecked)} answer(s) checked (${String(h.answersClean)} clean), ${String(h.uncheckedCaught)} unchecked answer(s) caught, ${String(h.readsRecorded)} host read(s) recorded, ${String(h.checksWaived)} check(s) waived`);
     return 0;
   });
 }

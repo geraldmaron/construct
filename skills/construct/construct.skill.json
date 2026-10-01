@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "construct",
   "title": "Construct operating skill",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "category": "operational",
   "owner": "geraldmaron/construct",
   "activation": [

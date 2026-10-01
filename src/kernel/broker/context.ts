@@ -29,4 +29,6 @@ export interface BrokerContext {
   readonly nextId: (prefix: string) => string;
   /** The person's identity as the host reports it, for decisions and promotions. */
   readonly actor: string;
+  /** Effective policy settings the tools apply. */
+  readonly policy?: { readonly hostReads: 'require' | 'accept'; readonly answerCheck: 'nudge' | 'off' };
 }

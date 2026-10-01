@@ -79,3 +79,25 @@ writes; point them at `construct serve --client=codex` or `--client=bob` by
 hand. What was exercised against a real host is recorded in
 [release-verification.md](release-verification.md); anything not listed
 there is untested, not assumed.
+
+## Hooks: habits that do not depend on the model
+
+With `--client=claude-code`, init also adds three hooks to
+`.claude/settings.json` (additively; other hooks are kept, and a settings
+file that is not valid JSON is left alone). After each tool call,
+`construct hook post-tool` records Jira issues a tool returned from a
+declared project as a host read, so reporting reads is automatic. When the
+host is about to stop, `construct hook stop` sends it back once if its reply
+named project facts (a declared ticket key, a file, a source) without
+`check_answer` or a gated step; `policy.answerCheck` set to off turns that
+off. At session start, `construct hook session-start` adds a short note of
+what waits. Every hook exits 0 and never blocks a session on its own
+failure. `construct doctor` reports whether the hooks are installed, and
+`construct status` shows over the last week how many answers were checked,
+how many unchecked ones were caught, how many host reads were recorded, and
+how many checks were waived.
+
+Hosts without hooks still get the server-side floor: under
+`policy.hostReads` set to require (the default), a citation into a source
+only the host can read does not resolve until a read of that source has
+been recorded.

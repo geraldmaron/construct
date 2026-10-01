@@ -119,6 +119,7 @@
         "numbers_grounded",
         "superseded_acknowledged",
         "no_uncited_material_findings",
+        "settled_not_contradicted",
         "deliverable_complete"
       ],
       "loadBearing": true,
