@@ -70,9 +70,10 @@ export interface HandlerOptions {
   /**
    * Whether a question the host shows the person counts as the person's own
    * answer on this machine. The adapter says no when something is configured
-   * to answer such questions automatically.
+   * to answer such questions automatically. A function is asked again before
+   * every question and when its answer arrives.
    */
-  readonly personPrompts?: boolean;
+  readonly personPrompts?: boolean | (() => boolean);
   /** How long a question to the person waits before it is left in the inbox. */
   readonly personPromptWaitMs?: number;
 }
@@ -81,8 +82,10 @@ export interface HandlerOptions {
 export const PERSON_PROMPT_WAIT_MS = 60_000;
 
 /** Ask the person through the host's elicitation: one choice among the options, shown by the host, not the model. */
-function elicitor(requests: HostRequests, waitMs: number): AskPerson {
+function elicitor(requests: HostRequests, waitMs: number, stillPerson: () => boolean): AskPerson {
   return async (question) => {
+    // Checked when asked and again when answered: a hook written in between could have answered.
+    if (!stillPerson()) return { answered: false, why: 'unavailable' };
     try {
       const result = (await requests.request(
         'elicitation/create',
@@ -93,6 +96,7 @@ function elicitor(requests: HostRequests, waitMs: number): AskPerson {
         waitMs,
       )) as { action?: unknown; content?: { answer?: unknown } } | null;
       if (result?.action === 'accept') {
+        if (!stillPerson()) return { answered: false, why: 'unavailable' };
         const choice = result.content?.answer;
         return typeof choice === 'string' && question.options.includes(choice) ? { answered: true, choice } : { answered: false, why: 'unavailable' };
       }
@@ -170,8 +174,10 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
     switch (method) {
       case 'initialize': {
         const declared = (record(params) as { capabilities?: { elicitation?: unknown } }).capabilities;
-        if (surface === 'interactive' && options.hostRequests && options.personPrompts && declared && typeof declared === 'object' && declared.elicitation) {
-          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, options.personPromptWaitMs ?? PERSON_PROMPT_WAIT_MS) };
+        const prompts = options.personPrompts;
+        const stillPerson = typeof prompts === 'function' ? prompts : () => prompts === true;
+        if (surface === 'interactive' && options.hostRequests && stillPerson() && declared && typeof declared === 'object' && declared.elicitation) {
+          callCtx = { ...ctx, askPerson: elicitor(options.hostRequests, options.personPromptWaitMs ?? PERSON_PROMPT_WAIT_MS, stillPerson) };
         }
         const client = (record(params) as { clientInfo?: unknown }).clientInfo;
         if (ctx.sessionId && client && typeof client === 'object') {

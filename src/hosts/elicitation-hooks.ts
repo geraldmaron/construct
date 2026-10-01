@@ -9,16 +9,23 @@
  * any such hook is configured, a prompt answer cannot count as the person's,
  * so Construct does not ask that way and the question waits in the inbox.
  *
- * The check reads configuration only and never reports a value. It matches
- * the event names in the raw text, so a file that is not valid JSON but names
- * the event still counts as configuring it.
+ * The check reads configuration only and never reports a value. It reads a
+ * file the way the host does, as JSON, so an escaped key such as
+ * `\u0045licitation` is seen for what it is. Not knowing is never taken as
+ * the person: a file that exists but cannot be read or parsed, or a plugin
+ * tree too large to walk, counts as able to answer. The server repeats the
+ * check before every question and again when the answer arrives, so a hook
+ * written while it runs is seen.
  */
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const ANSWERING_EVENT = /"Elicitation(?:Result)?"\s*:/;
+const ANSWERING_EVENTS = new Set(['Elicitation', 'ElicitationResult']);
 const PLUGIN_SCAN_LIMIT = 4000;
+
+/** Marks a plugin tree too large to check: it counts as able to answer. */
+export const UNCHECKED_PLUGIN_TREE = '(plugin directory too large to check)';
 
 /** The settings files at a checkout where project hooks live. */
 export function projectHookFiles(checkout: string): string[] {
@@ -31,7 +38,11 @@ export function pluginHookFiles(claudeDir: string): string[] {
   const out: string[] = [];
   let seen = 0;
   const walk = (dir: string, depth: number): void => {
-    if (depth > 7 || seen > PLUGIN_SCAN_LIMIT) return;
+    if (seen > PLUGIN_SCAN_LIMIT) return;
+    if (depth > 7) {
+      if (!out.includes(UNCHECKED_PLUGIN_TREE)) out.push(UNCHECKED_PLUGIN_TREE);
+      return;
+    }
     let entries: string[];
     try {
       entries = readdirSync(dir);
@@ -40,7 +51,10 @@ export function pluginHookFiles(claudeDir: string): string[] {
     }
     for (const name of entries) {
       seen += 1;
-      if (seen > PLUGIN_SCAN_LIMIT) return;
+      if (seen > PLUGIN_SCAN_LIMIT) {
+        if (!out.includes(UNCHECKED_PLUGIN_TREE)) out.push(UNCHECKED_PLUGIN_TREE);
+        return;
+      }
       const path = join(dir, name);
       let isDir = false;
       try {
@@ -57,14 +71,28 @@ export function pluginHookFiles(claudeDir: string): string[] {
   return out;
 }
 
-/** The files among `files` that configure a hook able to answer an elicitation. */
+/** Whether a parsed settings value names an answering hook event anywhere in it. */
+function namesAnsweringEvent(value: unknown, depth = 0): boolean {
+  if (depth > 32 || value === null || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some((v) => namesAnsweringEvent(v, depth + 1));
+  return Object.entries(value).some(([key, inner]) => ANSWERING_EVENTS.has(key) || namesAnsweringEvent(inner, depth + 1));
+}
+
+/** The files among `files` that configure, or might configure, a hook able to answer an elicitation. */
 export function elicitationAnswerers(files: readonly string[]): string[] {
   return files.filter((file) => {
+    if (file === UNCHECKED_PLUGIN_TREE) return true;
     if (!existsSync(file)) return false;
+    let text: string;
     try {
-      return ANSWERING_EVENT.test(readFileSync(file, 'utf8'));
+      text = readFileSync(file, 'utf8');
     } catch {
-      return false;
+      return true;
+    }
+    try {
+      return namesAnsweringEvent(JSON.parse(text));
+    } catch {
+      return true;
     }
   });
 }

@@ -85,7 +85,7 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const projectFlag = stringFlag(args, 'project');
   const bound = projectFlag ? { ...ctx, cwd: resolve(projectFlag), sessionCwd: ctx.cwd } : ctx;
   // A question shown to the person counts as theirs only when nothing here can answer it for them.
-  const hostOptions = { hostRequests: new HostRequests(), personPrompts: personPromptAnswerers(ctx, ctx.cwd).length === 0 };
+  const hostOptions = { hostRequests: new HostRequests(), personPrompts: () => personPromptAnswerers(ctx, ctx.cwd).length === 0 };
   const flags = { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') };
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;

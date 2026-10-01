@@ -111,6 +111,12 @@ the predecessor.
   kernel's act, not that session's. The holder that walked away is named.
 - The `work` tool stored a session's title as the description of work it
   added. It now keeps the description it is given.
+- A hook able to answer a host prompt for the person is found however it is
+  written: hook files are read as JSON, so an escaped event name counts, a
+  file that cannot be read or parsed counts, and the check runs before every
+  question and again when its answer arrives, so a hook added while the
+  server runs stops the answer counting as the person's. Before, the check
+  matched raw text once at startup.
 
 ### Known limitations
 
