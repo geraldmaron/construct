@@ -6,7 +6,7 @@
  * Grounding is checked, not trusted: when the caller supplies a resolver,
  * every cited reference must name something real, every artifact a step says
  * it wrote must exist, and every figure in the output or the artifact must
- * appear in something the step cited (or be declared as derived from figures
+ * appear in something the step cited (or be derived by arithmetic over figures
  * that do). These are mechanical floors under quality, not a judge of it.
  */
 
@@ -253,7 +253,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     for (const p of paths) {
       const r = resolve(p);
       if (!r || r.kind !== 'file') problems.push(`artifact "${p}" was not found in the project`);
-      else if ((r.text ?? '').trim() === '') problems.push(`artifact "${p}" is empty`);
+      // Text is only loaded under a size cap; a file too large to load is not empty.
+      else if (r.text !== undefined ? r.text.trim() === '' : (r.size ?? 0) === 0) problems.push(`artifact "${p}" is empty`);
     }
     return problems;
   },
@@ -286,10 +287,9 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
           if (got === null) problems.push(`derivation of "${value}": "${d.expression}" is not arithmetic over figures`);
           else if (want !== null && Math.abs(got - want) > Math.max(Math.abs(want) * 0.01, 1e-9)) problems.push(`derivation of "${value}": "${d.expression}" comes to ${String(Number(got.toPrecision(6)))}, not ${value}`);
           derived.add(normalizeFigure(value));
-        } else if (typeof d.from === 'string' && d.from.trim() !== '') {
-          derived.add(normalizeFigure(value));
         } else {
-          problems.push(`derivation of "${value}" says neither how it was computed (expression) nor from what (from)`);
+          // A description of where a figure came from is not a check of it; only arithmetic over cited figures is.
+          problems.push(`derivation of "${value}" gives no expression; give the arithmetic over cited figures that produces it`);
         }
       });
     }
