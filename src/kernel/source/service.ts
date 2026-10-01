@@ -81,6 +81,11 @@ export interface HostReportItem {
   /** What the host read; kept (capped) so excerpts and figures can be checked against it. */
   readonly text?: string;
   readonly fingerprint?: string;
+  /**
+   * Seen in passing (a search hit, a link) rather than read as a version: it adds the item when it is new and
+   * never counts as a change to one already recorded, because a thinner view of the same ticket is not an edit.
+   */
+  readonly weak?: boolean;
 }
 
 export interface HostReport {
@@ -289,13 +294,20 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       if (!source) throw new Error(`no source ${id}`);
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);
       if (deps.readers.has(source.kind)) throw new Error(`source ${id} is read by Construct itself; refresh it instead of reporting it`);
-      const reported = report.items.map((i) => {
+      const prior = new Map((currentManifest(store, id) ?? []).map((e) => [e.ref, e]));
+      const reported = report.items.flatMap((i) => {
         const text = typeof i.text === 'string' ? i.text.slice(0, REPORTED_TEXT_CAP) : undefined;
-        const basis = text ?? `${i.ref}\t${i.updatedAt ?? ''}\t${i.title ?? ''}`;
-        return { externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint: i.fingerprint ?? createHash('sha256').update(basis).digest('hex'), ...(text !== undefined ? { text } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}) } };
+        const was = prior.get(i.ref);
+        if (i.weak && was) return [];
+        // The system's own last-updated time is the version when it is given; otherwise what was read is.
+        const basis = i.updatedAt ? `${i.ref}\t${i.updatedAt}` : text ?? `${i.ref}\t${i.title ?? ''}`;
+        const fingerprint = i.fingerprint ?? createHash('sha256').update(basis).digest('hex');
+        // The same version seen again through a thinner view keeps the fuller text recorded before.
+        const keepText = was && was.fingerprint === fingerprint && (was.text?.length ?? 0) > (text?.length ?? 0) ? was.text : text;
+        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint, ...(keepText !== undefined ? { text: keepText } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}) } }];
       });
       // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
-      const before = report.partial ? currentManifest(store, id) ?? [] : [];
+      const before = report.partial ? [...prior.values()] : [];
       const seen = new Set(reported.map((r) => r.externalRef));
       const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: e.text } : {}) } }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));

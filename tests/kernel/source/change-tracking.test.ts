@@ -220,3 +220,20 @@ test('removing a file only flags work that cited that file in that source, not a
     fx.cleanup();
   }
 });
+
+test('review finding: the current manifest is the newest read even after a long history', async () => {
+  const fx = brokerFixture();
+  try {
+    const { recordObservation } = await import('../../../src/kernel/state/drift.ts');
+    const { currentManifest } = await import('../../../src/kernel/source/manifest.ts');
+    const s = fx.broker.store;
+    addSource(s, { id: 'long', kind: 'docs', purpose: 'wiki', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    const base = Date.parse('2026-01-01T00:00:00Z');
+    for (let i = 0; i < 2105; i++) {
+      recordObservation(s, { id: `o-${String(i)}`, sourceId: 'long', kind: 'source.changed', summary: 'read', evidence: { manifest: [{ ref: `v${String(i)}`, kind: 'item', fingerprint: String(i) }] }, at: new Date(base + i * 1000).toISOString() });
+    }
+    assert.equal(currentManifest(s, 'long')![0]!.ref, 'v2104');
+  } finally {
+    fx.cleanup();
+  }
+});

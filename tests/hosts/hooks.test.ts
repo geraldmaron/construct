@@ -132,3 +132,26 @@ test('the hook command never wedges a session: bad input or no project still exi
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('review findings: a thinner view of the same ticket is not a change, and underscore project keys match', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.ctx.now();
+    addSource(fx.broker.store, { id: 'jira-pa', kind: 'jira', locator: 'PLAT_A', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    const full = { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events', updated: '2026-09-29T10:00:00Z', description: 'Decision: Enterprise only.' } }] };
+    assert.deepEqual(jiraItemsIn(full, 'PLAT_A').map((i) => i.ref), ['PLAT_A-7']);
+    assert.deepEqual(jiraItemsIn({ key: 'PLATA-7' }, 'PLAT_A'), [], 'the underscore is part of the key, not noise to strip');
+    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: full });
+    // A later search returns the same ticket with fewer fields and no updated time.
+    const thin = onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events' } }] } });
+    assert.deepEqual(thin.reported, { 'jira-pa': 1 });
+    const same = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-29T10:00:00Z', text: '{"key":"PLAT_A-7"}' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    assert.equal(same.outcome, 'unchanged', 'same updated time, thinner text: unchanged');
+    const ans = await call(fx, 'check_answer', { answer: 'Enterprise only.', citations: [{ ref: 'PLAT_A-7', excerpt: 'Decision: Enterprise only' }] });
+    assert.equal(ans.ok, true, 'the fuller text recorded first is kept for checking quotes');
+    const edited = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-30T08:00:00Z', text: 'Decision: Pro at launch.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    assert.deepEqual(edited.changes?.modified, ['PLAT_A-7'], 'a new updated time is a change');
+  } finally {
+    fx.cleanup();
+  }
+});

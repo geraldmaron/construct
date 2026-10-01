@@ -9,7 +9,7 @@
  */
 
 import type { StateStore } from '../state/open.ts';
-import { listObservations } from '../state/drift.ts';
+import { latestObservationWith } from '../state/drift.ts';
 import type { SnapshotItem } from './connector.ts';
 
 export interface ManifestEntry {
@@ -55,12 +55,11 @@ export interface CurrentManifest {
 
 /** The manifest recorded at the source's most recent change, with how it was obtained, or null when none was recorded. */
 export function currentManifestRecord(store: StateStore, sourceId: string): CurrentManifest | null {
-  const changed = listObservations(store, { sourceId, limit: 2000 }).filter((o) => o.kind === 'source.changed');
-  for (let i = changed.length - 1; i >= 0; i -= 1) {
-    const ev = changed[i]!.evidence as { manifest?: unknown; evidence?: unknown; partial?: unknown } | null;
-    if (ev && Array.isArray(ev.manifest)) return { entries: ev.manifest as ManifestEntry[], provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', partial: ev.partial === true };
-  }
-  return null;
+  // Newest first, straight from the store: a source with a long history must still resolve to its latest read.
+  const o = latestObservationWith(store, sourceId, 'source.changed', 'manifest');
+  const ev = o?.evidence as { manifest?: unknown; evidence?: unknown; partial?: unknown } | null | undefined;
+  if (!ev || !Array.isArray(ev.manifest)) return null;
+  return { entries: ev.manifest as ManifestEntry[], provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', partial: ev.partial === true };
 }
 
 /** The manifest entries recorded at the source's most recent change, or null when none was ever recorded. */

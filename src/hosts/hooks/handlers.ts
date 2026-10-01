@@ -60,8 +60,13 @@ function str(o: Record<string, unknown>, ...path: string[]): string | undefined 
 }
 
 /** Jira-shaped items in a response whose key belongs to the given project key. */
+/** A project key as a pattern: escaped, not stripped, since keys may carry underscores (PLAT_A-101). */
+export function projectKeyPattern(projectKey: string): string {
+  return projectKey.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function jiraItemsIn(response: unknown, projectKey: string): HostReportItem[] {
-  const keyPattern = new RegExp(`^${projectKey.replace(/[^A-Za-z0-9]/g, '')}-\\d+$`);
+  const keyPattern = new RegExp(`^${projectKeyPattern(projectKey)}-\\d+$`);
   const byKey = new Map<string, HostReportItem>();
   for (const o of objectsIn(response)) {
     const key = str(o, 'key') ?? str(o, 'issueKey');
@@ -71,7 +76,8 @@ export function jiraItemsIn(response: unknown, projectKey: string): HostReportIt
     const text = JSON.stringify(o).slice(0, HOOK_TEXT_CAP);
     const prev = byKey.get(key);
     // The fullest object for a key wins; a bare link to an issue should not displace the issue itself.
-    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(updatedAt ? { updatedAt } : {}), text, kind: 'work_item' });
+    // Without the tracker's own updated time, a response cannot say whether the ticket changed, only that it exists.
+    if (!prev || (prev.text?.length ?? 0) < text.length) byKey.set(key, { ref: key, ...(title ? { title } : {}), ...(updatedAt ? { updatedAt } : { weak: true }), text, kind: 'work_item' });
   }
   return [...byKey.values()];
 }
@@ -138,7 +144,7 @@ export function lastTurn(transcriptPath: string): TranscriptTurn {
 export function projectFactsIn(ctx: BrokerContext, text: string): string[] {
   const out = new Set<string>();
   for (const s of ctx.sources.list()) {
-    if (s.kind === 'jira' && s.locator) for (const m of text.matchAll(new RegExp(`\\b${s.locator.replace(/[^A-Za-z0-9]/g, '')}-\\d+\\b`, 'g'))) out.add(m[0]);
+    if (s.kind === 'jira' && s.locator) for (const m of text.matchAll(new RegExp(`(?<![\\w-])${projectKeyPattern(s.locator)}-\\d+\\b`, 'g'))) out.add(m[0]);
     if (new RegExp(`\\b${s.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text) && s.id.length >= 4) out.add(s.id);
   }
   // A file name is a project fact only when it names a file this project actually holds: "package.json" in
