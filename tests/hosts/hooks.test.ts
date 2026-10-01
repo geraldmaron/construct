@@ -155,3 +155,25 @@ test('review findings: a thinner view of the same ticket is not a change, and un
     fx.cleanup();
   }
 });
+
+test('review findings: a search hit then a full read of the same ticket keeps the fuller text and is not an edit', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.ctx.now();
+    addSource(fx.broker.store, { id: 'jira-p', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    // First seen in a search: no updated time, a thin object.
+    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: { issues: [{ key: 'PLAT-9', fields: { summary: 'Events' } }] } });
+    // Then read in full, with its version.
+    const full = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    assert.deepEqual(full.changes?.modified ?? [], [], 'a passing sighting gaining its version is not an edit');
+    // Then the same version again through a search with less text, then a get-issue with more.
+    fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Events' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    const richer = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan. Revisit Pro in Q3.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    assert.deepEqual(richer.changes?.modified ?? [], [], 'fuller text for the same version is recorded, not called a change');
+    assert.equal((richer.staleDeliverables ?? []).length, 0);
+    const ans = await call(fx, 'check_answer', { answer: 'Pro is revisited in Q3.', citations: [{ ref: 'PLAT-9', excerpt: 'Revisit Pro in Q3' }] });
+    assert.equal(ans.ok, true, JSON.stringify(ans.problems));
+  } finally {
+    fx.cleanup();
+  }
+});
