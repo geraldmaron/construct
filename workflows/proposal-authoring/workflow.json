@@ -1,0 +1,231 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "proposal-authoring",
+  "title": "Write a proposal",
+  "version": "1.0.0",
+  "purpose": "Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back.",
+  "activation": [
+    "write a proposal",
+    "put together the business case",
+    "one-pager asking leadership to decide"
+  ],
+  "standDown": [
+    "the decision is already made",
+    "help me decide between these"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "request": "string",
+    "target": "string",
+    "template": "string",
+    "audience": "string",
+    "decisionBy": "string"
+  },
+  "requiredInputs": [
+    "request",
+    "target",
+    "audience"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material, sources, and work items; name every conflict between them",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "jira",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "request": "input.request",
+        "template": "input.template"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "material",
+        "conflicts",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "superseded_acknowledged",
+        "conflicts_declared",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "draft",
+      "title": "Write the proposal to the target file, grounded in what was gathered",
+      "needs": [
+        "gather"
+      ],
+      "skill": {
+        "id": "decision-framing",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "write_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "request": "input.request",
+        "target": "input.target",
+        "template": "input.template",
+        "material": "steps.gather.material",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns",
+        "audience": "input.audience",
+        "decisionBy": "input.decisionBy"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "artifact",
+        "derivations"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "evidence_witnessed",
+        "superseded_acknowledged",
+        "artifacts_exist",
+        "numbers_grounded",
+        "template_conformance",
+        "deliverable_complete",
+        "decision_ask_present"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "challenge",
+      "title": "Challenge the proposal: unsupported claims, silently resolved conflicts, invented owners or decisions",
+      "needs": [
+        "draft",
+        "gather"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 900000
+    },
+    {
+      "id": "record",
+      "title": "Record the result and hand it back",
+      "needs": [
+        "challenge",
+        "draft"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "verdict": "steps.challenge.verdict"
+      },
+      "outputs": [
+        "artifact",
+        "verdict"
+      ],
+      "validators": [
+        "schema",
+        "artifacts_exist"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "document/proposal",
+    "schema": "document/proposal/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

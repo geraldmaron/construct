@@ -19,23 +19,6 @@
       "expect": "activate"
     },
     {
-      "text": "Rename the config flag",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Flip the feature flag in config, it's well understood",
-      "expect": "stand_down"
-    },
-    {
-      "text": "Should we build this at all",
-      "expect": "stand_down",
-      "why": "whether versus what is a distinction of meaning; the words overlap with a build request"
-    },
-    {
-      "text": "Fix the well-understood null check bug",
-      "expect": "stand_down"
-    },
-    {
       "text": "The intent is settled, we just never wrote what done looks like",
       "expect": "activate",
       "why": "a settled intent without a verifiable artifact"
@@ -55,6 +38,27 @@
     {
       "text": "the ticket says 'make it faster', that's not enough to build from",
       "expect": "activate"
+    },
+    {
+      "text": "Draft the PRD from the tickets and research so engineering can build from it",
+      "expect": "activate"
+    },
+    {
+      "text": "Rename the config flag",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Flip the feature flag in config, it's well understood",
+      "expect": "stand_down"
+    },
+    {
+      "text": "Should we build this at all",
+      "expect": "stand_down",
+      "why": "whether versus what is a distinction of meaning; the words overlap with a build request"
+    },
+    {
+      "text": "Fix the well-understood null check bug",
+      "expect": "stand_down"
     }
   ]
 }

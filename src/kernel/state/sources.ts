@@ -363,8 +363,10 @@ export function recordSnapshot(
     let snapshot: SourceSnapshot;
     let changed: boolean;
     if (existing) {
+      // A digest seen before is only "unchanged" when it is the one last read;
+      // content that moved away and came back (A -> B -> A) is a change.
       snapshot = toSnapshot(existing);
-      changed = false;
+      changed = getSource(store, input.sourceId)?.lastSnapshotId !== existing.id;
     } else {
       const row = store.db
         .prepare(

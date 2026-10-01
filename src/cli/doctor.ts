@@ -12,6 +12,7 @@ import { findProjectRoot } from '../kernel/project/discover.ts';
 import { projectLayout } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { getProfile } from '../kernel/state/profile.ts';
+import { listSources } from '../kernel/state/sources.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
@@ -95,6 +96,14 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         try {
           const profile = getProfile(store);
           checks.push({ name: 'state', ok: true, detail: `format 2 at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
+          // Unreachable is a state Construct reports, not a broken install, so this never fails health; it does say it.
+          const active = listSources(store, { status: 'active' });
+          const unreachable = active.filter((x) => x.reachability === 'unreachable').map((x) => x.id);
+          const neverRead = active.filter((x) => !x.lastSnapshotId && x.reachability !== 'unreachable').map((x) => x.id);
+          const parts = [`${String(active.length)} declared`];
+          if (unreachable.length) parts.push(`unreachable: ${unreachable.join(', ')}`);
+          if (neverRead.length) parts.push(`never read: ${neverRead.join(', ')}`);
+          checks.push({ name: 'sources', ok: true, detail: parts.join('; ') + (unreachable.length || neverRead.length ? '; work that needs them will be blocked or flagged' : '') });
         } finally {
           store.close();
         }
