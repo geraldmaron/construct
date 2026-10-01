@@ -178,6 +178,8 @@ test('applying a draft proposes; only answers and acceptances confirm; the file 
       assert.equal(c.unknowns.includes('primary outcome'), false);
       assert.equal(c.unknowns.includes('purpose'), false);
       assert.deepEqual(c.glossary, []);
+      assert.ok(!c.unknowns.includes('primary outcome'), 'an answered setup question is no longer unknown');
+      assert.ok(listStatements(store, { kind: 'unknown' }).every((u) => u.text !== 'primary outcome' || u.status === 'retired'));
       assert.equal(constitutionCompleteness(validateConstitution(c, 'constitution.json')).complete, true);
       assert.throws(() => applyOnboardingAnswers(store, { answers: { scale: 'huge' as never }, by: 'g', at: AT, nextId }), /scale must be one of/);
     } finally {

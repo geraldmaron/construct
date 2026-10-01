@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "requirements-structuring",
   "title": "Requirements structuring",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [

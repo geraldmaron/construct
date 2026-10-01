@@ -1,0 +1,224 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "research-brief",
+  "title": "Research a question",
+  "version": "1.0.0",
+  "purpose": "Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back.",
+  "activation": [
+    "research this and tell me what holds up",
+    "what does the evidence say about",
+    "find out whether this is true and cite it",
+    "compare what the sources say about"
+  ],
+  "standDown": [
+    "a plain question I already know the answer to",
+    "just give me your opinion"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "question": "string",
+    "scope": "string",
+    "target": "string"
+  },
+  "requiredInputs": [
+    "question"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Find and read what bears on the question, inside the project and out; note where sources disagree",
+      "needs": [],
+      "skill": {
+        "id": "investigative-research",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files",
+        "read_source"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "jira",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "docs",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "question": "input.question",
+        "scope": "input.scope"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "conflicts",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "conflicts_declared",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "synthesize",
+      "title": "Answer the question: what holds, how sure, what it rests on, what is still unknown",
+      "needs": [
+        "gather"
+      ],
+      "skill": {
+        "id": "investigative-research",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "write_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "question": "input.question",
+        "findings": "steps.gather.findings",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "confidence",
+        "unknowns",
+        "derivations"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "sources_diverse",
+        "numbers_grounded",
+        "superseded_acknowledged",
+        "no_uncited_material_findings",
+        "settled_not_contradicted",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "challenge",
+      "title": "Challenge the answer: single-source claims, stale or superseded sources, figures without a trail, conclusions the evidence does not reach",
+      "needs": [
+        "synthesize"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "summary": "steps.synthesize.summary",
+        "findings": "steps.synthesize.findings"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 900000
+    },
+    {
+      "id": "record",
+      "title": "Record the answer and hand it back",
+      "needs": [
+        "challenge",
+        "synthesize"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "summary": "steps.synthesize.summary",
+        "verdict": "steps.challenge.verdict"
+      },
+      "outputs": [
+        "summary",
+        "verdict"
+      ],
+      "validators": [
+        "schema"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "question"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "research/brief",
+    "schema": "research/brief/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

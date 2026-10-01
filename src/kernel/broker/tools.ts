@@ -35,6 +35,18 @@ import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
 import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
 import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork } from '../work/service.ts';
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
+import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { runValidators } from '../workflow/validators.ts';
+import { settledConstraintText, settledTerms } from '../project/governance.ts';
+import { listLiveDeliverables } from '../state/deliverables.ts';
+import { appendActivity } from '../state/activity.ts';
+import { skillQuality } from '../state/quality.ts';
+import { projectResolver as resolverFor } from '../source/resolver.ts';
+
+/** What a step may cite in this project, as it stands now. */
+export function projectResolver(ctx: BrokerContext): RefResolver {
+  return resolverFor(ctx.store, ctx.root, null, { hostReads: ctx.policy?.hostReads ?? 'require' });
+}
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -53,8 +65,16 @@ const bootstrap = define<Record<string, never>, unknown>({
     closed(raw, this.inputSchema);
     return {} as Record<string, never>;
   },
-  run(ctx) {
+  async run(ctx) {
     const at = ctx.now();
+    const moved: string[] = [];
+    const hostRead: string[] = [];
+    for (const s of ctx.sources.list()) {
+      if (!ctx.sources.canRead(s.id)) {
+        const f = ctx.sources.status(s.id, at).freshness;
+        if (f === 'never_read' || f === 'stale') hostRead.push(s.id);
+      } else if ((await ctx.sources.peek(s.id)) === true) moved.push(s.id);
+    }
     const profile = getProfile(ctx.store);
     const open = listOpenDecisions(ctx.store);
     const onboarding = open.filter((d) => d.kind === 'clarification' && d.subject && typeof d.subject === 'object' && 'onboarding' in (d.subject as object));
@@ -70,12 +90,15 @@ const bootstrap = define<Record<string, never>, unknown>({
       : proposals > 0 ? `review ${String(proposals)} proposed statement(s) with inbox`
       : open.length > 0 ? `${String(open.length)} decision(s) wait on the person; show them with inbox`
       : runs.length > 0 ? `${String(runs.length)} run(s) active; continue with claim_work`
+      : moved.length > 0 ? `${moved.join(', ')} changed since last read; refresh with sources before relying on them`
+      : drift.length > 0 ? `${String(drift.length)} drift finding(s) open; read them with project_context drift and tell the person`
       : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
       construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null, lane: ctx.lane } },
       session: { host: ctx.host.hostId, session: ctx.sessionId ?? ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })), proposals },
-      sources,
+      // Sources only the host can read: when it reads them, it reports what it read so changes are tracked.
+      sources: { ...sources, changedSinceRead: moved, reportWhenRead: hostRead },
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
       capabilities: { available: [...ctx.host.available].sort(), maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
@@ -88,7 +111,7 @@ const bootstrap = define<Record<string, never>, unknown>({
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'work', 'sessions', 'activity'] as const;
+const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'quality', 'work', 'sessions', 'activity'] as const;
 
 function page<T>(items: readonly T[], text: (t: T) => string, query: string | undefined, limit: number): { items: T[]; total: number; truncated: boolean; query: string | null } {
   const q = query?.trim().toLowerCase();
@@ -149,13 +172,15 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
         return page(presentSessions(ctx.store, { now: ctx.now(), sessionId: ctx.sessionId }), (s) => `${s.id} ${s.host} ${s.client ?? ''} ${s.lane} ${s.branch ?? ''} ${s.agents.join(' ')}`, query, limit);
       case 'activity':
         return page(recentActivity(ctx.store, 500), (a) => `${a.kind} ${a.sessionId ?? ''} ${a.agent ?? ''} ${a.actor ?? ''} ${JSON.stringify(a.payload.content)}`, query, limit);
+      case 'quality':
+        return page(skillQuality(ctx.store), (q) => `${q.skill} ${q.version}`, query, limit);
       default:
         return null;
     }
   },
 });
 
-const remember = define<{ kind: StatementKind; text: string; assumptions: string[]; replaces?: string }, unknown>({
+const remember = define<{ kind: StatementKind; text: string; assumptions: string[]; replaces?: string; contradicts: string[] }, unknown>({
   name: 'remember',
   title: 'Remember one thing',
   description: 'Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff.',
@@ -168,6 +193,7 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
       text: { type: 'string', description: 'The person’s wording, as they said it.' },
       assumptions: { type: 'array', description: 'Load-bearing assumptions this governing record rests on.', items: { type: 'string' } },
       replaces: { type: 'string', description: 'The id of a statement this one supersedes.' },
+      contradicts: { type: 'array', items: { type: 'string' }, description: 'For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named.' },
     },
     required: ['kind', 'text'],
     additionalProperties: false,
@@ -175,12 +201,15 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
   validate(raw) {
     closed(raw, this.inputSchema);
     const assumptions = list(raw, 'assumptions').filter((a): a is string => typeof a === 'string' && a.trim().length > 0);
-    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')!, assumptions, replaces: str(raw, 'replaces', { optional: true }) };
+    const contradicts = list(raw, 'contradicts').filter((x): x is string => typeof x === 'string' && x.trim().length >= 3).map((x) => x.trim());
+    return { kind: str(raw, 'kind', { oneOf: STATEMENT_KINDS })! as StatementKind, text: str(raw, 'text')!, assumptions, replaces: str(raw, 'replaces', { optional: true }), contradicts };
   },
   run(ctx, input) {
     // The person asked the model to keep this; the record says the model relayed it.
-    const s = ctx.workflow.remember({ ...input, by: ctx.actor, channel: 'relay' });
-    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt, channel: s.channel }, nothingElseCreated: true };
+    const s = ctx.workflow.remember({ kind: input.kind, text: input.text, assumptions: input.assumptions, replaces: input.replaces, by: ctx.actor, channel: 'relay' });
+    // Each ruled-out term becomes a checkable constraint tied to the decision; that is all that is created.
+    const rules = input.kind === 'decision' ? input.contradicts.map((term) => ctx.workflow.remember({ kind: 'constraint', text: settledConstraintText(term, s.id), assumptions: [], by: ctx.actor, channel: 'relay' })) : [];
+    return { remembered: { id: s.id, kind: s.kind, text: s.text, at: s.createdAt, channel: s.channel }, rulesOut: rules.map((r) => ({ id: r.id, text: r.text })), nothingElseCreated: true };
   },
 });
 
@@ -223,7 +252,8 @@ const classify = define<{ text: string }, unknown>({
       .filter((w) => w !== null)
       .filter(() => !(classification.class === 'answer' || classification.class === 'remember' || classification.coordination))
       .slice(0, 5)
-      .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
+      // The inputs go with the suggestion, so starting it does not take a failed attempt to learn them.
+      .map((w) => ({ id: w.manifest.id, title: w.manifest.title, inputs: w.manifest.inputSchema, required: w.manifest.requiredInputs }));
     const activeContradictions = listRelations(ctx.store, { kind: 'contradicts' }).filter((r) => {
       if (r.status === 'retired') return false;
       const target = getEntity(ctx.store, r.toId);
@@ -420,8 +450,16 @@ const submitWork = define<SubmitInput, unknown>({
     if (!getStep(ctx.store, input.stepRunId)) throw new Error(`no step ${input.stepRunId}`);
     const leased = heldLease(ctx.store, { id: input.stepRunId, owner: ctx.host.executorId, nonce: input.token });
     if (!leased) throw new Error(`step ${input.stepRunId} is not held by this session under that token; claim it again`);
-    const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData });
-    return { step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason }, validation: r.validation, run: { id: r.run.id, state: r.run.state }, deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null };
+    const resolve = projectResolver(ctx);
+    const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData, resolve });
+    return {
+      step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason },
+      validation: r.validation,
+      // How much of this step rests on what Construct opened itself versus what the host reports it read.
+      evidence: provenanceOf(input.evidence, resolve),
+      run: { id: r.run.id, state: r.run.state },
+      deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null,
+    };
   },
 });
 
@@ -446,25 +484,41 @@ const runStatus = define<{ runId: string }, unknown>({
   run(ctx, { runId }) {
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
-    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
   },
 });
 
-const inbox = define<{ runId?: string }, unknown>({
+const inbox = define<{ runId?: string; owner?: string }, unknown>({
   name: 'inbox',
   title: 'Decisions waiting on the person',
-  description: 'The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts. Surface them conversationally; never decide them yourself.',
+  description: 'The approvals, questions, and proposed statements that belong to the person, in plain words, with the options each accepts, and who decides each when the constitution names owners for that area. Surface them conversationally; never decide them yourself. Pass owner to see one person\'s (unowned items included).',
   surface: 'interactive',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' } }, additionalProperties: false },
+  inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'Only this run’s.' }, owner: { type: 'string', description: 'Only this owner’s, plus unowned ones.' } }, additionalProperties: false },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { runId: str(raw, 'runId', { optional: true }) };
+    return { runId: str(raw, 'runId', { optional: true }), owner: str(raw, 'owner', { optional: true }) };
   },
-  run(ctx, { runId }) {
-    return listInbox(ctx.store, runId);
+  run(ctx, { runId, owner }) {
+    const owners = ctx.files.constitution?.owners ?? [];
+    return listInbox(ctx.store, runId)
+      .map((row) => {
+        const subject = row.kind === 'inbox_item' ? getDecision(ctx.store, row.id)?.subject ?? {} : {};
+        return { ...row, owner: ownerFor(owners, `${row.question} ${JSON.stringify(subject)}`) };
+      })
+      .filter((d) => !owner || d.owner === null || d.owner.toLowerCase() === owner.toLowerCase());
   },
 });
+
+/**
+ * Who decides a question, from the constitution's owners: the first owner one of whose "decides" areas the
+ * question names. Owners live in a committed file, so everyone on the project routes the same way.
+ */
+export function ownerFor(owners: readonly { readonly name: string; readonly decides: readonly string[] }[], text: string): string | null {
+  const t = text.toLowerCase();
+  for (const o of owners) for (const area of o.decides) if (area.trim().length >= 3 && t.includes(area.trim().toLowerCase())) return o.name;
+  return null;
+}
 
 const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
@@ -504,7 +558,7 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     }
     try {
       const r = ctx.workflow.decide({ decisionId, resolution, by, channel: 'relay' });
-      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
+      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)) };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
       const asked = await askThePerson(ctx, decisionId, `Your assistant relayed "${Array.isArray(resolution) ? resolution.join(' ') : resolution}".`);
@@ -547,29 +601,120 @@ function onboardingAnswerFor(subject: unknown, resolution: string | readonly str
   return null;
 }
 
-const sources = define<{ action: 'list' | 'show' | 'refresh'; id?: string }, unknown>({
+interface SourcesInput { action: 'list' | 'show' | 'refresh' | 'report'; id?: string; items: Record<string, unknown>[]; partial: boolean }
+
+const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
-  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed.',
+  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { action: { type: 'string', description: 'list, show, or refresh.', enum: ['list', 'show', 'refresh'] }, id: { type: 'string', description: 'The source id, for show and refresh.' } },
+    properties: {
+      action: { type: 'string', description: 'list, show, refresh, or report.', enum: ['list', 'show', 'refresh', 'report'] },
+      id: { type: 'string', description: 'The source id, for show, refresh, and report.' },
+      items: { type: 'array', description: 'For report: {ref, title?, updatedAt?, text?, kind?} for each item you read.', items: { type: 'object' } },
+      partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
+    },
     required: ['action'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'refresh'] }) as 'list' | 'show' | 'refresh', id: str(raw, 'id', { optional: true }) };
+    const items = list(raw, 'items').map((e) => record(e));
+    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'refresh', 'report'] }) as SourcesInput['action'], id: str(raw, 'id', { optional: true }), items, partial: bool(raw, 'partial', false) };
   },
-  async run(ctx, { action, id }) {
+  async run(ctx, { action, id, items, partial }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new Error(`"id" is required for ${action}`);
     if (!ctx.sources.list().some((s) => s.id === id)) throw new Error(`no active source ${id}`);
     if (action === 'show') return ctx.sources.status(id, at);
+    if (action === 'report') {
+      if (items.length === 0) throw new Error('"items" is required for report: what you read, one entry per item');
+      const parsed = items.map((i, n) => {
+        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new Error(`items[${String(n)}] needs a ref`);
+        const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
+        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text') };
+      });
+      return ctx.sources.reportRead(id, { items: parsed, partial }, at, () => ctx.nextId('snap'));
+    }
     return ctx.sources.refresh(id, at, () => ctx.nextId('snap'));
+  },
+});
+
+/**
+ * After the person answers a stale-work question, what starting the work they chose would look like. Nothing
+ * starts on its own: the host offers it, and start_outcome runs only if the person wants it.
+ */
+function followUp(ctx: BrokerContext, decision: ReturnType<typeof getDecision>, resolution: string): { suggestedOutcomes?: { workflowId: string; input: Record<string, unknown>; why: string }[] } {
+  const subject = (decision?.subject ?? null) as { deliverableIds?: string[]; driftFindingIds?: string[] } | null;
+  if (!subject?.deliverableIds?.length) return {};
+  const said = resolution.toLowerCase();
+  const out: { workflowId: string; input: Record<string, unknown>; why: string }[] = [];
+  for (const [i, deliverableId] of subject.deliverableIds.entries()) {
+    const finding = subject.driftFindingIds?.[i] ? listDriftFindings(ctx.store, {}).find((f) => f.id === subject.driftFindingIds![i]) : undefined;
+    const change = finding?.summary ?? 'material it drew on changed';
+    if (said.startsWith('revise')) {
+      const body = (listLiveDeliverablesFor(ctx, deliverableId)?.body ?? {}) as { artifact?: unknown };
+      out.push({ workflowId: 'revise-deliverable', input: { deliverable: deliverableId, change, ...(typeof body.artifact === 'string' ? { target: body.artifact } : {}) }, why: `revise ${deliverableId} for: ${change}` });
+    } else if (said.startsWith('re-run') || said.startsWith('rerun')) {
+      const d = listLiveDeliverablesFor(ctx, deliverableId);
+      const run = d ? listRuns(ctx.store, {}).find((x) => x.id === d.runId) : undefined;
+      if (run) out.push({ workflowId: run.workflowId, input: (run.input ?? {}) as Record<string, unknown>, why: `run ${run.workflowId} again with its original input` });
+    }
+  }
+  return out.length ? { suggestedOutcomes: out } : {};
+}
+
+function listLiveDeliverablesFor(ctx: BrokerContext, id: string) {
+  return listLiveDeliverables(ctx.store).find((d) => d.id === id);
+}
+
+interface CheckAnswerInput { answer: string; citations: { ref: string; excerpt?: string }[] }
+
+/** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
+export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged', 'settled_not_contradicted'] as const;
+
+const checkAnswer = define<CheckAnswerInput, unknown>({
+  name: 'check_answer',
+  title: 'Check an answer before giving it',
+  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
+  surface: 'interactive',
+  readOnly: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
+      citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: { type: 'object' } },
+    },
+    required: ['answer'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    const citations = list(raw, 'citations').map((e) => {
+      const r = record(e);
+      return { ref: typeof r.ref === 'string' ? r.ref : '', excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
+    });
+    return { answer: str(raw, 'answer')!, citations };
+  },
+  run(ctx, { answer, citations }) {
+    const resolve = projectResolver(ctx);
+    const settled = settledTerms(listStatements(ctx.store, { kind: 'constraint', status: 'confirmed' }));
+    const results = runValidators([...ANSWER_CHECKS], { output: { summary: answer }, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled });
+    const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
+    // Counted, so how often answers are checked is something a person can see, not something to hope for.
+    appendActivity(ctx.store, { at: ctx.now(), kind: 'answer.checked', actor: ctx.actor, payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length } });
+    return {
+      ok: problems.length === 0,
+      problems,
+      evidence: provenanceOf(citations, resolve),
+      next: problems.length === 0
+        ? 'give the answer; say which parts rest on reported sources if any'
+        : 'fix what is listed, or give the answer with the unsupported parts named as unsupported',
+    };
   },
 });
 
@@ -913,7 +1058,7 @@ const claimStep = define<{ runId?: string }, unknown>({
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, work, delegate, claimStep, heartbeat,
+  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, checkAnswer, staff, promote, work, delegate, claimStep, heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {

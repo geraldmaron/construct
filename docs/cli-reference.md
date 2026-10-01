@@ -162,6 +162,16 @@ Reads only: no.
 
 ## Skills
 
+### `construct skill impact`
+
+how each skill version's steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--skill` | yes | only this skill |
+
+Reads only: yes.
+
 ### `construct skill list`
 
 the skills this install ships, with versions
@@ -696,11 +706,16 @@ the hooks Construct installed here, and whether each is intact
 
 Reads only: yes.
 
-### `construct hook <host> <event>`
+### `construct hook <host-or-event> [event]`
 
-run by a host hook Construct installed; reads the event on stdin, always exits 0
+run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0
 
-Reads only: yes.
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--client` | yes | grounding hooks: which host sent the event (default: claude-code) |
+| `--project` | yes | grounding hooks: the project root (default: the event's cwd, then the working directory) |
+
+Reads only: no.
 
 ## Recover
 

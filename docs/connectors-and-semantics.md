@@ -37,3 +37,29 @@ credentials for git.
 Never in the kernel and never in a committed file. A locator that carries a
 password is refused; a key that names a secret is refused wherever it
 appears in a project file.
+
+## A Jira stand-in for testing
+
+Setting `CONSTRUCT_JIRA_FIXTURES` to a directory gives `jira` sources a
+reader backed by JSON exports instead of a live tracker. A source with
+locator `PLAT` reads `PLAT.json` there: a list of issues, or an object with
+an `issues` list, each with a `key`. Every issue becomes an item a step can
+cite by key (`PLAT-101`), and its text is kept for checking excerpts and
+figures. Reads from a fixture are recorded as reported, not witnessed: a
+fixture says what a tracker would have said. Without the variable, a `jira`
+source is unreachable as before. `construct doctor` says when jira sources
+are reading fixtures, so a forgotten variable cannot pass for a live tracker.
+
+## What the host reads, tracked
+
+Most systems a person works in (a live tracker, a wiki, a drive) are read
+by the host through its own tools, not by Construct. So that changes there
+are tracked like changes in a folder, the host records what it read with
+the `sources` tool, action `report`: each item's reference (a key or page
+id), title, last-updated time, and the text it read. Construct keeps a
+manifest of those items (text capped per item), marks citations of them
+as reported, checks quotes against the recorded text, and on the next
+report names what was added or modified and flags finished work that cited
+it. A partial report updates only the items it names; nothing is treated as
+removed because it was not read. `bootstrap` lists the sources only the
+host can read that have never been reported or have gone stale.

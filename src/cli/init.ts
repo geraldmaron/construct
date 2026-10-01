@@ -20,6 +20,7 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import { updateLock } from '../kernel/registry/lockfile.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
 import { installWiring } from '../hosts/wiring/wire.ts';
+import { installHooks } from '../hosts/wiring/hooks.ts';
 import { clientWiring, normalizeClient, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
@@ -192,6 +193,8 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
 
     const wireClient = boolFlag(args, 'no-wire') ? null : wiringClientFor(args, ctx);
     const wiring = wireClient ? installWiring(wireClient, root) : null;
+    // Hooks make reporting reads and checking answers automatic where the host supports them.
+    const hooksWired = wireClient === 'claude-code' ? installHooks(root) : null;
     let skillLine: string;
     let skillOk = false;
     if (skills.dir) {
@@ -248,6 +251,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     say(`  operational skill: ${esc(skillLine)}`);
     if (!skillOk && skills.dir) say('  (the skill was not planted; see above)');
     say(wiring ? `  host: ${wiring.client} ${wiring.status} (${esc(wiring.detail)})` : `  host: no MCP configuration written${boolFlag(args, 'no-wire') ? ' (--no-wire)' : '; pass --client=<host> to wire one'}`);
+    if (hooksWired) say(`  hooks: ${hooksWired.status} (${esc(hooksWired.detail)})`);
     say(status.openQuestions.length > 0
       ? 'Next: answer the questions in your agent session, or pass --scale, --outcome, and --constraint to init.'
       : 'Next: talk in your agent session. `construct status` shows where things stand.');

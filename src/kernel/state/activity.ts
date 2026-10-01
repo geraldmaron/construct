@@ -100,3 +100,29 @@ export function listActivity(
     .all(filter.runId ?? null, filter.runId ?? null, filter.afterId ?? 0, limit) as unknown as Row[];
   return rows.map(toEvent);
 }
+
+/**
+ * How often the habits that keep work honest actually happened since a
+ * moment: answers checked (and how many came back clean), answers that
+ * stated facts unchecked and were caught by a hook, host reads recorded by
+ * a hook, and checks a person waived. Counted from the activity log, so it
+ * is a measurement, not a setting.
+ */
+export function habitsSince(store: StateStore, since: string): { answersChecked: number; answersClean: number; uncheckedCaught: number; readsRecorded: number; checksWaived: number } {
+  const rows = store.db
+    .prepare(
+      `SELECT kind, payload_json FROM activity_events
+        WHERE at >= ? AND kind IN ('answer.checked', 'hook.answer_unchecked', 'hook.read_reported', 'step.checks_waived')`,
+    )
+    .all(since) as unknown as { kind: string; payload_json: string }[];
+  const out = { answersChecked: 0, answersClean: 0, uncheckedCaught: 0, readsRecorded: 0, checksWaived: 0 };
+  for (const r of rows) {
+    if (r.kind === 'answer.checked') {
+      out.answersChecked += 1;
+      if ((parseJson(r.payload_json) as { ok?: boolean } | null)?.ok === true) out.answersClean += 1;
+    } else if (r.kind === 'hook.answer_unchecked') out.uncheckedCaught += 1;
+    else if (r.kind === 'hook.read_reported') out.readsRecorded += 1;
+    else out.checksWaived += 1;
+  }
+  return out;
+}

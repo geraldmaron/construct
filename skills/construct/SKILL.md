@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.6.0
+  version: 2.7.0
   source: geraldmaron/construct
 ---
 
@@ -34,11 +34,17 @@ relay each answer with `decide`.
 ## Recognize the four kinds of request
 
 1. **Answer.** A question ("What does this function do?"). Answer it from
-   your own access. Record nothing. Do not start anything.
+   your own access. Record nothing. Do not start anything. When the answer
+   states facts about this project (status, figures, decisions, who owns
+   what), call `check_answer` with the answer and what it rests on first;
+   fix what it finds, or say plainly which parts you could not support.
 2. **Remember.** "Remember that…", "Record that…", "Note: …". Call `remember`
    with the person's wording and the kind it is (decision, constraint,
    principle, note, outcome). One record, nothing else: no run, no tasks,
    no staff, no follow-up questions about roles or approvals.
+   When a decision rules something out ("not exactly-once"), pass the terms
+   the person named in `contradicts`, so later work that states them as
+   current is caught. Only terms they said; never infer them.
 3. **Manage an outcome.** "Review this against our design principles",
    "Write the requirements for…", or a situation described in the person's
    own words with no skill or workflow named. Call `classify_request` with
@@ -72,6 +78,10 @@ After `start_outcome`, loop:
   plus `blockedBy`, `acceptance`, and `risk` when they apply. Work you file
   without a reason is proposed and cannot be claimed until it has one or the
   person admits it. Do not use an external tracker.
+  it rests on. When you read a source Construct cannot read itself (a live
+  tracker, a wiki) through your own tools, record what you read with
+  `sources` action `report`, so later changes there are tracked and work
+  that cited them is flagged.
 - `submit_work` with the step's declared outputs and your evidence
   entries. Validators run; a failure comes back with what to fix, and the
   step is retried if its policy allows. Say `noData` when there was nothing
@@ -83,6 +93,19 @@ After `start_outcome`, loop:
   never assume an answer. Approving an action that leaves the project or
   destroys something is the person's own answer: relayed, it stays open,
   and `decide` says how they give it.
+  never assume an answer. When a step keeps failing its checks, the
+  question lists the problems; the person may accept the output with them,
+  ask for another attempt, or stop. An accepted output is never called
+  validated.
+- Work that rests on confidential or restricted sources is labelled so. To
+  publish it, the person clears it for its audience (`clearedFor`) and
+  approves the exact write; give the location it went to.
+- Where the host supports hooks, Construct records what your tools read
+  from host-only sources and sends a reply back once if it stated project
+  facts unchecked. Treat that as a prompt to check, not as an error.
+- When a question about stale work is answered with revise or re-run,
+  `decide` returns the outcome that would do it; offer it, and start it only
+  if the person wants it.
 
 Construct never switches the lead host or launches a worker because one is
 installed. Explicitly authorized local subscription workers can be launched

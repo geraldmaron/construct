@@ -14,12 +14,14 @@ import { openStateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
 import { storeProjectId } from '../kernel/state/identity.ts';
+import { listSources } from '../kernel/state/sources.ts';
 import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { inspectWiring } from '../hosts/wiring/wire.ts';
+import { inspectHooks } from '../hosts/wiring/hooks.ts';
 import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
@@ -153,6 +155,16 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
               ? 'WAL journal: concurrent sessions read while one writes'
               : `${store.journalMode} journal: concurrent sessions queue for the file. The next command that writes switches it to WAL; if this persists, the filesystem refused WAL (a network or synced folder is the usual cause)`,
           });
+          // Unreachable is a state Construct reports, not a broken install, so this never fails health; it does say it.
+          const active = listSources(store, { status: 'active' });
+          const unreachable = active.filter((x) => x.reachability === 'unreachable').map((x) => x.id);
+          const neverRead = active.filter((x) => !x.lastSnapshotId && x.reachability !== 'unreachable').map((x) => x.id);
+          const parts = [`${String(active.length)} declared`];
+          if (unreachable.length) parts.push(`unreachable: ${unreachable.join(', ')}`);
+          if (neverRead.length) parts.push(`never read: ${neverRead.join(', ')}`);
+          const fixtures = ctx.env.CONSTRUCT_JIRA_FIXTURES;
+          if (fixtures) parts.push(`jira sources read test fixtures from ${fixtures} (CONSTRUCT_JIRA_FIXTURES), not a live tracker`);
+          checks.push({ name: 'sources', ok: true, detail: parts.join('; ') + (unreachable.length || neverRead.length ? '; work that needs them will be blocked or flagged' : '') });
         } finally {
           store.close();
         }
@@ -165,6 +177,11 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   const ambient = detectAmbientHost(ctx.env);
   if (root !== null) {
     const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
+    if (wired.some((w) => w.client === 'claude-code')) {
+      const h = inspectHooks(root);
+      // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing.
+      checks.push({ name: 'host-hooks', ok: h.status !== 'broken', detail: h.status === 'installed' ? h.detail : `${h.detail}; \`construct init --client=claude-code\` adds them` });
+    }
     checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
   }
   if (ambient) {

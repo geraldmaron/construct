@@ -118,6 +118,14 @@ export function listDeliverables(store: StateStore, runId: string): Deliverable[
   return rows.map(toDeliverable);
 }
 
+/** Every deliverable not rejected, oldest first; what a source change might have made stale. */
+export function listLiveDeliverables(store: StateStore): Deliverable[] {
+  const rows = store.db
+    .prepare("SELECT * FROM deliverables WHERE trust_state <> 'rejected' ORDER BY created_at, id")
+    .all() as unknown as Row[];
+  return rows.map(toDeliverable);
+}
+
 /**
  * Move trust. The actor and the basis are recorded; a validator's result or a
  * challenge verdict travels in `verification`.

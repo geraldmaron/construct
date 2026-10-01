@@ -74,3 +74,75 @@ rank first when held out and the routing floors still hold; its fixtures
 cover the four kinds; a consuming workflow
 resolves against it; and, for anything called working on a host, the
 conformance command recorded the run.
+
+## Grounding and quality checks
+
+Validators are floors under quality, not a judge of it. The ones that
+check grounding resolve every reference against the project as it stands:
+a real file, a declared source or an item it reported, a deliverable, or a
+record Construct keeps. A reference into a system Construct has no reader
+for is accepted as reported, and every submission says how many citations
+were witnessed, reported, or unresolved; a validated deliverable records
+the same counts.
+
+| Validator | Sends back an output when |
+|---|---|
+| `citations_present`, `evidence_refs_resolve` | a reference names nothing real |
+| `excerpts_match` | a quoted excerpt is not in the file or item it cites |
+| `evidence_witnessed` | every citation rests on the host's word |
+| `artifacts_exist` | the file the step says it wrote is missing or empty |
+| `numbers_grounded` | a figure appears in no cited source and is not derived by arithmetic that holds over cited figures |
+| `template_conformance` | the artifact lacks a section the named template has |
+| `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
+| `superseded_acknowledged` | a superseded document is used without saying so |
+| `decision_ask_present` | a proposal has no decision section naming who decides and by when |
+| `sources_diverse` | research rests on fewer than two independent places |
+
+Web pages (`https://…`) are cited as reported: Construct does not fetch
+them, so their excerpts stand as the host's word. Figures are compared by
+value, allowing for how they were rounded ("2M" is supported by a cited
+2,100,000; "3M" is not), dates and times are not figures, and a figure the
+person gave in the request is theirs, not invented. A symlink that leads
+out of the project does not resolve.
+
+When a load-bearing step still fails its checks after its last attempt,
+the run is not failed and the work is not thrown away: the person is asked
+to accept it with the named problems, give it another attempt, or stop. An
+accepted waiver is recorded on the step, and a deliverable that went
+through one is never marked validated.
+
+The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
+apply them in a gather, draft, challenge, record sequence; `research-brief`
+answers a question from the project and the web in a gather, synthesize,
+challenge, record sequence and asks for at least two independent sources. What none of
+them can tell is whether a grounded claim is the right claim; that is the
+challenge step's and the person's.
+
+## Plain answers and revisions
+
+`check_answer` runs the citation, quote, figure, and supersession checks on
+an answer before the host gives it, and records nothing. The operational
+skill asks the host to use it whenever an answer states facts about the
+project.
+
+`revise-deliverable` revises an earlier deliverable for a stated change and
+keeps the two linked; `revision_linked` asks for the deliverable it revises
+and a summary of what changed and why. When the person answers a stale-work
+question with revise or re-run, `decide` returns the outcome that would do
+it, for the host to offer; nothing starts on its own.
+
+## Settled terms, sensitivity, publishing, and skill impact
+
+`remember` with `contradicts` turns the terms a decision rules out into
+constraints ("Do not state \"exactly-once\" as current"), and
+`settled_not_contradicted` sends back answers and drafts that state them
+as current without saying they were decided against. A deliverable records
+the highest sensitivity among the sources its run cited;
+`publish-deliverable` needs `clearedFor` from the person when that is
+confidential or restricted, puts the write itself behind an action-time
+approval, and records the location (`published_location`).
+`construct skill impact` (and `project_context` topic `quality`) reports,
+per skill version, how often its steps passed their checks first time,
+mean attempts, waivers, and which checks sent them back. When the
+constitution names owners and what each decides, the inbox shows who
+decides each question and can be filtered to one owner.
