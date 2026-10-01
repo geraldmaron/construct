@@ -1,80 +1,103 @@
 # Changelog
 
-## 3.0.0-alpha.26 — 2026-09-27
+## 3.0.0-alpha.26 — 2026-10-01
 
-This alpha includes the previously unpublished alpha.25 development snapshot
-and the native work/coordination foundation. It publishes only under `alpha`;
-the stable `latest` tag remains unchanged.
+The first published alpha since alpha.24. It adds coordination between agent
+sessions working in one project, bounded delegation (off by default), and the
+native work ledger. It also includes everything developed as 3.0.0-alpha.25,
+which was never published. It publishes under `alpha` only; `latest` stays on
+the predecessor.
 
-- **Bounded delegation, disabled by default.** The interactive `delegate`
-  tool adds start, status, result, cancel, triage, and integrate actions.
-  Attempts stay in native work events with separate child sessions and claims.
-  Claude, Codex, and Cursor adapters require explicit executor/model settings
-  and matching operator-recorded live evidence; installation grants nothing.
-- **Proposals before integration.** Workers receive read-only snapshots and
-  return scoped patches. Construct validates in isolation, requires review and
-  finding dispositions, applies changes serially, and validates the combined
-  result. Dirty user work is retained. No commit, push, publication, approval,
-  or deliverable acceptance is implied.
-- **Bounded supervision.** Idempotent dispatch, concurrency and repair limits,
-  cancellation, timeouts, process-group cleanup, and conservative restart
-  reconciliation prevent retries from silently multiplying work. Windows
-  execution remains blocked pending process-tree controls.
-- **Shared coordination.** Git worktrees share project state. Session-bound
-  claims, path reservations, handoffs, and peer awareness coordinate manual
-  sessions as well as delegated work. Person-only approval and acceptance
-  boundaries remain in force.
-- **Upgrade safety.** State format 4 migrations require stopped sessions,
-  back up under the upgrade lock, and refuse incomplete or newer stores.
-  Existing operational skills can be updated without overwriting local edits.
-- **Written voice 0.5.0.** The skill includes its tell checker and reference
-  catalog from staging; the operational Construct skill is now 2.5.0.
-- **Verification boundary.** The delegation implementation passes the full
-  local gate on Node 25.9.0 and the supported minimum 22.18.0. Synthetic MCP
-  tests cover all six directions. Real vendor interoperability, subscription
-  billing/permission behavior, and productivity comparisons remain unverified.
-  See the delegation verification record; this is not a live three-tool release.
-- **Native work ledger.** Bounded work lives in Construct state format 4.
-  `construct work` and the `work` tool query, claim, complete, and restore
-  it. An external tracker is not part of the operating contract.
-- **Discovery admits conventions, not just filenames.** ADR directories and
-  architecture documents become governing proposals with locator, span, and
-  content digest. Quoted examples are not constraints. Caps report
-  continuation.
-- **Verification and review fail closed.** Empty, null, failed, and
-  old-revision evidence cannot pass. Frozen run bindings block silent
-  definition drift.
-- **Source refresh admits observed items** with content digests distinct
-  from inventory fingerprints.
-- **Official MCP stdio transport.** Framing uses `@modelcontextprotocol/server`
-  2.0.0. Domain tool contracts stay in Construct. A serve that cannot bind
-  a project still completes the handshake and reports the condition.
-- **Init wording matches what it stored.** Unanswered profile fields are
-  unknowns, not sourced proposals. Flags that fill a field retire the
-  matching unknown.
+### Upgrading from alpha.24
 
-## 3.0.0-alpha.25 — 2026-09-12 (unpublished development snapshot)
+- **State format 4.** Stop every Construct session on the project, then run
+  `construct migrate`. It backs the store up under its upgrade lock first,
+  and refuses while another process holds the store. Read-only commands
+  refuse an older store and name the migrate step. They never upgrade it.
+- **Operational skill 2.5.0.** Run `construct doctor` after migrating and
+  follow its skill-update instruction before reopening agent sessions. An
+  installed copy you have not edited is replaced without `--force`.
+- **First runtime dependency.** MCP stdio framing now uses
+  `@modelcontextprotocol/server` 2.0.0 (MIT), pinned exactly. Tool contracts
+  stay in Construct.
 
-- **Professional judgment on the ordinary path.** An ordinary managed
-  outcome with architectural or irreversible consequences is challenged
-  before it can be accepted; a private helper rename is not. Challenge is
-  selected from the request and the project's scale, not by naming a
-  review. `classify_request` and `claim_work` say so in ordinary language.
+### Added
+
+- **Shared coordination across worktrees.** Every git worktree of a project
+  uses the main checkout's one store. Claims are fenced to the session that
+  holds them. A claim can reserve the paths it changes. Claimed work passes
+  on only through an accepted handoff. Sessions learn what their peers hold
+  on the calls they already make. An opt-in pre-commit guard warns about
+  reserved paths and never blocks a commit.
+- **Bounded delegation, disabled by default.** The `delegate` tool starts,
+  checks, cancels, triages, and integrates worker attempts. Workers get
+  read-only snapshots and return scoped patches. Construct validates each
+  patch in isolation, requires review, applies changes one at a time, and
+  validates the combined result. The Claude, Codex, and Cursor adapters need
+  explicit executor and model settings plus operator-recorded live evidence.
+  Installing the package enables nothing. Windows execution is blocked until
+  process-tree controls exist.
+- **Native work ledger.** `construct work` and the `work` tool query, claim,
+  complete, and restore bounded work in Construct state. An external tracker
+  is not part of the operating contract.
+- **Professional challenge on the ordinary path.** A managed outcome with
+  architectural or irreversible consequences is challenged before it can be
+  accepted. A private helper rename is not. Selection reads the request and
+  the project's scale, not a magic word.
 - **Governing memory stays live.** Remembering a decision, constraint,
-  principle, outcome, or invariant mints a graph entity. A later
-  authoritative invalidation of an assumption, a supersession, or a
-  contradiction is visible as drift and blocks treating the work as a
-  trusted finished outcome. Notes stay notes.
+  principle, outcome, or invariant creates a graph entity. A later
+  invalidation, supersession, or contradiction shows as drift and blocks
+  treating the work as a trusted finished outcome.
 - **Backlog admission.** Observations persist without becoming work. A work
   item needs a parent outcome, requirement, decision, or metric. Proposed
-  statements after init are in the inbox and can be confirmed or retired.
-  Session close files executable remaining work, not every discovery.
-- **Skill qualification follows the digest.** Qualification is computed
-  from the existing lock and evals. The same version with different bytes
-  does not inherit a prior quality claim. Untrusted skill or source text
-  cannot raise Construct's authority.
-- **A step's declared outputs are the contract** its validators check.
-  An imperative to produce a deliverable classifies as work to manage.
+  statements wait in the inbox to be confirmed or retired.
+- **Convention discovery with provenance.** ADR directories and architecture
+  documents become governing proposals with locator, span, and content
+  digest. Quoted examples are not constraints. Caps report what they left
+  out.
+- **Written voice 0.5.0** ships a tell checker,
+  `skills/written-voice/scripts/voice-check.py`, and a catalog of the tells
+  it counts. The checker needs `python3`.
+
+### Changed
+
+- **Only the person approves.** Accepting a deliverable, finalizing, and
+  approving an outward or destructive action need the person on every
+  surface. An answer relayed by a model is recorded as relayed, with its
+  channel. An editor's or agent host's terminal is never the person.
+- **Verification and review fail closed.** Empty, null, failed, and
+  old-revision evidence cannot pass. A step's declared outputs are the
+  contract its validators check. Frozen run bindings block silent
+  definition drift.
+- **Skill qualification follows the content digest.** The same version with
+  different bytes does not inherit an earlier quality claim.
+- **Source refresh records observed items** with content digests, separate
+  from inventory fingerprints.
+- **An MCP server answers the handshake at once,** binds when the store's
+  lock clears, and reports a project it cannot bind instead of exiting.
+- **Init says what it stored.** Unanswered profile fields are unknowns, not
+  sourced proposals. Flags that fill a field retire the matching unknown.
+
+### Fixed
+
+- `construct init` no longer gives a project a new id when its project files
+  are missing but its store remains. The store records its project's id,
+  and every binding, `construct migrate`, and `construct doctor` check it.
+- Commands run in a main checkout whose current commit lacks the project
+  files now say to restore them, instead of suggesting `construct init`.
+- `status` and `doctor` read a store whose state directory this user cannot
+  write, when its write-ahead log is empty or a running session has the
+  store open. Otherwise they say what access the read needs.
+- A step lease that expires inside another session's call is recorded as the
+  kernel's act, not that session's. The holder that walked away is named.
+
+### Known limitations
+
+- Delegation is not live-verified across Claude, Codex, and Cursor. Its six
+  directions are covered by synthetic MCP tests only.
+- Held-out live-host outcome evaluations were not run for this alpha.
+- Live host conformance is not part of CI or the release workflow. The
+  static conformance suite passes.
 
 ## 3.0.0-alpha.24 — 2026-09-02
 
