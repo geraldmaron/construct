@@ -69,13 +69,13 @@ export function recordObservation(
   };
 }
 
-/** The newest observation of one kind for one source whose evidence carries the given key, or null. */
+/** The most recently recorded observation of one kind for one source whose evidence carries the given key, or null. Recording order, not the time a caller claimed, decides which is latest. */
 export function latestObservationWith(store: StateStore, sourceId: string, kind: string, evidenceKey: string): Observation | null {
   const row = store.db
     .prepare(
       `SELECT * FROM observations
         WHERE source_id = ? AND kind = ? AND evidence_json IS NOT NULL AND json_type(evidence_json, '$.' || ?) IS NOT NULL
-        ORDER BY observed_at DESC, rowid DESC LIMIT 1`,
+        ORDER BY rowid DESC LIMIT 1`,
     )
     .get(sourceId, kind, evidenceKey) as { id: string; run_id: string | null; source_id: string | null; kind: string; summary: string; evidence_json: string | null; observed_at: string } | undefined;
   if (!row) return null;
