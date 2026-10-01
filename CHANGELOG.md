@@ -10,6 +10,25 @@ upgrading, every directory source reports one change on its next read,
 because fingerprints moved from size and mtime to content; that first
 change opens no drift findings.
 
+- **Habits enforced, not hoped for.** `construct init --client=claude-code`
+  installs hooks: tool results that contain issues from a declared Jira
+  project are recorded as host reads automatically; a reply that names
+  project facts without `check_answer` is sent back once
+  (`policy.answerCheck`); a session starts with a note of what waits. Hooks
+  fail open. Without hooks, `policy.hostReads: require` (default) makes a
+  citation into a never-read host source unresolvable. `construct status`
+  reports the last week's habits; `doctor` reports hook installation.
+- **Decisions that rule things out.** `remember` takes `contradicts` terms;
+  `settled_not_contradicted` checks answers and drafts against them.
+- **Sensitivity and publishing.** Deliverables carry the highest
+  sensitivity of what they cite. `publish-deliverable` requires clearance
+  for confidential or restricted material, an approved write, and a
+  recorded location.
+- **Skill impact.** `construct skill impact` and `project_context` topic
+  `quality` measure each skill version's first-pass rate, attempts,
+  waivers, and failing checks.
+- **Owner routing.** The inbox names who decides each question from the
+  constitution's owners, and filters by owner.
 - **Plain answers can be checked.** `check_answer` runs the grounding
   checks on an answer before it is given and records nothing; the
   operational skill (2.1.0) asks hosts to use it for facts about the project.

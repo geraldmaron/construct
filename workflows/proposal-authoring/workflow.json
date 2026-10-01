@@ -70,6 +70,7 @@
         "excerpts_match",
         "superseded_acknowledged",
         "conflicts_declared",
+        "settled_not_contradicted",
         "deliverable_complete"
       ],
       "loadBearing": true,
@@ -123,6 +124,7 @@
         "numbers_grounded",
         "template_conformance",
         "deliverable_complete",
+        "settled_not_contradicted",
         "decision_ask_present"
       ],
       "loadBearing": true,

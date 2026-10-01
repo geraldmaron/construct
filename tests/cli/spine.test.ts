@@ -92,14 +92,14 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     assert.equal(record.onboarding.state, 'confirmed');
     assert.equal(record.runs.active, 0);
     assert.equal(record.registry.skills, 17);
-    assert.equal(record.registry.workflows, 21);
+    assert.equal(record.registry.workflows, 22);
     assert.deepEqual(record.registry.skew, []);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
     assert.equal(doctor.code, 0, doctor.out);
     const checks = JSON.parse(doctor.out);
     assert.equal(checks.healthy, true);
     assert.ok(checks.checks.some((c: { name: string }) => c.name === 'state'));
-    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /38\/38 current/);
+    assert.match(checks.checks.find((c: { name: string }) => c.name === 'registry').detail, /39\/39 current/);
     // Break the state file: doctor fails and says why, status leads with the problem.
     writeFileSync(join(box.cwd, '.construct', 'state', 'construct.sqlite'), 'garbage', 'utf8');
     const broken = await capture(() => run(['doctor'], ctx));

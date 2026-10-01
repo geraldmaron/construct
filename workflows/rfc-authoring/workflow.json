@@ -67,6 +67,7 @@
         "excerpts_match",
         "superseded_acknowledged",
         "conflicts_declared",
+        "settled_not_contradicted",
         "deliverable_complete"
       ],
       "loadBearing": true,
@@ -117,6 +118,7 @@
         "artifacts_exist",
         "numbers_grounded",
         "template_conformance",
+        "settled_not_contradicted",
         "deliverable_complete"
       ],
       "loadBearing": true,

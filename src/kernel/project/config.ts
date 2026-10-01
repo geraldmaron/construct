@@ -114,6 +114,22 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
     parse: oneOf(['managed', 'never']),
   },
   {
+    key: 'policy.answerCheck',
+    description: 'What a host hook does when an answer states project facts without check_answer: nudge (send the host back once to check) or off.',
+    settableBy: ['project config', 'environment'],
+    envVar: 'CONSTRUCT_ANSWER_CHECK',
+    fallback: 'nudge',
+    parse: oneOf(['nudge', 'off']),
+  },
+  {
+    key: 'policy.hostReads',
+    description: 'Citing a source only the host can read: require that the host reported what it read at least once, or accept the citation on the host\'s word.',
+    settableBy: ['project config', 'environment'],
+    envVar: 'CONSTRUCT_HOST_READS',
+    fallback: 'require',
+    parse: oneOf(['require', 'accept']),
+  },
+  {
     key: 'sources.defaultFreshnessHours',
     description: 'How old a source read may be before it counts as stale, when the source declares no expectation.',
     settableBy: ['project config', 'environment'],

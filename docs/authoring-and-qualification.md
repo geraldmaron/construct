@@ -130,3 +130,19 @@ keeps the two linked; `revision_linked` asks for the deliverable it revises
 and a summary of what changed and why. When the person answers a stale-work
 question with revise or re-run, `decide` returns the outcome that would do
 it, for the host to offer; nothing starts on its own.
+
+## Settled terms, sensitivity, publishing, and skill impact
+
+`remember` with `contradicts` turns the terms a decision rules out into
+constraints ("Do not state \"exactly-once\" as current"), and
+`settled_not_contradicted` sends back answers and drafts that state them
+as current without saying they were decided against. A deliverable records
+the highest sensitivity among the sources its run cited;
+`publish-deliverable` needs `clearedFor` from the person when that is
+confidential or restricted, puts the write itself behind an action-time
+approval, and records the location (`published_location`).
+`construct skill impact` (and `project_context` topic `quality`) reports,
+per skill version, how often its steps passed their checks first time,
+mean attempts, waivers, and which checks sent them back. When the
+constitution names owners and what each decides, the inbox shows who
+decides each question and can be filtered to one owner.

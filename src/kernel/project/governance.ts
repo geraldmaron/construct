@@ -52,3 +52,18 @@ export function supersessionFor(names: readonly string[], declared: readonly Dec
   const candidates = names.map((n) => n.slice(n.lastIndexOf('/') + 1).replace(/\.(?:md|markdown|txt|pdf|docx?|json|csv)$/i, '').toLowerCase());
   return declared.find((d) => candidates.some((c) => c === d.match || c.startsWith(`${d.match}-`) || c.startsWith(`${d.match}_`)));
 }
+
+/** The form a settled-against term is remembered in, so it can be checked: Do not state "X" as current. */
+export function settledConstraintText(term: string, statementId: string): string {
+  return `Do not state "${term.replace(/"/g, "'")}" as current; it contradicts statement:${statementId}.`;
+}
+
+/** Terms the person settled against, from confirmed constraints of that form (remembered or written by hand). */
+export function settledTerms(constraints: readonly { readonly id: string; readonly text: string }[]): { term: string; statementId: string }[] {
+  return constraints.flatMap((st) => {
+    const m = /^Do not state "([^"]+)" as current\b/.exec(st.text);
+    if (!m) return [];
+    const by = /statement:(\S+?)[.)]?$/.exec(st.text.trim())?.[1];
+    return [{ term: m[1]!, statementId: by ?? st.id }];
+  });
+}
