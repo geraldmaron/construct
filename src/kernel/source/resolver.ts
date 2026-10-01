@@ -8,15 +8,16 @@
 import type { StateStore } from '../state/open.ts';
 import { listSources } from '../state/sources.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
-import { getStatement } from '../state/profile.ts';
+import { getStatement, listStatements } from '../state/profile.ts';
+import { declaredSupersessions } from '../project/governance.ts';
 import { getClaim, getEntity } from '../state/graph.ts';
 import { getDecision } from '../state/decisions.ts';
 import { getRun } from '../state/runs.ts';
 import { getDriftFinding } from '../state/drift.ts';
 import { createEvidenceResolver, type RecordKind, type RefResolver } from '../project/evidence.ts';
-import { currentManifest, type ManifestEntry } from './manifest.ts';
+import { currentManifestRecord, type ManifestEntry } from './manifest.ts';
 
-export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null }): RefResolver {
+export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null; readonly provenance?: 'witnessed' | 'reported'; readonly partial?: boolean }): RefResolver {
   const knows = (kind: RecordKind, id: string): boolean => {
     switch (kind) {
       case 'statement': return getStatement(store, id) !== null;
@@ -29,12 +30,19 @@ export function projectResolver(store: StateStore, root: string, override?: { re
   };
   return createEvidenceResolver({
     root,
-    sources: listSources(store, { status: 'active' }).map((s) => ({
-      id: s.id,
-      kind: s.kind,
-      locator: s.locator,
-      manifest: override && override.sourceId === s.id ? override.manifest : currentManifest(store, s.id),
-    })),
+    sources: listSources(store, { status: 'active' }).map((s) => {
+      const rec = currentManifestRecord(store, s.id);
+      const overridden = override && override.sourceId === s.id;
+      return {
+        id: s.id,
+        kind: s.kind,
+        locator: s.locator,
+        manifest: overridden ? override.manifest : rec?.entries ?? null,
+        provenance: overridden ? override.provenance ?? rec?.provenance : rec?.provenance,
+        partial: overridden ? override.partial ?? false : rec?.partial ?? false,
+      };
+    }),
+    supersessions: declaredSupersessions(listStatements(store, { kind: 'decision', status: 'confirmed' })),
     deliverableIds: new Set(listLiveDeliverables(store).map((d) => d.id)),
     knows,
   });

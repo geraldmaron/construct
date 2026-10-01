@@ -30,6 +30,7 @@ import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { listStatements } from '../state/profile.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
@@ -99,6 +100,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
   decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
   sources_diverse: 'sources_diverse needs citations from at least two independent places (different files, items, or web sites).',
+  revision_linked: 'revision_linked needs "revises" (the deliverable id) and a "changeSummary" of what changed and why.',
   conflicts_declared: 'conflicts_declared needs a "conflicts" list (empty if none); each conflict gives "citations" naming at least the two sources that disagree.',
 };
 
@@ -163,6 +165,17 @@ function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
+  /**
+   * What the person has said is settled reaches every step that reads: a source that contradicts a remembered
+   * decision or constraint is a conflict to name, not a fact to adopt.
+   */
+  const governingInstructions = (capabilities: readonly string[]): string[] => {
+    if (!capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'))) return [];
+    const settled = listStatements(store, { status: 'confirmed' }).filter((st) => st.kind === 'decision' || st.kind === 'constraint');
+    if (settled.length === 0) return [];
+    const shown = settled.slice(-12).map((st) => `[${st.kind} ${st.id}] ${st.text.length > 200 ? `${st.text.slice(0, 200)}…` : st.text}`);
+    return [`Settled by the person (newest last${settled.length > 12 ? `, ${String(settled.length - 12)} older not shown; read them with project_context statements` : ''}): ${shown.join(' | ')}. Where a source disagrees with one of these, list it under conflicts and cite the statement as statement:<id>.`];
+  };
   /** The person accepted this step's output despite failing checks. */
   const acceptedWaiver = (stepRunId: string): boolean =>
     listDecisionsForStep(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
@@ -445,6 +458,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
           step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
           ...validatorGuidance(step.validators),
+          ...governingInstructions(step.capabilities),
           acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
           'Cite every source you read as evidence entries.',
         ].filter(Boolean);

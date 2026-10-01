@@ -117,3 +117,16 @@ answers a question from the project and the web in a gather, synthesize,
 challenge, record sequence and asks for at least two independent sources. What none of
 them can tell is whether a grounded claim is the right claim; that is the
 challenge step's and the person's.
+
+## Plain answers and revisions
+
+`check_answer` runs the citation, quote, figure, and supersession checks on
+an answer before the host gives it, and records nothing. The operational
+skill asks the host to use it whenever an answer states facts about the
+project.
+
+`revise-deliverable` revises an earlier deliverable for a stated change and
+keeps the two linked; `revision_linked` asks for the deliverable it revises
+and a summary of what changed and why. When the person answers a stale-work
+question with revise or re-run, `decide` returns the outcome that would do
+it, for the host to offer; nothing starts on its own.

@@ -9,8 +9,8 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "2.0.0",
-      "digest": "sha256:697bb12420288f4f5c8074823862f946c61adb4c69d1eeb98286e353315b5000",
+      "version": "2.1.0",
+      "digest": "sha256:fc1ba6092ae01276128049ec6b44d594343909aaefb0bc975131d9b352fd9d95",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -194,6 +194,12 @@
       "version": "1.0.0",
       "digest": "sha256:a2e5e48c9dcadb017355363bad7f80d8e0e661ac56bc969335eaa295197e7841",
       "title": "Research a question",
+      "interactionClass": "manage"
+    },
+    "revise-deliverable": {
+      "version": "1.0.0",
+      "digest": "sha256:96c8a1ecff1b4c9f7bd1ceb3aa26272080d259c833a35224a6cde0f790491bfe",
+      "title": "Revise a deliverable",
       "interactionClass": "manage"
     },
     "rfc-authoring": {

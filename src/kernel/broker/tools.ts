@@ -26,6 +26,8 @@ import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { runValidators } from '../workflow/validators.ts';
+import { listLiveDeliverables } from '../state/deliverables.ts';
 import { projectResolver as resolverFor } from '../source/resolver.ts';
 
 /** What a step may cite in this project, as it stands now. */
@@ -53,7 +55,13 @@ const bootstrap = define<Record<string, never>, unknown>({
   async run(ctx) {
     const at = ctx.now();
     const moved: string[] = [];
-    for (const s of ctx.sources.list()) if ((await ctx.sources.peek(s.id)) === true) moved.push(s.id);
+    const hostRead: string[] = [];
+    for (const s of ctx.sources.list()) {
+      if (!ctx.sources.canRead(s.id)) {
+        const f = ctx.sources.status(s.id, at).freshness;
+        if (f === 'never_read' || f === 'stale') hostRead.push(s.id);
+      } else if ((await ctx.sources.peek(s.id)) === true) moved.push(s.id);
+    }
     const profile = getProfile(ctx.store);
     const open = listOpenDecisions(ctx.store);
     const onboarding = open.filter((d) => d.kind === 'clarification' && d.subject && typeof d.subject === 'object' && 'onboarding' in (d.subject as object));
@@ -74,7 +82,8 @@ const bootstrap = define<Record<string, never>, unknown>({
       construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null } },
       session: { host: ctx.host.hostId, session: ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })) },
-      sources: { ...sources, changedSinceRead: moved },
+      // Sources only the host can read: when it reads them, it reports what it read so changes are tracked.
+      sources: { ...sources, changedSinceRead: moved, reportWhenRead: hostRead },
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
       capabilities: { available: [...ctx.host.available].sort(), maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
@@ -449,7 +458,7 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       return { decision: { id: decision.id, state: decision.state, resolvedBy: decision.resolvedBy }, run: null, profile: { onboarding: applied.profile.onboardingState, missing: applied.missing } };
     }
     const r = ctx.workflow.decide({ decisionId, resolution, by: ctx.actor });
-    return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null };
+    return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)) };
   },
 });
 
@@ -462,29 +471,117 @@ function onboardingAnswerFor(subject: unknown, resolution: string | readonly str
   return null;
 }
 
-const sources = define<{ action: 'list' | 'show' | 'refresh'; id?: string }, unknown>({
+interface SourcesInput { action: 'list' | 'show' | 'refresh' | 'report'; id?: string; items: Record<string, unknown>[]; partial: boolean }
+
+const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
-  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed.',
+  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { action: { type: 'string', description: 'list, show, or refresh.', enum: ['list', 'show', 'refresh'] }, id: { type: 'string', description: 'The source id, for show and refresh.' } },
+    properties: {
+      action: { type: 'string', description: 'list, show, refresh, or report.', enum: ['list', 'show', 'refresh', 'report'] },
+      id: { type: 'string', description: 'The source id, for show, refresh, and report.' },
+      items: { type: 'array', description: 'For report: {ref, title?, updatedAt?, text?, kind?} for each item you read.', items: { type: 'object' } },
+      partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
+    },
     required: ['action'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'refresh'] }) as 'list' | 'show' | 'refresh', id: str(raw, 'id', { optional: true }) };
+    const items = list(raw, 'items').map((e) => record(e));
+    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'refresh', 'report'] }) as SourcesInput['action'], id: str(raw, 'id', { optional: true }), items, partial: bool(raw, 'partial', false) };
   },
-  async run(ctx, { action, id }) {
+  async run(ctx, { action, id, items, partial }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new Error(`"id" is required for ${action}`);
     if (!ctx.sources.list().some((s) => s.id === id)) throw new Error(`no active source ${id}`);
     if (action === 'show') return ctx.sources.status(id, at);
+    if (action === 'report') {
+      if (items.length === 0) throw new Error('"items" is required for report: what you read, one entry per item');
+      const parsed = items.map((i, n) => {
+        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new Error(`items[${String(n)}] needs a ref`);
+        const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
+        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text') };
+      });
+      return ctx.sources.reportRead(id, { items: parsed, partial }, at, () => ctx.nextId('snap'));
+    }
     return ctx.sources.refresh(id, at, () => ctx.nextId('snap'));
+  },
+});
+
+/**
+ * After the person answers a stale-work question, what starting the work they chose would look like. Nothing
+ * starts on its own: the host offers it, and start_outcome runs only if the person wants it.
+ */
+function followUp(ctx: BrokerContext, decision: ReturnType<typeof getDecision>, resolution: string): { suggestedOutcomes?: { workflowId: string; input: Record<string, unknown>; why: string }[] } {
+  const subject = (decision?.subject ?? null) as { deliverableIds?: string[]; driftFindingIds?: string[] } | null;
+  if (!subject?.deliverableIds?.length) return {};
+  const said = resolution.toLowerCase();
+  const out: { workflowId: string; input: Record<string, unknown>; why: string }[] = [];
+  for (const [i, deliverableId] of subject.deliverableIds.entries()) {
+    const finding = subject.driftFindingIds?.[i] ? listDriftFindings(ctx.store, {}).find((f) => f.id === subject.driftFindingIds![i]) : undefined;
+    const change = finding?.summary ?? 'material it drew on changed';
+    if (said.startsWith('revise')) {
+      const body = (listLiveDeliverablesFor(ctx, deliverableId)?.body ?? {}) as { artifact?: unknown };
+      out.push({ workflowId: 'revise-deliverable', input: { deliverable: deliverableId, change, ...(typeof body.artifact === 'string' ? { target: body.artifact } : {}) }, why: `revise ${deliverableId} for: ${change}` });
+    } else if (said.startsWith('re-run') || said.startsWith('rerun')) {
+      const d = listLiveDeliverablesFor(ctx, deliverableId);
+      const run = d ? listRuns(ctx.store, {}).find((x) => x.id === d.runId) : undefined;
+      if (run) out.push({ workflowId: run.workflowId, input: (run.input ?? {}) as Record<string, unknown>, why: `run ${run.workflowId} again with its original input` });
+    }
+  }
+  return out.length ? { suggestedOutcomes: out } : {};
+}
+
+function listLiveDeliverablesFor(ctx: BrokerContext, id: string) {
+  return listLiveDeliverables(ctx.store).find((d) => d.id === id);
+}
+
+interface CheckAnswerInput { answer: string; citations: { ref: string; excerpt?: string }[] }
+
+/** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
+export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged'] as const;
+
+const checkAnswer = define<CheckAnswerInput, unknown>({
+  name: 'check_answer',
+  title: 'Check an answer before giving it',
+  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It records nothing and starts nothing; fix what it finds or say plainly what you could not support.',
+  surface: 'interactive',
+  readOnly: true,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
+      citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: { type: 'object' } },
+    },
+    required: ['answer'],
+    additionalProperties: false,
+  },
+  validate(raw) {
+    closed(raw, this.inputSchema);
+    const citations = list(raw, 'citations').map((e) => {
+      const r = record(e);
+      return { ref: typeof r.ref === 'string' ? r.ref : '', excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
+    });
+    return { answer: str(raw, 'answer')!, citations };
+  },
+  run(ctx, { answer, citations }) {
+    const resolve = projectResolver(ctx);
+    const results = runValidators([...ANSWER_CHECKS], { output: { summary: answer }, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve });
+    const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
+    return {
+      ok: problems.length === 0,
+      problems,
+      evidence: provenanceOf(citations, resolve),
+      next: problems.length === 0
+        ? 'give the answer; say which parts rest on reported sources if any'
+        : 'fix what is listed, or give the answer with the unsupported parts named as unsupported',
+    };
   },
 });
 
@@ -578,7 +675,7 @@ const claimStep = define<{ runId?: string }, unknown>({
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, staff, promote, claimStep, heartbeat,
+  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, checkAnswer, staff, promote, claimStep, heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {

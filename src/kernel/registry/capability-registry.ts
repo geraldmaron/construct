@@ -39,6 +39,7 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'superseded_acknowledged',
   'decision_ask_present',
   'sources_diverse',
+  'revision_linked',
 ]);
 
 export function capabilityDeclaration(name: CapabilityName): CapabilityDeclaration | null {

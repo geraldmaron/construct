@@ -10,7 +10,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | Skill | Version | Category | Engages when | Stands down when |
 |---|---|---|---|---|
 | `adversarial-review` | 0.3.0 | method | poke holes in this before we commit | the artifact is still moving, a half-finished draft, tidy up |
-| `construct` | 2.0.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
+| `construct` | 2.1.0 | operational | remember that we decided | a plain question about how something works, explain, what does this function do |
 | `context-mapping` | 0.4.0 | method | I just inherited this codebase | you already hold the map, know the system, just implement |
 | `decision-framing` | 0.3.1 | method | buy or build, which one | the decision is already made, help execute the rollout |
 | `experience-design` | 1.0.0 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
@@ -46,6 +46,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `proposal-authoring` | 1.0.0 | manage | manual | gather → draft → challenge → record | Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back. |
 | `remember` | 1.0.0 | remember | manual | record | Record a decision, constraint, principle, note, or outcome in the person's own wording as one statement, with project binding, timestamp, and provenance. Nothing else is created. |
 | `research-brief` | 1.0.0 | manage | manual | gather → synthesize → challenge → record | Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back. |
+| `revise-deliverable` | 1.0.0 | manage | manual | gather → revise → challenge → record | Revise an earlier deliverable for a stated change (reviewer feedback, a stale-work finding, new material, a conversion to another form), keeping it linked to the version it revises, saying what changed and why, and holding the revision to the same grounding checks; challenged before it is handed back. |
 | `rfc-authoring` | 1.0.0 | manage | manual | gather → draft → challenge → record | Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back. |
 | `security-privacy-review` | 1.0.0 | manage | manual, schedule | gather → checks → review → record | Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk. |
 | `source-drift-review` | 1.0.0 | maintain | manual, schedule, event | refresh → detect → review → record | Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed. |
@@ -86,3 +87,4 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 - `superseded_acknowledged`
 - `decision_ask_present`
 - `sources_diverse`
+- `revision_linked`

@@ -309,8 +309,9 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     for (const e of evidence) {
       if (!e.excerpt || e.excerpt.trim() === '') continue;
       const r = resolve(e.ref);
-      // A reported reference has no text here to compare; its excerpt stands as the host's word.
-      if (!r || r.provenance === 'reported' || r.text === undefined) continue;
+      // Without text there is nothing to compare, and the excerpt stands as the host's word. With text, even
+      // reported text (a fixture, a host's read), the quote has to agree with what was recorded.
+      if (!r || r.text === undefined) continue;
       if (!normalizeQuote(r.text).includes(normalizeQuote(e.excerpt))) problems.push(`the excerpt cited from "${e.ref}" does not appear in it`);
     }
     return problems;
@@ -330,7 +331,11 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       if (!r?.supersededBy) continue;
       const name = (r.itemRef ?? e.ref).toLowerCase();
       const base = name.slice(name.lastIndexOf('/') + 1).replace(/\.[a-z]+$/, '');
-      if (!text.includes('supersed') || !(text.includes(name) || text.includes(base))) {
+      // People name documents by their leading words: "ADR-004" for adr-004-retry-policy.md.
+      const parts = base.split(/[-_ ]/);
+      const names = [name, base, ...parts.map((_, i) => parts.slice(0, i + 1).join('-')).filter((p, i) => i >= 1 && p.length >= 5)];
+      const flagged = /supersed|replaced|outdated|obsolete|no longer (?:valid|current|applies)/.test(text);
+      if (!flagged || !names.some((n) => text.includes(n) || text.includes(n.replace(/-/g, ' ')))) {
         problems.push(`"${e.ref}" is superseded by ${r.supersededBy}; say so where it is used, or cite the document that replaces it`);
       }
     }
@@ -363,6 +368,16 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       } else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
     }
     return roots.size >= 2 ? [] : [`the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`];
+  },
+  revision_linked: ({ output, input, resolve }) => {
+    const problems: string[] = [];
+    const revises = (isRecord(output) && typeof output.revises === 'string' ? output.revises : null) ?? (isRecord(input) && typeof input.deliverable === 'string' ? input.deliverable : null);
+    if (!revises) problems.push('the output does not say which deliverable it revises ("revises")');
+    else if (resolve && resolve(revises.startsWith('deliverable:') ? revises : `deliverable:${revises}`)?.kind !== 'deliverable') problems.push(`"${revises}" is not a deliverable of this project`);
+    const summary = isRecord(output) ? output.changeSummary : undefined;
+    const said = typeof summary === 'string' ? summary.trim() : Array.isArray(summary) ? summary.filter((x) => typeof x === 'string' && x.trim() !== '').join(' ') : '';
+    if (said === '') problems.push('the output has no "changeSummary" saying what changed from the version it revises and why');
+    return problems;
   },
   conflicts_declared: ({ output }) => {
     if (!isRecord(output) || !Array.isArray(output.conflicts)) return ['the output has no "conflicts" list; give one, empty if the sources agree'];

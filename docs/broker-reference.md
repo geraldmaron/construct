@@ -140,14 +140,27 @@ Surface: interactive. Reads only: no.
 
 ### `sources`
 
-Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed.
+Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `refresh` | yes | list, show, or refresh. |
-| `id` | string | no | The source id, for show and refresh. |
+| `action` | `list`, `show`, `refresh`, `report` | yes | list, show, refresh, or report. |
+| `id` | string | no | The source id, for show, refresh, and report. |
+| `items` | array | no | For report: {ref, title?, updatedAt?, text?, kind?} for each item you read. |
+| `partial` | boolean | no | For report: you read only some of the source; items you did not report are kept, not treated as removed. |
+
+### `check_answer`
+
+Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It records nothing and starts nothing; fix what it finds or say plainly what you could not support.
+
+Surface: interactive. Reads only: yes.
+
+| Input | Type | Required | Meaning |
+|---|---|---|---|
+| `answer` | string | yes | The answer you are about to give, as you would give it. |
+| `citations` | array | no | What it rests on: {ref, excerpt?} entries. |
 
 ### `staff`
 
