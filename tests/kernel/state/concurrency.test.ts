@@ -10,7 +10,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { DatabaseSync } from 'node:sqlite';
 import { BUSY_TIMEOUT_MS, openStateStore } from '../../../src/kernel/state/open.ts';
@@ -253,6 +254,48 @@ test('a reader that finds the store mid-creation is told to wait, never to reset
     writeFileSync(empty, '');
     assert.throws(() => openStateStore(empty, { readOnly: true }), StateBusyError);
   } finally {
+    fx.cleanup();
+  }
+});
+
+test('a read-only open of a WAL store in a directory this user cannot write still reads it, and says what access a stale log needs', () => {
+  const fx = freshStore();
+  const dir = dirname(fx.dbPath);
+  try {
+    appendActivity(fx.store, { kind: 'test.before', at: clock()() });
+    fx.store.close();
+    chmodSync(dir, 0o555);
+    const reader = openStateStore(fx.dbPath, { readOnly: true });
+    try {
+      assert.equal(reader.journalMode, 'wal');
+      assert.ok(listActivity(reader).some((e) => e.kind === 'test.before'));
+    } finally {
+      reader.close();
+    }
+
+    // A live writer's shared-memory file is already there: its pending write is read, not missed.
+    chmodSync(dir, 0o755);
+    const writer = new DatabaseSync(fx.dbPath);
+    writer.exec('PRAGMA wal_autocheckpoint = 0');
+    writer.prepare(`INSERT INTO meta (key, value) VALUES ('pending', '1')`).run();
+    const log = readFileSync(`${fx.dbPath}-wal`);
+    chmodSync(dir, 0o555);
+    const live = openStateStore(fx.dbPath, { readOnly: true });
+    try {
+      assert.equal((live.db.prepare(`SELECT value FROM meta WHERE key = 'pending'`).get() as { value: string } | undefined)?.value, '1');
+    } finally {
+      live.close();
+    }
+
+    // A log left behind with no shared-memory file cannot be read safely here.
+    chmodSync(dir, 0o755);
+    writer.close();
+    writeFileSync(`${fx.dbPath}-wal`, log);
+    rmSync(`${fx.dbPath}-shm`, { force: true });
+    chmodSync(dir, 0o555);
+    assert.throws(() => openStateStore(fx.dbPath, { readOnly: true }), /non-empty write-ahead log, and reading it safely needs SQLite's shared-memory file/);
+  } finally {
+    chmodSync(dir, 0o755);
     fx.cleanup();
   }
 });

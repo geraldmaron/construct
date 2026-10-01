@@ -15,8 +15,9 @@
  * inside `transaction`, which is the only place BEGIN and COMMIT appear.
  */
 
-import { chmodSync, existsSync, mkdirSync } from 'node:fs';
+import { accessSync, chmodSync, closeSync, constants, existsSync, mkdirSync, openSync, readSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
@@ -240,12 +241,83 @@ function assertCurrentFormat(db: DatabaseSync): void {
   throw new UnsupportedStateError(readMeta(db, 'format'), Number.isFinite(version) ? version : null, version > STATE_FORMAT_VERSION ? 'newer' : 'foreign');
 }
 
+function writableDir(dir: string): boolean {
+  try {
+    accessSync(dir, constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sizeOf(path: string): number {
+  try {
+    return statSync(path).size;
+  } catch {
+    return 0;
+  }
+}
+
+/** The journal mode the file header records: a WAL database marks bytes 18 and 19 with 2. */
+function headerJournalMode(dbPath: string): string {
+  const header = Buffer.alloc(20);
+  const fd = openSync(dbPath, 'r');
+  try {
+    readSync(fd, header, 0, 20, 0);
+  } finally {
+    closeSync(fd);
+  }
+  return header[18] === 2 ? 'wal' : 'delete';
+}
+
+interface ReadOnlyTarget {
+  readonly target: string | URL;
+  readonly immutable: boolean;
+  /** The -wal is not empty in a directory this user cannot write: an ordinary open may still fail. */
+  readonly walInUnwritableDir: boolean;
+}
+
+/**
+ * Reading a WAL store creates its shared-memory file beside it, which a state
+ * directory this user cannot write refuses. With an empty or absent -wal, the
+ * main file is the whole store, so it is opened immutable instead. A non-empty
+ * -wal may hold committed writes an immutable read would miss, so that store
+ * gets an ordinary open, which succeeds when a live writer's shared-memory
+ * file is already there and this user can write it.
+ */
+function readOnlyTarget(dbPath: string): ReadOnlyTarget {
+  if (writableDir(dirname(dbPath)) || headerJournalMode(dbPath) !== 'wal') return { target: dbPath, immutable: false, walInUnwritableDir: false };
+  if (sizeOf(`${dbPath}-wal`) > 0) return { target: dbPath, immutable: false, walInUnwritableDir: true };
+  const url = pathToFileURL(dbPath);
+  url.searchParams.set('immutable', '1');
+  return { target: url, immutable: true, walInUnwritableDir: false };
+}
+
+/** SQLITE_READONLY or SQLITE_CANTOPEN, with their extended codes: what a missing shared-memory file in an unwritable directory produces. */
+function isReadOnlyError(error: unknown): boolean {
+  const code = (error as { errcode?: unknown } | null)?.errcode;
+  return typeof code === 'number' && ((code & 0xff) === 8 || (code & 0xff) === 14);
+}
+
+function walAccessError(dbPath: string): Error {
+  const dir = dirname(dbPath);
+  return new Error(
+    `the store at ${dbPath} has a non-empty write-ahead log, and reading it safely needs SQLite's shared-memory file beside it, which this user cannot create in ${dir}; read it as a user who can write that directory, or while a Construct session has the store open`,
+  );
+}
+
 export function openStateStore(dbPath: string, options: OpenStateOptions = {}): StateStore {
   const readOnly = options.readOnly === true;
   const busyTimeoutMs = Math.max(0, Math.floor(options.busyTimeoutMs ?? BUSY_TIMEOUT_MS));
   if (readOnly && !existsSync(dbPath)) throw new Error(`no state database at ${dbPath}`);
   if (!readOnly) mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
-  const db = new DatabaseSync(dbPath, { readOnly });
+  const { target, immutable, walInUnwritableDir } = readOnly ? readOnlyTarget(dbPath) : { target: dbPath, immutable: false, walInUnwritableDir: false };
+  let db: DatabaseSync;
+  try {
+    db = new DatabaseSync(target, { readOnly });
+  } catch (err) {
+    throw walInUnwritableDir && isReadOnlyError(err) ? walAccessError(dbPath) : err;
+  }
   let journalMode = 'delete';
   let migratedFrom: number | null = null;
   try {
@@ -266,11 +338,12 @@ export function openStateStore(dbPath: string, options: OpenStateOptions = {}): 
       journalMode = currentJournalMode(db) === 'wal' ? 'wal' : enableWal(db, busyTimeoutMs);
       db.exec('PRAGMA synchronous = NORMAL');
     } else {
-      journalMode = currentJournalMode(db);
+      journalMode = immutable ? headerJournalMode(dbPath) : currentJournalMode(db);
     }
   } catch (err) {
     db.close();
     if (isBusyError(err)) throw new StateBusyError(dbPath);
+    if (walInUnwritableDir && isReadOnlyError(err)) throw walAccessError(dbPath);
     throw err;
   }
 
