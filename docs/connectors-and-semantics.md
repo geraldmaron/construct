@@ -37,3 +37,14 @@ credentials for git.
 Never in the kernel and never in a committed file. A locator that carries a
 password is refused; a key that names a secret is refused wherever it
 appears in a project file.
+
+## A Jira stand-in for testing
+
+Setting `CONSTRUCT_JIRA_FIXTURES` to a directory gives `jira` sources a
+reader backed by JSON exports instead of a live tracker. A source with
+locator `PLAT` reads `PLAT.json` there: a list of issues, or an object with
+an `issues` list, each with a `key`. Every issue becomes an item a step can
+cite by key (`PLAT-101`), and its text is kept for checking excerpts and
+figures. Reads from a fixture are recorded as reported, not witnessed: a
+fixture says what a tracker would have said. Without the variable, a `jira`
+source is unreachable as before.

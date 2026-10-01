@@ -21,8 +21,8 @@
       "title": "Context mapping"
     },
     "decision-framing": {
-      "version": "0.3.0",
-      "digest": "sha256:53be976dfe7996b7acbe4ff9f94acf55bc3ccc5d4fda39ed32f5e2415ff64097",
+      "version": "0.3.1",
+      "digest": "sha256:61daccfdd108504898557f85348ab4623f8419ea79076528e169bdcfbc4ad593",
       "category": "method",
       "title": "Decision framing"
     },
@@ -69,8 +69,8 @@
       "title": "Program delivery"
     },
     "requirements-structuring": {
-      "version": "0.5.0",
-      "digest": "sha256:17c5254804f95350c54a32e9e0285babc8768b8f75ed19abb7379684b45e7834",
+      "version": "0.5.1",
+      "digest": "sha256:50ea1e66611967ad67973500fb0bd9307e8f673308e187fbc90f09a32f855c71",
       "category": "method",
       "title": "Requirements structuring"
     },
@@ -93,8 +93,8 @@
       "title": "Strategy and research"
     },
     "system-architecture": {
-      "version": "1.0.0",
-      "digest": "sha256:591a50e0f006ae14ab4593f44e2fb9bd346a6031df29eefff084c4e53f42185a",
+      "version": "1.0.1",
+      "digest": "sha256:9c6af51c54e8e3ba2be77ffceaa48e741b736561224f5c19aaf11eb4e42edf5d",
       "category": "professional",
       "title": "System architecture"
     },
@@ -149,8 +149,8 @@
       "interactionClass": "manage"
     },
     "managed-outcome": {
-      "version": "1.0.0",
-      "digest": "sha256:d5e8a794b48ed54804058a60a60083d1359cde8d1fa5a95834a91babc979a759",
+      "version": "1.1.0",
+      "digest": "sha256:59c8e249f25afe5b411ecbacf467dda3d1caec68eb553228cb6823dc38013b49",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },
@@ -158,6 +158,12 @@
       "version": "1.0.0",
       "digest": "sha256:2058bfd42b342a5a208279430c78f32d0b898a4c0393b3edfc33a12afa683255",
       "title": "Operational readiness review",
+      "interactionClass": "manage"
+    },
+    "prd-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:302647182bfeea0683bbe3f704c2d66cd0ab0eb2aec94d2c1277ccb17ca0506f",
+      "title": "Write a PRD",
       "interactionClass": "manage"
     },
     "product-requirements-review": {
@@ -172,11 +178,23 @@
       "title": "Project bootstrap and constitution review",
       "interactionClass": "manage"
     },
+    "proposal-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:5be3bc005f5b32e1f15e220eb238ab5579f03f7e1c7e2363259aa25cb3f68073",
+      "title": "Write a proposal",
+      "interactionClass": "manage"
+    },
     "remember": {
       "version": "1.0.0",
       "digest": "sha256:4543b0f337597ef9c911dfd6dc9d743374d1791443d8a829ca39b275916b4151",
       "title": "Remember one thing",
       "interactionClass": "remember"
+    },
+    "rfc-authoring": {
+      "version": "1.0.0",
+      "digest": "sha256:f6e90140057ee68e8283b6b526218689c4ec0b86dfa573aa0564d97e305e1947",
+      "title": "Write an RFC",
+      "interactionClass": "manage"
     },
     "security-privacy-review": {
       "version": "1.0.0",

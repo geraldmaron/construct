@@ -33,6 +33,9 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
   writeJsonFile(init.layout.lockFile, updateLock(init.lock, skills.list(), workflows.list()).lock);
   mkdirSync(join(box.cwd, 'docs'));
   writeFileSync(join(box.cwd, 'docs', 'design.md'), '# Design\n\n- Keep the kernel host-agnostic\n', 'utf8');
+  // Cited by the conformance scenario; evidence now has to name a file that exists.
+  mkdirSync(join(box.cwd, 'src', 'kernel'), { recursive: true });
+  writeFileSync(join(box.cwd, 'src', 'kernel', 'fetch.ts'), "import { connect } from 'node:net';\nexport const open = () => connect(80, 'example.com');\n", 'utf8');
   const project = { root: box.cwd, layout: init.layout, files: readProjectFiles(box.cwd), store: init.store };
   const binding: BrokerBinding = surface === 'interactive'
     ? { client: 'claude-code', surface: 'interactive', executorId: 'session:claude-code', actor: 'person via claude-code' }

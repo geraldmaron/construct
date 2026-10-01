@@ -10,7 +10,7 @@ import type { HostCapabilities } from '../kernel/registry/capability-registry.ts
 import { createWorkflowService } from '../kernel/workflow/service.ts';
 import { createTriggerService } from '../kernel/workflow/triggers.ts';
 import { createSourceService } from '../kernel/source/service.ts';
-import { readDirectorySource } from '../hosts/sources/directory.ts';
+import { hostReaders } from '../hosts/sources/readers.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
 import { explainConfig } from '../kernel/project/config.ts';
 import type { BrokerContext } from '../kernel/broker/context.ts';
@@ -27,8 +27,9 @@ export interface BrokerBinding {
 }
 
 /** What this session may do, described as capabilities rather than binaries. */
-export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null): HostCapabilities {
-  const available = new Set<string>(['read_project_files', 'read_project_context', 'write_project_context', 'run_validator', 'read_source:directory', 'run_tests', 'kernel']);
+export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | null, readerKinds: readonly string[] = ['directory']): HostCapabilities {
+  const available = new Set<string>(['read_project_files', 'read_project_context', 'write_project_context', 'run_validator', 'run_tests', 'kernel']);
+  for (const kind of readerKinds) available.add(`read_source:${kind}`);
   if (binding.surface === 'interactive') {
     available.add('model_review');
     available.add('ask_user');
@@ -61,8 +62,9 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
   const workflows = createWorkflowRegistry({ projectDir: project.layout.workflowsDir });
   const lock = project.files.lock ?? emptyLock();
   const sessionId = binding.surface === 'interactive' ? `${binding.client}:${String(process.pid)}` : null;
-  const host = hostCapabilitiesFor(binding, sessionId);
-  const sources = createSourceService(project.store, { readers: new Map([['directory', readDirectorySource]]) });
+  const host = hostCapabilitiesFor(binding, sessionId, [...hostReaders(ctx.env).keys()]);
+  const readers = hostReaders(ctx.env);
+  const sources = createSourceService(project.store, { readers, root: project.root });
   const projectWritePolicy = explainConfig(configInputs(ctx, project, {}), 'policy.projectWrite').effective.value as 'managed' | 'never';
   const workflow = createWorkflowService({
     store: project.store,

@@ -1,0 +1,225 @@
+{
+  "format": "construct-workflow",
+  "formatVersion": 1,
+  "id": "rfc-authoring",
+  "title": "Write an RFC",
+  "version": "1.0.0",
+  "purpose": "Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back.",
+  "activation": [
+    "draft an RFC",
+    "write the design doc",
+    "write up the technical approach"
+  ],
+  "standDown": [
+    "review this architecture",
+    "the design is decided, implement it"
+  ],
+  "interactionClass": "manage",
+  "inputSchema": {
+    "request": "string",
+    "target": "string",
+    "template": "string"
+  },
+  "requiredInputs": [
+    "request",
+    "target"
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "title": "Read the governing material, sources, and work items; name every conflict between them",
+      "needs": [],
+      "skill": {
+        "id": "context-mapping",
+        "range": "^0.4.0"
+      },
+      "capabilities": [
+        "read_project_context",
+        "read_project_files"
+      ],
+      "sources": [
+        {
+          "kind": "directory",
+          "freshness": "any",
+          "required": false
+        },
+        {
+          "kind": "jira",
+          "freshness": "any",
+          "required": false
+        }
+      ],
+      "tier": "observe",
+      "inputs": {
+        "request": "input.request",
+        "template": "input.template"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "material",
+        "conflicts",
+        "unknowns"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "superseded_acknowledged",
+        "conflicts_declared",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 600000
+    },
+    {
+      "id": "draft",
+      "title": "Write the RFC to the target file, grounded in what was gathered",
+      "needs": [
+        "gather"
+      ],
+      "skill": {
+        "id": "system-architecture",
+        "range": "^1.0.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "write_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "request": "input.request",
+        "target": "input.target",
+        "template": "input.template",
+        "material": "steps.gather.material",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "summary",
+        "findings",
+        "artifact",
+        "derivations"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "evidence_witnessed",
+        "superseded_acknowledged",
+        "artifacts_exist",
+        "numbers_grounded",
+        "template_conformance",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 1800000
+    },
+    {
+      "id": "challenge",
+      "title": "Challenge the RFC: unsupported claims, silently resolved conflicts, invented owners or decisions",
+      "needs": [
+        "draft",
+        "gather"
+      ],
+      "skill": {
+        "id": "adversarial-review",
+        "range": "^0.3.0"
+      },
+      "capabilities": [
+        "read_project_files",
+        "model_review"
+      ],
+      "sources": [],
+      "tier": "draft",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "conflicts": "steps.gather.conflicts",
+        "unknowns": "steps.gather.unknowns"
+      },
+      "outputs": [
+        "verdict",
+        "findings",
+        "summary"
+      ],
+      "validators": [
+        "citations_present",
+        "evidence_refs_resolve",
+        "excerpts_match",
+        "no_uncited_material_findings",
+        "deliverable_complete"
+      ],
+      "loadBearing": true,
+      "challenge": true,
+      "retry": {
+        "maxAttempts": 3,
+        "backoffMs": 1000
+      },
+      "timeoutMs": 900000
+    },
+    {
+      "id": "record",
+      "title": "Record the result and hand it back",
+      "needs": [
+        "challenge",
+        "draft"
+      ],
+      "skill": null,
+      "capabilities": [
+        "write_project_context"
+      ],
+      "sources": [],
+      "tier": "project_write",
+      "inputs": {
+        "artifact": "steps.draft.artifact",
+        "verdict": "steps.challenge.verdict"
+      },
+      "outputs": [
+        "artifact",
+        "verdict"
+      ],
+      "validators": [
+        "schema",
+        "artifacts_exist"
+      ],
+      "loadBearing": true,
+      "challenge": false,
+      "retry": {
+        "maxAttempts": 1,
+        "backoffMs": 0
+      },
+      "timeoutMs": 30000
+    }
+  ],
+  "triggers": [
+    "manual"
+  ],
+  "onNoData": "block",
+  "onStaleData": "proceed_flagged",
+  "concurrency": "per_input",
+  "dedupeKey": [
+    "target"
+  ],
+  "cancellation": "after_step",
+  "deliverable": {
+    "kind": "document/rfc",
+    "schema": "document/rfc/v1",
+    "challenge": true
+  },
+  "proposes": [
+    "lessons"
+  ],
+  "evals": []
+}

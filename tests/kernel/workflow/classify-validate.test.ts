@@ -62,3 +62,15 @@ test('cron fires at the right wall-clock instant in a timezone, and refuses bad 
   assert.throws(() => parseCron('0 25 * * *'), /outside/);
   assert.throws(() => nextCronAfter('0 9 * * *', 'Mars/Olympus', '2026-09-02T12:00:00.000Z'), /not a timezone/);
 });
+
+test('a deliverable named as a bare noun is work; a vague ask confirms before starting; questions about a document stay questions', () => {
+  for (const t of ['PRD for webhooks', 'an RFC on retry policy', 'proposal for funding webhooks']) {
+    const c = classifyInteraction(t);
+    assert.equal(c.class, 'manage', t);
+    assert.equal(c.confirmBeforeProceeding, false, t);
+  }
+  const vague = classifyInteraction('Write something for Sam about webhooks');
+  assert.equal(vague.class, 'manage');
+  assert.equal(vague.confirmBeforeProceeding, true);
+  for (const t of ['What does the PRD say about scope?', 'PRD is in the drive?', 'brief me on the incident']) assert.notEqual(classifyInteraction(t).class, 'manage', t);
+});

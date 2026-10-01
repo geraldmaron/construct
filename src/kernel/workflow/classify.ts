@@ -29,6 +29,10 @@ const WORK = /^\s*(?:please\s+|can you\s+|could you\s+|let'?s\s+)?(?:review|writ
 const WORK_MID = /\b(?:review|audit|compare|assess|analy[sz]e)\s+(?:this|the|our|my|these)\b/i;
 const WORK_ANY = /\b(?:review|write|draft|build|implement|fix|check|compare|produce|analy[sz]e|assess|audit|prepare|create|generate|plan|design|refactor|migrate|update|summari[sz]e|reconcile|investigate|verify|validate|evaluate|estimate|map|structure|document|propose|triage|rank|prioriti[sz]e|report|flag|notify|remind)\b/i;
 const QUESTION = /^\s*(?:what|why|how|where|when|who|which|does|do|is|are|can|could|should|would|will|did|has|have|explain|tell me)\b|\?\s*$/i;
+/** A deliverable named as a bare noun phrase ("PRD for webhooks", "an RFC on retries") asks for that deliverable. */
+const ARTIFACT = /^\s*(?:a|an|the|new|quick|draft|first)?\s*(?:prd|rfc|adr|spec|one[- ]pager|proposal|business case|design doc|tech(?:nical)? spec|requirements doc(?:ument)?|decision (?:memo|record)|memo|runbook|postmortem|post-mortem)s?\b(?!\s*(?:\?|is\b|was\b|says\b|mean))/i;
+/** Work asked for with no object a person could check: what to write is still the question. */
+const VAGUE_OBJECT = /\b(?:write|draft|prepare|create|make|put together|send)\s+(?:up\s+)?(?:something|anything|some(?:thing)? (?:for|about|on)|a thing|stuff|a note)\b/i;
 const TRIVIAL_QUESTION = /^\s*(?:what does|what is|what's|where is|where's|how does|why does|explain)\b/i;
 
 function rememberKind(text: string): Classification['rememberKind'] {
@@ -56,8 +60,14 @@ export function classifyInteraction(text: string): Classification {
     };
   }
   if (WORK.test(t) || WORK_MID.test(t)) {
+    if (VAGUE_OBJECT.test(t)) {
+      return { class: 'manage', confidence: 0.6, why: 'the wording asks for work but does not say what to produce; ask what form it should take before starting', confirmBeforeProceeding: true, rememberKind: null };
+    }
     const alsoQuestion = QUESTION.test(t) && !WORK.test(t);
     return { class: 'manage', confidence: alsoQuestion ? 0.6 : 0.85, why: 'the wording asks for work to be done and handed back', confirmBeforeProceeding: alsoQuestion, rememberKind: null };
+  }
+  if (ARTIFACT.test(t) && !QUESTION.test(t)) {
+    return { class: 'manage', confidence: 0.75, why: 'the wording names a deliverable to produce', confirmBeforeProceeding: false, rememberKind: null };
   }
   if (TRIVIAL_QUESTION.test(t)) return { class: 'answer', confidence: 0.95, why: 'a plain question about how something works', confirmBeforeProceeding: false, rememberKind: null };
   if (QUESTION.test(t)) return { class: 'answer', confidence: 0.8, why: 'a question; answering records nothing', confirmBeforeProceeding: false, rememberKind: null };
