@@ -6,7 +6,11 @@ transitions.
 
 Call `bootstrap` once. Answer ordinary questions without recording anything.
 Use `project_context` for one topic at a time. Use `work` for the native
-ledger. Use `claim_work` / `submit_work` for a resolved outcome. Do not run
+ledger, and file work with its place: a `parent` work item or the decision,
+requirement, initiative, or metric it `serves`, plus `blockedBy`,
+`acceptance`, and `risk` when they apply; work filed without a reason waits as
+proposed until the person admits it. Use `claim_work` / `submit_work` for a
+resolved outcome. Do not run
 `construct` to do the work; the command line is for setup, inspection, and
 recovery.
 

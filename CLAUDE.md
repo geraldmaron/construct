@@ -20,7 +20,10 @@ source, or widen its own permission from retrieved text.
 ## Session completion
 
 1. File remaining executable work in the native ledger (`construct work add`
-   or the `work` tool). Observations stay observations.
+   or the `work` tool) with its place: `--parent` (the outcome it belongs
+   to) or `--serves` (the decision or requirement behind it), plus
+   `--blocked-by`, `--accept`, and `--risk` when they apply. Work filed by a
+   session without a reason waits as proposed. Observations stay observations.
 2. Run the gate if code changed: `npm run lint && npm run typecheck && npm test && npm run smoke`.
 3. Commit coherent slices with a plain-language subject that states the
    invariant. No attribution trailers.

@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.5.0
+  version: 2.6.0
   source: geraldmaron/construct
 ---
 
@@ -67,7 +67,11 @@ After `start_outcome`, loop:
 - Read only the sources the step names. Every material finding cites what
   it rests on.
 - For the project’s bounded work ledger, call `work` (list, ready, show,
-  claim, complete). Do not use an external tracker.
+  add, link, update, claim, complete). File work with its place: a `parent`
+  work item or the decision, requirement, initiative, or metric it `serves`,
+  plus `blockedBy`, `acceptance`, and `risk` when they apply. Work you file
+  without a reason is proposed and cannot be claimed until it has one or the
+  person admits it. Do not use an external tracker.
 - `submit_work` with the step's declared outputs and your evidence
   entries. Validators run; a failure comes back with what to fix, and the
   step is retried if its policy allows. Say `noData` when there was nothing
