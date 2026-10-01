@@ -30,6 +30,5 @@ A14 held-out host comparisons were not run. Official MCP stdio framing is
 because `registerTool` requires Zod v4 schemas. The frozen `.beads` tree
 remains for recovery and citation lint; it is not an active writer.
 
-Cutover commit `8c74957a` is on `origin/staging`. This follow-through slice
-is uncommitted until signed. Unrelated `.construct/*.json` and gitignored
-recovery/state were not committed. Do not merge main, tag, or publish.
+Cutover commit `8c74957a` and its follow-through `8c45512b` are on
+`staging`. Gitignored recovery material and local state were not committed.

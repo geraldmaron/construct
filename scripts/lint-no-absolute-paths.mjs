@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * lint-no-absolute-paths.mjs — v2 shipped machine-specific absolute paths
- * baked into committed .mcp.json / settings.json (open bug construct-eda8s
- * in the predecessor). This lint fails CI if any tracked, non-generated file
+ * lint-no-absolute-paths.mjs — machine-specific absolute paths baked into a
+ * committed .mcp.json or settings.json break every other checkout. This lint
+ * fails CI if any tracked, non-generated file
  * contains a path rooted at a real user's home directory or /Users//home.
  * Host configs must be generated per-machine by sync, never committed.
  */
