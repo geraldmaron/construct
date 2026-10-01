@@ -88,3 +88,16 @@ test('watchdog disconnect and normal root-process exit both terminate descendant
     }
   } finally { fixture.cleanup(); }
 });
+
+test('a validation check that does not pass says which and why', async () => {
+  const fixture = repository();
+  try {
+    const config = fakeExecutor(fixture, 'claude');
+    const driver = createDelegationDriver({ configDir: fixture.home, artifactsDir: fixture.artifactsDir, env: fixture.env, machine: 'fixture', config: { ...config, validation: [[process.execPath, '-e', 'process.exit(3)']] }, processAlive: () => false });
+    const execution = { ...fixture.execution, assignment: { ...fixture.execution.assignment, executor: 'claude' as const, timeoutMs: 30_000 } };
+    const snapshot = await driver.prepare(execution, null);
+    const [check] = await driver.validate({ ...execution, snapshot }, 'worker');
+    assert.equal(check?.passed, false);
+    assert.equal(check?.why, 'exit code 3');
+  } finally { fixture.cleanup(); }
+});

@@ -128,9 +128,10 @@ export function createDelegationDriver(options: {
       const deadline = stage === 'integrated' ? Date.now() + execution.assignment.timeoutMs : deadlines.get(execution.id) ?? Date.now();
       for (const command of config.validation) {
         const remaining = deadline - Date.now();
-        if (remaining <= 0) { results.push({ command, passed: false }); break; }
+        if (remaining <= 0) { results.push({ command, passed: false, why: 'no time left in the attempt budget' }); break; }
         const outcome = await run(execution.id, command[0]!, command.slice(1), stage === 'worker' ? execution.snapshot!.directory : execution.target, '', remaining, onProcess, true);
-        results.push({ command, passed: outcome.code === 0 && outcome.reason === null });
+        const passed = outcome.code === 0 && outcome.reason === null;
+        results.push(passed ? { command, passed } : { command, passed, why: outcome.reason ?? `exit code ${String(outcome.code)}` });
         if (!results.at(-1)!.passed) break;
       }
       return results;
