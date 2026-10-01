@@ -202,7 +202,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       });
       if (changes && !firstRead && deps.root) {
         const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence, partial });
-        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId }).map((f) => f.id);
+        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root }).map((f) => f.id);
       }
     }
     return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };

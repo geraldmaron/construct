@@ -96,7 +96,7 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   citations_present: 'citations_present needs evidence entries whose ref names a real project file (docs/a.md), a source id, a source item (PLAT-101), or a deliverable.',
   evidence_refs_resolve: 'evidence_refs_resolve rejects any evidence ref that does not name something real.',
   artifacts_exist: 'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty.',
-  numbers_grounded: 'numbers_grounded rejects any figure in the output or artifact that no cited source contains; list computed figures under "derivations" as {value, from}.',
+  numbers_grounded: 'numbers_grounded rejects any figure in the output or artifact that no cited source contains; list computed figures under "derivations" as {value, expression}, where expression is arithmetic over cited figures.',
   template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
   excerpts_match: 'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter).',
   evidence_witnessed: 'evidence_witnessed needs at least one citation Construct can open itself, not only references into systems the host reads.',
