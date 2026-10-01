@@ -59,11 +59,13 @@ export function appendActivity(
     readonly payload?: unknown;
     /** Overrides the store's current attribution for this one row. */
     readonly channel?: string | null;
+    /** The kernel acted on its own, not for the calling session: no session, agent, or channel is recorded. */
+    readonly unattributed?: boolean;
   },
 ): ActivityEvent {
   requireInstant(input.at, 'activity.at');
   requireNonEmpty(input.kind, 'activity.kind');
-  const who = store.attribution;
+  const who = input.unattributed ? { sessionId: null, agent: null, channel: null } : store.attribution;
   const row = store.db
     .prepare(
       `INSERT INTO activity_events (at, kind, run_id, step_run_id, actor, payload_json, session_id, agent, channel)
