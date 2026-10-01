@@ -10,6 +10,13 @@ import { EXECUTORS, type Assignment, type DelegationDriver, type DelegationServi
 const ACTIVE = new Set(['queued', 'running', 'orphaned', 'integrating']);
 const EVENT = DELEGATION_ATTEMPT_EVENT;
 
+/** Which validation check failed and why, or that none ran. Command names only; never their output. */
+function validationDetail(validation: readonly { readonly command: readonly string[]; readonly passed: boolean; readonly why?: string }[]): string {
+  const failed = validation.find((check) => !check.passed);
+  if (!failed) return 'no validation check ran';
+  return `${failed.command.slice(0, 2).join(' ')}: ${failed.why ?? 'did not pass'}`;
+}
+
 export function executions(store: StateStore): Execution[] {
   const rows = store.db.prepare(`SELECT payload_json FROM work_events WHERE id IN
     (SELECT MAX(id) FROM work_events WHERE kind = ? GROUP BY work_id) ORDER BY id`).all(EVENT) as Array<{ payload_json: string }>;
@@ -125,7 +132,7 @@ export function createDelegationService(options: {
       const independence = subject && (subject.assignment.executor === execution.assignment.executor || subject.model === execution.model)
         ? 'review independence is limited: executor or configured model matches the implementation' : null;
       change(id, { artifact, validation, result: { ...result, summary }, state: validationFailed ? 'blocked' : result.state,
-        reason: validationFailed ? 'worker validation failed; review and integration remain blocked' : result.state === 'succeeded' ? independence : summary });
+        reason: validationFailed ? `worker validation failed (${validationDetail(validation)}); review and integration remain blocked` : result.state === 'succeeded' ? independence : summary });
       if (execution.assignment.role === 'review' && result.state === 'succeeded') {
         store.db.prepare(`INSERT INTO reviews (id, subject_kind, subject_id, subject_revision, method, reviewer, evidence_json, objections_json, dispositions_json, unresolved_json, status, created_at, updated_at)
           VALUES (?, 'work_item', ?, ?, 'bounded-local-review', ?, ?, ?, '[]', ?, 'open', ?, ?)`)

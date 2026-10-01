@@ -95,6 +95,8 @@ export interface ExecutorStatus {
 export interface ValidationResult {
   readonly command: readonly string[];
   readonly passed: boolean;
+  /** Why a check did not pass: its exit code, or what stopped it (out of time, supervisor lost). */
+  readonly why?: string;
 }
 
 export interface DelegationDriver {
