@@ -86,7 +86,7 @@ class FakeHost {
   }
 }
 
-async function session(fx: BrokerFixture, opts: { elicitation: boolean; personPrompts: boolean; waitMs?: number }): Promise<{ host: FakeHost; served: Promise<void> }> {
+async function session(fx: BrokerFixture, opts: { elicitation: boolean; personPrompts: boolean | (() => boolean); waitMs?: number }): Promise<{ host: FakeHost; served: Promise<void> }> {
   const host = new FakeHost();
   const requests = new HostRequests();
   const handler = createMcpHandler('interactive', fx.broker, { hostRequests: requests, personPrompts: opts.personPrompts, personPromptWaitMs: opts.waitMs ?? 5_000 });
@@ -260,4 +260,28 @@ test('a call cancelled before it asks the person never sends the prompt', async 
   const next = requests.request('ping', {}, 50);
   assert.equal(sent.length, 1, 'the next call may ask again');
   await assert.rejects(next, /did not answer/);
+});
+
+test('a hook that appears while the server runs stops the next answer counting as the person’s, before or after the prompt', async () => {
+  for (const when of ['before asking', 'while the prompt is open'] as const) {
+    const fx = brokerFixture();
+    try {
+      externalWrite(fx, 'decision-ext');
+      let hookPresent = false;
+      const { host, served } = await session(fx, { elicitation: true, personPrompts: () => !hookPresent });
+      if (when === 'before asking') hookPresent = true;
+      host.answer = () => {
+        hookPresent = true;
+        return { action: 'accept', content: { answer: 'approve' } };
+      };
+      const r = await decide(host, 'decision-ext');
+      assert.equal((r.decision as { state: string }).state, 'open', when);
+      assert.equal(listGrants(fx.broker.store).length, 0, `${when}: no grant from an answer a hook could have given`);
+      assert.equal(host.asked.length, when === 'before asking' ? 0 : 1, when);
+      host.close();
+      await served;
+    } finally {
+      fx.cleanup();
+    }
+  }
 });
