@@ -30,6 +30,14 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'constitution_shape',
   'no_velocity_as_capacity',
   'evidence_refs_resolve',
+  'artifacts_exist',
+  'numbers_grounded',
+  'template_conformance',
+  'conflicts_declared',
+  'excerpts_match',
+  'evidence_witnessed',
+  'superseded_acknowledged',
+  'decision_ask_present',
 ]);
 
 export function capabilityDeclaration(name: CapabilityName): CapabilityDeclaration | null {

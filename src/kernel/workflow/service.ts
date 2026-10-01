@@ -29,6 +29,8 @@ import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
+import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { runValidators, type ValidatorResult } from './validators.ts';
 
@@ -80,6 +82,26 @@ export interface WorkPacket {
   readonly instructions: readonly string[];
 }
 
+/** What each check needs from the output, said once to the host instead of discovered by failing. */
+const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
+  deliverable_complete: 'deliverable_complete needs a non-empty "summary" and one of "findings", "body", or "decisions".',
+  schema: 'schema needs every declared output key present.',
+  citations_present: 'citations_present needs evidence entries whose ref names a real project file (docs/a.md), a source id, a source item (PLAT-101), or a deliverable.',
+  evidence_refs_resolve: 'evidence_refs_resolve rejects any evidence ref that does not name something real.',
+  artifacts_exist: 'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty.',
+  numbers_grounded: 'numbers_grounded rejects any figure in the output or artifact that no cited source contains; list computed figures under "derivations" as {value, from}.',
+  template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
+  excerpts_match: 'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter).',
+  evidence_witnessed: 'evidence_witnessed needs at least one citation Construct can open itself, not only references into systems the host reads.',
+  superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
+  decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
+  conflicts_declared: 'conflicts_declared needs a "conflicts" list (empty if none); each conflict gives "citations" naming at least the two sources that disagree.',
+};
+
+function validatorGuidance(names: readonly string[]): string[] {
+  return names.map((n) => VALIDATOR_GUIDANCE[n]).filter((x): x is string => typeof x === 'string');
+}
+
 export interface ClaimOutcome {
   readonly packet: WorkPacket | null;
   /** Why nothing was handed out: a decision is open, the run is finished, or nothing is ready. */
@@ -92,6 +114,8 @@ export interface SubmitInput {
   readonly evidence?: readonly { readonly ref: string; readonly excerpt?: string }[];
   readonly noData?: boolean;
   readonly resolvableRefs?: ReadonlySet<string>;
+  /** Resolves evidence and artifact references; the broker always supplies one. */
+  readonly resolve?: RefResolver;
 }
 
 export interface SubmitResult {
@@ -135,6 +159,17 @@ function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
+  /** Every distinct citation the run's finished steps made, plus this one's: what the deliverable rests on. */
+  const runEvidence = (runId: string, current: readonly { readonly ref: string }[]): { ref: string }[] => {
+    const refs = new Set(current.map((e) => e.ref));
+    for (const st of listSteps(store, runId)) {
+      if (st.state !== 'succeeded') continue;
+      const ev = (st.output as { evidence?: unknown } | null)?.evidence;
+      if (Array.isArray(ev)) for (const e of ev) if (e && typeof (e as { ref?: unknown }).ref === 'string') refs.add((e as { ref: string }).ref);
+    }
+    return [...refs].map((ref) => ({ ref }));
+  };
+
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
   const policyContext = (interactionClass: PolicyContext['interactionClass'], at: string): PolicyContext => ({
     at,
@@ -400,6 +435,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
           step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
           step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
+          ...validatorGuidance(step.validators),
           'Cite every source you read as evidence entries.',
         ].filter(Boolean);
         return {
@@ -421,7 +457,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       return { packet: null, waitingOn: { kind: 'nothing_ready' } };
     },
 
-    submit({ leased, output, evidence = [], noData = false, resolvableRefs = new Set() }) {
+    submit({ leased, output, evidence = [], noData = false, resolvableRefs = new Set(), resolve }) {
       const at = deps.now();
       const run = getRun(store, leased.runId);
       if (!run) throw new Error(`no run ${leased.runId}`);
@@ -445,7 +481,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null };
         });
       }
-      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs });
+      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
         if (failures.length > 0) {
@@ -460,7 +496,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (isLast || step.challenge) {
           deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: workflow.manifest.deliverable.kind, body: { ...output, evidence }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0) {
-            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation } });
+            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
         return { step: done, validation, run: advance(run.id, at), deliverable };
@@ -481,7 +517,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (!decision) throw new Error(`no decision ${decisionId}`);
         const resolved = resolveDecision(store, { id: decisionId, resolution, by, at });
         let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean };
+        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; driftFindingId?: string };
+        if (subject.driftFindingId) {
+          const finding = getDriftFinding(store, subject.driftFindingId);
+          if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
+            const to = resolution === 'dismiss' ? 'dismissed' : 'acknowledged';
+            if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
+          }
+        }
         if (decision.kind === 'approval' && subject.request) {
           if (resolution === 'approve') {
             approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at });

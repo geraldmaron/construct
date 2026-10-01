@@ -158,7 +158,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       created: result.created,
       gitignoreUpdated: result.gitignoreUpdated,
       profile: { name: answers.profile.name, onboardingState: answers.profile.onboardingState, missing: answers.missing },
-      proposed: applied.proposedStatements.length,
+      proposed: onboardingStatus(result.store).proposalsAwaitingReview,
       openQuestions: status.openQuestions.map((q) => q.question),
       sources: synced,
       hostWiring: wiring ? { client: wiring.client, path: wiring.path, status: wiring.status } : null,
@@ -173,7 +173,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     say(`${fresh ? 'Initialized' : 'Reconciled'} Construct project "${esc(String(answers.profile.name))}" at ${esc(root)}`);
     say(`  files: .construct/{project,constitution,sources,registry.lock}.json${result.gitignoreUpdated ? '; .gitignore now ignores .construct/state/' : ''}`);
     say(`  state: ${result.created.state ? 'created' : 'opened'} .construct/state/construct.sqlite`);
-    say(`  read from the project: ${String(applied.proposedStatements.length)} proposal(s), each with its source, waiting for your review`);
+    say(`  read from the project: ${String(onboardingStatus(result.store).proposalsAwaitingReview)} proposal(s), each with its source, waiting for your review`);
     if (status.openQuestions.length > 0) {
       say(`  still to answer (${String(status.openQuestions.length)}):`);
       for (const q of status.openQuestions) say(`    - ${esc(q.question)}`);

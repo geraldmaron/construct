@@ -74,3 +74,30 @@ rank first when held out and the routing floors still hold; its fixtures
 cover the four kinds; a consuming workflow
 resolves against it; and, for anything called working on a host, the
 conformance command recorded the run.
+
+## Grounding and quality checks
+
+Validators are floors under quality, not a judge of it. The ones that
+check grounding resolve every reference against the project as it stands:
+a real file, a declared source or an item it reported, a deliverable, or a
+record Construct keeps. A reference into a system Construct has no reader
+for is accepted as reported, and every submission says how many citations
+were witnessed, reported, or unresolved; a validated deliverable records
+the same counts.
+
+| Validator | Sends back an output when |
+|---|---|
+| `citations_present`, `evidence_refs_resolve` | a reference names nothing real |
+| `excerpts_match` | a quoted excerpt is not in the file or item it cites |
+| `evidence_witnessed` | every citation rests on the host's word |
+| `artifacts_exist` | the file the step says it wrote is missing or empty |
+| `numbers_grounded` | a figure appears in no cited source and is not derived by arithmetic that holds over cited figures |
+| `template_conformance` | the artifact lacks a section the named template has |
+| `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
+| `superseded_acknowledged` | a superseded document is used without saying so |
+| `decision_ask_present` | a proposal has no decision section naming who decides and by when |
+
+The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
+apply them in a gather, draft, challenge, record sequence. What none of
+them can tell is whether a grounded claim is the right claim; that is the
+challenge step's and the person's.

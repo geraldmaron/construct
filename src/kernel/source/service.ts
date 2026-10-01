@@ -29,6 +29,9 @@ import { recordObservation } from '../state/drift.ts';
 import type { DeclaredSource, SourcesFile } from '../project/sources-file.ts';
 import { locatorProblem } from './locators.ts';
 import type { ReadOutcome, SourceReader } from './connector.ts';
+import { currentManifest, describeChanges, diffManifests, toManifest, type ItemChanges } from './manifest.ts';
+import { projectResolver } from './resolver.ts';
+import { flagStaleDeliverables } from '../drift/deliverables.ts';
 
 export interface SourceStatus {
   readonly source: Source;
@@ -59,6 +62,10 @@ export interface RefreshResult {
   readonly outcome: 'changed' | 'unchanged' | 'unreachable';
   readonly snapshot: SourceSnapshot | null;
   readonly reason?: string;
+  /** Item by item, when the reader reports items. */
+  readonly changes?: ItemChanges;
+  /** Drift findings opened because finished work drew on what changed. */
+  readonly staleDeliverables?: readonly string[];
 }
 
 export interface SourceService {
@@ -68,6 +75,8 @@ export interface SourceService {
   addLocal(input: Omit<DeclaredSource, 'read' | 'write'> & { readonly read?: boolean; readonly write?: boolean }, at: string): Source;
   setLocalLocator(id: string, locator: string, at: string): Source;
   refresh(id: string, at: string, nextId: () => string): Promise<RefreshResult>;
+  /** Read without recording: has the source moved since its last recorded read? Null when it cannot be read here. */
+  peek(id: string): Promise<boolean | null>;
   status(id: string, at: string): SourceStatus;
   list(): Source[];
   summary(at: string): SourceSummary;
@@ -76,6 +85,8 @@ export interface SourceService {
 export interface SourceServiceDeps {
   /** Reader per source kind; a kind with no reader is unreachable from Construct itself. */
   readonly readers: ReadonlyMap<string, SourceReader>;
+  /** The project root; with it, a change is checked against the deliverables that cited it. */
+  readonly root?: string;
 }
 
 function sameAuthority(a: readonly string[], b: readonly string[]): boolean {
@@ -218,17 +229,40 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         evidenceRef: outcome.report.evidenceRef,
         at,
       });
+      let changes: ItemChanges | undefined;
+      let staleDeliverables: string[] | undefined;
       if (changed) {
+        const manifest = outcome.report.items ? toManifest(outcome.report.items) : null;
+        const before = currentManifest(store, id);
+        changes = manifest ? diffManifests(before, manifest) : undefined;
+        const firstRead = before === null;
         recordObservation(store, {
           id: nextId(),
           sourceId: id,
           kind: 'source.changed',
-          summary: `${id} changed: ${outcome.report.summary}`,
-          evidence: { digest: outcome.report.digest, evidence: outcome.report.evidence, items: outcome.report.items?.length ?? 0 },
+          summary: `${id} changed: ${outcome.report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
+          evidence: { digest: outcome.report.digest, evidence: outcome.report.evidence, items: outcome.report.items?.length ?? 0, ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
           at,
         });
+        if (changes && !firstRead && deps.root) {
+          const resolve = projectResolver(store, deps.root, { sourceId: id, manifest });
+          staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId }).map((f) => f.id);
+        }
       }
-      return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot };
+      return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
+    },
+    async peek(id) {
+      const source = getSource(store, id);
+      const reader = source ? deps.readers.get(source.kind) : undefined;
+      if (!source || !reader) return null;
+      const last = latestSnapshot(store, id);
+      if (!last) return null;
+      try {
+        const outcome = await reader({ sourceId: source.id, kind: source.kind, locator: source.locator });
+        return outcome.outcome === 'read' ? outcome.report.digest !== last.digest : null;
+      } catch {
+        return null;
+      }
     },
     status(id, at) {
       const source = getSource(store, id);

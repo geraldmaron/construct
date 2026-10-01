@@ -25,6 +25,13 @@ import { TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition } from './definition.ts';
 import { createRouter, type Router } from '../skills/routing.ts';
+import { provenanceOf, type RefResolver } from '../project/evidence.ts';
+import { projectResolver as resolverFor } from '../source/resolver.ts';
+
+/** What a step may cite in this project, as it stands now. */
+export function projectResolver(ctx: BrokerContext): RefResolver {
+  return resolverFor(ctx.store, ctx.root);
+}
 
 type Tool<I, O> = ToolDefinition<BrokerContext, I, O>;
 
@@ -43,8 +50,10 @@ const bootstrap = define<Record<string, never>, unknown>({
     closed(raw, this.inputSchema);
     return {} as Record<string, never>;
   },
-  run(ctx) {
+  async run(ctx) {
     const at = ctx.now();
+    const moved: string[] = [];
+    for (const s of ctx.sources.list()) if ((await ctx.sources.peek(s.id)) === true) moved.push(s.id);
     const profile = getProfile(ctx.store);
     const open = listOpenDecisions(ctx.store);
     const onboarding = open.filter((d) => d.kind === 'clarification' && d.subject && typeof d.subject === 'object' && 'onboarding' in (d.subject as object));
@@ -58,12 +67,14 @@ const bootstrap = define<Record<string, never>, unknown>({
       onboarding.length > 0 ? `answer the ${String(onboarding.length)} setup question(s) with decide`
       : open.length > 0 ? `${String(open.length)} decision(s) wait on the person; show them with inbox`
       : runs.length > 0 ? `${String(runs.length)} run(s) active; continue with claim_work`
+      : moved.length > 0 ? `${moved.join(', ')} changed since last read; refresh with sources before relying on them`
+      : drift.length > 0 ? `${String(drift.length)} drift finding(s) open; read them with project_context drift and tell the person`
       : 'listen: answer questions plainly, remember what the person asks to keep, start an outcome when asked for work';
     return {
       construct: { version: ctx.version, project: { root: ctx.root, id: ctx.files.config?.id ?? null, name: ctx.files.config?.name ?? null } },
       session: { host: ctx.host.hostId, session: ctx.host.sessionId, executor: ctx.host.executorId, actor: ctx.actor },
       profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing, openQuestions: onboarding.map((d) => ({ id: d.id, question: d.question, options: d.options })) },
-      sources,
+      sources: { ...sources, changedSinceRead: moved },
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
       capabilities: { available: [...ctx.host.available].sort(), maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
@@ -182,7 +193,8 @@ const classify = define<{ text: string }, unknown>({
       .filter((w) => w !== null)
       .filter((w) => c.class === 'answer' || c.class === 'remember' ? false : true)
       .slice(0, 5)
-      .map((w) => ({ id: w.manifest.id, title: w.manifest.title }));
+      // The inputs go with the suggestion, so starting it does not take a failed attempt to learn them.
+      .map((w) => ({ id: w.manifest.id, title: w.manifest.title, inputs: w.manifest.inputSchema, required: w.manifest.requiredInputs }));
     const next =
       c.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
       : c.class === 'remember' ? 'call remember with the person’s wording'
@@ -363,8 +375,16 @@ const submitWork = define<SubmitInput, unknown>({
       throw new Error(`step ${input.stepRunId} is not held under this owner and token; claim it again`);
     }
     const leased = { ...step, leaseOwner: input.owner, leaseUntil: step.leaseUntil ?? ctx.now(), token: input.token };
-    const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData });
-    return { step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason }, validation: r.validation, run: { id: r.run.id, state: r.run.state }, deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null };
+    const resolve = projectResolver(ctx);
+    const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData, resolve });
+    return {
+      step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason },
+      validation: r.validation,
+      // How much of this step rests on what Construct opened itself versus what the host reports it read.
+      evidence: provenanceOf(input.evidence, resolve),
+      run: { id: r.run.id, state: r.run.state },
+      deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null,
+    };
   },
 });
 
@@ -382,7 +402,7 @@ const runStatus = define<{ runId: string }, unknown>({
   run(ctx, { runId }) {
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
-    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
   },
 });
 

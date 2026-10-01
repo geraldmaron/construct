@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+- **Grounding is checked, not trusted.** Evidence references now resolve
+  against the project as it stands (files inside the project or a directory
+  source, declared sources and the items they reported, deliverables, and
+  Construct's own records). Before this, `evidence_refs_resolve` passed
+  whenever it was given nothing to resolve against, which was always, and
+  `citations_present` accepted any non-empty string; a run citing a file
+  that did not exist could finish "validated". Both now fail closed.
+  Citations carry provenance: witnessed (Construct opened it) or reported (a
+  system only the host reads). `submit_work` returns the counts and a
+  validated deliverable records them for the whole run.
+- **Quality floors.** New validators: `excerpts_match`, `evidence_witnessed`,
+  `artifacts_exist`, `numbers_grounded` (figures must come from cited
+  sources, or be derived by arithmetic that holds over cited figures),
+  `template_conformance`, `conflicts_declared`, `superseded_acknowledged`,
+  and `decision_ask_present`. `claim_work` tells the host what each check
+  needs.
+- **Authoring workflows.** `prd-authoring`, `rfc-authoring`, and
+  `proposal-authoring` run gather, draft, challenge, record with those
+  checks. `managed-outcome` 1.1.0 checks its plan against its declared keys
+  and its work against resolvable, matching citations.
+- **Routing for documents.** A deliverable named as a bare noun ("PRD for
+  webhooks") is work, not a question; a request with no stated output
+  ("write something for Sam") confirms first. Requirements structuring,
+  system architecture, and decision framing carry PRD, RFC, and proposal
+  phrasings; `classify_request` returns each suggested workflow's inputs.
+- **Change tracking.** Directory reads fingerprint content (cached by size
+  and mtime) and report items, so a refresh names files added, modified, or
+  removed; content that changes back is a change. A change to something
+  finished work cited opens a drift finding and an inbox question (revise,
+  re-run, dismiss), one per run. `bootstrap` names directory sources that
+  moved since their last read. A "Supersedes:" or "Status: Superseded" line
+  marks a document inside a source as replaced.
+- **Jira fixtures.** `CONSTRUCT_JIRA_FIXTURES` gives `jira` sources a reader
+  over JSON exports for testing and evaluation; reads are recorded as
+  reported.
+- **Setup.** Answers given at init no longer remain listed as unknowns, and
+  init reports the proposals left after them; `doctor` names unreachable and
+  never-read sources.
+
 ## 3.0.0-alpha.24 — 2026-09-02
 
 - **Skill routing by the person's words.** `classify_request` now ranks
