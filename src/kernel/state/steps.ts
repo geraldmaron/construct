@@ -315,7 +315,9 @@ export function claimStep(
  * Reclaim expired leases: return the step to `ready` so a later claim can
  * start a new attempt, or fail it when its budget is spent. A lease that ran
  * out is not the step's own failure, so it spends the expiry allowance, not
- * the step's retry budget.
+ * the step's retry budget. The reaping runs inside whichever call came next,
+ * so its rows record the kernel as actor and no session; the holder that
+ * walked away is named in the payload.
  */
 export function expireDeadLeases(store: StateStore, now: string, runId?: string): number {
   requireInstant(now, 'expire.now');
@@ -341,8 +343,9 @@ export function expireDeadLeases(store: StateStore, now: string, runId?: string)
         kind: 'step.failed',
         runId: step.runId,
         stepRunId: step.id,
-        actor: step.leaseOwner,
-        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired and the step’s budget is spent' },
+        actor: 'kernel',
+        unattributed: true,
+        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired and the step’s budget is spent', previousHolder: step.leaseOwner },
       });
     }
     const remaining = store.db
@@ -366,8 +369,9 @@ export function expireDeadLeases(store: StateStore, now: string, runId?: string)
         kind: 'step.retry_scheduled',
         runId: step.runId,
         stepRunId: step.id,
-        actor: step.leaseOwner,
-        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired' },
+        actor: 'kernel',
+        unattributed: true,
+        payload: { stepId: step.stepId, attempt: step.attempts, reason: 'lease expired', previousHolder: step.leaseOwner },
       });
     }
     return spent.length + remaining.length;

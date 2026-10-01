@@ -221,3 +221,24 @@ test('inputs are validated before they reach SQL', () => {
     fx.cleanup();
   }
 });
+
+test('an expiry reaped inside another session’s call is recorded as the kernel’s act, naming the holder that walked away', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    createRun(fx.store, { ...base, id: 'run-reap', idempotencyKey: 'k-reap', at: at() });
+    addStep(fx.store, { id: 's-reap', runId: 'run-reap', stepId: 'fetch', ordinal: 0, permissionTier: 'observe', ready: true, maxAttempts: 2, at: at() });
+    claimStep(fx.store, { owner: 'gone', now: '2026-09-02T10:00:00.000Z', leaseUntil: '2026-09-02T10:00:30.000Z' });
+    Object.assign(fx.store.attribution, { sessionId: 'sess-caller', agent: 'caller-agent', channel: 'relay' });
+    assert.equal(expireDeadLeases(fx.store, '2026-09-02T10:00:31.000Z'), 1);
+    const reaped = listActivity(fx.store, { runId: 'run-reap' }).filter((e) => e.kind === 'step.retry_scheduled');
+    assert.equal(reaped.length, 1);
+    assert.equal(reaped[0]!.actor, 'kernel');
+    assert.equal(reaped[0]!.sessionId, null);
+    assert.equal(reaped[0]!.agent, null);
+    assert.equal(reaped[0]!.channel, null);
+    assert.equal((reaped[0]!.payload as { previousHolder?: string }).previousHolder, 'gone');
+  } finally {
+    fx.cleanup();
+  }
+});
