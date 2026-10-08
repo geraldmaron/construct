@@ -67,7 +67,7 @@ expect_contains "doctor" "$predoctor" "FAIL project"
 
 echo "== init from the packaged install =="
 skills_dir="$scratch/host-skills"
-init_out="$(npx --no-install construct init --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' --skills-dir="$skills_dir" 2>&1)" \
+init_out="$(npx --no-install construct init --client=claude-code --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' --skills-dir="$skills_dir" 2>&1)" \
   || fail "construct init exited non-zero" "$init_out"
 printf '%s\n' "$init_out"
 expect_contains "init" "$init_out" "Initialized Construct project"
@@ -81,6 +81,25 @@ expect_contains "init" "$init_out" "Initialized Construct project"
 cmp -s "$skills_dir/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
 grep -q '^\.construct/state/$' "$project/.gitignore" || fail "init did not ignore .construct/state/"
+
+echo "== the host file starts the project's construct with no machine path =="
+[ -f "$project/.mcp.json" ] || fail "init --client=claude-code wrote no .mcp.json" "$init_out"
+mcp_launch="$(node -e '
+const e = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).mcpServers.construct;
+const parts = [e.command, ...e.args];
+if (parts.some((p) => require("node:path").isAbsolute(p) || p.startsWith("--project="))) { console.error(parts.join(" ")); process.exit(1); }
+process.stdout.write(JSON.stringify(parts));
+' "$project/.mcp.json")" || fail ".mcp.json carries a machine path" "$(cat "$project/.mcp.json")"
+[ "$mcp_launch" = '["npx","--no-install","construct","serve","--client=claude-code"]' ] \
+  || fail ".mcp.json does not start npx --no-install construct serve" "$mcp_launch"
+written_out="$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | node -e '
+const { spawn } = require("node:child_process");
+const [command, ...args] = JSON.parse(process.argv[1]);
+const child = spawn(command, args, { stdio: ["pipe", "inherit", "ignore"] });
+process.stdin.pipe(child.stdin);
+child.on("exit", (code) => process.exit(code ?? 1));
+' "$mcp_launch")" || fail "the server would not start the way .mcp.json says" "$written_out"
+expect_contains "the server started from .mcp.json" "$written_out" '"name":"construct"'
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "init created a per-user data directory; project truth must stay in the project"
 
 echo "== status and doctor =="

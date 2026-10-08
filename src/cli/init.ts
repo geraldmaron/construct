@@ -40,7 +40,7 @@ export const INIT_SPEC: CommandSpec = {
     { name: 'scale', gloss: `what this is to you: ${PROJECT_SCALES.join(' | ')}`, takesValue: true },
     { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
     { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
-    { name: 'client', gloss: `the host you use: plants its skill and wires its MCP config (${WIRABLE_CLIENTS.join(' | ')}, bob, codex)`, takesValue: true },
+    { name: 'client', gloss: `the host you use: plants its skill and wires its MCP config (${WIRABLE_CLIENTS.join(' | ')})`, takesValue: true },
     { name: 'no-wire', gloss: 'do not write the host’s MCP configuration', takesValue: false },
     { name: 'skills-dir', gloss: 'plant the operational skill into this directory instead of a host’s', takesValue: true },
     { name: 'dry-run', gloss: 'say what would happen and write nothing', takesValue: false },
@@ -48,9 +48,9 @@ export const INIT_SPEC: CommandSpec = {
   readOnly: false,
 };
 
-/** The skills directory a host name maps to; vscode reads none of its own. */
+/** The skills directory a host name maps to. */
 function skillsHostFor(client: string): SkillsHostName | null {
-  const map: Record<string, SkillsHostName> = { claude: 'claude', 'claude-code': 'claude', cursor: 'cursor', opencode: 'opencode', codex: 'codex', bob: 'bob' };
+  const map: Record<string, SkillsHostName> = { claude: 'claude', 'claude-code': 'claude', cursor: 'cursor', vscode: 'vscode', opencode: 'opencode', codex: 'codex', bob: 'bob' };
   return map[client] ?? null;
 }
 
@@ -110,7 +110,7 @@ function resolveSkillsDir(args: ParsedArgs, ctx: CliContext): { readonly dir: st
   if (client !== undefined) {
     const skillsHost = skillsHostFor(client);
     if (skillsHost) return { dir: resolveHostSkillsDir(skillsHost, ctx.env), how: `--client=${client}` };
-    if (normalizeClient(client) === null) throw new UsageError(`--client must be one of ${[...WIRABLE_CLIENTS, 'bob', 'codex'].join(' | ')}`);
+    if (normalizeClient(client) === null) throw new UsageError(`--client must be one of ${WIRABLE_CLIENTS.join(' | ')}`);
     return { dir: null, how: `${client} documents no personal skills directory; pass --skills-dir=<dir> to plant the operational skill where it reads` };
   }
   const ambient = detectAmbientHost(ctx.env);

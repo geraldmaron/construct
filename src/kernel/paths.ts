@@ -97,10 +97,12 @@ export function resolveScheduleDir(
  * `resolveSkillsDir` above, and `resolveHostSkillsDir` defers to it rather
  * than duplicating the path.
  *
- * codex reads `~/.agents/skills`, which is not a path of its own: cursor and
- * opencode document reading that same directory, so an install there reaches
- * three hosts at once. Reaching them by one name is a separate decision this
- * table does not make; what it records is where each host says it looks.
+ * codex reads `~/.agents/skills`, which is not a path of its own: cursor,
+ * opencode, and vscode document reading that same directory, so an install
+ * there reaches four hosts at once. vscode also reads `~/.claude/skills`
+ * beside its own `~/.copilot/skills`. Reaching them by one name is a separate
+ * decision this table does not make; what it records is where each host says
+ * it looks.
  */
 const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   // https://bob.ibm.com/docs/ide/features/skills — checked 2026-08-24
@@ -111,6 +113,8 @@ const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   cursor: ['.cursor', 'skills'],
   // https://learn.chatgpt.com/docs/build-skills — checked 2026-08-24
   codex: ['.agents', 'skills'],
+  // https://code.visualstudio.com/docs/agent-customization/agent-skills — checked 2026-10-08
+  vscode: ['.copilot', 'skills'],
 };
 
 /** Every host name `--host` accepts, `claude` included, in a stable order. */

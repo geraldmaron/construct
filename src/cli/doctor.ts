@@ -4,6 +4,7 @@
  */
 
 import { existsSync, accessSync, constants, realpathSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/project/legacy.ts';
 import { readProjectFiles } from '../kernel/project/initialize.ts';
@@ -20,9 +21,10 @@ import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
-import { inspectWiring } from '../hosts/wiring/wire.ts';
+import { inspectWiring, launchOf } from '../hosts/wiring/wire.ts';
 import { inspectHooks } from '../hosts/wiring/hooks.ts';
-import { WIRABLE_CLIENTS } from '../hosts/wiring/clients.ts';
+import { LAUNCHER, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
+import { findOnPath } from '../hosts/presence.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
 import { esc, say, writeJson } from './output.ts';
@@ -50,6 +52,37 @@ function sameFile(a: string, b: string): boolean {
   } catch {
     return false;
   }
+}
+
+/** Hosts usually started from the desktop rather than from this shell, so their PATH may differ from the one checked here. */
+const DESKTOP_HOSTS: ReadonlySet<WirableClient> = new Set(['cursor', 'vscode', 'bob']);
+
+/** Can the command this host's file starts be found and run from here? */
+function hostLaunchCheck(client: WirableClient, root: string, env: NodeJS.ProcessEnv): Check {
+  const name = `host-launch:${client}`;
+  const shellNote = DESKTOP_HOSTS.has(client) ? ' (this checks this shell\'s PATH; a host started from the Dock may see another)' : '';
+  const repair = `\`construct init --client=${client}\` rewrites it`;
+  const launch = launchOf(client, root);
+  if (!launch) return { name, ok: false, detail: `the ${client} entry names no command; ${repair}` };
+  const install = (path: string) => (sameFile(path, LAUNCHER) ? ', the same install as this doctor' : `, a different install than this doctor (${LAUNCHER}); versions may differ`);
+  if (launch.command === 'construct') {
+    const found = findOnPath('construct', env);
+    return found
+      ? { name, ok: true, detail: `starts ${found}${install(found)}${shellNote}` }
+      : { name, ok: false, detail: `\`construct\` is not on PATH here, so ${client} cannot start the server; install it with npm install -g @geraldmaron/construct@alpha or as a project dependency${shellNote}` };
+  }
+  if (launch.command === 'npx') {
+    const npx = findOnPath('npx', env);
+    const local = join(root, 'node_modules', '.bin', 'construct');
+    if (!npx) return { name, ok: false, detail: `\`npx\` is not on PATH here, so ${client} cannot start the project's construct${shellNote}` };
+    if (!existsSync(local)) return { name, ok: false, detail: `${local} does not exist, so npx --no-install construct has nothing to start; install @geraldmaron/construct as a project dependency, or ${repair} to start construct from PATH${shellNote}` };
+    return { name, ok: true, detail: `starts ${local} through ${npx}${install(local)}${shellNote}` };
+  }
+  const command = isAbsolute(launch.command) ? (existsSync(launch.command) ? launch.command : null) : findOnPath(launch.command, env);
+  if (!command) return { name, ok: false, detail: `${launch.command} cannot be found here, so ${client} cannot start the server; ${repair}${shellNote}` };
+  const script = launch.args.find((a) => a.endsWith('construct.mjs'));
+  if (script && isAbsolute(script) && !existsSync(script)) return { name, ok: false, detail: `${script} does not exist, so ${client} cannot start the server; ${repair}${shellNote}` };
+  return { name, ok: true, detail: `starts ${command}${script ? ` ${script}${install(script)}` : ''}${shellNote}` };
 }
 
 function nodeCheck(): Check {
@@ -182,7 +215,8 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
       // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing.
       checks.push({ name: 'host-hooks', ok: h.status !== 'broken', detail: h.status === 'installed' ? h.detail : `${h.detail}; \`construct init --client=claude-code\` adds them` });
     }
-    checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
+    checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}${w.status === 'installed' ? '' : ` (${w.detail})`}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
+    for (const w of wired) checks.push(hostLaunchCheck(w.client, root, ctx.env));
   }
   if (ambient) {
     checks.push({ name: 'host', ok: true, detail: `inside ${ambient.host} (${ambient.marker})` });

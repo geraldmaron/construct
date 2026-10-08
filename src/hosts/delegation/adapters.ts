@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs';
-import { delimiter, isAbsolute, join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import type { Executor, ExecutorStatus, Role, WorkerResult, Finding } from '../../kernel/delegation/types.ts';
 import { safeEnvironment } from './workspace.ts';
+import { findOnPath } from '../presence.ts';
 
 export interface ExecutorConfig {
   readonly binary: string;
@@ -52,9 +53,8 @@ export function commandFor(executor: Executor, model: string, _role: Role, direc
 }
 
 export function installedBinary(executor: Executor, configured: ExecutorConfig | undefined, env: NodeJS.ProcessEnv): string | null {
-  const name = executor === 'cursor' ? 'agent' : executor;
-  const candidates = configured ? [configured.binary] : (env.PATH ?? '').split(delimiter).filter(Boolean).map(directory => join(directory, name));
-  return candidates.find(path => { try { accessSync(path, constants.X_OK); return true; } catch { return false; } }) ?? null;
+  if (!configured) return findOnPath(executor === 'cursor' ? 'agent' : executor, env);
+  try { accessSync(configured.binary, constants.X_OK); return configured.binary; } catch { return null; }
 }
 
 function probe(binary: string, args: string[], env: NodeJS.ProcessEnv): Promise<string | null> {

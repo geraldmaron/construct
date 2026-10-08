@@ -5,6 +5,7 @@
 
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 
 export type McpServersKey = 'mcpServers' | 'servers' | 'mcp';
 
@@ -25,7 +26,8 @@ function readConfig(path: string): ReadConfig {
   }
 }
 
-function commandParts(entry: Record<string, unknown>): string[] {
+/** Every part of an entry's launch line: the command (a string, or OpenCode's array) and its args. */
+export function launchParts(entry: Record<string, unknown>): string[] {
   const parts: string[] = [];
   if (typeof entry.command === 'string') parts.push(entry.command);
   else if (Array.isArray(entry.command)) parts.push(...entry.command.map(String));
@@ -36,7 +38,7 @@ function commandParts(entry: Record<string, unknown>): string[] {
 /** True when this host entry launches this package's `serve`. */
 export function launchesConstructServe(entry: unknown): boolean {
   if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return false;
-  const parts = commandParts(entry as Record<string, unknown>);
+  const parts = launchParts(entry as Record<string, unknown>);
   const hasBin = parts.some((p) => /(?:^|[/\\])construct(?:\.mjs)?$/.test(p) || p === 'construct');
   return hasBin && parts.includes('serve');
 }
@@ -55,6 +57,8 @@ export function mergeMcpServerEntry(path: string, serverName: string, entry: Rec
       replaced.push(name);
     }
   }
+  // An unchanged entry leaves the file's bytes, and its mode, exactly as they are.
+  if (replaced.length === 0 && isDeepStrictEqual(servers[serverName], entry)) return { ok: true, created: false, path, replaced: [] };
   servers[serverName] = entry;
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, `${JSON.stringify({ ...existing, [key]: servers }, null, 2)}\n`, 'utf8');
