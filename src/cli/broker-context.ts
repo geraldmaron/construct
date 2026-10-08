@@ -21,7 +21,7 @@ import { explainConfig } from '../kernel/project/config.ts';
 import type { BrokerContext } from '../kernel/broker/context.ts';
 import { normalizeClient, type ClientId } from '../hosts/wiring/clients.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
-import { configInputs, openProject, type CliContext, type OpenProject } from './context.ts';
+import { configInputs, openProject, projectWorktrees, type CliContext, type OpenProject } from './context.ts';
 import { UsageError } from './output.ts';
 import { packageVersion } from './version.ts';
 
@@ -138,7 +138,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
     driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
   }) : undefined;
-  return { version: packageVersion(), root: project.root, lane: project.lane, sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
+  return { version: packageVersion(), root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root), sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
 }
 
 export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {

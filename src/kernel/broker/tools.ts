@@ -32,8 +32,9 @@ import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '..
 import { createRouter, type Router } from '../skills/routing.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
+import { laneNamed, WORKTREE_PATH_MAX, type EditLane } from '../work/lanes.ts';
 import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
-import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork } from '../work/service.ts';
+import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork, type WorkItem } from '../work/service.ts';
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
@@ -774,23 +775,59 @@ const WORK_ACTIONS = ['list', 'ready', 'offers', 'show', 'add', 'update', 'link'
 type WorkAction = (typeof WORK_ACTIONS)[number];
 const WORK_CLAIM_TERM_MS = 30 * 60_000;
 
+/** The actions whose reservations record a checkout, and so may name the worktree the claimant edits in. */
+const LANE_ACTIONS: readonly WorkAction[] = ['claim', 'check', 'accept', 'takeover'];
+
+/**
+ * Where a claimant edits: the worktree it names, checked against the
+ * project's worktrees, else the checkout this session runs in.
+ */
+function editLane(ctx: BrokerContext, worktree: string | undefined): EditLane {
+  if (worktree === undefined) return { lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null };
+  return laneNamed({ named: worktree, worktrees: ctx.worktrees?.() ?? null, here: ctx.lane });
+}
+
+/**
+ * The checkout a renewal that names no worktree keeps: the one its live claim
+ * already records, with the branch its reservations record there. Null when
+ * the claimant holds no live claim on the item, or that claim records the
+ * checkout this session runs in.
+ */
+function renewedLane(ctx: BrokerContext, item: WorkItem, owner: string, now: string): EditLane | null {
+  if (item.status !== 'claimed' || item.claimOwner !== owner || item.claimUntil === null || item.claimUntil <= now) return null;
+  const lane = item.claimLane ?? undefined;
+  if (lane === ctx.lane?.root) return null;
+  const held = leasesFor(ctx.store, item.id)[0];
+  const branch = held ? held.branch : ctx.worktrees?.().find((w) => (lane === undefined ? w.main : w.root === lane))?.branch ?? null;
+  return { lane, branch };
+}
+
 /**
  * Who holds a claim: this session and the agent inside it. Two agents of one
  * session are two claimants; an agent the host did not vouch for is recorded
  * as reported. Without a session (a caller with none) the actor stands in.
  */
-function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
-  const who = claimantOf(ctx, agent);
-  if (who.session && who.agent !== 'main') recordAgent(ctx.store, { sessionId: who.session, agent: who.agent!, attestation: 'reported', at, laneRoot: ctx.lane?.root });
+function claimantFor(ctx: BrokerContext, agent: string | undefined, at: string, where: EditLane = editLane(ctx, undefined)): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
+  const who = claimantOf(ctx, agent, where);
+  if (who.session && who.agent !== 'main') recordAgent(ctx.store, { sessionId: who.session, agent: who.agent!, attestation: 'reported', at, laneRoot: who.lane });
   return who;
 }
 
-/** The claimant an agent of this session is, without recording anything. */
-function claimantOf(ctx: BrokerContext, agent: string | undefined): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
-  const where = { lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null };
+/** The claimant an agent of this session is, editing in `where`, without recording anything. */
+function claimantOf(ctx: BrokerContext, agent: string | undefined, where: EditLane = editLane(ctx, undefined)): { owner: string; session?: string; agent?: string; lane?: string; branch: string | null } {
   if (!ctx.sessionId) return { owner: ctx.actor, ...where };
   const name = agent ?? 'main';
   return { owner: `${ctx.sessionId}/${name}`, session: ctx.sessionId, agent: name, ...where };
+}
+
+/** A worktree as a claim names it: an absolute path, short and plainly spelled. */
+function worktreePath(raw: Record<string, unknown>): string | undefined {
+  const value = str(raw, 'worktree', { optional: true });
+  if (value === undefined) return undefined;
+  const path = value.trim();
+  if (!path || path.length > WORKTREE_PATH_MAX || /\p{C}/u.test(path)) throw new ToolInputError(`"worktree" is the absolute path of a git worktree of this project, at most ${String(WORKTREE_PATH_MAX)} characters`);
+  if (!path.startsWith('/') && !/^[A-Za-z]:[\\/]/.test(path)) throw new ToolInputError('"worktree" is the absolute path of a git worktree of this project, not a path relative to somewhere');
+  return path;
 }
 
 const MAX_LEASE_PATHS = 200;
@@ -855,6 +892,7 @@ interface WorkToolInput {
   mode?: LeaseMode;
   packet?: Record<string, unknown>;
   to?: string;
+  worktree?: string;
 }
 
 /** A list input that must hold only strings. */
@@ -868,7 +906,7 @@ function strings(raw: Record<string, unknown>, key: string): string[] | undefine
 const work = define<WorkToolInput, unknown>({
   name: 'work',
   title: 'Native work',
-  description: 'File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
+  description: 'File, query, claim, complete, release, take over, or reopen bounded work in this project’s ledger. File work with its place: a parent work item, or the decision, requirement, initiative, or metric it serves (serves), plus blockedBy, related, acceptance criteria, risk, and premise sources. Work you add without an admitted parent or a reason is proposed, outcomes included: it is never ready or claimable until a link gives it a reason or the person admits it. To root your own work, remember the outcome or decision behind it and serve that. link adds structure later, unlink removes a parent or dependencies, update changes the text, acceptance, risk, or sources; a source refresh that changes a premise holds the work until requalify records what was checked. Completing work with acceptance criteria needs a reason saying how they were met, and work with open children cannot be completed. Ready means admitted, not blocked by unfinished work, not held, and premises not stale — not only a status string. A claim returns a token that only you see; pass it to renew (claim again), complete, or release. Name the files you will change in "paths" when you claim: another claim in the same checkout cannot take them while you hold the work, and overlaps with other worktrees come back as merge risks. Check paths before editing with action check. When you edit in a git worktree of this project other than the one this session runs in, pass its absolute path as worktree with claim, check, accept, or takeover, so your reservations record that worktree and its branch. To pass claimed work on, handoff it with your token and a packet (state, next, watchOut, openQuestions, where); the next holder accepts it and gets its own token. offers lists handoffs you may accept. Another session’s claim is taken over only once it expired or its session went quiet, with a reason.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -895,6 +933,7 @@ const work = define<WorkToolInput, unknown>({
       mode: { type: 'string', description: 'exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside.', enum: [...LEASE_MODES] },
       packet: { type: 'object', description: 'For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths.' },
       to: { type: 'string', description: 'For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept.' },
+      worktree: { type: 'string', description: 'For claim, check, accept, and takeover: the absolute path of the git worktree of this project you edit in, when it is not the one this session runs in. Reservations then record that worktree and its current branch, and a renewal that leaves it out keeps the worktree its claim records. A path that is not one of the project’s worktrees is refused with the ones that are.' },
     },
     required: ['action'],
     additionalProperties: false,
@@ -922,16 +961,18 @@ const work = define<WorkToolInput, unknown>({
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
       packet: obj(raw, 'packet', { optional: true }),
       to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
+      worktree: worktreePath(raw),
     };
   },
-  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, agent, paths, mode, packet, to }) {
+  run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, agent, paths, mode, packet, to, worktree }) {
     const at = ctx.now();
+    const where = editLane(ctx, LANE_ACTIONS.includes(action) ? worktree : undefined);
     if (action === 'list') return queryWork(ctx.store, { query: title, parentId: parent, limit: 50 });
     if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
       if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
       const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
-      return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
+      return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: where.lane ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
     }
     if (action === 'ready') return listReady(ctx.store, at);
     if (action === 'add') {
@@ -982,7 +1023,8 @@ const work = define<WorkToolInput, unknown>({
     }
     if (action === 'link') return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
-    const who = claimantFor(ctx, agent, at);
+    const renewing = action === 'claim' && token !== undefined && worktree === undefined ? renewedLane(ctx, item, claimantOf(ctx, agent).owner, at) : null;
+    const who = claimantFor(ctx, agent, at, renewing ?? where);
     if (action === 'handoff') {
       if (!token) throw new Error('"token" is required for handoff: the one your claim returned');
       if (!packet) throw new Error('"packet" is required for handoff: at least state and next');
