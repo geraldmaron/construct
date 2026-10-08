@@ -16,11 +16,16 @@
  *
  * `--live` additionally drives an installed host's own CLI with a prompt and
  * asks it to call bootstrap; that needs the host's credential and cannot run
- * from inside a host session. OpenCode live also needs `--model=provider/model`
- * because the conformance scratch HOME has no tool-capable default. Optional
- * `--host=<id>` limits the run to one host. A missing host, a missing
- * credential, a missing model where required, or a nested session is
- * reported as untested with the reason, never as a pass.
+ * from inside a host session. Claude Code, Codex, and Cursor are driven
+ * through scripts/host-cli.mjs, with the host's own login and the project's
+ * Construct pinned to the scratch home; Codex, Cursor, and OpenCode need
+ * `--model=<model>`, and Cursor also `--allow-cursor-state`, because a run
+ * touches the person's ~/.cursor: its model selection is put back and the
+ * chats the call made are moved under .tmp-conformance/cursor-live/.
+ * Optional `--host=<id>` limits the
+ * run to one host. A missing host, a missing credential, a missing model
+ * where required, or a nested session is reported as untested with the
+ * reason, never as a pass.
  *
  * Output: a markdown table on stdout and a JSON report at --out (default
  * .tmp-conformance/report.json, ignored by git).
@@ -32,6 +37,8 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { clientWiring, projectSkillsDirFor } from '../src/hosts/wiring/clients.ts';
 import { launchOf } from '../src/hosts/wiring/wire.ts';
+import { EVAL_HOSTS, codexProviderFromConfig, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment } from './host-cli.mjs';
+import { cursorSnapshot, restoreCursor } from './evals-live.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const LAUNCHER = join(ROOT, 'bin', 'construct.mjs');
@@ -302,11 +309,39 @@ async function checkHost(host) {
       if (!binary) record(host.id, 'live host call', 'untested', `${host.binary} is not installed`);
       else if (process.env.CLAUDECODE || process.env.CLAUDE_CODE_ENTRYPOINT || process.env.CURSOR_AGENT) record(host.id, 'live host call', 'untested', 'this conformance run is itself inside a host session; a live call would nest a host');
       else if (!host.liveArgs) record(host.id, 'live host call', 'untested', `${host.id} has no scripted prompt entry point`);
-      else if (host.needsModel && !MODEL) record(host.id, 'live host call', 'untested', `${host.id} live needs --model=provider/model; the scratch HOME has no tool-capable default`);
+      else if ((host.needsModel || (EVAL_HOSTS.includes(host.id) && host.id !== 'claude-code')) && !MODEL) record(host.id, 'live host call', 'untested', `${host.id} live needs --model=<model>`);
+      else if (host.id === 'cursor' && !process.argv.includes('--allow-cursor-state')) record(host.id, 'live host call', 'untested', 'a Cursor live call runs in the person\'s own ~/.cursor; pass --allow-cursor-state once they have opted in');
       else {
         const prompt = 'Call the construct MCP tool named bootstrap and reply with the value of its "next" field only.';
-        const r = spawnSync(binary, host.liveArgs(prompt, MODEL), { cwd: project, env: { ...process.env, HOME: home }, encoding: 'utf8', timeout: 180000 });
-        record(host.id, 'live host call', r.status === 0 && /listen|question|decision|run/.test(r.stdout) ? 'passed' : 'failed', r.status === 0 ? r.stdout.slice(0, 200).replace(/\s+/g, ' ') : (r.stderr || r.error?.message || 'no output').slice(0, 200));
+        let r;
+        let reply;
+        if (EVAL_HOSTS.includes(host.id)) {
+          // The host keeps its own login; the Construct it starts keeps the scratch home.
+          const server = { command: [process.execPath, LAUNCHER, 'serve', `--client=${host.id}`, `--project=${project}`], env };
+          const entry = { mcpServers: { construct: mcpEntry(server.command, env) } };
+          if (host.id === 'claude-code') writeFileSync(join(project, '.mcp.json'), `${JSON.stringify(entry, null, 2)}\n`);
+          if (host.id === 'cursor') {
+            mkdirSync(join(project, '.cursor'), { recursive: true });
+            writeFileSync(join(project, '.cursor', 'mcp.json'), `${JSON.stringify(entry, null, 2)}\n`);
+            writeFileSync(join(project, '.cursor', 'cli.json'), `${JSON.stringify({ permissions: { allow: ['Mcp(construct:*)', 'Read(**)'], deny: ['Write(**)', 'Shell(*)'] } }, null, 2)}\n`);
+          }
+          if (host.id === 'claude-code') for (const name of ['settings.json', 'settings.local.json']) pinHookEnvironment(join(project, '.claude', name), env);
+          const runHome = join(scratch, 'host-home');
+          mkdirSync(runHome, { recursive: true });
+          const args = hostArgs(host.id, { model: MODEL ?? 'haiku', prompt, mcpConfig: join(project, '.mcp.json'), server, provider: host.id === 'codex' ? codexProviderFromConfig() : null });
+          // Cursor runs under the person's own HOME: its model selection is put back and the chats the call made move next to the report.
+          const cursorBefore = host.id === 'cursor' ? cursorSnapshot() : null;
+          try {
+            r = spawnSync(binary, args, { cwd: project, env: hostEnv(host.id, { runHome }), encoding: 'utf8', timeout: 180000, stdio: ['ignore', 'pipe', 'pipe'] });
+          } finally {
+            if (cursorBefore) restoreCursor(cursorBefore, join(OUT, '..', 'cursor-live'));
+          }
+          reply = parseHostStream(host.id, r.stdout ?? '').finalText ?? '';
+        } else {
+          r = spawnSync(binary, host.liveArgs(prompt, MODEL), { cwd: project, env: { ...process.env, HOME: home }, encoding: 'utf8', timeout: 180000 });
+          reply = r.stdout ?? '';
+        }
+        record(host.id, 'live host call', r.status === 0 && /listen|question|decision|run/.test(reply) ? 'passed' : 'failed', r.status === 0 ? reply.slice(0, 200).replace(/\s+/g, ' ') : (r.stderr || r.error?.message || 'no output').slice(0, 200));
       }
     } else {
       record(host.id, 'live host call', 'untested', 'run with --live outside any host session, with the host’s credential present');

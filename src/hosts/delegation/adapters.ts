@@ -24,6 +24,11 @@ export interface DelegationConfig {
 const EMPTY: DelegationConfig = { executors: {}, maxWorkers: 2, maxRepairCycles: 2, maxTimeoutMs: 20 * 60_000, validation: [] };
 const API_ENV = /^(?:OPENAI_API_KEY|OPENAI_BASE_URL|CODEX_API_KEY|ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOKEN|ANTHROPIC_BASE_URL|CURSOR_API_KEY|CLAUDE_CODE_USE_BEDROCK|CLAUDE_CODE_USE_VERTEX|CLAUDE_CODE_USE_FOUNDRY)$/;
 
+/** True when the environment carries an API key or a provider override, so a host CLI would not run on the person's subscription. */
+export function apiEnvironmentPresent(env: NodeJS.ProcessEnv): boolean {
+  return Object.keys(env).some(key => API_ENV.test(key) && Boolean(env[key]));
+}
+
 export function loadDelegationConfig(configDir: string): DelegationConfig {
   const path = join(configDir, 'delegation.json');
   if (!existsSync(path)) return EMPTY;
@@ -81,7 +86,7 @@ export async function executorStatus(executor: Executor, role: Role, config: Del
   const binary = installedBinary(executor, configured, env);
   const base = { executor, installed: binary !== null, configured: configured?.enabled === true, authenticated: 'unknown' as const, liveVerified: false, model: configured?.model ?? null };
   if (!binary || !configured?.enabled) return { ...base, reason: binary ? 'not explicitly enabled by the person' : 'CLI not installed at the configured path' };
-  if (Object.keys(env).some(key => API_ENV.test(key) && env[key])) return { ...base, authenticated: 'api', reason: 'API authentication or provider environment present; no subscription fallback attempted' };
+  if (apiEnvironmentPresent(env)) return { ...base, authenticated: 'api', reason: 'API authentication or provider environment present; no subscription fallback attempted' };
   const auth = authentication(executor, await probe(binary, executor === 'claude' ? ['auth', 'status', '--json'] : executor === 'codex' ? ['login', 'status'] : ['status', '--format', 'json'], env));
   if (auth !== 'subscription') return { ...base, authenticated: auth, reason: 'subscription-only authentication could not be proved' };
   try {

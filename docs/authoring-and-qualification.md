@@ -30,19 +30,30 @@ them the way people talk, not the way the manifest does.
 The router does not decide which skill loads; the host model does. The
 router orders every skill by how well the person's words match its
 description, its activation phrases, and its labeled cases, and hands the
-banded list back through `classify_request`. Measured on requests written
-after the catalog was final and never used to tune it (`skills/evals/
-routing.json`), retrieval alone puts the right skill first about four times
-in ten and in the top five about eight times in ten; a host-class model
-reading the same descriptions picks it almost every time. Those floors are
-asserted in the tests, so a description or phrase change that makes the
-ranking worse fails before it ships. A routing case is never copied into a
+banded list back through `classify_request`; that ranking is lexical and is
+labeled so. Its regression floors run on a frozen copy of the catalog
+(`tests/fixtures/router-catalog.json`) and held-out requests
+(`tests/fixtures/router-cases.json`), so they test the router's code and
+never fail a description edit. A routing case is never copied into a
 skill's own eval file, or the measurement stops being held out.
 
-`npm run evals:live` asks a subscription model to pick a skill for every
-routing case from the shipped descriptions alone and records the verdicts,
-the model, and the date in `skills/evals/live-judge.json`. The test suite
-checks that the record covers the current cases; it never runs the model.
+Whether hosts read requests well is measured through real hosts, not by
+word overlap. The held-out corpus, `skills/evals/intake.json`, holds
+requests in ordinary language, some with earlier turns, each labeled by two
+model families with the readings either would accept. A hash of each case
+puts it in the tune or the test split; descriptions are tuned only on the
+tune split. `npm run evals:live -- run` drives Claude Code, Codex, and Cursor
+one request at a time against a sterile project, with Construct alone, among
+competing servers (on Claude Code also with tool search off), after a
+first-run init, and with a page that carries planted instructions. `npm run evals:live -- record` writes
+`skills/evals/intake-live.json`, scored by the rule fixed in code before any
+test-split run. The suite validates a committed record and recomputes its
+verdicts from the stored outcomes; `npm run evals:live -- check` fails when
+the record is missing, does not cover the current cases, or was made against
+different model-facing text (server instructions, tool descriptions and
+schemas, the operational skill, or skill and workflow text), so changing any
+of them means running it again. Neither the corpus nor a record is committed
+yet; until one is, `check` says that no record exists.
 
 Professional packs add `evals/fixtures.json` with positive, negative, edge,
 and adversarial cases, and `references/sources.md` with citations, what each
