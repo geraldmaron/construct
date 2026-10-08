@@ -42,8 +42,9 @@ construct skill verify --dir=./.tmp-skills
 construct skill remove intake --dir=./.tmp-skills --confirm
 ```
 
-`init` plants only the operational skill. Install others by name when a
-host needs files on disk; `verify` compares installed copies with the shipped
+`init` plants only the operational skill, in the project skills directory
+each wired host reads (`.claude/skills`, `.agents/skills`, or `.bob/skills`).
+Install others by name when a host needs files on disk; `verify` compares installed copies with the shipped
 bytes. A copy is current, absent, outdated (this package's own earlier
 release of the skill, which `init` and `install` replace), or diverged (a
 copy someone changed, or one this package did not ship, which only

@@ -116,9 +116,11 @@ test('init --client wires the host, doctor reports it, and serve --describe name
   try {
     const init = await capture(() => run(['init', '--client=cursor', '--scale=solo', '--outcome=x', '--constraint=y', `--skills-dir=${join(box.home, 'skills')}`, '--json'], box.ctx));
     assert.equal(init.code, 0, init.err);
-    const record = JSON.parse(init.out) as { hostWiring: { client: string; status: string } };
+    const record = JSON.parse(init.out) as { hosts: { client: string; mcp: { path: string; status: string; launch: string }; skill: { dir: string } }[] };
     // The sandbox PATH holds this checkout's launcher as `construct`, which is what the cursor entry starts.
-    assert.deepEqual(record.hostWiring, { client: 'cursor', path: join(box.cwd, '.cursor', 'mcp.json'), status: 'installed' });
+    assert.equal(record.hosts[0]!.client, 'cursor');
+    assert.deepEqual({ path: record.hosts[0]!.mcp.path, status: record.hosts[0]!.mcp.status, launch: record.hosts[0]!.mcp.launch }, { path: join(box.cwd, '.cursor', 'mcp.json'), status: 'installed', launch: 'construct' });
+    assert.equal(record.hosts[0]!.skill.dir, join(box.cwd, '.agents', 'skills'));
     const doctor = await capture(() => run(['doctor', '--json'], box.ctx));
     const checks = (JSON.parse(doctor.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks;
     assert.match(checks.find((c) => c.name === 'host-wiring')!.detail, /cursor installed/);

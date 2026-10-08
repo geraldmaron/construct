@@ -5,8 +5,8 @@
  * For every supported host it checks, without credentials: whether the host
  * is installed here, that its project MCP file can be written and reads
  * back bound, that the file carries no machine path and starts the server
- * exactly as written, that the operational skill is discoverable where the host
- * looks, that `construct serve` completes the MCP handshake the host would
+ * exactly as written, that the operational skill is planted in the project
+ * skills directory the host reads, that `construct serve` completes the MCP handshake the host would
  * perform, that the interactive surface preserves the current host (no
  * spawn path exists in the server or the broker), that ordinary language
  * classifies as the directive's examples say, that a skill body loads only
@@ -29,7 +29,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { tmpdir, homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { clientWiring } from '../src/hosts/wiring/clients.ts';
+import { clientWiring, projectSkillsDirFor } from '../src/hosts/wiring/clients.ts';
 import { launchOf } from '../src/hosts/wiring/wire.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -43,12 +43,12 @@ const hostArg = process.argv.find((a) => a.startsWith('--host='));
 const HOST_FILTER = hostArg ? hostArg.slice('--host='.length) : null;
 
 const ALL_HOSTS = [
-  { id: 'claude-code', binary: 'claude', skillsDir: (home) => join(home, '.claude', 'skills'), liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json', '--max-turns', '3'] },
-  { id: 'cursor', binary: 'cursor-agent', skillsDir: (home) => join(home, '.cursor', 'skills'), liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json'] },
-  { id: 'vscode', binary: 'code', skillsDir: (home) => join(home, '.copilot', 'skills'), liveArgs: null },
-  { id: 'opencode', binary: 'opencode', skillsDir: (home) => join(home, '.config', 'opencode', 'skills'), liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
-  { id: 'codex', binary: 'codex', skillsDir: (home) => join(home, '.agents', 'skills'), liveArgs: (prompt) => ['exec', prompt] },
-  { id: 'bob', binary: 'bob', skillsDir: (home) => join(home, '.bob', 'skills'), liveArgs: null },
+  { id: 'claude-code', binary: 'claude', liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json', '--max-turns', '3'] },
+  { id: 'cursor', binary: 'cursor-agent', liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json'] },
+  { id: 'vscode', binary: 'code', liveArgs: null },
+  { id: 'opencode', binary: 'opencode', liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
+  { id: 'codex', binary: 'codex', liveArgs: (prompt) => ['exec', prompt] },
+  { id: 'bob', binary: 'bob', liveArgs: null },
 ];
 const HOSTS = HOST_FILTER ? ALL_HOSTS.filter((h) => h.id === HOST_FILTER) : ALL_HOSTS;
 if (HOST_FILTER && HOSTS.length === 0) {
@@ -195,16 +195,15 @@ async function checkHost(host) {
     const init = cli(['init', `--client=${host.id}`, '--scale=solo', '--outcome=prove conformance', '--constraint=never write outside the project', '--json'], project, env);
     const rec = init.code === 0 ? JSON.parse(init.out) : null;
     record(host.id, 'installation and binding', init.code === 0 ? 'passed' : 'failed', init.code === 0 ? `init bound ${project}` : init.err.trim());
-    record(host.id, 'host wiring', rec?.hostWiring?.status === 'installed' ? 'passed' : 'failed', rec?.hostWiring ? `${rec.hostWiring.path} ${rec.hostWiring.status}` : 'no wiring recorded');
+    const wiredHost = rec?.hosts?.find((h) => h.client === host.id);
+    record(host.id, 'host wiring', wiredHost?.mcp?.status === 'installed' ? 'passed' : 'failed', wiredHost?.mcp ? `${wiredHost.mcp.path} ${wiredHost.mcp.status}` : 'no wiring recorded');
     await checkPortableWiring(host, project, env, join(scratch, 'bin'));
-    if (host.skillsDir) {
-      const dir = host.skillsDir(home);
-      const present = existsSync(join(dir, 'construct', 'SKILL.md'));
-      const same = present && Buffer.compare(readFileSync(join(dir, 'construct', 'SKILL.md')), readFileSync(join(ROOT, 'skills', 'construct', 'SKILL.md'))) === 0;
-      record(host.id, 'operational skill discovery', same ? 'passed' : 'failed', same ? `${dir}/construct/SKILL.md is the shipped bytes` : `not planted at ${dir}`);
-    } else {
-      record(host.id, 'operational skill discovery', 'untested', `${host.id} documents no personal skills directory`);
-    }
+    // The project skills directory this host reads when it is the only host wired.
+    const dir = join(realpathSync(project), projectSkillsDirFor(host.id, [host.id]));
+    const present = existsSync(join(dir, 'construct', 'SKILL.md'));
+    const same = present && Buffer.compare(readFileSync(join(dir, 'construct', 'SKILL.md')), readFileSync(join(ROOT, 'skills', 'construct', 'SKILL.md'))) === 0;
+    const recorded = wiredHost?.skill?.dir === dir;
+    record(host.id, 'operational skill discovery', same && recorded ? 'passed' : 'failed', same && recorded ? `${dir}/construct/SKILL.md is the shipped bytes` : `not planted at ${dir}${recorded ? '' : ` (init recorded ${String(wiredHost?.skill?.dir)})`}`);
     const s = session(project, env, host.id);
     try {
       const initMsg = await s.rpc('initialize', {});

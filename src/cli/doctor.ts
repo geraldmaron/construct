@@ -20,14 +20,14 @@ import { listShippedSkills, readShippedSkill, skillState, OPERATIONAL_SKILL } fr
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
 import { lockStatus } from '../kernel/registry/lockfile.ts';
-import { resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
+import { resolveHostConfigDirs, resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { inspectWiring, launchOf } from '../hosts/wiring/wire.ts';
 import { inspectHooks } from '../hosts/wiring/hooks.ts';
-import { LAUNCHER, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
-import { findOnPath } from '../hosts/presence.ts';
+import { LAUNCHER, normalizeClient, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
+import { findOnPath, presentHosts } from '../hosts/presence.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
 import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
-import { esc, say, writeJson } from './output.ts';
+import { esc, say, shellWord, writeJson } from './output.ts';
 
 export const DOCTOR_SPEC: CommandSpec = {
   path: ['doctor'],
@@ -83,6 +83,31 @@ function hostLaunchCheck(client: WirableClient, root: string, env: NodeJS.Proces
   const script = launch.args.find((a) => a.endsWith('construct.mjs'));
   if (script && isAbsolute(script) && !existsSync(script)) return { name, ok: false, detail: `${script} does not exist, so ${client} cannot start the server; ${repair}${shellNote}` };
   return { name, ok: true, detail: `starts ${command}${script ? ` ${script}${install(script)}` : ''}${shellNote}` };
+}
+
+/**
+ * The operational skill in each project skills directory a wired host reads,
+ * one check per directory. Init plants it there, so re-running init is the
+ * fix, except for a changed copy, which only an explicit replace overwrites.
+ */
+function projectSkillChecks(root: string, wired: readonly WirableClient[]): Check[] {
+  const skill = readShippedSkill(OPERATIONAL_SKILL);
+  if (!skill) return [];
+  const byDir = new Map<string, WirableClient[]>();
+  for (const client of wired) {
+    const dir = join(root, projectSkillsDirFor(client, wired));
+    byDir.set(dir, [...(byDir.get(dir) ?? []), client]);
+  }
+  return [...byDir].map(([dir, clients]) => {
+    const state = skillState(skill, dir);
+    const version = skill.version ?? 'the shipped copy';
+    const next = state.state === 'current'
+      ? ''
+      : state.state === 'diverged'
+        ? `; \`construct skill install ${OPERATIONAL_SKILL} --force --dir=${shellWord(dir)}\` replaces it with ${version}, and any edits in it are lost`
+        : `; \`construct init --client=${clients[0]!}\` plants ${version}`;
+    return { name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir} (read by ${clients.join(', ')}): ${state.why}${next}` };
+  });
 }
 
 function nodeCheck(): Check {
@@ -208,30 +233,40 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
   }
 
   const ambient = detectAmbientHost(ctx.env);
+  let wiredClients: WirableClient[] = [];
   if (root !== null) {
     const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
+    wiredClients = wired.map((w) => w.client);
     if (wired.some((w) => w.client === 'claude-code')) {
       const h = inspectHooks(root);
       // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing.
       checks.push({ name: 'host-hooks', ok: h.status !== 'broken', detail: h.status === 'installed' ? h.detail : `${h.detail}; \`construct init --client=claude-code\` adds them` });
     }
-    checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.length ? wired.map((w) => `${w.client} ${w.status}${w.status === 'installed' ? '' : ` (${w.detail})`}`).join(', ') : 'no host wired; `construct init --client=<host>` writes the MCP configuration' });
+    if (wired.length === 0) {
+      // A project no host is wired to is one no agent session can reach, so it is not healthy.
+      const found = presentHosts(ctx.env, resolveHostConfigDirs(ctx.env));
+      const where = found.length > 0 ? `found ${found.map((f) => f.client).join(', ')}` : 'no agent host found on this machine';
+      checks.push({ name: 'host-wiring', ok: false, detail: `no host wired, so no agent session can reach Construct; ${where}; \`construct init --client=<host>\` wires one` });
+    } else {
+      checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.map((w) => `${w.client} ${w.status}${w.status === 'installed' ? '' : ` (${w.detail})`}`).join(', ') });
+    }
     for (const w of wired) checks.push(hostLaunchCheck(w.client, root, ctx.env));
+    checks.push(...projectSkillChecks(root, wiredClients));
   }
   if (ambient) {
-    checks.push({ name: 'host', ok: true, detail: `inside ${ambient.host} (${ambient.marker})` });
+    const inside = normalizeClient(ambient.host);
+    const unwired = root !== null && inside !== 'unknown' && !wiredClients.includes(inside)
+      ? `; ${inside} is not wired in this project, so a session here cannot reach Construct; \`construct init --client=${inside}\` wires it`
+      : '';
+    checks.push({ name: 'host', ok: true, detail: `inside ${ambient.host} (${ambient.marker})${unwired}` });
     if ((SKILLS_HOST_NAMES as readonly string[]).includes(ambient.host)) {
+      // A personal copy loads in every repository the host opens, whichever Construct each one runs.
       const dir = resolveHostSkillsDir(ambient.host as SkillsHostName, ctx.env);
       const skill = readShippedSkill(OPERATIONAL_SKILL);
-      if (skill) {
-        const state = skillState(skill, dir);
-        const install = `construct skill install ${OPERATIONAL_SKILL} --client=${ambient.host}`;
-        const next = state.state === 'current'
-          ? ''
-          : state.state === 'diverged'
-            ? `; \`${install} --force\` replaces it with ${skill.version ?? 'the shipped copy'}, and any edits in it are lost`
-            : `; run \`${install}\` to plant ${skill.version ?? 'the shipped copy'}`;
-        checks.push({ name: 'operational-skill', ok: state.state === 'current', detail: `${state.state} in ${dir}: ${state.why}${next}` });
+      const state = skill ? skillState(skill, dir).state : 'absent';
+      if (state === 'outdated' || state === 'diverged') {
+        const copy = state === 'outdated' ? `an older personal copy at ${dir}` : `a personal copy at ${dir} that differs from this release`;
+        checks.push({ name: 'personal-skill', ok: true, detail: `${copy} loads in every repository; \`construct skill remove ${OPERATIONAL_SKILL} --client=${ambient.host} --confirm\` removes it` });
       }
     }
   } else {

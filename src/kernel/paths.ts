@@ -22,6 +22,7 @@ export interface PathsEnv {
   XDG_CACHE_HOME?: string;
   HOME?: string;
   CLAUDE_CONFIG_DIR?: string;
+  CODEX_HOME?: string;
 }
 
 const APP = 'construct';
@@ -146,6 +147,32 @@ export function resolveClaudeConfigDir(
 ): string {
   const configured = env.CLAUDE_CONFIG_DIR;
   return configured && configured.trim() ? configured : join(home, '.claude');
+}
+
+/** The agent hosts whose per-user configuration directories `resolveHostConfigDirs` names. */
+export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob';
+
+/**
+ * Where each agent host keeps its per-user configuration. A directory that
+ * exists is evidence the host has run on this machine, which is how setup
+ * finds a host whose command is not on this shell's PATH (an editor started
+ * from the desktop). Read here for the same reason as every home-rooted path.
+ * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, and OpenCode
+ * XDG_CONFIG_HOME.
+ */
+export function resolveHostConfigDirs(
+  env: PathsEnv = process.env,
+  home: string = xdgBase(env.HOME, homedir()),
+): Readonly<Record<ConfigHostName, readonly string[]>> {
+  const codexHome = env.CODEX_HOME;
+  return {
+    'claude-code': [resolveClaudeConfigDir(env, home)],
+    cursor: [join(home, '.cursor')],
+    vscode: [join(home, '.vscode'), join(home, '.vscode-insiders')],
+    opencode: [join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'opencode')],
+    codex: [codexHome && codexHome.trim() ? codexHome : join(home, '.codex')],
+    bob: [join(home, '.bob')],
+  };
 }
 
 /** Where an administrator's managed Claude Code settings live on this platform, if anywhere. */
