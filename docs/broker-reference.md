@@ -75,7 +75,7 @@ Surface: interactive. Reads only: yes.
 
 ### `start_outcome`
 
-Start an outcome. Start a managed outcome by running a workflow. It is resolved first; if something is missing you get the reasons, not a half-started run. Returns the run and what it needs. Then call claim_work to do the next step here.
+Start an outcome. Start a managed outcome by running a workflow. It is resolved first; if something is missing, the run waits blocked with the reasons and what would fix them; starting again after the fix replaces it, or with unchanged input checks it again. If this work is already running you get that run back, with any inputs you gave differently named. Returns the run and what it needs. Then call claim_work to do the next step here.
 
 Surface: interactive. Reads only: no.
 
@@ -86,7 +86,7 @@ Surface: interactive. Reads only: no.
 
 ### `claim_work`
 
-Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.
+Claim the next step. Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.
 
 Surface: interactive. Reads only: no.
 

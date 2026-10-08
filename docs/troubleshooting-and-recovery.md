@@ -55,6 +55,14 @@ reason with a remedy: a missing source, a stale one, a capability the host
 does not provide, a skill version out of range, a diverged lock. Clear the
 reason and `construct run resume <id>`.
 
+Starting the same work again settles a blocked run too. With the same input,
+the blocked run is checked again where it stands and goes ahead once nothing
+blocks it. With corrected input, including an input it left out, a new run
+starts and the blocked one is cancelled, its reason naming the run that
+replaced it. A blocked run of other work, such as one that names a different
+target, is left alone; `construct run cancel <id>` retires it. A claim on a
+blocked run returns its reasons and what would clear each one.
+
 ## Registry skew
 
 `status` and `doctor` report bundles that are outdated, diverged, missing, or

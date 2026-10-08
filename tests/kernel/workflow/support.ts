@@ -75,6 +75,12 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   writeWorkflow(join(dirs.root, 'workflows'), 'ship', workflowManifest('ship', '1.0.0', [
     step('do', { outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] }),
   ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'brief', workflowManifest('brief', '1.0.0', [
+    step('write', { tier: 'draft', capabilities: ['model_review'], outputs: ['summary'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['target'], inputSchema: { target: 'string', scope: 'string' }, requiredInputs: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'tally', workflowManifest('tally', '1.0.0', [
+    step('count', { capabilities: ['read_project_context'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['count'] }),
+  ], { concurrency: 'per_input', onStaleData: 'block', inputSchema: {}, requiredInputs: [] }));
   const registry = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
   const skills: SkillRegistry = { ...registry, get: (id) => (self.onSkillLookup?.(), registry.get(id)) };
   const workflows = createWorkflowRegistry({ builtinDir: join(dirs.root, 'workflows'), projectDir: null });
