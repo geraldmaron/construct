@@ -53,6 +53,62 @@ construct run cancel run-0001   # exits 1
 construct run resume run-0001   # exits 1
 ```
 
+## Typed inputs
+
+Besides strings, numbers, booleans, string lists and objects, a workflow
+input may be declared as one of two types Construct checks itself.
+
+- `period`: the time the work covers. It is an object with `semantics` and
+  exactly one way of naming the time. `semantics` is `as_of` (things as they
+  stood at the end of a day), `changed_during` (what changed inside a
+  window), or `evidence_window` (evidence dated inside a window). The time is
+  `relative` (`this_week`, `last_week`, `this_month`, `last_month`,
+  `this_quarter`, `last_quarter`, `this_year`, `last_year`, `year_to_date`,
+  or `last_n_days` with `n` from 1 to 3660), a `quarter` from 1 to 4 with or
+  without a `year`, a `year` alone, or `from` and `to` as YYYY-MM-DD. It may
+  also carry a `timezone` and a `phrase`, the person's own words. Dates may
+  accompany `relative`, `quarter` or `year` only when they agree with them.
+- `source_ids`: a list of declared source ids. An id that names no active
+  source blocks the run, with how to declare it.
+
+A malformed period, or one given as prose such as "Q3", blocks the run with
+the shape it takes; a period left out that the workflow requires names its
+slot in the reason. How a period is worked out:
+
+- Weeks run Monday to Sunday, and quarters are calendar quarters.
+- `this_week`, `this_quarter` and the rest name the whole unit, and say so
+  when it ends after today.
+- `year_to_date` runs from January 1 to today, and `last_n_days` counts
+  today.
+- A quarter without a year is the most recent one that has started: asked on
+  2026-08-15, Q4 is the fourth quarter of 2025.
+- `as_of` keeps only the end date; an end after today is taken as of today.
+- Dates are in the period's own timezone, else the caller's (a trigger's for
+  a firing), else UTC.
+
+Every result lists what it took as given, such as "quarters are calendar
+quarters", "dates are in UTC", or "Q3 taken as 2026". The period is worked
+out once, when the run is created, and frozen on the run: the run's input
+keeps the period as it was given, every step that reads the period input
+receives the dates, every step is told what the run covers and which sources
+it names, and `run_status` shows both. Resuming, retrying, or answering a
+decision never moves the window.
+
+A period is part of the work's identity by what it means: its semantics,
+dates, and timezone. `last_quarter` asked on two days of one quarter, or
+`quarter` 3 with `year` 2026, is the same run; another window or another
+semantics is different work. Source ids count as a set. A start that finds
+the work under way says which inputs it gave differently, and a start whose
+period was refused is replaced by the corrected one. A named source last
+read on a day before a finished period ends is flagged at start so it can be
+read again; the flag never blocks.
+
+A manifest declares at most one period input, since a run covers one
+period, and a non-empty `dedupeKey` must include every `period` and
+`source_ids` input, since work for a different period or sources is
+different work. [Recurring and scheduled operation](recurring-operation.md)
+shows a trigger whose period moves with each firing.
+
 ## Deliverables and trust
 
 A finished step leaves a draft. The final step's validators move it to

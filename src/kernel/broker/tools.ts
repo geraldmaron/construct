@@ -37,6 +37,7 @@ import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
 import { differsNext } from '../workflow/service.ts';
+import { askedOf } from '../workflow/asked.ts';
 import { settledConstraintText, settledTerms } from '../project/governance.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
 import { appendActivity } from '../state/activity.ts';
@@ -480,7 +481,7 @@ function leaseToken(raw: Record<string, unknown>): string {
 const runStatus = define<{ runId: string }, unknown>({
   name: 'run_status',
   title: 'Run status',
-  description: 'Where a run stands: its state, each step, the deliverables and how far they are trusted, and any decision it waits on.',
+  description: 'Where a run stands: its state, each step, the deliverables and how far they are trusted, any decision it waits on, and what it was asked to cover (the period in dates, the sources it names, who judged the reading).',
   surface: 'both',
   readOnly: true,
   inputSchema: { type: 'object', properties: { runId: { type: 'string', description: 'The run id.' } }, required: ['runId'], additionalProperties: false },
@@ -491,7 +492,8 @@ const runStatus = define<{ runId: string }, unknown>({
   run(ctx, { runId }) {
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
-    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    const asked = askedOf(v.run);
+    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
   },
 });
 

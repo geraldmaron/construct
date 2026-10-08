@@ -27,14 +27,16 @@ import { tierAtLeast } from '../policy/lattice.ts';
 import { isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
 import { provides, type HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
-import type { RegisteredWorkflow, WorkflowStep } from '../registry/models.ts';
+import type { RegisteredWorkflow, WorkflowManifest, WorkflowStep } from '../registry/models.ts';
 import { resolveWorkflow, type Resolution, type SourceAvailability } from '../registry/resolver.ts';
+import { checkSlot, normalizeSourceIds, resolvePeriod, slotIdentity, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
+import { calendarDate } from '../calendar.ts';
 import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
 import { classifyInteraction, type Classification } from './classify.ts';
 import { assessConsequence, judgmentRequired, wordsOf, type Judgment } from './consequence.ts';
-import { askedFrom, askedOf, type AskedReading, type Declared } from './asked.ts';
+import { askedFrom, askedOf, type AskedReading, type AskedSources, type Declared, type Firing } from './asked.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { listSources } from '../state/sources.ts';
 import { settledTerms } from '../project/governance.ts';
@@ -75,6 +77,12 @@ export interface StartInput {
   readonly executorKind?: 'interactive' | 'headless';
   /** The reading the run starts from, frozen on the run once: the inputs to every later judgment. */
   readonly asked?: AskedReading;
+  /** The instant a relative period is worked out against: a firing passes the time it was due; now otherwise. */
+  readonly periodAt?: string;
+  /** The caller's timezone, for a period that names none; UTC otherwise. */
+  readonly timezone?: string;
+  /** The standing trigger firing that started this run. */
+  readonly firing?: Firing;
 }
 
 export interface StartResult {
@@ -93,9 +101,14 @@ export interface Preflight {
   readonly status: Resolution['status'];
   readonly summary: string;
   readonly approvalsAhead: readonly string[];
-  readonly reasons: readonly { readonly code: string; readonly stepId: string | null; readonly message: string; readonly remedy: string }[];
+  /** Each reason with what would clear it; a missing input names its slot. */
+  readonly reasons: readonly { readonly code: string; readonly stepId: string | null; readonly message: string; readonly remedy: string; readonly slot?: string }[];
   readonly flags: readonly string[];
   readonly judgment: Judgment;
+  /** The period the work covers, in dates, when its input names one. */
+  readonly period: ResolvedPeriod | null;
+  /** What was taken as given to work the input out, in plain words. */
+  readonly assumptions: readonly string[];
 }
 
 export interface WorkPacket {
@@ -203,7 +216,8 @@ export interface WorkflowService {
     readonly assumptions?: readonly string[];
     readonly replaces?: string;
   }): Statement;
-  preflight(workflowId: string, input: Readonly<Record<string, unknown>>, opts?: { readonly declared?: Declared | null }): { readonly resolution: Resolution; readonly preflight: Preflight };
+  /** Resolve without starting; a period is worked out at `periodAt` (now when absent) in the caller's timezone. */
+  preflight(workflowId: string, input: Readonly<Record<string, unknown>>, opts?: { readonly declared?: Declared | null; readonly periodAt?: string; readonly timezone?: string }): { readonly resolution: Resolution; readonly preflight: Preflight };
   /** The one judgment of how much rigor work gets: classify, preflight, packets, resume and acceptance all read it. */
   judge(input: { readonly workflowId: string | null; readonly input: Readonly<Record<string, unknown>>; readonly declared?: Declared | null }): Judgment;
   start(input: StartInput): StartResult;
@@ -238,12 +252,62 @@ function identifyingKeys(m: RegisteredWorkflow['manifest']): readonly string[] {
   return m.dedupeKey.length ? m.dedupeKey : Object.keys(m.inputSchema);
 }
 
-function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>, trigger: string): string {
+/**
+ * The work identity. A kernel-typed input is identified by what it means: a
+ * period by its dates (so last_quarter asked on two days of one quarter is
+ * one piece of work), source ids as a set.
+ */
+function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>, trigger: string, identities: Readonly<Record<string, string>> = {}): string {
   const m = workflow.manifest;
   const keys = identifyingKeys(m);
-  const material = keys.map((k) => `${k}=${JSON.stringify(input[k] ?? null)}`).join('&');
+  const material = keys.map((k) => (k in identities ? `${k}=${identities[k]!}` : `${k}=${JSON.stringify(input[k] ?? null)}`)).join('&');
   const hash = createHash('sha256').update(`${m.id}@${m.version}|${trigger}|${material}`).digest('hex').slice(0, 24);
   return `${m.id}:${hash}`;
+}
+
+/** A run input with its kernel-typed values worked out: the period in dates, source ids trimmed and without repeats. */
+interface NormalizedInput {
+  /** The input to store and resolve: the period exactly as given, source ids normalized. */
+  readonly input: Readonly<Record<string, unknown>>;
+  /** The period in dates, when the input gives one that checks out. */
+  readonly period: ResolvedPeriod | null;
+  readonly periodSpec: PeriodSpec | null;
+  /** Every source id the input names, when it has a source ids input. */
+  readonly sourceIds: readonly string[] | null;
+  /** Identity material for each kernel-typed input given. */
+  readonly identities: Readonly<Record<string, string>>;
+}
+
+function normalizeInput(m: WorkflowManifest, input: Readonly<Record<string, unknown>>, ctx: { readonly at: string; readonly timezone?: string; readonly sourceIds: readonly string[] }): NormalizedInput {
+  const out: Record<string, unknown> = { ...input };
+  const identities: Record<string, string> = {};
+  let period: ResolvedPeriod | null = null;
+  let periodSpec: PeriodSpec | null = null;
+  let sourceIds: string[] | null = null;
+  for (const [key, type] of Object.entries(m.inputSchema)) {
+    if (out[key] === undefined) continue;
+    if (type === 'source_ids') {
+      out[key] = normalizeSourceIds(out[key]);
+      const ids = out[key];
+      if (Array.isArray(ids) && ids.every((id) => typeof id === 'string')) sourceIds = [...new Set([...(sourceIds ?? []), ...(ids as string[])])];
+      identities[key] = slotIdentity('source_ids', out[key]);
+    } else if (type === 'period') {
+      if (checkSlot('period', key, out[key], ctx).length === 0) {
+        periodSpec = out[key] as PeriodSpec;
+        period = resolvePeriod(periodSpec, ctx.at, ctx.timezone);
+      }
+      identities[key] = slotIdentity('period', period ?? out[key]);
+    }
+  }
+  return { input: out, period, periodSpec, sourceIds, identities };
+}
+
+/** The value a run gave a declared input, as its identity compares it: a kernel-typed one by meaning. */
+function identityOf(m: WorkflowManifest, key: string, value: unknown, period: ResolvedPeriod | null): string {
+  const type = m.inputSchema[key];
+  if (type === 'period') return period ? slotIdentity('period', period) : canonicalJson(value);
+  if (type === 'source_ids') return value === undefined ? canonicalJson(null) : slotIdentity('source_ids', value);
+  return canonicalJson(value);
 }
 
 /** JSON with object keys in sorted order, so equal values give equal text; a missing value reads as null. */
@@ -267,6 +331,26 @@ export function differsFlag(runId: string, keys: readonly string[]): string {
 /** What the host is told to put to the person when the run it got back was started with other values. */
 export function differsNext(keys: readonly string[]): string {
   return `Tell the person this work is already running with different ${listed(keys)}, and ask whether to carry on with it or cancel it and start again.`;
+}
+
+/**
+ * The reading frozen on a new run: what the caller declared, with the period,
+ * the source ids and the firing taken from the start itself rather than from
+ * anything the caller said about them. Null when there is nothing to keep.
+ */
+function frozenReading(given: AskedReading | undefined, normalized: NormalizedInput, firing: Firing | null): AskedReading | null {
+  const caller = given ? askedFrom(given) : null;
+  const named = caller?.sources?.named ?? [];
+  const sources: AskedSources | null = normalized.sourceIds || named.length ? { registered: normalized.sourceIds ?? [], named } : null;
+  if (!caller && !normalized.period && !sources && !firing) return null;
+  return {
+    ...(caller && 'declared' in caller ? { declared: caller.declared } : {}),
+    ...(caller && 'judgedBy' in caller ? { judgedBy: caller.judgedBy } : {}),
+    ...(caller && 'assumptions' in caller ? { assumptions: caller.assumptions } : {}),
+    ...(normalized.period ? { period: normalized.period, periodSpec: normalized.periodSpec } : {}),
+    ...(sources ? { sources } : {}),
+    ...(firing ? { firing } : {}),
+  };
 }
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
@@ -325,7 +409,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     explicitRememberRequest: interactionClass === 'remember',
   });
 
-  function resolutionFor(workflowId: string, input: Readonly<Record<string, unknown>>, executorId: string): Resolution {
+  /** When and in what timezone a period input is checked: a run's own at the instant its period was worked out. */
+  interface PeriodClock { readonly periodAt?: string; readonly timezone?: string }
+
+  function clockOf(run: WorkflowRun): PeriodClock {
+    const period = askedOf(run).period;
+    return period ? { periodAt: period.resolvedAt, timezone: period.timezone } : {};
+  }
+
+  function resolutionFor(workflowId: string, input: Readonly<Record<string, unknown>>, executorId: string, clock: PeriodClock = {}): Resolution {
     return resolveWorkflow({
       workflowId,
       input,
@@ -336,6 +428,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       sources: deps.sources(),
       store,
       at: deps.now(),
+      periodAt: clock.periodAt,
+      timezone: clock.timezone,
       targetSystemFor: deps.targetSystemFor,
     });
   }
@@ -345,8 +439,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    * and for a workflow that blocks on stale data, blocked by any stale or
    * unread source its steps read.
    */
-  function startResolution(workflowId: string, input: Readonly<Record<string, unknown>>, executorId: string): Resolution {
-    const resolution = resolutionFor(workflowId, input, executorId);
+  function startResolution(workflowId: string, input: Readonly<Record<string, unknown>>, executorId: string, clock: PeriodClock = {}): Resolution {
+    const resolution = resolutionFor(workflowId, input, executorId, clock);
     const m = resolution.workflow?.manifest;
     if (!m || m.onStaleData !== 'block' || (resolution.status !== 'runnable' && resolution.status !== 'outdated')) return resolution;
     const kinds = new Set(m.steps.flatMap((s) => s.sources.map((src) => src.kind)));
@@ -385,22 +479,50 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return raised.length ? raised.join('; ') : 'the workflow declares that its deliverable must be challenged';
   }
 
-  function preflightOf(resolution: Resolution, input: Readonly<Record<string, unknown>> = {}, declared?: Declared | null): Preflight {
+  /**
+   * A named source whose last read cannot cover a period that has ended:
+   * never read, or last read on a day before the period's end.
+   */
+  function coverageFlags(period: ResolvedPeriod | null, sourceIds: readonly string[] | null): string[] {
+    if (!period || !sourceIds?.length || period.to > calendarDate(deps.now(), period.timezone)) return [];
+    const known = new Map(deps.sources().map((s) => [s.id, s]));
+    const flags: string[] = [];
+    for (const id of sourceIds) {
+      const source = known.get(id);
+      if (!source) continue;
+      const read = source.lastReadAt ? calendarDate(source.lastReadAt, period.timezone) : null;
+      if (read === null) flags.push(`${id} has not been read here, so nothing shows the period up to ${period.to} is covered; read it so the whole period is covered`);
+      else if (read < period.to) flags.push(`${id} was last read ${read}, before the period ends (${period.to}); read it again so the whole period is covered`);
+    }
+    return flags;
+  }
+
+  function preflightOf(resolution: Resolution, input: Readonly<Record<string, unknown>> = {}, declared?: Declared | null, slots: { readonly period?: ResolvedPeriod | null; readonly sourceIds?: readonly string[] | null } = {}): Preflight {
     const flags: string[] = [];
     if (resolution.workflow?.manifest.onStaleData === 'proceed_flagged') {
       const stale = deps.sources().filter((s) => s.freshness === 'stale');
       if (stale.length) flags.push(`proceeding with stale sources: ${stale.map((s) => s.id).join(', ')}`);
     }
+    const period = slots.period ?? null;
+    flags.push(...coverageFlags(period, slots.sourceIds ?? null));
     const judgment = judgmentFor(resolution.workflow, resolution.plan.map((p) => p.step), input, declared);
     if (judgment.challenge) flags.push(`challenge required: ${judgment.why}`);
     return {
       status: resolution.status,
       summary: resolution.summary,
       approvalsAhead: resolution.plan.filter((p) => p.needsApproval).map((p) => p.step.id),
-      reasons: resolution.reasons.map((r) => ({ code: r.code, stepId: r.stepId, message: r.message, remedy: r.remedy })),
+      reasons: resolution.reasons.map((r) => ({ code: r.code, stepId: r.stepId, message: r.message, remedy: r.remedy, ...(r.slot ? { slot: r.slot } : {}) })),
       flags,
       judgment,
+      period,
+      assumptions: period?.assumptions ?? [],
     };
+  }
+
+  /** The preflight of a run that exists, from its frozen reading. */
+  function runPreflight(run: WorkflowRun, resolution: Resolution): Preflight {
+    const asked = askedOf(run);
+    return preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>, asked.declared, { period: asked.period, sourceIds: asked.sources?.registered ?? null });
   }
 
   function stepsOf(run: WorkflowRun): readonly WorkflowStep[] {
@@ -416,8 +538,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    */
   function resumeBlocked(run: WorkflowRun, at: string, reason: string): { readonly run: WorkflowRun; readonly resolution: Resolution; readonly preflight: Preflight } {
     const input = (run.input ?? {}) as Record<string, unknown>;
-    const resolution = startResolution(run.workflowId, input, run.executorId);
-    const preflight = preflightOf(resolution, input, askedOf(run).declared);
+    const resolution = startResolution(run.workflowId, input, run.executorId, clockOf(run));
+    const preflight = runPreflight(run, resolution);
     if (resolution.status === 'runnable' || resolution.status === 'outdated') {
       const roots = new Set(readySteps(resolution.workflow!.manifest.steps, new Set()).map((s) => s.id));
       if (listSteps(store, run.id).length === 0) {
@@ -472,13 +594,17 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
+  /** A step's inputs; one read from a period input gets the period in dates the run was created with. */
   function inputsFor(run: WorkflowRun, step: WorkflowStep): Record<string, unknown> {
     const runInput = (run.input ?? {}) as Record<string, unknown>;
     const stepRuns = listSteps(store, run.id);
+    const schema = deps.workflows.get(run.workflowId)?.manifest.inputSchema ?? {};
+    const period = askedOf(run).period ?? null;
     const out: Record<string, unknown> = {};
     for (const [key, ref] of Object.entries(step.inputs)) {
       if (ref.startsWith('input.')) {
-        out[key] = runInput[ref.slice('input.'.length)];
+        const name = ref.slice('input.'.length);
+        out[key] = schema[name] === 'period' && period ? period : runInput[name];
       } else {
         const [, upstreamId, output] = ref.split('.') as [string, string, string];
         const upstream = stepRuns.find((s) => s.stepId === upstreamId);
@@ -638,6 +764,21 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return { outcome: null, held, refused };
   }
 
+  /** What every step of a run is told about the period it covers and the sources it names. */
+  function readingInstructions(run: WorkflowRun): string[] {
+    const asked = askedOf(run);
+    const lines: string[] = [];
+    const p = asked.period;
+    if (p) {
+      lines.push(p.semantics === 'as_of'
+        ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. Describe them as they stood at the end of that day.`
+        : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`);
+    }
+    const ids = asked.sources?.registered ?? [];
+    if (ids.length) lines.push(`Read the sources this run names: ${ids.join(', ')}; cite items as <source>:<item>. Before you submit, record what you read with sources action report; a source Construct reads itself takes action refresh instead.`);
+    return lines;
+  }
+
   /** Everything the claimer needs to do one leased step. */
   function packetFor(leased: LeasedStep, step: WorkflowStep): WorkPacket {
     const run = getRun(store, leased.runId)!;
@@ -652,6 +793,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
+      ...readingInstructions(run),
       ...governingInstructions(step.capabilities),
       acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
       'Cite every source you read as evidence entries.',
@@ -740,8 +882,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     },
 
     preflight(workflowId, input, opts = {}) {
-      const resolution = resolutionFor(workflowId, input, deps.host.executorId);
-      return { resolution, preflight: preflightOf(resolution, input, opts.declared) };
+      const m = deps.workflows.get(workflowId)?.manifest;
+      const clock = { periodAt: opts.periodAt ?? deps.now(), timezone: opts.timezone };
+      const normalized = m ? normalizeInput(m, input, { at: clock.periodAt, timezone: clock.timezone, sourceIds: deps.sources().map((s) => s.id) }) : null;
+      const given = normalized?.input ?? input;
+      const resolution = resolutionFor(workflowId, given, deps.host.executorId, clock);
+      return { resolution, preflight: preflightOf(resolution, given, opts.declared, { period: normalized?.period, sourceIds: normalized?.sourceIds }) };
     },
 
     judge({ workflowId, input, declared }) {
@@ -759,25 +905,34 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         throw new Error(resolution.reasons[0]?.message ?? `no workflow ${input.workflowId}`);
       }
       const m = workflow.manifest;
-      const asked = input.asked ? askedFrom(input.asked) : null;
-      const declared = asked?.declared ?? null;
       if (m.interactionClass === 'remember' || m.interactionClass === 'answer') {
         throw new Error(`${m.id} is a ${m.interactionClass} workflow; it records or answers without a run`);
       }
       if (!m.triggers.includes(input.trigger)) throw new Error(`${m.id} does not accept ${input.trigger} triggers (it accepts ${m.triggers.join(', ')})`);
+      // The period is worked out once, here, at the instant the start names; the run keeps it in dates from then on.
+      const clock: PeriodClock = { periodAt: input.periodAt ?? at, timezone: input.timezone };
+      const normalized = normalizeInput(m, input.input, { at: clock.periodAt!, timezone: clock.timezone, sourceIds: deps.sources().map((s) => s.id) });
+      const given = normalized.input;
+      const asked = frozenReading(input.asked, normalized, input.firing ?? null);
+      const declared = asked?.declared ?? null;
       const keyExplicit = input.idempotencyKey;
-      const workIdentity = idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
+      const workIdentity = idempotencyKeyFor(workflow, given, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`, normalized.identities);
       const activeSingle = (): WorkflowRun | null => (m.concurrency === 'single' ? listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked') ?? null : null);
       const singleFlag = (active: WorkflowRun) => `an active ${m.id} run (${active.id}) already exists; concurrency is single`;
+      /** Whether a run gave this declared input the same value this start gives it; a period compares by its dates. */
+      const sameValue = (run: WorkflowRun, key: string): boolean => {
+        const was = (run.input ?? {}) as Record<string, unknown>;
+        return identityOf(m, key, was[key], askedOf(run).period ?? null) === identityOf(m, key, given[key], normalized.period);
+      };
       /** The work is already under way: hand back that run with its own preflight, and say which declared inputs this start gave differently. */
       const reuse = (existing: WorkflowRun, flags: readonly string[] = []): StartResult => {
         const existingInput = (existing.input ?? {}) as Record<string, unknown>;
         // The stale-data rule decides whether a run may start, so it applies only to a run still waiting to.
         const resolution = existing.state === 'blocked'
-          ? startResolution(existing.workflowId, existingInput, existing.executorId)
-          : resolutionFor(existing.workflowId, existingInput, existing.executorId);
-        const pf = preflightOf(resolution, existingInput, askedOf(existing).declared);
-        const differs = Object.keys(m.inputSchema).filter((k) => canonicalJson(input.input[k]) !== canonicalJson(existingInput[k]));
+          ? startResolution(existing.workflowId, existingInput, existing.executorId, clockOf(existing))
+          : resolutionFor(existing.workflowId, existingInput, existing.executorId, clockOf(existing));
+        const pf = runPreflight(existing, resolution);
+        const differs = Object.keys(m.inputSchema).filter((k) => !sameValue(existing, k));
         return { run: existing, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, ...flags, ...(differs.length ? [differsFlag(existing.id, differs)] : [])] }, differs, superseded: null };
       };
       if (keyExplicit) {
@@ -790,8 +945,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const key = keyExplicit ?? `${workIdentity}:${deps.nextId('inv')}`;
       const active = activeSingle();
       if (active) return reuse(active, [singleFlag(active)]);
-      const resolution = startResolution(m.id, input.input, executorId);
-      const preflight = preflightOf(resolution, input.input, declared);
+      const resolution = startResolution(m.id, given, executorId, clock);
+      const preflight = preflightOf(resolution, given, declared, { period: normalized.period, sourceIds: normalized.sourceIds });
       const resolves = resolution.status === 'runnable' || resolution.status === 'outdated';
       return store.transaction(() => {
         // Another session may have started the same work between the checks
@@ -802,18 +957,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         if (racedSingle) return reuse(racedSingle, [singleFlag(racedSingle)]);
         // A blocked run of the same work is never handed back as if it were under way. Started again with
         // the same input, it is resolved again where it stands; started with other input, it is replaced.
-        // A manual start that fills in what a blocked run left out of the work's identity, and agrees on
-        // the rest, is the same work corrected; a blocked run that names other work is left alone.
+        // A manual start that fills in what a blocked run left out of the work's identity, or gave a value
+        // its check refused, and agrees on the rest, is the same work corrected; a blocked run that names
+        // other work is left alone.
         const identifying = identifyingKeys(m);
+        const sourceIds = deps.sources().map((x) => x.id);
+        const leftOut = (r: WorkflowRun, k: string): boolean => {
+          const was = ((r.input ?? {}) as Record<string, unknown>)[k];
+          if (was === undefined || was === null) return true;
+          const type = m.inputSchema[k];
+          return (type === 'period' || type === 'source_ids') && checkSlot(type, k, was, { at: clockOf(r).periodAt ?? at, timezone: clockOf(r).timezone, sourceIds }).length > 0;
+        };
         const sameWork = (r: WorkflowRun): boolean => {
           if (r.workIdentity === workIdentity) return true;
           if (r.workflowId !== m.id || r.triggerKind !== 'manual' || input.trigger !== 'manual') return false;
-          const was = (r.input ?? {}) as Record<string, unknown>;
-          return identifying.every((k) => was[k] === undefined || was[k] === null || canonicalJson(was[k]) === canonicalJson(input.input[k]));
+          return identifying.every((k) => leftOut(r, k) || sameValue(r, k));
         };
         const blocked = listActiveRuns(store).filter((r) => r.state === 'blocked' && sameWork(r));
         if (!keyExplicit) {
-          const same = blocked.find((r) => r.workIdentity === workIdentity && canonicalJson(r.input) === canonicalJson(input.input));
+          const same = blocked.find((r) => r.workIdentity === workIdentity && canonicalJson(r.input) === canonicalJson(given));
           if (same) return { ...resumeBlocked(same, at, 'resolved again when the same work was started'), created: false, differs: [], superseded: null };
         }
         const { run } = createRun(store, {
@@ -827,7 +989,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           executorId,
           hostId: deps.host.hostId,
           sessionId: deps.host.sessionId ?? undefined,
-          input: input.input,
+          input: given,
           invocationId: key,
           workIdentity,
           workflowDigest: workflow.digest,

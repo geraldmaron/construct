@@ -118,22 +118,23 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     hostReads: explainConfig(configInputs(ctx, project, {}), 'policy.hostReads').effective.value as 'require' | 'accept',
     answerCheck: explainConfig(configInputs(ctx, project, {}), 'policy.answerCheck').effective.value as 'nudge' | 'off',
   };
+  const available = () => sources.list().map((s) => {
+    const st = sources.status(s.id, ctx.now());
+    return { kind: s.kind, id: s.id, reachability: s.reachability, freshness: st.freshness, lastReadAt: st.lastSnapshot?.takenAt ?? null };
+  });
   const workflow = createWorkflowService({
     store: project.store,
     skills,
     workflows,
     lock,
     host,
-    sources: () => sources.list().map((s) => {
-      const st = sources.status(s.id, ctx.now());
-      return { kind: s.kind, id: s.id, reachability: s.reachability, freshness: st.freshness };
-    }),
+    sources: available,
     projectWritePolicy,
     now: ctx.now,
     nextId: ctx.nextId,
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),
   });
-  const triggers = createTriggerService({ store: project.store, workflows, workflowService: workflow, now: ctx.now, nextId: ctx.nextId, projectRoot: project.root });
+  const triggers = createTriggerService({ store: project.store, workflows, workflowService: workflow, sources: available, now: ctx.now, nextId: ctx.nextId, projectRoot: project.root });
   const delegation = binding.surface === 'interactive' && projectWritePolicy !== 'never' ? createDelegationService({
     store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
     driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
