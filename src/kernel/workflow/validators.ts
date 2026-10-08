@@ -5,16 +5,19 @@
  *
  * Grounding is checked, not trusted: when the caller supplies a resolver,
  * every cited reference must name something this project holds, every
- * artifact a step says it wrote must exist, and every figure in the output or
- * the artifact must appear in text Construct holds for something the step
- * cited (or be derived by arithmetic over figures that do). An excerpt is
- * checked against that text; it never stands in for it. A cited item dated
- * after the period the run covers is refused unless the output says why it
- * belongs, and every source the run names must have something cited from it
- * or be listed as unread. These are mechanical floors under quality, not a
- * judge of it.
+ * artifact a step says it wrote must exist, and every figure in the output
+ * or in a document the step wrote (its artifact or a changed file; code and
+ * configuration are not read for figures) must appear in text Construct
+ * holds for something else the step cited (or be derived by arithmetic over
+ * figures that do); a document the step wrote never grounds itself. An
+ * excerpt is checked against that text; it never stands in for it. A cited
+ * item dated after the period the run covers is refused unless the output
+ * says why it belongs, and every source the run names must have something
+ * cited from it or be listed as unread. These are mechanical floors under
+ * quality, not a judge of it.
  */
 
+import { realpathSync } from 'node:fs';
 import { holdsContent, normalizeQuote, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
 import { normalizeUrl } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
@@ -106,13 +109,50 @@ function strings(v: unknown, out: string[] = []): string[] {
 }
 
 const MONTH = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const CLOCK = /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi;
 const DATES = [
   new RegExp(`\\b${MONTH}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b(?![.,]?\\d|\\s?(?:%|[kmb]\\b))`, 'gi'),
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH}\\b`, 'gi'),
-  /\b\d{4}-\d{2}-\d{2}\b/g,
+  /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/g,
   /\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g,
-  /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi,
+  CLOCK,
 ];
+
+/** Whether "h:mm" is a time a clock can show; "80:80" is a port mapping, not a time. */
+function onAClock(time: string): boolean {
+  const [hours, minutes] = time.split(':').map((part) => Number.parseInt(part, 10));
+  return hours !== undefined && minutes !== undefined && hours <= 23 && minutes <= 59;
+}
+
+/** A digit run cited text gives, with an optional unit: not inside a word, a key, a path, an anchor or a version. */
+const CITED_FIGURE = /(?<![\w\-#/.])[$€£]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|[kKmMbB]\b|ms\b|h\b|x\b))?(?![a-zA-Z_]*\d)/g;
+const CITED_RUN = /(?<![\w\-#/.])\d+(?:\.\d+)?(?![a-zA-Z_]*\d)/g;
+
+/**
+ * Every figure cited text could be giving. Configuration writes figures
+ * inside other tokens ("postgres:16", "80:80", "PORT=8443"), so the cited
+ * side is read more loosely than an output: a digit run after a colon, quote,
+ * equals sign or comma counts, and so does each number of a list. Dates,
+ * times, years, lone digits, one group of "1,600", and digits inside an
+ * identifier (a ticket key, an issue or page number, a hash, a version's
+ * tail) are never figures, on either side.
+ */
+export function citedFiguresIn(text: string): string[] {
+  let body = text;
+  for (const d of DATES) body = body.replace(d, (m) => (d === CLOCK && !onAClock(m) ? m : ' '));
+  const out: string[] = [];
+  const keep = (f: string) => {
+    const digits = f.replace(/[^\d.]/g, '');
+    if (/^\d$/.test(f) || (YEAR.test(digits) && f === digits)) return;
+    out.push(f);
+  };
+  for (const m of body.matchAll(CITED_FIGURE)) keep(normalizeFigure(m[0]));
+  for (const m of body.matchAll(CITED_RUN)) {
+    if (/^\d{3}(?:\.\d+)?$/.test(m[0]) && /\d,$/.test(body.slice(Math.max(0, m.index - 2), m.index))) continue;
+    keep(m[0]);
+  }
+  return out;
+}
 
 /** Figures worth checking: not a lone digit, a year, a date or time, or a list or section number. */
 export function figuresIn(text: string): string[] {
@@ -207,16 +247,55 @@ export function evaluateExpression(expr: string): number | null {
   return v !== null && i === tokens.length ? v : null;
 }
 
+/** A file an output names: a path, or {path}; a {path, removed: true} entry names a file that is gone. */
+function namedPath(x: unknown): string | null {
+  if (typeof x === 'string') return x.trim() !== '' ? x.trim() : null;
+  if (isRecord(x) && typeof x.path === 'string' && x.path.trim() !== '' && x.removed !== true) return x.path.trim();
+  return null;
+}
+
+/** The files an output lists under "changes". */
+function changedPaths(output: unknown): string[] {
+  if (!isRecord(output) || !Array.isArray(output.changes)) return [];
+  return output.changes.map(namedPath).filter((p): p is string => p !== null);
+}
+
+/** Every file an output says it wrote: its changes, then its artifact. */
 function artifactPaths(output: unknown): string[] {
-  if (!isRecord(output)) return [];
-  const out: string[] = [];
-  const push = (x: unknown) => {
-    if (typeof x === 'string' && x.trim() !== '') out.push(x.trim());
-    else if (isRecord(x) && typeof x.path === 'string') out.push(x.path);
-  };
-  if (Array.isArray(output.changes)) output.changes.forEach(push);
-  push(output.artifact);
-  return out;
+  const artifact = isRecord(output) ? namedPath(output.artifact) : null;
+  return [...changedPaths(output), ...(artifact ? [artifact] : [])];
+}
+
+/** Files whose text states figures to a reader; code and configuration are not read for them. */
+const DOCUMENT_EXTENSIONS = new Set(['.md', '.mdx', '.markdown', '.txt', '.rst', '.adoc', '.html', '.htm', '.csv', '.tsv', '.mmd']);
+
+function isDocument(path: string): boolean {
+  const name = path.replaceAll('\\', '/').split('/').pop()!.toLowerCase();
+  const dot = name.lastIndexOf('.');
+  return dot > 0 && DOCUMENT_EXTENSIONS.has(name.slice(dot));
+}
+
+/** Where a file really lives, so a symlink to it or the same name in another letter case is the same file. */
+function realPath(path: string): string {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return path;
+  }
+}
+
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
+
+/** Whether text names the day asked for: a YYYY-MM-DD date as written, or as "October 16", "Oct 16" or "16 October"; anything else as written. */
+function namesDay(text: string, by: string): boolean {
+  if (text.toLowerCase().includes(by.toLowerCase())) return true;
+  const iso = /^\d{4}-(\d{2})-(\d{2})$/.exec(by);
+  const month = iso ? MONTH_NAMES[Number(iso[1]) - 1] : undefined;
+  const day = iso ? Number(iso[2]) : 0;
+  if (!month || day < 1 || day > 31) return false;
+  const name = `(?:${month}|${month.slice(0, 3)}${month === 'september' ? '|sept' : ''})`;
+  const date = `0?${String(day)}(?:st|nd|rd|th)?`;
+  return new RegExp(`\\b${name}\\.?\\s+${date}\\b|\\b${date}\\s+${name}\\b`, 'i').test(text);
 }
 
 function headings(text: string): string[] {
@@ -490,9 +569,13 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  artifacts_exist: ({ output, resolve }) => {
+  artifacts_exist: ({ output, expectedKeys, resolve }) => {
     const paths = artifactPaths(output);
-    if (paths.length === 0) return ['the output names no artifact (give "artifact" or "changes" with the file written)'];
+    if (paths.length === 0) {
+      // A step that declares the files it changed may honestly change none: an analysis, or work that wrote nothing here.
+      if (expectedKeys.includes('changes') && isRecord(output) && Array.isArray(output.changes)) return [];
+      return ['the output names no artifact (give "artifact" or "changes" with the file written)'];
+    }
     if (!resolve) return ['nothing was supplied to check that the artifact exists'];
     const problems: string[] = [];
     for (const p of paths) {
@@ -506,16 +589,27 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   numbers_grounded: ({ output, evidence, resolve, input }) => {
     // Only text Construct holds grounds a figure: a file, or what a recorded read kept. An excerpt is a claim about
     // that text, checked by excerpts_match, and supports nothing on its own.
+    // Documents the step wrote are read for figures; code and configuration are not, since their ports, limits and
+    // versions are the change itself, and citing a changed code file can ground what the output says about it. What
+    // is read is what is being checked, so citing it, by any name for the same file, grounds nothing.
+    const artifact = isRecord(output) ? namedPath(output.artifact) : null;
+    const read = [...new Set([...changedPaths(output), ...(artifact ? [artifact] : [])])].filter(isDocument);
+    const own = new Set(read.map((p) => resolve?.(p)?.path).filter((p): p is string => p !== undefined).map(realPath));
     const cited: string[] = [];
     const cut: string[] = [];
+    const selfCited: string[] = [];
     for (const e of evidence) {
       const r = resolve?.(e.ref);
+      if (r?.path !== undefined && own.has(realPath(r.path))) {
+        if (!selfCited.includes(e.ref)) selfCited.push(e.ref);
+        continue;
+      }
       if (r?.text) cited.push(r.text);
       if (r?.truncated && !cut.includes(e.ref)) cut.push(e.ref);
     }
     // What the person asked for counts as given: a figure in the request or inputs is theirs, not invented.
-    cited.push(...strings(input));
-    const haystack = new Set(figuresIn(cited.join('\n')));
+    const citedText = cited.join('\n');
+    const haystack = new Set([...citedFiguresIn(citedText), ...figuresIn(citedText), ...figuresIn(strings(input).join('\n'))]);
     const citedValues = [...haystack].map(figureValue).filter((x): x is number => x !== null);
     const supported = (f: string) => figureSupported(f, haystack, citedValues);
     const derived = new Set<string>();
@@ -542,7 +636,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       });
     }
     const texts = strings(output);
-    for (const p of artifactPaths(output)) {
+    for (const p of read) {
       const t = resolve?.(p)?.text;
       if (t) texts.push(t);
     }
@@ -550,7 +644,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
     for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
     const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} was cut at 16 KiB; report the part you rely on as its own item)` : '';
-    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}`)];
+    const selfNote = selfCited.length > 0 ? ` (citing ${selfCited.join(', ')}, which this step wrote, grounds nothing in it)` : '';
+    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}${selfNote}`)];
   },
   template_conformance: ({ output, input, resolve }) => {
     const template = (isRecord(output) && typeof output.template === 'string' ? output.template : null) ?? (isRecord(input) && typeof input.template === 'string' ? input.template : null);
@@ -658,7 +753,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const audience = isRecord(input) && typeof input.audience === 'string' ? input.audience.trim() : '';
     const by = isRecord(input) && typeof input.decisionBy === 'string' ? input.decisionBy.trim() : '';
     if (audience && !section.toLowerCase().includes(audience.toLowerCase())) problems.push(`the decision section does not name who decides (${audience})`);
-    if (by ? !section.toLowerCase().includes(by.toLowerCase()) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
+    if (by ? !namesDay(section, by) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
     return problems;
   },
   sources_diverse: ({ evidence, resolve }) => {

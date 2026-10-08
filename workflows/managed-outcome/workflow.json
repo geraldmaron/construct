@@ -4,8 +4,8 @@
   "evals": [],
   "id": "managed-outcome",
   "title": "Managed outcome with verification",
-  "version": "1.3.0",
-  "purpose": "Turn a request into a plan, do the work in the current host, verify it with the project's own checks and the step validators, and hand back a finished deliverable with its evidence; the deliverable is drafted, validated, and only then offered for acceptance.",
+  "version": "2.0.0",
+  "purpose": "The general carrier for an outcome no other workflow names: plan it, do it in this session citing what was read (inside the period when one is given, from the sources the run names), verify it with the project's own checks, and hand back the deliverable with its evidence and the file it produced.",
   "activation": [
     "do this piece of work and hand it back",
     "manage this outcome",
@@ -19,7 +19,9 @@
   "interactionClass": "manage",
   "inputSchema": {
     "request": "string",
-    "target": "string"
+    "target": "string",
+    "period": "period",
+    "sources": "source_ids"
   },
   "requiredInputs": [
     "request"
@@ -40,7 +42,10 @@
       "sources": [],
       "tier": "draft",
       "inputs": {
-        "request": "input.request"
+        "request": "input.request",
+        "target": "input.target",
+        "period": "input.period",
+        "sources": "input.sources"
       },
       "outputs": [
         "plan",
@@ -79,18 +84,27 @@
       ],
       "tier": "project_write",
       "inputs": {
+        "request": "input.request",
+        "target": "input.target",
+        "period": "input.period",
+        "sources": "input.sources",
         "plan": "steps.plan.plan",
         "assumptions": "steps.plan.assumptions"
       },
       "outputs": [
         "summary",
         "findings",
-        "changes"
+        "changes",
+        "artifact"
       ],
       "validators": [
         "citations_present",
         "evidence_refs_resolve",
         "excerpts_match",
+        "within_period",
+        "named_sources_read",
+        "numbers_grounded",
+        "artifacts_exist",
         "deliverable_complete",
         "no_placeholder_facts"
       ],
@@ -104,7 +118,7 @@
     },
     {
       "id": "verify",
-      "title": "Run the project's own checks and the validators",
+      "title": "Run the project's own checks, then hand back the outcome",
       "needs": [
         "do"
       ],
@@ -116,7 +130,10 @@
       "sources": [],
       "tier": "observe",
       "inputs": {
-        "changes": "steps.do.changes"
+        "summary": "steps.do.summary",
+        "findings": "steps.do.findings",
+        "changes": "steps.do.changes",
+        "artifact": "steps.do.artifact"
       },
       "outputs": [
         "verification",
@@ -124,6 +141,7 @@
       ],
       "validators": [
         "evidence_refs_resolve",
+        "within_period",
         "verification_result"
       ],
       "loadBearing": true,
@@ -133,55 +151,25 @@
         "backoffMs": 0
       },
       "timeoutMs": 1200000
-    },
-    {
-      "id": "record",
-      "title": "Record the outcome and hand it back",
-      "needs": [
-        "verify",
-        "do"
-      ],
-      "skill": null,
-      "capabilities": [
-        "write_project_context"
-      ],
-      "sources": [],
-      "tier": "project_write",
-      "inputs": {
-        "summary": "steps.do.summary",
-        "findings": "steps.do.findings",
-        "verification": "steps.verify.verification"
-      },
-      "outputs": [
-        "deliverableId"
-      ],
-      "validators": [
-        "schema",
-        "deliverable_complete"
-      ],
-      "loadBearing": true,
-      "challenge": false,
-      "retry": {
-        "maxAttempts": 1,
-        "backoffMs": 0
-      },
-      "timeoutMs": 30000
     }
   ],
   "triggers": [
-    "manual"
+    "manual",
+    "schedule"
   ],
   "onNoData": "fail",
   "onStaleData": "proceed_flagged",
   "concurrency": "per_input",
   "dedupeKey": [
     "request",
-    "target"
+    "target",
+    "period",
+    "sources"
   ],
   "cancellation": "after_step",
   "deliverable": {
     "kind": "outcome/managed",
-    "schema": "outcome/managed/v1",
+    "schema": "outcome/managed/v2",
     "challenge": false
   },
   "proposes": [

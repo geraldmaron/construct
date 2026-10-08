@@ -71,7 +71,7 @@ function replaced(...ws: RegisteredWorkflow[]): RegisteredWorkflow[] {
   return WORKFLOWS.map((w) => byId.get(w.manifest.id) ?? w);
 }
 
-/** The general carrier as it reads once it takes a period and source ids. */
+/** The general carrier with a period it requires, not only accepts. */
 const DIGEST = withManifest(GENERAL_CARRIER, { inputSchema: { request: 'string', target: 'string', period: 'period', sources: 'source_ids' }, requiredInputs: ['request', 'period'] });
 
 const MATCHABLE = WORKFLOWS.filter((w) => w.manifest.interactionClass === 'manage' || w.manifest.interactionClass === 'maintain');
@@ -423,16 +423,18 @@ test('maintain matches only workflows a schedule or an event can start, and othe
   assert.ok(event.length > 0);
   assert.ok(event.every((m) => manifest(m.workflowId).triggers.includes('event')));
 
-  const shipped = matchWorkflows(reading({ kind: 'maintain', deliverable: { kind: 'other', describe: 'a weekly digest' }, skill: 'context-mapping', schedule: { cron: '0 9 * * 1', timezone: 'UTC' } }), CATALOG);
-  assert.ok(shipped.every((m) => m.because === 'binds chosen skill' && manifest(m.workflowId).triggers.includes('schedule')));
-  assert.equal(shipped.some((m) => m.workflowId === GENERAL_CARRIER), manifest(GENERAL_CARRIER).triggers.includes('schedule'), 'the carrier is matched only when it can be scheduled');
-
-  const schedulable = catalogOf({ workflows: replaced(withManifest(GENERAL_CARRIER, { triggers: ['manual', 'schedule'] })) });
-  const carried = matchWorkflows(reading({ kind: 'maintain', deliverable: { kind: 'other', describe: 'a weekly digest' }, skill: 'context-mapping', schedule: { cron: '0 9 * * 1', timezone: 'UTC' } }, schedulable), schedulable);
+  const weekly = { kind: 'maintain', deliverable: { kind: 'other', describe: 'a weekly digest' }, skill: 'context-mapping', schedule: { cron: '0 9 * * 1', timezone: 'UTC' } } as const;
+  assert.ok(manifest(GENERAL_CARRIER).triggers.includes('schedule'), 'the shipped carrier can be scheduled');
+  const carried = matchWorkflows(reading(weekly), CATALOG);
   assert.equal(carried.at(-1)?.workflowId, GENERAL_CARRIER);
   assert.equal(carried.at(-1)?.because, 'other: general carrier');
-  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill'));
+  assert.ok(carried.slice(0, -1).every((m) => m.because === 'binds chosen skill' && manifest(m.workflowId).triggers.includes('schedule')));
   assert.ok(carried.length > 1);
+
+  const manualOnly = catalogOf({ workflows: replaced(withManifest(GENERAL_CARRIER, { triggers: ['manual'] })) });
+  const unscheduled = matchWorkflows(reading(weekly, manualOnly), manualOnly);
+  assert.ok(!unscheduled.some((m) => m.workflowId === GENERAL_CARRIER), 'the carrier is matched only when it can be scheduled');
+  assert.ok(unscheduled.every((m) => m.because === 'binds chosen skill'));
 });
 
 test('a named workflow comes first; a manage reading nothing fits falls back to the carrier; nothing else ever matches the remember workflow', () => {

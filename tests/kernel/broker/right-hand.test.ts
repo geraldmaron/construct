@@ -66,9 +66,8 @@ test('what the host read from a tracker is tracked: citations resolve, quotes ar
     const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'summarize gating' } });
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
-    await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: [] }, [{ ref: 'PLAT-101' }]);
-    await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'PLAT-101' }]);
-    const done = await submit(fx, await step(fx, runId), { deliverableId: 'gating', summary: 'Enterprise only', findings: ['gated'] }, [{ ref: 'PLAT-101' }]);
+    await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: [], artifact: null }, [{ ref: 'PLAT-101' }]);
+    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'PLAT-101' }]);
     assert.equal(done.run.state, 'succeeded');
 
     const partial = await call(fx, 'sources', { action: 'report', id: 'jira-plat', partial: true, items: [{ ref: 'PLAT-101', title: 'Platform events', updatedAt: '2026-09-29', text: 'Decision reversed: Pro at launch with caps' }] });
@@ -165,9 +164,8 @@ test('answering "revise" on stale work offers a linked revision, and the revisio
     const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on gating' } });
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
-    await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: ['docs/brief.md'] }, [{ ref: 'notes/pricing.md' }]);
-    await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
-    const done = await submit(fx, await step(fx, runId), { deliverableId: 'brief', artifact: 'docs/brief.md', summary: 'Enterprise only', findings: ['gated'] }, [{ ref: 'notes/pricing.md' }]);
+    await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: ['docs/brief.md'], artifact: 'docs/brief.md' }, [{ ref: 'notes/pricing.md' }]);
+    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
     const deliverableId = done.deliverable.id;
 
     writeFileSync(join(dir, 'pricing.md'), 'Pro at launch, capped at 5 subscriptions.\n');
@@ -188,6 +186,42 @@ test('answering "revise" on stale work offers a linked revision, and the revisio
     assert.ok(unlinked.validation.some((v: { validator: string; ok: boolean }) => v.validator === 'revision_linked' && !v.ok));
     const linked = await submit(fx, await step(fx, revRun), { summary: 'revised', findings: ['Pro at launch'], artifact: 'docs/brief.md', revises: deliverableId, changeSummary: 'Enterprise-only gating replaced by Pro at launch with a 5-subscription cap, per notes/pricing.md', derivations: [] }, [{ ref: 'notes/pricing.md' }]);
     assert.equal(linked.step.state, 'succeeded', JSON.stringify(linked.validation));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('the general carrier takes an honest code edit and an analysis that writes nothing, and its deliverable carries what the work did', async () => {
+  const fx = brokerFixture();
+  try {
+    const finish = async (request: string, output: Record<string, unknown>, evidence: { ref: string; excerpt?: string }[]) => {
+      const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request } });
+      const runId = started.run.id;
+      await submit(fx, await step(fx, runId), { plan: ['read', 'change'], assumptions: [], blockers: [] }, []);
+      const did = await submit(fx, await step(fx, runId), output, evidence);
+      if (did.step.state !== 'succeeded') return { did, done: null, body: null };
+      const done = await submit(fx, await step(fx, runId), { verification: { command: 'npm test', exitStatus: 0 }, passed: true }, []);
+      const status = await call(fx, 'run_status', { runId });
+      return { did, done, body: status.deliverables.at(-1).body };
+    };
+    // The edited file holds a port and a timeout; they are the change itself, not claims about what was read.
+    writeFileSync(join(fx.broker.root, 'src', 'kernel', 'fetch.ts'), "import { connect } from 'node:net';\nexport const open = () => connect(443, 'example.com', { timeout: 15000 });\n");
+    const edit = await finish('use TLS for the example connection', { summary: 'the connection uses TLS', findings: ['open() now connects over TLS'], changes: ['src/kernel/fetch.ts'], artifact: null }, [{ ref: 'docs/design.md' }]);
+    assert.equal(edit.did.step.state, 'succeeded', JSON.stringify(edit.did.validation));
+    assert.equal(edit.done.deliverable.trust, 'validated');
+    assert.deepEqual([edit.body.summary, edit.body.changes, edit.body.artifact], ['the connection uses TLS', ['src/kernel/fetch.ts'], null]);
+    const named = await finish('use TLS for the example connection', { summary: 'the connection uses TLS', findings: ['open() now connects over TLS'], changes: ['src/kernel/fetch.ts'], artifact: 'src/kernel/fetch.ts' }, [{ ref: 'docs/design.md' }]);
+    assert.equal(named.did.step.state, 'succeeded', `code named as the artifact is not read for figures: ${JSON.stringify(named.did.validation)}`);
+    const stated = await finish('use TLS for the example connection', { summary: 'the connection uses TLS on port 443', findings: ['open() now connects on port 443 with a 15000 ms timeout'], changes: ['src/kernel/fetch.ts'], artifact: null }, [{ ref: 'src/kernel/fetch.ts' }]);
+    assert.equal(stated.did.step.state, 'succeeded', `citing the changed code grounds the values it now holds: ${JSON.stringify(stated.did.validation)}`);
+
+    const analysis = await finish('explain the design principles', { summary: 'one principle', findings: ['the kernel stays host-agnostic'], changes: [], artifact: null }, [{ ref: 'docs/design.md', excerpt: 'Keep the kernel host-agnostic' }]);
+    assert.equal(analysis.did.step.state, 'succeeded', JSON.stringify(analysis.did.validation));
+    assert.deepEqual([analysis.body.findings, analysis.body.changes, analysis.body.artifact], [['the kernel stays host-agnostic'], [], null]);
+
+    const invented = await finish('how fast is the connection', { summary: 'fast', findings: ['the connection takes p99 420ms'], changes: [], artifact: null }, [{ ref: 'docs/design.md' }]);
+    assert.notEqual(invented.did.step.state, 'succeeded');
+    assert.ok(invented.did.validation.some((v: { validator: string; ok: boolean; problems: string[] }) => v.validator === 'numbers_grounded' && !v.ok && v.problems.some((p) => p.includes('"420ms"'))));
   } finally {
     fx.cleanup();
   }

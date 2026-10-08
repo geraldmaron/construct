@@ -133,6 +133,25 @@ validated; a challenge, acceptance, and finality are recorded transitions
 the person's judgment drives through the host. A task being done never
 implies its deliverable is trusted.
 
+The last step hands the deliverable back. Its body is what that step
+returned plus every input the step was handed (from the run's input or
+earlier steps), so the last step returns only what it adds. A handed value
+wins over a restatement; a restated key whose value differs stays in the
+step's own record, and `submit_work` names it under `ignored`. The body
+also carries the last step's evidence, the sensitivity of what the run
+cited (null when nothing cited carries a label), how many of the run's
+citations Construct opened itself or holds only as the host's report
+(`provenance`), and, when the run covers a period or names sources, its
+coverage of both.
+
+The general carrier, `managed-outcome`, runs plan, do, and verify for any
+outcome no other workflow names. It takes the request, a target, a period,
+and source ids. Its do step returns the summary, findings, the files it
+changed, and `artifact` (the file it produced, or null), and is checked for
+citations, the period, the named sources, grounded figures, and the files
+it says it wrote. Its verify step runs the project's own checks and hands
+the outcome back.
+
 ## Built-in workflows
 
 Project bootstrap and constitution review, minimal remember, managed

@@ -305,3 +305,41 @@ test('a deliverable says which named sources something was cited from and which 
     fx.cleanup();
   }
 });
+
+test('the last step hands back what it was given: the deliverable carries its inputs, the step keeps what the host sent, and a differing restatement is named', () => {
+  const fx = fixture();
+  const ev = evidence();
+  try {
+    const finish = (target: string, restated: string) => {
+      const started = fx.service.start({ workflowId: 'digest', input: { target, period: lastQuarter, sources: ['jira'] }, trigger: 'manual' });
+      const gather = fx.service.claimNext({ runId: started.run.id }).packet!;
+      assert.equal(fx.service.submit({ leased: gather.leased, output: { notes: 'payments call the ledger' }, evidence: [{ ref: 'jira:PAY-1' }], resolve: ev.resolve }).step.state, 'succeeded');
+      const write = fx.service.claimNext({ runId: started.run.id }).packet!;
+      return { runId: started.run.id, write, done: fx.service.submit({ leased: write.leased, output: { summary: 's', findings: ['f'], notes: restated }, evidence: [], resolve: ev.resolve }) };
+    };
+    const { runId, write, done } = finish('payments', 'the ledger calls payments');
+    assert.ok(write.instructions.includes("Construct carries notes into the deliverable as this step received them, and period with what the run's citations cover; return only what this step adds."), write.instructions.join('\n'));
+    assert.equal(done.run.state, 'succeeded');
+    assert.deepEqual(done.ignored, ['notes']);
+    const body = done.deliverable!.body as Record<string, any>;
+    assert.equal(body.notes, 'payments call the ledger', 'what the step was handed wins over its restatement');
+    assert.deepEqual([body.summary, body.findings], ['s', ['f']], 'what the step adds is kept');
+    assert.equal(body.sensitivity, null, 'sensitivity is always said, null when nothing cited carries a label');
+    assert.deepEqual(body.provenance, { witnessed: 0, reported: 1, unverified: 0, unresolved: 0 }, 'counted over everything the run cited');
+    assert.equal(body.period.to, '2026-06-30');
+    const ledger = fx.service.status(runId)!.steps.find((s) => s.stepId === 'write')!;
+    assert.equal((ledger.output as Record<string, unknown>).notes, 'the ledger calls payments', 'the step keeps exactly what the host sent');
+
+    assert.deepEqual(finish('ledger', 'payments call the ledger').done.ignored, [], 'restating the same value ignores nothing');
+
+    const plain = fx.service.start({ workflowId: 'ship', input: { request: 'tidy the README' }, trigger: 'manual' });
+    const only = fx.service.claimNext({ runId: plain.run.id }).packet!;
+    assert.ok(!only.instructions.some((i) => i.startsWith('Construct carries')), 'a last step handed nothing is told nothing about it');
+    const shipped = fx.service.submit({ leased: only.leased, output: { summary: 's', findings: [] }, evidence: [] });
+    assert.deepEqual(shipped.ignored, []);
+    assert.equal((shipped.deliverable!.body as Record<string, unknown>).provenance, null, 'with nothing to resolve against there are no counts');
+  } finally {
+    ev.cleanup();
+    fx.cleanup();
+  }
+});
