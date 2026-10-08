@@ -1,7 +1,8 @@
 /**
  * tests/hosts/mcp/server.test.ts — the MCP protocol over the line transport:
- * initialize, tools/list derived from the definitions, tools/call with typed
- * errors, and a refusal of tools the surface does not carry.
+ * initialize, tools/list derived from the definitions, tools/call with wrong
+ * input returned as a tool error naming the field, and a protocol refusal of
+ * tools the surface does not carry.
  */
 
 import { test } from 'node:test';
@@ -11,6 +12,7 @@ import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveH
 import { bindFailureFor } from '../../../src/cli/serve.ts';
 import { StateBusyError, UnsupportedStateError } from '../../../src/kernel/state/format.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
+import { listStatements, STATEMENT_KINDS } from '../../../src/kernel/state/profile.ts';
 import { brokerFixture } from '../../kernel/broker/support.ts';
 
 test('initialize, tools/list, tools/call, and errors follow the protocol', async () => {
@@ -30,9 +32,11 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
     const ok = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { content: { type: string; text: string }[]; structuredContent: { next: string } } };
     assert.equal(ok.result.content[0]!.type, 'text');
     assert.match(ok.result.structuredContent.next, /listen/);
-    const badInput = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'decision' } } })) as { error: { code: number; message: string } };
-    assert.equal(badInput.error.code, -32602);
-    assert.match(badInput.error.message, /"text" is required/);
+    const badInput = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'decision' } } })) as { error?: unknown; result: { isError: boolean; structuredContent: { error: string; field: string | null } } };
+    assert.equal(badInput.error, undefined, 'wrong input is not a protocol error');
+    assert.equal(badInput.result.isError, true);
+    assert.match(badInput.result.structuredContent.error, /"text" is required/);
+    assert.equal(badInput.result.structuredContent.field, 'text');
     const toolError = (await handle({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'run_status', arguments: { runId: 'nope' } } })) as { result: { isError: boolean; structuredContent: { error: string } } };
     assert.equal(toolError.result.isError, true);
     assert.equal(toolError.result.structuredContent.error, 'no run nope');
@@ -42,6 +46,43 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
     const unknown = (await handle({ jsonrpc: '2.0', id: 7, method: 'resources/list' })) as { error: { code: number } };
     assert.equal(unknown.error.code, -32601);
     assert.deepEqual(await handle({ jsonrpc: '2.0', id: 8, method: 'ping' }), { jsonrpc: '2.0', id: 8, result: {} });
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('wrong input comes back as a tool error naming the field and the values it accepts, in structured and text content alike', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const before = listStatements(fx.broker.store).length;
+    type ToolError = { error?: unknown; result: { isError: boolean; content: { type: string; text: string }[]; structuredContent: { error: string; field: string | null; allowed: string[] | null; example: unknown } } };
+    const wrongKind = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'wish', text: 'x' } } })) as ToolError;
+    assert.equal(wrongKind.error, undefined);
+    assert.equal(wrongKind.result.isError, true);
+    assert.equal(wrongKind.result.structuredContent.field, 'kind');
+    assert.deepEqual(wrongKind.result.structuredContent.allowed, [...STATEMENT_KINDS]);
+    assert.match(wrongKind.result.structuredContent.error, /"kind" must be one of/);
+    assert.deepEqual(JSON.parse(wrongKind.result.content[0]!.text), wrongKind.result.structuredContent, 'the text a host shows carries the same field and values');
+
+    const stray = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'note', text: 'x', bogus: 1 } } })) as ToolError;
+    assert.equal(stray.error, undefined);
+    assert.equal(stray.result.isError, true);
+    assert.equal(stray.result.structuredContent.field, 'bogus');
+    const remember = toolsFor('interactive').find((t) => t.name === 'remember')!;
+    assert.deepEqual(stray.result.structuredContent.allowed, Object.keys(remember.inputSchema.properties));
+    assert.equal(JSON.parse(stray.result.content[0]!.text).field, 'bogus');
+
+    const badToken = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'submit_work', arguments: { stepRunId: 's', output: {} } } })) as ToolError;
+    assert.equal(badToken.result.isError, true);
+    assert.equal(badToken.result.structuredContent.field, 'token');
+    assert.equal(badToken.result.structuredContent.allowed, null);
+    assert.equal(badToken.result.structuredContent.example, null);
+    const noId = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'work', arguments: { action: 'show' } } })) as ToolError;
+    assert.equal(noId.error, undefined);
+    assert.equal(noId.result.isError, true, 'an input one action needs is named too');
+    assert.equal(noId.result.structuredContent.field, 'id');
+    assert.equal(listStatements(fx.broker.store).length, before, 'a refused call records nothing');
   } finally {
     fx.cleanup();
   }

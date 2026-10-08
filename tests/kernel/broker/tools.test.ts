@@ -38,6 +38,54 @@ test('every tool is declared once with a closed schema, a plain description, and
   assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
 });
 
+test('every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold', () => {
+  const arraysWithoutItems = (schema: unknown, path: string): string[] => {
+    if (schema === null || typeof schema !== 'object') return [];
+    const node = schema as { type?: unknown; items?: unknown; properties?: Record<string, unknown> };
+    const missing: string[] = node.type === 'array' && (node.items === null || typeof node.items !== 'object') ? [path] : [];
+    for (const [key, child] of Object.entries(node.properties ?? {})) missing.push(...arraysWithoutItems(child, `${path}.${key}`));
+    if (node.items !== null && typeof node.items === 'object') missing.push(...arraysWithoutItems(node.items, `${path}[]`));
+    return missing;
+  };
+  const seen = new Set<string>();
+  for (const surface of ['interactive', 'headless'] as const) {
+    for (const t of toolsFor(surface)) {
+      if (seen.has(t.name)) continue;
+      seen.add(t.name);
+      assert.ok(Buffer.byteLength(JSON.stringify(t.inputSchema)) < 4500, `${t.name}: input schema is ${String(Buffer.byteLength(JSON.stringify(t.inputSchema)))} bytes`);
+      assert.ok(t.description.length <= 2048, `${t.name}: description is ${String(t.description.length)} characters`);
+      assert.deepEqual(arraysWithoutItems(t.inputSchema, t.name), [], `${t.name}: every array declares items`);
+    }
+  }
+  assert.equal(seen.size, TOOLS.length, 'the two surfaces together carry every tool');
+});
+
+test('wrong input names the field and, for a closed set, the values it accepts', () => {
+  const problem = (fn: () => unknown): ToolInputError => {
+    try {
+      fn();
+    } catch (error) {
+      assert.ok(error instanceof ToolInputError);
+      return error;
+    }
+    assert.fail('expected a ToolInputError');
+  };
+  const missing = problem(() => tool('remember').validate({ kind: 'note' }));
+  assert.equal(missing.field, 'text');
+  assert.equal(missing.allowed, null);
+  assert.equal(missing.example, null);
+  const wrong = problem(() => tool('remember').validate({ kind: 'wish', text: 'x' }));
+  assert.equal(wrong.field, 'kind');
+  assert.ok(wrong.allowed?.includes('decision'));
+  const stray = problem(() => tool('remember').validate({ kind: 'note', text: 'x', bogus: 1 }));
+  assert.equal(stray.field, 'bogus');
+  assert.deepEqual(stray.allowed, Object.keys(tool('remember').inputSchema.properties));
+  assert.equal(problem(() => tool('heartbeat').validate({ stepRunId: 's' })).field, 'token');
+  assert.equal(problem(() => tool('work').validate({ action: 'check', paths: [3] })).field, 'paths');
+  assert.equal(problem(() => tool('work').validate({ action: 'add', title: 't', acceptance: [1] })).field, 'acceptance');
+  assert.equal(problem(() => tool('work').validate({ action: 'claim', id: 'x', agent: 'not a name' })).field, 'agent');
+});
+
 test('bootstrap is small and says what to do next; answers create nothing; remember creates one statement', async () => {
   const fx = brokerFixture();
   try {
