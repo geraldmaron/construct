@@ -19,3 +19,8 @@ documentation is one level up, in docs/.
   (237 verified findings), the approved plan, and the recommended design for
   several agent sessions from any host sharing one project. Its plan and design
   describe commands the program is building.
+- `multi-repo-sources.md` — the 2026-10-08 design for systems that span
+  several repositories: naming sibling repositories portably, checked
+  provenance for repositories read through a host connector, citing
+  cross-repository edges, and what each supported host can open. It
+  describes changes not yet built.
