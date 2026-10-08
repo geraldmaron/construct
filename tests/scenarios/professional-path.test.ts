@@ -42,9 +42,10 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
     const unusual = (await call(fx, 'classify_request', { text: 'Put identity and billing on the same postgres' })) as { judgment: { challenge: boolean } };
     assert.equal(unusual.judgment.challenge, true, 'unusual phrasing of a shared store still challenges');
 
-    const trivial = (await call(fx, 'classify_request', { text: 'Rename a private helper in the invoice formatter' })) as { judgment: { challenge: boolean; depth: string } };
+    const trivial = (await call(fx, 'classify_request', { text: 'Rename a private helper in the invoice formatter' })) as { judgment: { challenge: boolean; depth: string; signals: { kind: string }[] } };
     assert.equal(trivial.judgment.challenge, false);
-    assert.equal(trivial.judgment.depth, 'light');
+    assert.equal(trivial.judgment.depth, 'standard', 'an unanswered scale is treated as a team project');
+    assert.ok(trivial.judgment.signals.some((s) => s.kind === 'scale'));
 
     const remembered = (await call(fx, 'remember', {
       kind: 'decision',
@@ -69,11 +70,17 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
 
     upsertProfile(fx.broker.store, { scale: 'multi_team' }, fx.broker.now());
     const team = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
-    assert.equal(team.judgment.challenge, true, 'same wording challenges after scale becomes multi_team');
+    assert.equal(team.judgment.challenge, false, 'one mid-weight word does not challenge at multi_team without declared stakes');
+    assert.equal(team.judgment.depth, 'standard');
 
     upsertProfile(fx.broker.store, { scale: 'organization' }, fx.broker.now());
-    const org = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean } };
-    assert.equal(org.judgment.challenge, true);
+    const org = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    assert.equal(org.judgment.challenge, false);
+    assert.equal(org.judgment.depth, 'standard');
+    for (const text of ['Introduce a shared database for billing and identity', 'Put identity and billing on the same postgres']) {
+      const always = (await call(fx, 'classify_request', { text })) as { judgment: { challenge: boolean } };
+      assert.equal(always.judgment.challenge, true, `${text} is still challenged at organization`);
+    }
   } finally {
     fx.cleanup();
   }

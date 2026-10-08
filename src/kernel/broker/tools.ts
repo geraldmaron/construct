@@ -14,7 +14,7 @@ import { listActiveRuns, listRuns } from '../state/runs.ts';
 import { getDecision, listOpenDecisions } from '../state/decisions.ts';
 import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, type OnboardingAnswers } from '../project/onboarding.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
-import { listEntities, listClaims, listRelations, getEntity } from '../state/graph.ts';
+import { listEntities, listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
 import { extendLease, getStep, heldLease } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
@@ -24,7 +24,6 @@ import { constitutionCompleteness } from '../project/constitution.ts';
 import { TIER_POLICIES } from '../policy/lattice.ts';
 import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
 import { getDeliverable, TRUST_STATES, type TrustState } from '../state/deliverables.ts';
-import { assessConsequence } from '../workflow/consequence.ts';
 import type { BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type ToolDefinition, ToolInputError } from './definition.ts';
 import { recordAgent } from '../state/sessions.ts';
@@ -254,15 +253,7 @@ const classify = define<{ text: string }, unknown>({
       .slice(0, 5)
       // The inputs go with the suggestion, so starting it does not take a failed attempt to learn them.
       .map((w) => ({ id: w.manifest.id, title: w.manifest.title, inputs: w.manifest.inputSchema, required: w.manifest.requiredInputs }));
-    const activeContradictions = listRelations(ctx.store, { kind: 'contradicts' }).filter((r) => {
-      if (r.status === 'retired') return false;
-      const target = getEntity(ctx.store, r.toId);
-      return !!target && (target.kind === 'decision' || target.kind === 'requirement') && target.status === 'active';
-    }).length;
-    const judgment = assessConsequence(text, getProfile(ctx.store)?.scale ?? null, {
-      likelySkills: likely.map((s) => s.id),
-      activeContradictions,
-    });
+    const judgment = ctx.workflow.judge({ workflowId: null, input: { request: text } });
     const next =
       classification.coordination ? classification.coordination.next
       : classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
