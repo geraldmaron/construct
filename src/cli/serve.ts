@@ -15,7 +15,7 @@ import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
 import { HostRequests } from '../hosts/mcp/outbound.ts';
-import { refreshLauncher } from './hooks.ts';
+import { refreshLauncher } from '../hosts/wiring/claude-local.ts';
 import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
 import { managedClaudeSettingsPath, resolveClaudeConfigDir } from '../kernel/paths.ts';
 import { bindingFor, openBroker } from './broker-context.ts';

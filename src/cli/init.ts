@@ -27,6 +27,7 @@ import { updateLock } from '../kernel/registry/lockfile.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
 import { inspectWiring, installWiring, type WiringState } from '../hosts/wiring/wire.ts';
 import { HOOK_SETTINGS_PATH, inspectHooks, installHooks, type HookWiringState } from '../hosts/wiring/hooks.ts';
+import { projectStateDir } from '../kernel/project/layout.ts';
 import { clientWiring, launchFor, normalizeClient, parseClients, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { presentHosts, type PresentHost } from '../hosts/presence.ts';
 import { resolveHostConfigDirs } from '../kernel/paths.ts';
@@ -198,6 +199,13 @@ interface HostRecord {
   readonly next: readonly string[];
 }
 
+/** What a dry run says init would do to the hooks, given how they are now. */
+function plannedHooks(now: HookWiringState): HookWiringState {
+  return now.status === 'installed'
+    ? { ...now, detail: `${now.detail}; nothing to change` }
+    : { ...now, detail: `would put construct hooks in ${HOOK_SETTINGS_PATH}, on this machine only; now ${now.status}: ${now.detail}` };
+}
+
 /** The steps that leave a wired host able to reach Construct: its one-time steps, then the person's request. */
 function nextSteps(client: WirableClient, setupQuestions: number): string[] {
   const ask = setupQuestions > 0
@@ -241,6 +249,8 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     );
   }
   const root = initRootFor(ctx.cwd);
+  // Claude Code's machine-local settings, which hold the hooks, belong to the checkout.
+  const checkout = repo?.checkout ?? root;
   const dryRun = boolFlag(args, 'dry-run');
   const noWire = boolFlag(args, 'no-wire');
   const personalDir = stringFlag(args, 'skills-dir') ?? null;
@@ -268,7 +278,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
         how,
         mcp: noWire ? null : { path: current.path, status: current.status, detail: `would write ${w.relativePath} to start \`${launchText(root)} serve\``, launch: launchText(root) },
         skill: shipped ? { dir, outcome: 'planned', why: `would plant; now ${skillState(shipped, dir).state}` } : null,
-        hooks: client === 'claude-code' && !noWire ? { ...inspectHooks(root), detail: `would add construct hooks to ${HOOK_SETTINGS_PATH}` } : null,
+        hooks: client === 'claude-code' && !noWire ? plannedHooks(inspectHooks(root, { checkout, stateDir: projectStateDir(root) })) : null,
         next: noWire ? [] : nextSteps(client, draft.questions.length),
       };
     });
@@ -340,7 +350,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
     const hosts: HostRecord[] = pick.hosts.map(({ client, how }) => {
       const mcp = noWire ? null : installWiring(client, root);
       // Hooks make reporting reads and checking answers automatic where the host supports them.
-      const hooks = client === 'claude-code' && !noWire ? installHooks(root) : null;
+      const hooks = client === 'claude-code' && !noWire ? installHooks(root, { checkout, stateDir: result.layout.stateDir, env: ctx.env, at }) : null;
       const dir = skillDirOf(client);
       const skill = plantIn(dir, client);
       return {
