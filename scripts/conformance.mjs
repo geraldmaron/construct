@@ -6,7 +6,8 @@
  * is installed here, that its project MCP file can be written and reads
  * back bound, that the file carries no machine path and starts the server
  * exactly as written, that the operational skill is planted in the project
- * skills directory the host reads, that `construct serve` completes the MCP handshake the host would
+ * skills directory the host reads, that Claude Code's hooks stay in its
+ * machine-local settings, that `construct serve` completes the MCP handshake the host would
  * perform, that the interactive surface preserves the current host (no
  * spawn path exists in the server or the broker), that ordinary language
  * classifies as the directive's examples say, that a skill body loads only
@@ -179,6 +180,33 @@ async function checkPortableWiring(host, project, env, bin) {
   }
 }
 
+/**
+ * Claude Code's hooks stay on this machine: init records them installed in
+ * .claude/settings.local.json, git ignores that file, the shared
+ * .claude/settings.json holds no construct hook, and each hook runs through
+ * the launcher rather than naming Node or the install. Construct ships hooks
+ * for Claude Code only.
+ */
+function checkLocalHooks(project, wiredHost, env) {
+  const hooks = wiredHost?.hooks;
+  const local = join(project, '.claude', 'settings.local.json');
+  const shared = join(project, '.claude', 'settings.json');
+  const commands = (file) => {
+    if (!existsSync(file)) return [];
+    const settings = JSON.parse(readFileSync(file, 'utf8'));
+    return Object.values(settings.hooks ?? {}).flatMap((list) => list.flatMap((e) => (e.hooks ?? []).map((h) => String(h.command))));
+  };
+  const ours = (c) => / hook (?:post-tool|stop|session-start) --client=claude-code /.test(c);
+  const problems = [];
+  if (hooks?.status !== 'installed' || realpathSync(hooks.path) !== realpathSync(local)) problems.push(`init recorded hooks ${hooks ? `${hooks.status} in ${hooks.path}` : 'nowhere'}`);
+  if (commands(shared).some(ours)) problems.push('the shared .claude/settings.json holds construct hooks');
+  const installed = commands(local).filter(ours);
+  if (installed.length !== 3) problems.push(`${String(installed.length)} grounding hook(s) in .claude/settings.local.json, not 3`);
+  if (installed.some((c) => c.includes(process.execPath) || !c.includes('/.construct/state/launcher'))) problems.push('a hook names Node or the install instead of the launcher');
+  if (spawnSync('git', ['check-ignore', '-q', '.claude/settings.local.json'], { cwd: project, env }).status !== 0) problems.push('git does not ignore .claude/settings.local.json');
+  record('claude-code', 'machine-local hooks', problems.length === 0 ? 'passed' : 'failed', problems.length === 0 ? '.claude/settings.local.json runs the three hooks through the launcher; git ignores it; .claude/settings.json holds none' : problems.join('; '));
+}
+
 async function checkHost(host) {
   const scratch = mkdtempSync(join(tmpdir(), `construct-conformance-${host.id}-`));
   const home = join(scratch, 'home');
@@ -198,6 +226,7 @@ async function checkHost(host) {
     const wiredHost = rec?.hosts?.find((h) => h.client === host.id);
     record(host.id, 'host wiring', wiredHost?.mcp?.status === 'installed' ? 'passed' : 'failed', wiredHost?.mcp ? `${wiredHost.mcp.path} ${wiredHost.mcp.status}` : 'no wiring recorded');
     await checkPortableWiring(host, project, env, join(scratch, 'bin'));
+    if (host.id === 'claude-code') checkLocalHooks(project, wiredHost, env);
     // The project skills directory this host reads when it is the only host wired.
     const dir = join(realpathSync(project), projectSkillsDirFor(host.id, [host.id]));
     const present = existsSync(join(dir, 'construct', 'SKILL.md'));

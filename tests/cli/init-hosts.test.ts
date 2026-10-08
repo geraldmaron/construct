@@ -3,7 +3,8 @@
  * or the ones the person picks at their own terminal, and plants the
  * operational skill in the project where those hosts read it. When nothing is
  * connected it says so and names the command that connects one, and doctor
- * fails until then. Every PATH and HOME is the sandbox's own.
+ * fails until then. Re-running init repairs an earlier release's host file
+ * and hooks. Every PATH and HOME is the sandbox's own.
  */
 
 import { test } from 'node:test';
@@ -227,6 +228,42 @@ test('re-running init says the project’s statements are already proposed, and 
     assert.equal(unwired.code, 0, unwired.err);
     assert.match(unwired.out, /host: cursor wired earlier; no MCP configuration written \(--no-wire\)/);
     assert.doesNotMatch(unwired.out, /no agent session can reach Construct|not connected/);
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('re-init over an alpha.25 project repairs its .mcp.json and moves its hooks out of the shared settings, keeping the person\'s, and doctor is healthy', async () => {
+  const box = sandbox();
+  try {
+    const made = await capture(() => run(['init', '--no-wire', '--scale=solo', '--outcome=x', '--constraint=y'], box.ctx));
+    assert.equal(made.code, 0, made.err);
+    const node = '/nonexistent/fnm/node-versions/v22.18.0/installation/bin/node';
+    const install = '/nonexistent/lib/node_modules/@geraldmaron/construct/bin/construct.mjs';
+    writeFileSync(join(box.cwd, '.mcp.json'), JSON.stringify({ mcpServers: { construct: { type: 'stdio', command: node, args: [install, 'serve', '--client=claude-code', `--project=${box.cwd}`] } } }, null, 2));
+    const old = (event: string, matcher?: string) => ({ ...(matcher ? { matcher } : {}), hooks: [{ type: 'command', command: `${node} ${install} hook ${event} --client=claude-code --project=${box.cwd}`, timeout: 20 }] });
+    const mine = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo mine' }] };
+    mkdirSync(join(box.cwd, '.claude'), { recursive: true });
+    writeFileSync(join(box.cwd, '.claude', 'settings.json'), JSON.stringify({ hooks: { PostToolUse: [mine, old('post-tool', '*')], Stop: [old('stop')], SessionStart: [old('session-start')] } }, null, 2));
+
+    const before = await doctor(box.ctx);
+    assert.equal(before.healthy, false);
+    const staleHooks = before.checks.find((c) => c.name === 'host-hooks')!;
+    assert.equal(staleHooks.ok, false);
+    assert.match(staleHooks.detail, /\.claude\/settings\.json, the shared file, still holds 3 construct hook\(s\).*`construct init --client=claude-code` repairs them/);
+
+    const again = await capture(() => run(['init'], box.ctx));
+    assert.equal(again.code, 0, again.err);
+    assert.match(again.out, /host: claude-code wired \(\.mcp\.json starts `construct serve`; already wired in this project\)/);
+    assert.match(again.out, /hooks: installed \(.*; moved 3 old construct hook\(s\) out of \.claude\/settings\.json\)/);
+    assert.deepEqual(JSON.parse(readFileSync(join(box.cwd, '.claude', 'settings.json'), 'utf8')), { hooks: { PostToolUse: [mine] } }, 'the person\'s hook stays where it was');
+    const local = JSON.parse(readFileSync(join(box.cwd, '.claude', 'settings.local.json'), 'utf8')) as { hooks: Record<string, unknown[]> };
+    assert.deepEqual(Object.keys(local.hooks), ['PostToolUse', 'Stop', 'SessionStart']);
+    assert.ok(!readFileSync(join(box.cwd, '.mcp.json'), 'utf8').includes('/nonexistent/'));
+
+    const after = await doctor(box.ctx);
+    assert.equal(after.healthy, true, JSON.stringify(after.checks.filter((c) => !c.ok)));
+    assert.match(after.checks.find((c) => c.name === 'host-hooks')!.detail, /^\.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/);
   } finally {
     box.cleanup();
   }

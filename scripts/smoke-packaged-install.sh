@@ -76,7 +76,8 @@ expect_contains "init" "$init_out" "Initialized Construct project"
 [ -f "$project/.construct/sources.json" ] || fail "init wrote no sources.json"
 [ -f "$project/.construct/registry.lock.json" ] || fail "init wrote no registry.lock.json"
 [ -f "$project/.construct/state/construct.sqlite" ] || fail "the spine did not create its database"
-[ "$(ls "$project/.construct/state" | wc -l | tr -d ' ')" = "1" ] || fail "more than one file under .construct/state"
+state_files="$(ls "$project/.construct/state" | sort | tr '\n' ' ')"
+[ "$state_files" = "construct.sqlite installed.json launcher " ] || fail "the state directory holds something other than the database, the hooks' launcher, and the record of what Construct installed" "$state_files"
 [ -f "$project/.claude/skills/construct/SKILL.md" ] || fail "init did not plant the operational skill in the project" "$init_out"
 cmp -s "$project/.claude/skills/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
@@ -103,6 +104,25 @@ child.on("exit", (code) => process.exit(code ?? 1));
 ' "$mcp_launch")" || fail "the server would not start the way .mcp.json says" "$written_out"
 expect_contains "the server started from .mcp.json" "$written_out" '"name":"construct"'
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "init created a per-user data directory; project truth must stay in the project"
+
+echo "== the hooks live in this machine's settings and find Node through the launcher =="
+launcher="$project/.construct/state/launcher"
+[ "$(wc -l < "$launcher" | tr -d ' ')" = "2" ] || fail "the launcher is not two lines (Node, then Construct)" "$(cat "$launcher")"
+{ IFS= read -r launcher_node; IFS= read -r launcher_construct; } < "$launcher"
+"$launcher_node" "$launcher_construct" version >/dev/null || fail "the launcher does not start this install" "$(cat "$launcher")"
+[ -f "$project/.claude/settings.local.json" ] || fail "init --client=claude-code put no hooks in .claude/settings.local.json" "$init_out"
+node -e '
+const fs = require("node:fs");
+const read = (p) => (fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {});
+const ours = (settings) => Object.entries(settings.hooks ?? {}).flatMap(([event, list]) => list.flatMap((e) => e.hooks.map((h) => [event, h.command]))).filter(([, c]) => / hook (?:post-tool|stop|session-start) --client=claude-code /.test(c));
+const local = ours(read(process.argv[1]));
+const events = local.map(([e]) => e).sort().join(",");
+if (events !== "PostToolUse,SessionStart,Stop") { console.error(`local: ${events}`); process.exit(1); }
+if (local.some(([, c]) => !c.includes(process.argv[3]))) { console.error("a hook does not run through the launcher"); process.exit(1); }
+if (ours(read(process.argv[2])).length > 0) { console.error("the shared .claude/settings.json holds construct hooks"); process.exit(1); }
+' "$project/.claude/settings.local.json" "$project/.claude/settings.json" "$launcher" \
+  || fail "the three grounding hooks are not in .claude/settings.local.json alone" "$(cat "$project/.claude/settings.local.json")"
+git -C "$project" check-ignore -q .claude/settings.local.json || fail ".claude/settings.local.json is not kept out of git"
 
 echo "== plain init with no agent host installed says no session can reach Construct =="
 bare="$scratch/bare"

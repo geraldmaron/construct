@@ -2,18 +2,22 @@
  * tests/hosts/hooks.test.ts — the habits that keep work honest run without
  * the host model having to remember them: host reads are recorded from tool
  * results, unchecked factual answers are sent back once, and the hooks are
- * installed without disturbing a person's other settings.
+ * installed in the checkout's machine-local settings, through the launcher,
+ * without disturbing a person's other settings or hooks.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { addSource } from '../../src/kernel/state/sources.ts';
 import { listActivity } from '../../src/kernel/state/activity.ts';
 import { jiraItemsIn, onPostTool, onSessionStart, onStop } from '../../src/hosts/hooks/handlers.ts';
-import { installHooks, inspectHooks, HOOK_SETTINGS_PATH } from '../../src/hosts/wiring/hooks.ts';
+import { installHooks, inspectHooks, HOOK_SETTINGS_PATH, SHARED_HOOK_SETTINGS_PATH } from '../../src/hosts/wiring/hooks.ts';
+import { holdsSet, installClaudeLocal, uninstallClaudeLocal } from '../../src/hosts/wiring/claude-local.ts';
+import { CHECKOUT_LAUNCHER, sterile, type SterileFixture } from '../harness/sterile.ts';
 import { TOOLS } from '../../src/kernel/broker/tools.ts';
 import { record } from '../../src/kernel/broker/definition.ts';
 import { brokerFixture } from '../kernel/broker/support.ts';
@@ -96,24 +100,165 @@ test('session start says what waits and which sources only the host can read', a
   }
 });
 
-test('hooks install into Claude Code settings additively, once, and never over a file that is not JSON', () => {
-  const root = mkdtempSync(join(tmpdir(), 'construct-hooks-'));
+/** A git repository with a .claude directory, and the environment git runs in, all inside the sterile fixture. */
+function checkout(fx: SterileFixture): { readonly root: string; readonly stateDir: string; readonly env: NodeJS.ProcessEnv } {
+  const root = join(fx.root, 'repo');
+  mkdirSync(join(root, '.claude'), { recursive: true });
+  mkdirSync(join(fx.root, 'home'), { recursive: true });
+  const env: NodeJS.ProcessEnv = { PATH: process.env.PATH, HOME: join(fx.root, 'home'), GIT_CONFIG_NOSYSTEM: '1' };
+  assert.equal(spawnSync('git', ['init', '-q'], { cwd: root, env }).status, 0);
+  return { root, stateDir: join(root, '.construct', 'state'), env };
+}
+
+/** A grounding hook as an earlier release wrote it into the shared file: this machine's Node and install, by absolute path. */
+const committedHook = (event: string, matcher?: string) => ({
+  ...(matcher ? { matcher } : {}),
+  hooks: [{ type: 'command', command: `/opt/teammate/node/bin/node /opt/teammate/lib/node_modules/@geraldmaron/construct/bin/construct.mjs hook ${event} --client=claude-code --project=/opt/teammate/repo`, timeout: 20 }],
+});
+
+const AT = '2026-10-08T12:00:00.000Z';
+
+test('the grounding hooks go into the checkout\'s machine-local settings and run through the launcher; Construct\'s old entries leave the shared file and the person\'s stay', () => {
+  const fx = sterile();
   try {
-    mkdirSync(join(root, '.claude'));
-    const path = join(root, HOOK_SETTINGS_PATH);
-    writeFileSync(path, JSON.stringify({ model: 'x', hooks: { Stop: [{ hooks: [{ type: 'command', command: 'say done' }] }] } }));
-    assert.equal(installHooks(root).status, 'installed');
-    assert.equal(installHooks(root).status, 'installed');
-    const settings = JSON.parse(readFileSync(path, 'utf8'));
-    assert.equal(settings.model, 'x');
-    assert.equal(settings.hooks.Stop.length, 2, 'the person\'s own Stop hook stays, Construct\'s is added once');
-    assert.equal(settings.hooks.PostToolUse.length, 1);
-    writeFileSync(path, '{ not json');
-    assert.equal(installHooks(root).status, 'broken');
-    assert.equal(readFileSync(path, 'utf8'), '{ not json');
-    assert.equal(inspectHooks(join(root, 'nowhere')).status, 'absent');
+    const { root, stateDir, env } = checkout(fx);
+    const place = { checkout: root, stateDir };
+    const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
+    const mine = { hooks: [{ type: 'command', command: 'say done' }] };
+    writeFileSync(shared, `${JSON.stringify({ model: 'x', hooks: { PostToolUse: [committedHook('post-tool', '*')], Stop: [mine, committedHook('stop')], SessionStart: [committedHook('session-start')] } }, null, 2)}\n`);
+    const before = inspectHooks(root, place);
+    assert.equal(before.status, 'stale');
+    assert.match(before.detail, /^\.claude\/settings\.json, the shared file, still holds 3 construct hook\(s\) that name one machine's Node and install; `construct init --client=claude-code` repairs them$/);
+
+    const state = installHooks(root, { ...place, env, at: AT });
+    assert.equal(state.status, 'installed', state.detail);
+    assert.equal(state.path, join(root, '.claude', 'settings.local.json'));
+    assert.match(state.detail, /moved 3 old construct hook\(s\) out of \.claude\/settings\.json$/);
+    assert.deepEqual(JSON.parse(readFileSync(shared, 'utf8')), { model: 'x', hooks: { Stop: [mine] } }, 'the person\'s own Stop hook stays, and so do their settings');
+
+    const local = JSON.parse(readFileSync(join(root, HOOK_SETTINGS_PATH), 'utf8')) as { hooks: Record<string, { matcher?: string; hooks: { command: string; timeout: number }[] }[]> };
+    assert.deepEqual(Object.keys(local.hooks), ['PostToolUse', 'Stop', 'SessionStart']);
+    assert.equal(local.hooks.PostToolUse![0]!.matcher, '*');
+    for (const [hostEvent, event] of [['PostToolUse', 'post-tool'], ['Stop', 'stop'], ['SessionStart', 'session-start']] as const) {
+      assert.equal(local.hooks[hostEvent]!.length, 1, hostEvent);
+      const { command, timeout } = local.hooks[hostEvent]![0]!.hooks[0]!;
+      assert.equal(timeout, 20);
+      assert.ok(command.startsWith(`/bin/sh -c 'l='\\''${join(stateDir, 'launcher')}'\\''; `), command);
+      assert.ok(command.endsWith(`; "$n" "$c" hook ${event} --client=claude-code 2>/dev/null; exit 0'`), command);
+      assert.ok(!command.includes(process.execPath) && !command.includes('--project'), 'Node and the install are found through the launcher, and the project from the event');
+    }
+    assert.equal(readFileSync(join(stateDir, 'launcher'), 'utf8'), `${process.execPath}\n${CHECKOUT_LAUNCHER}\n`);
+    assert.equal(spawnSync('git', ['check-ignore', '-q', '.claude/settings.local.json'], { cwd: root, env }).status, 0, 'the machine-local file stays out of git');
+    const ran = spawnSync('/bin/sh', ['-c', local.hooks.Stop![0]!.hooks[0]!.command], { cwd: root, env, input: JSON.stringify({ cwd: root }), encoding: 'utf8' });
+    assert.equal(ran.status, 0, 'the hook runs as the host runs it, and exits 0');
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    fx.cleanup();
+  }
+});
+
+test('re-running the install is byte-identical, and init repairs an entry that differs or a launcher that names a Node that is gone', () => {
+  const fx = sterile();
+  try {
+    const { root, stateDir, env } = checkout(fx);
+    const place = { checkout: root, stateDir };
+    const local = join(root, HOOK_SETTINGS_PATH);
+    writeFileSync(local, `${JSON.stringify({ permissions: { allow: ['Bash(npm test)'] }, hooks: { Stop: [{ hooks: [{ type: 'command', command: 'echo mine' }] }] } }, null, 2)}\n`);
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
+    const files = [local, join(stateDir, 'launcher'), join(stateDir, 'installed.json'), join(fx.root, 'repo', '.git', 'info', 'exclude')];
+    const first = files.map((f) => readFileSync(f, 'utf8'));
+    assert.equal(installHooks(root, { ...place, env, at: '2026-10-09T12:00:00.000Z' }).status, 'installed');
+    assert.deepEqual(files.map((f) => readFileSync(f, 'utf8')), first, 'nothing changes on a second run');
+    const settings = JSON.parse(first[0]!) as { permissions: unknown; hooks: Record<string, { hooks: { command: string }[] }[]> };
+    assert.deepEqual(settings.permissions, { allow: ['Bash(npm test)'] });
+    assert.equal(settings.hooks.Stop!.length, 2);
+    assert.equal(settings.hooks.Stop![0]!.hooks[0]!.command, 'echo mine', 'the person\'s hook stays first');
+
+    const launcher = join(stateDir, 'launcher');
+    writeFileSync(launcher, `/no/such/node\n${CHECKOUT_LAUNCHER}\n`);
+    const gone = inspectHooks(root, place);
+    assert.equal(gone.status, 'stale');
+    assert.match(gone.detail, /the launcher names \/no\/such\/node, which no longer exists here; `construct init --client=claude-code` repairs them/);
+    rmSync(launcher);
+    assert.match(inspectHooks(root, place).detail, /the launcher .*launcher is missing, so the hooks cannot find Node/);
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
+
+    const edited = JSON.parse(readFileSync(local, 'utf8')) as { hooks: Record<string, { hooks: { command: string }[] }[]> };
+    edited.hooks.PostToolUse![0]!.hooks[0]!.command = `/opt/old/node /opt/old/construct.mjs hook post-tool --client=claude-code --project=${root}`;
+    writeFileSync(local, JSON.stringify(edited, null, 2));
+    const differs = inspectHooks(root, place);
+    assert.equal(differs.status, 'stale');
+    assert.match(differs.detail, /\.claude\/settings\.local\.json has construct hooks that differ from what init writes now/);
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'installed');
+    assert.equal(readFileSync(local, 'utf8'), first[0], 'the stale entry is rewritten, not kept beside a new one');
+
+    writeFileSync(local, '{ not json');
+    writeFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), JSON.stringify({ hooks: { Stop: [committedHook('stop')] } }));
+    const sharedBefore = readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8');
+    assert.equal(installHooks(root, { ...place, env, at: AT }).status, 'broken');
+    assert.equal(readFileSync(local, 'utf8'), '{ not json', 'a file that is not JSON is never rewritten');
+    assert.equal(readFileSync(join(root, SHARED_HOOK_SETTINGS_PATH), 'utf8'), sharedBefore, 'and the shared file keeps its hooks until the new ones are in place');
+    assert.equal(inspectHooks(join(root, 'nowhere'), { checkout: join(root, 'nowhere'), stateDir }).status, 'absent');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('one writer: removing one set of hooks leaves the other and the ignore line, and removing the last puts the file and the ignore list back', () => {
+  const fx = sterile();
+  try {
+    const { root, stateDir, env } = checkout(fx);
+    const local = join(root, HOOK_SETTINGS_PATH);
+    const exclude = join(root, '.git', 'info', 'exclude');
+    const excludeNow = (): string | null => (existsSync(exclude) ? readFileSync(exclude, 'utf8') : null);
+    const excludeBefore = excludeNow();
+    installClaudeLocal(root, stateDir, env, AT, 'grounding');
+    installClaudeLocal(root, stateDir, env, AT, 'coordination');
+    const both = readFileSync(local, 'utf8');
+    assert.ok(holdsSet(both, 'grounding') && holdsSet(both, 'coordination'));
+    assert.equal(installClaudeLocal(root, stateDir, env, AT, 'grounding').changed, false, 'a set already in place changes nothing');
+    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'grounding'), ['removed the grounding hooks', `${local} keeps the claude-code hook pack, and stays out of git`]);
+    const left = readFileSync(local, 'utf8');
+    assert.ok(!holdsSet(left, 'grounding') && holdsSet(left, 'coordination'));
+    assert.notEqual(excludeNow(), excludeBefore);
+    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'grounding'), ['no grounding hooks are installed in this checkout']);
+    assert.deepEqual(uninstallClaudeLocal(root, stateDir, 'coordination'), ['removed the claude-code hook pack', `restored ${local} as it was`]);
+    assert.equal(existsSync(local), false, 'there was no file before Construct wrote one');
+    assert.equal(excludeNow(), excludeBefore);
+
+    // A change someone made between two of Construct's writes outlives Construct's hooks.
+    installClaudeLocal(root, stateDir, env, AT, 'grounding');
+    writeFileSync(local, `${JSON.stringify({ ...JSON.parse(readFileSync(local, 'utf8')), model: 'opus' }, null, 2)}\n`);
+    installClaudeLocal(root, stateDir, env, AT, 'coordination');
+    uninstallClaudeLocal(root, stateDir, 'coordination');
+    uninstallClaudeLocal(root, stateDir, 'grounding');
+    assert.deepEqual(JSON.parse(readFileSync(local, 'utf8')), { model: 'opus' });
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a machine-local settings file git tracks is never written, because what is written there would be committed', () => {
+  const fx = sterile();
+  try {
+    const { root, stateDir, env } = checkout(fx);
+    const local = join(root, HOOK_SETTINGS_PATH);
+    const shared = join(root, SHARED_HOOK_SETTINGS_PATH);
+    writeFileSync(local, `${JSON.stringify({ permissions: { allow: ['Bash(ls)'] } }, null, 2)}\n`);
+    writeFileSync(shared, `${JSON.stringify({ hooks: { Stop: [committedHook('stop')] } }, null, 2)}\n`);
+    const gitEnv = { ...env, GIT_AUTHOR_NAME: 'fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid', GIT_COMMITTER_NAME: 'fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' };
+    assert.equal(spawnSync('git', ['add', '.claude'], { cwd: root, env: gitEnv }).status, 0);
+    assert.equal(spawnSync('git', ['commit', '-q', '-m', 'tracked'], { cwd: root, env: gitEnv }).status, 0);
+    const before = [readFileSync(local, 'utf8'), readFileSync(shared, 'utf8')];
+
+    const state = installHooks(root, { checkout: root, stateDir, env, at: AT });
+    assert.equal(state.status, 'broken');
+    assert.match(state.detail, /settings\.local\.json is tracked by git, so hooks written there would be committed; Construct will not edit it; left untouched$/);
+    assert.deepEqual([readFileSync(local, 'utf8'), readFileSync(shared, 'utf8')], before, 'neither file changes');
+    assert.throws(() => installClaudeLocal(root, stateDir, env, AT, 'coordination'), /tracked by git/);
+    assert.equal(readFileSync(local, 'utf8'), before[0]);
+    assert.equal(existsSync(join(root, '.git', 'info', 'exclude')) && readFileSync(join(root, '.git', 'info', 'exclude'), 'utf8').includes('/.claude/settings.local.json'), false, 'no ignore line that would do nothing for a tracked file');
+  } finally {
+    fx.cleanup();
   }
 });
 

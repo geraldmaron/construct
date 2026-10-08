@@ -10,7 +10,7 @@ import { detectLegacyHomeState, detectLegacyProjectFiles } from '../kernel/proje
 import { readProjectFiles } from '../kernel/project/initialize.ts';
 import { constitutionCompleteness } from '../kernel/project/constitution.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
-import { projectDbPath, projectLayout } from '../kernel/project/layout.ts';
+import { projectDbPath, projectLayout, projectStateDir } from '../kernel/project/layout.ts';
 import { openStateStore } from '../kernel/state/open.ts';
 import { STATE_FORMAT_VERSION } from '../kernel/state/format.ts';
 import { getProfile } from '../kernel/state/profile.ts';
@@ -22,11 +22,11 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostConfigDirs, resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { inspectWiring, launchOf } from '../hosts/wiring/wire.ts';
-import { inspectHooks } from '../hosts/wiring/hooks.ts';
+import { HOOK_SETTINGS_PATH, inspectHooks } from '../hosts/wiring/hooks.ts';
 import { LAUNCHER, normalizeClient, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { findOnPath, presentHosts } from '../hosts/presence.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
-import { bindProject, createContext, gitRootOf, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
+import { bindProject, createContext, gitRootOf, resolveRepository, WorktreeBindingError, type CliContext, type Lane } from './context.ts';
 import { esc, say, shellWord, writeJson } from './output.ts';
 
 export const DOCTOR_SPEC: CommandSpec = {
@@ -238,9 +238,17 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     const wired = WIRABLE_CLIENTS.map((c) => inspectWiring(c, root)).filter((w) => w.status !== 'absent');
     wiredClients = wired.map((w) => w.client);
     if (wired.some((w) => w.client === 'claude-code')) {
-      const h = inspectHooks(root);
-      // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing.
-      checks.push({ name: 'host-hooks', ok: h.status !== 'broken', detail: h.status === 'installed' ? h.detail : `${h.detail}; \`construct init --client=claude-code\` adds them` });
+      // A session reads the machine-local settings of the checkout it works in; a worktree has its own, which init never writes.
+      const checkout = lane?.checkout ?? resolveRepository(root)?.checkout ?? root;
+      const h = inspectHooks(lane?.root ?? root, { checkout, stateDir: projectStateDir(root) });
+      const fix = '`construct init --client=claude-code`';
+      const inLane = lane ? `; \`construct init\` writes the hooks only in the main checkout, ${root}, not in this worktree's own ${HOOK_SETTINGS_PATH}` : '';
+      // Hooks are what make reporting reads and checking answers automatic; their absence is worth saying, not failing. Stale or broken hooks fail.
+      const detail = h.status === 'installed' ? h.detail
+        : h.status === 'stale' ? `${h.detail}${inLane}`
+          : h.status === 'broken' ? `${h.detail}; fix the file${lane ? inLane : `, then ${fix} puts them back`}`
+            : lane ? `${h.detail}${inLane}` : `${h.detail}; ${fix} adds them`;
+      checks.push({ name: 'host-hooks', ok: h.status !== 'broken' && h.status !== 'stale', detail });
     }
     if (wired.length === 0) {
       // A project no host is wired to is one no agent session can reach, so it is not healthy.
