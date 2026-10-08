@@ -8,6 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { sterile } from '../../harness/sterile.ts';
@@ -16,6 +17,9 @@ import { run } from '../../../src/cli/index.ts';
 import { capture, inProject } from '../../cli/support.ts';
 
 const RELEASED_2_2_0 = readFileSync(new URL('./fixtures/construct-2.2.0-SKILL.md', import.meta.url));
+/** The operational SKILL.md exactly as published 3.0.0-alpha.25 planted it: version 2.2.0, no source line. */
+const RELEASED_ALPHA_25 = readFileSync(new URL('./fixtures/construct-2.2.0-alpha.25-SKILL.md', import.meta.url));
+const ALPHA_25_DIGEST = '51b336e795a413bd520553358004c15e271609d1f1b462fe49cf30d5530dd610';
 
 function operational(): ShippedSkill {
   return readShippedSkill(OPERATIONAL_SKILL)!;
@@ -41,6 +45,53 @@ test('the operational skill exactly as an earlier release shipped it, with no so
     assert.equal(planted.outcome, 'planted');
     assert.match(planted.why, /2\.2\.0 is an earlier release/);
     assert.equal(skillState(skill, fx.root).state, 'current');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('the operational skill exactly as alpha.25 planted it is an earlier release, and plantSkill and init replace it without --force', async () => {
+  assert.equal(createHash('sha256').update(RELEASED_ALPHA_25).digest('hex'), ALPHA_25_DIGEST);
+  const skill = operational();
+  const fx = sterile();
+  try {
+    install(fx.root, skill.name, RELEASED_ALPHA_25);
+    const before = skillState(skill, fx.root);
+    assert.equal(before.state, 'outdated', before.why);
+    const planted = plantSkill(skill, fx.root);
+    assert.equal(planted.outcome, 'planted');
+    assert.equal(planted.found, 'outdated');
+    assert.match(planted.why, /upgraded: 2\.2\.0 is an earlier release/);
+    assert.equal(skillState(skill, fx.root).state, 'current');
+  } finally {
+    fx.cleanup();
+  }
+  await inProject(async (ctx, box) => {
+    const dir = join(box.home, 'skills');
+    install(dir, skill.name, RELEASED_ALPHA_25);
+    const upgraded = await capture(() => run(['init', `--skills-dir=${dir}`], ctx));
+    assert.equal(upgraded.code, 0, upgraded.err);
+    assert.match(upgraded.out, /operational skill: planted .*upgraded: 2\.2\.0 is an earlier release/);
+    assert.equal(skillState(skill, dir).state, 'current');
+  });
+});
+
+test('the alpha.25 copy with one byte changed is someone’s edits: diverged, and left alone without --force', () => {
+  const skill = operational();
+  const edited = Uint8Array.from(RELEASED_ALPHA_25);
+  const at = Buffer.from(edited).indexOf('# Construct in this session') + 2;
+  assert.ok(at > 1, 'the fixture carries the heading the edit lands in');
+  edited[at] = 'c'.charCodeAt(0);
+  assert.equal(edited.byteLength, RELEASED_ALPHA_25.byteLength);
+  assert.notEqual(createHash('sha256').update(edited).digest('hex'), ALPHA_25_DIGEST);
+  const fx = sterile();
+  try {
+    install(fx.root, skill.name, edited);
+    assert.equal(skillState(skill, fx.root).state, 'diverged');
+    const refused = plantSkill(skill, fx.root);
+    assert.equal(refused.outcome, 'refused');
+    assert.equal(refused.found, 'diverged');
+    assert.deepEqual(new Uint8Array(readFileSync(join(fx.root, skill.name, 'SKILL.md'))), edited, 'left as it was');
   } finally {
     fx.cleanup();
   }
