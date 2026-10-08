@@ -63,3 +63,25 @@ report names what was added or modified and flags finished work that cited
 it. A partial report updates only the items it names; nothing is treated as
 removed because it was not read. `bootstrap` lists the sources only the
 host can read that have never been reported or have gone stale.
+
+## A system the person names, declared from the session
+
+A report needs a declared source. When the person names a system that the
+project has not declared (a tracker, a wiki, chat, a monitoring tool), the
+host declares it with the `sources` tool, action `declare`: an id, a kind
+(`github`, `jira`, `docs`, `hris`, or `other`), and optionally a purpose and
+a locator. Pages read from the open web go under one source named `web`
+with kind `other`. A report on an id that is not declared is refused with
+that remedy. The host reports only the items it cites, with the passage it
+relies on.
+
+A source declared this way stays in this machine's state and never reaches
+`.construct/sources.json`. It is treated as confidential, it is informative
+only, so it settles nothing, and Construct cannot write to it. The activity
+log records it as declared by the assistant. A directory or git source is
+never declared from a session, because either one lets Construct read files
+itself; the person adds those with `construct source add`. The person
+commits a declared source with `construct source add <id>` and the same
+kind. The committed declaration then governs it, it stays confidential
+unless the person names another sensitivity, and what was already read from
+it carries over.

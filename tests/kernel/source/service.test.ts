@@ -12,6 +12,7 @@ import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
 import { getSource, listSources, authorityOf } from '../../../src/kernel/state/sources.ts';
 import { listObservations } from '../../../src/kernel/state/drift.ts';
+import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
 const file = (sources: unknown[]) => validateSourcesFile({ format: 'construct-sources', formatVersion: 2, sources }, 'sources.json');
@@ -48,7 +49,7 @@ test('connector declarations say what a system supplies and what it is commonly 
   assert.equal(connectorDeclaration('salesforce'), null);
 });
 
-test('declarations sync into state: add, update, retire, and never touch local sources', () => {
+test('declarations sync into state: add, update, retire, and leave local sources alone', () => {
   const fx = freshStore();
   try {
     const at = clock();
@@ -71,9 +72,37 @@ test('declarations sync into state: add, update, retire, and never touch local s
     assert.equal(getSource(fx.store, 'scratch')?.status, 'active');
     assert.equal(listSources(fx.store, { status: 'active' }).length, 2);
 
-    assert.throws(() => svc.syncDeclarations(file([{ ...jira, id: 'scratch', kind: 'directory', locator: '/x' }]), at()), /exists locally/);
+    assert.throws(() => svc.syncDeclarations(file([{ ...jira, id: 'scratch' }]), at()), /scratch exists on this machine as a directory source; declare the jira one under a new id/);
+    assert.equal(getSource(fx.store, 'scratch')?.origin, 'local', 'a refused sync changes nothing');
     assert.throws(() => svc.syncDeclarations(file([docs]), at()), /was retired; declare it under a new id/);
     assert.throws(() => svc.syncDeclarations(file([{ ...jira, locator: 'bad key' }]), at()), /project key/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('committing a local source under its own id and kind makes it declared and keeps what was read from it', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.addLocal({ id: 'jira', kind: 'jira', purpose: 'named by the person', locator: 'PROJ', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at());
+    let n = 0;
+    svc.reportRead('jira', { items: [{ ref: 'PROJ-1', title: 'Retry policy', updatedAt: '2026-09-01', text: 'retries back off over 24h' }] }, at(), () => `snap-${String((n += 1))}`);
+    const synced = svc.syncDeclarations(file([{ ...jira, locator: undefined }]), at());
+    assert.deepEqual(synced, { added: [], updated: ['jira'], retired: [] });
+    const s = getSource(fx.store, 'jira')!;
+    assert.equal(s.origin, 'declared');
+    assert.equal(s.authorityLevel, 'authoritative', 'the committed declaration governs');
+    assert.equal(s.sensitivity, 'internal');
+    assert.equal(s.locator, 'PROJ', 'a local locator stays when the committed file names none');
+    assert.deepEqual(currentManifest(fx.store, 'jira')?.map((e) => e.ref), ['PROJ-1'], 'the read recorded before it was committed carries over');
+    assert.deepEqual(svc.syncDeclarations(file([]), at()).retired, ['jira'], 'once committed, it follows the file');
+
+    const scratch = { id: 'scratch', kind: 'other', purpose: 'notes', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' } as const;
+    svc.addLocal({ ...scratch, locator: null }, at());
+    assert.deepEqual(svc.syncDeclarations(file([scratch]), at()).updated, ['scratch'], 'a local source committed exactly as it stands is reported, because it is now declared');
+    assert.equal(getSource(fx.store, 'scratch')?.origin, 'declared');
   } finally {
     fx.cleanup();
   }

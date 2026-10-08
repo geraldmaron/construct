@@ -144,16 +144,19 @@ Surface: interactive. Reads only: no.
 
 ### `sources`
 
-Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.
+Sources. The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `refresh`, `report` | yes | list, show, refresh, or report. |
-| `id` | string | no | The source id, for show, refresh, and report. |
+| `action` | `list`, `show`, `refresh`, `report`, `declare` | yes | list, show, refresh, report, or declare. |
+| `id` | string | no | The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter. |
 | `items` | array | no | For report: {ref, title?, updatedAt?, text?, kind?} for each item you read. |
 | `partial` | boolean | no | For report: you read only some of the source; items you did not report are kept, not treated as removed. |
+| `kind` | `github`, `jira`, `docs`, `hris`, `other` | no | For declare: what kind of system it is; other covers chat, monitoring tools, and the open web. |
+| `purpose` | string | no | For declare: what the person uses it for, in one sentence. |
+| `locator` | string | no | For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials. |
 
 ### `check_answer`
 

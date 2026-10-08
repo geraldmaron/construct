@@ -21,7 +21,14 @@ construct source retire design
 Declared sources go into `.construct/sources.json` without credentials; a
 locator that carries a password or any key that names a secret is refused.
 `--local` keeps a source out of the committed file so a sensitive locator
-stays in this checkout.
+stays in this checkout. A session can also declare a system the person
+named, through the `sources` tool: such a source is local, confidential,
+and informative, and never a directory or git source (see
+[Connectors and system semantics](connectors-and-semantics.md)).
+Committing a local source with `construct source add <id>` under the same
+kind makes it declared and keeps what was read from it. It keeps its
+sensitivity unless `--sensitivity` names another, and a local locator stays
+local when the committed declaration names none.
 
 A relative directory locator is taken relative to the project. `relate`
 records how two sources stand to each other; relations are typed (governs,
