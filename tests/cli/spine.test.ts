@@ -95,6 +95,14 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     assert.equal(record.registry.skills, 17);
     assert.equal(record.registry.workflows, 22);
     assert.deepEqual(record.registry.skew, []);
+    // A project no host is wired to is not healthy, and that is the only thing wrong with it.
+    const unwired = await capture(() => run(['doctor', '--json'], ctx));
+    assert.equal(unwired.code, 1, unwired.out);
+    const failing = (JSON.parse(unwired.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.filter((c) => !c.ok);
+    assert.deepEqual(failing.map((c) => c.name), ['host-wiring']);
+    assert.match(failing[0]!.detail, /no host wired, so no agent session can reach Construct; no agent host found on this machine; `construct init --client=<host>` wires one/);
+    const wired = await capture(() => run(['init', '--client=claude-code'], ctx));
+    assert.equal(wired.code, 0, wired.err);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
     assert.equal(doctor.code, 0, doctor.out);
     const checks = JSON.parse(doctor.out);

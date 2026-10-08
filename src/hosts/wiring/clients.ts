@@ -8,6 +8,11 @@
  * and the host's working directory (or its workspace variable) names the
  * project. The same file works on every teammate's machine and after a Node
  * upgrade, so it is safe to commit.
+ *
+ * Each host's project skills directory is the one its skills documentation
+ * names: Claude Code reads .claude/skills, Codex .agents/skills, Bob
+ * .bob/skills, and Cursor, OpenCode, and VS Code read both .agents/skills and
+ * .claude/skills.
  */
 
 import { realpathSync } from 'node:fs';
@@ -57,9 +62,23 @@ export function serveArgs(client: ClientId): string[] {
 
 interface WiringFacts {
   readonly id: WirableClient;
+  /** The host's name as a person knows it. */
+  readonly label: string;
   /** The file the host reads, relative to the project root. */
   readonly relativePath: string;
   readonly documentation: string;
+  /** Commands whose presence on PATH says the host is installed here. */
+  readonly binaries: readonly string[];
+  /** The project skills directory the host reads, relative to the project root. */
+  readonly projectSkillsDir: string;
+  /** True when the host also reads Claude Code's project skills directory, so one copy there serves both. */
+  readonly readsClaudeSkills: boolean;
+  /**
+   * What the person does once, in the host, before a session there reaches
+   * Construct. Init writes none of these settings; each is the host's own
+   * approval or trust step, and how each host prompts is as its docs say.
+   */
+  readonly firstRun: readonly string[];
   /** True when the entry starts `serve` for this client. */
   bound(entry: Record<string, unknown>): boolean;
 }
@@ -77,9 +96,23 @@ function boundTo(client: WirableClient): (entry: Record<string, unknown>) => boo
 
 const serveLine = (launch: Launch, client: WirableClient, ...extra: string[]): string[] => [...launch.args, ...serveArgs(client), ...extra];
 
+/** Claude Code's project skills directory, which Cursor, OpenCode, and VS Code also read. */
+export const CLAUDE_PROJECT_SKILLS_DIR = join('.claude', 'skills');
+/** The shared project skills directory Codex, Cursor, OpenCode, and VS Code read. */
+const AGENTS_PROJECT_SKILLS_DIR = join('.agents', 'skills');
+
 export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   {
     id: 'claude-code',
+    label: 'Claude Code',
+    binaries: ['claude'],
+    projectSkillsDir: CLAUDE_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: true,
+    firstRun: [
+      'Start a new Claude Code session in this folder; a session already open does not see Construct.',
+      'Approve the project server construct when Claude Code asks. `claude mcp get construct` shows whether it is pending, approved, or rejected; if you declined it, `claude mcp reset-project-choices` asks again.',
+      'Allow Construct\'s tools when Claude Code asks, or add mcp__construct to permissions.allow in your own settings.',
+    ],
     relativePath: '.mcp.json',
     format: 'json',
     serversKey: 'mcpServers',
@@ -89,6 +122,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   },
   {
     id: 'cursor',
+    label: 'Cursor',
+    binaries: ['cursor', 'cursor-agent'],
+    projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: true,
+    firstRun: [
+      'Open this folder in Cursor, or start cursor-agent here.',
+      'Check that construct is on in Cursor\'s MCP settings.',
+    ],
     relativePath: join('.cursor', 'mcp.json'),
     format: 'json',
     serversKey: 'mcpServers',
@@ -98,6 +139,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   },
   {
     id: 'vscode',
+    label: 'VS Code',
+    binaries: ['code', 'code-insiders'],
+    projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: true,
+    firstRun: [
+      'Open this folder in VS Code and trust the workspace; workspace MCP servers follow Workspace Trust.',
+      'In Copilot Chat agent mode, start construct from the tools list if it has not started.',
+    ],
     relativePath: join('.vscode', 'mcp.json'),
     format: 'json',
     serversKey: 'servers',
@@ -107,6 +156,11 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   },
   {
     id: 'opencode',
+    label: 'OpenCode',
+    binaries: ['opencode'],
+    projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: true,
+    firstRun: ['Start opencode in this folder.'],
     relativePath: 'opencode.json',
     format: 'json',
     serversKey: 'mcp',
@@ -116,6 +170,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   },
   {
     id: 'codex',
+    label: 'Codex',
+    binaries: ['codex'],
+    projectSkillsDir: AGENTS_PROJECT_SKILLS_DIR,
+    readsClaudeSkills: false,
+    firstRun: [
+      'Start codex in this folder and trust the project when it asks; Codex reads .codex/config.toml only in trusted projects.',
+      'Approve construct\'s tool calls when Codex asks.',
+    ],
     relativePath: join('.codex', 'config.toml'),
     format: 'toml',
     serversKey: 'mcp_servers',
@@ -126,6 +188,14 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
   },
   {
     id: 'bob',
+    label: 'IBM Bob',
+    binaries: ['bob'],
+    projectSkillsDir: join('.bob', 'skills'),
+    readsClaudeSkills: false,
+    firstRun: [
+      'Open this folder in Bob; it reads .bob/mcp.json.',
+      'Approve construct\'s tools when Bob asks.',
+    ],
     relativePath: join('.bob', 'mcp.json'),
     format: 'json',
     serversKey: 'mcpServers',
@@ -137,6 +207,18 @@ export const CLIENT_WIRINGS: readonly ClientWiring[] = Object.freeze([
 
 export function clientWiring(id: string): ClientWiring | null {
   return CLIENT_WIRINGS.find((c) => c.id === id) ?? null;
+}
+
+/**
+ * The project skills directory the operational skill is planted in for this
+ * host, given every host wired in the project. One copy serves as many hosts
+ * as can read it: Claude Code's directory when Claude Code is wired and this
+ * host reads it too, else the host's own. The result is relative to the
+ * project root.
+ */
+export function projectSkillsDirFor(client: WirableClient, wired: readonly WirableClient[]): string {
+  const w = clientWiring(client)!;
+  return w.readsClaudeSkills && wired.includes('claude-code') ? CLAUDE_PROJECT_SKILLS_DIR : w.projectSkillsDir;
 }
 
 /** The client id a `--client` value or an ambient host name means. */

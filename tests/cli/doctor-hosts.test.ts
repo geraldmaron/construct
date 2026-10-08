@@ -1,12 +1,13 @@
 /**
- * tests/cli/doctor-hosts.test.ts — for each wired host, doctor checks that
- * the command its file starts can be found from here, and says whether it is
- * the same install as the doctor running.
+ * tests/cli/doctor-hosts.test.ts — doctor fails a project no host is wired
+ * to; for each wired host it checks that the command its file starts can be
+ * found from here, and says whether it is the same install as the doctor
+ * running; and it checks the operational skill where the wired hosts read it.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { chmodSync, copyFileSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import type { CliContext } from '../../src/cli/context.ts';
@@ -110,6 +111,43 @@ test('an alpha.25 .mcp.json is reported broken with its repair, and init --clien
     const after = await doctorWith(box, box.ctx.env.PATH!);
     assert.equal(after.healthy, true, JSON.stringify(after.checks.filter((c) => !c.ok)));
     assert.match(after.checks.find((c) => c.name === 'host-wiring')!.detail, /^claude-code installed$/);
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('with no host wired, host-wiring fails, names the hosts found here, and gives the command that wires one', async () => {
+  const box = sandbox();
+  try {
+    const init = await capture(() => run(['init', '--no-wire', '--scale=solo', '--outcome=x', '--constraint=y'], box.ctx));
+    assert.equal(init.code, 0, init.err);
+    assert.match(init.out, /host: not connected: no MCP configuration written \(--no-wire\)\nNext: run `construct init --client=<host>` without --no-wire/);
+    mkdirSync(join(box.home, '.cursor'));
+    const r = await doctorWith(box, box.ctx.env.PATH!);
+    assert.equal(r.healthy, false);
+    const wiring = r.checks.find((c) => c.name === 'host-wiring')!;
+    assert.equal(wiring.ok, false);
+    assert.equal(wiring.detail, 'no host wired, so no agent session can reach Construct; found cursor; `construct init --client=<host>` wires one');
+    assert.deepEqual(r.checks.filter((c) => !c.ok).map((c) => c.name), ['host-wiring']);
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('the operational skill is checked once in each project skills directory a wired host reads, with init as the fix', async () => {
+  const box = sandbox();
+  try {
+    await wired(box, 'codex', 'bob');
+    const both = await doctorWith(box, box.ctx.env.PATH!);
+    const skills = both.checks.filter((c) => c.name === 'operational-skill');
+    assert.deepEqual(skills.map((c) => [c.ok, /in (\S+) \(read by (\S+)\)/.exec(c.detail)?.slice(1)]), [
+      [true, [join(box.cwd, '.agents', 'skills'), 'codex']],
+      [true, [join(box.cwd, '.bob', 'skills'), 'bob']],
+    ]);
+    rmSync(join(box.cwd, '.bob', 'skills'), { recursive: true, force: true });
+    const missing = (await doctorWith(box, box.ctx.env.PATH!)).checks.filter((c) => c.name === 'operational-skill' && !c.ok);
+    assert.equal(missing.length, 1);
+    assert.match(missing[0]!.detail, /^absent in .*\.bob\/skills \(read by bob\): .*; `construct init --client=bob` plants /);
   } finally {
     box.cleanup();
   }

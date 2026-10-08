@@ -71,9 +71,14 @@ bundle that changed is locked only when you name it with `--confirm`.
 
 ## The host does not see Construct
 
-`construct doctor` reports host wiring. `construct init --client=<host>`
-writes the host's project MCP file; `construct serve --client=<host>
---describe` prints what the server would serve without starting it.
+`construct doctor` reports host wiring, and fails when no host is wired.
+`construct init --client=<host>` writes the host's project MCP file and plants
+the operational skill where that host reads it; `construct serve
+--client=<host> --describe` prints what the server would serve without
+starting it. A host needs its one-time step before it sees Construct: in
+Claude Code, a new session and approving the `construct` server
+(`claude mcp get construct` shows whether it is pending, approved, or
+rejected).
 
 ## Something ran that should not have
 

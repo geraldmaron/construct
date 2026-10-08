@@ -12,15 +12,31 @@ construct init --client=cursor --scale=solo --outcome="ship the first paying ver
 
 `init` finds the repository root, writes `.construct/` (project, constitution,
 sources, and registry lock files, all committed) and one runtime database
-under `.construct/state/` (ignored), reads what the project already says
+under `.construct/state/` (ignored), and reads what the project already says
 about itself (README, agent instructions, architecture documents, ownership
-files, the package manifest) and proposes a profile with provenance for each
-proposal, plants the operational `construct` skill into the host's skills
-directory, and writes the host's project MCP configuration so the host
-starts `construct serve` in this project. That file names no path on your
-machine: it starts `construct` from your PATH, or `npx --no-install
-construct` when Construct is installed as a dependency of the project.
-Re-running `init` leaves an unchanged file exactly as it is.
+files, the package manifest) to propose a profile with provenance for each
+proposal. Re-running it says what is new and what an earlier run already
+proposed.
+
+Then it connects the agent hosts you use here. `--client=<host>` names them
+(repeat it, or comma-separate: `--client=claude-code,cursor`). Without it,
+`init` picks in this order: the host it is running inside; the hosts already
+wired in this project, so re-running `init` repairs them; the only agent host
+installed on this machine, found by its command on PATH or its configuration
+directory. When it finds several and you are at a terminal of your own, it
+asks once which you use; otherwise it names what it found, wires none, and
+says that no agent session can reach Construct until you run
+`construct init --client=<host>`. `construct doctor` fails until a host is
+wired.
+
+For each host, `init` writes the host's project MCP file so the host starts
+`construct serve` in this project, and plants the operational `construct`
+skill in the project skills directory that host reads. That file names no
+path on your machine: it starts `construct` from your PATH, or `npx
+--no-install construct` when Construct is installed as a dependency of the
+project. Re-running `init` leaves an unchanged file exactly as it is. One copy
+of the skill serves every host that reads its directory, so wiring Claude
+Code and Cursor together plants only `.claude/skills/construct`.
 
 Without the answer flags, `init` leaves three questions open and the host
 asks them in conversation: what this project is to you, what result matters
@@ -28,7 +44,28 @@ most now, and what Construct must be careful not to violate. Nothing
 inferred becomes fact until you confirm it.
 
 `--dry-run` says what would happen and writes nothing. `--no-wire` skips the
-host configuration. `--skills-dir` plants the skill somewhere explicit.
+hosts' MCP files and hooks, and sets up only a host you name or are running
+inside. `--skills-dir` also plants a personal copy of the
+skill in that directory; a personal copy loads in every repository the host
+opens, whichever Construct each one runs, and `construct doctor` says when an
+older one is still there.
+
+## First run in each host
+
+After `init`, each host has a one-time step before a session there reaches
+Construct. `init` prints it, and writes none of these settings for you.
+
+| Host | File written | Skill directory | One-time step |
+|---|---|---|---|
+| Claude Code | `.mcp.json` | `.claude/skills` | Start a new session in the folder and approve the project server `construct` (`claude mcp get construct` shows its state; `claude mcp reset-project-choices` asks again after a decline), then allow its tools or add `mcp__construct` to `permissions.allow` |
+| Cursor | `.cursor/mcp.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | Open the folder in Cursor or start `cursor-agent` there, and check that `construct` is on in Cursor's MCP settings |
+| VS Code | `.vscode/mcp.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | Trust the workspace (workspace MCP servers follow Workspace Trust), and start `construct` from the tools list in Copilot Chat agent mode if it has not started |
+| OpenCode | `opencode.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | None: start `opencode` in the folder |
+| Codex | `.codex/config.toml` | `.agents/skills` | Trust the project when Codex asks (it reads `.codex/config.toml` only in trusted projects), and approve `construct`'s tool calls |
+| IBM Bob | `.bob/mcp.json` | `.bob/skills` | Open the folder in Bob and approve `construct`'s tools |
+
+How each host prompts for these approvals is as its own documentation
+describes; Construct has not exercised every prompt.
 
 ## What the host does with it
 
@@ -176,8 +213,9 @@ anything not listed there is untested, not assumed.
 
 ## What to commit
 
-`.construct/*.json` and the host MCP files above carry no machine paths, so
-they are safe to commit. Each teammate needs Construct on their PATH (`npm
+`.construct/*.json`, the host MCP files above, and the project skill
+directories `init` plants carry no machine paths, so they are safe to commit.
+Each teammate needs Construct on their PATH (`npm
 install -g @geraldmaron/construct@alpha`) or as a project dependency.
 `.construct/state/` stays on this machine and is ignored. The hooks `init`
 adds to `.claude/settings.json` name this machine's Node and install, so

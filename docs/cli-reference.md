@@ -9,7 +9,7 @@ Every command, its flags, and what it does. Every command accepts the global fla
 
 ### `construct init`
 
-set this project up: files, one database, a drafted profile, the operational skill in your host
+set this project up: files, one database, a drafted profile, and the agent host you use here, wired with the operational skill
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
@@ -18,9 +18,9 @@ set this project up: files, one database, a drafted profile, the operational ski
 | `--scale` | yes | what this is to you: solo \| side_project \| team \| multi_team \| organization |
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
-| `--client` | yes | the host you use: plants its skill and wires its MCP config (claude-code \| cursor \| vscode \| opencode \| codex \| bob) |
-| `--no-wire` | no | do not write the host’s MCP configuration |
-| `--skills-dir` | yes | plant the operational skill into this directory instead of a host’s |
+| `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |
+| `--no-wire` | no | do not write the hosts’ MCP configuration or hooks |
+| `--skills-dir` | yes | also plant a personal copy of the operational skill in this directory |
 | `--dry-run` | no | say what would happen and write nothing |
 
 Reads only: no.

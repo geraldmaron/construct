@@ -67,7 +67,7 @@ expect_contains "doctor" "$predoctor" "FAIL project"
 
 echo "== init from the packaged install =="
 skills_dir="$scratch/host-skills"
-init_out="$(npx --no-install construct init --client=claude-code --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' --skills-dir="$skills_dir" 2>&1)" \
+init_out="$(npx --no-install construct init --client=claude-code --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' 2>&1)" \
   || fail "construct init exited non-zero" "$init_out"
 printf '%s\n' "$init_out"
 expect_contains "init" "$init_out" "Initialized Construct project"
@@ -77,9 +77,11 @@ expect_contains "init" "$init_out" "Initialized Construct project"
 [ -f "$project/.construct/registry.lock.json" ] || fail "init wrote no registry.lock.json"
 [ -f "$project/.construct/state/construct.sqlite" ] || fail "the spine did not create its database"
 [ "$(ls "$project/.construct/state" | wc -l | tr -d ' ')" = "1" ] || fail "more than one file under .construct/state"
-[ -f "$skills_dir/construct/SKILL.md" ] || fail "init did not plant the operational skill" "$init_out"
-cmp -s "$skills_dir/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
+[ -f "$project/.claude/skills/construct/SKILL.md" ] || fail "init did not plant the operational skill in the project" "$init_out"
+cmp -s "$project/.claude/skills/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
+[ ! -e "$HOME/.claude/skills/construct" ] || fail "init planted a personal copy that would load in every repository"
+expect_contains "init" "$init_out" "Next, in Claude Code:"
 grep -q '^\.construct/state/$' "$project/.gitignore" || fail "init did not ignore .construct/state/"
 
 echo "== the host file starts the project's construct with no machine path =="
@@ -101,6 +103,28 @@ child.on("exit", (code) => process.exit(code ?? 1));
 ' "$mcp_launch")" || fail "the server would not start the way .mcp.json says" "$written_out"
 expect_contains "the server started from .mcp.json" "$written_out" '"name":"construct"'
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "init created a per-user data directory; project truth must stay in the project"
+
+echo "== plain init with no agent host installed says no session can reach Construct =="
+bare="$scratch/bare"
+bare_bin="$scratch/bare-bin"
+mkdir -p "$bare/home" "$bare/project" "$bare_bin"
+for tool in node npm npx git; do
+  found="$(command -v "$tool")" || fail "$tool is not on PATH"
+  ln -s "$found" "$bare_bin/$tool"
+done
+git -C "$bare/project" init -q .
+printf '# Bare\n\nA project on a machine with no agent host.\n' > "$bare/project/README.md"
+bare_init="$(cd "$bare/project" && env -i HOME="$bare/home" PATH="$bare_bin" "$project/node_modules/.bin/construct" init 2>&1)" \
+  || fail "plain init exited non-zero" "$bare_init"
+expect_contains "plain init" "$bare_init" "host: not connected"
+expect_contains "plain init" "$bare_init" "no agent session can reach Construct"
+case "$bare_init" in *"answer the questions in your agent session"*) fail "plain init points at an agent session that cannot reach Construct" "$bare_init" ;; esac
+set +e
+bare_doctor="$(cd "$bare/project" && env -i HOME="$bare/home" PATH="$bare_bin" "$project/node_modules/.bin/construct" doctor 2>&1)"
+bare_doctor_status=$?
+set -e
+[ "$bare_doctor_status" -ne 0 ] || fail "doctor called a project no host is wired to healthy" "$bare_doctor"
+expect_contains "plain doctor" "$bare_doctor" "FAIL host-wiring"
 
 echo "== status and doctor =="
 status_out="$(npx --no-install construct status 2>&1)" || fail "status exited non-zero" "$status_out"

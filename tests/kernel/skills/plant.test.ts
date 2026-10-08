@@ -158,22 +158,48 @@ test('init replaces an earlier release of the operational skill, and for a chang
   });
 });
 
-test('doctor gives the operational skill’s next step: install for an earlier release, install --force for a changed copy', async () => {
+test('doctor gives the operational skill’s next step: init to connect the host, init for an earlier release, install --force for a changed copy', async () => {
   await inProject(async (ctx, box) => {
     const inClaude = { ...ctx, env: { ...ctx.env, CLAUDECODE: '1' } };
-    const dir = join(box.home, '.claude', 'skills');
     const skill = operational();
+    const escaped = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Not wired: no project skill to check, and the advice connects the host.
+    const unwired = await capture(() => run(['doctor'], inClaude));
+    assert.match(unwired.out, /FAIL host-wiring: no host wired, so no agent session can reach Construct; .*`construct init --client=<host>` wires one/);
+    assert.match(unwired.out, /ok {3}host: inside claude \(CLAUDECODE\); claude-code is not wired in this project, so a session here cannot reach Construct; `construct init --client=claude-code` wires it/);
+    assert.doesNotMatch(unwired.out, /operational-skill/);
+
+    const wired = await capture(() => run(['init', '--client=claude-code'], ctx));
+    assert.equal(wired.code, 0, wired.err);
+    const dir = join(box.cwd, '.claude', 'skills');
+    assert.match((await capture(() => run(['doctor'], inClaude))).out, /ok {3}operational-skill: current in .*\.claude\/skills \(read by claude-code\)/);
 
     install(dir, skill.name, RELEASED_2_2_0);
     const outdated = await capture(() => run(['doctor'], inClaude));
-    assert.match(outdated.out, /FAIL operational-skill: outdated .*run `construct skill install construct --client=claude` to plant/);
+    assert.match(outdated.out, /FAIL operational-skill: outdated .*`construct init --client=claude-code` plants/);
 
     install(dir, skill.name, new TextDecoder().decode(RELEASED_2_2_0).replace('# Construct in this session', '# Mine now'));
     const diverged = await capture(() => run(['doctor'], inClaude));
-    assert.match(diverged.out, /FAIL operational-skill: diverged .*`construct skill install construct --client=claude --force` replaces it/);
+    assert.match(diverged.out, new RegExp(`FAIL operational-skill: diverged .*\`construct skill install construct --force --dir=${escaped(dir)}\` replaces it`));
 
-    const fixed = await capture(() => run(['skill', 'install', 'construct', '--client=claude', '--force'], inClaude));
+    const fixed = await capture(() => run(['skill', 'install', 'construct', `--dir=${dir}`, '--force'], inClaude));
     assert.equal(fixed.code, 0, fixed.err);
     assert.match((await capture(() => run(['doctor'], inClaude))).out, /ok {3}operational-skill: current/);
+  });
+});
+
+test('doctor says when an older personal copy of the operational skill loads in every repository, and how to remove it', async () => {
+  await inProject(async (ctx, box) => {
+    const inClaude = { ...ctx, env: { ...ctx.env, CLAUDECODE: '1' } };
+    assert.equal((await capture(() => run(['init', '--client=claude-code'], ctx))).code, 0);
+    const personal = join(box.home, '.claude', 'skills');
+    install(personal, OPERATIONAL_SKILL, RELEASED_ALPHA_25);
+    const doctor = await capture(() => run(['doctor'], inClaude));
+    assert.equal(doctor.code, 0, doctor.out);
+    assert.match(doctor.out, /ok {3}personal-skill: an older personal copy at .*\.claude\/skills loads in every repository; `construct skill remove construct --client=claude --confirm` removes it/);
+    const removed = await capture(() => run(['skill', 'remove', 'construct', '--client=claude', '--confirm'], inClaude));
+    assert.equal(removed.code, 0, removed.err);
+    assert.doesNotMatch((await capture(() => run(['doctor'], inClaude))).out, /personal-skill/);
   });
 });
