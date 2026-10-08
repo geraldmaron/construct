@@ -112,7 +112,7 @@ Surface: both. Reads only: no.
 
 ### `run_status`
 
-Run status. Where a run stands: its state, each step, the deliverables and how far they are trusted, and any decision it waits on.
+Run status. Where a run stands: its state, each step, the deliverables and how far they are trusted, any decision it waits on, and what it was asked to cover (the period in dates, the sources it names, who judged the reading).
 
 Surface: both. Reads only: yes.
 
@@ -282,7 +282,7 @@ Surface: both. Reads only: no.
 
 ### `run_status`
 
-Run status. Where a run stands: its state, each step, the deliverables and how far they are trusted, and any decision it waits on.
+Run status. Where a run stands: its state, each step, the deliverables and how far they are trusted, any decision it waits on, and what it was asked to cover (the period in dates, the sources it names, who judged the reading).
 
 Surface: both. Reads only: yes.
 

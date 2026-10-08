@@ -7,11 +7,13 @@
 import { ACTION_TIERS, type ActionTier } from '../state/steps.ts';
 import { isRange, isVersion } from './semver.ts';
 import {
+  INPUT_TYPES,
   INTERACTION_CLASSES,
   SKILL_MANIFEST_FORMAT,
   SKILL_MANIFEST_VERSION,
   WORKFLOW_MANIFEST_FORMAT,
   WORKFLOW_MANIFEST_VERSION,
+  type InputType,
   type InteractionClass,
   type SkillManifest,
   type VersionedDependency,
@@ -237,12 +239,20 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
   const version = str(r, 'version', path);
   if (!isVersion(version)) throw new ManifestError(path, '"version" must be a semantic version');
   const schemaRaw = r.inputSchema === undefined ? {} : rec(r.inputSchema, path, '"inputSchema"');
-  const inputSchema: Record<string, 'string' | 'number' | 'boolean' | 'string[]' | 'object'> = {};
+  const inputSchema: Record<string, InputType> = {};
   for (const [k, v] of Object.entries(schemaRaw)) {
-    inputSchema[k] = oneOf(String(v), ['string', 'number', 'boolean', 'string[]', 'object'] as const, path, `inputSchema.${k}`);
+    inputSchema[k] = oneOf(String(v), INPUT_TYPES, path, `inputSchema.${k}`);
   }
   const requiredInputs = strList(r, 'requiredInputs', path, { optional: true });
   for (const k of requiredInputs) if (!(k in inputSchema)) throw new ManifestError(path, `"requiredInputs" names "${k}", which inputSchema does not declare`);
+  if (Object.values(inputSchema).filter((t) => t === 'period').length > 1) throw new ManifestError(path, 'declares more than one period input; a run covers one period');
+  const dedupeKey = strList(r, 'dedupeKey', path, { optional: true });
+  if (dedupeKey.length > 0) {
+    // An empty dedupe key already identifies the work by every input.
+    for (const [k, t] of Object.entries(inputSchema)) {
+      if ((t === 'period' || t === 'source_ids') && !dedupeKey.includes(k)) throw new ManifestError(path, `"dedupeKey" leaves out ${k}; work for a different ${k} is different work`);
+    }
+  }
   const stepsRaw = r.steps;
   if (!Array.isArray(stepsRaw) || stepsRaw.length === 0) throw new ManifestError(path, '"steps" must be a non-empty list');
   const steps = stepsRaw.map((s, i) => step(s, path, i));
@@ -286,7 +296,7 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     onNoData: oneOf(typeof r.onNoData === 'string' ? r.onNoData : 'block', ['succeed_empty', 'block', 'fail'] as const, path, 'onNoData'),
     onStaleData: oneOf(typeof r.onStaleData === 'string' ? r.onStaleData : 'block', ['block', 'proceed_flagged', 'fail'] as const, path, 'onStaleData'),
     concurrency: oneOf(typeof r.concurrency === 'string' ? r.concurrency : 'single', ['single', 'per_input'] as const, path, 'concurrency'),
-    dedupeKey: strList(r, 'dedupeKey', path, { optional: true }),
+    dedupeKey,
     cancellation: oneOf(typeof r.cancellation === 'string' ? r.cancellation : 'after_step', ['immediate', 'after_step'] as const, path, 'cancellation'),
     deliverable: { kind: str(deliverableRaw, 'kind', path), schema: str(deliverableRaw, 'schema', path), challenge: bool(deliverableRaw, 'challenge', path, false) },
     proposes: strList(r, 'proposes', path, { optional: true }).map((p) => oneOf(p, ['constitution', 'sources', 'skills', 'workflows', 'lessons'] as const, path, 'proposes')),
