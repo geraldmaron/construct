@@ -161,8 +161,8 @@
       "interactionClass": "manage"
     },
     "prd-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:9646c279922b586d487e2182997705a8eccda49343642957dd03277178546bd1",
+      "version": "1.1.0",
+      "digest": "sha256:d9ecaa15284f578da222dbef2335a49aa4394ce25a1060984905c2bab8d7be91",
       "title": "Write a PRD",
       "interactionClass": "manage"
     },
@@ -179,8 +179,8 @@
       "interactionClass": "manage"
     },
     "proposal-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:e44de7891112e1c9e1660a12ce89451dac12db3e039d1f60fc09a0ee724e2a5c",
+      "version": "1.1.0",
+      "digest": "sha256:487bb33dcc34aaca692b4d0b9b19781c3a06947b691d10f0fa2326a5151f2936",
       "title": "Write a proposal",
       "interactionClass": "manage"
     },
@@ -209,8 +209,8 @@
       "interactionClass": "manage"
     },
     "rfc-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:6d06a8d258fa137f33dfc97d09981bf61d3c0346b44e61d8ed27208a91cef954",
+      "version": "1.1.0",
+      "digest": "sha256:300c89e682642ca7436d2b0457b71e63ecb2dd7eedb98e80eba02806135d64f4",
       "title": "Write an RFC",
       "interactionClass": "manage"
     },

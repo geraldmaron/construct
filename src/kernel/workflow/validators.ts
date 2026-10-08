@@ -4,13 +4,16 @@
  * returns what it checked and what failed, never a judgment about content.
  *
  * Grounding is checked, not trusted: when the caller supplies a resolver,
- * every cited reference must name something real, every artifact a step says
- * it wrote must exist, and every figure in the output or the artifact must
- * appear in something the step cited (or be derived by arithmetic over figures
- * that do). These are mechanical floors under quality, not a judge of it.
+ * every cited reference must name something this project holds, every
+ * artifact a step says it wrote must exist, and every figure in the output or
+ * the artifact must appear in text Construct holds for something the step
+ * cited (or be derived by arithmetic over figures that do). An excerpt is
+ * checked against that text; it never stands in for it. These are mechanical
+ * floors under quality, not a judge of it.
  */
 
-import { normalizeQuote, type RefResolver } from '../project/evidence.ts';
+import { holdsContent, normalizeQuote, type RefResolver } from '../project/evidence.ts';
+import { normalizeUrl } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
 
 export interface ValidatorResult {
@@ -185,6 +188,11 @@ function headings(text: string): string[] {
 
 type Validator = (subject: ValidationSubject) => readonly string[];
 
+/** What a citation that names nothing held is told: what does resolve, and how to make a host read citable. */
+function unheld(ref: string): string {
+  return `evidence "${ref}" names nothing this project holds: cite a project file, a deliverable, or an item a recorded read holds (its ref or its url); record what you read through your own tools with the sources tool (action report) before citing it`;
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
@@ -203,7 +211,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   citations_present: ({ evidence, resolve }) => {
     if (evidence.length === 0) return ['no evidence was submitted; every step that reads cites what it read'];
     const problems = evidence.filter((e) => !e.ref || e.ref.trim() === '').map(() => 'an evidence entry has no reference');
-    if (resolve) for (const e of evidence) if (e.ref && e.ref.trim() !== '' && !resolve(e.ref)) problems.push(`evidence "${e.ref}" does not name a file, source, item, or deliverable this project has`);
+    if (resolve) for (const e of evidence) if (e.ref && e.ref.trim() !== '' && !resolve(e.ref)) problems.push(unheld(e.ref));
     return problems;
   },
   no_uncited_material_findings: ({ output }) => {
@@ -269,7 +277,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return problems;
   },
   evidence_refs_resolve: ({ evidence, resolvableRefs, resolve }) => {
-    if (resolve) return evidence.filter((e) => !resolve(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
+    if (resolve) return evidence.filter((e) => !resolve(e.ref)).map((e) => unheld(e.ref));
     // Fail closed: with nothing to resolve against, an unchecked pass would read as a checked one.
     if (resolvableRefs.size === 0) return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
     return evidence.filter((e) => !resolvableRefs.has(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
@@ -360,11 +368,14 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return problems;
   },
   numbers_grounded: ({ output, evidence, resolve, input }) => {
+    // Only text Construct holds grounds a figure: a file, or what a recorded read kept. An excerpt is a claim about
+    // that text, checked by excerpts_match, and supports nothing on its own.
     const cited: string[] = [];
+    const cut: string[] = [];
     for (const e of evidence) {
-      if (e.excerpt) cited.push(e.excerpt);
       const r = resolve?.(e.ref);
       if (r?.text) cited.push(r.text);
+      if (r?.truncated && !cut.includes(e.ref)) cut.push(e.ref);
     }
     // What the person asked for counts as given: a figure in the request or inputs is theirs, not invented.
     cited.push(...strings(input));
@@ -402,7 +413,8 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const unsupported = new Set<string>();
     const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
     for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
-    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it`)];
+    const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} was cut at 16 KiB; report the part you rely on as its own item)` : '';
+    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}`)];
   },
   template_conformance: ({ output, input, resolve }) => {
     const template = (isRecord(output) && typeof output.template === 'string' ? output.template : null) ?? (isRecord(input) && typeof input.template === 'string' ? input.template : null);
@@ -425,9 +437,9 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     for (const e of evidence) {
       if (!e.excerpt || e.excerpt.trim() === '') continue;
       const r = resolve(e.ref);
-      // Without text there is nothing to compare, and the excerpt stands as the host's word. With text, even
-      // reported text (a fixture, a host's read), the quote has to agree with what was recorded. Both sides are
-      // compared with credentials removed, since recorded text is kept that way.
+      // Without text there is nothing to compare: the excerpt is not checked, and it supports nothing (no figure,
+      // no content floor). With text, even reported text (a fixture, a host's read), the quote has to agree with
+      // what was recorded. Both sides are compared with credentials removed, since recorded text is kept that way.
       if (!r || r.text === undefined) continue;
       if (normalizeQuote(redact(r.text)).includes(normalizeQuote(redact(e.excerpt)))) continue;
       // Text cut at the cap may hold the quote past the cut: unchecked, not a misquote.
@@ -436,11 +448,10 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  evidence_witnessed: ({ evidence, resolve }) => {
+  evidence_recorded: ({ evidence, resolve }) => {
     if (!resolve) return ['nothing was supplied to resolve evidence against'];
     if (evidence.length === 0) return ['no evidence was submitted'];
-    const witnessed = evidence.filter((e) => resolve(e.ref)?.provenance === 'witnessed').length;
-    return witnessed === 0 ? ['every citation rests on the host\'s word; cite at least one thing Construct can open (a project file or a source it reads)'] : [];
+    return evidence.some((e) => holdsContent(resolve(e.ref))) ? [] : ['nothing cited holds content Construct can check: cite a project file, or an item whose text a recorded read holds'];
   },
   superseded_acknowledged: ({ output, evidence, resolve }) => {
     if (!resolve) return [];
@@ -478,14 +489,15 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return problems;
   },
   sources_diverse: ({ evidence, resolve }) => {
-    // Triangulation: a finding resting on one document is a quotation, not research.
+    // Triangulation: a finding resting on one document is a quotation, not research. Only what holds content
+    // counts, and pages of one website are one place.
     const roots = new Set<string>();
     for (const e of evidence) {
       const r = resolve?.(e.ref);
-      if (!r) continue;
-      if (r.kind === 'web') {
-        try { roots.add(new URL(e.ref.trim()).hostname.replace(/^www\./, '')); } catch { /* unparseable stays uncounted */ }
-      } else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
+      if (!r || !holdsContent(r)) continue;
+      const page = r.itemRef ? normalizeUrl(r.itemRef) : null;
+      if (page !== null) roots.add(new URL(page).hostname.replace(/^www\./, ''));
+      else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
     }
     return roots.size >= 2 ? [] : [`the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`];
   },

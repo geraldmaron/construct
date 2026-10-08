@@ -143,7 +143,7 @@ test('a report on an undeclared id names the declare remedy, and the same report
     assert.equal(reported.result.structuredContent.sourceId, 'jira');
 
     const checked = await call(fx, 'check_answer', { answer: 'Retries back off over 24 hours.', citations: [{ ref: 'PROJ-101', excerpt: 'back off over 24 hours' }] });
-    assert.deepEqual(checked.evidence, { witnessed: 0, reported: 1, unresolved: 0 }, 'what was reported from a declared source is citable, as the assistant\'s report');
+    assert.deepEqual(checked.evidence, { witnessed: 0, reported: 1, unverified: 0, unresolved: 0 }, 'what was reported from a declared source is citable, as the assistant\'s report');
     const unknown = await mcpCall(handle, 5, { action: 'report', id: 'confluence', items });
     assert.deepEqual(unknown.result.structuredContent.allowed, ['jira'], 'the error names the sources that are declared');
   } finally {
@@ -200,7 +200,7 @@ test('the person commits a declared source with construct source add, and what w
     assert.equal(s.purpose, 'work tracking', 'the committed declaration governs');
     assert.equal(s.locator, 'PROJ');
     const checked = await call(fx, 'check_answer', { answer: 'Retries back off over 24 hours.', citations: [{ ref: 'PROJ-101' }] });
-    assert.deepEqual(checked.evidence, { witnessed: 0, reported: 1, unresolved: 0 });
+    assert.deepEqual(checked.evidence, { witnessed: 0, reported: 1, unverified: 0, unresolved: 0 });
   } finally {
     fx.cleanup();
   }

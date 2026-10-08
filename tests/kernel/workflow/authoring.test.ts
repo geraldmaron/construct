@@ -86,7 +86,7 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     assert.equal(done.deliverable.trust, 'validated');
     const status = await call(fx, 'run_status', { runId });
     const final = status.deliverables.at(-1);
-    assert.deepEqual(final.verification.evidence, { witnessed: 3, reported: 0, unresolved: 0 }, 'the deliverable records what the whole run rested on');
+    assert.deepEqual(final.verification.evidence, { witnessed: 3, reported: 0, unverified: 0, unresolved: 0 }, 'the deliverable records what the whole run rested on');
   } finally {
     fx.cleanup();
   }

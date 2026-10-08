@@ -41,7 +41,7 @@ test('a plain answer can be checked before it is given, and checking records not
     assert.ok(bad.problems.some((p: { problem: string }) => p.problem.includes('docs/forecast.md')));
     const good = await call(fx, 'check_answer', { answer: 'About 2.1M 429s a month as of September.', citations: [{ ref: 'docs/metrics.md', excerpt: 'September 2.1M' }] });
     assert.equal(good.ok, true, JSON.stringify(good.problems));
-    assert.deepEqual(good.evidence, { witnessed: 1, reported: 0, unresolved: 0 });
+    assert.deepEqual(good.evidence, { witnessed: 1, reported: 0, unverified: 0, unresolved: 0 });
     assert.deepEqual({ runs: listRuns(fx.broker.store, {}).length, statements: listStatements(fx.broker.store).length }, before);
   } finally {
     fx.cleanup();
@@ -58,7 +58,7 @@ test('what the host read from a tracker is tracked: citations resolve, quotes ar
     const first = await call(fx, 'sources', { action: 'report', id: 'jira-plat', items: [{ ref: 'PLAT-101', title: 'Platform events', updatedAt: '2026-08-21', text: 'v1 launch is gated to the Enterprise plan' }, { ref: 'PLAT-102', title: 'Emit events', text: 'emit job events' }] });
     assert.equal(first.outcome, 'changed');
     const ans = await call(fx, 'check_answer', { answer: 'v1 is Enterprise-only.', citations: [{ ref: 'PLAT-101', excerpt: 'gated to the Enterprise plan' }, { ref: 'PLAT-999' }] });
-    assert.deepEqual(ans.evidence, { witnessed: 0, reported: 1, unresolved: 1 }, 'a reported read is the host\'s word, and an item it never reported does not resolve');
+    assert.deepEqual(ans.evidence, { witnessed: 0, reported: 1, unverified: 0, unresolved: 1 }, 'a reported read is the host\'s word, and an item it never reported does not resolve');
     const misquote = await call(fx, 'check_answer', { answer: 'Pro gets it.', citations: [{ ref: 'PLAT-101', excerpt: 'Pro gets webhooks at launch' }] });
     assert.ok(misquote.problems.some((p: { check: string }) => p.check === 'excerpts_match'), 'quotes are checked against what the host reported');
 
@@ -77,6 +77,27 @@ test('what the host read from a tracker is tracked: citations resolve, quotes ar
     const q = listOpenDecisions(s).find((d) => (d.subject as { deliverableIds?: string[] } | null)?.deliverableIds?.length);
     assert.ok(q, 'the person is asked about the work that cited the changed ticket');
     await assert.rejects(call(fx, 'sources', { action: 'report', id: 'nope', items: [{ ref: 'x' }] }), /no source "nope" is declared; declare it with sources action declare/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an answer resting on citations admitted on the host\'s word is told to name them as unverified', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.ctx.now();
+    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'platform tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'report', id: 'jira-plat', partial: true, items: [{ ref: 'PLAT-101', text: 'v1 launch is gated to the Enterprise plan' }] });
+    const strict = await call(fx, 'check_answer', { answer: 'v1 is Enterprise-only.', citations: [{ ref: 'PLAT-101' }, { ref: 'jira-plat:PLAT-999' }] });
+    assert.equal(strict.ok, false, 'under require an unrecorded ticket names nothing');
+    assert.doesNotMatch(strict.next, /unverified/);
+    const accepting = { ...fx.broker, policy: { hostReads: 'accept' as const, answerCheck: 'nudge' as const } };
+    const t = tool('check_answer');
+    const loose = await t.run(accepting, t.validate(record({ answer: 'v1 is Enterprise-only.', citations: [{ ref: 'PLAT-101' }, { ref: 'jira-plat:PLAT-999' }, { ref: 'https://example.com/blog' }] }))) as any;
+    assert.equal(loose.ok, true, JSON.stringify(loose.problems));
+    assert.deepEqual(loose.evidence, { witnessed: 0, reported: 1, unverified: 2, unresolved: 0 });
+    assert.match(loose.next, /no recorded read holds jira-plat:PLAT-999, https:\/\/example\.com\/blog/);
+    assert.match(loose.next, /unverified/);
   } finally {
     fx.cleanup();
   }

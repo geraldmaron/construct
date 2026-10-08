@@ -65,17 +65,15 @@ export interface CurrentManifest {
   readonly entries: ManifestEntry[];
   /** "witnessed" when Construct read the source itself; "reported" when a host or fixture said what it held. */
   readonly provenance: 'witnessed' | 'reported';
-  /** Only some items were read; absence from the manifest is not evidence of absence. */
-  readonly partial: boolean;
 }
 
 /** The manifest recorded at the source's most recent change, with how it was obtained, or null when none was recorded. */
 export function currentManifestRecord(store: StateStore, sourceId: string): CurrentManifest | null {
   // Newest first, straight from the store: a source with a long history must still resolve to its latest read.
   const o = latestObservationWith(store, sourceId, 'source.changed', 'manifest');
-  const ev = o?.evidence as { manifest?: unknown; evidence?: unknown; partial?: unknown } | null | undefined;
+  const ev = o?.evidence as { manifest?: unknown; evidence?: unknown } | null | undefined;
   if (!ev || !Array.isArray(ev.manifest)) return null;
-  return { entries: ev.manifest as ManifestEntry[], provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', partial: ev.partial === true };
+  return { entries: ev.manifest as ManifestEntry[], provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed' };
 }
 
 /** The manifest entries recorded at the source's most recent change, or null when none was ever recorded. */

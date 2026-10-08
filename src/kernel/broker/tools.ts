@@ -792,13 +792,18 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
     const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
     // Counted, so how often answers are checked is something a person can see, not something to hope for.
     appendActivity(ctx.store, { at: ctx.now(), kind: 'answer.checked', actor: ctx.actor, payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length } });
+    // Admitted on the host's word alone (policy.hostReads accept): the person should hear which parts those are.
+    const unverified = [...new Set(citations.filter((c) => resolve(c.ref)?.provenance === 'unverified').map((c) => c.ref))];
+    const onWord = unverified.length === 0
+      ? ''
+      : `; no recorded read holds ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? ` (+${String(unverified.length - 5)} more)` : ''}, so say the parts resting on ${unverified.length === 1 ? 'it' : 'them'} are unverified, or record what you read with sources action report and check again`;
     return {
       ok: problems.length === 0,
       problems,
       evidence: provenanceOf(citations, resolve),
-      next: problems.length === 0
+      next: (problems.length === 0
         ? 'give the answer; say which parts rest on reported sources if any'
-        : 'fix what is listed, or give the answer with the unsupported parts named as unsupported',
+        : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,
     };
   },
 });

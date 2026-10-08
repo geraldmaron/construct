@@ -267,4 +267,4 @@ how many checks were waived.
 Construct installs hooks only in Claude Code. In every host, the
 server-side floor still holds: under `policy.hostReads` set to require (the
 default), a citation into a source only the host can read does not resolve
-until a read of that source has been recorded.
+until a read of that item has been recorded.

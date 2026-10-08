@@ -17,7 +17,7 @@ import { getDriftFinding } from '../state/drift.ts';
 import { createEvidenceResolver, type RecordKind, type RefResolver } from '../project/evidence.ts';
 import { currentManifestRecord, type ManifestEntry } from './manifest.ts';
 
-export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null; readonly provenance?: 'witnessed' | 'reported'; readonly partial?: boolean } | null, options?: { readonly hostReads?: 'require' | 'accept' }): RefResolver {
+export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null; readonly provenance?: 'witnessed' | 'reported' } | null, options?: { readonly hostReads?: 'require' | 'accept' }): RefResolver {
   const knows = (kind: RecordKind, id: string): boolean => {
     switch (kind) {
       case 'statement': return getStatement(store, id) !== null;
@@ -39,7 +39,6 @@ export function projectResolver(store: StateStore, root: string, override?: { re
         locator: s.locator,
         manifest: overridden ? override.manifest : rec?.entries ?? null,
         provenance: overridden ? override.provenance ?? rec?.provenance : rec?.provenance,
-        partial: overridden ? override.partial ?? false : rec?.partial ?? false,
         neverRead: !overridden && !s.lastSnapshotId,
       };
     }),

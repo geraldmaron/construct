@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "proposal-authoring",
   "title": "Write a proposal",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Write a decision proposal or business case for a named reader, grounded in strategy, goals, and evidence, ending in the decision needed, from whom, and by when; challenge the draft before handing it back.",
   "activation": [
     "write a proposal",
@@ -118,7 +118,7 @@
         "citations_present",
         "evidence_refs_resolve",
         "excerpts_match",
-        "evidence_witnessed",
+        "evidence_recorded",
         "superseded_acknowledged",
         "artifacts_exist",
         "numbers_grounded",
