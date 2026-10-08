@@ -96,7 +96,11 @@ export interface HostReport {
 }
 
 export interface SourceService {
-  /** Reconcile committed declarations into state. Local sources are untouched. */
+  /**
+   * Reconcile committed declarations into state. A local source is untouched unless the committed file declares
+   * the same id with the same kind: then it becomes declared, takes the committed declaration, and keeps what was
+   * read from it.
+   */
   syncDeclarations(file: SourcesFile, at: string): SyncResult;
   /** Add a source only this checkout knows about; its locator never reaches a committed file. */
   addLocal(input: Omit<DeclaredSource, 'read' | 'write'> & { readonly read?: boolean; readonly write?: boolean }, at: string): Source;
@@ -259,16 +263,22 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         const retired: string[] = [];
         const declaredIds = new Set(file.sources.map((s) => s.id));
         for (const d of file.sources) {
-          const existing = getSource(store, d.id);
-          if (existing && existing.origin === 'local') {
-            throw new Error(`source ${d.id} exists locally; remove the local one before declaring it in the committed file`);
+          let existing = getSource(store, d.id);
+          let committedLocal = false;
+          if (existing && existing.origin === 'local' && existing.status === 'active') {
+            if (existing.kind !== d.kind) {
+              throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
+            }
+            existing = updateSource(store, d.id, { origin: 'declared' }, at);
+            committedLocal = true;
           }
           if (existing && existing.status === 'retired') {
             throw new Error(`source ${d.id} was retired; declare it under a new id`);
           }
           const result = declare(d, at, existing);
           if (result === 'added') added.push(d.id);
-          if (result === 'updated') updated.push(d.id);
+          // A local source the file now declares has changed origin, so it counts as updated even when nothing else differs.
+          if (result === 'updated' || committedLocal) updated.push(d.id);
         }
         for (const s of listSources(store, { status: 'active' })) {
           if (s.origin === 'declared' && !declaredIds.has(s.id)) {

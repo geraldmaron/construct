@@ -76,7 +76,7 @@ test('what the host read from a tracker is tracked: citations resolve, quotes ar
     assert.equal(partial.staleDeliverables.length, 1);
     const q = listOpenDecisions(s).find((d) => (d.subject as { deliverableIds?: string[] } | null)?.deliverableIds?.length);
     assert.ok(q, 'the person is asked about the work that cited the changed ticket');
-    await assert.rejects(call(fx, 'sources', { action: 'report', id: 'nope', items: [{ ref: 'x' }] }), /no active source/);
+    await assert.rejects(call(fx, 'sources', { action: 'report', id: 'nope', items: [{ ref: 'x' }] }), /no source "nope" is declared; declare it with sources action declare/);
   } finally {
     fx.cleanup();
   }

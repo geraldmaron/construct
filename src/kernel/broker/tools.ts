@@ -42,6 +42,10 @@ import { listLiveDeliverables } from '../state/deliverables.ts';
 import { appendActivity } from '../state/activity.ts';
 import { skillQuality } from '../state/quality.ts';
 import { projectResolver as resolverFor } from '../source/resolver.ts';
+import { ensureSourceEntities } from '../source/entities.ts';
+import { locatorProblem } from '../source/locators.ts';
+import { getSource } from '../state/sources.ts';
+import { SOURCE_ID, locatorCarriesCredentials } from '../project/sources-file.ts';
 
 /** What a step may cite in this project, as it stands now. */
 export function projectResolver(ctx: BrokerContext): RefResolver {
@@ -600,35 +604,108 @@ function onboardingAnswerFor(subject: unknown, resolution: string | readonly str
   return null;
 }
 
-interface SourcesInput { action: 'list' | 'show' | 'refresh' | 'report'; id?: string; items: Record<string, unknown>[]; partial: boolean }
+const SOURCE_ACTIONS = ['list', 'show', 'refresh', 'report', 'declare'] as const;
+/** Kinds a session may declare: systems the host reads with its own tools. Directory and git let Construct read files itself, so only the person adds those. */
+const DECLARABLE_KINDS = ['github', 'jira', 'docs', 'hris', 'other'] as const;
+const DECLARE_ONLY = ['kind', 'purpose', 'locator'] as const;
+const DECLARED_PURPOSE = 'named by the person; declared by your assistant in this session';
+const PURPOSE_CAP = 200;
+const LOCATOR_CAP = 512;
+const LOCATOR_EXAMPLES: Readonly<Record<string, string>> = { github: 'owner/repo', jira: 'PROJ', docs: 'confluence:space:ENG' };
+
+interface SourcesInput {
+  action: (typeof SOURCE_ACTIONS)[number];
+  id?: string;
+  items: Record<string, unknown>[];
+  partial: boolean;
+  kind?: (typeof DECLARABLE_KINDS)[number];
+  purpose?: string;
+  locator?: string;
+}
+
+/** A suggested id for a name that is not one yet: lowercase, dashes for anything else. */
+function idExample(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^[^a-z]+/, '').replace(/-+$/, '').slice(0, 64);
+  return SOURCE_ID.test(slug) ? slug : 'jira';
+}
+
+function declareInput(raw: Record<string, unknown>, id: string | undefined): Pick<SourcesInput, 'id' | 'kind' | 'purpose' | 'locator'> {
+  if (!id) throw new ToolInputError('"id" is required for declare: a short name for the system, such as jira or web', { field: 'id', example: 'jira' });
+  if (!SOURCE_ID.test(id)) throw new ToolInputError('"id" is lowercase letters, digits and dashes, starting with a letter, at most 64 characters', { field: 'id', example: idExample(id) });
+  const kind = raw.kind;
+  if (kind === 'directory' || kind === 'git') {
+    throw new ToolInputError('a directory or git source is declared by the person with construct source add, because it lets Construct read files itself', { field: 'kind', allowed: DECLARABLE_KINDS, example: 'other' });
+  }
+  const k = str(raw, 'kind', { oneOf: DECLARABLE_KINDS }) as SourcesInput['kind'];
+  const rawPurpose = str(raw, 'purpose', { optional: true });
+  const purpose = rawPurpose?.replace(/[\u0000-\u001f\u007f\s]+/g, ' ').trim();
+  if (purpose !== undefined && purpose.length > PURPOSE_CAP) throw new ToolInputError(`"purpose" is one sentence of at most ${String(PURPOSE_CAP)} characters`, { field: 'purpose' });
+  const locator = str(raw, 'locator', { optional: true })?.trim() || undefined;
+  if (locator !== undefined) {
+    const example = LOCATOR_EXAMPLES[k!];
+    if (locator.length > LOCATOR_CAP || /[\u0000-\u001f\u007f]/.test(locator)) throw new ToolInputError(`"locator" is one line of at most ${String(LOCATOR_CAP)} characters`, { field: 'locator', example });
+    if (locatorCarriesCredentials(locator)) throw new ToolInputError('"locator" carries credentials; your connector holds them, and Construct never records them', { field: 'locator', example });
+    const problem = locatorProblem(k!, locator);
+    if (problem) throw new ToolInputError(problem, { field: 'locator', example });
+  }
+  return { id, kind: k, purpose: purpose || undefined, locator };
+}
 
 const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
-  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items.',
+  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
     properties: {
-      action: { type: 'string', description: 'list, show, refresh, or report.', enum: ['list', 'show', 'refresh', 'report'] },
-      id: { type: 'string', description: 'The source id, for show, refresh, and report.' },
+      action: { type: 'string', description: 'list, show, refresh, report, or declare.', enum: SOURCE_ACTIONS },
+      id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
       items: { type: 'array', description: 'For report: {ref, title?, updatedAt?, text?, kind?} for each item you read.', items: { type: 'object' } },
       partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
+      kind: { type: 'string', description: 'For declare: what kind of system it is; other covers chat, monitoring tools, and the open web.', enum: DECLARABLE_KINDS },
+      purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
+      locator: { type: 'string', description: 'For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials.' },
     },
     required: ['action'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
+    const action = str(raw, 'action', { oneOf: SOURCE_ACTIONS }) as SourcesInput['action'];
+    const id = str(raw, 'id', { optional: true });
     const items = list(raw, 'items').map((e) => record(e));
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'refresh', 'report'] }) as SourcesInput['action'], id: str(raw, 'id', { optional: true }), items, partial: bool(raw, 'partial', false) };
+    const partial = bool(raw, 'partial', false);
+    if (action === 'declare') return { action, items, partial, ...declareInput(raw, id) };
+    for (const key of DECLARE_ONLY) {
+      if (raw[key] !== undefined && raw[key] !== null) throw new ToolInputError(`"${key}" is for declare only`, { field: key });
+    }
+    return { action, id, items, partial };
   },
-  async run(ctx, { action, id, items, partial }) {
+  async run(ctx, { action, id, items, partial, kind, purpose, locator }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
-    if (!ctx.sources.list().some((s) => s.id === id)) throw new Error(`no active source ${id}`);
+    const active = ctx.sources.list();
+    if (action === 'declare') {
+      if (active.some((s) => s.id === id)) return { declared: false, already: true, source: ctx.sources.status(id, at) };
+      if (getSource(ctx.store, id)) throw new ToolInputError(`source "${id}" was retired; declare it under a new id`, { field: 'id', example: `${id}-2`.slice(0, 64) });
+      // A declared source lives in this machine's state only, is treated as confidential, and settles nothing.
+      ctx.store.transaction(() => {
+        ctx.sources.addLocal({ id, kind: kind!, purpose: purpose ?? DECLARED_PURPOSE, locator: locator ?? null, authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential', read: true, write: false }, at);
+        ensureSourceEntities(ctx.store, at, ctx.nextId);
+        appendActivity(ctx.store, { at, kind: 'source.declared', actor: ctx.actor, payload: { sourceId: id, kind, by: 'relayed' } });
+      });
+      return {
+        declared: true,
+        source: { id, kind, origin: 'local', sensitivity: 'confidential', authority: 'informative' },
+        next: 'Report what you read from it with sources action report (ref, url, updatedAt, and the passage you rely on) before citing it. It stays on this machine; the person can commit it with construct source add.',
+      };
+    }
+    if (!active.some((s) => s.id === id)) {
+      throw new ToolInputError(`no source "${id}" is declared; declare it with sources action declare (id, kind), then ${action === 'report' ? 'report again' : 'report what you read from it'}`, { field: 'id', allowed: active.map((s) => s.id) });
+    }
     if (action === 'show') return ctx.sources.status(id, at);
     if (action === 'report') {
       if (items.length === 0) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
