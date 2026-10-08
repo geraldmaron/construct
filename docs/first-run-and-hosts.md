@@ -76,6 +76,12 @@ Construct keeps them from stepping on each other:
   checkout, another claim cannot take a path someone holds exclusively; in
   another worktree the overlap comes back as a merge risk naming that
   checkout and branch, because each worktree has its own copy of the files.
+  A claim records the checkout its session runs in; an agent that edits in
+  another git worktree of the project names that worktree's absolute path
+  as `worktree` on the `work` tool's claim, check, accept, or takeover, and
+  its reservations record that worktree and its current branch. A renewal
+  that leaves it out keeps the worktree the claim records. A path that is
+  not one of the project's worktrees is refused with the ones that are.
   Reservations end with the claim, and are judged per work item: two agents
   a host cannot tell apart are still two writers. A reserved path is spelled
   plainly (no spaces, at most 512 bytes), so a file whose name has spaces is
@@ -95,8 +101,9 @@ Construct keeps them from stepping on each other:
 - In Claude Code, `construct hooks install --host=claude-code` adds two hooks
   to the checkout's `.claude/settings.local.json`, which stays out of git: at
   session start the agent hears who else works here and what they hold, and
-  right after it edits a file another agent holds in this checkout, it hears
-  that too, even if it never called Construct. Neither hook can block
+  right after it edits a file another agent holds in the checkout that file
+  is in (its own, or another worktree of the project), it hears that too,
+  even if it never called Construct. Neither hook can block
   anything; each always succeeds within a second and a half, says at most one
   short line of facts, and says nothing when anything is missing or broken.
   Hooks already in the file stay, and `construct hooks uninstall

@@ -16,13 +16,13 @@
  *   from host-only sources; at stop it sends back, once, a reply that stated
  *   project facts unchecked; at session start it notes what waits.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join, resolve } from 'node:path';
 import { coordinationFor } from '../kernel/coord/awareness.ts';
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
-import { findOverlaps, MAIN_LANE, normalizeLeasePath } from '../kernel/work/leases.ts';
+import { findOverlaps, MAIN_LANE, normalizeLeasePath, whereHeld } from '../kernel/work/leases.ts';
 import { projectDbPath, projectStateDir } from '../kernel/project/layout.ts';
-import { createContext, locateProject, resolveRepository, type CliContext } from './context.ts';
+import { createContext, locateProject, worktreeHolding, type CliContext, type ProjectLocation } from './context.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
 
 import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
@@ -121,21 +121,36 @@ function possiblyOwn(store: StateStore, workId: string, sessionId: string | null
   return row.host === null || row.host === 'claude-code';
 }
 
-function postToolUse(store: StateStore, payload: Payload, cwd: string, sessionId: string | null, lane: string | null, now: string): string {
+function realpathOr(path: string): string {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
+  }
+}
+
+/**
+ * After an edit: whether another claim holds the edited file in the checkout
+ * the file is in. That is the project's checkout holding the file, which may
+ * be another worktree than the one the session runs in, so an edit made in a
+ * worktree is judged against the claims recorded for that worktree.
+ */
+function postToolUse(store: StateStore, payload: Payload, cwd: string, located: ProjectLocation, sessionId: string | null, now: string): string {
   const path = editedPath(payload);
   if (!path) return '';
-  const top = resolveRepository(cwd)?.checkout;
-  if (!top) return '';
-  const rel = relative(top, isAbsolute(path) ? path : resolve(cwd, path));
-  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return '';
-  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(rel, 'check')], laneRoot: lane ?? MAIN_LANE, now })
+  const held = worktreeHolding(located.root, isAbsolute(path) ? path : resolve(cwd, path));
+  if (!held || !held.path) return '';
+  const { worktree } = held;
+  const here = located.lane === null ? worktree.main : !worktree.main && realpathOr(located.lane.checkout) === worktree.checkout;
+  const lane = worktree.main ? MAIN_LANE : here ? located.lane!.root : worktree.root;
+  const overlaps = findOverlaps(store, { paths: [normalizeLeasePath(held.path, 'check')], laneRoot: lane, now })
     .filter((o) => o.kind === 'collision' && !possiblyOwn(store, o.workId, sessionId));
   if (overlaps.length === 0) return '';
   const o = overlaps[0]!;
-  return bounded(
-    'post-tool-use',
-    `Construct: ${o.path} is reserved by ${o.holder} for ${o.workId} until ${o.until}, in this checkout. Another agent holds it: stop editing it, and claim other work or ask for a handoff.`,
-  );
+  const reserved = `Construct: ${o.path} is reserved by ${o.holder} for ${o.workId} until ${o.until}`;
+  const act = 'Another agent holds it: stop editing it, and claim other work or ask for a handoff.';
+  // Another worktree's path can be long; it comes last so the output budget trims it, not what to do.
+  return bounded('post-tool-use', here ? `${reserved}, in this checkout. ${act}` : `${reserved}. ${act} Held ${whereHeld(o)}.`);
 }
 
 /**
@@ -156,9 +171,8 @@ function respond(event: HookEvent, payload: Payload, ctx: CliContext): { readonl
     if (!existsSync(dbPath)) return { text: '', failed: false };
     store = openStateStore(dbPath, { readOnly: true, busyTimeoutMs: HOOK_LOCK_WAIT_MS });
     const sessionId = sessionOf(store, typeof payload.session_id === 'string' ? payload.session_id : null);
-    const lane = located.lane?.root ?? null;
     const now = ctx.now();
-    return { text: event === 'session-start' ? sessionStart(store, sessionId, lane, now) : postToolUse(store, payload, cwd, sessionId, lane, now), failed: false };
+    return { text: event === 'session-start' ? sessionStart(store, sessionId, located.lane?.root ?? null, now) : postToolUse(store, payload, cwd, located, sessionId, now), failed: false };
   } catch (error) {
     // No project where the host is working is an ordinary quiet run; anything else failed.
     return { text: '', failed: !(error instanceof NoProjectError) };
