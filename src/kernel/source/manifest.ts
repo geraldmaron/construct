@@ -4,8 +4,9 @@
  * of only saying "something changed".
  *
  * The manifest rides on the source.changed observation; the latest one is
- * the current manifest. Items carry a fingerprint and, for small work items,
- * their text, which is what evidence resolution checks wording against.
+ * the current manifest. Items carry a fingerprint and, for work items and
+ * pages a host read, their text (what evidence resolution checks wording
+ * against) and the address a person would open.
  */
 
 import type { StateStore } from '../state/open.ts';
@@ -23,6 +24,12 @@ export interface ManifestEntry {
   readonly updatedAt?: string;
   /** Recorded from a passing sighting with no version; its fingerprint says nothing about content. */
   readonly weak?: boolean;
+  /** The address a person would open for this item; a citation of it means this item. */
+  readonly url?: string;
+  /** The kept text stops short of what was read: it was cut at the cap. */
+  readonly truncated?: boolean;
+  /** The host tool whose response carried this item, when a hook recorded it rather than the host reporting it. */
+  readonly via?: string;
   /** Reader-specific facts kept so the next read can skip unchanged items (size, mtime, what it supersedes). */
   readonly attributes?: Readonly<Record<string, unknown>>;
 }
@@ -47,6 +54,9 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
       ...(i.attributes && ('size' in i.attributes || 'supersedes' in i.attributes) ? { attributes: { size: i.attributes.size, mtimeMs: i.attributes.mtimeMs, supersedes: i.attributes.supersedes, declaredSupersededBy: i.attributes.declaredSupersededBy } } : {}),
       ...(typeof i.attributes?.updatedAt === 'string' ? { updatedAt: i.attributes.updatedAt } : {}),
       ...(i.attributes?.weak === true ? { weak: true } : {}),
+      ...(typeof i.attributes?.url === 'string' ? { url: i.attributes.url } : {}),
+      ...(i.attributes?.truncated === true ? { truncated: true } : {}),
+      ...(typeof i.attributes?.via === 'string' ? { via: i.attributes.via } : {}),
     };
   });
 }

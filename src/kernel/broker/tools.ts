@@ -46,6 +46,9 @@ import { ensureSourceEntities } from '../source/entities.ts';
 import { locatorProblem } from '../source/locators.ts';
 import { getSource } from '../state/sources.ts';
 import { SOURCE_ID, locatorCarriesCredentials } from '../project/sources-file.ts';
+import { urlProblem } from '../project/urls.ts';
+import { redact } from '../render/redact.ts';
+import { REPORTED_TEXT_CAP } from '../source/service.ts';
 
 /** What a step may cite in this project, as it stands now. */
 export function projectResolver(ctx: BrokerContext): RefResolver {
@@ -445,7 +448,8 @@ const submitWork = define<SubmitInput, unknown>({
     const evidence = list(raw, 'evidence').map((e) => {
       const r = record(e);
       const ref = typeof r.ref === 'string' ? r.ref : '';
-      return { ref, excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
+      // An excerpt is kept with the step, so it is kept without credentials, as recorded source text is.
+      return { ref, excerpt: typeof r.excerpt === 'string' ? redact(r.excerpt) : undefined };
     });
     return { stepRunId: str(raw, 'stepRunId')!, token: leaseToken(raw), output: obj(raw, 'output')!, evidence, noData: bool(raw, 'noData', false) };
   },
@@ -654,7 +658,7 @@ function declareInput(raw: Record<string, unknown>, id: string | undefined): Pic
 const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
-  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
+  description: 'The systems and documents this project reads: what each is for, what it is trusted to settle, whether it is reachable and fresh. Declare a system the person named (a tracker, a wiki, chat, a monitoring tool) with action declare before reporting what you read from it; pages from the open web go under one source named web with kind other. Refresh reads one now and records whether it changed. Report records what you read from a source Construct cannot read itself (a live tracker, a wiki) through your own tools, so changes there are tracked and finished work that cited them is flagged: give each item its ref (a key or page id), its url when it has one, title, updatedAt, and the text you read; set partial when you read only some items. Report only items you cite, with the passage you rely on.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -662,7 +666,7 @@ const sources = define<SourcesInput, unknown>({
     properties: {
       action: { type: 'string', description: 'list, show, refresh, report, or declare.', enum: SOURCE_ACTIONS },
       id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
-      items: { type: 'array', description: 'For report: {ref, title?, updatedAt?, text?, kind?} for each item you read.', items: { type: 'object' } },
+      items: { type: 'array', description: 'For report: {ref, url?, title?, updatedAt?, text?, kind?} for each item you read; url is the http(s) address a person would open for it.', items: { type: 'object' } },
       partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
       kind: { type: 'string', description: 'For declare: what kind of system it is; other covers chat, monitoring tools, and the open web.', enum: DECLARABLE_KINDS },
       purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
@@ -712,9 +716,14 @@ const sources = define<SourcesInput, unknown>({
       const parsed = items.map((i, n) => {
         if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: 'items' });
         const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
-        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text') };
+        const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
+        const problem = url === undefined ? null : urlProblem(url);
+        if (problem) throw new ToolInputError(`items[${String(n)}].url ${problem}`, { field: `items[${String(n)}].url`, example: 'https://acme.atlassian.net/browse/PLAT-101' });
+        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text'), ...(url !== undefined ? { url } : {}) };
       });
-      return ctx.sources.reportRead(id, { items: parsed, partial }, at, () => ctx.nextId('snap'));
+      const reported = ctx.sources.reportRead(id, { items: parsed, partial }, at, () => ctx.nextId('snap'));
+      if (!reported.truncated?.length) return reported;
+      return { ...reported, next: `Construct kept the first ${String(REPORTED_TEXT_CAP / 1024)} KiB of the text of ${reported.truncated.join(', ')}; a quote or figure past that cannot be checked, so report the passage you rely on as its own item.` };
     }
     return ctx.sources.refresh(id, at, () => ctx.nextId('snap'));
   },

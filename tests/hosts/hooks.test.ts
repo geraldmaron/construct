@@ -1,9 +1,10 @@
 /**
  * tests/hosts/hooks.test.ts — the habits that keep work honest run without
  * the host model having to remember them: host reads are recorded from tool
- * results, unchecked factual answers are sent back once, and the hooks are
- * installed in the checkout's machine-local settings, through the launcher,
- * without disturbing a person's other settings or hooks.
+ * results as readable text with the issue's address, unchecked factual
+ * answers are sent back once, and the hooks are installed in the checkout's
+ * machine-local settings, through the launcher, without disturbing a
+ * person's other settings or hooks.
  */
 
 import { test } from 'node:test';
@@ -14,7 +15,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { addSource } from '../../src/kernel/state/sources.ts';
 import { listActivity } from '../../src/kernel/state/activity.ts';
-import { jiraItemsIn, onPostTool, onSessionStart, onStop } from '../../src/hosts/hooks/handlers.ts';
+import { jiraItemsIn, onPostTool, onSessionStart, onStop, readableText } from '../../src/hosts/hooks/handlers.ts';
+import { currentManifest } from '../../src/kernel/source/manifest.ts';
 import { installHooks, inspectHooks, HOOK_SETTINGS_PATH, SHARED_HOOK_SETTINGS_PATH } from '../../src/hosts/wiring/hooks.ts';
 import { holdsSet, installClaudeLocal, uninstallClaudeLocal } from '../../src/hosts/wiring/claude-local.ts';
 import { CHECKOUT_LAUNCHER, sterile, type SterileFixture } from '../harness/sterile.ts';
@@ -318,6 +320,69 @@ test('review findings: a search hit then a full read of the same ticket keeps th
     assert.equal((richer.staleDeliverables ?? []).length, 0);
     const ans = await call(fx, 'check_answer', { answer: 'Pro is revisited in Q3.', citations: [{ ref: 'PLAT-9', excerpt: 'Revisit Pro in Q3' }] });
     assert.equal(ans.ok, true, JSON.stringify(ans.problems));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** A Jira Cloud issue as the REST API returns it: an ADF description, marks on some runs, a REST self link. */
+const adfIssue = {
+  key: 'PLAT-101',
+  self: 'https://acme.atlassian.net/rest/api/3/issue/10001',
+  fields: {
+    summary: 'Platform events',
+    updated: '2026-09-29T10:00:00Z',
+    description: {
+      type: 'doc',
+      version: 1,
+      content: [
+        { type: 'paragraph', content: [
+          { type: 'text', text: 'Sam said "ship v1 to ' },
+          { type: 'text', text: 'Enterprise', marks: [{ type: 'strong' }] },
+          { type: 'text', text: ' only" on the call.' },
+        ] },
+        { type: 'bulletList', content: [
+          { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Revisit Pro in Q3.' }] }] },
+        ] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'First line' }, { type: 'hardBreak' }, { type: 'text', text: 'second line', marks: [{ type: 'link', attrs: { href: 'https://x.example' } }] }] },
+      ],
+    },
+  },
+};
+
+test('readable text keeps what a person reads in an issue: quotes, line breaks, and rich text without its markup', async () => {
+  const text = readableText(adfIssue);
+  assert.match(text, /Sam said "ship v1 to Enterprise only" on the call\./, 'inline runs with marks join into one line, quotes intact');
+  assert.match(text, /\nRevisit Pro in Q3\.\n/, 'a block goes on its own line');
+  assert.match(text, /First line\nsecond line/);
+  for (const markup of ['paragraph', 'strong', 'bulletList', 'hardBreak', 'https://x.example', '{', '\\"']) assert.ok(!text.includes(markup), `no ${markup} in the text`);
+  assert.equal(readableText(JSON.stringify({ a: 'one', b: [2, { c: 'three' }], d: true, e: null })), 'one\n2\nthree', 'JSON inside a string is opened; booleans and nulls are not words');
+
+  const fx = brokerFixture();
+  try {
+    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: { content: [{ type: 'text', text: JSON.stringify(adfIssue) }] } });
+    const ans = await call(fx, 'check_answer', { answer: 'Sam wants v1 on Enterprise only.', citations: [{ ref: 'PLAT-101', excerpt: 'Sam said "ship v1 to Enterprise only" on the call' }] });
+    assert.equal(ans.ok, true, JSON.stringify(ans.problems));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an issue is recorded under the browse page its REST self link names, unless it gives its own address', () => {
+  const [item] = jiraItemsIn({ issues: [adfIssue] }, 'PLAT');
+  assert.equal(item!.url, 'https://acme.atlassian.net/browse/PLAT-101');
+  const server = jiraItemsIn({ key: 'PLAT-7', self: 'https://jira.acme.internal/jira/rest/api/2/issue/77', fields: { summary: 'x' } }, 'PLAT');
+  assert.equal(server[0]!.url, 'https://jira.acme.internal/jira/browse/PLAT-7', 'a server under a context path keeps it');
+  assert.equal(jiraItemsIn({ key: 'PLAT-8', url: 'https://acme.atlassian.net/browse/PLAT-8?focus=1', self: 'https://acme.atlassian.net/rest/api/3/issue/8' }, 'PLAT')[0]!.url, 'https://acme.atlassian.net/browse/PLAT-8?focus=1');
+  assert.equal(jiraItemsIn({ key: 'PLAT-9', self: 'not a link' }, 'PLAT')[0]!.url, undefined);
+  assert.equal(jiraItemsIn({ key: 'PLAT-10', webUrl: 'https://me:secret@acme.atlassian.net/browse/PLAT-10' }, 'PLAT')[0]!.url, undefined, 'an address carrying credentials is not kept');
+
+  const fx = brokerFixture();
+  try {
+    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
+    onPostTool(fx.broker, { tool_name: 'mcp__atlassian__getJiraIssue', tool_response: adfIssue });
+    assert.equal(currentManifest(fx.broker.store, 'jira-plat')!.find((e) => e.ref === 'PLAT-101')?.url, 'https://acme.atlassian.net/browse/PLAT-101');
   } finally {
     fx.cleanup();
   }

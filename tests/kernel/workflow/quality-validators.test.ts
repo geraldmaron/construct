@@ -137,3 +137,24 @@ test('review findings: a derivation that only says where a figure came from is n
   writeFileSync(join(root, 'docs', 'blank.md'), '   \n');
   assert.equal(run(['artifacts_exist'], { output: { artifact: 'docs/blank.md' } }).artifacts_exist!.length, 1);
 });
+
+test('an excerpt and the recorded text it quotes still match when both carry the same secret, whichever side was cleaned', () => {
+  const BODY = 'a1B2c3D4e5F6g7H8i9J0';
+  const secret = `ghp_${BODY}${BODY.slice(0, 4)}`;
+  const said = `rotate ${secret} before launch`;
+  const held = createEvidenceResolver({
+    root,
+    sources: [
+      { id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [
+        { ref: 'cleaned', kind: 'item', fingerprint: 'a', text: 'Runbook: rotate [redacted] before launch.' },
+        { ref: 'older', kind: 'item', fingerprint: 'b', text: `Runbook: ${said}.` },
+        { ref: 'cut', kind: 'item', fingerprint: 'c', text: 'Runbook: the first part only', truncated: true },
+      ] },
+    ],
+  });
+  const check = (evidence: { ref: string; excerpt: string }[]) => runValidators(['excerpts_match'], { output: {}, expectedKeys: [], evidence, resolvableRefs: new Set(), resolve: held })[0]!.problems;
+  assert.deepEqual(check([{ ref: 'wiki:cleaned', excerpt: said }]), [], 'a quote with the secret matches text kept without it');
+  assert.deepEqual(check([{ ref: 'wiki:older', excerpt: 'rotate [redacted] before launch' }]), [], 'a cleaned quote matches text recorded before cleaning');
+  assert.equal(check([{ ref: 'wiki:cleaned', excerpt: 'rotate nothing before launch' }]).length, 1, 'a different quote is still a misquote');
+  assert.deepEqual(check([{ ref: 'wiki:cut', excerpt: 'the second part' }]), [], 'text cut at the cap may hold the quote past the cut: unchecked, not a misquote');
+});

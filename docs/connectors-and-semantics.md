@@ -56,11 +56,17 @@ Most systems a person works in (a live tracker, a wiki, a drive) are read
 by the host through its own tools, not by Construct. So that changes there
 are tracked like changes in a folder, the host records what it read with
 the `sources` tool, action `report`: each item's reference (a key or page
-id), title, last-updated time, and the text it read. Construct keeps a
-manifest of those items (text capped per item), marks citations of them
-as reported, checks quotes against the recorded text, and on the next
-report names what was added or modified and flags finished work that cited
-it. A partial report updates only the items it names; nothing is treated as
+id), its url (the http(s) address a person would open), title,
+last-updated time, and the text it read. Construct keeps a manifest of
+those items, marks citations of them as reported, checks quotes against the
+recorded text, and on the next report names what was added or modified and
+flags finished work that cited it. An item's url is kept from one report to
+the next when a later report leaves it out; a url that is not http(s), or
+that carries credentials, is refused. The text is kept with anything shaped
+like a credential replaced by `[redacted]`, and capped at 16 KiB per item;
+the report names any item whose text it cut, and a quote past the cut is
+not checked. Whether an item changed is still judged on what the host read,
+so a rotated key is a change. A partial report updates only the items it names; nothing is treated as
 removed because it was not read. `bootstrap` lists the sources only the
 host can read that have never been reported or have gone stale.
 

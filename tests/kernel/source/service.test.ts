@@ -1,17 +1,19 @@
 /**
  * tests/kernel/source/service.test.ts — declarations sync into state, locators
  * are checked by kind, refresh dedupes by digest and records reachability,
- * and status names authority and freshness.
+ * status names authority and freshness, and a host's report keeps each
+ * item's address, keeps its text without credentials, and says when it cut.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createSourceService } from '../../../src/kernel/source/service.ts';
+import { createHash } from 'node:crypto';
+import { createSourceService, REPORTED_TEXT_CAP } from '../../../src/kernel/source/service.ts';
 import { locatorProblem, parseDocsLocator } from '../../../src/kernel/source/locators.ts';
 import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS, type SourceReader } from '../../../src/kernel/source/connector.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
 import { getSource, listSources, authorityOf } from '../../../src/kernel/state/sources.ts';
-import { listObservations } from '../../../src/kernel/state/drift.ts';
+import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
@@ -169,6 +171,112 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     assert.equal(summary.total, 2);
     assert.equal(summary.unreachable, 2);
     assert.equal(summary.neverRead, 1);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+function wikiService() {
+  const fx = freshStore();
+  const at = clock();
+  let n = 0;
+  const nextId = () => `id-${String(++n)}`;
+  const svc = createSourceService(fx.store, { readers: new Map() });
+  svc.addLocal({ id: 'wiki', kind: 'docs', purpose: 'design pages', locator: 'confluence:space:ENG', authorityLevel: 'informative', authoritativeFor: [], notAuthoritativeFor: [], freshnessHours: null, sensitivity: 'confidential' }, at());
+  const entry = (ref: string) => currentManifest(fx.store, 'wiki')!.find((e) => e.ref === ref);
+  return { fx, at, nextId, svc, entry };
+}
+
+test('a reported item keeps its address, and a later report that omits it keeps the one recorded', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const url = 'https://acme.atlassian.net/wiki/spaces/ENG/pages/98765';
+    svc.reportRead('wiki', { items: [{ ref: '98765', title: 'Architecture', url, updatedAt: '2026-09-01T00:00:00Z', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
+    assert.equal(entry('98765')?.url, url);
+    svc.reportRead('wiki', { items: [{ ref: '98765', updatedAt: '2026-09-02T00:00:00Z', text: 'The gateway fronts every service but billing.' }], partial: true }, at(), nextId);
+    assert.equal(entry('98765')?.url, url, 'a newer version reported without its address keeps the address');
+    svc.reportRead('wiki', { items: [{ ref: '11111', text: 'Other page.' }], partial: true }, at(), nextId);
+    assert.equal(entry('98765')?.url, url, 'an item a partial read did not name keeps its address');
+    assert.throws(() => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'ftp://files.example/x' }] }, at(), nextId), /not an http\(s\) address/);
+    assert.throws(() => svc.reportRead('wiki', { items: [{ ref: '22222', url: 'https://me:hunter2@wiki.example/x' }] }, at(), nextId), /carries credentials/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('an address gained on a re-read of the same text is recorded, and is not called a change to the item', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    svc.reportRead('wiki', { items: [{ ref: '98765', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
+    assert.equal(entry('98765')?.url, undefined);
+    const again = svc.reportRead('wiki', { items: [{ ref: '98765', url: 'https://wiki.example/pages/98765', text: 'The gateway fronts every service.' }], partial: true }, at(), nextId);
+    assert.equal(again.outcome, 'changed', 'the read is recorded, not dismissed as unchanged');
+    assert.deepEqual(again.changes?.modified ?? [], [], 'the item itself did not change');
+    assert.equal(entry('98765')?.url, 'https://wiki.example/pages/98765');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('text past the cap is cut, the item is marked, and the report names it', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const long = `Intro. ${'word '.repeat(REPORTED_TEXT_CAP / 4)}The end.`;
+    const r = svc.reportRead('wiki', { items: [{ ref: 'long', text: long }, { ref: 'short', text: 'Short page.' }] }, at(), nextId);
+    assert.deepEqual(r.truncated, ['long']);
+    assert.equal(entry('long')?.truncated, true);
+    assert.equal(entry('long')?.text?.length, REPORTED_TEXT_CAP);
+    assert.equal(entry('short')?.truncated, undefined);
+    const thin = svc.reportRead('wiki', { items: [{ ref: 'long', text: long.slice(0, 100) }, { ref: 'short', text: 'Short page.' }] }, at(), nextId);
+    assert.equal(thin.truncated, undefined, 'a report that kept nothing cut names nothing');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('stored text and titles have credentials removed, while the version is still judged on what was read', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const BODY = 'a1B2c3D4e5F6g7H8i9J0';
+    const secret = `ghp_${BODY}${BODY.slice(0, 4)}`;
+    const text = `Deploy with GITHUB_TOKEN=${secret} from the runbook.`;
+    svc.reportRead('wiki', { items: [{ ref: 'runbook', title: `Runbook ${secret}`, text }] }, at(), nextId);
+    const e = entry('runbook')!;
+    assert.ok(!e.text!.includes(secret), 'the token is not kept');
+    assert.match(e.text!, /GITHUB_TOKEN=\[redacted\] from the runbook/);
+    assert.equal(e.fingerprint, createHash('sha256').update(text).digest('hex'), 'the fingerprint is of what was read, unredacted');
+    const same = svc.reportRead('wiki', { items: [{ ref: 'runbook', text }] }, at(), nextId);
+    assert.equal(same.outcome, 'unchanged', 'the same text read again is the same version');
+    const rotated = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: text.replace(secret, `ghp_${BODY.split('').reverse().join('')}0000`) }] }, at(), nextId);
+    assert.deepEqual(rotated.changes?.modified, ['runbook'], 'a rotated secret is still a change to the page');
+    const tables = (fx.store.db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]).map((t) => t.name);
+    for (const table of tables) {
+      const rows = JSON.stringify(fx.store.db.prepare(`SELECT * FROM "${table}"`).all());
+      assert.ok(!rows.includes(secret), `no row of ${table} holds the token`);
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('text recorded with a credential in it is kept without it whenever a later report carries it forward', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const BODY = 'a1B2c3D4e5F6g7H8i9J0';
+    const secret = `ghp_${BODY}${BODY.slice(0, 4)}`;
+    const runbook = `Deploy with GITHUB_TOKEN=${secret} from the runbook.`;
+    const other = `Rotate ${secret} every quarter.`;
+    const sha = (t: string) => createHash('sha256').update(t).digest('hex');
+    // A manifest whose text was kept exactly as read, credentials and all.
+    recordObservation(fx.store, { id: 'planted', sourceId: 'wiki', kind: 'source.changed', summary: 'wiki changed', evidence: { digest: 'sha256:planted', evidence: 'reported', items: 2, partial: true, manifest: [{ ref: 'other', kind: 'item', fingerprint: sha(other), text: other }, { ref: 'runbook', kind: 'item', fingerprint: sha(runbook), text: runbook }] }, at: at() });
+    assert.ok(entry('runbook')!.text!.includes(secret));
+
+    const again = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: runbook }], partial: true }, at(), nextId);
+    assert.deepEqual(again.changes?.modified ?? [], [], 'the same version read again is not a change to the item');
+    assert.equal(entry('runbook')!.text, 'Deploy with GITHUB_TOKEN=[redacted] from the runbook.', 'the item read again keeps its text without the token');
+    assert.equal(entry('other')!.text, 'Rotate [redacted] every quarter.', 'an item the partial read did not name is carried forward without the token');
+    const settled = svc.reportRead('wiki', { items: [{ ref: 'runbook', text: runbook }], partial: true }, at(), nextId);
+    assert.equal(settled.outcome, 'unchanged', 'once cleaned, carrying the text forward changes nothing');
   } finally {
     fx.cleanup();
   }

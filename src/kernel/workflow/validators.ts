@@ -11,6 +11,7 @@
  */
 
 import { normalizeQuote, type RefResolver } from '../project/evidence.ts';
+import { redact } from '../render/redact.ts';
 
 export interface ValidatorResult {
   readonly validator: string;
@@ -425,9 +426,13 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       if (!e.excerpt || e.excerpt.trim() === '') continue;
       const r = resolve(e.ref);
       // Without text there is nothing to compare, and the excerpt stands as the host's word. With text, even
-      // reported text (a fixture, a host's read), the quote has to agree with what was recorded.
+      // reported text (a fixture, a host's read), the quote has to agree with what was recorded. Both sides are
+      // compared with credentials removed, since recorded text is kept that way.
       if (!r || r.text === undefined) continue;
-      if (!normalizeQuote(r.text).includes(normalizeQuote(e.excerpt))) problems.push(`the excerpt cited from "${e.ref}" does not appear in it`);
+      if (normalizeQuote(redact(r.text)).includes(normalizeQuote(redact(e.excerpt)))) continue;
+      // Text cut at the cap may hold the quote past the cut: unchecked, not a misquote.
+      if (r.truncated) continue;
+      problems.push(`the excerpt cited from "${e.ref}" does not appear in it`);
     }
     return problems;
   },
