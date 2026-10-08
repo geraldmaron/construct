@@ -17,7 +17,10 @@ about itself (README, agent instructions, architecture documents, ownership
 files, the package manifest) and proposes a profile with provenance for each
 proposal, plants the operational `construct` skill into the host's skills
 directory, and writes the host's project MCP configuration so the host
-launches `construct serve` bound to this project.
+starts `construct serve` in this project. That file names no path on your
+machine: it starts `construct` from your PATH, or `npx --no-install
+construct` when Construct is installed as a dependency of the project.
+Re-running `init` leaves an unchanged file exactly as it is.
 
 Without the answer flags, `init` leaves three questions open and the host
 asks them in conversation: what this project is to you, what result matters
@@ -142,15 +145,48 @@ decisions waiting on you, source health, registry lock, drift. `doctor`
 never reports healthy for a missing or broken project, and it says what to
 run next.
 
+`doctor` also checks, for each wired host, that the command its file starts
+can be found from this shell (`host-launch:<host>`), and says whether that
+is the same install as the `construct` you ran. A file that still names an
+absolute path that no longer exists, such as another machine's Node or an
+upgraded one, is reported broken with the `construct init --client=<host>`
+that rewrites it.
+
 ## Supported hosts
 
-Claude Code, Cursor, VS Code, and OpenCode are wired by file (`.mcp.json`,
-`.cursor/mcp.json`, `.vscode/mcp.json`, `opencode.json`). Codex and IBM Bob
-can receive the operational skill but read no project MCP file Construct
-writes; point them at `construct serve --client=codex` or `--client=bob` by
-hand. What was exercised against a real host is recorded in
-[release-verification.md](release-verification.md); anything not listed
-there is untested, not assumed.
+All six hosts are wired by file, with `init --client=<host>`:
+
+| Host | File | How it finds the project |
+|---|---|---|
+| Claude Code | `.mcp.json` | starts the server in the project directory |
+| Cursor | `.cursor/mcp.json` | `--project=${workspaceFolder}` |
+| VS Code | `.vscode/mcp.json` | `cwd` is `${workspaceFolder}` |
+| OpenCode | `opencode.json` | the directory OpenCode starts the server in, which its docs do not state |
+| Codex | `.codex/config.toml` | the directory Codex starts the server in, which its docs do not state |
+| IBM Bob | `.bob/mcp.json` | the directory Bob starts the server in, which its docs do not state |
+
+Codex reads `.codex/config.toml` only in a project you have trusted, and
+Construct sets its tool timeout to 120 seconds so a question Construct shows
+you is not cut off by Codex's 60-second default. Construct edits only its
+own `[mcp_servers.construct]` table there, and refuses a file it cannot
+read safely (multi-line strings, or the server written as a dotted key or
+an inline table) rather than rewrite it. What was exercised against a real
+host is recorded in [release-verification.md](release-verification.md);
+anything not listed there is untested, not assumed.
+
+## What to commit
+
+`.construct/*.json` and the host MCP files above carry no machine paths, so
+they are safe to commit. Each teammate needs Construct on their PATH (`npm
+install -g @geraldmaron/construct@alpha`) or as a project dependency.
+`.construct/state/` stays on this machine and is ignored. The hooks `init`
+adds to `.claude/settings.json` name this machine's Node and install, so
+they work only here.
+
+To have a host start a particular build instead, give it a server named
+`construct` at a scope that outranks the project file. In Claude Code that
+is local scope: `claude mcp add --scope local --transport stdio construct --
+node /path/to/construct/bin/construct.mjs serve --client=claude-code`.
 
 ## Hooks: habits that do not depend on the model
 

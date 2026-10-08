@@ -18,7 +18,7 @@ set this project up: files, one database, a drafted profile, the operational ski
 | `--scale` | yes | what this is to you: solo \| side_project \| team \| multi_team \| organization |
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
-| `--client` | yes | the host you use: plants its skill and wires its MCP config (claude-code \| cursor \| vscode \| opencode, bob, codex) |
+| `--client` | yes | the host you use: plants its skill and wires its MCP config (claude-code \| cursor \| vscode \| opencode \| codex \| bob) |
 | `--no-wire` | no | do not write the host’s MCP configuration |
 | `--skills-dir` | yes | plant the operational skill into this directory instead of a host’s |
 | `--dry-run` | no | say what would happen and write nothing |
@@ -191,7 +191,7 @@ plant a shipped skill into a host’s skills directory, byte for byte
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
 | `--force` | no | overwrite a copy that someone changed; an earlier release is replaced without it |
 
 Reads only: no.
@@ -203,7 +203,7 @@ compare installed skills with the shipped ones
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
 
 Reads only: yes.
 
@@ -225,7 +225,7 @@ remove an installed skill (needs --confirm)
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--dir` | yes | the skills directory to use instead of the detected host’s |
-| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex |
+| `--client` | yes | the host whose skills directory to use: claude \| bob \| opencode \| cursor \| codex \| vscode |
 | `--confirm` | no | actually remove it |
 
 Reads only: no.

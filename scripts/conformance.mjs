@@ -4,7 +4,8 @@
  *
  * For every supported host it checks, without credentials: whether the host
  * is installed here, that its project MCP file can be written and reads
- * back bound, that the operational skill is discoverable where the host
+ * back bound, that the file carries no machine path and starts the server
+ * exactly as written, that the operational skill is discoverable where the host
  * looks, that `construct serve` completes the MCP handshake the host would
  * perform, that the interactive surface preserves the current host (no
  * spawn path exists in the server or the broker), that ordinary language
@@ -24,10 +25,12 @@
  * .tmp-conformance/report.json, ignored by git).
  */
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { clientWiring } from '../src/hosts/wiring/clients.ts';
+import { launchOf } from '../src/hosts/wiring/wire.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const LAUNCHER = join(ROOT, 'bin', 'construct.mjs');
@@ -40,12 +43,12 @@ const hostArg = process.argv.find((a) => a.startsWith('--host='));
 const HOST_FILTER = hostArg ? hostArg.slice('--host='.length) : null;
 
 const ALL_HOSTS = [
-  { id: 'claude-code', binary: 'claude', skillsDir: (home) => join(home, '.claude', 'skills'), wire: true, liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json', '--max-turns', '3'] },
-  { id: 'cursor', binary: 'cursor-agent', skillsDir: (home) => join(home, '.cursor', 'skills'), wire: true, liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json'] },
-  { id: 'vscode', binary: 'code', skillsDir: null, wire: true, liveArgs: null },
-  { id: 'opencode', binary: 'opencode', skillsDir: (home) => join(home, '.config', 'opencode', 'skills'), wire: true, liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
-  { id: 'codex', binary: 'codex', skillsDir: (home) => join(home, '.agents', 'skills'), wire: false, liveArgs: (prompt) => ['exec', prompt] },
-  { id: 'bob', binary: 'bob', skillsDir: (home) => join(home, '.bob', 'skills'), wire: false, liveArgs: null },
+  { id: 'claude-code', binary: 'claude', skillsDir: (home) => join(home, '.claude', 'skills'), liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json', '--max-turns', '3'] },
+  { id: 'cursor', binary: 'cursor-agent', skillsDir: (home) => join(home, '.cursor', 'skills'), liveArgs: (prompt) => ['-p', prompt, '--output-format', 'json'] },
+  { id: 'vscode', binary: 'code', skillsDir: (home) => join(home, '.copilot', 'skills'), liveArgs: null },
+  { id: 'opencode', binary: 'opencode', skillsDir: (home) => join(home, '.config', 'opencode', 'skills'), liveArgs: (prompt, model) => model ? ['run', '-m', model, prompt] : ['run', prompt], needsModel: true },
+  { id: 'codex', binary: 'codex', skillsDir: (home) => join(home, '.agents', 'skills'), liveArgs: (prompt) => ['exec', prompt] },
+  { id: 'bob', binary: 'bob', skillsDir: (home) => join(home, '.bob', 'skills'), liveArgs: null },
 ];
 const HOSTS = HOST_FILTER ? ALL_HOSTS.filter((h) => h.id === HOST_FILTER) : ALL_HOSTS;
 if (HOST_FILTER && HOSTS.length === 0) {
@@ -63,17 +66,39 @@ function cli(args, cwd, env) {
   return { code: r.status, out: r.stdout, err: r.stderr };
 }
 
-function session(cwd, env, client) {
-  const child = spawn(process.execPath, [LAUNCHER, 'serve', `--client=${client}`], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
+/**
+ * A PATH holding only this checkout's launcher as `construct`, the running
+ * node, and git, so a host file's `construct` resolves here and never to a
+ * global install.
+ */
+function scratchBin(dir) {
+  mkdirSync(dir, { recursive: true });
+  symlinkSync(LAUNCHER, join(dir, 'construct'));
+  symlinkSync(process.execPath, join(dir, 'node'));
+  const git = which('git');
+  if (git) symlinkSync(git, join(dir, 'git'));
+  return dir;
+}
+
+/** A served session; by default this checkout's serve, or exactly the command a host file names. */
+function session(cwd, env, client, launch = { command: process.execPath, args: [LAUNCHER, 'serve', `--client=${client}`] }) {
+  const child = spawn(launch.command, launch.args, { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
   let buffer = '';
   let stderr = '';
+  let failed = null;
   const pending = new Map();
   let next = 1;
-  child.stderr.on('data', (chunk) => { stderr += chunk; });
-  child.on('exit', (code) => {
-    for (const [, resolve] of pending) resolve({ error: { code: -1, message: `serve exited with ${String(code)}: ${stderr.trim().slice(0, 300)}` } });
+  const fail = (message) => {
+    for (const [, resolve] of pending) resolve({ error: { code: -1, message } });
     pending.clear();
+  };
+  child.on('error', (error) => {
+    failed = `could not start ${launch.command}: ${error.message}`;
+    fail(failed);
   });
+  child.stdin.on('error', () => {});
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+  child.on('exit', (code) => fail(`serve exited with ${String(code)}: ${stderr.trim().slice(0, 300)}`));
   child.stdout.on('data', (chunk) => {
     buffer += chunk;
     let nl;
@@ -90,6 +115,10 @@ function session(cwd, env, client) {
     }
   });
   const rpc = (method, params) => new Promise((resolve) => {
+    if (failed) {
+      resolve({ error: { code: -1, message: failed } });
+      return;
+    }
     const id = next++;
     pending.set(id, resolve);
     child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
@@ -101,7 +130,7 @@ function session(cwd, env, client) {
     return r.result.structuredContent ?? JSON.parse(r.result.content[0].text);
   };
   const close = () => new Promise((resolve) => {
-    if (child.exitCode !== null) {
+    if (failed || child.exitCode !== null || child.signalCode !== null) {
       resolve();
       return;
     }
@@ -113,6 +142,42 @@ function session(cwd, env, client) {
 
 const checks = [];
 const record = (host, check, status, detail) => checks.push({ host, check, status, detail });
+
+/**
+ * The host file carries no machine path, and starting it exactly as written
+ * (workspace variables substituted, from the project directory, with only
+ * construct, node, and git on PATH) serves this project.
+ */
+async function checkPortableWiring(host, project, env, bin) {
+  const w = clientWiring(host.id);
+  const launch = launchOf(host.id, project);
+  if (!w || !launch) {
+    record(host.id, 'portable wiring', 'failed', `no construct entry to start in ${w?.relativePath ?? 'the host file'}`);
+    return;
+  }
+  const text = readFileSync(join(project, w.relativePath), 'utf8');
+  const parts = [launch.command, ...launch.args];
+  const pinned = parts.filter((p) => isAbsolute(p) || /\bv?\d+\.\d+\.\d+\b/.test(p));
+  const leaked = [project, realpathSync(project), ROOT.replace(/\/$/, ''), process.execPath].filter((p) => text.includes(p));
+  if (pinned.length > 0 || leaked.length > 0) {
+    record(host.id, 'portable wiring', 'failed', `${w.relativePath} carries a machine path: ${[...pinned, ...leaked].join(', ')}`);
+    return;
+  }
+  const substitute = (a) => a.replaceAll('${workspaceFolder}', project);
+  const s = session(project, { ...env, PATH: scratchBin(bin) }, host.id, { command: launch.command, args: launch.args.map(substitute) });
+  try {
+    const initMsg = await s.rpc('initialize', {});
+    if (!initMsg.result) throw new Error(initMsg.error?.message ?? 'no initialize reply');
+    const boot = await s.call('bootstrap');
+    const root = boot.construct?.project?.root;
+    const same = typeof root === 'string' && realpathSync(root) === realpathSync(project);
+    record(host.id, 'portable wiring', same ? 'passed' : 'failed', `${w.relativePath} starts ${parts.join(' ')}; bootstrap bound ${String(root)}`);
+  } catch (error) {
+    record(host.id, 'portable wiring', 'failed', `${w.relativePath} starts ${parts.join(' ')}: ${String(error instanceof Error ? error.message : error).slice(0, 300)}`);
+  } finally {
+    await s.close();
+  }
+}
 
 async function checkHost(host) {
   const scratch = mkdtempSync(join(tmpdir(), `construct-conformance-${host.id}-`));
@@ -130,8 +195,8 @@ async function checkHost(host) {
     const init = cli(['init', `--client=${host.id}`, '--scale=solo', '--outcome=prove conformance', '--constraint=never write outside the project', '--json'], project, env);
     const rec = init.code === 0 ? JSON.parse(init.out) : null;
     record(host.id, 'installation and binding', init.code === 0 ? 'passed' : 'failed', init.code === 0 ? `init bound ${project}` : init.err.trim());
-    if (host.wire) record(host.id, 'host wiring', rec?.hostWiring?.status === 'installed' ? 'passed' : 'failed', rec?.hostWiring ? `${rec.hostWiring.path} ${rec.hostWiring.status}` : 'no wiring recorded');
-    else record(host.id, 'host wiring', 'untested', `${host.id} reads no project MCP file Construct writes; point it at construct serve --client=${host.id} by hand`);
+    record(host.id, 'host wiring', rec?.hostWiring?.status === 'installed' ? 'passed' : 'failed', rec?.hostWiring ? `${rec.hostWiring.path} ${rec.hostWiring.status}` : 'no wiring recorded');
+    await checkPortableWiring(host, project, env, join(scratch, 'bin'));
     if (host.skillsDir) {
       const dir = host.skillsDir(home);
       const present = existsSync(join(dir, 'construct', 'SKILL.md'));

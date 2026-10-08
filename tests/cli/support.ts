@@ -10,6 +10,7 @@ import { realpathSync } from 'node:fs';
 import { run } from '../../src/cli/index.ts';
 import { createContext, type CliContext } from '../../src/cli/context.ts';
 import { AMBIENT_ENV_KEYS } from '../../src/hosts/ambient.ts';
+import { sterileBin } from '../harness/sterile.ts';
 
 export interface Capture {
   readonly code: number;
@@ -41,14 +42,14 @@ export interface Sandbox {
   cleanup(): void;
 }
 
-/** A git repository with a README and its own HOME, no ambient host, deterministic clock and ids. */
+/** A git repository with a README, its own HOME and sterile PATH, no ambient host, deterministic clock and ids. */
 export function sandbox(): Sandbox {
   const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'construct-cli-')));
   const home = realpathSync(mkdtempSync(join(tmpdir(), 'construct-cli-home-')));
   mkdirSync(join(cwd, '.git'));
   writeFileSync(join(cwd, 'README.md'), '# Demo\n\nA demo project for the CLI tests.\n', 'utf8');
   writeFileSync(join(cwd, 'package.json'), JSON.stringify({ name: 'demo', description: 'A demo project' }), 'utf8');
-  const env: NodeJS.ProcessEnv = { HOME: home, XDG_CONFIG_HOME: join(home, '.config'), XDG_STATE_HOME: join(home, '.state'), XDG_DATA_HOME: join(home, '.data'), XDG_CACHE_HOME: join(home, '.cache'), PATH: process.env.PATH };
+  const env: NodeJS.ProcessEnv = { HOME: home, XDG_CONFIG_HOME: join(home, '.config'), XDG_STATE_HOME: join(home, '.state'), XDG_DATA_HOME: join(home, '.data'), XDG_CACHE_HOME: join(home, '.cache'), PATH: sterileBin(home) };
   for (const key of AMBIENT_ENV_KEYS) delete env[key];
   let n = 0;
   let t = Date.parse('2026-09-02T12:00:00.000Z');
