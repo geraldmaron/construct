@@ -15,7 +15,7 @@ import { createWorkflowRegistry } from '../../../src/kernel/registry/workflow-re
 import { stepOrder, readySteps, DependencyCycleError } from '../../../src/kernel/registry/dependency-graph.ts';
 import { lockStatus, updateLock } from '../../../src/kernel/registry/lockfile.ts';
 import { resolveWorkflow, type ResolveInput } from '../../../src/kernel/registry/resolver.ts';
-import { provides, type HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
+import { isKnownValidator, provides, type HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
 import { emptyLock, type RegistryLock } from '../../../src/kernel/project/lock.ts';
 import { createGrant } from '../../../src/kernel/state/grants.ts';
 import { freshStore } from '../state/support.ts';
@@ -331,6 +331,18 @@ test('a period and source ids are typed inputs: one period per workflow, part of
     fx.cleanup();
     cleanup();
   }
+});
+
+test('a workflow that covers a period checks every citation against it', () => {
+  const cites = (validators: string[], inputSchema: Record<string, string> = { target: 'string', period: 'period' }) => workflowManifest('w', '1.0.0', [
+    step('gather', { inputs: 'period' in inputSchema ? { period: 'input.period' } : {}, validators }),
+    step('write', { needs: ['gather'], validators: ['schema'] }),
+  ], { inputSchema, requiredInputs: [], dedupeKey: [] });
+  assert.throws(() => validateWorkflowManifest(cites(['citations_present']), 'w.json'), /step "gather" cites evidence but does not check it against the period \(add within_period\)/);
+  assert.throws(() => validateWorkflowManifest(cites(['evidence_refs_resolve', 'excerpts_match']), 'w.json'), /step "gather" cites evidence but does not check it against the period/);
+  assert.equal(validateWorkflowManifest(cites(['citations_present', 'within_period']), 'w.json').steps[0]!.validators.length, 2);
+  assert.equal(validateWorkflowManifest(cites(['citations_present'], { target: 'string' }), 'w.json').steps.length, 2, 'without a period input nothing changes');
+  assert.ok(isKnownValidator('within_period') && isKnownValidator('named_sources_read'));
 });
 
 test('host capabilities honor scope', () => {

@@ -40,6 +40,8 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'conflicts_declared',
   'excerpts_match',
   'evidence_recorded',
+  'within_period',
+  'named_sources_read',
   'superseded_acknowledged',
   'decision_ask_present',
   'sources_diverse',

@@ -85,7 +85,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   ], { concurrency: 'per_input', onStaleData: 'block', inputSchema: {}, requiredInputs: [] }));
   // A digest of what changed over a period, from the sources it names: the kernel-typed inputs.
   writeWorkflow(join(dirs.root, 'workflows'), 'digest', workflowManifest('digest', '1.0.0', [
-    step('gather', { capabilities: ['read_project_context'], inputs: { target: 'input.target', period: 'input.period', sources: 'input.sources' }, outputs: ['notes'], validators: ['citations_present'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
+    step('gather', { capabilities: ['read_project_context'], inputs: { target: 'input.target', period: 'input.period', sources: 'input.sources' }, outputs: ['notes'], validators: ['citations_present', 'within_period'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
     step('write', { needs: ['gather'], tier: 'draft', capabilities: ['model_review'], inputs: { notes: 'steps.gather.notes', period: 'input.period' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'], loadBearing: true }),
   ], { triggers: ['manual', 'schedule'], concurrency: 'per_input', interactionClass: 'manage', inputSchema: { target: 'string', period: 'period', sources: 'source_ids' }, requiredInputs: ['period'], dedupeKey: ['target', 'period', 'sources'], deliverable: { kind: 'digest', schema: 'digest/v1', challenge: false } }));
   const registry = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });

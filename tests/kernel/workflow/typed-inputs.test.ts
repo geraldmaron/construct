@@ -8,8 +8,12 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import type { BrokerContext } from '../../../src/kernel/broker/context.ts';
+import { createEvidenceResolver, type RefResolver } from '../../../src/kernel/project/evidence.ts';
 import { askedOf } from '../../../src/kernel/workflow/asked.ts';
 import { fixture, T0, type Fixture } from './support.ts';
 
@@ -18,6 +22,25 @@ const lastQuarter = { semantics: 'changed_during', relative: 'last_quarter', phr
 
 function bindingsJson(fx: Fixture, runId: string): string {
   return (fx.store.db.prepare('SELECT bindings_json FROM workflow_runs WHERE id = ?').get(runId) as { bindings_json: string }).bindings_json;
+}
+
+/** A project with one file, and a Jira source whose recorded reads carry the dates the tracker gave. */
+function evidence(): { resolve: RefResolver; cleanup(): void } {
+  const root = mkdtempSync(join(tmpdir(), 'construct-period-'));
+  mkdirSync(join(root, 'docs'), { recursive: true });
+  writeFileSync(join(root, 'docs', 'architecture.md'), '# Architecture\nPayments call the ledger.\n');
+  const item = (ref: string, updatedAt?: string) => ({ ref, kind: 'item', fingerprint: ref, text: `${ref} text`, ...(updatedAt ? { updatedAt } : {}) });
+  const resolve = createEvidenceResolver({
+    root,
+    sources: [{ id: 'jira', kind: 'jira', locator: null, provenance: 'reported', manifest: [
+      item('PAY-1', '2026-05-10T09:00:00Z'),
+      item('PAY-2', '2026-02-01'),
+      item('PAY-3', '2026-07-01T01:30:00+02:00'),
+      item('PAY-4'),
+      item('PAY-5', 'October 5, 2026'),
+    ] }],
+  });
+  return { resolve, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
 async function runStatus(fx: Fixture, runId: string): Promise<Record<string, any>> {
@@ -98,18 +121,18 @@ test('steps receive the period in dates, and every packet says what the run cove
     assert.deepEqual(gather.inputs.period, frozen, 'the step gets the dates, not the words');
     assert.deepEqual(gather.inputs.sources, ['jira']);
     assert.equal(gather.inputs.target, 'payments');
-    assert.ok(gather.instructions.includes("This run covers 2026-04-01 to 2026-06-30 (UTC; what changed during it) in this run's reading."), gather.instructions.join('\n'));
-    assert.ok(gather.instructions.some((l) => l.startsWith('Read the sources this run names: jira; cite items as <source>:<item>')));
-    assert.ok(!gather.instructions.some((l) => /refused/.test(l)));
+    assert.ok(gather.instructions.includes(`This run covers 2026-04-01 to 2026-06-30 (UTC; what changed during it) in this run's reading. An item updated after 2026-06-30 is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`), gather.instructions.join('\n'));
+    assert.ok(gather.instructions.some((l) => l.startsWith('Read the sources this run names: jira; cite items as <source>:<item>') && l.endsWith('A named source you could not read goes under "unread" as {source, why}.')));
     fx.tick(10 * DAY);
     fx.service.submit({ leased: gather.leased, output: { notes: 'n' }, evidence: [{ ref: 'jira:PAY-1' }] });
     const write = fx.service.claimNext({ runId: started.run.id })!.packet!;
     assert.deepEqual(write.inputs.period, frozen, 'a later step gets the same dates, however late it runs');
-    assert.ok(write.instructions.some((l) => l.startsWith('This run covers 2026-04-01 to 2026-06-30')), 'every step sees the window');
+    assert.ok(write.instructions.includes("This run covers 2026-04-01 to 2026-06-30 (UTC; what changed during it) in this run's reading."), 'every step sees the window');
+    assert.ok(!write.instructions.some((l) => /is refused unless/.test(l)), 'a step that checks no citations is not told what it refuses');
 
     const asOf = fx.service.start({ workflowId: 'digest', input: { target: 'ledger', period: { semantics: 'as_of', to: '2026-06-30' } }, trigger: 'manual' });
     const packet = fx.service.claimNext({ runId: asOf.run.id })!.packet!;
-    assert.ok(packet.instructions.includes("This run covers things as of 2026-06-30 (UTC) in this run's reading. Describe them as they stood at the end of that day."), packet.instructions.join('\n'));
+    assert.ok(packet.instructions.includes(`This run covers things as of 2026-06-30 (UTC) in this run's reading. Describe them as they stood at the end of that day. An item updated after 2026-06-30 is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`), packet.instructions.join('\n'));
     assert.ok(!packet.instructions.some((l) => l.startsWith('Read the sources')), 'no sources named, no sources line');
   } finally {
     fx.cleanup();
@@ -210,6 +233,75 @@ test('a named source last read before the period ended is flagged, and nothing i
     const running = fx.service.start({ workflowId: 'digest', input: { target: 'payments', period: { semantics: 'changed_during', relative: 'this_quarter' }, sources: ['jira'] }, trigger: 'manual' });
     assert.ok(!running.preflight.flags.some((f) => /jira/.test(f)), 'the period has not ended yet');
   } finally {
+    fx.cleanup();
+  }
+});
+
+test('a cited item updated after the period is refused until the output says why it belongs; older, undated and file evidence passes and is counted', () => {
+  const fx = fixture();
+  const ev = evidence();
+  try {
+    const started = fx.service.start({ workflowId: 'digest', input: { target: 'payments', period: lastQuarter, sources: ['jira'] }, trigger: 'manual' });
+    const cited = [{ ref: 'jira:PAY-1' }, { ref: 'jira:PAY-2' }, { ref: 'jira:PAY-3' }, { ref: 'jira:PAY-4' }, { ref: 'jira:PAY-5' }, { ref: 'docs/architecture.md' }];
+    const gather = fx.service.claimNext({ runId: started.run.id })!.packet!;
+    const inUtc = fx.service.submit({ leased: gather.leased, output: { notes: 'n' }, evidence: cited, resolve: ev.resolve });
+    assert.deepEqual(inUtc.validation.find((v) => v.validator === 'within_period')!.problems, [], 'PAY-3 was updated at 23:30 UTC on June 30, inside the period in UTC');
+
+    const late = fx.service.start({ workflowId: 'digest', input: { target: 'ledger', period: { semantics: 'evidence_window', relative: 'last_quarter', timezone: 'Asia/Tokyo' }, sources: ['jira'] }, trigger: 'manual' });
+    const first = fx.service.claimNext({ runId: late.run.id })!.packet!;
+    const no = fx.service.submit({ leased: first.leased, output: { notes: 'n' }, evidence: cited, resolve: ev.resolve });
+    assert.deepEqual(no.validation.find((v) => v.validator === 'within_period')!.problems, [
+      '"jira:PAY-3" was updated 2026-07-01, after the period ends (2026-06-30); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs',
+    ], 'in Tokyo PAY-3 was updated on July 1; the older, undated, unreadably dated and file citations are not problems');
+    assert.equal(no.step.state, 'ready', 'sent back for another attempt');
+    const retry = fx.service.claimNext({ runId: late.run.id })!.packet!;
+    const ok = fx.service.submit({ leased: retry.leased, output: { notes: 'n', outsidePeriod: [{ ref: 'PAY-3', why: 'the fix landed just after the quarter closed' }] }, evidence: cited, resolve: ev.resolve });
+    assert.deepEqual(ok.validation.filter((v) => !v.ok), [], 'acknowledged by its item ref while cited as jira:PAY-3');
+    const write = fx.service.claimNext({ runId: late.run.id })!.packet!;
+    const done = fx.service.submit({ leased: write.leased, output: { summary: 's', findings: ['f'] }, evidence: [], resolve: ev.resolve });
+    assert.equal(done.run.state, 'succeeded');
+    const body = done.deliverable!.body as Record<string, any>;
+    assert.equal(body.period.from, '2026-04-01');
+    assert.equal(body.period.to, '2026-06-30');
+    assert.equal(body.period.timezone, 'Asia/Tokyo');
+    assert.deepEqual(body.period.coverage, {
+      inside: ['jira:PAY-1'],
+      before: ['jira:PAY-2'],
+      after: ['jira:PAY-3'],
+      undated: ['jira:PAY-4', 'jira:PAY-5', 'docs/architecture.md'],
+      acknowledged: [{ ref: 'PAY-3', why: 'the fix landed just after the quarter closed' }],
+    });
+    assert.deepEqual(body.sources, { named: ['jira'], read: ['jira'], unread: [] });
+
+    const plain = fx.service.start({ workflowId: 'ship', input: { request: 'tidy the README' }, trigger: 'manual' });
+    const only = fx.service.claimNext({ runId: plain.run.id })!.packet!;
+    const shipped = fx.service.submit({ leased: only.leased, output: { summary: 's', findings: [] }, evidence: [], resolve: ev.resolve });
+    const shippedBody = shipped.deliverable!.body as Record<string, unknown>;
+    assert.ok(!('period' in shippedBody) && !('sources' in shippedBody), 'a run that covers no period and names no source says nothing about them');
+  } finally {
+    ev.cleanup();
+    fx.cleanup();
+  }
+});
+
+test('a deliverable says which named sources something was cited from and which the work said it could not read', () => {
+  const fx = fixture();
+  const ev = evidence();
+  try {
+    fx.sources = [...fx.sources, { kind: 'confluence', id: 'wiki', reachability: 'reachable', freshness: 'no_expectation' }];
+    const started = fx.service.start({ workflowId: 'digest', input: { target: 'payments', period: lastQuarter, sources: ['jira', 'wiki', 'repo'] }, trigger: 'manual' });
+    assert.equal(started.run.state, 'ready', started.preflight.summary);
+    const gather = fx.service.claimNext({ runId: started.run.id })!.packet!;
+    fx.service.submit({ leased: gather.leased, output: { notes: 'n', unread: [{ source: 'wiki', why: 'the connector was not signed in' }, { source: 'repo', why: '' }] }, evidence: [{ ref: 'jira:PAY-1' }, { ref: 'jira' }], resolve: ev.resolve });
+    const write = fx.service.claimNext({ runId: started.run.id })!.packet!;
+    const done = fx.service.submit({ leased: write.leased, output: { summary: 's', findings: ['f'] }, evidence: [], resolve: ev.resolve });
+    assert.deepEqual((done.deliverable!.body as Record<string, unknown>).sources, {
+      named: ['jira', 'wiki', 'repo'],
+      read: ['jira'],
+      unread: [{ source: 'wiki', why: 'the connector was not signed in' }],
+    }, 'an unread entry with no why counts for nothing, and naming a whole source reads nothing from it');
+  } finally {
+    ev.cleanup();
     fx.cleanup();
   }
 });

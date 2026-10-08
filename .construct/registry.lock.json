@@ -165,8 +165,8 @@
       "origin": "builtin"
     },
     "research-brief": {
-      "version": "1.0.0",
-      "digest": "sha256:74eae2e7cedb89cb55c359de280d1afdb5422b6c37c63400daadee8128038066",
+      "version": "1.1.0",
+      "digest": "sha256:49ce5a08f80af66951d79e6a67b18af9d270e875c300c0dab8b1bbf9d1fc0e48",
       "origin": "builtin"
     },
     "revise-deliverable": {

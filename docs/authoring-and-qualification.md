@@ -71,6 +71,16 @@ key, cancellation, deliverable contract, and what it may propose. A step
 that reads an upstream output must list that step in `needs`; a load-bearing
 step must name a validator; a step may not need itself.
 
+An input may be typed `period` or `source_ids`, which Construct checks and
+works out itself ([typed inputs](workflows-and-resolution.md#typed-inputs)).
+A manifest declares at most one `period` input. A non-empty `dedupeKey`
+must include every `period` and `source_ids` input, since work for another
+period or other sources is different work. When a `period` input is
+declared, every step that names `citations_present` or
+`evidence_refs_resolve` must also name `within_period`, so every citation is
+checked against the period. A manifest that breaks one of these rules does
+not load.
+
 Project-authored workflows live under `.construct/workflows/`.
 
 ```bash
@@ -117,6 +127,8 @@ counts.
 | `superseded_acknowledged` | a superseded document is used without saying so |
 | `decision_ask_present` | a proposal has no decision section naming who decides and by when |
 | `sources_diverse` | research rests on fewer than two independent places that hold content (pages of one website count once) |
+| `within_period` | a cited item was updated after the period the run covers ends, and the output does not list it under `outsidePeriod` with why it belongs |
+| `named_sources_read` | a source the run names has nothing cited from it, and the output does not list it under `unread` with why |
 
 Construct does not fetch web pages. A web page resolves only once its read
 is recorded: the host declares a source for the open web (one named `web`,
@@ -139,14 +151,19 @@ through one is never marked validated.
 The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
 apply them in a gather, draft, challenge, record sequence; `research-brief`
 answers a question from the project and the web in a gather, synthesize,
-challenge, record sequence and asks for at least two independent sources. What none of
+challenge, record sequence and asks for at least two independent sources.
+It also takes the period the question covers and the sources to read, and
+checks its citations against both. What none of
 them can tell is whether a grounded claim is the right claim; that is the
 challenge step's and the person's.
 
 ## Plain answers and revisions
 
 `check_answer` runs the citation, quote, figure, and supersession checks on
-an answer before the host gives it, and records nothing. The operational
+an answer before the host gives it, and records nothing. Given the period
+the answer covers, it also flags a cited item updated after the period
+ends, unless the call lists it under `outsidePeriod` with why it belongs,
+and returns the period in dates. The operational
 skill asks the host to use it whenever an answer states facts about the
 project.
 

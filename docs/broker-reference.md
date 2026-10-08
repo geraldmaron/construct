@@ -160,7 +160,7 @@ Surface: interactive. Reads only: no.
 
 ### `check_answer`
 
-Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.
+Check an answer before giving it. Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are named as such, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.
 
 Surface: interactive. Reads only: no.
 
@@ -168,6 +168,8 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `answer` | string | yes | The answer you are about to give, as you would give it. |
 | `citations` | array | no | What it rests on: {ref, excerpt?} entries. |
+| `period` | object | no | The period the answer covers, when it covers one: {semantics: as_of \| changed_during \| evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}. |
+| `outsidePeriod` | array | no | Cited items updated after the period that belong in the answer anyway: {ref, why} entries. |
 
 ### `staff`
 
