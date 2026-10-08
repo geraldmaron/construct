@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
@@ -16,7 +17,7 @@ import { addSource } from '../../../src/kernel/state/sources.ts';
 import { listDriftFindings } from '../../../src/kernel/state/drift.ts';
 import { listOpenDecisions } from '../../../src/kernel/state/decisions.ts';
 import { readDirectorySource } from '../../../src/hosts/sources/directory.ts';
-import { createJiraFixtureReader } from '../../../src/hosts/sources/jira-fixture.ts';
+import { createJiraFixtureReader, FIXTURE_TEXT_CAP } from '../../../src/hosts/sources/jira-fixture.ts';
 import { hostReaders } from '../../../src/hosts/sources/readers.ts';
 import { createSourceService } from '../../../src/kernel/source/service.ts';
 import { brokerFixture } from '../broker/support.ts';
@@ -54,6 +55,22 @@ test('a Jira fixture stands in for the tracker: issues become citable items, rep
     if (read.outcome === 'read') {
       assert.deepEqual(read.report.items!.map((i) => i.externalRef), ['PLAT-101', 'PLAT-102']);
       assert.equal(read.report.evidence, 'reported');
+    }
+    // The fixture keeps text the way the hook keeps a connector's: readable, without credentials, cut and marked at the cap.
+    const BODY = 'a1B2c3D4e5F6g7H8i9J0';
+    const issue = { key: 'PLAT-103', self: 'https://acme.atlassian.net/rest/api/3/issue/103', summary: 'Rotate keys', description: `Rotate ghp_${BODY}${BODY.slice(0, 4)} and say "done".` };
+    const long = { key: 'PLAT-104', summary: 'Long', description: 'x '.repeat(FIXTURE_TEXT_CAP) };
+    writeFileSync(join(dir, 'KEYS.json'), JSON.stringify([issue, long]));
+    const keys = await createJiraFixtureReader(dir)({ sourceId: 'jira-keys', kind: 'jira', locator: 'KEYS' });
+    assert.equal(keys.outcome, 'read');
+    if (keys.outcome === 'read') {
+      const [a, b] = keys.report.items!;
+      assert.equal(a!.attributes!.text, 'PLAT-103\nhttps://acme.atlassian.net/rest/api/3/issue/103\nRotate keys\nRotate [redacted] and say "done".');
+      assert.equal(a!.attributes!.fingerprint, createHash('sha256').update(JSON.stringify(issue)).digest('hex'), 'the version is the whole issue as exported');
+      assert.equal(a!.attributes!.url, 'https://acme.atlassian.net/browse/PLAT-103');
+      assert.equal(a!.attributes!.truncated, undefined);
+      assert.equal(b!.attributes!.truncated, true);
+      assert.equal((b!.attributes!.text as string).length, FIXTURE_TEXT_CAP);
     }
     assert.equal((await createJiraFixtureReader(dir)({ sourceId: 'x', kind: 'jira', locator: 'NOPE' })).outcome, 'unreachable');
     assert.ok(!hostReaders({}).has('jira'));

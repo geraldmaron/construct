@@ -48,6 +48,8 @@ export interface ResolvedRef {
   readonly itemRef?: string;
   /** What it says, when that is cheap to know: file text under the cap, a work item's text. */
   readonly text?: string;
+  /** The recorded text stops short of what was read, so a quote or figure past the cut cannot be checked. */
+  readonly truncated?: boolean;
   /** Bytes on disk, for files. */
   readonly size?: number;
   /** The document that says it replaces this one, when one does. */
@@ -177,11 +179,11 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
         return { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' };
       }
       const hit = s.manifest.find((e) => e.ref === rest);
-      if (hit) return { ref: original, kind: 'item', sourceId: s.id, itemRef: hit.ref, text: hit.text, provenance: s.provenance ?? 'witnessed', ...(hit.supersededBy ? { supersededBy: hit.supersededBy } : {}) };
+      if (hit) return { ref: original, kind: 'item', sourceId: s.id, itemRef: hit.ref, text: hit.text, provenance: s.provenance ?? 'witnessed', ...(hit.truncated ? { truncated: true } : {}), ...(hit.supersededBy ? { supersededBy: hit.supersededBy } : {}) };
       return s.partial ? { ref: original, kind: 'item', sourceId: s.id, itemRef: rest, provenance: 'reported' } : null;
     }
     const item = itemIndex.get(ref);
-    if (item) return { ref: original, kind: 'item', sourceId: item.source.id, itemRef: item.entry.ref, text: item.entry.text, provenance: item.source.provenance ?? 'witnessed' };
+    if (item) return { ref: original, kind: 'item', sourceId: item.source.id, itemRef: item.entry.ref, text: item.entry.text, provenance: item.source.provenance ?? 'witnessed', ...(item.entry.truncated ? { truncated: true } : {}) };
     return asPath(ref, original);
   }
 }
