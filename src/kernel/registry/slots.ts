@@ -79,7 +79,8 @@ export interface SlotContext {
   readonly timezone?: string;
 }
 
-const PERIOD_KEYS = ['semantics', 'relative', 'n', 'quarter', 'year', 'from', 'to', 'timezone', 'phrase'] as const;
+/** Every key a period takes; a period is closed. */
+export const PERIOD_KEYS = ['semantics', 'relative', 'n', 'quarter', 'year', 'from', 'to', 'timezone', 'phrase'] as const;
 
 export function isSlotType(type: string): type is SlotType {
   return (SLOT_TYPES as readonly string[]).includes(type);
