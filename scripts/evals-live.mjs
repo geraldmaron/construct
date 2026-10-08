@@ -36,6 +36,8 @@ import { modelFacingDigest } from '../src/hosts/mcp/server.ts';
 import { apiEnvironmentPresent, authentication } from '../src/hosts/delegation/adapters.ts';
 import { escapeForTerminal } from '../src/kernel/render/terminal.ts';
 import { KNOWN_CLIENTS } from '../src/hosts/wiring/clients.ts';
+import { INTAKE_KINDS, validateIntake } from '../src/kernel/workflow/intake.ts';
+import { PERIOD_SEMANTICS } from '../src/kernel/registry/slots.ts';
 import {
   BARE_MODEL_ALIAS, LIVE_CONDITIONS, OBSERVATION_DEFAULTS, PREREGISTRATION, caseSet, compactObservation, gatingAxes, intakeVerdict, measureIntake, observeRun, pairToolCalls,
   recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord,
@@ -159,28 +161,43 @@ function setup() {
 
 /**
  * The typed reading check the corpus is validated with: classify_request's
- * own validator and the vocabularies it names. It is wired to the typed
- * intake module once that module is part of this tree; until then the
- * corpus cannot be loaded, and the commands that need it say so.
+ * own validator, in classify mode, against the built-in workflows and skills
+ * and the fixture project's declared sources at the current instant, and the
+ * vocabularies it names. A gold reading therefore names each fixture source
+ * by its id, and gives a period in a form that holds on any day.
  */
-export function readingCheck() {
-  return null;
+export function readingCheck({ at = new Date().toISOString() } = {}) {
+  const { skills, workflows } = builtins();
+  const catalog = {
+    workflows: workflows.list(),
+    skills: skills.list(),
+    sources: setup().sources.map((s) => ({ id: s.id, kind: s.kind, locator: s.locator ?? null })),
+    at,
+    timezone: 'UTC',
+    projectRoot: FIXTURE_PROJECT,
+  };
+  return { validateReading: (raw) => validateIntake(raw, catalog, 'classify'), kinds: INTAKE_KINDS, periodSemantics: PERIOD_SEMANTICS };
 }
 
 function builtins() {
   return { skills: createSkillRegistry({ projectDir: null }), workflows: createWorkflowRegistry({ projectDir: null }) };
 }
 
+/** The deliverable kinds the built-in workflows declare, and the families they fall in, which a reading may give instead. */
+function deliverableVocabulary(workflows) {
+  const kinds = workflows.list().map((w) => w.manifest.deliverable.kind);
+  return new Set([...kinds, ...kinds.filter((k) => k.includes('/')).map((k) => k.slice(0, k.indexOf('/')))]);
+}
+
 /** The corpus, validated against the tool's own reading check. */
 export function loadCorpus(check = readingCheck()) {
   if (!existsSync(CORPUS)) throw new Error('skills/evals/intake.json does not exist yet; there is no corpus to run.');
-  if (!check) throw new Error('The typed intake check is not wired into the runner yet, so skills/evals/intake.json cannot be validated.');
   const { skills, workflows } = builtins();
   const ctx = {
     validateReading: check.validateReading,
     kinds: new Set(check.kinds),
     periodSemantics: new Set(check.periodSemantics),
-    deliverableKinds: new Set(workflows.list().map((w) => w.manifest.deliverable.kind)),
+    deliverableKinds: deliverableVocabulary(workflows),
     skillIds: new Set(skills.list().map((s) => s.manifest.id)),
     sourceIds: new Set(setup().sources.map((s) => s.id)),
   };

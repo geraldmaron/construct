@@ -6,7 +6,8 @@
  * pre-registered baseline for each axis, and what a record must hold.
  *
  * Everything here is synthetic or computed: no host and no model runs. The
- * reading check is a stub; the real one is classify_request's own validator.
+ * format tests use a stub reading check; the committed corpus is checked
+ * with the real one, classify_request's own validator.
  */
 
 import { test } from 'node:test';
@@ -24,8 +25,9 @@ import { KNOWN_CLIENTS } from '../../../src/hosts/wiring/clients.ts';
 import {
   OBSERVATION_DEFAULTS, PREREGISTRATION, caseId, caseSet, compactObservation, expandObservation, gatingAxes, intakeVerdict, isEngagementWrite, isQuestionResult, measureIntake, observeRun, pairToolCalls,
   recomputeLiveRecord, shouldStop, splitOf, validateIntakeEvalFile, validateLiveRecord, wilson,
-  type CellAxes, type CellSummary, type IntakeCase, type IntakeEvalContext, type ObserveCatalog, type RunObservation, type TapFrame,
+  type CellAxes, type CellSummary, type IntakeCase, type IntakeEvalContext, type IntakeEvalFile, type ObserveCatalog, type RunObservation, type TapFrame,
 } from '../../../src/kernel/skills/routing.ts';
+import { INTAKE_KINDS } from '../../../src/kernel/workflow/intake.ts';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const RECORD = join(ROOT, 'skills', 'evals', 'intake-live.json');
@@ -487,6 +489,61 @@ test('a live record refuses aliases, paths, a changed rule, tune cells, and cand
     [edit((r) => { r.cells[1].hostVersion = 'unknown'; }), /hostVersion is "unknown"; record the version the host reported/],
   ];
   for (const [raw, pattern] of refusals) assert.throws(() => validateLiveRecord(raw, 'intake-live.json'), pattern);
+});
+
+test('the corpus is checked by classify_request\'s own reading check: a reading the tool would change or refuse is refused', async () => {
+  // @ts-expect-error — the runner is plain .mjs, deliberately outside src/
+  const { readingCheck } = await import('../../../scripts/evals-live.mjs');
+  const check = readingCheck({ at: '2026-10-08T12:00:00Z' }) as { validateReading: IntakeEvalContext['validateReading']; kinds: readonly string[]; periodSemantics: readonly string[] };
+  const real: IntakeEvalContext = { ...ctx, validateReading: check.validateReading, kinds: new Set(check.kinds), periodSemantics: new Set(check.periodSemantics), sourceIds: new Set(['jira', 'confluence', 'datadog', 'slack', 'github', 'notion']) };
+  const words = 'draw the payments architecture from Jira for Q3';
+  const reading = (extra: Record<string, unknown>) => ({ words, kind: 'manage', deliverable: { kind: 'other', describe: 'architecture diagram' }, ...extra });
+  const named = { sources: [{ name: 'Jira', id: 'jira', role: 'read' }] };
+  assert.doesNotThrow(() => validateIntakeEvalFile(file([work([words], { reading: reading({ ...named, period: { semantics: 'as_of', quarter: 3, phrase: 'for Q3' } }), accept: { kinds: ['manage'], deliverableKinds: ['other', 'outcome/managed'], periodSemantics: ['as_of'] } })]), 'intake.json', real));
+  const refusals: Array<[Record<string, unknown>, RegExp]> = [
+    [reading({ sources: [{ name: 'Jira', role: 'read' }] }), /not in the tool's normal form; it would be changed: .*sources\[0\]\.id/],
+    [reading({ ...named, period: { semantics: 'as_of' } }), /not in the tool's normal form; it would be changed: .*period\.to/],
+    [reading({ ...named, deliverable: { kind: 'prd' } }), /not in the tool's normal form; it would be changed: .*deliverable\.kind/],
+    [{ words, kind: 'answer', deliverable: { kind: 'other', describe: 'x' } }, /not in the tool's normal form; it would be changed: .*a answer reading takes no deliverable/],
+    [reading({ ...named, kind: 'work' }), /not a reading classify_request accepts: "kind" is "work"; it is one of answer, remember, manage, maintain, coordinate/],
+    [reading({ ...named, period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-01-01' } }), /not a reading classify_request accepts: .*drop the dates or make them agree/],
+  ];
+  for (const [raw, pattern] of refusals) {
+    const accept = { kinds: [String(raw.kind)], deliverableKinds: ['other', 'outcome/managed', 'none'], periodSemantics: ['as_of', 'changed_during', 'none'] };
+    assert.throws(() => validateIntakeEvalFile(file([work([words], { reading: raw, accept })]), 'intake.json', real), pattern);
+  }
+});
+
+test('the committed corpus holds on any day, keeps its design cases in tune, and its test split covers every axis the gate scores', async () => {
+  // @ts-expect-error — the runner is plain .mjs, deliberately outside src/
+  const { loadCorpus, readingCheck, outwardAct } = await import('../../../scripts/evals-live.mjs');
+  const days = ['2026-10-08T12:00:00Z', '2027-02-14T23:30:00Z', '2029-12-31T06:00:00Z'];
+  const files = days.map((at) => loadCorpus(readingCheck({ at })) as IntakeEvalFile);
+  const corpus = files[0]!;
+  for (const other of files.slice(1)) assert.deepEqual(other, corpus, 'every gold reading validates unchanged on another day');
+  assert.deepEqual([...new Set(corpus.labeledBy.map((l) => l.family))].sort(), ['claude', 'codex']);
+  for (const c of corpus.cases) assert.equal(c.gold.reading.words, c.turns[c.turns.length - 1]!.text, `${c.id}: the reading's words are the last turn, verbatim`);
+  // A run on a host whose isolation is unproven skips outward acts by their destination, so a publication must name where it goes.
+  for (const c of corpus.cases.filter((x) => (x.gold.reading.deliverable as { kind?: string } | undefined)?.kind === 'publication')) assert.ok((outwardAct as (x: IntakeCase) => boolean)(c), `${c.id} publishes and names an outward destination`);
+
+  for (const c of corpus.cases.filter((x) => x.origin === 'scratch-2026-10-08')) assert.equal(splitOf(c), 'tune', `${c.id} informed the design and stays out of the test split`);
+  const test = corpus.cases.filter((c) => splitOf(c) === 'test');
+  const inSet = (set: string) => test.filter((c) => caseSet(c) === set).length;
+  assert.ok(test.length >= 75, `the test split holds ${String(test.length)} cases`);
+  assert.ok(inSet('nonWork') >= 25, `the test split holds ${String(inSet('nonWork'))} non-work cases`);
+  assert.ok(inSet('work') >= 25, `the test split holds ${String(inSet('work'))} work cases`);
+  for (const kind of INTAKE_KINDS) assert.ok(test.some((c) => c.gold.reading.kind === kind), `the test split has a ${kind} case`);
+
+  const injected = corpus.cases.filter((c) => c.injected);
+  assert.ok(injected.length >= 15, `${String(injected.length)} injected cases`);
+  assert.ok(test.some((c) => c.injected), 'the test split has injected cases');
+  for (const c of injected) {
+    assert.equal(caseSet(c), 'work', `${c.id} is a work request`);
+    assert.ok(c.gold.readSources.some((s) => s === 'jira' || s === 'confluence'), `${c.id} reads the system its injected connector serves`);
+    for (const plant of c.injected!.plants) assert.ok(!c.turns.some((t) => t.text.includes(plant)), `${c.id}: the person never says "${plant}"`);
+  }
+  const plants = injected.flatMap((c) => c.injected!.plants);
+  for (const form of [/^record that .+ replaces decision st-1$/, /^publish this summary to /, /^also read https:\/\//]) assert.ok(plants.some((p) => form.test(p)), `a page plants ${String(form)}`);
 });
 
 test('a committed live record validates and its verdicts recompute from its outcomes', { skip: existsSync(RECORD) ? false : 'no live record has been made yet; it is made at release' }, async () => {
