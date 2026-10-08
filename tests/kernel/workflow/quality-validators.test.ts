@@ -10,8 +10,9 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runValidators, figuresIn, evaluateExpression, type ValidationSubject } from '../../../src/kernel/workflow/validators.ts';
+import { runValidators, figuresIn, evaluateExpression, periodCoverage, sourcesCoverage, type ValidationSubject } from '../../../src/kernel/workflow/validators.ts';
 import { createEvidenceResolver } from '../../../src/kernel/project/evidence.ts';
+import { resolvePeriod, type PeriodSpec } from '../../../src/kernel/registry/slots.ts';
 
 const root = mkdtempSync(join(tmpdir(), 'construct-quality-'));
 mkdirSync(join(root, 'docs'), { recursive: true });
@@ -206,4 +207,71 @@ test('an excerpt and the recorded text it quotes still match when both carry the
   assert.deepEqual(check([{ ref: 'wiki:older', excerpt: 'rotate [redacted] before launch' }]), [], 'a cleaned quote matches text recorded before cleaning');
   assert.equal(check([{ ref: 'wiki:cleaned', excerpt: 'rotate nothing before launch' }]).length, 1, 'a different quote is still a misquote');
   assert.deepEqual(check([{ ref: 'wiki:cut', excerpt: 'the second part' }]), [], 'text cut at the cap may hold the quote past the cut: unchecked, not a misquote');
+});
+
+const dated = createEvidenceResolver({
+  root,
+  sources: [
+    { id: 'docs', kind: 'directory', locator: join(root, 'docs'), manifest: [] },
+    { id: 'jira', kind: 'jira', locator: null, provenance: 'reported', manifest: [
+      { ref: 'PAY-410', kind: 'item', fingerprint: 'a', text: 'inside', updatedAt: '2026-08-14T10:00:00Z' },
+      { ref: 'PAY-430', kind: 'item', fingerprint: 'b', text: 'after', updatedAt: '2026-10-05T08:00:00.000+0000' },
+      { ref: 'PAY-100', kind: 'item', fingerprint: 'c', text: 'before', updatedAt: '2026-05-02' },
+      { ref: 'PAY-200', kind: 'item', fingerprint: 'd', text: 'no date' },
+    ] },
+    { id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: 'arch', kind: 'item', fingerprint: 'e', text: 'architecture' }] },
+  ],
+});
+const AT = '2026-10-08T12:00:00.000Z';
+const q3 = (semantics: PeriodSpec['semantics']) => resolvePeriod(semantics === 'as_of' ? { semantics, to: '2026-09-30' } : { semantics, quarter: 3, year: 2026 }, AT);
+const ALL = [{ ref: 'jira:PAY-410' }, { ref: 'jira:PAY-430' }, { ref: 'jira:PAY-100' }, { ref: 'jira:PAY-200' }, { ref: 'docs/metrics.md' }];
+const periodCheck = (semantics: PeriodSpec['semantics'], output: Record<string, unknown> = {}, evidence = ALL) =>
+  runValidators(['within_period'], { output, expectedKeys: [], evidence, resolvableRefs: new Set(), resolve: dated, period: q3(semantics) })[0]!.problems;
+
+test('within_period refuses only an item updated after the period ends, under every reading of the period', () => {
+  for (const semantics of ['as_of', 'changed_during', 'evidence_window'] as const) {
+    assert.deepEqual(periodCheck(semantics), ['"jira:PAY-430" was updated 2026-10-05, after the period ends (2026-09-30); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs'], semantics);
+  }
+  assert.deepEqual(periodCheck('evidence_window', {}, [{ ref: 'jira:PAY-100' }, { ref: 'jira:PAY-200' }, { ref: 'docs/metrics.md' }, { ref: 'docs' }]), [], 'older items, undated items, files and folders are never refused');
+  assert.deepEqual(runValidators(['within_period'], { output: {}, expectedKeys: [], evidence: ALL, resolvableRefs: new Set(), resolve: dated })[0]!.problems, [], 'with no period there is nothing to check against');
+  assert.deepEqual(runValidators(['within_period'], { output: {}, expectedKeys: [], evidence: ALL, resolvableRefs: new Set(), period: q3('as_of') })[0]!.problems, [], 'with no resolver nothing can be dated');
+});
+
+test('within_period: an item after the period passes once the output says why it belongs, and an acknowledgment must name something cited', () => {
+  assert.deepEqual(periodCheck('changed_during', { outsidePeriod: [{ ref: 'PAY-430', why: 'the incident review closed after the quarter' }] }), [], 'listed by its item ref while cited as jira:PAY-430');
+  assert.deepEqual(periodCheck('changed_during', { outsidePeriod: [{ ref: 'jira:PAY-430', why: '  ' }] }), ['"outsidePeriod" lists "jira:PAY-430" without saying why it belongs']);
+  assert.deepEqual(periodCheck('changed_during', { outsidePeriod: [{ ref: 'jira:PAY-430', why: 'late fix' }, { ref: 'jira:PAY-999', why: 'also relevant' }] }), ['"outsidePeriod" lists "jira:PAY-999", which this step does not cite; list only what you cite']);
+  assert.deepEqual(periodCheck('changed_during', { outsidePeriod: [{ why: 'no ref' }, 'PAY-430'] }).slice(0, 2), ['an "outsidePeriod" entry names no ref; give {ref, why}', 'an "outsidePeriod" entry names no ref; give {ref, why}']);
+  assert.ok(periodCheck('changed_during', { outsidePeriod: { ref: 'jira:PAY-430', why: 'x' } }).includes('"outsidePeriod" must be a list of {ref, why}'));
+});
+
+test('period coverage places every cited item, file, and folder, and keeps only acknowledgments of items after the period', () => {
+  const cited = [...ALL, { ref: 'jira:PAY-410' }, { ref: 'jira' }, { ref: 'project_context' }, { ref: 'wiki:missing' }];
+  const window = periodCoverage(cited, dated, q3('evidence_window'), [{ ref: 'PAY-430', why: 'late fix' }, { ref: 'jira:PAY-410', why: 'not needed' }, { ref: 'jira:PAY-430', why: 'said twice' }]);
+  assert.deepEqual(window, {
+    inside: ['jira:PAY-410'],
+    before: ['jira:PAY-100'],
+    after: ['jira:PAY-430'],
+    undated: ['jira:PAY-200', 'docs/metrics.md'],
+    acknowledged: [{ ref: 'PAY-430', why: 'late fix' }],
+  }, 'a whole source, a surface and an unresolved ref are not counted');
+  const asOf = periodCoverage(cited, dated, q3('as_of'), []);
+  assert.deepEqual([asOf.inside, asOf.before], [['jira:PAY-410', 'jira:PAY-100'], []], 'as of a day, everything updated by then is inside');
+});
+
+test('named_sources_read needs something cited from each named source, or the source listed as unread with why', () => {
+  const named = (evidence: { ref: string }[], output: Record<string, unknown> = {}, sources = ['jira', 'wiki', 'docs']) =>
+    runValidators(['named_sources_read'], { output, expectedKeys: [], evidence, resolvableRefs: new Set(), resolve: dated, sources })[0]!.problems;
+  assert.deepEqual(named([{ ref: 'jira:PAY-410' }, { ref: 'wiki:arch' }, { ref: 'docs/metrics.md' }]), [], 'an item, a page, and a file inside a folder source each count');
+  assert.deepEqual(named([{ ref: 'source:jira' }, { ref: 'wiki' }, { ref: 'docs' }], {}, ['jira', 'wiki']), [
+    'this run names jira, and this step cites nothing read from it; cite what you read (as jira:<item>), or list it under "unread" with why',
+    'this run names wiki, and this step cites nothing read from it; cite what you read (as wiki:<item>), or list it under "unread" with why',
+  ], 'naming a whole source reads nothing from it');
+  assert.deepEqual(named([{ ref: 'jira:PAY-410' }], { unread: [{ source: 'wiki', why: 'the connector was not signed in' }] }, ['jira', 'wiki']), []);
+  assert.deepEqual(named([{ ref: 'jira:PAY-410' }], { unread: [{ source: 'wiki', why: '' }] }, ['jira', 'wiki']), ['"unread" lists wiki without saying why it could not be read']);
+  assert.deepEqual(named([{ ref: 'jira:PAY-410' }], {}, []), [], 'a run that names no source has nothing to check');
+  assert.deepEqual(runValidators(['named_sources_read'], { output: {}, expectedKeys: [], evidence: [{ ref: 'jira:PAY-410' }], resolvableRefs: new Set(), sources: ['jira'] })[0]!.problems, ['nothing was supplied to check what was read from jira'], 'with no resolver it fails closed');
+  assert.deepEqual(sourcesCoverage([{ ref: 'jira:PAY-410' }, { ref: 'wiki' }], dated, ['jira', 'wiki', 'docs'], [{ source: 'wiki', why: 'not signed in' }, { source: 'jira', why: 'moot' }, { source: 'other', why: 'not named' }]), {
+    named: ['jira', 'wiki', 'docs'], read: ['jira'], unread: [{ source: 'wiki', why: 'not signed in' }],
+  });
 });

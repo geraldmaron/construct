@@ -103,10 +103,27 @@ period was refused is replaced by the corrected one. A named source last
 read on a day before a finished period ends is flagged at start so it can be
 read again; the flag never blocks.
 
+Evidence is checked against the period. A step that names `within_period`
+refuses a cited item whose recorded update falls after the period ends,
+under every semantics, unless the output lists it under `outsidePeriod` as
+`{ref, why}` with why it belongs. An item last updated before the period
+starts, an item with no date, and a project file are never refused. A step
+that names `named_sources_read` needs something cited from each source the
+run names (an item, a file, or a folder inside it; naming the whole source
+does not count), or the source listed under `unread` as `{source, why}`.
+The deliverable states the period it covers with its coverage: which
+citations fall inside it, before it, or after it, which are undated
+(project files count here, since they are read as they stand now), and the
+`outsidePeriod` entries the run's steps gave for citations after it. It also states which named
+sources something was cited from and which were listed as unread.
+`check_answer` takes the same period for a plain answer.
+
 A manifest declares at most one period input, since a run covers one
 period, and a non-empty `dedupeKey` must include every `period` and
 `source_ids` input, since work for a different period or sources is
-different work. [Recurring and scheduled operation](recurring-operation.md)
+different work. When a period input is declared, every step that checks
+citations (`citations_present` or `evidence_refs_resolve`) must also name
+`within_period`. [Recurring and scheduled operation](recurring-operation.md)
 shows a trigger whose period moves with each firing.
 
 ## Deliverables and trust

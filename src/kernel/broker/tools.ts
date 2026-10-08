@@ -36,6 +36,7 @@ import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handof
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
+import { checkSlot, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
 import { differsNext } from '../workflow/service.ts';
 import { askedOf } from '../workflow/asked.ts';
 import { settledConstraintText, settledTerms } from '../project/governance.ts';
@@ -759,7 +760,12 @@ function listLiveDeliverablesFor(ctx: BrokerContext, id: string) {
   return listLiveDeliverables(ctx.store).find((d) => d.id === id);
 }
 
-interface CheckAnswerInput { answer: string; citations: { ref: string; excerpt?: string }[] }
+interface CheckAnswerInput {
+  answer: string;
+  citations: { ref: string; excerpt?: string }[];
+  period?: Record<string, unknown>;
+  outsidePeriod?: { ref: string; why: string }[];
+}
 
 /** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
 export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'excerpts_match', 'numbers_grounded', 'superseded_acknowledged', 'settled_not_contradicted'] as const;
@@ -767,7 +773,7 @@ export const ANSWER_CHECKS = ['citations_present', 'evidence_refs_resolve', 'exc
 const checkAnswer = define<CheckAnswerInput, unknown>({
   name: 'check_answer',
   title: 'Check an answer before giving it',
-  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, and superseded documents are named as such, and returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
+  description: 'Before you state facts about this project in a plain answer, pass the answer and what it rests on. Construct checks that each citation names something real, quotes match, figures come from what was cited, superseded documents are named as such, and, when the answer covers a period, that nothing cited was updated after it ends; it returns the problems. It starts nothing and records only that a check happened and how it went; fix what it finds or say plainly what you could not support.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -775,6 +781,8 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
     properties: {
       answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
       citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: { type: 'object' } },
+      period: { type: 'object', description: 'The period the answer covers, when it covers one: {semantics: as_of | changed_during | evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}.' },
+      outsidePeriod: { type: 'array', description: 'Cited items updated after the period that belong in the answer anyway: {ref, why} entries.', items: { type: 'object' } },
     },
     required: ['answer'],
     additionalProperties: false,
@@ -785,12 +793,27 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       const r = record(e);
       return { ref: typeof r.ref === 'string' ? r.ref : '', excerpt: typeof r.excerpt === 'string' ? r.excerpt : undefined };
     });
-    return { answer: str(raw, 'answer')!, citations };
+    const period = obj(raw, 'period', { optional: true });
+    const outsidePeriod = list(raw, 'outsidePeriod').map((e) => {
+      const r = record(e);
+      return { ref: typeof r.ref === 'string' ? r.ref : '', why: typeof r.why === 'string' ? r.why : '' };
+    });
+    return { answer: str(raw, 'answer')!, citations, ...(period ? { period } : {}), ...(outsidePeriod.length ? { outsidePeriod } : {}) };
   },
-  run(ctx, { answer, citations }) {
+  run(ctx, { answer, citations, period: spec, outsidePeriod }) {
+    // A period is checked and worked out at the moment of asking, before anything is recorded.
+    let period: ResolvedPeriod | null = null;
+    if (spec) {
+      const at = ctx.now();
+      const wrong = checkSlot('period', 'period', spec, { at, sourceIds: [] });
+      if (wrong.length) throw new ToolInputError(`${wrong.map((p) => p.message).join('; ')}. ${wrong[0]!.remedy}`, { field: 'period', example: { semantics: 'changed_during', relative: 'last_quarter' } });
+      period = resolvePeriod(spec as unknown as PeriodSpec, at);
+    }
     const resolve = projectResolver(ctx);
     const settled = settledTerms(listStatements(ctx.store, { kind: 'constraint', status: 'confirmed' }));
-    const results = runValidators([...ANSWER_CHECKS], { output: { summary: answer }, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled });
+    const checks: string[] = [...ANSWER_CHECKS, ...(period ? ['within_period'] : [])];
+    const output = { summary: answer, ...(outsidePeriod ? { outsidePeriod } : {}) };
+    const results = runValidators(checks, { output, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled, period });
     const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
     // Counted, so how often answers are checked is something a person can see, not something to hope for.
     appendActivity(ctx.store, { at: ctx.now(), kind: 'answer.checked', actor: ctx.actor, payload: { ok: problems.length === 0, problems: problems.length, citations: citations.length } });
@@ -803,6 +826,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       ok: problems.length === 0,
       problems,
       evidence: provenanceOf(citations, resolve),
+      ...(period ? { period: { from: period.from, to: period.to, timezone: period.timezone, assumptions: period.assumptions } } : {}),
       next: (problems.length === 0
         ? 'give the answer; say which parts rest on reported sources if any'
         : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,

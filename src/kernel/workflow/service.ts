@@ -43,7 +43,7 @@ import { settledTerms } from '../project/governance.ts';
 import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
-import { runValidators, type ValidatorResult } from './validators.ts';
+import { outsidePeriodOf, periodCoverage, runValidators, sourcesCoverage, unreadOf, type OutsidePeriod, type Unread, type ValidatorResult } from './validators.ts';
 
 function activeContradictionCount(store: StateStore): number {
   return listRelations(store, { kind: 'contradicts' }).filter((r) => {
@@ -148,6 +148,8 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
   excerpts_match: 'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter); an excerpt from something Construct holds no text for is not checked and supports nothing.',
   evidence_recorded: 'evidence_recorded needs at least one citation that holds content Construct can check: a project file, or an item whose text you recorded with sources action report.',
+  within_period: 'within_period refuses a cited item whose recorded updatedAt falls after the period this run covers ends; an item that belongs anyway passes when the output lists it under "outsidePeriod" as {ref, why}. Items last updated before the period, items with no date, and project files pass and are counted in the deliverable.',
+  named_sources_read: 'named_sources_read needs, for each source this run names, a cited item, file or folder read from it (cite it as <source>:<item>; naming the whole source does not count); a named source you could not read passes when the output lists it under "unread" as {source, why}.',
   superseded_acknowledged: 'superseded_acknowledged needs any superseded document you cite to be named as superseded in the output.',
   decision_ask_present: 'decision_ask_present needs a section headed with "decision" that names who decides (the audience input) and by when.',
   sources_diverse: 'sources_diverse needs citations from at least two independent places that hold content Construct can check (different files, recorded items, or web sites; pages of one site count once).',
@@ -399,6 +401,26 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (Array.isArray(ev)) for (const e of ev) if (e && typeof (e as { ref?: unknown }).ref === 'string') refs.add((e as { ref: string }).ref);
     }
     return [...refs].map((ref) => ({ ref }));
+  };
+  /**
+   * What a deliverable says about the period its run covers and the sources
+   * it names: where everything the run cited falls against the period, which
+   * named sources something was cited from, and what the run's finished
+   * steps (and this one) listed under outsidePeriod and unread. Null where
+   * no resolver was supplied to place the citations.
+   */
+  const coverageFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], output: unknown, resolve?: RefResolver): Record<string, unknown> => {
+    const asked = askedOf(run);
+    const ids = asked.sources?.registered ?? [];
+    if (!asked.period && ids.length === 0) return {};
+    const evidence = runEvidence(run.id, current);
+    const outputs = [...listSteps(store, run.id).filter((st) => st.state === 'succeeded').map((st) => st.output), output];
+    const outside: OutsidePeriod[] = outputs.flatMap(outsidePeriodOf);
+    const unread: Unread[] = outputs.flatMap(unreadOf);
+    return {
+      ...(asked.period ? { period: { ...asked.period, coverage: resolve ? periodCoverage(evidence, resolve, asked.period, outside) : null } } : {}),
+      ...(ids.length ? { sources: resolve ? sourcesCoverage(evidence, resolve, ids, unread) : { named: [...ids], read: null, unread: null } } : {}),
+    };
   };
 
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
@@ -764,18 +786,26 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return { outcome: null, held, refused };
   }
 
-  /** What every step of a run is told about the period it covers and the sources it names. */
-  function readingInstructions(run: WorkflowRun): string[] {
+  /**
+   * What every step of a run is told about the period it covers and the
+   * sources it names; a step that checks citations against the period is
+   * also told what it refuses.
+   */
+  function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
     const p = asked.period;
     if (p) {
-      lines.push(p.semantics === 'as_of'
+      const covers = p.semantics === 'as_of'
         ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. Describe them as they stood at the end of that day.`
-        : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`);
+        : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`;
+      const refused = step.validators.includes('within_period')
+        ? ` An item updated after ${p.to} is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`
+        : '';
+      lines.push(covers + refused);
     }
     const ids = asked.sources?.registered ?? [];
-    if (ids.length) lines.push(`Read the sources this run names: ${ids.join(', ')}; cite items as <source>:<item>. Before you submit, record what you read with sources action report; a source Construct reads itself takes action refresh instead.`);
+    if (ids.length) lines.push(`Read the sources this run names: ${ids.join(', ')}; cite items as <source>:<item>. Before you submit, record what you read with sources action report; a source Construct reads itself takes action refresh instead. A named source you could not read goes under "unread" as {source, why}.`);
     return lines;
   }
 
@@ -793,7 +823,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
-      ...readingInstructions(run),
+      ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
       acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
       'Cite every source you read as evidence entries.',
@@ -1089,7 +1119,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         });
       }
       const sensitivity = sensitivityFor(run, evidence, resolve);
-      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity });
+      const asked = askedOf(run);
+      const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity, period: asked.period ?? null, sources: asked.sources?.registered ?? null });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
         const waived = failures.length > 0 && acceptedWaiver(leased.id);
@@ -1126,7 +1157,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const judgment = judgmentOf(run);
         const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}) }, at });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}), ...coverageFor(run, evidence, output, resolve) }, at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
             deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }

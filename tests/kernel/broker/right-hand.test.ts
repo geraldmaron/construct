@@ -103,6 +103,36 @@ test('an answer resting on citations admitted on the host\'s word is told to nam
   }
 });
 
+test('an answer about a period is checked against it: a cited item updated after the period is flagged unless the answer says why it belongs', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.ctx.now();
+    addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'platform tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'report', id: 'jira-plat', items: [
+      { ref: 'PLAT-201', updatedAt: '2026-05-20T10:00:00Z', text: 'Retries capped at five' },
+      { ref: 'PLAT-202', updatedAt: '2026-07-03T09:00:00Z', text: 'Retries capped at three' },
+    ] });
+    const lastQuarter = { semantics: 'changed_during', relative: 'last_quarter' };
+    const before = listRuns(fx.broker.store, {}).length;
+    const late = await call(fx, 'check_answer', { answer: 'Last quarter retries were capped.', citations: [{ ref: 'PLAT-201' }, { ref: 'PLAT-202' }], period: lastQuarter });
+    assert.equal(late.ok, false);
+    assert.deepEqual(late.problems, [{ check: 'within_period', problem: '"PLAT-202" was updated 2026-07-03, after the period ends (2026-06-30); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs' }]);
+    assert.deepEqual([late.period.from, late.period.to, late.period.timezone], ['2026-04-01', '2026-06-30', 'UTC']);
+    assert.ok(late.period.assumptions.includes('quarters are calendar quarters'));
+    const said = await call(fx, 'check_answer', { answer: 'Last quarter retries were capped at five; PLAT-202 changed that after the quarter closed.', citations: [{ ref: 'PLAT-201' }, { ref: 'PLAT-202' }], period: lastQuarter, outsidePeriod: [{ ref: 'PLAT-202', why: 'it records the change that followed' }] });
+    assert.equal(said.ok, true, JSON.stringify(said.problems));
+    const timeless = await call(fx, 'check_answer', { answer: 'Retries are capped.', citations: [{ ref: 'PLAT-202' }] });
+    assert.equal(timeless.ok, true, 'an answer that names no period is not checked against one');
+    assert.equal(timeless.period, undefined);
+    await assert.rejects(call(fx, 'check_answer', { answer: 'Q3 retries.', citations: [], period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-01', to: '2026-09-30' } }), (e: { name: string; field: string; message: string }) =>
+      e.name === 'ToolInputError' && e.field === 'period' && /runs from 2026-04-01 to 2026-06-30/.test(e.message) && /Pass period as/.test(e.message));
+    await assert.rejects(call(fx, 'check_answer', { answer: 'Q3 retries.', period: 'Q3' }), /"period" must be an object/);
+    assert.equal(listRuns(fx.broker.store, {}).length, before, 'checking an answer starts nothing');
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('what the person settled governs: a remembered supersession is enforced, and settled decisions reach every reading step', async () => {
   const fx = brokerFixture();
   try {

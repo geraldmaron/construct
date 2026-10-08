@@ -8,13 +8,17 @@
  * artifact a step says it wrote must exist, and every figure in the output or
  * the artifact must appear in text Construct holds for something the step
  * cited (or be derived by arithmetic over figures that do). An excerpt is
- * checked against that text; it never stands in for it. These are mechanical
- * floors under quality, not a judge of it.
+ * checked against that text; it never stands in for it. A cited item dated
+ * after the period the run covers is refused unless the output says why it
+ * belongs, and every source the run names must have something cited from it
+ * or be listed as unread. These are mechanical floors under quality, not a
+ * judge of it.
  */
 
-import { holdsContent, normalizeQuote, type RefResolver } from '../project/evidence.ts';
+import { holdsContent, normalizeQuote, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
 import { normalizeUrl } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
+import { dayOf, type ResolvedPeriod } from '../registry/slots.ts';
 
 export interface ValidatorResult {
   readonly validator: string;
@@ -36,6 +40,43 @@ export interface ValidationSubject {
   readonly settled?: readonly { readonly term: string; readonly statementId: string }[];
   /** The highest sensitivity among the sources this run (or the deliverable it acts on) cited. */
   readonly sensitivity?: string | null;
+  /** The period the run covers, in dates, when it covers one. */
+  readonly period?: ResolvedPeriod | null;
+  /** The declared source ids the run names, when it names any. */
+  readonly sources?: readonly string[] | null;
+}
+
+/** A cited item an output says belongs although it is dated after the period. */
+export interface OutsidePeriod {
+  readonly ref: string;
+  readonly why: string;
+}
+
+/** A named source an output says could not be read. */
+export interface Unread {
+  readonly source: string;
+  readonly why: string;
+}
+
+/** Where the citations a deliverable rests on fall against the period it covers, each by its ref. */
+export interface PeriodCoverage {
+  /** Items whose recorded update falls inside the period. */
+  readonly inside: readonly string[];
+  /** Items last updated before the period starts. */
+  readonly before: readonly string[];
+  /** Items updated after the period ends. */
+  readonly after: readonly string[];
+  /** Items with no date Construct can read, and project files, which are read as they stand now. */
+  readonly undated: readonly string[];
+  /** The items after the period that an output said belong, and why. */
+  readonly acknowledged: readonly OutsidePeriod[];
+}
+
+/** Which of the sources a run names something was cited from, and which an output said could not be read. */
+export interface SourcesCoverage {
+  readonly named: readonly string[];
+  readonly read: readonly string[];
+  readonly unread: readonly Unread[];
 }
 
 const SENSITIVITY_ORDER = ['public', 'internal', 'confidential', 'restricted'] as const;
@@ -201,6 +242,101 @@ function findings(output: unknown): Array<Record<string, unknown>> {
   if (!isRecord(output)) return [];
   const list = output.findings ?? output.conflicts ?? output.items;
   return Array.isArray(list) ? list.filter(isRecord) : [];
+}
+
+/**
+ * An ISO date, or an ISO date and time with or without a zone. Only these
+ * are read as a day, so the day never depends on the timezone of the machine
+ * that checks it; anything else is undated.
+ */
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/i;
+
+/** The day a cited item was last updated, in `timezone`; null for anything that is not a recorded item with an ISO date. */
+function itemDay(r: ResolvedRef | null, timezone: string): string | null {
+  if (!r || r.kind !== 'item' || typeof r.updatedAt !== 'string') return null;
+  const at = r.updatedAt.trim();
+  return ISO_TIME.test(at) ? dayOf(at, timezone) : null;
+}
+
+/** Whether two references name the same thing: written alike, or resolving to one recorded item or one file. */
+function sameRef(a: string, b: string, resolve: RefResolver): boolean {
+  if (a.trim() === b.trim()) return true;
+  const [x, y] = [resolve(a), resolve(b)];
+  if (!x || !y || x.kind !== y.kind) return false;
+  if (x.kind === 'item') return x.sourceId === y.sourceId && x.itemRef === y.itemRef;
+  return x.path !== undefined && x.path === y.path;
+}
+
+/** What an output lists under a key, as {first, why} pairs; an entry that is not an object comes back blank. */
+function entriesOf(output: unknown, key: 'outsidePeriod' | 'unread', first: 'ref' | 'source'): { name: string; why: string }[] {
+  if (!isRecord(output) || !Array.isArray(output[key])) return [];
+  const text = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
+  return (output[key] as unknown[]).map((x) => (isRecord(x) ? { name: text(x[first]), why: text(x.why) } : { name: '', why: '' }));
+}
+
+/** The items an output says belong although they are dated after the period, each with why. */
+export function outsidePeriodOf(output: unknown): OutsidePeriod[] {
+  return entriesOf(output, 'outsidePeriod', 'ref').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ ref: x.name, why: x.why }));
+}
+
+/** The named sources an output says could not be read, each with why. */
+export function unreadOf(output: unknown): Unread[] {
+  return entriesOf(output, 'unread', 'source').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ source: x.name, why: x.why }));
+}
+
+/** The distinct, non-empty refs cited, in the order first cited. */
+function citedRefs(evidence: readonly { readonly ref: string }[]): string[] {
+  return [...new Set(evidence.map((e) => e.ref).filter((ref): ref is string => typeof ref === 'string' && ref.trim() !== ''))];
+}
+
+/** The sources something was cited from: an item, a file, or a folder inside them; naming a whole source reads nothing from it. */
+function sourcesReadFrom(evidence: readonly { readonly ref: string }[], resolve: RefResolver): Set<string> {
+  const read = new Set<string>();
+  for (const ref of citedRefs(evidence)) {
+    const r = resolve(ref);
+    if (r?.sourceId && (r.kind === 'item' || r.kind === 'file' || r.kind === 'directory')) read.add(r.sourceId);
+  }
+  return read;
+}
+
+/**
+ * Where what a deliverable rests on falls against its period. Only things
+ * that hold or name content are counted: a recorded item by its recorded
+ * update; an item with no ISO date, an unrecorded page, and files and
+ * folders, which are read as they stand now, as undated. Acknowledgments are
+ * kept only for items after the period.
+ */
+export function periodCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, period: ResolvedPeriod, acknowledged: readonly OutsidePeriod[]): PeriodCoverage {
+  const inside: string[] = [];
+  const before: string[] = [];
+  const after: string[] = [];
+  const undated: string[] = [];
+  for (const ref of citedRefs(evidence)) {
+    const r = resolve(ref);
+    if (!r || !(r.kind === 'item' || r.kind === 'web' || r.kind === 'file' || r.kind === 'directory')) continue;
+    const day = itemDay(r, period.timezone);
+    if (day === null) undated.push(ref);
+    else if (day > period.to) after.push(ref);
+    else if (period.from !== null && day < period.from) before.push(ref);
+    else inside.push(ref);
+  }
+  const kept: OutsidePeriod[] = [];
+  for (const a of acknowledged) {
+    if (a.why.trim() === '' || kept.some((k) => sameRef(k.ref, a.ref, resolve))) continue;
+    if (after.some((ref) => sameRef(ref, a.ref, resolve))) kept.push({ ref: a.ref, why: a.why });
+  }
+  return { inside, before, after, undated, acknowledged: kept };
+}
+
+/** Which named sources something was cited from, and which an output said could not be read (and were not read). */
+export function sourcesCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, sources: readonly string[], unread: readonly Unread[]): SourcesCoverage {
+  const read = sourcesReadFrom(evidence, resolve);
+  const listed: Unread[] = [];
+  for (const u of unread) {
+    if (u.why.trim() === '' || !sources.includes(u.source) || read.has(u.source) || listed.some((x) => x.source === u.source)) continue;
+    listed.push({ source: u.source, why: u.why });
+  }
+  return { named: [...sources], read: sources.filter((id) => read.has(id)), unread: listed };
 }
 
 const VALIDATORS: Readonly<Record<string, Validator>> = {
@@ -452,6 +588,43 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (!resolve) return ['nothing was supplied to resolve evidence against'];
     if (evidence.length === 0) return ['no evidence was submitted'];
     return evidence.some((e) => holdsContent(resolve(e.ref))) ? [] : ['nothing cited holds content Construct can check: cite a project file, or an item whose text a recorded read holds'];
+  },
+  within_period: ({ output, evidence, resolve, period }) => {
+    // Only an item dated after the period ends is refused. One last updated before it starts, one with no date, and a
+    // file are not: the deliverable counts them so the person sees what the work could not place in the period.
+    if (!period || !resolve) return [];
+    const problems: string[] = [];
+    if (isRecord(output) && output.outsidePeriod !== undefined && !Array.isArray(output.outsidePeriod)) problems.push('"outsidePeriod" must be a list of {ref, why}');
+    const entries = entriesOf(output, 'outsidePeriod', 'ref');
+    const cited = citedRefs(evidence);
+    for (const entry of entries) {
+      if (entry.name === '') problems.push('an "outsidePeriod" entry names no ref; give {ref, why}');
+      else if (!cited.some((ref) => sameRef(ref, entry.name, resolve))) problems.push(`"outsidePeriod" lists "${entry.name}", which this step does not cite; list only what you cite`);
+      else if (entry.why === '') problems.push(`"outsidePeriod" lists "${entry.name}" without saying why it belongs`);
+    }
+    for (const ref of cited) {
+      const day = itemDay(resolve(ref), period.timezone);
+      if (day === null || day <= period.to) continue;
+      if (entries.some((x) => x.name !== '' && sameRef(ref, x.name, resolve))) continue;
+      problems.push(`"${ref}" was updated ${day}, after the period ends (${period.to}); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs`);
+    }
+    return problems;
+  },
+  named_sources_read: ({ output, evidence, resolve, sources }) => {
+    if (!sources || sources.length === 0) return [];
+    const problems: string[] = [];
+    if (isRecord(output) && output.unread !== undefined && !Array.isArray(output.unread)) problems.push('"unread" must be a list of {source, why}');
+    const entries = entriesOf(output, 'unread', 'source');
+    const read = resolve ? sourcesReadFrom(evidence, resolve) : null;
+    for (const id of sources) {
+      if (read?.has(id)) continue;
+      const entry = entries.find((x) => x.name === id);
+      if (entry?.why) continue;
+      if (entry) problems.push(`"unread" lists ${id} without saying why it could not be read`);
+      else if (!read) problems.push(`nothing was supplied to check what was read from ${id}`);
+      else problems.push(`this run names ${id}, and this step cites nothing read from it; cite what you read (as ${id}:<item>), or list it under "unread" with why`);
+    }
+    return problems;
   },
   superseded_acknowledged: ({ output, evidence, resolve }) => {
     if (!resolve) return [];

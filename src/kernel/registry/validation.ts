@@ -245,7 +245,9 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
   }
   const requiredInputs = strList(r, 'requiredInputs', path, { optional: true });
   for (const k of requiredInputs) if (!(k in inputSchema)) throw new ManifestError(path, `"requiredInputs" names "${k}", which inputSchema does not declare`);
-  if (Object.values(inputSchema).filter((t) => t === 'period').length > 1) throw new ManifestError(path, 'declares more than one period input; a run covers one period');
+  const periods = Object.values(inputSchema).filter((t) => t === 'period').length;
+  if (periods > 1) throw new ManifestError(path, 'declares more than one period input; a run covers one period');
+  const hasPeriod = periods === 1;
   const dedupeKey = strList(r, 'dedupeKey', path, { optional: true });
   if (dedupeKey.length > 0) {
     // An empty dedupe key already identifies the work by every input.
@@ -277,6 +279,10 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
       }
     }
     if (s.loadBearing && s.validators.length === 0) throw new ManifestError(path, `step "${s.id}" is load-bearing but names no validator`);
+    // A run that covers a period checks every citation against it, wherever citations are checked.
+    if (hasPeriod && s.validators.some((v) => v === 'citations_present' || v === 'evidence_refs_resolve') && !s.validators.includes('within_period')) {
+      throw new ManifestError(path, `step "${s.id}" cites evidence but does not check it against the period (add within_period)`);
+    }
   }
   const deliverableRaw = rec(r.deliverable, path, '"deliverable"');
   return {

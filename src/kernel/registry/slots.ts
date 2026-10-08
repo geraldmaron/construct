@@ -131,7 +131,7 @@ function quarterWindow(y: number, q: number): { from: Day; to: Day } {
 }
 
 /** An ISO date and time written without a zone, such as 2026-10-05T23:30:00. */
-const ZONELESS_TIME = /^(\d{4}-\d{2}-\d{2})[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
+const ZONELESS_TIME = /^(\d{4}-\d{2}-\d{2})[Tt ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/;
 
 /**
  * The calendar date an instant (or a bare YYYY-MM-DD) falls on in `timezone`,

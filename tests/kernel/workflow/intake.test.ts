@@ -472,7 +472,7 @@ test('a workflow input is mapped from the reading: the words, target and scope, 
   });
   assert.deepEqual(workflowInputFor({ ...r.intake, period: null }, DIGEST).missing, ['period']);
   const research = workflowInputFor({ ...r.intake, scope: 'payments' }, WORKFLOWS.find((w) => w.manifest.id === 'research-brief')!);
-  assert.deepEqual(research.input, { question: r.intake.words, target: 'docs/architecture.md', scope: 'payments' });
+  assert.deepEqual(research.input, { question: r.intake.words, target: 'docs/architecture.md', scope: 'payments', period: { semantics: 'evidence_window', relative: 'last_quarter' }, sources: ['jira', 'platform'] }, 'research-brief takes the period and the read sources too');
 
   const publish = WORKFLOWS.find((w) => w.manifest.id === 'publish-deliverable')!;
   const to = (destination: unknown) => workflowInputFor(v({ ...REVIEW, destination }).intake, publish).input.destination;

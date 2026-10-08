@@ -167,6 +167,7 @@ test('the calendar gives the date an instant falls on in a timezone, and cron st
   assert.equal(dayOf('2026-10-05', 'America/Los_Angeles'), '2026-10-05', 'a bare date is that date anywhere');
   assert.equal(dayOf('2026-10-05T23:30:00', 'America/Los_Angeles'), '2026-10-05', 'a time written without a zone is on the date it shows, on any machine');
   assert.equal(dayOf('2026-10-05 23:30', 'Asia/Tokyo'), '2026-10-05');
+  assert.equal(dayOf('2026-10-05t23:30:00', 'Asia/Tokyo'), '2026-10-05', 'a lowercase t is still a time written without a zone');
   assert.equal(dayOf('2026-10-05T23:30:00.000+0000', 'Europe/Berlin'), '2026-10-06', 'a time with an offset is placed in the timezone');
   assert.equal(dayOf('not a time', 'UTC'), null);
   assert.equal(dayOf('2027-02-29', 'UTC'), null);
