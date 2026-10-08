@@ -184,8 +184,12 @@ test('a prepared run launches the server it names, through the tap, under its ow
     assert.ok(existsSync(join(run.project, '.claude', 'skills', 'construct', 'SKILL.md')), 'the operational skill is planted where the host reads project skills');
     const sources = JSON.parse(readFileSync(join(run.project, '.construct', 'sources.json'), 'utf8')) as { sources: { id: string }[] };
     assert.deepEqual(sources.sources.map((s) => s.id).sort(), ['confluence', 'datadog', 'github', 'jira', 'notion', 'slack']);
-    const settings = readFileSync(join(run.project, '.claude', 'settings.json'), 'utf8');
+    const settings = readFileSync(join(run.project, '.claude', 'settings.local.json'), 'utf8');
     assert.match(settings, /"command": "env HOME=/, 'Construct\'s hooks run under the run\'s Construct home');
+    const shared = join(run.project, '.claude', 'settings.json');
+    assert.ok(!existsSync(shared) || !/ hook /.test(readFileSync(shared, 'utf8')), 'the shared settings file holds no Construct hook');
+    const launcher = readFileSync(join(run.project, '.construct', 'state', 'launcher'), 'utf8').split('\n');
+    assert.equal(launcher[1], join(ROOT, 'bin', 'construct.mjs'), 'the hooks reach the server the run names through the launcher');
     const reply = await new Promise<string>((resolve, reject) => {
       const child = spawn(entry.command, entry.args, { env: { ...entry.env }, stdio: ['pipe', 'pipe', 'pipe'] });
       let out = '';
