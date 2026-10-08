@@ -69,6 +69,18 @@ The runs behind a record are a release step, run by hand outside any host
 session, on subscriptions only. They have not been run yet; no record
 exists, so `check` fails until the first one is made.
 
+The corpus, `skills/evals/intake.json`, is committed, and the suite checks
+every gold reading with classify_request's own validator. Two model families
+labeled only its 48 cases from the typed-intake design work, which stay in
+the tune split. The routing cases and the authored cases carry Claude's
+labels alone, so `agreed` is false on them, and exact kind and
+blocking-question agreement are scored only on agreed cases. Before the
+first full record, run `node scripts/evals-live.mjs label --labeler=codex`,
+widen each case's accept sets where Codex reads it differently, and set
+`agreed` where the two families match on kind and deliverable kind. The
+labels land in `.tmp-evals/labels/`; merging them is a hand edit, and it
+changes the corpus digest, so it comes before the runs.
+
 The smoke subset below makes a record `check` accepts: the two smoke cells,
 each against the candidate and both baselines. The staging baseline is a
 `git archive` of 79562bbc with this tree's `node_modules` linked in; the
