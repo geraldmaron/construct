@@ -81,6 +81,11 @@ declared, every step that names `citations_present` or
 checked against the period. A manifest that breaks one of these rules does
 not load.
 
+The last step's mapped inputs travel into the deliverable under the names
+the step reads them by, so a last step declares as outputs only what it
+adds. An output it also reads as an input is its own to restate, and the
+handed value is the one the deliverable keeps.
+
 Project-authored workflows live under `.construct/workflows/`.
 
 ```bash
@@ -120,12 +125,12 @@ counts.
 | `citations_present`, `evidence_refs_resolve` | a reference names nothing this project holds |
 | `excerpts_match` | a quoted excerpt is not in the file or item it cites |
 | `evidence_recorded` | nothing cited holds content Construct can check (a project file, or an item whose text a recorded read holds) |
-| `artifacts_exist` | the file the step says it wrote is missing or empty |
-| `numbers_grounded` | a figure appears in no text Construct holds for what was cited, and is not derived by arithmetic that holds over cited figures |
+| `artifacts_exist` | the file the step says it wrote is missing or empty, or it names none (a step that declares `changes` may list none) |
+| `numbers_grounded` | a figure in the output, or in a document the step wrote, appears in no text Construct holds for something else that was cited, and is not derived by arithmetic that holds over cited figures |
 | `template_conformance` | the artifact lacks a section the named template has |
 | `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
 | `superseded_acknowledged` | a superseded document is used without saying so |
-| `decision_ask_present` | a proposal has no decision section naming who decides and by when |
+| `decision_ask_present` | a proposal has no decision section naming who decides and by when (a `decisionBy` date such as 2026-10-16 is found as written or as "October 16", "Oct 16" or "16 October") |
 | `sources_diverse` | research rests on fewer than two independent places that hold content (pages of one website count once) |
 | `within_period` | a cited item was updated after the period the run covers ends, and the output does not list it under `outsidePeriod` with why it belongs |
 | `named_sources_read` | a source the run names has nothing cited from it, and the output does not list it under `unread` with why |
@@ -139,8 +144,22 @@ own; a citation with no held text (a whole source, one of Construct's own
 surfaces such as `project_context`) supports nothing. Figures are compared
 by value, allowing for how they were rounded ("2M" is supported by a cited
 2,100,000; "3M" is not), dates and times are not figures, and a figure the
-person gave in the request is theirs, not invented. A symlink that leads
-out of the project does not resolve.
+person gave in the request is theirs, not invented. Cited text is read
+more loosely than an output, so configuration grounds the figures it sets:
+`postgres:16` in a cited compose file grounds "Postgres 16", and
+`"8080:8080"` or `PORT=8080` grounds port 8080. Dates, times, years, lone
+digits, one group of "1,600", and digits inside an identifier (`PAY-420`,
+`pull/311`, a commit hash, `v1.25.3`) give no figures. Only
+documents a step wrote are read for figures: its artifact and its changed
+files when they are documents (`.md`, `.mdx`, `.markdown`, `.txt`, `.rst`,
+`.adoc`, `.html`, `.htm`, `.csv`, `.tsv`, `.mmd`). Code and configuration
+are not, whether changed or named as the artifact, since their ports and
+limits are the change itself, and citing a changed code file grounds what
+the output says it now holds. A document a step wrote never grounds its
+own figures, even when the step cites it through a link or in another
+letter case. A `{path, removed: true}` entry in `changes` names a file
+that is gone and is not looked for. A symlink that leads out of the
+project does not resolve.
 
 When a load-bearing step still fails its checks after its last attempt,
 the run is not failed and the work is not thrown away: the person is asked

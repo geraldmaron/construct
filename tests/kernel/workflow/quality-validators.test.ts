@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runValidators, figuresIn, evaluateExpression, periodCoverage, sourcesCoverage, type ValidationSubject } from '../../../src/kernel/workflow/validators.ts';
+import { runValidators, figuresIn, citedFiguresIn, evaluateExpression, periodCoverage, sourcesCoverage, type ValidationSubject } from '../../../src/kernel/workflow/validators.ts';
 import { createEvidenceResolver } from '../../../src/kernel/project/evidence.ts';
 import { resolvePeriod, type PeriodSpec } from '../../../src/kernel/registry/slots.ts';
 
@@ -22,6 +22,12 @@ writeFileSync(join(root, 'docs', 'prd.md'), '# PRD: Webhooks\n## Problem\n429s r
 writeFileSync(join(root, 'docs', 'fabricated.md'), '# PRD\nNorthwind is worth $2.4M ARR.\n');
 writeFileSync(join(root, 'docs', 'old.md'), 'old strategy');
 writeFileSync(join(root, 'docs', 'proposal.md'), '# Proposal\n## Decision needed\nSam Ortiz decides by Oct 15 whether to fund webhooks.\n');
+writeFileSync(join(root, 'docs', 'proposal-day-first.md'), '# Proposal\n## Decision\nSam Ortiz decides before 16 October.\n');
+writeFileSync(join(root, 'docker-compose.yml'), 'services:\n  ledger:\n    image: postgres:16\n    ports:\n      - "5432:5432"\n  checkout:\n    ports:\n      - "8080:8080"\n');
+writeFileSync(join(root, 'docs', 'architecture.md'), '# Architecture\n```mermaid\nC4Container\n  ContainerDb(ledger, "ledger", "Postgres 16", "port 5432")\n  Container(checkout, "checkout", "Node", "port 8080")\n```\n');
+writeFileSync(join(root, 'docs', 'latency.md'), '# Latency\ncheckout p99 is 420ms.\n');
+mkdirSync(join(root, 'src'), { recursive: true });
+writeFileSync(join(root, 'src', 'retry.ts'), 'export const TIMEOUT_MS = 45000;\nexport const RETRIES = 7;\n');
 const resolve = createEvidenceResolver({
   root,
   sources: [
@@ -107,6 +113,71 @@ test('a proposal ends in a decision that names who decides and by when', () => {
   assert.deepEqual(ok.decision_ask_present, []);
   const wrong = run(['decision_ask_present'], { output: { artifact: 'docs/proposal.md' }, input: { audience: 'Dana Okafor' } });
   assert.equal(wrong.decision_ask_present!.length, 1);
+});
+
+test('a decisionBy given as a date is found however the decision section writes the day', () => {
+  const by = (artifact: string, decisionBy: string) => run(['decision_ask_present'], { output: { artifact }, input: { audience: 'Sam Ortiz', decisionBy } }).decision_ask_present;
+  assert.deepEqual(by('docs/proposal.md', '2026-10-15'), [], '"Oct 15" names 2026-10-15');
+  assert.deepEqual(by('docs/proposal-day-first.md', '2026-10-16'), [], '"16 October" names 2026-10-16');
+  assert.deepEqual(by('docs/proposal.md', '2026-10-01'), ['the decision section does not say by when'], '"Oct 15" does not name October 1');
+  assert.deepEqual(by('docs/proposal.md', '2026-11-15'), ['the decision section does not say by when'], 'another month is another day');
+  assert.deepEqual(by('docs/proposal.md', 'next sprint'), ['the decision section does not say by when'], 'a free-text deadline is matched as written');
+});
+
+test('a step that declares the files it changed may honestly change none; one that names none otherwise still fails', () => {
+  assert.deepEqual(run(['artifacts_exist'], { output: { summary: 'analysis only', changes: [], artifact: null }, expectedKeys: ['summary', 'findings', 'changes', 'artifact'] }).artifacts_exist, []);
+  assert.equal(run(['artifacts_exist'], { output: {}, expectedKeys: ['summary', 'findings', 'changes', 'artifact'] }).artifacts_exist!.length, 1, 'no changes list at all is not an honest none');
+  assert.equal(run(['artifacts_exist'], { output: { changes: [] }, expectedKeys: ['summary', 'artifact'] }).artifacts_exist!.length, 1, 'a step that must write its artifact cannot list no changes instead');
+  assert.deepEqual(run(['artifacts_exist'], { output: { changes: [{ path: 'docs/gone.md', removed: true }, 'docs/metrics.md'] }, expectedKeys: ['changes'] }).artifacts_exist, [], 'a removed file is not looked for');
+  assert.deepEqual(run(['artifacts_exist'], { output: { changes: [{ path: 'docs/gone.md', removed: true }] }, expectedKeys: ['changes'] }).artifacts_exist, [], 'a step that only removed files wrote nothing to check');
+});
+
+test('figures in a document a step wrote are grounded only by something else it cited; code it changed or named is not read for figures', () => {
+  const diagram = { summary: 'the payments containers', findings: ['the ledger is Postgres 16 on port 5432'], changes: ['docs/architecture.md'], artifact: 'docs/architecture.md' };
+  const compose = 'image: postgres:16\n- "8080:8080"';
+  assert.deepEqual(figuresIn(compose), [], 'stated this way they are not figures a claim makes');
+  assert.ok(['16', '8080'].every((f) => citedFiguresIn(compose).includes(f)), 'but cited configuration gives the figures it sets');
+  assert.deepEqual(run(['numbers_grounded'], { output: diagram, evidence: [{ ref: 'docker-compose.yml' }] }).numbers_grounded, [], '"postgres:16" and "8080:8080" in the cited compose file ground "Postgres 16" and "port 8080"');
+  const self = run(['numbers_grounded'], { output: diagram, evidence: [{ ref: 'docs/architecture.md' }, { ref: './docs/architecture.md' }] }).numbers_grounded!;
+  assert.ok(self.some((p) => p.startsWith('the figure "16" appears in no cited source')), self.join('\n'));
+  assert.ok(self.every((p) => p.includes('(citing docs/architecture.md, ./docs/architecture.md, which this step wrote, grounds nothing in it)')), 'the problem says why the citation did not count');
+
+  const invented = run(['numbers_grounded'], { output: { summary: 'checkout is slow', findings: ['checkout p99 is 420ms'], changes: [], artifact: null }, evidence: [{ ref: 'docker-compose.yml' }] }).numbers_grounded!;
+  assert.deepEqual(invented, ['the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it']);
+  const inArtifact = run(['numbers_grounded'], { output: { summary: 'latency', findings: ['see the note'], changes: [], artifact: 'docs/latency.md' }, evidence: [{ ref: 'docker-compose.yml' }] }).numbers_grounded!;
+  assert.equal(inArtifact.length, 1, 'a document named as the artifact is read for figures');
+  symlinkSync('latency.md', join(root, 'docs', 'latency-link.md'));
+  const viaLink = run(['numbers_grounded'], { output: { summary: 'latency', findings: ['see the note'], changes: [], artifact: 'docs/latency.md' }, evidence: [{ ref: 'docs/latency-link.md' }] }).numbers_grounded!;
+  assert.deepEqual(viaLink, ['the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it (citing docs/latency-link.md, which this step wrote, grounds nothing in it)'], 'a link to the artifact is the artifact');
+  const otherCase = run(['numbers_grounded'], { output: { summary: 'latency', findings: ['see the note'], changes: [], artifact: 'docs/latency.md' }, evidence: [{ ref: 'docs/LATENCY.md' }] }).numbers_grounded!;
+  assert.ok(otherCase.length === 1 && otherCase[0]!.includes('"420ms"'), 'the artifact in another letter case grounds nothing, whether or not the disk folds case');
+
+  const code = { summary: 'retry timeout raised', findings: ['the retry timeout is now longer'], changes: ['src/retry.ts'], artifact: null };
+  assert.deepEqual(run(['numbers_grounded'], { output: code, evidence: [{ ref: 'docs/metrics.md' }] }).numbers_grounded, [], 'figures in changed code are the change itself, not claims');
+  assert.equal(run(['numbers_grounded'], { output: { ...code, changes: ['src/retry.ts', 'docs/latency.md'] }, evidence: [{ ref: 'docs/metrics.md' }] }).numbers_grounded!.length, 1, 'a changed document is read');
+  assert.deepEqual(run(['numbers_grounded'], { output: { ...code, artifact: 'src/retry.ts' }, evidence: [{ ref: 'docs/metrics.md' }] }).numbers_grounded, [], 'code named as the artifact is not read for figures either');
+  const stated = { ...code, findings: ['TIMEOUT_MS is now 45000'] };
+  assert.deepEqual(run(['numbers_grounded'], { output: stated, evidence: [{ ref: 'src/retry.ts' }] }).numbers_grounded, [], 'citing the changed code grounds what the output says it now holds');
+  assert.deepEqual(run(['numbers_grounded'], { output: { ...stated, artifact: 'src/retry.ts' }, evidence: [{ ref: 'src/retry.ts' }] }).numbers_grounded, [], 'and so does citing the code named as the artifact');
+  assert.equal(run(['numbers_grounded'], { output: stated, evidence: [{ ref: 'docs/metrics.md' }] }).numbers_grounded!.length, 1, 'a value stated without citing where it is set is still a claim');
+});
+
+test('cited text gives the figures configuration sets, never a date, a year, or digits inside an identifier', () => {
+  const gives: [string, string[]][] = [['image: postgres:16', ['16']], ['- "8080:8080"', ['8080']], ['- "80:80"', ['80']], ['- "443:443"', ['443']], ['PORT=8443', ['8443']], ['timeout: 15000', ['15000']], ['FROM node:22-alpine', ['22']], ['image: redis:7.2', ['7.2']], ['ports: 10, 20, 30', ['10', '20', '30']], ['1,600 users', ['1600']], ['q3,1200,3400', ['12003400', '1200', '3400']]];
+  for (const [text, figures] of gives) assert.deepEqual([...new Set(citedFiguresIn(text))], figures, text);
+  for (const text of ['PAY-420', 'see pull/311', 'acme/checkout#311', 'commit 7d4987f4', 'commit 81c3e2a', 'id 550e8400-e29b-41d4', 'Target date 2026-09-18', 'standup at 10:30', 'deployed at 9:05am', 'Updated 2026-09-30T14:22:05.000+0000', 'In 2026', 'v1.25.3']) assert.deepEqual(citedFiguresIn(text), [], text);
+
+  const items = createEvidenceResolver({
+    root,
+    sources: [{ id: 'jira', kind: 'jira', locator: null, provenance: 'reported', manifest: [
+      { ref: 'PAY-420', kind: 'item', fingerprint: 'p', text: 'Split cart out of checkout (PAY-420).' },
+      { ref: 'PAY-7', kind: 'item', fingerprint: 'd', text: 'Target date 2026-09-18' },
+    ] }],
+  });
+  const dated = run(['numbers_grounded'], { output: { summary: 'launch plan', findings: ['about 2k users get it first', 'we run 18 replicas'] }, evidence: [{ ref: 'jira:PAY-7' }], resolve: items }).numbers_grounded!;
+  assert.deepEqual(dated.map((p) => /"([^"]+)"/.exec(p)?.[1]), ['2k', '18'], 'a cited date grounds neither a figure near its year nor its day');
+  const keyed = run(['numbers_grounded'], { output: { summary: 'checkout', findings: ['checkout p99 is 420ms'] }, evidence: [{ ref: 'jira:PAY-420' }], resolve: items }).numbers_grounded!;
+  assert.deepEqual(keyed, ['the figure "420ms" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it'], 'a ticket key grounds no latency');
 });
 
 test('dates and times are not figures, but a figure after a month name still is', () => {

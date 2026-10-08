@@ -143,8 +143,8 @@ const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   schema: 'schema needs every declared output key present.',
   citations_present: 'citations_present needs evidence entries whose ref names a real project file (docs/a.md), a deliverable, or an item a recorded read holds (PLAT-101, confluence:98765, or the page\'s url); record what you read with sources action report before citing it.',
   evidence_refs_resolve: 'evidence_refs_resolve rejects any evidence ref that names nothing this project holds.',
-  artifacts_exist: 'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty.',
-  numbers_grounded: 'numbers_grounded rejects any figure in the output or artifact that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading); an excerpt alone does not ground it. List computed figures under "derivations" as {value, expression}, where expression is arithmetic over cited figures.',
+  artifacts_exist: 'artifacts_exist needs "artifact" (or "changes") naming the file you wrote, and that file must exist and not be empty; a step whose outputs include "changes" may list none ("changes": [], "artifact": null).',
+  numbers_grounded: 'numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. List computed figures under "derivations" as {value, expression}, where expression is arithmetic over cited figures.',
   template_conformance: 'template_conformance needs every section heading of the named template present in the artifact.',
   excerpts_match: 'excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter); an excerpt from something Construct holds no text for is not checked and supports nothing.',
   evidence_recorded: 'evidence_recorded needs at least one citation that holds content Construct can check: a project file, or an item whose text you recorded with sources action report.',
@@ -197,6 +197,12 @@ export interface SubmitResult {
   readonly validation: readonly ValidatorResult[];
   readonly run: WorkflowRun;
   readonly deliverable: Deliverable | null;
+  /**
+   * Keys the last step restated with a value other than the one it was
+   * handed: the step's record keeps the restatement, and the deliverable
+   * carries what it was handed.
+   */
+  readonly ignored: readonly string[];
 }
 
 export interface RunView {
@@ -402,6 +408,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     }
     return [...refs].map((ref) => ({ ref }));
   };
+  /** The keys coverageFor writes into a deliverable over what its last step was handed. */
+  const coverageKeys = (run: WorkflowRun): string[] => {
+    const asked = askedOf(run);
+    return [...(asked.period ? ['period'] : []), ...((asked.sources?.registered ?? []).length ? ['sources'] : [])];
+  };
   /**
    * What a deliverable says about the period its run covers and the sources
    * it names: where everything the run cited falls against the period, which
@@ -422,6 +433,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       ...(ids.length ? { sources: resolve ? sourcesCoverage(evidence, resolve, ids, unread) : { named: [...ids], read: null, unread: null } } : {}),
     };
   };
+  /**
+   * What a deliverable says: what the step returned, then what the last step
+   * was handed (which wins over a restatement), the step's evidence, the
+   * highest sensitivity among what the run cited and the deliverable it acts
+   * on (null when none carries a label), how much of the run's evidence
+   * Construct opened itself or holds only on the host's word, and where it
+   * falls against the period and the named sources.
+   */
+  const deliverableBody = (run: WorkflowRun, output: Readonly<Record<string, unknown>>, handed: Readonly<Record<string, unknown>>, evidence: readonly { readonly ref: string; readonly excerpt?: string }[], sensitivity: string | null, resolve?: RefResolver): Record<string, unknown> => ({
+    ...output,
+    ...handed,
+    evidence,
+    sensitivity: sensitivity ?? null,
+    provenance: resolve ? provenanceOf(runEvidence(run.id, evidence), resolve) : null,
+    ...coverageFor(run, evidence, output, resolve),
+  });
 
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
   const policyContext = (interactionClass: PolicyContext['interactionClass'], at: string): PolicyContext => ({
@@ -638,6 +665,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return out;
   }
 
+  /** The run's last step, which hands the deliverable back. */
+  function isLastStep(run: WorkflowRun, step: WorkflowStep): boolean {
+    const frozen = stepsOf(run);
+    return frozen[frozen.length - 1]?.id === step.id;
+  }
+
+  /**
+   * What the last step is handed and the deliverable carries: each input it
+   * declares, under its own name, that has a value. Any other step hands
+   * nothing on.
+   */
+  function handedTo(run: WorkflowRun, step: WorkflowStep): Record<string, unknown> {
+    if (!isLastStep(run, step)) return {};
+    const inputs = inputsFor(run, step);
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(step.inputs)) if (inputs[key] !== undefined) out[key] = inputs[key];
+    return out;
+  }
+
   /** Why this service's host may not perform `step`, or null when it may. */
   function beyondHost(step: WorkflowStep): string | null {
     if (!tierAtLeast(deps.host.maxTier, step.tier)) {
@@ -817,10 +863,21 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const judgment = judgmentOf(run);
     const workflowChallenge = deps.workflows.get(run.workflowId)?.manifest.deliverable.challenge ?? false;
     const needsChallenge = judgmentRequired(workflowChallenge, judgment);
+    // A key the step also returns is its own to restate; the rest the deliverable already carries, the period and
+    // named sources with what the run's citations cover.
+    const handed = Object.keys(handedTo(run, step)).filter((k) => !step.outputs.includes(k));
+    const covered = coverageKeys(run);
+    const asReceived = handed.filter((k) => !covered.includes(k));
+    const withCoverage = handed.filter((k) => covered.includes(k));
+    const carriedParts = [
+      asReceived.length ? `${asReceived.join(', ')} into the deliverable as this step received them` : '',
+      withCoverage.length ? `${withCoverage.join(', ')}${asReceived.length ? '' : ' into the deliverable'} with what the run's citations cover` : '',
+    ].filter(Boolean);
     const instructions = [
       `Step ${step.id}: ${step.title}.`,
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
       ...readingInstructions(run, step),
@@ -1105,17 +1162,17 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         return store.transaction(() => {
           if (policy === 'fail') {
             const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { noData: true }, reason: 'no data' });
-            return { step: failed, validation: [], run: advance(run.id, at), deliverable: null };
+            return { step: failed, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
           }
           if (policy === 'block') {
             const decision = raiseDecision(store, { id: deps.nextId('decision'), kind: 'blocked', question: `Step ${step.id} found no data. Continue without it, or stop?`, runId: run.id, stepRunId: leased.id, options: ['continue', 'stop'], subject: { noData: true }, at });
             transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: 'no data' });
             transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} found no data` });
             void decision;
-            return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null };
+            return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
           const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output } });
-          return { step: done, validation: [], run: advance(run.id, at), deliverable: null };
+          return { step: done, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
         });
       }
       const sensitivity = sensitivityFor(run, evidence, resolve);
@@ -1142,27 +1199,30 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: 'checks still failing; waiting on the person' });
             transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: `step ${step.id} needs the person's call on failing checks` });
             appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), escalated: true } });
-            return { step: getStep(store, leased.id)!, validation, run: getRun(store, run.id)!, deliverable: null };
+            return { step: getStep(store, leased.id)!, validation, run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
           const reason = failures.map((f) => `${f.validator}: ${f.problems.join('; ')}`).join(' | ');
           const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { validation }, reason });
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
-          return { step: failed, validation, run: advance(run.id, at), deliverable: null };
+          return { step: failed, validation, run: advance(run.id, at), deliverable: null, ignored: [] };
         }
         const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence, ...(waived ? { waived: failures.map((f) => ({ validator: f.validator, problems: f.problems })) } : {}) } });
         if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
         let deliverable: Deliverable | null = null;
-        const frozenSteps = stepsOf(run);
-        const isLast = frozenSteps[frozenSteps.length - 1]?.id === step.id;
+        const isLast = isLastStep(run, step);
+        // The last step hands the deliverable what earlier steps produced; a restatement that differs stays in the
+        // step's own record and is named, never carried.
+        const handed = handedTo(run, step);
+        const ignored = Object.keys(handed).filter((k) => k in output && canonicalJson(output[k]) !== canonicalJson(handed[k]));
         const judgment = judgmentOf(run);
         const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: { ...output, evidence, ...(sensitivity ? { sensitivity } : {}), ...coverageFor(run, evidence, output, resolve) }, at });
+          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: deliverableBody(run, output, handed, evidence, sensitivity, resolve), at });
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id)) {
             deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
-        return { step: done, validation, run: advance(run.id, at), deliverable };
+        return { step: done, validation, run: advance(run.id, at), deliverable, ignored };
       });
     },
 

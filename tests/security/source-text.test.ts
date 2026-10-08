@@ -38,7 +38,7 @@ test('instruction-shaped text in a reported item never comes back on a surface, 
     const started = await call(a, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'summarize the retry page' } });
     const runId = started.run.id as string;
     const evidence = [{ ref: URL, excerpt: 'Retries back off for 30 seconds' }];
-    const outputs = [{ plan: ['read the page'], assumptions: [], blockers: [] }, { summary: 'retries back off', findings: ['30 seconds'], changes: [] }, { verification: 'read back', passed: true }, { deliverableId: 'retries', summary: 'retries back off', findings: ['30 seconds'] }];
+    const outputs = [{ plan: ['read the page'], assumptions: [], blockers: [] }, { summary: 'retries back off', findings: ['30 seconds'], changes: [], artifact: null }, { verification: 'read back', passed: true }];
     for (const output of outputs) {
       const w = (await call(a, 'claim_work', { runId })).work;
       const r = await call(a, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence: output === outputs[0] ? [] : evidence });

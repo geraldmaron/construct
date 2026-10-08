@@ -116,7 +116,7 @@ async function runManaged(fx: ReturnType<typeof brokerFixture>, evidence: { ref:
     return call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence: ev });
   };
   await submit({ plan: ['read notes'], assumptions: [], blockers: [] }, []);
-  const done = await submit({ summary: 'summary', findings, changes: [] }, evidence);
+  const done = await submit({ summary: 'summary', findings, changes: [], artifact: null }, evidence);
   return { runId, done };
 }
 
@@ -143,10 +143,8 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     addSource(s, { id: 'notes', kind: 'directory', locator: dir, purpose: 'notes', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     const { runId } = await runManaged(fx, [{ ref: 'notes/pricing.md', excerpt: 'Enterprise only' }], ['v1 is Enterprise only']);
-    let w = (await call(fx, 'claim_work', { runId })).work;
-    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
-    w = (await call(fx, 'claim_work', { runId })).work;
-    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { deliverableId: 'pricing-summary', summary: 'v1 is Enterprise only', findings: ['Enterprise only'] }, evidence: [{ ref: 'notes/pricing.md' }] });
+    const w = (await call(fx, 'claim_work', { runId })).work;
+    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
     assert.equal(rec.run.state, 'succeeded');
     assert.deepEqual(rec.evidence, { witnessed: 1, reported: 0, unverified: 0, unresolved: 0 });
 
@@ -179,10 +177,8 @@ test('new files in a busy source raise one question for the refresh, not one per
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     for (const n of [1, 2]) {
       const { runId } = await runManaged(fx, [{ ref: 'notes/a.md', excerpt: 'alpha' }], [`finding ${String(n)}`], `summarize the notes, pass ${String(n)}`);
-      for (const out of [{ verification: 'ok', passed: true }, { deliverableId: `d${String(n)}`, summary: 's', findings: ['f'] }]) {
-        const w = (await call(fx, 'claim_work', { runId })).work;
-        await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'notes/a.md' }] });
-      }
+      const w = (await call(fx, 'claim_work', { runId })).work;
+      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'notes/a.md' }] });
     }
     const before = listOpenDecisions(s).length;
     writeFileSync(join(dir, 'b.md'), 'new');
@@ -228,10 +224,8 @@ test('removing a file only flags work that cited that file in that source, not a
     addSource(s, { id: 'web', kind: 'other', purpose: 'pages read on the open web', authorityLevel: 'informative', sensitivity: 'public', canRead: true, canWrite: false, at });
     await call(fx, 'sources', { action: 'report', id: 'web', partial: true, items: [{ ref: 'https://example.com/plan.md', text: 'other plan' }] });
     const { runId } = await runManaged(fx, [{ ref: 'docs/plan.md' }, { ref: 'https://example.com/plan.md' }], ['other plan'], 'summarize the other plan');
-    for (const out of [{ verification: 'ok', passed: true }, { deliverableId: 'x', summary: 's', findings: ['f'] }]) {
-      const w = (await call(fx, 'claim_work', { runId })).work;
-      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'docs/plan.md' }] });
-    }
+    const w = (await call(fx, 'claim_work', { runId })).work;
+    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
     rmSync(join(dir, 'plan.md'));
     const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     assert.deepEqual(r.changes.removed, ['plan.md']);
@@ -244,10 +238,9 @@ test('removing a file only flags work that cited that file in that source, not a
 async function finishedCiting(fx: ReturnType<typeof brokerFixture>, refs: string[], name: string) {
   const { runId, done } = await runManaged(fx, refs.map((ref) => ({ ref })), ['the ledger is called synchronously'], `summarize the architecture page, cited as ${name}`);
   assert.equal(done.step.state, 'succeeded', JSON.stringify(done.validation));
-  for (const out of [{ verification: 'read back', passed: true }, { deliverableId: name, summary: 's', findings: ['f'] }]) {
-    const w = (await call(fx, 'claim_work', { runId })).work;
-    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: refs.map((ref) => ({ ref })) });
-  }
+  const w = (await call(fx, 'claim_work', { runId })).work;
+  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: refs.map((ref) => ({ ref })) });
+  assert.equal(verified.run.state, 'succeeded', JSON.stringify(verified.validation));
   return runId;
 }
 

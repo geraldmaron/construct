@@ -52,11 +52,12 @@ test('work resting on confidential sources carries that label, and publishing it
     const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk' } });
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
-    await submit(fx, await step(fx, runId), { summary: 'risk', findings: ['18%'], changes: ['docs/brief.md'] }, [{ ref: 'docs/finance.md' }]);
-    await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
-    const done = await submit(fx, await step(fx, runId), { deliverableId: 'brief', summary: 'risk', findings: ['18%'], artifact: 'docs/brief.md' }, [{ ref: 'docs/finance.md' }]);
+    await submit(fx, await step(fx, runId), { summary: 'risk', findings: ['18%'], changes: ['docs/brief.md'], artifact: 'docs/brief.md' }, [{ ref: 'docs/finance.md' }]);
+    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
+    assert.equal(done.deliverable.trust, 'validated', JSON.stringify(done.validation));
     const status = await call(fx, 'run_status', { runId });
     assert.equal(status.deliverables.at(-1).body.sensitivity, 'confidential');
+    assert.equal(status.deliverables.at(-1).body.artifact, 'docs/brief.md', 'the deliverable carries the file the work produced');
 
     const uncleared = await call(fx, 'start_outcome', { workflowId: 'publish-deliverable', input: { deliverable: done.deliverable.id, destination: 'notion:Product/Webhooks', audience: 'whole company' } });
     const prep = await submit(fx, await step(fx, uncleared.run.id), { summary: 'prepared', findings: ['formatted'], artifact: 'docs/brief.md' }, [{ ref: 'docs/brief.md' }]);

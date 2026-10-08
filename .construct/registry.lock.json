@@ -125,8 +125,8 @@
       "origin": "builtin"
     },
     "managed-outcome": {
-      "version": "1.3.0",
-      "digest": "sha256:fda3eae79344d15e6089aa3ba94de3c0cf6270f0bf6a53e3f9920d74b0379bd3",
+      "version": "2.0.0",
+      "digest": "sha256:69a1e499a3a2617a972cce21d446f5fbf91bf74ba6df5dbf27fd63d5770c68ee",
       "origin": "builtin"
     },
     "operational-readiness-review": {

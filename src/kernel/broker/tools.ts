@@ -468,6 +468,8 @@ const submitWork = define<SubmitInput, unknown>({
       evidence: provenanceOf(input.evidence, resolve),
       run: { id: r.run.id, state: r.run.state },
       deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null,
+      // Restated keys whose value differs from what the step was handed: the deliverable carries what was handed.
+      ...(r.ignored.length > 0 ? { ignored: r.ignored } : {}),
     };
   },
 });
