@@ -48,7 +48,7 @@ function cliReference() {
 }
 
 function brokerReference() {
-  const parts = [HEADER('src/kernel/broker/tools.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
+  const parts = [HEADER('src/kernel/broker/tools.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). Wrong input comes back as a tool error result: `error` says what is wrong, `field` names the input, and `allowed` and `example` give the values it accepts and one that would pass, or are null when Construct has none to give. Only a call to a tool the surface does not carry is a JSON-RPC error (-32602). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
   for (const surface of ['interactive', 'headless']) {
     parts.push(`## ${surface === 'interactive' ? 'Interactive surface' : 'Headless surface'}`, '');
     for (const t of TOOLS.filter((x) => x.surface === 'both' || x.surface === surface)) {

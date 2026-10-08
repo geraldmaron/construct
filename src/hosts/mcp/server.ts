@@ -217,7 +217,11 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           return response(id, withPeers(result, peersAfter(tool.name)));
         } catch (error) {
           const messageText = error instanceof Error ? error.message : String(error);
-          if (error instanceof ToolInputError) return failure(id, -32602, messageText);
+          // Wrong input is a tool error the model reads and corrects; only a tool
+          // this surface does not carry is a protocol error.
+          if (error instanceof ToolInputError) {
+            return response(id, { ...text({ error: messageText, field: error.field, allowed: error.allowed, example: error.example }), isError: true });
+          }
           if (error instanceof UnsupportedStateError) {
             return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
           }

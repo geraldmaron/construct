@@ -310,7 +310,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
   },
   run(ctx, { action, id, input }) {
     if (action === 'list') return ctx.workflows.list().map((w) => ({ id: w.manifest.id, title: w.manifest.title, version: w.manifest.version, interactionClass: w.manifest.interactionClass, purpose: w.manifest.purpose, triggers: w.manifest.triggers }));
-    if (!id) throw new Error(`"id" is required for ${action}`);
+    if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     const w = ctx.workflows.get(id);
     if (!w) throw new Error(`no workflow "${id}"; list shows the ones this project has`);
     if (action === 'show') return { ...w.manifest, origin: w.origin, digest: w.digest };
@@ -341,7 +341,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   run(ctx, { action, id, includeBody }) {
     if (action === 'list') return ctx.skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, version: s.manifest.version, category: s.manifest.category, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown }));
     if (action === 'status') return lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).map((r) => ({ kind: r.kind, id: r.id, state: r.state, why: r.why }));
-    if (!id) throw new Error('"id" is required for show');
+    if (!id) throw new ToolInputError('"id" is required for show', { field: 'id' });
     const s = ctx.skills.get(id);
     if (!s) throw new Error(`no skill "${id}"`);
     const lock = lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).find((r) => r.kind === 'skill' && r.id === id);
@@ -466,7 +466,7 @@ const submitWork = define<SubmitInput, unknown>({
 /** A lease token as given: the claim's secret string. */
 function leaseToken(raw: Record<string, unknown>): string {
   const token = raw.token;
-  if (typeof token !== 'string' || !token.trim()) throw new ToolInputError('"token" is required: the token claim_work returned');
+  if (typeof token !== 'string' || !token.trim()) throw new ToolInputError('"token" is required: the token claim_work returned', { field: 'token' });
   return token.trim();
 }
 
@@ -628,13 +628,13 @@ const sources = define<SourcesInput, unknown>({
   async run(ctx, { action, id, items, partial }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
-    if (!id) throw new Error(`"id" is required for ${action}`);
+    if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     if (!ctx.sources.list().some((s) => s.id === id)) throw new Error(`no active source ${id}`);
     if (action === 'show') return ctx.sources.status(id, at);
     if (action === 'report') {
-      if (items.length === 0) throw new Error('"items" is required for report: what you read, one entry per item');
+      if (items.length === 0) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
-        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new Error(`items[${String(n)}] needs a ref`);
+        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: 'items' });
         const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
         return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text') };
       });
@@ -731,7 +731,7 @@ const staff = define<{ action: 'list' | 'show'; id?: string }, unknown>({
   },
   run(ctx, { action, id }) {
     if (action === 'list') return listStaffMembers(ctx.store);
-    if (!id) throw new Error('"id" is required for show');
+    if (!id) throw new ToolInputError('"id" is required for show', { field: 'id' });
     const m = getStaffMember(ctx.store, id);
     if (!m) throw new Error(`no staff member ${id}`);
     return m;
@@ -805,21 +805,21 @@ const HANDOFF_TARGET = /^[A-Za-z0-9][A-Za-z0-9._-]{0,79}(?:\/[A-Za-z0-9][A-Za-z0
 
 function leasePaths(raw: Record<string, unknown>): string[] {
   const items = list(raw, 'paths');
-  if (items.length > MAX_LEASE_PATHS) throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`);
+  if (items.length > MAX_LEASE_PATHS) throw new ToolInputError(`"paths" takes at most ${String(MAX_LEASE_PATHS)} entries; reserve a directory instead`, { field: 'paths' });
   const use = raw.action === 'claim' ? 'reserve' : 'check';
   return items.map((p) => {
-    if (typeof p !== 'string' || !p.trim()) throw new ToolInputError('"paths" holds non-empty strings');
+    if (typeof p !== 'string' || !p.trim()) throw new ToolInputError('"paths" holds non-empty strings', { field: 'paths' });
     try {
       return normalizeLeasePath(p, use);
     } catch (e) {
-      throw new ToolInputError((e as Error).message);
+      throw new ToolInputError((e as Error).message, { field: 'paths' });
     }
   });
 }
 
-function matching(value: string | undefined, pattern: RegExp, message: string): string | undefined {
+function matching(value: string | undefined, pattern: RegExp, field: string, message: string): string | undefined {
   if (value === undefined) return undefined;
-  if (!pattern.test(value.trim())) throw new ToolInputError(message);
+  if (!pattern.test(value.trim())) throw new ToolInputError(message, { field });
   return value.trim();
 }
 
@@ -861,7 +861,7 @@ interface WorkToolInput {
 function strings(raw: Record<string, unknown>, key: string): string[] | undefined {
   if (raw[key] === undefined) return undefined;
   const values = list(raw, key);
-  if (values.some((v) => typeof v !== 'string')) throw new ToolInputError(`"${key}" must contain strings`);
+  if (values.some((v) => typeof v !== 'string')) throw new ToolInputError(`"${key}" must contain strings`, { field: key });
   return values as string[];
 }
 
@@ -917,11 +917,11 @@ const work = define<WorkToolInput, unknown>({
       removeParent: bool(raw, 'removeParent', false),
       reason: str(raw, 'reason', { optional: true }),
       token: str(raw, 'token', { optional: true }),
-      agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
+      agent: matching(str(raw, 'agent', { optional: true }), AGENT_NAME, 'agent', '"agent" is a name of letters, digits, dot, dash, or underscore, at most 40 characters'),
       paths: raw.paths === undefined ? undefined : leasePaths(raw),
       mode: str(raw, 'mode', { optional: true, oneOf: [...LEASE_MODES] }) as LeaseMode | undefined,
       packet: obj(raw, 'packet', { optional: true }),
-      to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
+      to: matching(str(raw, 'to', { optional: true }), HANDOFF_TARGET, 'to', '"to" names a session or a session’s agent, such as ses_ab12/reviewer'),
     };
   },
   run(ctx, { action, id, title, kind, description, parent, serves, blockedBy, related, acceptance, risk, sources, removeParent, reason, token, agent, paths, mode, packet, to }) {
@@ -929,13 +929,13 @@ const work = define<WorkToolInput, unknown>({
     if (action === 'list') return queryWork(ctx.store, { query: title, parentId: parent, limit: 50 });
     if (action === 'offers') return listOffers(ctx.store, at, claimantOf(ctx, agent)).map((o) => ({ work: o.work, handoff: handoffAsData(o.handoff) }));
     if (action === 'check') {
-      if (!paths || paths.length === 0) throw new Error('"paths" is required for check');
+      if (!paths || paths.length === 0) throw new ToolInputError('"paths" is required for check', { field: 'paths' });
       const exclude = id ? (getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id))?.id : undefined;
       return overlapReport(findOverlaps(ctx.store, { paths, laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, mode, excludeWorkId: exclude }));
     }
     if (action === 'ready') return listReady(ctx.store, at);
     if (action === 'add') {
-      if (!title) throw new Error('"title" is required for add');
+      if (!title) throw new ToolInputError('"title" is required for add', { field: 'title' });
       const filed = fileWork(ctx.store, {
         id: ctx.nextId('work'),
         kind: (kind as 'outcome' | 'task' | 'defect' | 'plan' | undefined) ?? 'task',
@@ -955,7 +955,7 @@ const work = define<WorkToolInput, unknown>({
       });
       return { ...filed.work, admitted: filed.admitted, admittedBy: filed.admittedBy, next: filed.next };
     }
-    if (!id) throw new Error(`"id" is required for ${action}`);
+    if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     const item = getWork(ctx.store, id) ?? getWorkByLegacyId(ctx.store, id);
     if (!item) throw new Error(`no work ${id}`);
     const until = new Date(Date.parse(at) + WORK_CLAIM_TERM_MS).toISOString();
@@ -977,15 +977,15 @@ const work = define<WorkToolInput, unknown>({
       });
     }
     if (action === 'requalify') {
-      if (!reason) throw new Error('requalify needs a reason: what was checked against the changed source');
+      if (!reason) throw new ToolInputError('requalify needs a reason: what was checked against the changed source', { field: 'reason' });
       return requalifyWork(ctx.store, { id: item.id, reason, at, actor: ctx.actor });
     }
     if (action === 'link') return linkWork(ctx.store, { id: item.id, parentId: parent, serves, blockedBy, related, at, actor: ctx.actor, nextId: ctx.nextId });
     if (action === 'unlink') return unlinkWork(ctx.store, { id: item.id, parent: removeParent, blockedBy, related, at, actor: ctx.actor });
     const who = claimantFor(ctx, agent, at);
     if (action === 'handoff') {
-      if (!token) throw new Error('"token" is required for handoff: the one your claim returned');
-      if (!packet) throw new Error('"packet" is required for handoff: at least state and next');
+      if (!token) throw new ToolInputError('"token" is required for handoff: the one your claim returned', { field: 'token' });
+      if (!packet) throw new ToolInputError('"packet" is required for handoff: at least state and next', { field: 'packet' });
       return handoffWork(ctx.store, { id: item.id, owner: who.owner, token, packet, to, now: at });
     }
     if (action === 'accept') {
@@ -995,14 +995,14 @@ const work = define<WorkToolInput, unknown>({
     if (action === 'claim') return claimWorkItem(ctx.store, { id: item.id, ...who, until, now: at, token, paths, mode });
     if (action === 'complete') return completeWork(ctx.store, { id: item.id, owner: who.owner, token, at, reason });
     if (action === 'release') {
-      if (!token) throw new Error('"token" is required for release: the one your claim returned');
+      if (!token) throw new ToolInputError('"token" is required for release: the one your claim returned', { field: 'token' });
       return releaseWork(ctx.store, { id: item.id, owner: who.owner, token, at });
     }
     if (action === 'takeover') {
-      if (!reason) throw new Error('takeover needs a reason');
+      if (!reason) throw new ToolInputError('takeover needs a reason', { field: 'reason' });
       return takeoverWork(ctx.store, { id: item.id, ...who, until, now: at, reason, processAlive: ctx.processAlive });
     }
-    if (!reason) throw new Error('reopen needs a reason');
+    if (!reason) throw new ToolInputError('reopen needs a reason', { field: 'reason' });
     return reopenWork(ctx.store, { id: item.id, actor: ctx.actor, at, reason });
   },
 });
