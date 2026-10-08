@@ -36,6 +36,7 @@ import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handof
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
+import { differsNext } from '../workflow/service.ts';
 import { settledConstraintText, settledTerms } from '../project/governance.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
 import { appendActivity } from '../state/activity.ts';
@@ -351,7 +352,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
 const startOutcome = define<{ workflowId: string; input: Record<string, unknown> }, unknown>({
   name: 'start_outcome',
   title: 'Start an outcome',
-  description: 'Start a managed outcome by running a workflow. It is resolved first; if something is missing you get the reasons, not a half-started run. Returns the run and what it needs. Then call claim_work to do the next step here.',
+  description: 'Start a managed outcome by running a workflow. It is resolved first; if something is missing, the run waits blocked with the reasons and what would fix them; starting again after the fix replaces it, or with unchanged input checks it again. If this work is already running you get that run back, with any inputs you gave differently named. Returns the run and what it needs. Then call claim_work to do the next step here.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -366,14 +367,21 @@ const startOutcome = define<{ workflowId: string; input: Record<string, unknown>
   },
   run(ctx, { workflowId, input }) {
     const r = ctx.workflow.start({ workflowId, input, trigger: 'manual' });
-    return { run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId }, created: r.created, preflight: r.preflight };
+    return {
+      run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
+      created: r.created,
+      preflight: r.preflight,
+      differs: r.differs,
+      superseded: r.superseded,
+      ...(r.differs.length > 0 ? { next: differsNext(r.differs) } : {}),
+    };
   },
 });
 
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why.',
+  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {

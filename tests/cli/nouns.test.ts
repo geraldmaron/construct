@@ -64,6 +64,29 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
   });
 });
 
+test('workflow run says when a corrected start replaced a blocked run and when a reused run was started with other values', async () => {
+  await inProject(async (ctx) => {
+    const wrong = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    assert.equal(wrong.code, 1);
+    assert.match(wrong.out, /^started: run (\S+) \(blocked\)/m);
+    assert.match(wrong.out, /or run this again with the input corrected; it says when it replaces this run\./);
+    const blockedId = /^started: run (\S+) \(blocked\)/m.exec(wrong.out)![1]!;
+    const retried = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    assert.equal(retried.code, 1);
+    assert.match(retried.out, new RegExp(`^checked again: run ${blockedId} \\(blocked\\)$`, 'm'), 'the same start checks the blocked run again; it is not called running');
+    const fixed = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=enterprise'], ctx));
+    assert.equal(fixed.code, 0, fixed.out + fixed.err);
+    assert.match(fixed.out, new RegExp(`^superseded blocked run ${blockedId}$`, 'm'));
+    const reused = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve', '--json'], ctx));
+    const record = JSON.parse(reused.out) as { created: boolean; differs: string[]; superseded: string | null };
+    assert.equal(record.created, false);
+    assert.deepEqual(record.differs, ['scope']);
+    assert.equal(record.superseded, null);
+    const prose = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve'], ctx));
+    assert.match(prose.out, /^note: run \S+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/m);
+  });
+});
+
 test('a standing trigger is scheduled, listed, fired idempotently, disabled, and given a recipe', async () => {
   await inProject(async (ctx, box) => {
     mkdirSync(join(box.cwd, 'docs'));

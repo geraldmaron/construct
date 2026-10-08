@@ -81,7 +81,12 @@ export interface StartResult {
   readonly run: WorkflowRun;
   readonly created: boolean;
   readonly resolution: Resolution;
+  /** For a run that already existed, its own preflight, not the one this start's input would give. */
   readonly preflight: Preflight;
+  /** For a run that already existed, the declared inputs this start gave differently; empty otherwise. */
+  readonly differs: readonly string[];
+  /** The blocked run of the same work that this start cancelled and replaced, if any. */
+  readonly superseded: string | null;
 }
 
 export interface Preflight {
@@ -111,6 +116,8 @@ export type WaitingOn =
   | { readonly kind: 'held'; readonly runId: string; readonly stepId: string; readonly executorId: string; readonly until: string | null }
   /** The step acts above what this executor may reach, or needs a capability it lacks. */
   | { readonly kind: 'refused'; readonly runId: string; readonly stepId: string; readonly reason: string }
+  /** The run named is blocked: why, and each reason with what would clear it. */
+  | { readonly kind: 'blocked'; readonly runId: string; readonly summary: string; readonly reasons: Preflight['reasons'] }
   | { readonly kind: 'nothing_ready' }
   | { readonly kind: 're_resolve'; readonly reason: string };
 
@@ -226,12 +233,40 @@ interface PromotionSubject {
   readonly requestedBy: string;
 }
 
+/** The inputs that say which piece of work a run is: the dedupe key, or every declared input when there is none. */
+function identifyingKeys(m: RegisteredWorkflow['manifest']): readonly string[] {
+  return m.dedupeKey.length ? m.dedupeKey : Object.keys(m.inputSchema);
+}
+
 function idempotencyKeyFor(workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>, trigger: string): string {
   const m = workflow.manifest;
-  const keys = m.dedupeKey.length ? m.dedupeKey : Object.keys(m.inputSchema);
+  const keys = identifyingKeys(m);
   const material = keys.map((k) => `${k}=${JSON.stringify(input[k] ?? null)}`).join('&');
   const hash = createHash('sha256').update(`${m.id}@${m.version}|${trigger}|${material}`).digest('hex').slice(0, 24);
   return `${m.id}:${hash}`;
+}
+
+/** JSON with object keys in sorted order, so equal values give equal text; a missing value reads as null. */
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(value ?? null, (_key, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : v);
+}
+
+/** Names in a sentence: a, a and b, a, b and c. */
+function listed(names: readonly string[]): string {
+  return names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]!}`;
+}
+
+/** The flag a start carries when the run it found was started with other values for these inputs. */
+export function differsFlag(runId: string, keys: readonly string[]): string {
+  return `run ${runId} already covers this work but was started with a different ${listed(keys)}; carry on with it, or cancel it and start again to use the new values`;
+}
+
+/** What the host is told to put to the person when the run it got back was started with other values. */
+export function differsNext(keys: readonly string[]): string {
+  return `Tell the person this work is already running with different ${listed(keys)}, and ask whether to carry on with it or cancel it and start again.`;
 }
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
@@ -305,6 +340,26 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
+  /**
+   * The resolution a run is created or re-resolved on: the resolver's answer,
+   * and for a workflow that blocks on stale data, blocked by any stale or
+   * unread source its steps read.
+   */
+  function startResolution(workflowId: string, input: Readonly<Record<string, unknown>>, executorId: string): Resolution {
+    const resolution = resolutionFor(workflowId, input, executorId);
+    const m = resolution.workflow?.manifest;
+    if (!m || m.onStaleData !== 'block' || (resolution.status !== 'runnable' && resolution.status !== 'outdated')) return resolution;
+    const kinds = new Set(m.steps.flatMap((s) => s.sources.map((src) => src.kind)));
+    const stale = deps.sources().filter((s) => kinds.has(s.kind) && (s.freshness === 'stale' || s.freshness === 'never_read'));
+    if (stale.length === 0) return resolution;
+    return {
+      ...resolution,
+      status: 'blocked',
+      reasons: [...resolution.reasons, ...stale.map((s) => ({ code: 'stale_source' as const, stepId: null, message: `${s.id} is ${s.freshness === 'stale' ? 'stale' : 'unread'} and this workflow blocks on stale data`, remedy: `Refresh ${s.id}.` }))],
+      summary: `${m.id} ${m.version} is blocked: ${stale.map((s) => `${s.id} ${s.freshness === 'stale' ? 'stale' : 'unread'}`).join(', ')} (onStaleData: block)`,
+    };
+  }
+
   /** Structure sets the floor; declared stakes, the chosen skill and the words only raise it. */
   function judgmentFor(workflow: RegisteredWorkflow | null, steps: readonly WorkflowStep[], input: Readonly<Record<string, unknown>>, declared?: Declared | null): Judgment {
     return assessConsequence({
@@ -352,6 +407,26 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const frozen = run.bindings as { steps?: readonly WorkflowStep[] } | null;
     if (frozen && Array.isArray(frozen.steps) && frozen.steps.length > 0) return frozen.steps;
     return deps.workflows.get(run.workflowId)?.manifest.steps ?? [];
+  }
+
+  /**
+   * Resolve a blocked run again where it stands, inside the caller's
+   * transaction. Once nothing blocks it, it gets its steps and is ready;
+   * otherwise it stays blocked with the reasons as they are now.
+   */
+  function resumeBlocked(run: WorkflowRun, at: string, reason: string): { readonly run: WorkflowRun; readonly resolution: Resolution; readonly preflight: Preflight } {
+    const input = (run.input ?? {}) as Record<string, unknown>;
+    const resolution = startResolution(run.workflowId, input, run.executorId);
+    const preflight = preflightOf(resolution, input, askedOf(run).declared);
+    if (resolution.status === 'runnable' || resolution.status === 'outdated') {
+      const roots = new Set(readySteps(resolution.workflow!.manifest.steps, new Set()).map((s) => s.id));
+      if (listSteps(store, run.id).length === 0) {
+        resolution.plan.forEach((bound, i) => addStep(store, { id: deps.nextId('step'), runId: run.id, stepId: bound.step.id, ordinal: i, permissionTier: bound.step.tier, maxAttempts: bound.step.retry.maxAttempts, input: { skill: bound.skill, needsApproval: bound.needsApproval }, ready: roots.has(bound.step.id), at }));
+      }
+      return { run: transitionRun(store, { id: run.id, to: 'ready', at, reason, preflight }), resolution, preflight };
+    }
+    transitionRun(store, { id: run.id, to: 'preflight', at, reason: 'still blocked', preflight });
+    return { run: transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary }), resolution, preflight };
   }
 
   /** Mark every pending step whose needs are done as ready, and settle the run when everything is terminal. */
@@ -692,54 +767,54 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (!m.triggers.includes(input.trigger)) throw new Error(`${m.id} does not accept ${input.trigger} triggers (it accepts ${m.triggers.join(', ')})`);
       const keyExplicit = input.idempotencyKey;
       const workIdentity = idempotencyKeyFor(workflow, input.input, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`);
+      const activeSingle = (): WorkflowRun | null => (m.concurrency === 'single' ? listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked') ?? null : null);
+      const singleFlag = (active: WorkflowRun) => `an active ${m.id} run (${active.id}) already exists; concurrency is single`;
+      /** The work is already under way: hand back that run with its own preflight, and say which declared inputs this start gave differently. */
+      const reuse = (existing: WorkflowRun, flags: readonly string[] = []): StartResult => {
+        const existingInput = (existing.input ?? {}) as Record<string, unknown>;
+        // The stale-data rule decides whether a run may start, so it applies only to a run still waiting to.
+        const resolution = existing.state === 'blocked'
+          ? startResolution(existing.workflowId, existingInput, existing.executorId)
+          : resolutionFor(existing.workflowId, existingInput, existing.executorId);
+        const pf = preflightOf(resolution, existingInput, askedOf(existing).declared);
+        const differs = Object.keys(m.inputSchema).filter((k) => canonicalJson(input.input[k]) !== canonicalJson(existingInput[k]));
+        return { run: existing, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, ...flags, ...(differs.length ? [differsFlag(existing.id, differs)] : [])] }, differs, superseded: null };
+      };
       if (keyExplicit) {
         const existingByKey = getRunByKey(store, keyExplicit);
-        if (existingByKey) {
-          const resolution = resolutionFor(m.id, input.input, executorId);
-          return { run: existingByKey, created: false, resolution, preflight: preflightOf(resolution, input.input, declared) };
-        }
+        if (existingByKey) return reuse(existingByKey);
       } else {
-        const inFlight = findActiveByWorkIdentity(store, workIdentity);
-        if (inFlight) {
-          const resolution = resolutionFor(m.id, input.input, executorId);
-          return { run: inFlight, created: false, resolution, preflight: preflightOf(resolution, input.input, declared) };
-        }
+        const inFlight = findActiveByWorkIdentity(store, workIdentity, { includeBlocked: false });
+        if (inFlight) return reuse(inFlight);
       }
       const key = keyExplicit ?? `${workIdentity}:${deps.nextId('inv')}`;
-      if (m.concurrency === 'single') {
-        const active = listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked');
-        if (active) {
-          const resolution = resolutionFor(m.id, input.input, executorId);
-          const pf = preflightOf(resolution, input.input, declared);
-          return { run: active, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, `an active ${m.id} run (${active.id}) already exists; concurrency is single`] } };
-        }
-      }
-      let resolution = resolutionFor(m.id, input.input, executorId);
-      if ((resolution.status === 'runnable' || resolution.status === 'outdated') && m.onStaleData === 'block') {
-        const kinds = new Set(m.steps.flatMap((s) => s.sources.map((src) => src.kind)));
-        const stale = deps.sources().filter((s) => kinds.has(s.kind) && (s.freshness === 'stale' || s.freshness === 'never_read'));
-        if (stale.length > 0) {
-          resolution = {
-            ...resolution,
-            status: 'blocked',
-            reasons: [...resolution.reasons, ...stale.map((s) => ({ code: 'stale_source' as const, stepId: null, message: `${s.id} is ${s.freshness === 'stale' ? 'stale' : 'unread'} and this workflow blocks on stale data`, remedy: `Refresh ${s.id}.` }))],
-            summary: `${m.id} ${m.version} is blocked: ${stale.map((s) => `${s.id} ${s.freshness === 'stale' ? 'stale' : 'unread'}`).join(', ')} (onStaleData: block)`,
-          };
-        }
-      }
+      const active = activeSingle();
+      if (active) return reuse(active, [singleFlag(active)]);
+      const resolution = startResolution(m.id, input.input, executorId);
       const preflight = preflightOf(resolution, input.input, declared);
+      const resolves = resolution.status === 'runnable' || resolution.status === 'outdated';
       return store.transaction(() => {
         // Another session may have started the same work between the checks
         // above and this write lock; under the lock the answer is final.
-        const raced = keyExplicit
-          ? getRunByKey(store, keyExplicit)
-          : findActiveByWorkIdentity(store, workIdentity)
-            ?? (m.concurrency === 'single' ? listActiveRuns(store).find((r) => r.workflowId === m.id && r.state !== 'blocked') ?? null : null);
-        if (raced) return { run: raced, created: false, resolution, preflight };
-        if (resolution.status === 'runnable' || resolution.status === 'outdated') {
-          for (const stale of listActiveRuns(store).filter((r) => r.workflowId === m.id && r.state === 'blocked')) {
-            transitionRun(store, { id: stale.id, to: 'cancelled', at, reason: 'superseded by a run that resolved' });
-          }
+        const raced = keyExplicit ? getRunByKey(store, keyExplicit) : findActiveByWorkIdentity(store, workIdentity, { includeBlocked: false });
+        if (raced) return reuse(raced);
+        const racedSingle = activeSingle();
+        if (racedSingle) return reuse(racedSingle, [singleFlag(racedSingle)]);
+        // A blocked run of the same work is never handed back as if it were under way. Started again with
+        // the same input, it is resolved again where it stands; started with other input, it is replaced.
+        // A manual start that fills in what a blocked run left out of the work's identity, and agrees on
+        // the rest, is the same work corrected; a blocked run that names other work is left alone.
+        const identifying = identifyingKeys(m);
+        const sameWork = (r: WorkflowRun): boolean => {
+          if (r.workIdentity === workIdentity) return true;
+          if (r.workflowId !== m.id || r.triggerKind !== 'manual' || input.trigger !== 'manual') return false;
+          const was = (r.input ?? {}) as Record<string, unknown>;
+          return identifying.every((k) => was[k] === undefined || was[k] === null || canonicalJson(was[k]) === canonicalJson(input.input[k]));
+        };
+        const blocked = listActiveRuns(store).filter((r) => r.state === 'blocked' && sameWork(r));
+        if (!keyExplicit) {
+          const same = blocked.find((r) => r.workIdentity === workIdentity && canonicalJson(r.input) === canonicalJson(input.input));
+          if (same) return { ...resumeBlocked(same, at, 'resolved again when the same work was started'), created: false, differs: [], superseded: null };
         }
         const { run } = createRun(store, {
           id: deps.nextId('run'),
@@ -759,13 +834,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           bindings: { steps: m.steps, digest: workflow.digest, version: m.version, asked },
           at,
         });
+        const superseding = `superseded by run ${run.id}`;
+        for (const b of blocked) transitionRun(store, { id: b.id, to: 'cancelled', at, reason: superseding });
+        // Under single concurrency a run that resolves also retires the workflow's other blocked runs.
+        if (resolves && m.concurrency === 'single') {
+          for (const other of listActiveRuns(store).filter((r) => r.workflowId === m.id && r.state === 'blocked')) {
+            transitionRun(store, { id: other.id, to: 'cancelled', at, reason: superseding });
+          }
+        }
+        const superseded = blocked[blocked.length - 1]?.id ?? null;
         store.db.prepare(
           `INSERT INTO run_bindings (run_id, workflow_id, workflow_version, workflow_digest, skill_bindings_json, frozen_at)
            VALUES (?, ?, ?, ?, ?, ?)`,
         ).run(run.id, m.id, m.version, workflow.digest, JSON.stringify(resolution.plan.map((p) => p.skill)), at);
-        if (resolution.status === 'blocked' || resolution.status === 'divergent') {
-          const blocked = transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary, preflight });
-          return { run: blocked, created: true, resolution, preflight };
+        if (!resolves) {
+          const stopped = transitionRun(store, { id: run.id, to: 'blocked', at, reason: resolution.summary, preflight });
+          return { run: stopped, created: true, resolution, preflight, differs: [], superseded };
         }
         const done = new Set<string>();
         const roots = new Set(readySteps(m.steps, done).map((s) => s.id));
@@ -783,7 +867,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           });
         });
         const ready = transitionRun(store, { id: run.id, to: 'ready', at, preflight });
-        return { run: ready, created: true, resolution, preflight };
+        return { run: ready, created: true, resolution, preflight, differs: [], superseded };
       });
     },
 
@@ -792,7 +876,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const who = owner ?? deps.host.executorId;
       const leaseUntil = new Date(Date.parse(at) + (requested ?? leaseMs)).toISOString();
       expireDeadLeases(store, at, runId);
-      const candidates = runId ? [getRun(store, runId)].filter((r): r is WorkflowRun => r !== null) : listActiveRuns(store);
+      const named = runId ? getRun(store, runId) : null;
+      // A blocked run hands nothing out; say why it is stuck and what would clear it.
+      if (named?.state === 'blocked') {
+        const shown = named.preflight as { summary?: unknown; reasons?: unknown } | null;
+        const reasons = Array.isArray(shown?.reasons) ? (shown.reasons as Preflight['reasons']) : [];
+        const summary = named.stateReason ?? (typeof shown?.summary === 'string' ? shown.summary : `run ${named.id} is blocked`);
+        return { packet: null, waitingOn: { kind: 'blocked', runId: named.id, summary, reasons } };
+      }
+      const candidates = runId ? [named].filter((r): r is WorkflowRun => r !== null) : listActiveRuns(store);
       let held: RunClaim['held'] = null;
       let refused: RunClaim['refused'] = null;
       for (const candidate of candidates) {
@@ -980,18 +1072,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const run = getRun(store, runId);
         if (!run) throw new Error(`no run ${runId}`);
         if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return run;
-        if (run.state === 'blocked') {
-          const resolution = resolutionFor(run.workflowId, (run.input ?? {}) as Record<string, unknown>, run.executorId);
-          const declared = askedOf(run).declared;
-          if (resolution.status === 'runnable' || resolution.status === 'outdated') {
-            const roots = new Set(readySteps(resolution.workflow!.manifest.steps, new Set()).map((s) => s.id));
-            if (listSteps(store, runId).length === 0) {
-              resolution.plan.forEach((bound, i) => addStep(store, { id: deps.nextId('step'), runId, stepId: bound.step.id, ordinal: i, permissionTier: bound.step.tier, maxAttempts: bound.step.retry.maxAttempts, input: { skill: bound.skill, needsApproval: bound.needsApproval }, ready: roots.has(bound.step.id), at }));
-            }
-            return transitionRun(store, { id: runId, to: 'ready', at, reason: 'resolved on resume', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>, declared) });
-          }
-          return transitionRun(store, { id: runId, to: 'preflight', at, reason: 'still blocked', preflight: preflightOf(resolution, (run.input ?? {}) as Record<string, unknown>, declared) }) && transitionRun(store, { id: runId, to: 'blocked', at, reason: resolution.summary });
-        }
+        if (run.state === 'blocked') return resumeBlocked(run, at, 'resolved on resume').run;
         appendActivity(store, { at, kind: 'run.resumed', runId, payload: { from: run.state } });
         return advance(runId, at);
       });

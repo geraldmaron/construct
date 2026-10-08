@@ -40,9 +40,11 @@ test('a managed run: idempotent start, ordered leases, validated outputs, a draf
     const again = fx.service.start({ workflowId: 'review', input: { target: 'feature-x' }, trigger: 'manual' });
     assert.equal(again.created, false);
     assert.equal(again.run.id, first.run.id);
+    assert.deepEqual(again.differs, []);
     const other = fx.service.start({ workflowId: 'review', input: { target: 'feature-y' }, trigger: 'manual' });
     assert.equal(other.created, false, 'concurrency single: the active run is returned');
     assert.match(other.preflight.flags.join(' '), /already exists/);
+    assert.deepEqual(other.differs, ['target'], 'the run handed back says which input it was started with differently');
 
     const c1 = fx.service.claimNext({ runId: first.run.id });
     assert.ok(c1.packet);
@@ -192,7 +194,10 @@ test('a blocked start records why, resumes once the world changes, and arbitrary
     assert.equal(blocked.run.state, 'blocked');
     assert.ok(blocked.preflight.reasons.some((r) => r.code === 'unavailable_source'));
     assert.equal(fx.service.status(blocked.run.id)!.steps.length, 0, 'no steps exist for a blocked run');
-    assert.deepEqual(fx.service.claimNext({ runId: blocked.run.id }).waitingOn, { kind: 'nothing_ready' });
+    const stuck = fx.service.claimNext({ runId: blocked.run.id });
+    assert.equal(stuck.packet, null);
+    assert.deepEqual(stuck.waitingOn, { kind: 'blocked', runId: blocked.run.id, summary: blocked.run.stateReason, reasons: blocked.preflight.reasons }, 'a claim on a blocked run says why, with what would clear it');
+    assert.ok(blocked.preflight.reasons.every((r) => r.remedy.length > 0));
     fx.sources = [{ kind: 'jira', id: 'jira', reachability: 'reachable', freshness: 'no_expectation' }];
     const resumed = fx.service.resume(blocked.run.id);
     assert.equal(resumed.state, 'ready');
