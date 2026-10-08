@@ -256,8 +256,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       });
       markPremisesStale(store, id, at);
       if (changes && !firstRead && deps.root) {
-        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence, partial });
-        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root }).map((f) => f.id);
+        // Which finished work drew on this source is a question of what it cited, not of the citation policy, so
+        // a citation admitted on the host's word still counts as drawing on it.
+        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence }, { hostReads: 'accept' });
+        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root, previous: before }).map((f) => f.id);
       }
     }
     return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };

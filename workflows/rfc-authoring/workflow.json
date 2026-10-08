@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "rfc-authoring",
   "title": "Write an RFC",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Write a technical RFC or design document grounded in the project's decisions, work items, and evidence; carry superseded and conflicting decisions explicitly; challenge the draft before handing it back.",
   "activation": [
     "draft an RFC",
@@ -113,7 +113,7 @@
         "citations_present",
         "evidence_refs_resolve",
         "excerpts_match",
-        "evidence_witnessed",
+        "evidence_recorded",
         "superseded_acknowledged",
         "artifacts_exist",
         "numbers_grounded",

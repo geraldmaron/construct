@@ -58,17 +58,35 @@ are tracked like changes in a folder, the host records what it read with
 the `sources` tool, action `report`: each item's reference (a key or page
 id), its url (the http(s) address a person would open), title,
 last-updated time, and the text it read. Construct keeps a manifest of
-those items, marks citations of them as reported, checks quotes against the
-recorded text, and on the next report names what was added or modified and
-flags finished work that cited it. An item's url is kept from one report to
-the next when a later report leaves it out; a url that is not http(s), or
-that carries credentials, is refused. The text is kept with anything shaped
-like a credential replaced by `[redacted]`, and capped at 16 KiB per item;
-the report names any item whose text it cut, and a quote past the cut is
-not checked. Whether an item changed is still judged on what the host read,
-so a rotated key is a change. A partial report updates only the items it names; nothing is treated as
-removed because it was not read. `bootstrap` lists the sources only the
-host can read that have never been reported or have gone stale.
+those items, marks citations of them as reported, checks quotes and
+figures against the recorded text, and on the next report names what was
+added or modified and flags finished work that cited it, whether that work
+cited the item by its ref (`confluence:98765`, `98765`), by its url, or as
+`owner/repo#311`. An item's url is kept from one report to the next when a
+later report leaves it out; a url that is not http(s), or that carries
+credentials, is refused. The text is kept with anything shaped like a
+credential replaced by `[redacted]`, and capped at 16 KiB per item; the
+report names any item whose text it cut, a quote past the cut is not
+checked, and a figure past it is not grounded, so report the passage you
+rely on as its own item. Whether an item changed is still judged on what
+the host read, so a rotated key is a change. A partial report updates only
+the items it names; nothing is treated as removed because it was not read.
+`bootstrap` lists the sources only the host can read that have never been
+reported or have gone stale.
+
+A citation into what only the host can read resolves to the item a
+recorded read holds, never to the whole source and never to an item the
+read did not name. Under `policy.hostReads` set to require (the default),
+an item no read recorded (`jira:PAY-999` after a read of `PAY-1`), a web
+page nobody reported, or a source never read does not resolve, and the
+check that refused it says to report the read first. Set to accept, such a
+citation resolves on the host's word and is counted as unverified. Items
+match exactly as recorded: `confluence:98765#heading` is not
+`confluence:98765`; cite the ref or the url as it was reported.
+
+What the host reports is kept as data for checking quotes and figures. It
+is never read back to the host as an instruction, and it cannot approve,
+resolve, or promote anything.
 
 ## A system the person names, declared from the session
 

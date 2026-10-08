@@ -25,7 +25,7 @@ const resolve = createEvidenceResolver({
   root,
   sources: [
     { id: 'docs', kind: 'directory', locator: join(root, 'docs'), manifest: [{ ref: 'old.md', kind: 'file', fingerprint: 'x', supersededBy: 'new.md' }] },
-    { id: 'wiki', kind: 'docs', locator: null, manifest: null },
+    { id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: 'okrs', kind: 'item', fingerprint: 'k', text: 'reduce 429s by 50% vs June', url: 'https://wiki.example/okrs' }] },
   ],
 });
 test.after(() => rmSync(root, { recursive: true, force: true }));
@@ -76,13 +76,19 @@ test('artifacts must exist and not be empty; templates must be followed section 
   assert.deepEqual(t.template_conformance, ['the artifact has no "risks & open questions" section that the template requires']);
 });
 
-test('excerpts must appear in what they cite; at least one citation must be something Construct can open', () => {
+test('excerpts must appear in what they cite; at least one citation must hold content Construct can check', () => {
+  assert.equal(resolve('wiki:page'), null, 'an item no recorded read holds does not resolve');
   const quoted = run(['excerpts_match'], { evidence: [{ ref: 'docs/metrics.md', excerpt: 'Jun   1.6M,  Sep 2.1M' }, { ref: 'wiki:page', excerpt: 'cannot be checked here' }] });
   assert.deepEqual(quoted.excerpts_match, []);
   const misquoted = run(['excerpts_match'], { evidence: [{ ref: 'docs/metrics.md', excerpt: 'Sep 3.4M' }] });
   assert.equal(misquoted.excerpts_match!.length, 1);
-  assert.equal(run(['evidence_witnessed'], { evidence: [{ ref: 'wiki:a' }] }).evidence_witnessed!.length, 1);
-  assert.deepEqual(run(['evidence_witnessed'], { evidence: [{ ref: 'wiki:a' }, { ref: 'docs/metrics.md' }] }).evidence_witnessed, []);
+  assert.deepEqual(run(['evidence_recorded'], { evidence: [{ ref: 'wiki:okrs' }] }).evidence_recorded, [], 'a recorded read with its text holds content');
+  assert.equal(run(['evidence_recorded'], { evidence: [{ ref: 'project_context' }] }).evidence_recorded!.length, 1, 'a surface holds no text to check');
+  assert.equal(run(['evidence_recorded'], { evidence: [{ ref: 'wiki:a' }] }).evidence_recorded!.length, 1);
+  assert.deepEqual(run(['evidence_recorded'], { evidence: [{ ref: 'wiki:a' }, { ref: 'docs/metrics.md' }] }).evidence_recorded, []);
+  const blank = createEvidenceResolver({ root, sources: [{ id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: 'blank', kind: 'item', fingerprint: 'b', text: '  ' }] }] });
+  const [recorded] = runValidators(['evidence_recorded'], { output: {}, expectedKeys: [], evidence: [{ ref: 'wiki:blank' }], resolvableRefs: new Set(), resolve: blank });
+  assert.equal(recorded!.ok, false, 'an item recorded with empty text holds nothing to check');
 });
 
 test('conflicts cite both sides; a superseded document is named as superseded where it is used', () => {
@@ -116,17 +122,60 @@ test('a figure written in another notation or rounded the way people write is st
   assert.deepEqual(asked.numbers_grounded, [], 'a figure the person gave is not invented');
 });
 
-test('a symlink out of the project does not resolve; a web page is accepted as reported', () => {
+test('a symlink out of the project does not resolve; an unrecorded web page is not taken on the host\'s word', () => {
   const outside = mkdtempSync(join(tmpdir(), 'construct-outside-'));
   try {
     writeFileSync(join(outside, 'secret.env'), 'API_KEY=x');
     symlinkSync(join(outside, 'secret.env'), join(root, 'docs', 'link.md'));
     assert.equal(resolve('docs/link.md'), null);
-    assert.equal(resolve('https://example.com/report#p2')?.provenance, 'reported');
-    assert.equal(resolve('https://example.com/report')?.kind, 'web');
+    assert.equal(resolve('https://example.com/report#p2'), null, 'under require an unrecorded page does not resolve');
+    const accept = createEvidenceResolver({ root, hostReads: 'accept', sources: [] });
+    assert.equal(accept('https://example.com/report')?.kind, 'web');
+    assert.equal(accept('https://example.com/report')?.provenance, 'unverified');
+    const recorded = resolve('https://wiki.example/okrs#q3');
+    assert.equal(recorded?.sourceId, 'wiki');
+    assert.equal(recorded?.itemRef, 'okrs');
+    assert.match(recorded?.text ?? '', /50%/);
   } finally {
     rmSync(outside, { recursive: true, force: true });
   }
+});
+
+test('an excerpt grounds a figure only when it was checked against text Construct holds', () => {
+  const bare = run(['numbers_grounded', 'excerpts_match'], { output: { summary: 'revenue grew 40%' }, evidence: [{ ref: 'project_context', excerpt: 'revenue grew 40%' }] });
+  assert.ok(bare.numbers_grounded!.some((p) => p.includes('40%')), 'a surface excerpt carrying the figure grounds nothing');
+  assert.deepEqual(bare.excerpts_match, [], 'an excerpt with no held text is not checked');
+  const held = createEvidenceResolver({ root, sources: [{ id: 'web', kind: 'other', locator: null, provenance: 'reported', manifest: [{ ref: 'https://news.example.com/q3', kind: 'item', fingerprint: 'n', text: 'Revenue grew 40% in Q3.' }] }] });
+  const grounded = runValidators(['numbers_grounded'], { output: { summary: 'revenue grew 40%' }, expectedKeys: [], evidence: [{ ref: 'https://news.example.com/q3' }], resolvableRefs: new Set(), resolve: held });
+  assert.deepEqual(grounded[0]!.problems, []);
+});
+
+test('text cut at the cap: a quote past the cut is unchecked, and a figure past it is told to report the part it relies on', () => {
+  const held = createEvidenceResolver({ root, sources: [{ id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: 'long', kind: 'item', fingerprint: 'l', text: 'Intro only. 12% of calls', truncated: true }] }] });
+  const r = runValidators(['excerpts_match', 'numbers_grounded'], { output: { summary: 'retries cost 9.9M a year' }, expectedKeys: [], evidence: [{ ref: 'wiki:long', excerpt: 'past the cut' }], resolvableRefs: new Set(), resolve: held });
+  const by = Object.fromEntries(r.map((x) => [x.validator, x.problems]));
+  assert.deepEqual(by.excerpts_match, []);
+  assert.equal(by.numbers_grounded!.length, 1);
+  assert.match(by.numbers_grounded![0]!, /the recorded text of wiki:long was cut at 16 KiB; report the part you rely on as its own item/);
+});
+
+test('sources_diverse counts only places that hold content: not unverified refs, surfaces, or whole sources, and two pages of one site once', () => {
+  const held = createEvidenceResolver({
+    root,
+    hostReads: 'accept',
+    sources: [
+      { id: 'web', kind: 'other', locator: null, provenance: 'reported', manifest: [
+        { ref: 'https://www.example.com/a', kind: 'item', fingerprint: 'a', text: 'page a' },
+        { ref: 'https://example.com/b', kind: 'item', fingerprint: 'b', text: 'page b' },
+      ] },
+      { id: 'wiki', kind: 'docs', locator: null, provenance: 'reported', manifest: [{ ref: 'okrs', kind: 'item', fingerprint: 'k', text: 'okrs' }] },
+    ],
+  });
+  const check = (evidence: { ref: string }[]) => runValidators(['sources_diverse'], { output: {}, expectedKeys: [], evidence, resolvableRefs: new Set(), resolve: held })[0]!.problems;
+  assert.equal(check([{ ref: 'https://www.example.com/a' }, { ref: 'https://example.com/b' }]).length, 1, 'two pages of one website are one place');
+  assert.equal(check([{ ref: 'https://www.example.com/a' }, { ref: 'wiki:invented' }, { ref: 'https://other.example.org/x' }, { ref: 'project_context' }, { ref: 'wiki' }]).length, 1, 'unverified refs, surfaces and whole sources do not count');
+  assert.deepEqual(check([{ ref: 'https://www.example.com/a' }, { ref: 'wiki:okrs' }]), []);
+  assert.deepEqual(check([{ ref: 'https://www.example.com/a' }, { ref: 'docs/metrics.md' }]), []);
 });
 
 test('review findings: a derivation that only says where a figure came from is not a check of it, and a large artifact is not empty', () => {

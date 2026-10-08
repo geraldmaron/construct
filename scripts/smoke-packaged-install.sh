@@ -240,10 +240,14 @@ await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged
 const asked = await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'the session asks the person to accept' }); must(asked.personRequired === true && typeof asked.pendingDecision === 'string', 'acceptance waits for the person');
 const relayed = await call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }); must(relayed.personRequired === true && relayed.decision.state === 'open', 'a relayed approval of acceptance is refused');
 const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers');
+await call('sources', { action: 'declare', id: 'wiki', kind: 'docs' });
+await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', text: 'Checkout retries each payment call up to 3 times.' }] });
+const byUrl = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'https://wiki.example.com/pages/98765#retries', excerpt: 'up to 3 times' }] }); must(byUrl.ok === true && byUrl.evidence.reported === 1, `a recorded page is citable by its url: ${JSON.stringify(byUrl.problems)}`);
+const invented = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:12345' }] }); must(invented.ok === false && invented.problems.some((p) => p.problem.includes('names nothing this project holds')), 'an invented item is refused');
 console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out" | grep -v '^pending=' || true

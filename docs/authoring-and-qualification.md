@@ -79,28 +79,42 @@ conformance command recorded the run.
 
 Validators are floors under quality, not a judge of it. The ones that
 check grounding resolve every reference against the project as it stands:
-a real file, a declared source or an item it reported, a deliverable, or a
-record Construct keeps. A reference into a system Construct has no reader
-for is accepted as reported, and every submission says how many citations
-were witnessed, reported, or unresolved; a validated deliverable records
-the same counts.
+a real file, a deliverable, a record Construct keeps, a declared source, or
+an item a recorded read holds. Every resolved reference has one of three
+provenances:
+
+- witnessed: Construct opened it (a project file, a directory source) or
+  keeps the record itself;
+- reported: a recorded read holds that exact item, with the text the host
+  said it read;
+- unverified: it names something only the host can read that no recorded
+  read holds. It resolves only when `policy.hostReads` is accept.
+
+Every submission says how many citations were witnessed, reported,
+unverified, or unresolved, and a validated deliverable records the same
+counts.
 
 | Validator | Sends back an output when |
 |---|---|
-| `citations_present`, `evidence_refs_resolve` | a reference names nothing real |
+| `citations_present`, `evidence_refs_resolve` | a reference names nothing this project holds |
 | `excerpts_match` | a quoted excerpt is not in the file or item it cites |
-| `evidence_witnessed` | every citation rests on the host's word |
+| `evidence_recorded` | nothing cited holds content Construct can check (a project file, or an item whose text a recorded read holds) |
 | `artifacts_exist` | the file the step says it wrote is missing or empty |
-| `numbers_grounded` | a figure appears in no cited source and is not derived by arithmetic that holds over cited figures |
+| `numbers_grounded` | a figure appears in no text Construct holds for what was cited, and is not derived by arithmetic that holds over cited figures |
 | `template_conformance` | the artifact lacks a section the named template has |
 | `conflicts_declared` | there is no conflicts list, or a conflict cites fewer than both sides |
 | `superseded_acknowledged` | a superseded document is used without saying so |
 | `decision_ask_present` | a proposal has no decision section naming who decides and by when |
-| `sources_diverse` | research rests on fewer than two independent places |
+| `sources_diverse` | research rests on fewer than two independent places that hold content (pages of one website count once) |
 
-Web pages (`https://…`) are cited as reported: Construct does not fetch
-them, so their excerpts stand as the host's word. Figures are compared by
-value, allowing for how they were rounded ("2M" is supported by a cited
+Construct does not fetch web pages. A web page resolves only once its read
+is recorded: the host declares a source for the open web (one named `web`,
+kind `other`), reports the page under it with its url and the text it
+read, and a citation of that url then lands on the recorded item. An
+excerpt is checked against held text and never grounds a figure on its
+own; a citation with no held text (a whole source, one of Construct's own
+surfaces such as `project_context`) supports nothing. Figures are compared
+by value, allowing for how they were rounded ("2M" is supported by a cited
 2,100,000; "3M" is not), dates and times are not figures, and a figure the
 person gave in the request is theirs, not invented. A symlink that leads
 out of the project does not resolve.
