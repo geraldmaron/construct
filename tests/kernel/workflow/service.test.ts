@@ -253,11 +253,48 @@ test('architectural work is challenged without magic words; a helper rename is n
 
     const trivial = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
     assert.equal(trivial.preflight.judgment.challenge, false);
+    assert.equal(trivial.preflight.judgment.depth, 'standard', 'an unanswered scale is treated as a team project, not a small one');
     const t1 = fx.service.claimNext({ runId: trivial.run.id });
-    assert.match(t1.packet!.instructions.join(' '), /low-stakes/);
+    assert.equal(t1.packet!.judgment.depth, 'standard');
+    assert.doesNotMatch(t1.packet!.instructions.join(' '), /side project|keep the process small|adversarial review/);
     const done = fx.service.submit({ leased: t1.packet!.leased, output: { summary: 'renamed', findings: [] } });
     const trusted = fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     assert.equal(trusted.trustState, 'accepted');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('stakes the host declared at start survive a block and a resume, and still demand a challenge before acceptance', () => {
+  const fx = fixture();
+  try {
+    const declared = { stakes: { reversible: false, affects: [] }, chosenSkill: null, words: null };
+    assert.equal(fx.service.judge({ workflowId: 'sweep', input: {} }).depth, 'standard', 'nothing in the structure raises it');
+    assert.equal(fx.service.judge({ workflowId: 'sweep', input: {}, declared }).depth, 'challenged');
+
+    fx.sources = [{ kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'stale' }];
+    const started = fx.service.start({ workflowId: 'sweep', input: {}, trigger: 'manual', asked: { declared } });
+    assert.equal(started.run.state, 'blocked');
+    assert.equal(started.preflight.judgment.challenge, true);
+    assert.deepEqual((started.run.bindings as { asked: unknown }).asked, { declared }, 'the reading is frozen on the run');
+
+    fx.sources = [{ kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'fresh' }];
+    const resumed = fx.service.resume(started.run.id);
+    assert.equal(resumed.state, 'ready');
+    const shown = resumed.preflight as { judgment: { challenge: boolean; signals: { kind: string }[] } };
+    assert.equal(shown.judgment.challenge, true, 'resume reads the frozen stakes, not the input alone');
+    assert.ok(shown.judgment.signals.some((sig) => sig.kind === 'host_stakes'));
+
+    const claimed = fx.service.claimNext({ runId: started.run.id });
+    assert.equal(claimed.packet!.judgment.challenge, true);
+    assert.match(claimed.packet!.instructions.join(' '), /This run must be challenged before it is accepted: the host reported it is hard to undo\. Apply adversarial review/, 'the packet names what raised it, once');
+    const done = fx.service.submit({ leased: claimed.packet!.leased, output: { seen: 'two files' } });
+    assert.ok(done.deliverable);
+    assert.throws(
+      () => fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
+      /recorded challenge/,
+      'acceptance reads the same judgment',
+    );
   } finally {
     fx.cleanup();
   }
