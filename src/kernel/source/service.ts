@@ -361,18 +361,22 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const cut: string[] = [];
       const reported = report.items.flatMap((i) => {
         // Versions are judged on what the host read, so a fingerprint means the same thing whatever is kept.
-        const text = typeof i.text === 'string' ? i.text.slice(0, REPORTED_TEXT_CAP) : undefined;
+        const text = i.text;
         const was = prior.get(i.ref);
         if (i.weak && was) return [];
-        // The system's own last-updated time is the version when it is given; otherwise what was read is.
-        const fingerprint = i.fingerprint ?? (i.updatedAt ? createHash('sha256').update(`${i.ref}\t${i.updatedAt}`).digest('hex') : contentHash(i.ref, text, i.title));
+        // Provider revisions and timestamps are claims about identity, not proof
+        // that the observed bytes are unchanged. Include both in the fingerprint.
+        const bodyHash = contentHash(i.ref, text, i.title);
+        const fingerprint = i.updatedAt || i.fingerprint
+          ? createHash('sha256').update(JSON.stringify([i.ref, i.fingerprint ?? null, i.updatedAt ?? null, bodyHash])).digest('hex')
+          : bodyHash;
         if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
         // What is kept is what was read with credentials removed, then capped; truncated says the cut happened. The cut
         // text is cleaned once more, so text kept from one report to the next reads the same when it is cleaned again.
         const clean = typeof i.text === 'string' ? redact(i.text) : undefined;
         const stored = clean === undefined ? undefined : redact(clean.slice(0, REPORTED_TEXT_CAP));
-        // The same version seen again through a thinner view keeps the fuller text recorded before, and where it came
-        // from. Text carried forward is kept without credentials too, whenever it was recorded.
+        // An identical content identity keeps any fuller text recorded before, and where it came
+        // from. Partial sightings must be marked weak; length alone cannot prove they are unchanged. Text carried forward is kept without credentials too, whenever it was recorded.
         const wasText = was?.text !== undefined ? redact(was.text) : undefined;
         const keepWas = was !== undefined && was.fingerprint === fingerprint && (wasText?.length ?? 0) > (stored?.length ?? 0);
         const keptText = keepWas ? wasText : stored;
