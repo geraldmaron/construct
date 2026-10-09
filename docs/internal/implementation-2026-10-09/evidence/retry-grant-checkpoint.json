@@ -1,0 +1,37 @@
+{
+  "recordedAt": "2026-10-09T18:59:15.480550+00:00",
+  "base": "bbfd4efe",
+  "reviewerFinding": "One approval admitted extra validation failures after expired leases.",
+  "before": {
+    "passed": 2,
+    "failed": 4,
+    "cases": 6
+  },
+  "focused": {
+    "passed": 34,
+    "failed": 0
+  },
+  "full": {
+    "passed": 868,
+    "failed": 0,
+    "skipped": 1
+  },
+  "gates": {
+    "lint": "passed",
+    "typecheck": "passed",
+    "smoke": "passed",
+    "staticConformance": {
+      "passed": 91,
+      "failed": 0,
+      "untested": 7
+    }
+  },
+  "files": {
+    "src/kernel/state/steps.ts": "ac4d497b3e2cc0dca094fa1e02d894e7656b4d740231a7b0e623a170b8b84deb",
+    "tests/kernel/broker/support.ts": "0bd0a4d498f99e00cbada4f979f6f2aa1cdf77a1b6ba11a3f870d3db0be09000",
+    "tests/kernel/broker/retry-budget.test.ts": "4517cd7c174b51ad6b822e2a43775c364efd065053afe19b0ae42a7bf7cce563",
+    "src/kernel/workflow/service.ts": "11fc1d9d8a188b6b6e14576ae31daab5be26bf9c089c441afb43fb2b6471e095"
+  },
+  "independentRecheck": "pending; prior P1 and freshness fixes cleared at runtime 2b1720e0",
+  "limits": "This deterministic public-broker regression does not expand live-host or semantic qualification."
+}

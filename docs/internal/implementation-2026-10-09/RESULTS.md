@@ -38,7 +38,7 @@ Keep intent admission, evidence identity/provenance, scoped policy, leases, froz
 
 ## Validation and blockers
 
-Current gate: lint, typecheck, **862 passing tests, zero failures, one existing skip**, packaged smoke; **91 passed, zero failed, seven untested cells (six live calls plus absent Bob installation)** in the saved [all-host report](evidence/review-conformance.log). The new destination guard passed both unit and public-broker negative tests. The latest ordinary scheduled-file replay passed after its originating session exited: [assessment](evidence/schedule-artifact/assessment.json), [actual brief](evidence/schedule-artifact/release-brief.md). The source-drift and interrupted managed executor evidence used packed alpha.26 hash `51109874e0646a03235c0593a861081a6c6ea683a8d8c02f8fbbb708f6014ac3`; later safety/destination changes are covered by the newest full gate and the final destination replay, using package `691f73a7188c57ce1f6b16b60ddfa9ac626850d90b4acae87aaa9ce917662822`.
+Current gate: lint, typecheck, **868 passing tests, zero failures, one existing skip**, packaged smoke; **91 passed, zero failed, seven untested cells (six live calls plus absent Bob installation)** in the saved [all-host report](evidence/review-conformance.log). The new destination guard passed both unit and public-broker negative tests. The latest ordinary scheduled-file replay passed after its originating session exited: [assessment](evidence/schedule-artifact/assessment.json), [actual brief](evidence/schedule-artifact/release-brief.md). The source-drift and interrupted managed executor evidence used packed alpha.26 hash `51109874e0646a03235c0593a861081a6c6ea683a8d8c02f8fbbb708f6014ac3`; later safety/destination changes are covered by the newest full gate and the final destination replay, using package `691f73a7188c57ce1f6b16b60ddfa9ac626850d90b4acae87aaa9ce917662822`.
 
 The user explicitly removed Construct's signing-prompt requirement. Repository-local `commit.gpgsign=false` is applied; the global value remains true and 1Password settings are unchanged. The previously blocked research commit succeeded as `58146ab5`. Earlier commits are `6febaa30` and `d798abcc`. No push, merge, publish or deploy occurred. The user's memory files were not modified.
 
@@ -61,3 +61,8 @@ Final [cleanup audit](evidence/review-cleanup-final.json): owned control session
 
 
 Evidence portability: tracked JSON/transcript copies replace home-directory prefixes with `<USER_HOME>`. [The normalization manifest](evidence/path-normalization.json) records original and normalized file hashes; raw copies remain in the task workspace. Actual artifact Markdown bytes and hashes are unchanged. Their intentional Markdown hard breaks, and raw logs' terminal blank lines, are retained as evidence rather than reformatted.
+
+
+## Retry approval correction and renewed scope review
+
+The independent reviewer cleared the earlier two P1s, freshness and lease recovery, then found a retry-approval counting mismatch. It is fixed with six public-broker cases; [bounded follow-up and exact evidence](RETRY-GRANT-RECHECK.md). Independent confirmation of this final fix remains pending. Earlier receipts stay historical. The remaining-limits section is being reclassified against the user’s request: implementable mechanisms and missing tests are work to finish, not external blockers.

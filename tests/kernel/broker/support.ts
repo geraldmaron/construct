@@ -28,7 +28,7 @@ export interface BrokerFixture {
   cleanup(): void;
 }
 
-export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive'): BrokerFixture {
+export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive', options: { now?: () => string } = {}): BrokerFixture {
   const box = sandbox();
   const at = '2026-09-02T12:00:00.000Z';
   const init = initializeProject({ root: box.cwd, projectId: 'proj-test', name: 'demo', at });
@@ -44,7 +44,7 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
   const binding: BrokerBinding = surface === 'interactive'
     ? { client: 'claude-code', surface: 'interactive', sessionId: 'ses_fixture', executorId: 'session:claude-code', actor: 'person via claude-code' }
     : { client: 'unknown', surface: 'headless', sessionId: 'ses_runner', executorId: 'runner:ci', actor: 'runner:ci' };
-  const ctx = box.ctx;
+  const ctx = options.now ? { ...box.ctx, now: options.now } : box.ctx;
   const broker = createBrokerContext(ctx, project, binding);
   return { box, ctx, broker, binding, cleanup: () => { init.store.close(); box.cleanup(); } };
 }
