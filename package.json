@@ -55,8 +55,8 @@
     "evals:live": "node scripts/evals-live.mjs"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "typescript": "^5.9.0"
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0"
