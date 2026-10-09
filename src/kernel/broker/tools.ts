@@ -38,7 +38,7 @@ import { runValidators } from '../workflow/validators.ts';
 import { checkSlot, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
 import { inputProblems } from '../registry/resolver.ts';
 import type { RegisteredWorkflow } from '../registry/models.ts';
-import { differsNext, OBJECTION_DISPOSITIONS, OBJECTIONS_EXAMPLE, readObjections, VALIDATED_BY_CHECKS, type Objection, type StartResult } from '../workflow/service.ts';
+import { differsNext, OBJECTION_DISPOSITIONS, OBJECTIONS_EXAMPLE, readObjections, VALIDATED_BY_CHECKS, type Objection, type PromotionSubject, type StartResult } from '../workflow/service.ts';
 import { askedOf, type Assumption, type Declared, type JudgedBy } from '../workflow/asked.ts';
 import { STAKE_AREAS } from '../workflow/consequence.ts';
 import {
@@ -57,6 +57,7 @@ import { getSource } from '../state/sources.ts';
 import { SOURCE_ID, locatorCarriesCredentials } from '../project/sources-file.ts';
 import { urlProblem } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
+import { quoteHost } from '../render/person-prompt.ts';
 import { REPORTED_TEXT_CAP } from '../source/service.ts';
 
 /** What a step may cite in this project, as it stands now. */
@@ -849,9 +850,15 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)) };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
-      const asked = await askThePerson(ctx, decisionId, `Your assistant relayed "${Array.isArray(resolution) ? resolution.join(' ') : resolution}".`);
-      if (asked) return asked;
-      return { decision: { id: decisionId, state: 'open' }, personRequired: true, next: error.message };
+      const relayed = `Your assistant relayed ${quoteHost(Array.isArray(resolution) ? resolution.join(' ') : resolution)}.`;
+      // Accepting a deliverable is asked about the deliverable as it stands now: a question put before it changed is withdrawn and asked again.
+      const promote = existing?.kind === 'approval' ? (existing.subject as { promote?: PromotionSubject } | null)?.promote : undefined;
+      const current = promote ? ctx.workflow.requestPromotion({ deliverableId: promote.deliverableId, to: promote.to, by: ctx.actor, reason: promote.reason ?? undefined }) : null;
+      const askedId = current?.id ?? decisionId;
+      const replaced = askedId !== decisionId ? { replaces: decisionId } : {};
+      const asked = await askThePerson(ctx, askedId, relayed);
+      if (asked) return { ...asked, ...replaced };
+      return { decision: { id: askedId, state: 'open' }, ...replaced, personRequired: true, next: current ? personStepFor(askedId) : error.message };
     }
   },
 });
@@ -867,8 +874,10 @@ async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: str
   const decision = getDecision(ctx.store, decisionId);
   if (!decision || decision.state !== 'open') return null;
   const options = decision.options && decision.options.length > 0 ? decision.options.map(String) : ['approve', 'decline'];
+  // What the assistant relayed is Construct's own line, right after the question's first, never inside the assistant's quoted words below it.
+  const [lead, ...rest] = decision.question.split('\n');
   const answer = await ctx.askPerson({
-    message: `Construct needs your own answer; your assistant cannot give it for you. ${decision.question}${relayed ? ` ${relayed}` : ''}`,
+    message: [`Construct needs your own answer; your assistant cannot give it for you. ${lead ?? ''}`, ...(relayed ? [relayed] : []), ...rest].join('\n'),
     options,
   });
   if (!answer.answered) {

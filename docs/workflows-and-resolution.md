@@ -178,10 +178,34 @@ earlier steps), so the last step returns only what it adds. A handed value
 wins over a restatement; a restated key whose value differs stays in the
 step's own record, and `submit_work` names it under `ignored`. The body
 also carries the last step's evidence, the sensitivity of what the run
-cited (null when nothing cited carries a label), how many of the run's
-citations Construct opened itself or holds only as the host's report
-(`provenance`), and, when the run covers a period or names sources, its
-coverage of both.
+cited (null when nothing cited carries a label), how many citations come
+from no declared source, so that their sensitivity is unknown
+(`sensitivityUnknown`), how many of the run's citations Construct opened
+itself or holds only as the host's report (`provenance`), every check the
+run went through on a waiver, with who accepted it and how (`waived`), and,
+when the run covers a period or names sources, its coverage of both.
+
+Accepting a deliverable, or making it final, is the person's own answer.
+The question they are asked starts with the move, from the trust the
+deliverable holds now. Then come the facts Construct holds, one per line:
+the checks waived and whether the person or their assistant answered, the
+checks that passed, how many of the things it rests on Construct opened,
+how many are the assistant's report and how many could not be checked, any
+verification the assistant reports running (Construct runs none), the
+highest sensitivity cited, the sources the assistant declared, the systems
+the request named that are not registered, where the citations fall
+against the period and the named sources, and the challenge record. The
+assistant's own words come last, under "Your assistant's description, not
+checked by Construct:", each quoted on one line and cut at 160 characters:
+its assumptions, why it kept an item dated after the period or could not
+read a source, open objections, the destination it named, and the request
+as it relayed it. The question is cut at 1,500 characters, and a cut one
+ends with `(more: construct inbox show <id>)`, which prints the whole. When
+the deliverable has changed since an open question was asked, asking again
+withdraws that question and asks a current one. An approval of the older
+question, relayed or the person's own, moves nothing: a relayed one puts
+the current question to the person instead, and the person's own answer
+(`construct inbox resolve`) is refused with the id of the current question.
 
 The general carrier, `managed-outcome`, runs plan, do, and verify for any
 outcome no other workflow names. It takes the request, a target, a period,
