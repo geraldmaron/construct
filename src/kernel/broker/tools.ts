@@ -8,18 +8,20 @@
  * own output. Descriptions speak plainly; plumbing stays out of them.
  */
 
+import { contextPage, historyPage, isHistoryTopic } from './context-page.ts';
 import { scheduleIntake } from '../workflow/scheduling.ts';
 import { listStatements, getProfile, getStatement, missingProfileFields } from '../state/profile.ts';
 import { delegate } from './delegate.ts';
-import { listActiveRuns, listRuns } from '../state/runs.ts';
+import { listActiveRuns, getRun } from '../state/runs.ts';
 import { getDecision, listOpenDecisions, type Decision } from '../state/decisions.ts';
 import { listInbox, onboardingQuestionOf, onboardingStatus, resolveProposal } from '../project/onboarding.ts';
 import { SCALE_CHOICES } from '../project/discovery.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
-import { listEntities, listClaims, listRelations } from '../state/graph.ts';
+import { listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
 import { extendLease, getStep, heldLease } from '../state/steps.ts';
 import { lockStatus } from '../registry/lockfile.ts';
+import { qualificationRecords } from '../registry/qualification-evidence.ts';
 import { qualifySkill } from '../registry/qualification.ts';
 import { emptyLock } from '../project/lock.ts';
 import { constitutionCompleteness } from '../project/constitution.ts';
@@ -33,7 +35,7 @@ import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '..
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
 import { laneNamed, UnknownWorktreeError, WORKTREE_PATH_MAX, type EditLane } from '../work/lanes.ts';
-import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
+import { coordinationFor, presentSessions } from '../coord/awareness.ts';
 import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handoffWork, listOffers, getWork, getWorkByLegacyId, listReady, queryWork, readinessOf, releaseWork, reopenWork, takeoverWork, updateWork, requalifyWork, type WorkItem } from '../work/service.ts';
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
@@ -173,25 +175,19 @@ const bootstrap = define<Record<string, never>, unknown>({
   },
 });
 
-const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'quality', 'work', 'sessions', 'activity'] as const;
+const TOPICS = ['summary', 'constitution', 'sources', 'decisions', 'runs', 'entities', 'claims', 'relations', 'drift', 'statements', 'quality', 'work', 'sessions', 'activity', 'source_history'] as const;
 
-function page<T>(items: readonly T[], text: (t: T) => string, query: string | undefined, limit: number): { items: T[]; total: number; truncated: boolean; query: string | null } {
-  const q = query?.trim().toLowerCase();
-  const matched = q ? items.filter((i) => text(i).toLowerCase().includes(q)) : [...items];
-  const sliced = matched.slice(0, limit);
-  return { items: sliced, total: matched.length, truncated: sliced.length < matched.length, query: q ?? null };
-}
-
-const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number }, unknown>({
+const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; limit: number; cursor?: string }, unknown>({
   name: 'project_context',
   title: 'Project context',
-  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, or recent activity. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.',
+  description: 'Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, resolved decisions, activity history, or source_history (recorded source revisions). Ask for one topic at a time; pass a query to narrow. Search covers full history before paging. Results name their revision, selection reason and nextCursor; pass that cursor with the same topic/query to continue. A changed snapshot asks you to restart.',
   surface: 'interactive',
   readOnly: true,
   inputSchema: {
     type: 'object',
     properties: {
       topic: { type: 'string', description: 'What to read.', enum: TOPICS },
+      cursor: { type: 'string', description: 'nextCursor from the previous page; keep topic and query unchanged.' },
       query: { type: 'string', description: 'A word or id to narrow by.' },
       limit: { type: 'number', description: 'At most this many items (default 50).' },
     },
@@ -200,9 +196,12 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { topic: str(raw, 'topic', { oneOf: TOPICS }) as (typeof TOPICS)[number], query: str(raw, 'query', { optional: true }), limit: Math.max(1, Math.min(num(raw, 'limit') ?? 50, 200)) };
+    return { topic: str(raw, 'topic', { oneOf: TOPICS }) as (typeof TOPICS)[number], query: str(raw, 'query', { optional: true }), limit: Math.max(1, Math.min(Math.floor(num(raw, 'limit') ?? 50), 200)), cursor: str(raw, 'cursor', { optional: true }) };
   },
-  run(ctx, { topic, query, limit }) {
+  run(ctx, { topic, query, limit, cursor }) {
+    if (isHistoryTopic(topic)) return historyPage(ctx.store, topic, query, limit, cursor);
+    if (cursor && (topic === 'summary' || topic === 'constitution')) throw new ToolInputError('this topic is not paged', { field: 'cursor' });
+    const page = <T>(items: readonly T[], text: (item: T) => string, q: string | undefined, n: number) => contextPage(items, text, topic, q, n, cursor);
     switch (topic) {
       case 'summary': {
         const c = ctx.files.constitution;
@@ -214,12 +213,6 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
         const p = page(ctx.sources.list(), (s) => `${s.id} ${s.kind} ${s.purpose}`, query, limit);
         return { ...p, items: p.items.map((s) => ctx.sources.status(s.id, ctx.now())) };
       }
-      case 'decisions':
-        return page(listInbox(ctx.store), (d) => `${d.id} ${d.question} ${d.kind}`, query, limit);
-      case 'runs':
-        return page(listRuns(ctx.store, { limit: 10_000 }), (r) => `${r.id} ${r.workflowId} ${r.state}`, query, limit);
-      case 'entities':
-        return page(listEntities(ctx.store, { limit: 10_000 }), (e) => `${e.id} ${e.kind} ${e.name}`, query, limit);
       case 'claims':
         return page(listClaims(ctx.store), (c) => `${c.id} ${c.claimType} ${c.statement}`, query, limit);
       case 'relations':
@@ -228,12 +221,8 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
         return page(listDriftFindings(ctx.store), (f) => `${f.id} ${f.kind} ${f.summary}`, query, limit);
       case 'statements':
         return page(listStatements(ctx.store), (s) => `${s.kind} ${s.text}`, query, limit);
-      case 'work':
-        return page(queryWork(ctx.store, { query, limit: 10_000 }).items, (w) => `${w.id} ${w.title} ${w.status} ${w.kind}`, query, limit);
       case 'sessions':
         return page(presentSessions(ctx.store, { now: ctx.now(), sessionId: ctx.sessionId }), (s) => `${s.id} ${s.host} ${s.client ?? ''} ${s.lane} ${s.branch ?? ''} ${s.agents.join(' ')}`, query, limit);
-      case 'activity':
-        return page(recentActivity(ctx.store, 500), (a) => `${a.kind} ${a.sessionId ?? ''} ${a.agent ?? ''} ${a.actor ?? ''} ${JSON.stringify(a.payload.content)}`, query, limit);
       case 'quality':
         return page(skillQuality(ctx.store), (q) => `${q.skill} ${q.version}`, query, limit);
       default:
@@ -602,7 +591,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
   },
 });
 
-const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; includeBody: boolean }, unknown>({
+const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; includeBody: boolean; model?: string }, unknown>({
   name: 'skills',
   title: 'Skills',
   description: 'List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.',
@@ -613,6 +602,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
     properties: {
       action: { type: 'string', description: 'list, show, or status.', enum: ['list', 'show', 'status'] },
       id: { type: 'string', description: 'The skill id, for show.' },
+      model: { type: 'string', description: 'Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies.' },
       includeBody: { type: 'boolean', description: 'Include the skill’s full text (default false).' },
     },
     required: ['action'],
@@ -620,9 +610,9 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status', id: str(raw, 'id', { optional: true }), includeBody: bool(raw, 'includeBody', false) };
+    return { action: str(raw, 'action', { oneOf: ['list', 'show', 'status'] }) as 'list' | 'show' | 'status', id: str(raw, 'id', { optional: true }), includeBody: bool(raw, 'includeBody', false), model: str(raw, 'model', { optional: true }) };
   },
-  run(ctx, { action, id, includeBody }) {
+  run(ctx, { action, id, includeBody, model }) {
     if (action === 'list') return ctx.skills.list().map((s) => ({ id: s.manifest.id, title: s.manifest.title, version: s.manifest.version, category: s.manifest.category, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown }));
     if (action === 'status') return lockStatus(ctx.files.lock ?? emptyLock(), ctx.skills.list(), ctx.workflows.list()).map((r) => ({ kind: r.kind, id: r.id, state: r.state, why: r.why }));
     if (!id) throw new ToolInputError('"id" is required for show', { field: 'id' });
@@ -635,7 +625,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
       origin: s.origin,
       digest: s.digest,
       files: s.files,
-      qualification: qualifySkill(s, lock, body),
+      qualification: qualifySkill(s, lock, body, { host: ctx.host.hostId, model: model ?? null, now: ctx.now(), records: qualificationRecords(ctx.store, id), resolve: projectResolver(ctx) }),
       body: includeBody ? body : undefined,
     };
   },
@@ -1122,7 +1112,7 @@ function followUp(ctx: BrokerContext, decision: ReturnType<typeof getDecision>, 
       out.push({ workflowId: 'revise-deliverable', input: { deliverable: deliverableId, change, ...(typeof body.artifact === 'string' ? { target: body.artifact } : {}) }, why: `revise ${deliverableId} for: ${change}` });
     } else if (said.startsWith('re-run') || said.startsWith('rerun')) {
       const d = listLiveDeliverablesFor(ctx, deliverableId);
-      const run = d ? listRuns(ctx.store, {}).find((x) => x.id === d.runId) : undefined;
+      const run = d ? getRun(ctx.store, d.runId) : undefined;
       if (run) out.push({ workflowId: run.workflowId, input: (run.input ?? {}) as Record<string, unknown>, why: `run ${run.workflowId} again with its original input` });
     }
   }

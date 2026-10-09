@@ -162,6 +162,18 @@ Reads only: no.
 
 ## Skills
 
+### `construct skill evaluate <name>`
+
+execute a predetermined skill evaluation and record scoped qualification evidence
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--suite` | yes | project JSON suite with host/model, predefined cases and explicit evaluator command |
+| `--timeout-ms` | yes | bounded evaluation timeout, at most 1200000 |
+| `--valid-hours` | yes | qualification expiry, at most 720 hours |
+
+Reads only: no.
+
 ### `construct skill impact`
 
 how each skill version's steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back

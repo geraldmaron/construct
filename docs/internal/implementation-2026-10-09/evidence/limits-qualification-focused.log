@@ -1,0 +1,35 @@
+✔ an actual passing evaluator can qualify only its digest, host, scope and live evidence, then expires (89.203084ms)
+✔ qualification cannot survive changed artifact (76.434959ms)
+✔ qualification cannot survive changed evaluator (71.797667ms)
+✔ qualification cannot survive changed suite (70.829208ms)
+✔ qualification cannot survive changed host (75.756875ms)
+✔ qualification rejects missing_case instead of treating execution as substantive success (69.858292ms)
+✔ qualification rejects missing_check instead of treating execution as substantive success (70.809875ms)
+✔ qualification rejects unknown instead of treating execution as substantive success (69.678583ms)
+✔ qualification rejects self_review instead of treating execution as substantive success (69.295875ms)
+✔ qualification rejects missing_evidence instead of treating execution as substantive success (70.064958ms)
+✔ qualification rejects irrelevant_command instead of treating execution as substantive success (62.06725ms)
+✔ qualification rejects failed_command instead of treating execution as substantive success (67.897208ms)
+✔ qualification rejects timeout instead of treating execution as substantive success (44.414417ms)
+✔ a later failed observation supersedes a prior pass and a model-authored activity cannot fabricate qualification (123.12875ms)
+✔ the public skill evaluate command records a usable scoped receipt (327.730916ms)
+✔ every tool is declared once with a closed schema, a plain description, and a surface (1.850917ms)
+✔ every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold (0.330291ms)
+✔ wrong input names the field and, for a closed set, the values it accepts (0.321541ms)
+✔ promote_deliverable never takes validated, and takes challenged only with the objections the challenge raised (0.433875ms)
+✔ bootstrap is small and says what to do next; answers create nothing; remember creates one statement (33.911458ms)
+✔ the tools that record or start something for the person say that what the host reads is data, not a request (0.216958ms)
+✔ bootstrap never puts setup ahead of the person's request: setup questions and proposals are offered after it, with their answers (38.890875ms)
+✔ bootstrap leads with the decisions about runs, and names blocked runs instead of sending claim_work to them (19.958292ms)
+✔ the interactive lifecycle: read, start, claim, submit, status, promote (27.968ms)
+✔ the headless surface claims and submits but cannot decide, remember, or start (23.264958ms)
+✔ a locked digest and evaluation filenames do not prove execution; changed bytes lose prior identity (1.433667ms)
+✔ skill text that tries to raise authority is unsafe; ordinary shipped skills are not (0.551708ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1599.105417
