@@ -8,7 +8,7 @@
  */
 
 import type { QualificationRecord } from './qualification-evidence.ts';
-import { validateQualificationSuite } from './qualification-evidence.ts';
+import { validateQualificationSuite, nativeQualificationProblems } from './qualification-evidence.ts';
 import type { RefResolver } from '../project/evidence.ts';
 import { contentReceipt } from '../workflow/verification.ts';
 import type { RegisteredSkill } from './models.ts';
@@ -69,9 +69,6 @@ export function qualifySkill(skill: RegisteredSkill, lockRow: LockRow | undefine
   if (!hasActivationEvals(skill)) {
     return { ...base, state: 'experimental', why: 'no activation evaluation cases are declared' };
   }
-  if (!hasBehaviorEvals(skill)) {
-    return { ...base, state: 'experimental', why: 'activation cases only; no behavior evaluation cases are declared' };
-  }
   // Only the host observation adapter supplies these records; source or skill text cannot.
   const observed = context?.records.find(({ record: r }) => r.formatVersion === 1 && r.skill.id === base.id && r.skill.version === base.version && r.skill.digest === base.digest && r.suite.host === context.host && r.suite.model === context.model);
   if (observed && context) {
@@ -80,7 +77,17 @@ export function qualifySkill(skill: RegisteredSkill, lockRow: LockRow | undefine
     if (!r.passed || r.exitStatus !== 0 || r.problems.length) return { ...base, state: 'degraded', why: 'the latest executed evaluation for this digest and host failed; prior passing evidence does not hide it' };
     if (!Number.isFinite(Date.parse(r.expiresAt)) || r.expiresAt <= context.now || r.endedAt > context.now) return { ...base, state: 'degraded', why: 'executed qualification expired or has a future observation time; rerun it' };
     if (!r.evidence.length || r.evidence.some((entry) => entry.digest === null || entry.provenance !== 'witnessed' || contentReceipt(entry.ref, context.resolve).digest !== entry.digest)) return { ...base, state: 'degraded', why: 'qualification evidence or evaluator bytes changed or no longer resolve; rerun it' };
+    if (r.assurance !== 'native_execution_and_independent_review') return { ...base, state: 'experimental', why: 'an evaluator command ran, but host/model labels, producer/reviewer names and skill application are reported only; native invocation and independent review witnesses are required' };
+    if (!r.nativeWitnesses || r.nativeWitnesses.length !== r.suite.cases.length || r.suite.cases.some((c) => {
+      const w = r.nativeWitnesses!.find((entry) => entry.caseId === c.id);
+      return !w || w.host !== context.host || w.model !== context.model || w.skillDigest !== base.digest || !w.hostVersion || w.producer.exitStatus !== 0 || w.reviewer.exitStatus !== 0 || !w.producer.sessionId || !w.reviewer.sessionId || w.producer.sessionId === w.reviewer.sessionId || w.producer.invocationId === w.reviewer.invocationId || w.application !== (c.kind === 'negative' ? 'stood_down' : 'applied') || !w.artifacts.length || c.checks.some((check) => w.checks[check] !== 'pass') || [w.producer.receipt, w.reviewer.receipt, w.caseRef, ...w.artifacts].some((ref) => !r.evidence.some((entry) => entry.ref === ref && entry.digest && entry.provenance === 'witnessed'));
+    })) return { ...base, state: 'degraded', why: 'qualification lacks complete matching native producer, application, artifact and independent reviewer witnesses' };
+    const nativeProblems = nativeQualificationProblems(r, context.resolve);
+    if (nativeProblems.length) return { ...base, state: 'degraded', why: nativeProblems.join('; ') };
     return { ...base, state: 'qualified', why: 'an observed passing evaluation covers this exact version and host within its stated scope; it is not a universal correctness or permission claim', evidence: { evaluationRef: `evaluation:${observed.id}`, host: r.suite.host, model: r.suite.model, scope: r.suite.scope, expiresAt: r.expiresAt, suiteDigest: r.suiteDigest } };
+  }
+  if (!hasBehaviorEvals(skill)) {
+    return { ...base, state: 'experimental', why: 'activation cases only; no behavior evaluation cases are declared' };
   }
   return { ...base, state: 'experimental', why: context && !context.model ? 'current model is unspecified; executed evidence is scoped to a model and cannot qualify an unspecified one' : 'lock and evaluation cases are present; no passing execution record is bound to this digest, host and model' };
 }

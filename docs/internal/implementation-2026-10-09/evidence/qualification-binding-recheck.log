@@ -1,0 +1,20 @@
+✔ native adapter observes fresh per-case producer, artifact and independent reviewer invocations (1471.157ms)
+✔ native qualification rejects producer-failed despite an evaluator result (1300.576667ms)
+✔ native qualification rejects missing-artifact despite an evaluator result (1481.301875ms)
+✔ native qualification rejects no-session despite an evaluator result (1451.108ms)
+✔ native qualification rejects unknown despite an evaluator result (1373.992542ms)
+✔ native qualification rejects wrong-application despite an evaluator result (1428.999125ms)
+✔ a native case cannot prepopulate its output through an input path alias (1217.74825ms)
+✔ redaction preserves JSON structure around escaped lines and nested command strings (0.877292ms)
+✔ installed method files cannot be claimed as freshly produced artifacts (1281.199083ms)
+✔ a producer cannot receive a held-out rubric through an input alias (325.194583ms)
+✔ external grading cannot substitute adapter-observed artifacts or invocation receipts (1294.496542ms)
+✔ hash-matching receipt files still need consistent case relationships and unique native invocations (1460.186916ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14387.144292

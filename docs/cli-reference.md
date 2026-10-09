@@ -179,7 +179,7 @@ execute a predetermined skill evaluation and record scoped qualification evidenc
 
 | Flag | Takes a value | Meaning |
 |---|---|---|
-| `--suite` | yes | project JSON suite with host/model, predefined cases and explicit evaluator command |
+| `--suite` | yes | project JSON suite with host/model, cases and evaluator argv; native.adapter=codex adds fresh producer/reviewer calls |
 | `--timeout-ms` | yes | bounded evaluation timeout, at most 1200000 |
 | `--valid-hours` | yes | qualification expiry, at most 720 hours |
 
