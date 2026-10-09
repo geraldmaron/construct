@@ -115,13 +115,27 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     assert.deepEqual(q.options, ['accept with these problems', 'another attempt', 'stop']);
     await call(fx, 'decide', { decisionId: q.id, resolution: 'accept with these problems' });
     const w = await step();
-    assert.ok(w.instructions.some((i: string) => i.includes('accepted this step despite')));
+    const told = w.instructions.join(' ');
+    assert.match(told, /You relayed "accept with these problems"/, 'a relayed waiver is named as the relay it was');
+    assert.doesNotMatch(told, /The person accepted/);
     const accepted = await submit(w, draft, [{ ref: 'docs/notes.md' }]);
     assert.equal(accepted.step.state, 'succeeded');
     await submit(await step(), { verdict: 'figure unsupported, accepted by person', summary: 'c', findings: [] }, [{ ref: 'docs/prd.md' }]);
     const done = await submit(await step(), { artifact: 'docs/prd.md', verdict: 'waived' }, [{ ref: 'docs/prd.md' }]);
     assert.equal(done.run.state, 'succeeded');
     assert.notEqual(done.deliverable?.trust, 'validated', 'a waived check never reads as a passed one');
+    const status = await call(fx, 'run_status', { runId });
+    const final = status.deliverables.find((d: { id: string }) => d.id === done.deliverable.id);
+    const waived = final.body.waived as { stepId: string; validator: string; problems: string[]; acceptedBy: string; channel: string }[];
+    assert.ok(waived.length > 0, 'the deliverable lists what was waived');
+    const grounded = waived.find((x) => x.validator === 'numbers_grounded')!;
+    assert.equal(grounded.stepId, 'draft');
+    assert.match(grounded.problems.join(' '), /9\.9m/);
+    assert.ok(waived.every((x) => x.channel === 'relay' && x.acceptedBy === `relayed via ${fx.broker.host.hostId}`), 'each waiver says it was relayed, and through which host');
+    const byHand = await call(fx, 'promote_deliverable', { deliverableId: final.id, to: 'validated' }).catch((error: Error) => error);
+    assert.ok(byHand instanceof Error);
+    assert.match(byHand.message, /validated is set when the step's checks pass, not by promotion/);
+    assert.equal((await call(fx, 'run_status', { runId })).deliverables.find((d: { id: string }) => d.id === final.id).trust, final.trust, 'nothing moved');
   } finally {
     fx.cleanup();
   }

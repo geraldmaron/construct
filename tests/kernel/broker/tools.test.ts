@@ -86,6 +86,47 @@ test('wrong input names the field and, for a closed set, the values it accepts',
   assert.equal(problem(() => tool('work').validate({ action: 'claim', id: 'x', agent: 'not a name' })).field, 'agent');
 });
 
+test('promote_deliverable never takes validated, and takes challenged only with the objections the challenge raised', () => {
+  const problem = (args: Record<string, unknown>): ToolInputError => {
+    try {
+      tool('promote_deliverable').validate(record(args));
+    } catch (error) {
+      assert.ok(error instanceof ToolInputError, String(error));
+      return error;
+    }
+    assert.fail(`expected a ToolInputError for ${JSON.stringify(args)}`);
+  };
+  const schema = tool('promote_deliverable').inputSchema.properties as Record<string, { enum?: readonly string[] }>;
+  assert.ok(!schema.to!.enum!.includes('validated'), 'validated is not offered');
+  const byHand = problem({ deliverableId: 'd', to: 'validated' });
+  assert.equal(byHand.field, 'to');
+  assert.match(byHand.message, /validated is set when the step's checks pass, not by promotion/);
+  assert.deepEqual(byHand.allowed, ['draft', 'challenged', 'accepted', 'final', 'rejected']);
+
+  const bare = problem({ deliverableId: 'd', to: 'challenged' });
+  assert.equal(bare.field, 'objections');
+  assert.deepEqual(bare.example, [{ objection: 'the latency figure has no source', disposition: 'fixed' }]);
+  const wrong = problem({ deliverableId: 'd', to: 'challenged', objections: [{ objection: 'x', disposition: 'ignored' }] });
+  assert.equal(wrong.field, 'objections[0].disposition');
+  assert.deepEqual(wrong.allowed, ['fixed', 'accepted', 'rejected', 'open']);
+  assert.equal(wrong.example, 'fixed', 'the example is for the field that is wrong');
+  const unsaid = problem({ deliverableId: 'd', to: 'challenged', objections: [{ disposition: 'open' }] });
+  assert.equal(unsaid.field, 'objections[0].objection');
+  assert.equal(typeof unsaid.example, 'string');
+  assert.equal(problem({ deliverableId: 'd', to: 'challenged', objections: [3] }).field, 'objections[0]');
+  assert.equal(problem({ deliverableId: 'd', to: 'challenged', objections: [{ objection: 'x', disposition: 'open', severity: 'high' }] }).field, 'objections[0].severity');
+  const notAList = problem({ deliverableId: 'd', to: 'challenged', objections: 'none' });
+  assert.equal(notAList.field, 'objections');
+  assert.ok(Array.isArray(notAList.example));
+  assert.equal(problem({ deliverableId: 'd', to: 'accepted', objections: [] }).field, 'objections', 'objections belong to a challenge only');
+
+  assert.deepEqual(tool('promote_deliverable').validate(record({ deliverableId: 'd', to: 'challenged', objections: [] })), { deliverableId: 'd', to: 'challenged', reason: undefined, objections: [] });
+  assert.deepEqual(
+    (tool('promote_deliverable').validate(record({ deliverableId: 'd', to: 'challenged', objections: [{ objection: ' stale figure ', disposition: 'fixed' }] })) as { objections: unknown }).objections,
+    [{ objection: 'stale figure', disposition: 'fixed' }],
+  );
+});
+
 test('bootstrap is small and says what to do next; answers create nothing; remember creates one statement', async () => {
   const fx = brokerFixture();
   try {
