@@ -40,7 +40,7 @@ const REST = [
   'Setup questions and the proposed statements in inbox never come before the person\'s request; relay their answers, and confirm or retire, with decide.',
   'Before citing a system the person named, declare it with sources, then report the items you cite.',
   'Observations are not work.',
-  'Other agents and sessions may work here: claim work before editing it (work claim, naming yourself as agent and the files as paths) and keep the token; one writer per item and per path; a refused path means other work or wait, never edit anyway.',
+  'Other sessions may work here. claim_work delivery already reserves its requested file; use it without another commitment. For other edits, use work claim with agent and paths, keeping its token. One writer per path; refused paths mean wait, never edit anyway.',
   'The next agent accepts a handoff with its packet.',
   'Another session\'s claim is theirs until it expires or they go quiet.',
   'delegate launches explicitly authorized local workers only after configuration and live verification; you stay the lead, and workers cannot delegate, approve, commit, push, or publish.',
