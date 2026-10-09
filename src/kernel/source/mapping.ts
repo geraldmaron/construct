@@ -39,6 +39,7 @@ export function dataMapping(value: unknown): DataMapping {
   if (!Array.isArray(value.evidence) || !value.evidence.length || value.evidence.length > 20 || value.evidence.some((e) => typeof e !== 'string' || !e.trim())) throw new Error('mapping needs bounded evidence references for its interpretation');
   return JSON.parse(redact(JSON.stringify({ item: value.item, records: value.records, identity: value.identity, fields: value.fields.map((f) => ({ name: f.name, path: f.path, type: f.type, ...(f.nullable !== undefined ? { nullable: f.nullable } : {}), ...(f.unit !== undefined ? { unit: f.unit } : {}), ...(f.timezone !== undefined ? { timezone: f.timezone } : {}) })), evidence: value.evidence }))) as DataMapping;
 }
+function schemaTypes(field: Record<string, unknown> | null): readonly unknown[] { return typeof field?.type === 'string' ? [field.type] : Array.isArray(field?.type) ? field.type : []; }
 function schemaField(schema: unknown, pointer: string): Record<string, unknown> | null {
   for (const token of pointer.slice(1).split('/').map((x) => x.replace(/~1/g, '/').replace(/~0/g, '~'))) {
     if (!object(schema) || !object(schema.properties)) return null;
@@ -82,7 +83,7 @@ export function evaluateMapping(store: StateStore, sourceId: string, mapping: Da
   else if (object(schema)) schema = schema.items;
   for (const field of mapping.fields) {
     const metadata = schemaField(schema, field.path);
-    const types = typeof metadata?.type === 'string' ? [metadata.type] : Array.isArray(metadata?.type) ? metadata.type : [];
+    const types = schemaTypes(metadata);
     const scalarTypes = types.filter((t) => t !== 'null');
     const compatible = scalarTypes.length === 1 && (scalarTypes[0] === field.type || (field.type === 'number' && scalarTypes[0] === 'integer'));
     if (!compatible) problems.push(`${field.name}: schema type is unknown or incompatible with mapped ${field.type}`);
@@ -100,7 +101,7 @@ export function evaluateMapping(store: StateStore, sourceId: string, mapping: Da
     for (const field of mapping.fields) {
       const v = atPointer(row, field.path);
       if (!(v === null && field.nullable) && (typeof v !== field.type || (field.type === 'number' && !Number.isFinite(v)))) problems.push(`row ${String(index)}, ${field.name}: required ${field.type} value is missing, null or incompatible`);
-      if (schemaField(schema, field.path)?.type === 'integer' && v !== null && !Number.isInteger(v)) problems.push(`row ${String(index)}, ${field.name}: schema requires an integer`);
+      if (schemaTypes(schemaField(schema, field.path)).includes('integer') && v !== null && !Number.isInteger(v)) problems.push(`row ${String(index)}, ${field.name}: schema requires an integer`);
       values[field.name] = v ?? null;
     }
     return { identity: JSON.stringify([sourceId, mapping.item, typeof id, id]), values };

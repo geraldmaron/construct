@@ -45,7 +45,8 @@ export function assessAccess(store: StateStore, sourceId: string, request: Acces
   for (const row of rows) {
     const e = JSON.parse(row.evidence_json || '{}') as Record<string, unknown>;
     const sourceFailure = e.applicability === 'source' && e.outcome === 'unreachable' && e.operation === '*' && e.scope === '*';
-    if ((e.scope === request.scope || e.scope === '*') && (e.operation === request.operation || sourceFailure) && e.mode === request.mode) { selected = { id: row.id, evidence: e, observedAt: row.observed_at }; break; }
+    const ambiguousScopedResult = e.applicability === 'scope' && e.provenance === 'reported' && e.operation === '*' && e.outcome !== 'read';
+    if ((e.scope === request.scope || e.scope === '*') && (e.operation === request.operation || sourceFailure || ambiguousScopedResult) && e.mode === request.mode) { selected = { id: row.id, evidence: e, observedAt: row.observed_at }; break; }
   }
   const e = selected?.evidence;
   if (!e) problems.push('no observation for the requested operation and scope; perform a harmless scoped probe');
