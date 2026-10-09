@@ -1,0 +1,68 @@
+
+> @geraldmaron/construct@3.0.0-alpha.26 smoke
+> bash scripts/smoke-packaged-install.sh
+
+== building ==
+== packing ==
+== every packed module has a source ==
+== installing into a scratch project ==
+== version ==
+3.0.0-alpha.26
+== doctor before init refuses to call a missing project healthy ==
+== init from the packaged install ==
+Initialized Construct project "project" at /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project
+  files: .construct/{project,constitution,sources,registry.lock}.json; .gitignore now ignores .construct/state/
+  state: created .construct/state/construct.sqlite
+  read from the project: 1 statement(s) extracted with source locators
+  unanswered fields recorded as unknowns: success measures; risk posture; review cadence; ownership and decision rights
+  onboarding: confirmed
+  registry: 17 skill(s), 22 workflow(s) locked
+  host: claude-code wired (.mcp.json starts `npx --no-install construct serve`; --client=claude-code)
+    skill: planted at /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project/.claude/skills/construct (installed)
+    hooks: installed (.claude/settings.local.json runs construct hook on PostToolUse, Stop, SessionStart, through Construct's launcher, on this machine only)
+Next, in Claude Code:
+  1. Start a new Claude Code session in this folder; a session already open does not see Construct.
+  2. Approve the project server construct when Claude Code asks. `claude mcp get construct` shows whether it is pending, approved, or rejected; if you declined it, `claude mcp reset-project-choices` asks again.
+  3. Allow Construct's tools when Claude Code asks, or add mcp__construct to permissions.allow in your own settings.
+  4. Ask for what you want in your own words.
+== the host file starts the project's construct with no machine path ==
+== the hooks live in this machine's settings and find Node through the launcher ==
+== plain init with no agent host installed says no session can reach Construct ==
+== status and doctor ==
+project at /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project
+  setup: confirmed; 0 question(s) open; 5 proposal(s) to review
+  work: nothing in flight
+  decisions: none waiting on you
+  sources: 0 declared; 0 reachable, 0 unreachable, 0 never checked; 0 stale
+  registry: 17 skill(s), 22 workflow(s) locked; all current
+  drift: nothing open
+  sessions: none present
+  last 7 days: 0 answer(s) checked (0 clean), 0 unchecked answer(s) caught, 0 host read(s) recorded, 0 check(s) waived
+ok   node: v25.9.0
+ok   project: /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project
+ok   files: project, constitution, sources, and lock files validate
+ok   constitution: complete
+ok   registry: 39/39 current
+ok   state: format 5 at /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project/.construct/state/construct.sqlite; onboarding confirmed
+ok   state-project: the store belongs to project proj-c504bd0a
+ok   state-concurrency: WAL journal: concurrent sessions read while one writes
+ok   sources: 0 declared
+ok   host-hooks: .claude/settings.local.json runs construct hook on PostToolUse, Stop, SessionStart, through Construct's launcher, on this machine only
+ok   host-wiring: claude-code installed
+ok   host-launch:claude-code: starts /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project/node_modules/.bin/construct through /opt/homebrew/bin/npx, the same install as this doctor
+ok   operational-skill: current in /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/tmp.qBNi8nvAZw/project/.claude/skills (read by claude-code): every shipped file is present and byte-identical
+ok   host: no agent host detected in this shell; that is fine for setup and inspection
+ok   package: 17 skill(s) shipped
+doctor: healthy
+== configuration is explained ==
+== native work from packaged bytes: a session's unrooted work waits as proposed, with its structure ==
+== a directory source is declared, read, and re-read unchanged ==
+== a workflow resolves, starts, and is read back from packaged bytes ==
+== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, acceptance held for the person ==
+loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok
+== the packaged install can describe the surface it would serve ==
+== the packaged install carries the skills ==
+== a database the CLI cannot open ==
+== reset previews, then removes exactly what it named ==
+== unknown and retired commands are refused ==
+smoke-packaged-install: pass

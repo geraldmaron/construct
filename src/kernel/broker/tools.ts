@@ -1,3 +1,5 @@
+import { accessDescriptor, accessRequest, assessAccess, type AccessDescriptor, type AccessRequest } from '../source/access.ts';
+import { dataMapping, sourceMapping, type DataMapping } from '../source/mapping.ts';
 /**
  * kernel/broker/tools.ts — every tool Construct offers a host, declared once.
  *
@@ -960,7 +962,7 @@ async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: str
   return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy, resolution: answer.choice }, channel: 'elicitation', run: r.run ? { id: r.run.id, state: r.run.state } : null };
 }
 
-const SOURCE_ACTIONS = ['list', 'show', 'refresh', 'report', 'declare'] as const;
+const SOURCE_ACTIONS = ['list', 'show', 'refresh', 'report', 'declare', 'check', 'map'] as const;
 /** Kinds a session may declare: systems the host reads with its own tools. Directory and git let Construct read files itself, so only the person adds those. */
 const DECLARABLE_KINDS = ['github', 'jira', 'docs', 'hris', 'other'] as const;
 const DECLARE_ONLY = ['kind', 'purpose', 'locator'] as const;
@@ -970,6 +972,10 @@ const LOCATOR_CAP = 512;
 const LOCATOR_EXAMPLES: Readonly<Record<string, string>> = { github: 'owner/repo', jira: 'PROJ', docs: 'confluence:space:ENG' };
 
 interface SourcesInput {
+  observation?: AccessDescriptor;
+  request?: AccessRequest;
+  mapping?: DataMapping;
+  item?: string;
   outcome?: SourceReadOutcome;
   reason?: string;
   scope?: string;
@@ -1020,7 +1026,11 @@ const sources = define<SourcesInput, unknown>({
   inputSchema: {
     type: 'object',
     properties: {
-      action: { type: 'string', description: 'list, show, refresh, report, or declare.', enum: SOURCE_ACTIONS },
+      action: { type: 'string', description: 'Inspect, read, check scoped access, or map typed data.', enum: SOURCE_ACTIONS },
+      observation: { type: 'object', description: 'Report: observed transport (api/mcp/local), operation, mode (read), principal, exact scope, expiresAt, inputSchema?, outputSchema?. This stays reported; session and provenance are adapter-owned.' },
+      request: { type: 'object', description: 'Check: principal, exact scope, operation and mode (read/write). Checks permission and current scoped access evidence without making a grant.' },
+      item: { type: 'string', description: 'Map: item ref; without mapping returns its recorded mapping or unknown shape.' },
+      mapping: { type: 'object', description: 'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.' },
       id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
       outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness.' },
       reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
@@ -1045,9 +1055,12 @@ const sources = define<SourcesInput, unknown>({
     for (const key of DECLARE_ONLY) {
       if (raw[key] !== undefined && raw[key] !== null) throw new ToolInputError(`"${key}" is for declare only`, { field: key });
     }
-    return { action, id, items, partial, outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
+    const observation = raw.observation === undefined ? undefined : accessDescriptor(raw.observation);
+    const request = raw.request === undefined ? undefined : accessRequest(raw.request);
+    const mapping = raw.mapping === undefined ? undefined : dataMapping(raw.mapping);
+    return { action, id, items, partial, observation, request, mapping, item: str(raw, 'item', { optional: true }), outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
   },
-  async run(ctx, { action, id, items, partial, kind, purpose, locator, outcome, reason, scope, coverage }) {
+  async run(ctx, { action, id, items, partial, kind, purpose, locator, outcome, reason, scope, coverage, observation, request, mapping, item }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
@@ -1071,6 +1084,16 @@ const sources = define<SourcesInput, unknown>({
       throw new ToolInputError(`no source "${id}" is declared; declare it with sources action declare (id, kind), then ${action === 'report' ? 'report again' : 'report what you read from it'}`, { field: 'id', allowed: active.map((s) => s.id) });
     }
     if (action === 'show') return ctx.sources.status(id, at);
+    if (action === 'check') {
+      if (!request) throw new ToolInputError('check requires a scoped access request');
+      return assessAccess(ctx.store, id, request, ctx.sessionId, at);
+    }
+    if (action === 'map') {
+      const ref = mapping?.item ?? item;
+      if (!ref) throw new ToolInputError('map requires an item or mapping.item');
+      if (item && mapping && item !== mapping.item) throw new ToolInputError('item differs from mapping.item');
+      return sourceMapping(ctx.store, { sourceId: id, item: ref, mapping, resolve: projectResolver(ctx), at, nextId: () => ctx.nextId('mapping') });
+    }
     if (action === 'report') {
       if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
@@ -1081,7 +1104,7 @@ const sources = define<SourcesInput, unknown>({
         if (problem) throw new ToolInputError(`items[${String(n)}].url ${problem}`, { field: `items[${String(n)}].url`, example: 'https://acme.atlassian.net/browse/PLAT-101' });
         return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text'), fingerprint: opt('fingerprint'), weak: i.weak === true, ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}), ...(url !== undefined ? { url } : {}) };
       });
-      const reported = ctx.sources.reportRead(id, { items: parsed, partial, outcome, reason, scope, coverage, sessionId: ctx.sessionId ?? undefined }, at, () => ctx.nextId('snap'));
+      const reported = ctx.sources.reportRead(id, { items: parsed, partial, outcome, reason, scope, coverage, observation, sessionId: ctx.sessionId ?? undefined }, at, () => ctx.nextId('snap'));
       // Access observations are scoped reports, not grants or evidence that every source
       // of the same kind is available. They never mutate permitted or available capabilities.
       if (reported.outcome === 'changed' || reported.outcome === 'unchanged' || reported.outcome === 'no_results') {

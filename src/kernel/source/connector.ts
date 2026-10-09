@@ -8,6 +8,7 @@
  * configures, claim type by claim type.
  */
 
+import type { AccessDescriptor } from './access.ts';
 import type { ActionTier } from '../state/steps.ts';
 import type { SourceKind } from './locators.ts';
 
@@ -30,6 +31,9 @@ export interface ConnectorDeclaration {
 
 /** What one read of a source produced, as the connector or host reports it. */
 export interface SnapshotReport {
+  readonly observation?: AccessDescriptor;
+  /** Adapter binding, never connector response content. */
+  readonly sessionId?: string;
   readonly digest: string;
   readonly summary: string;
   readonly evidenceRef?: string;
