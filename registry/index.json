@@ -9,8 +9,8 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "3.0.3",
-      "digest": "sha256:1553be68f6ded38b93b4c9446714f3a146df8b5630d86ffd3b88a1bc4a5d674f",
+      "version": "3.0.4",
+      "digest": "sha256:5490ff48b840b8dfad1172b0d17ae16a506cab8928fb82685973741dfbbc2c2a",
       "category": "operational",
       "title": "Construct operating skill"
     },

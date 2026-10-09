@@ -279,7 +279,7 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           if (error instanceof UnsupportedStateError) {
             return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
           }
-          return response(id, { ...text({ error: messageText }), isError: true });
+          return response(id, { ...text({ error: messageText, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.' } }), isError: true });
         }
       }
       default:

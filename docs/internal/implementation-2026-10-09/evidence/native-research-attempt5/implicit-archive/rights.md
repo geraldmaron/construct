@@ -1,0 +1,1 @@
+Only 120 photographs are cleared for an internal pilot. Public distribution rights are unresolved. Restricted donor deed is unavailable in this fixture; no legal approval exists.

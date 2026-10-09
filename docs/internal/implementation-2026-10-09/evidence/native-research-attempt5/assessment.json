@@ -1,0 +1,119 @@
+{
+  "evaluationRef": "evaluation:5",
+  "skill": {
+    "id": "investigative-research",
+    "version": "0.3.1",
+    "digest": "sha256:71b7cf346df66474ec5fd3a04518dd9ca6205c859b094c7eca1915b977529364"
+  },
+  "startedAt": "2026-10-09T21:10:24.703Z",
+  "endedAt": "2026-10-09T21:23:12.414Z",
+  "exitStatus": 0,
+  "passed": false,
+  "assurance": "native_execution_and_independent_review",
+  "problems": [
+    "implicit-archive: independent native review did not establish all required checks and application",
+    "composition-review-packet: independent native review did not establish all required checks and application",
+    "implicit-archive: a required independent check did not pass",
+    "composition-review-packet: a required independent check did not pass",
+    "implicit-archive: native independent application or checks did not pass",
+    "composition-review-packet: native independent application or checks did not pass"
+  ],
+  "limitation": "Scoped executed evaluator result; reviewer judgments remain fallible and host/model labels describe this suite. No permission or universal qualification is inferred.",
+  "qualificationRevision": "d1615f84",
+  "requestedHost": "codex",
+  "requestedModel": "gpt-6-astra",
+  "resolvedModel": "not independently observed",
+  "cases": [
+    {
+      "id": "explicit-vendor",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "2b90d29743dda643016d7f1f448ca6279b1947f7cdfb6a3e9600423fce5a8d38"
+    },
+    {
+      "id": "implicit-archive",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "fail"
+      },
+      "application": "applied",
+      "outputDigest": "42e582869906702cf578569cbe087e5ad4aa1592953e9bb036efc4a6db2aea72"
+    },
+    {
+      "id": "contextual-correction",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "e79ddd601d8b900ea536db26a029a66e3d223810f63bdc797249869b123b8118"
+    },
+    {
+      "id": "negative-single-fact",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "stood_down",
+      "outputDigest": "29a9665b0f44d1b626f136003678a94d7fbc50e79674cb48afc1941c65755fef"
+    },
+    {
+      "id": "held-out-denominator",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "537b39cda6b42f9726afd82136038524e8ee81182f6e883986cd92332b25fb9a"
+    },
+    {
+      "id": "composition-review-packet",
+      "checks": {
+        "correctness": "unknown",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "ccdcb87608168903630c2e52b488753c452ec1f8386d3e4f53f2d92c3150e856"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "all six provider initialization failures"
+    },
+    {
+      "attempt": 2,
+      "status": "interrupted, cause unconfirmed, one complete case"
+    },
+    {
+      "attempt": 3,
+      "status": "redaction-boundary crash, one complete case"
+    },
+    {
+      "attempt": 4,
+      "status": "interrupted, cause unconfirmed, four complete pre-fix cases"
+    },
+    {
+      "attempt": 5,
+      "status": "complete, not qualified: four cases pass all checks; archive method check fails; composition factual correctness unknown"
+    }
+  ],
+  "baseline": "Two no-skill native baseline artifacts passed correctness, uncertainty and evidence. No incremental benefit established.",
+  "negativeControls": "Both intentionally wrong artifacts rejected on all three substantive checks.",
+  "derivedArchive": "Original invocation/case files remain in the task workspace. This archive copies synthetic inputs, actual output bytes, judgments and safe receipt metadata; it does not replace the kernel qualification record."
+}

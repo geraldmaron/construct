@@ -313,7 +313,7 @@ const CLASSIFY_DESCRIPTION = [
   'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
   'Prefer period.relative or quarter over computing dates.',
   'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"other","describe":"architecture diagram"},"period":{"semantics":"evidence_window","from":"2026-07-01","to":"2026-09-30","phrase":"only covering 2026-07-01 to 2026-09-30"},"sources":[{"name":"Jira","role":"read"}]}.',
-  'Then ask the person every returned question in one message, and call start_outcome with the returned intake.',
+  'Evidence gaps do not block an investigation: open items use blocking=false with handling=investigate or carry_unknown; never invent an assumption. Only required scope, permission or destination decisions block. Start with the returned intake.',
   PERSON_ASKED_ONLY,
 ].join(' ');
 
@@ -335,13 +335,13 @@ const INTAKE_SCHEMA: JsonSchema = {
     },
     skill: { type: 'string', description: 'The skill whose method fits, by id.' },
     workflowId: { type: 'string', description: 'A workflow to start, if you know it.' },
-    target: { type: 'string', description: 'The document, file or system worked on.' },
+    target: { type: 'string', description: 'The document, file or system.' },
     scope: { type: 'string', description: 'What it covers, if narrower.' },
     period: {
       type: 'object',
       description: 'The period they named.',
       properties: {
-        semantics: { type: 'string', description: 'as_of: how things stood at its end; changed_during: what changed in it; evidence_window: only evidence dated in it.', enum: PERIOD_SEMANTICS },
+        semantics: { type: 'string', description: 'as_of: state at end; changed_during: changes; evidence_window: dated evidence only.', enum: PERIOD_SEMANTICS },
         relative: { type: 'string', description: 'Relative to today.', enum: PERIOD_RELATIVES },
         n: { type: 'number', description: 'Days, for last_n_days.' },
         quarter: { type: 'number', description: '1 to 4.' },
@@ -373,7 +373,7 @@ const INTAKE_SCHEMA: JsonSchema = {
       description: 'Where the result goes.',
       properties: {
         kind: { type: 'string', description: 'What kind of place.', enum: DESTINATION_KINDS },
-        ref: { type: 'string', description: 'A file path, a place in the source, or an address.' },
+        ref: { type: 'string', description: 'A file path, source location or address.' },
         name: { type: 'string', description: 'For registered_source: its id.' },
       },
       required: ['kind'],
@@ -381,7 +381,7 @@ const INTAKE_SCHEMA: JsonSchema = {
     },
     schedule: {
       type: 'object',
-      description: 'For maintain: when it runs. For a current-state period at each firing, use period {semantics: as_of, relative: today}; do not freeze today into an absolute date unless the person explicitly wants a fixed historical reference.',
+      description: 'Saved timing. Use period.relative=today for current-state firings.',
       properties: {
         cron: { type: 'string', description: 'Five fields.' },
         timezone: { type: 'string', description: 'IANA; required with cron.' },
@@ -402,14 +402,15 @@ const INTAKE_SCHEMA: JsonSchema = {
     },
     open: {
       type: 'array',
-      description: 'What the conversation leaves open.',
+      description: 'Blocking decisions or evidence gaps; keep these distinct.',
       items: {
         type: 'object',
         properties: {
           about: { type: 'string', description: 'What it is about.', enum: OPEN_ABOUT },
-          question: { type: 'string', description: 'As you would put it to the person.' },
-          blocking: { type: 'boolean', description: 'True when work cannot start without it.' },
-          assumption: { type: 'string', description: 'If not blocking, what you take as given.' },
+          question: { type: 'string', description: 'The unresolved question.' },
+          blocking: { type: 'boolean', description: 'True for a required decision, permission or essential intent detail.' },
+          handling: { type: 'string', enum: ['investigate', 'carry_unknown'], description: 'With blocking=false: investigate or retain unknown, never assume.' },
+          assumption: { type: 'string', description: 'A deliberate assumption; omit for evidence gaps.' },
         },
         required: ['question', 'blocking'],
         additionalProperties: false,
@@ -635,7 +636,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   },
 });
 
-const NOTHING_STARTED = 'Nothing started. Put these to the person in one message, then call start_outcome again with their answers.';
+const NOTHING_STARTED = 'Nothing started. Recheck host-marked blockers: evidence gaps in an investigation can use blocking=false and handling=investigate or carry_unknown, without an assumed answer. Do not downgrade required permission, essential scope or destination decisions. Resolve real blockers with the person, then retry start_outcome; do not silently bypass this result.';
 
 /** Input a workflow refuses: an undeclared key, or a value its type does not take. Each comes back naming input.<key>. */
 function refuseWrongInput(ctx: BrokerContext, workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>): void {

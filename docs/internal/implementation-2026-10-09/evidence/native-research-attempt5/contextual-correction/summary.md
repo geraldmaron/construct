@@ -1,0 +1,1 @@
+We can release: yesterday the error rate was 80 basis points, below1%.

@@ -1,0 +1,1 @@
+Release only when error rate is strictly below1% and open P1 incidents equals0. Exact equality fails.

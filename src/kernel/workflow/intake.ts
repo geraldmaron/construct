@@ -76,7 +76,8 @@ const SOURCE_KEYS = ['name', 'id', 'role'] as const;
 const DESTINATION_KEYS = ['kind', 'ref', 'name'] as const;
 const SCHEDULE_KEYS = ['cron', 'timezone', 'event', 'phrase'] as const;
 const STAKES_KEYS = ['reversible', 'affects'] as const;
-const OPEN_KEYS = ['about', 'question', 'blocking', 'assumption'] as const;
+export const OPEN_HANDLING = ['investigate', 'carry_unknown'] as const;
+const OPEN_KEYS = ['about', 'question', 'blocking', 'assumption', 'handling'] as const;
 
 // ---------------------------------------------------------------- shapes
 
@@ -118,6 +119,8 @@ export interface OpenItem {
   readonly blocking: boolean;
   /** For a non-blocking item, what the host took as given instead. */
   readonly assumption: string | null;
+  /** Evidence may be investigated or explicitly left unknown without inventing an assumption. */
+  readonly handling?: (typeof OPEN_HANDLING)[number];
 }
 
 /** The host's reading of one request, as reported and then normalized; every field is present. */
@@ -634,13 +637,16 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
     const question = requiredText(o.question, `${field}.question`, 'the question, as it would be put to the person');
     if (typeof o.blocking !== 'boolean') fail(`${field}.blocking`, `"${field}.blocking" is required: true when the work cannot start until the person answers`);
     const assumption = text(o.assumption, `${field}.assumption`);
+    const handling = given(o.handling) ? oneOf(o.handling, `${field}.handling`, OPEN_HANDLING) : undefined;
+    if (handling && o.blocking) fail(`${field}.handling`, 'an evidence gap can be investigated or carried unknown only when blocking is false; keep required permission, scope and destination decisions blocking');
+    if (handling && assumption !== null) fail(`${field}.assumption`, 'an evidence gap remains unknown; do not pair handling with an assumed answer');
     let blocking = o.blocking;
-    if (!blocking && (assumption === null || !assumption.trim())) {
+    if (!blocking && !handling && (assumption === null || !assumption.trim())) {
       coerce(`${field}.blocking`, false, true, 'a non-blocking item says what was taken as given instead; this one says nothing, so it blocks');
       blocking = true;
     }
-    if (!blocking) assumptions.push({ about, text: assumption!, by: 'host' });
-    return { about, question, blocking, assumption };
+    if (!blocking && !handling) assumptions.push({ about, text: assumption!, by: 'host' });
+    return { about, question, blocking, assumption, ...(handling ? { handling } : {}) };
   });
 
   // inputs: workflow inputs by the workflow's own keys, checked against a workflow when mapped.

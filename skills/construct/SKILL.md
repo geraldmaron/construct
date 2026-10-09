@@ -12,7 +12,7 @@ description: >-
   is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.0.3
+  version: 3.0.4
   source: geraldmaron/construct
 ---
 
@@ -87,7 +87,17 @@ Never promote a question into work, or a note into a run.
 
 ## Asking
 
-Settle from the conversation whatever it already answers. Put the rest to
+Settle from the conversation and permitted sources whatever they answer.
+An evidence gap is often the reason for an investigation, not a blocker to
+starting it. In `open`, use `blocking: false` with `handling: investigate`
+or `handling: carry_unknown`; omit `assumption`. Preserve the question in
+the deliverable and never guess a fact to make work runnable. Required
+permission, essential scope or destination decisions still block. A brief
+can conclude that the requested decision must wait for missing evidence.
+Choose the listed `research/brief` kind when the outcome is an investigation;
+use `other` only when none of the declared kinds fits.
+
+Put only the decisions that actually block the work to
 the person in one message, in plain words, with the options each question
 offers, then call again with their answers. Never ask them to name a skill,
 a workflow, or a field. State each assumption Construct carries once

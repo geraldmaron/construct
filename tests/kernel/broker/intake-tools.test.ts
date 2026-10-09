@@ -188,7 +188,8 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     assert.equal(missing.started, false);
     assert.equal(missing.recorded, false);
     assert.deepEqual(missing.questions.map((q: { slot: string }) => q.slot), ['target']);
-    assert.equal(missing.next, 'Nothing started. Put these to the person in one message, then call start_outcome again with their answers.');
+    assert.match(missing.next, /^Nothing started/);
+    assert.match(missing.next, /Do not downgrade required permission, essential scope or destination decisions/);
     assert.deepEqual(listRuns(fx.broker.store), [], 'no run is left for a missing input');
 
     const open = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { ...prd, target: 'docs/prd.md', open: [{ about: 'audience', question: 'Is this for the partner team or for customers?', blocking: true }] } });
@@ -329,5 +330,52 @@ test('an outcome cannot finish in state alone when the person requested a local 
     assert.ok(end.validation.some((check: any) => check.validator === 'requested_destination' && check.ok === false));
     assert.notEqual(end.run.state, 'succeeded');
     assert.equal(end.deliverable, null);
+  } finally { fx.cleanup(); }
+});
+
+
+for (const handling of ['investigate', 'carry_unknown']) {
+  test(`an explicit ${handling} evidence gap starts research and survives in the packet without a fabricated assumption`, async () => {
+    const fx = brokerFixture();
+    try {
+      const gap = { about: 'sources', question: 'Which measurement definition is current?', blocking: false, handling };
+      const reading = await call(fx, 'classify_request', { words: 'Investigate the conflicting measurements and report what remains unknown.', kind: 'manage', deliverable: { kind: 'research/brief' }, open: [gap] });
+      assert.deepEqual(reading.hostQuestions, []);
+      assert.ok(!reading.assumptions.some((a: any) => a.by === 'host'));
+      assert.equal(reading.intake.open[0].assumption, null);
+      assert.equal(reading.matches[0].workflowId, 'research-brief');
+      const started = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: reading.intake });
+      assert.equal(started.started, true);
+      assert.equal(askedOf(getRun(fx.broker.store, started.run.id)!).intake!.open[0]!.handling, handling);
+      const next = (await call(fx, 'claim_work', { runId: started.run.id })).work;
+      assert.equal(next.step.tier, 'observe');
+      assert.deepEqual(next.intake.evidenceGaps, [{ about: 'sources', question: gap.question, handling }]);
+      assert.ok(next.instructions.some((instruction: string) => instruction.includes('not assumed facts')));
+    } finally { fx.cleanup(); }
+  });
+}
+
+test('explicit evidence handling cannot simultaneously claim an assumed answer or person blocker', async () => {
+  const fx = brokerFixture();
+  try {
+    const base = { words: 'Research current measurements.', kind: 'manage', deliverable: { kind: 'research/brief' } };
+    for (const extra of [{ blocking: true }, { blocking: false, assumption: 'The missing field means cases.' }, { blocking: false, handling: 'approved' }]) {
+      await refusal(fx, 'classify_request', { ...base, open: [{ question: 'What does this field mean?', handling: 'investigate', ...extra }] });
+    }
+    assert.equal(listActivity(fx.broker.store).length, 0);
+  } finally { fx.cleanup(); }
+});
+
+test('carrying an unknown cannot supply a required destination or waive an actual decision', async () => {
+  const fx = brokerFixture();
+  try {
+    const gap = { question: 'What do the unavailable records establish?', blocking: false, handling: 'carry_unknown' };
+    const missing = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { words: 'Write a PRD.', kind: 'manage', deliverable: { kind: 'document/prd' }, open: [gap] } });
+    assert.equal(missing.started, false);
+    assert.ok(missing.questions.some((q: any) => q.slot === 'target'));
+    const blocked = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: { words: 'Research the confidential records after the owner permits access.', kind: 'manage', deliverable: { kind: 'research/brief' }, open: [gap, { about: 'scope', question: 'Has the owner permitted this access?', blocking: true }] } });
+    assert.equal(blocked.started, false);
+    assert.deepEqual(blocked.hostQuestions, [{ about: 'scope', question: 'Has the owner permitted this access?' }]);
+    assert.deepEqual(listRuns(fx.broker.store), []);
   } finally { fx.cleanup(); }
 });
