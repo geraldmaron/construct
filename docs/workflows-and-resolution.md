@@ -84,6 +84,16 @@ submission runs the step's validators; a failure comes back with what to
 fix and the step is retried by its policy. Steps that declare the kernel's
 own drift capability are run by Construct itself.
 
+A step that returns `blockers`, such as a plan's questions that only the
+person can answer, raises them as one question for the person, answered in
+their own words, and the run waits: claiming work returns that question
+instead of the next step until it is answered. Every later step receives each question with its
+answer, who gave it and how it reached Construct, under `answers` in its
+inputs. The answer is kept on the question, so the run's input stays as it
+was given and the run can be started again with it. A deliverable is not
+accepted or made final while its run still has such a question open, and the
+acceptance prompt quotes any answer the assistant relayed for the person.
+
 The `run show` line above expects exit code 1 because no run with that id
 exists in a fresh project; a real id comes from `workflow run --json`.
 

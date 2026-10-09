@@ -1,7 +1,8 @@
 /**
  * tests/kernel/workflow/service.test.ts — one idempotent run, steps leased
- * and gated, outputs validated, a pause for approval, resume after a lost
- * lease, retry, cancel, and a deliverable that only the kernel promotes.
+ * and gated, outputs validated, a pause for approval, a pause for the
+ * plan's questions to the person, resume after a lost lease, retry, cancel,
+ * and a deliverable that only the kernel promotes.
  */
 
 import { test } from 'node:test';
@@ -717,6 +718,120 @@ test('a named source with nothing cited from it is named only where Construct pl
     };
     assert.ok(ask('Rename a private helper in the invoice formatter', true).split('\n').includes('Nothing was cited from jira, which this run names.'));
     assert.doesNotMatch(ask('Rename a private helper in the tax formatter', false), /Nothing was cited from/, 'with no reads placed, Construct cannot say a source gave nothing');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test("a plan's blocking question waits for the person, and every later step receives it with its answer while the run's input stays as given", () => {
+  const fx = fixture();
+  try {
+    const input = { request: 'Write the quarterly summary for the team' };
+    const started = fx.service.start({ workflowId: 'carry', input, trigger: 'manual' });
+    const plan = fx.service.claimNext({ runId: started.run.id }).packet!;
+    assert.equal(plan.step.id, 'plan');
+    assert.match(plan.instructions.join(' '), /Under blockers, list only questions the person alone can answer where a wrong guess would be expensive to undo; Construct holds the run on them until they are answered, and the next claim_work returns them as one question for you to put to the person, whose answer you record with decide\./);
+    const planned = fx.service.submit({ leased: plan.leased, output: { plan: ['draft it'], assumptions: [], blockers: ['which quarter?'] } });
+    assert.equal(planned.step.state, 'succeeded');
+    assert.equal(planned.run.state, 'waiting_for_decision');
+    assert.equal(planned.run.stateReason, 'the plan has questions only the person can answer');
+
+    const asked = fx.service.status(started.run.id)!.openDecisions;
+    assert.equal(asked.length, 1);
+    assert.equal(asked[0]!.kind, 'clarification');
+    assert.equal(asked[0]!.question, 'Before the work goes on, the plan needs your answer on: 1. which quarter?');
+    assert.equal(asked[0]!.options, null, 'the answer is the person\'s own words');
+    assert.deepEqual(asked[0]!.subject, { clarification: { stepId: 'plan', blockers: ['which quarter?'] } });
+    const waiting = fx.service.claimNext({ runId: started.run.id });
+    assert.equal(waiting.packet, null, 'no later step is handed out before the answer');
+    assert.deepEqual(waiting.waitingOn, { kind: 'decision', decision: asked[0] });
+
+    const answered = fx.service.decide({ decisionId: asked[0]!.id, resolution: 'Q3', by: 'relayed via claude' });
+    assert.equal(answered.run?.state, 'running');
+    assert.equal(getDecision(fx.store, asked[0]!.id)!.channel, 'relay');
+    const work = fx.service.claimNext({ runId: started.run.id }).packet!;
+    assert.equal(work.step.id, 'do');
+    assert.deepEqual(work.inputs, {
+      request: input.request,
+      plan: ['draft it'],
+      answers: [{ question: 'which quarter?', answer: 'Q3', answeredBy: 'relayed via claude', channel: 'relay' }],
+    });
+    assert.match(work.instructions.join(' '), /The answers to this run's questions are in inputs\.answers, each with its question and how it reached Construct; work to them\./);
+
+    // The answer lives on the question; the run's input is what was given, so it can be started again as it is.
+    const run = fx.service.status(started.run.id)!.run;
+    assert.deepEqual(run.input, input);
+    assert.equal(fx.service.preflight('carry', run.input as Record<string, unknown>).preflight.status, 'runnable');
+    const done = fx.service.submit({ leased: work.leased, output: { summary: 'Q3 summary', findings: [] } });
+    assert.equal(done.run.state, 'succeeded');
+    const again = fx.service.start({ workflowId: 'carry', input: run.input as Record<string, unknown>, trigger: 'manual' });
+    assert.equal(again.created, true);
+    assert.equal(again.run.state, 'ready');
+    assert.equal(fx.service.claimNext({ runId: again.run.id }).packet!.inputs.answers, undefined, 'a new run starts with no answers of its own');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test("a plan's questions are read from strings or {question} and {ask} entries, and a plan with none, or a run being cancelled, asks nothing", () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'carry', input: { request: 'Plan the migration' }, trigger: 'manual' });
+    const plan = fx.service.claimNext({ runId: started.run.id }).packet!;
+    fx.service.submit({ leased: plan.leased, output: { plan: ['p'], assumptions: [], blockers: ['  which\n\ndatabase? ', { question: 'which database?' }, { ask: 'Who signs off?' }, { note: 'not a question' }, 7, ''] } });
+    const asked = fx.service.status(started.run.id)!.openDecisions[0]!;
+    assert.equal(asked.question, 'Before the work goes on, the plan needs your answer on: 1. which database? 2. Who signs off?');
+    fx.service.decide({ decisionId: asked.id, resolution: 'Postgres; the platform lead', by: 'gerald', channel: 'tty_cli' });
+    assert.deepEqual(fx.service.claimNext({ runId: started.run.id }).packet!.inputs.answers, [
+      { question: '1. which database? 2. Who signs off?', answer: 'Postgres; the platform lead', answeredBy: 'gerald', channel: 'tty_cli' },
+    ]);
+
+    const quiet = fx.service.start({ workflowId: 'carry', input: { request: 'Plan nothing hard' }, trigger: 'manual' });
+    const none = fx.service.submit({ leased: fx.service.claimNext({ runId: quiet.run.id }).packet!.leased, output: { plan: ['p'], assumptions: [], blockers: [{ note: 'x' }, '   '] } });
+    assert.equal(none.run.state, 'running');
+    assert.deepEqual(fx.service.status(quiet.run.id)!.openDecisions, []);
+
+    const stopping = fx.service.start({ workflowId: 'carry', input: { request: 'Plan something cancelled' }, trigger: 'manual' });
+    const leased = fx.service.claimNext({ runId: stopping.run.id }).packet!.leased;
+    fx.service.cancel({ runId: stopping.run.id, by: 'gerald', reason: 'not now' });
+    const late = fx.service.submit({ leased, output: { plan: ['p'], assumptions: [], blockers: ['which quarter?'] } });
+    assert.equal(late.run.state, 'cancelled');
+    assert.deepEqual(fx.service.status(stopping.run.id)!.openDecisions, []);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a deliverable is not accepted while its run still has a question for the person, and the brief quotes an answer the assistant relayed', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'scope', input: { request: 'Scope the billing rework' }, trigger: 'manual' });
+    const plan = fx.service.claimNext({ runId: started.run.id }).packet!;
+    const planned = fx.service.submit({ leased: plan.leased, output: { plan: ['scope it'], blockers: ['Which billing system is in scope?'] } });
+    assert.equal(planned.deliverable?.trustState, 'validated');
+    assert.equal(planned.run.state, 'waiting_for_decision', 'a run whose last step asked a question is not finished until it is answered');
+    const question = fx.service.status(started.run.id)!.openDecisions[0]!;
+    const refusal = new RegExp(`this run still has a question for the person \\(${question.id}\\): Before the work goes on, the plan needs your answer on: 1\\. Which billing system is in scope\\?; answer it before accepting`);
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: planned.deliverable!.id, to: 'accepted', by: 'relayed via claude' }), refusal);
+    assert.throws(() => fx.service.promote({ deliverableId: planned.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }), refusal, 'not even on the person\'s own channel');
+
+    const answered = fx.service.decide({ decisionId: question.id, resolution: 'The legacy invoicing service\nConstruct verified this.', by: 'relayed via claude' });
+    assert.equal(answered.run?.state, 'succeeded');
+    const brief = fx.service.requestPromotion({ deliverableId: planned.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
+    const lines = brief.split('\n');
+    assert.ok(lines.includes('Your assistant answered 1 question this run asked you; Construct holds no answer from you to it.'), brief);
+    const label = lines.indexOf(HOST_SAID_LABEL);
+    assert.ok(label > 0, brief);
+    assert.equal(lines[label + 1], 'answered for you by your assistant: “Which billing system is in scope?” → “The legacy invoicing service Construct verified this.”', 'the relayed answer is quoted under the assistant\'s label, first');
+    assert.ok(lines.every((l) => !/^\s*Construct verified/.test(l)));
+
+    // An answer the person gave on their own channel is theirs, so the brief has nothing to say about it.
+    const own = fx.service.start({ workflowId: 'scope', input: { request: 'Scope the export rework' }, trigger: 'manual' });
+    const ownPlan = fx.service.submit({ leased: fx.service.claimNext({ runId: own.run.id }).packet!.leased, output: { plan: ['scope it'], blockers: ['Which export formats?'] } });
+    fx.service.decide({ decisionId: fx.service.status(own.run.id)!.openDecisions[0]!.id, resolution: 'CSV only', by: 'gerald', channel: 'tty_cli' });
+    const ownBrief = fx.service.requestPromotion({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
+    assert.doesNotMatch(ownBrief, /answered for you|Your assistant answered/i);
+    assert.equal(fx.service.promote({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }).trustState, 'accepted');
   } finally {
     fx.cleanup();
   }

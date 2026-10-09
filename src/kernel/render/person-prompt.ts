@@ -17,8 +17,10 @@
  * string on its own quoted line: whitespace (newlines included) collapsed to
  * single spaces, control characters removed, format characters shown as
  * their escapes, the framing quote marks inside it replaced so it cannot
- * close its own quote, and cut at 160 characters. The whole prompt is cut at
- * 1,500 characters at a line boundary, so what is cut is what came last: the
+ * close its own quote, and cut at 160 characters. An answer the assistant
+ * gave in the person's place sits on one line as the question it answers and
+ * the answer, each quoted that way. The whole prompt is cut at 1,500
+ * characters at a line boundary, so what is cut is what came last: the
  * assistant's text before Construct's facts.
  *
  * WHAT GOES THROUGH quoteHost. Every string the assistant supplied, wherever
@@ -37,8 +39,12 @@ export const HOST_TEXT_CAP = 160;
 /** How long a whole person-only prompt may be. */
 export const PERSON_PROMPT_CAP = 1500;
 
-/** One string the assistant supplied: bare, or with Construct's own word for what it is. */
-export type HostSaid = string | { readonly about: string; readonly text: string };
+/**
+ * One string the assistant supplied: bare, or with Construct's own word for
+ * what it is; for an answer the assistant gave, `text` is the question it
+ * answers and `answer` the answer.
+ */
+export type HostSaid = string | { readonly about: string; readonly text: string; readonly answer?: string };
 
 export interface PersonPrompt {
   /** Construct's question, first. */
@@ -89,9 +95,9 @@ export function renderPersonPrompt(prompt: PersonPrompt): string {
   const cap = prompt.cap ?? PERSON_PROMPT_CAP;
   const facts = prompt.facts.map((f) => f.trim()).filter((f) => f !== '');
   const said = prompt.hostSaid
-    .map((h) => (typeof h === 'string' ? { about: '', text: h } : h))
+    .map((h): { readonly about: string; readonly text: string; readonly answer?: string } => (typeof h === 'string' ? { about: '', text: h } : h))
     .filter((h) => h.text.trim() !== '')
-    .map((h) => `${h.about ? `${h.about}: ` : ''}${quoteHost(h.text)}`);
+    .map((h) => `${h.about ? `${h.about}: ` : ''}${quoteHost(h.text)}${h.answer === undefined ? '' : ` → ${quoteHost(h.answer)}`}`);
   const lines = [prompt.lead, ...facts, ...(said.length ? [HOST_SAID_LABEL, ...said] : [])];
   const whole = lines.join('\n');
   if ([...whole].length <= cap) return whole;
