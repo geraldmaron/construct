@@ -128,14 +128,20 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
       const id = args.positionals[0]!;
       return withProject(ctx, (project) => {
         const { store, layout, files, root } = project;
-        const declared = declaredFrom(id, args, root);
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
+        // A source only this machine knows (added with --local, or declared from a session) is committed under its own
+        // id and kind, and keeps its sensitivity unless the person names another.
+        const local = svc.list().find((s) => s.id === id && s.origin === 'local');
+        const given = declaredFrom(id, args, root);
+        const declared = local && stringFlag(args, 'sensitivity') === undefined ? { ...given, sensitivity: local.sensitivity } : given;
         if (boolFlag(args, 'local')) {
+          if (svc.list().some((s) => s.id === id)) throw new OperationError(`source ${id} already exists`, '`construct source show ' + id + '` shows it.');
           svc.addLocal({ ...declared }, at);
         } else {
           const current: SourcesFile = files.sources ?? { format: 'construct-sources', formatVersion: 2, sources: [] };
           if (current.sources.some((s) => s.id === id)) throw new OperationError(`source ${id} is already declared`, '`construct source show ' + id + '` shows it.');
+          if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
           requireMainCheckout(project, 'source add (without --local)');
           const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
           writeJsonFile(layout.sourcesFile, next);
@@ -145,7 +151,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const r = svc.status(id, at);
         if (args.json) writeJson(r);
         else {
-          say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ' in .construct/sources.json'}`);
+          say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ` in .construct/sources.json${local ? '; what was already read from it on this machine carries over' : ''}`}`);
           say(`Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`);
         }
         return 0;

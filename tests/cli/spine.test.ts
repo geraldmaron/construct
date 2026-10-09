@@ -55,7 +55,12 @@ test('init refuses a bad scale before writing, and an earlier-alpha file with th
   try {
     const bad = await capture(() => run(['init', '--scale=huge'], box.ctx));
     assert.equal(bad.code, 2);
-    assert.match(bad.err, /--scale must be one of/);
+    assert.match(bad.err, /--scale must be one of side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one: a side project \| your primary product, just you/);
+    // Off the person's own terminal, a side project is refused before anything is written.
+    const relayed = await capture(() => run(['init', '--no-wire', '--scale=a side project'], { ...box.ctx, terminal: { interactive: false, agentAncestor: null } }));
+    assert.equal(relayed.code, 1);
+    assert.match(relayed.err, /side project, which lowers how much challenge work gets, needs your own answer/);
+    assert.equal(existsSync(join(box.cwd, '.construct')), false);
     mkdirSync(join(box.cwd, '.construct'));
     writeFileSync(join(box.cwd, '.construct', 'settings.json'), 'not json', 'utf8');
     const legacy = await capture(() => run(['init'], box.ctx));
@@ -95,6 +100,14 @@ test('status and doctor read the one state universe; doctor is never healthy wit
     assert.equal(record.registry.skills, 17);
     assert.equal(record.registry.workflows, 22);
     assert.deepEqual(record.registry.skew, []);
+    // A project no host is wired to is not healthy, and that is the only thing wrong with it.
+    const unwired = await capture(() => run(['doctor', '--json'], ctx));
+    assert.equal(unwired.code, 1, unwired.out);
+    const failing = (JSON.parse(unwired.out) as { checks: { name: string; ok: boolean; detail: string }[] }).checks.filter((c) => !c.ok);
+    assert.deepEqual(failing.map((c) => c.name), ['host-wiring']);
+    assert.match(failing[0]!.detail, /no host wired, so no agent session can reach Construct; no agent host found on this machine; `construct init --client=<host>` wires one/);
+    const wired = await capture(() => run(['init', '--client=claude-code'], ctx));
+    assert.equal(wired.code, 0, wired.err);
     const doctor = await capture(() => run(['doctor', '--json'], ctx));
     assert.equal(doctor.code, 0, doctor.out);
     const checks = JSON.parse(doctor.out);
@@ -302,4 +315,19 @@ test('an unreadable state directory is a failure sentence, not a stack trace', a
       chmodSync(db, 0o600);
     }
   });
+});
+
+test('init takes --scale in the setup question\'s words, and a side project from the person at their own terminal', async () => {
+  const box = sandbox();
+  try {
+    const solo = await capture(() => run(['init', '--no-wire', '--scale=my primary product', '--json'], box.ctx));
+    assert.equal(solo.code, 0, solo.err);
+    assert.equal(JSON.parse(readFileSync(join(box.cwd, '.construct', 'constitution.json'), 'utf8')).scale, 'solo');
+    const person = { ...box.ctx, terminal: { interactive: true, agentAncestor: null } };
+    const light = await capture(() => run(['init', '--no-wire', '--scale=a side project', '--json'], person));
+    assert.equal(light.code, 0, light.err);
+    assert.equal(JSON.parse(readFileSync(join(box.cwd, '.construct', 'constitution.json'), 'utf8')).scale, 'side_project');
+  } finally {
+    box.cleanup();
+  }
 });

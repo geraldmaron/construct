@@ -15,7 +15,7 @@ import { createWorkflowRegistry } from '../../../src/kernel/registry/workflow-re
 import { stepOrder, readySteps, DependencyCycleError } from '../../../src/kernel/registry/dependency-graph.ts';
 import { lockStatus, updateLock } from '../../../src/kernel/registry/lockfile.ts';
 import { resolveWorkflow, type ResolveInput } from '../../../src/kernel/registry/resolver.ts';
-import { provides, type HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
+import { isKnownValidator, provides, type HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
 import { emptyLock, type RegistryLock } from '../../../src/kernel/project/lock.ts';
 import { createGrant } from '../../../src/kernel/state/grants.ts';
 import { freshStore } from '../state/support.ts';
@@ -272,6 +272,77 @@ test('the resolver names every failure, and a runnable result carries the bound 
     fx.cleanup();
     cleanup();
   }
+});
+
+test('a period and source ids are typed inputs: one period per workflow, part of the work identity, checked by the kernel', () => {
+  const typed = (extra: Record<string, unknown> = {}) => workflowManifest('w', '1.0.0', [step('a', { inputs: { period: 'input.period', sources: 'input.sources' } })], {
+    inputSchema: { target: 'string', period: 'period', sources: 'source_ids' }, requiredInputs: ['period'], dedupeKey: ['target', 'period', 'sources'], ...extra,
+  });
+  const ok = validateWorkflowManifest(typed(), 'w.json');
+  assert.equal(ok.inputSchema.period, 'period');
+  assert.equal(ok.inputSchema.sources, 'source_ids');
+  assert.throws(() => validateWorkflowManifest(typed({ inputSchema: { target: 'string', period: 'period', sources: 'source_ids', also: 'period' } }), 'w.json'), /declares more than one period input; a run covers one period/);
+  assert.throws(() => validateWorkflowManifest(typed({ dedupeKey: ['target', 'sources'] }), 'w.json'), /"dedupeKey" leaves out period; work for a different period is different work/);
+  assert.throws(() => validateWorkflowManifest(typed({ dedupeKey: ['target', 'period'] }), 'w.json'), /"dedupeKey" leaves out sources/);
+  assert.equal(validateWorkflowManifest(typed({ dedupeKey: [] }), 'w.json').dedupeKey.length, 0, 'an empty dedupe key already identifies the work by every input');
+  assert.throws(() => validateWorkflowManifest(typed({ inputSchema: { target: 'string', period: 'daterange', sources: 'source_ids' } }), 'w.json'), /inputSchema.period" must be one of string \| number \| boolean \| string\[\] \| object \| period \| source_ids/);
+  assert.equal(validateWorkflowManifest(workflowManifest('w', '1.0.0', [step('a')], { dedupeKey: ['target', 'owner'] }), 'w.json').dedupeKey.length, 2, 'a dedupe key naming an undeclared input still loads');
+
+  const { root, cleanup } = tmp();
+  const fx = freshStore();
+  try {
+    writeWorkflow(join(root, 'w'), 'digest', typed({ id: 'digest' }));
+    const skills = createSkillRegistry({ builtinDir: join(root, 'b'), projectDir: null });
+    const workflows = createWorkflowRegistry({ builtinDir: join(root, 'w'), projectDir: null });
+    assert.deepEqual(workflows.problems(), []);
+    const lock = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
+    const base: ResolveInput = {
+      workflowId: 'digest', input: { period: { semantics: 'changed_during', relative: 'last_week' }, sources: ['jira'] }, skills, workflows, lock, host: host(),
+      sources: [{ kind: 'jira', id: 'jira', reachability: 'reachable', freshness: 'no_expectation' }], store: fx.store, at: T,
+    };
+    const runnable = resolveWorkflow(base);
+    assert.equal(runnable.status, 'runnable', runnable.summary);
+
+    const malformed = resolveWorkflow({ ...base, input: { period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-07-02', to: '2026-09-30' } } });
+    assert.equal(malformed.status, 'blocked');
+    const bad = malformed.reasons.find((r) => r.code === 'schema_mismatch')!;
+    assert.match(bad.message, /last_quarter on 2026-09-02 \(UTC\) runs from 2026-04-01 to 2026-06-30/);
+    assert.match(bad.remedy, /^Pass period as \{"semantics": as_of \| changed_during \| evidence_window/);
+    const prose = resolveWorkflow({ ...base, input: { period: 'Q3' } });
+    assert.match(prose.reasons.find((r) => r.code === 'schema_mismatch')!.message, /input "period" is string, not a period/);
+
+    const unknown = resolveWorkflow({ ...base, input: { period: { semantics: 'as_of', to: '2026-09-30' }, sources: ['datadog'] } });
+    assert.equal(unknown.status, 'blocked');
+    assert.ok(unknown.reasons.some((r) => r.code === 'unavailable_source' && /datadog/.test(r.message) && /name one of: jira/.test(r.remedy)));
+
+    const missing = resolveWorkflow({ ...base, input: {} });
+    const absent = missing.reasons.find((r) => r.code === 'missing_step_input')!;
+    assert.equal(absent.slot, 'period');
+    assert.match(absent.remedy, /^Provide period as \{"semantics"/);
+    const plain = resolveWorkflow({ ...base, workflowId: 'digest', input: { period: { semantics: 'changed_during', relative: 'last_week' }, target: 5 } });
+    assert.match(plain.reasons.find((r) => r.code === 'schema_mismatch')!.message, /input "target" is number, not string/);
+
+    // The agreement of dates with a relative period is checked at the instant the period was worked out.
+    const asOfThen = { ...base, input: { period: { semantics: 'changed_during', relative: 'last_week', from: '2026-08-24', to: '2026-08-30' } } };
+    assert.equal(resolveWorkflow(asOfThen).status, 'runnable', 'on 2026-09-02 last week was 08-24..08-30');
+    assert.equal(resolveWorkflow({ ...asOfThen, at: '2026-09-09T12:00:00.000Z' }).status, 'blocked');
+    assert.equal(resolveWorkflow({ ...asOfThen, at: '2026-09-09T12:00:00.000Z', periodAt: T }).status, 'runnable');
+  } finally {
+    fx.cleanup();
+    cleanup();
+  }
+});
+
+test('a workflow that covers a period checks every citation against it', () => {
+  const cites = (validators: string[], inputSchema: Record<string, string> = { target: 'string', period: 'period' }) => workflowManifest('w', '1.0.0', [
+    step('gather', { inputs: 'period' in inputSchema ? { period: 'input.period' } : {}, validators }),
+    step('write', { needs: ['gather'], validators: ['schema'] }),
+  ], { inputSchema, requiredInputs: [], dedupeKey: [] });
+  assert.throws(() => validateWorkflowManifest(cites(['citations_present']), 'w.json'), /step "gather" cites evidence but does not check it against the period \(add within_period\)/);
+  assert.throws(() => validateWorkflowManifest(cites(['evidence_refs_resolve', 'excerpts_match']), 'w.json'), /step "gather" cites evidence but does not check it against the period/);
+  assert.equal(validateWorkflowManifest(cites(['citations_present', 'within_period']), 'w.json').steps[0]!.validators.length, 2);
+  assert.equal(validateWorkflowManifest(cites(['citations_present'], { target: 'string' }), 'w.json').steps.length, 2, 'without a period input nothing changes');
+  assert.ok(isKnownValidator('within_period') && isKnownValidator('named_sources_read'));
 });
 
 test('host capabilities honor scope', () => {

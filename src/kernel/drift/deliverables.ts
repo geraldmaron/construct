@@ -18,10 +18,11 @@ import { listLiveDeliverables, type Deliverable } from '../state/deliverables.ts
 import { listSteps } from '../state/steps.ts';
 import { addDriftFinding, listDriftFindings, type DriftFinding } from '../state/drift.ts';
 import { raiseDecision } from '../state/decisions.ts';
-import { stripLocator, type RefResolver } from '../project/evidence.ts';
+import { sourceItemOf, stripLocator, type RefResolver } from '../project/evidence.ts';
+import { normalizeUrl } from '../project/urls.ts';
 import { getSource } from '../state/sources.ts';
 import { join as joinPath, resolve as resolvePath } from 'node:path';
-import type { ItemChanges } from '../source/manifest.ts';
+import type { ItemChanges, ManifestEntry } from '../source/manifest.ts';
 
 function refsOf(store: StateStore, d: Deliverable): string[] {
   const refs = new Set<string>();
@@ -36,7 +37,16 @@ function refsOf(store: StateStore, d: Deliverable): string[] {
 
 export function flagStaleDeliverables(
   store: StateStore,
-  input: { readonly sourceId: string; readonly changes: ItemChanges; readonly resolve: RefResolver; readonly at: string; readonly nextId: () => string; readonly root?: string },
+  input: {
+    readonly sourceId: string;
+    readonly changes: ItemChanges;
+    readonly resolve: RefResolver;
+    readonly at: string;
+    readonly nextId: () => string;
+    readonly root?: string;
+    /** The manifest before this read, so a removed item cited by its address is still matched to it. */
+    readonly previous?: readonly ManifestEntry[] | null;
+  },
 ): DriftFinding[] {
   const { sourceId, changes, resolve, at } = input;
   const touched = new Set([...changes.modified, ...changes.removed]);
@@ -44,6 +54,7 @@ export function flagStaleDeliverables(
   const open = listDriftFindings(store, { status: 'open' });
   const source = getSource(store, sourceId);
   const dirAbs = source?.kind === 'directory' && source.locator ? resolvePath(input.root ?? '', source.locator) : null;
+  const goneAddress = new Map((input.previous ?? []).filter((e) => typeof e.url === 'string').map((e) => [e.ref, normalizeUrl(e.url!)]));
   const out: DriftFinding[] = [];
   const addedOnly: DriftFinding[] = [];
   // One run can leave a challenged draft and then its final deliverable; only the latest speaks for the run.
@@ -60,14 +71,18 @@ export function flagStaleDeliverables(
       if (touched.has(r.itemRef)) hit.push(r.itemRef);
     }
     // A removed item no longer resolves, so match it to this source explicitly: by "<source>:<item>", by a path
-    // that lands on the item inside this directory source, or by a bare key from a non-directory source.
+    // that lands on the item inside this directory source, by a bare key from a non-directory source, or by the
+    // address the read before this one recorded for it. Items match exactly as recorded; only paths are narrowed.
     for (const ref of refsOf(store, d)) {
       const bare = stripLocator(ref);
+      const item = sourceItemOf(ref, sourceId);
+      const address = normalizeUrl(ref);
       for (const gone of changes.removed) {
-        const viaSource = bare === `${sourceId}:${gone}` || bare === `source:${sourceId}:${gone}`;
+        const viaSource = item !== null && (source?.kind === 'directory' ? stripLocator(item) : item) === gone;
         const viaPath = source?.kind === 'directory' && dirAbs !== null && resolvePath(input.root ?? '', bare.replace(/^file:/, '')) === joinPath(dirAbs, gone);
-        const viaKey = source !== null && source.kind !== 'directory' && bare === gone;
-        if (viaSource || viaPath || viaKey) hit.push(gone);
+        const viaKey = source !== null && source.kind !== 'directory' && ref.trim() === gone;
+        const viaUrl = address !== null && source?.kind !== 'directory' && (address === goneAddress.get(gone) || address === normalizeUrl(gone));
+        if (viaSource || viaPath || viaKey || viaUrl) hit.push(gone);
       }
     }
     const uniqueHit = [...new Set(hit)];

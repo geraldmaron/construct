@@ -1,0 +1,303 @@
+{
+  "format": "construct-routing-evals",
+  "formatVersion": 1,
+  "labeledBy": "Claude Fable 5.1, 2026-09-02, under the standing LLM-as-judge rule. Written after every description and activation phrase was final and never used to tune them; wording borrows no skill name. A case added here is never copied into a skill's own eval file, or the measurement stops being held out.",
+  "cases": [
+    {
+      "text": "the guy who built the billing cron quit and I'm supposed to change it next sprint",
+      "skill": "context-mapping"
+    },
+    {
+      "text": "which services would notice if I turned off the legacy auth box",
+      "skill": "context-mapping"
+    },
+    {
+      "text": "we acquired a company and I need to understand their stack before the integration kickoff",
+      "skill": "context-mapping"
+    },
+    {
+      "text": "there's a spreadsheet, a lambda and a slack bot and nobody knows how they connect",
+      "skill": "context-mapping"
+    },
+    {
+      "text": "stripe or adyen, we sign a three year contract either way",
+      "skill": "decision-framing"
+    },
+    {
+      "text": "do we hire a contractor for the redesign or push it to next year",
+      "skill": "decision-framing"
+    },
+    {
+      "text": "the founders disagree on whether to open source the core, help us get to a call",
+      "skill": "decision-framing"
+    },
+    {
+      "text": "rewrite in rust or keep patching the go service, I need to present this thursday",
+      "skill": "decision-framing"
+    },
+    {
+      "text": "users hit the wrong button constantly because the two look identical",
+      "skill": "experience-design"
+    },
+    {
+      "text": "our error messages are just 'something went wrong' everywhere",
+      "skill": "experience-design"
+    },
+    {
+      "text": "the app is unusable with a screen reader according to a customer",
+      "skill": "experience-design"
+    },
+    {
+      "text": "people sign up and then never come back after the first screen",
+      "skill": "experience-design"
+    },
+    {
+      "text": "a german customer asked where their data is stored and I don't know what to say",
+      "skill": "governance-risk"
+    },
+    {
+      "text": "we're taking payments from minors on the new game, is that a problem",
+      "skill": "governance-risk"
+    },
+    {
+      "text": "the auditor asked for our vendor due diligence file and we don't have one",
+      "skill": "governance-risk"
+    },
+    {
+      "text": "the partnership agreement has an exclusivity clause, what does that mean for our roadmap",
+      "skill": "governance-risk"
+    },
+    {
+      "text": "long email chain from the client, three people asking for different things, figure out the actual request",
+      "skill": "intake"
+    },
+    {
+      "text": "my boss dumped a wall of text in slack at midnight, what is he actually asking for",
+      "skill": "intake"
+    },
+    {
+      "text": "transcript of the discovery call attached, what did they commit to and what's still open",
+      "skill": "intake"
+    },
+    {
+      "text": "half a dozen sticky notes from the workshop, make sense of them",
+      "skill": "intake"
+    },
+    {
+      "text": "a blog post says our competitor's outage lasted nine hours, confirm before I mention it in the deck",
+      "skill": "investigative-research"
+    },
+    {
+      "text": "the customer says we promised them a feature in 2024, did we",
+      "skill": "investigative-research"
+    },
+    {
+      "text": "reconstruct who approved the vendor change and when from the ticket history",
+      "skill": "investigative-research"
+    },
+    {
+      "text": "an analyst report quotes a market size that seems made up, trace it",
+      "skill": "investigative-research"
+    },
+    {
+      "text": "the batch job silently stopped running two weeks ago and nobody noticed",
+      "skill": "operations-reliability"
+    },
+    {
+      "text": "black friday is in a month and I have no idea if we'll stay up",
+      "skill": "operations-reliability"
+    },
+    {
+      "text": "our disk filled up and took the database down, again",
+      "skill": "operations-reliability"
+    },
+    {
+      "text": "who gets woken up when the payment webhook fails at 3am",
+      "skill": "operations-reliability"
+    },
+    {
+      "text": "the CEO wants a chatbot, I'm not sure any customer asked for one",
+      "skill": "product-management"
+    },
+    {
+      "text": "we have forty feature requests and one team, help me pick",
+      "skill": "product-management"
+    },
+    {
+      "text": "how would we even know if the new dashboard is a success",
+      "skill": "product-management"
+    },
+    {
+      "text": "a big customer wants a custom integration, should it go on the roadmap",
+      "skill": "product-management"
+    },
+    {
+      "text": "the go-live date was set before anyone estimated the work",
+      "skill": "program-delivery"
+    },
+    {
+      "text": "two of the five workstreams depend on the same person",
+      "skill": "program-delivery"
+    },
+    {
+      "text": "the status report is green but the demo didn't work",
+      "skill": "program-delivery"
+    },
+    {
+      "text": "what has to happen in what order for the data center move",
+      "skill": "program-delivery"
+    },
+    {
+      "text": "the designer and the engineer built different things from the same mockup",
+      "skill": "requirements-structuring"
+    },
+    {
+      "text": "QA asks how they're supposed to test 'improve search'",
+      "skill": "requirements-structuring"
+    },
+    {
+      "text": "we keep reopening this ticket because nobody agrees when it's finished",
+      "skill": "requirements-structuring"
+    },
+    {
+      "text": "write down what the export needs to do before the offshore team starts",
+      "skill": "requirements-structuring"
+    },
+    {
+      "text": "every engineer shares the same database password",
+      "skill": "security-privacy"
+    },
+    {
+      "text": "a customer uploaded a file and it ended up in a public bucket",
+      "skill": "security-privacy"
+    },
+    {
+      "text": "we log full request bodies including credit card numbers",
+      "skill": "security-privacy"
+    },
+    {
+      "text": "a former employee's laptop was never wiped",
+      "skill": "security-privacy"
+    },
+    {
+      "text": "this function has four nested try/catch blocks and I can't tell what it does on failure",
+      "skill": "software-engineering"
+    },
+    {
+      "text": "can I ship this refactor without a feature flag",
+      "skill": "software-engineering"
+    },
+    {
+      "text": "the new dependency pulls in two hundred packages, is that fine",
+      "skill": "software-engineering"
+    },
+    {
+      "text": "review my changes to the payment retry code",
+      "skill": "software-engineering"
+    },
+    {
+      "text": "the all hands said focus on enterprise but every sprint is consumer features",
+      "skill": "strategy-research"
+    },
+    {
+      "text": "our OKRs and our actual backlog have nothing in common",
+      "skill": "strategy-research"
+    },
+    {
+      "text": "leadership announced three priorities and each team picked a different one",
+      "skill": "strategy-research"
+    },
+    {
+      "text": "are we resourced for what the annual plan promises",
+      "skill": "strategy-research"
+    },
+    {
+      "text": "the orders service calls inventory which calls orders",
+      "skill": "system-architecture"
+    },
+    {
+      "text": "should reporting read from the production database or a copy",
+      "skill": "system-architecture"
+    },
+    {
+      "text": "we have one queue for everything and it's becoming a problem",
+      "skill": "system-architecture"
+    },
+    {
+      "text": "where should the tenant boundary live in the new platform",
+      "skill": "system-architecture"
+    },
+    {
+      "text": "this release note is full of buzzwords, fix it",
+      "skill": "written-voice"
+    },
+    {
+      "text": "write the apology to customers for yesterday's data loss",
+      "skill": "written-voice"
+    },
+    {
+      "text": "the onboarding guide sounds like a legal contract",
+      "skill": "written-voice"
+    },
+    {
+      "text": "shorten this exec summary to something people will actually read",
+      "skill": "written-voice"
+    },
+    {
+      "text": "before the board sees this, tell me what they'll attack",
+      "skill": "adversarial-review"
+    },
+    {
+      "text": "steelman the case against our migration plan",
+      "skill": "adversarial-review"
+    },
+    {
+      "text": "I'm sure this design is right, prove me wrong",
+      "skill": "adversarial-review"
+    },
+    {
+      "text": "find the flaw in this pricing proposal",
+      "skill": "adversarial-review"
+    },
+    {
+      "text": "keep in mind we froze the API until the audit is over",
+      "skill": "construct"
+    },
+    {
+      "text": "once a quarter check our roadmap against the OKRs",
+      "skill": "construct"
+    },
+    {
+      "text": "what constraints have we recorded for this project",
+      "skill": "construct"
+    },
+    {
+      "text": "run the security review on the new upload feature",
+      "skill": "construct"
+    },
+    {
+      "text": "what's the difference between a mutex and a semaphore",
+      "skill": "none"
+    },
+    {
+      "text": "format this date as ISO 8601",
+      "skill": "none"
+    },
+    {
+      "text": "add a semicolon at the end of line 12",
+      "skill": "none"
+    },
+    {
+      "text": "good morning",
+      "skill": "none"
+    },
+    {
+      "text": "how many bytes in a kilobyte",
+      "skill": "none"
+    },
+    {
+      "text": "translate this error message to french",
+      "skill": "none"
+    }
+  ]
+}

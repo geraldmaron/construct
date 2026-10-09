@@ -20,8 +20,8 @@ const work = TOOLS.find((t) => t.name === 'work')!;
 const call = (ctx: BrokerContext, args: Record<string, unknown>): unknown => work.run(ctx, work.validate(record(args)));
 const remember = TOOLS.find((t) => t.name === 'remember')!;
 /** A remembered outcome: the reason a session's work is admitted. */
-const reasonFor = (ctx: BrokerContext, text = 'The parser ships'): string =>
-  (remember.run(ctx, remember.validate(record({ kind: 'outcome', text }))) as { remembered: { id: string } }).remembered.id;
+const reasonFor = async (ctx: BrokerContext, text = 'The parser ships'): Promise<string> =>
+  ((await remember.run(ctx, remember.validate(record({ kind: 'outcome', text })))) as { remembered: { id: string } }).remembered.id;
 
 function peer(fx: BrokerFixture, sessionId: string, lane: string | null): BrokerContext {
   const b = fx.broker;
@@ -29,13 +29,13 @@ function peer(fx: BrokerFixture, sessionId: string, lane: string | null): Broker
   return createBrokerContext(fx.ctx, project, { ...fx.binding, sessionId });
 }
 
-test('sessions reserve paths through the work tool: one writer per path in a checkout, a merge risk across worktrees', () => {
+test('sessions reserve paths through the work tool: one writer per path in a checkout, a merge risk across worktrees', async () => {
   const fx = brokerFixture();
   try {
     const a = fx.broker;
     const b = peer(fx, 'ses_b', null);
     const c = peer(fx, 'ses_c', '/tmp/repo-lane');
-    const reason = reasonFor(a);
+    const reason = await reasonFor(a);
     const one = call(a, { action: 'add', serves: reason, title: 'parser' }) as { id: string };
     const two = call(a, { action: 'add', serves: reason, title: 'lexer' }) as { id: string };
     const three = call(a, { action: 'add', serves: reason, title: 'docs' }) as { id: string };

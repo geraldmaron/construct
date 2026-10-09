@@ -4,14 +4,13 @@ description: >-
   Spots compliance, legal, contractual, and financial exposure in plain
   language: what rule or obligation applies, what the evidence is, what a
   licensed professional must settle. Use when the person says things like:
-  we started selling in a new country or industry; a lawyer sent us a
-  letter; we're about to sign this deal, what could bite us; the board wants
-  a risk register; are we allowed to; do we need a policy for this. Research
-  and issue-spotting only, never advice; security controls go to security-
-  privacy.
+  we started selling in a new country or industry; we're about to sign this
+  deal, what could bite us; the board wants a risk register; are we allowed
+  to. Research and issue-spotting only, never advice; security controls go
+  to security-privacy.
 license: Apache-2.0
 metadata:
-  version: 1.0.1
+  version: 1.0.2
   source: geraldmaron/construct
 ---
 # Governance and risk

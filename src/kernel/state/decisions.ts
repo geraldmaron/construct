@@ -8,7 +8,7 @@
 import type { StateStore } from './open.ts';
 import { appendActivity } from './activity.ts';
 import { assertTransition, parseJson, requireInstant, requireNonEmpty, requireOneOf, toJson } from './rows.ts';
-import type { DecisionChannel } from '../policy/channels.ts';
+import { DECISION_CHANNELS, type DecisionChannel } from '../policy/channels.ts';
 
 export const DECISION_KINDS = ['decision', 'approval', 'clarification', 'blocked'] as const;
 export type DecisionKind = (typeof DECISION_KINDS)[number];
@@ -35,6 +35,8 @@ export interface Decision {
   readonly raisedAt: string;
   readonly resolvedAt: string | null;
   readonly resolvedBy: string | null;
+  /** How the answer reached Construct; null while open, and for an answer recorded without one. */
+  readonly channel: DecisionChannel | null;
 }
 
 interface Row {
@@ -50,6 +52,7 @@ interface Row {
   readonly raised_at: string;
   readonly resolved_at: string | null;
   readonly resolved_by: string | null;
+  readonly channel: string | null;
 }
 
 function toDecision(row: Row): Decision {
@@ -67,6 +70,7 @@ function toDecision(row: Row): Decision {
     raisedAt: row.raised_at,
     resolvedAt: row.resolved_at,
     resolvedBy: row.resolved_by,
+    channel: (DECISION_CHANNELS as readonly string[]).includes(row.channel ?? '') ? (row.channel as DecisionChannel) : null,
   };
 }
 
@@ -127,6 +131,14 @@ export function listStepDecisions(store: StateStore, stepRunId: string): Decisio
   return rows.map(toDecision);
 }
 
+/** Every decision raised for one run, in the order they were raised. */
+export function listRunDecisions(store: StateStore, runId: string): Decision[] {
+  const rows = store.db
+    .prepare(`SELECT * FROM decisions WHERE run_id = ? ORDER BY raised_at, id`)
+    .all(runId) as unknown as Row[];
+  return rows.map(toDecision);
+}
+
 export function listOpenDecisions(store: StateStore, runId?: string): Decision[] {
   const rows = store.db
     .prepare(
@@ -136,7 +148,7 @@ export function listOpenDecisions(store: StateStore, runId?: string): Decision[]
   return rows.map(toDecision);
 }
 
-/** Record the answer. `channel` says how it reached Construct and lands in the activity row; null when unknown. */
+/** Record the answer. `channel` says how it reached Construct; it is kept on the decision and its activity row, null when unknown. */
 export function resolveDecision(
   store: StateStore,
   input: { readonly id: string; readonly resolution: unknown; readonly by: string; readonly at: string; readonly channel?: DecisionChannel },
@@ -154,9 +166,9 @@ export function resolveDecision(
     }
     store.db
       .prepare(
-        `UPDATE decisions SET state = 'resolved', resolution_json = ?, resolved_at = ?, resolved_by = ? WHERE id = ?`,
+        `UPDATE decisions SET state = 'resolved', resolution_json = ?, resolved_at = ?, resolved_by = ?, channel = ? WHERE id = ?`,
       )
-      .run(toJson(input.resolution), input.at, input.by, input.id);
+      .run(toJson(input.resolution), input.at, input.by, input.channel ?? null, input.id);
     appendActivity(store, {
       at: input.at,
       kind: 'decision.resolved',

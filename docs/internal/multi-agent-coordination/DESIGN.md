@@ -699,7 +699,7 @@ It already owns the ledger and the leases, and MANDATE rows 152, 190, 196 and 19
 4. Changing a declared dependency marks the dependent premise stale.
 5. A model session can't take a role or grant without a person channel.
 6. `.env` is never admitted.
-7. A class eval of at least 200 labeled sentences has recorded precision and recall per class, and outward acts come back `confirmBeforeProceeding:true`.
+7. A class eval of at least 200 labeled sentences has recorded precision and recall per class.
 
 ### Phase 4: template and validator substance
 

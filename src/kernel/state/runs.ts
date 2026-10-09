@@ -299,7 +299,13 @@ export function setCancelRequested(store: StateStore, id: string, at: string): W
   return getRun(store, id)!;
 }
 
-export function findActiveByWorkIdentity(store: StateStore, workIdentity: string): WorkflowRun | null {
-  return listActiveRuns(store).find((r) => r.workIdentity === workIdentity) ?? null;
+/** The oldest unfinished run of this work; `includeBlocked: false` passes over runs that are blocked. */
+export function findActiveByWorkIdentity(
+  store: StateStore,
+  workIdentity: string,
+  opts: { readonly includeBlocked?: boolean } = {},
+): WorkflowRun | null {
+  const includeBlocked = opts.includeBlocked ?? true;
+  return listActiveRuns(store).find((r) => r.workIdentity === workIdentity && (includeBlocked || r.state !== 'blocked')) ?? null;
 }
 

@@ -34,6 +34,8 @@ export interface Fixture {
   /** Called whenever a service looks a skill up; a test sets it to act at that moment. */
   onSkillLookup: (() => void) | null;
   tick(ms?: number): void;
+  /** The fixture clock's instant. */
+  now(): string;
   /** Open another session on this store, with a lock wait and host of its own. */
   peer(opts?: { readonly busyTimeoutMs?: number; readonly host?: Partial<HostCapabilities> }): Peer;
   cleanup(): void;
@@ -75,6 +77,31 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   writeWorkflow(join(dirs.root, 'workflows'), 'ship', workflowManifest('ship', '1.0.0', [
     step('do', { outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] }),
   ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'brief', workflowManifest('brief', '1.0.0', [
+    step('write', { tier: 'draft', capabilities: ['model_review'], outputs: ['summary'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['target'], inputSchema: { target: 'string', scope: 'string' }, requiredInputs: ['target'] }));
+  writeWorkflow(join(dirs.root, 'workflows'), 'tally', workflowManifest('tally', '1.0.0', [
+    step('count', { capabilities: ['read_project_context'], sources: [{ kind: 'jira', freshness: 'any', required: true }], outputs: ['count'] }),
+  ], { concurrency: 'per_input', onStaleData: 'block', inputSchema: {}, requiredInputs: [] }));
+  // A digest of what changed over a period, from the sources it names: the kernel-typed inputs.
+  writeWorkflow(join(dirs.root, 'workflows'), 'digest', workflowManifest('digest', '1.0.0', [
+    step('gather', { capabilities: ['read_project_context'], inputs: { target: 'input.target', period: 'input.period', sources: 'input.sources' }, outputs: ['notes'], validators: ['citations_present', 'within_period'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
+    step('write', { needs: ['gather'], tier: 'draft', capabilities: ['model_review'], inputs: { notes: 'steps.gather.notes', period: 'input.period' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'], loadBearing: true }),
+  ], { triggers: ['manual', 'schedule'], concurrency: 'per_input', interactionClass: 'manage', inputSchema: { target: 'string', period: 'period', sources: 'source_ids' }, requiredInputs: ['period'], dedupeKey: ['target', 'period', 'sources'], deliverable: { kind: 'digest', schema: 'digest/v1', challenge: false } }));
+  // Read, then run a check the host reports: the verification an acceptance question names.
+  writeWorkflow(join(dirs.root, 'workflows'), 'check', workflowManifest('check', '1.0.0', [
+    step('gather', { capabilities: ['read_project_context'], outputs: ['notes'], validators: ['citations_present'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
+    step('verify', { needs: ['gather'], capabilities: ['run_tests'], inputs: { notes: 'steps.gather.notes' }, outputs: ['verification'], validators: ['verification_result'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['target'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false } }));
+  // Plan, then do: a plan's blocking questions wait for the person, and the step after it receives their answers.
+  writeWorkflow(join(dirs.root, 'workflows'), 'carry', workflowManifest('carry', '1.0.0', [
+    step('plan', { tier: 'draft', capabilities: ['model_review'], inputs: { request: 'input.request' }, outputs: ['plan', 'assumptions', 'blockers'], validators: ['schema'] }),
+    step('do', { needs: ['plan'], tier: 'draft', capabilities: ['model_review'], inputs: { request: 'input.request', plan: 'steps.plan.plan' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
+  // A plan that is the whole run: its deliverable exists while its questions are still open.
+  writeWorkflow(join(dirs.root, 'workflows'), 'scope', workflowManifest('scope', '1.0.0', [
+    step('plan', { tier: 'draft', capabilities: ['model_review'], inputs: { request: 'input.request' }, outputs: ['plan', 'blockers'], validators: ['schema'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['request'], deliverable: { kind: 'plan', schema: 'plan/v1', challenge: false }, inputSchema: { request: 'string' }, requiredInputs: ['request'] }));
   const registry = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
   const skills: SkillRegistry = { ...registry, get: (id) => (self.onSkillLookup?.(), registry.get(id)) };
   const workflows = createWorkflowRegistry({ builtinDir: join(dirs.root, 'workflows'), projectDir: null });
@@ -107,6 +134,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     sources,
     onSkillLookup: null,
     tick: (ms = 1000) => { t += ms; },
+    now,
     peer: (peerOpts = {}) => {
       const store = openStateStore(fx.dbPath, { busyTimeoutMs: peerOpts.busyTimeoutMs });
       peers.push(store);
@@ -124,6 +152,6 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
       dirs.cleanup();
     },
   };
-  (self as { triggers: TriggerService }).triggers = createTriggerService({ store: fx.store, workflows, workflowService: self.service, now, nextId, projectRoot: '/repo' });
+  (self as { triggers: TriggerService }).triggers = createTriggerService({ store: fx.store, workflows, workflowService: self.service, sources: () => self.sources, now, nextId, projectRoot: '/repo' });
   return self;
 }

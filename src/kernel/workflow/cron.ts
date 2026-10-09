@@ -1,8 +1,13 @@
 /**
  * kernel/workflow/cron.ts — when a five-field cron expression next fires in a
- * timezone. No dependency: wall-clock parts come from Intl, and the search
- * walks forward minute by minute, skipping whole days that cannot match.
+ * timezone. No dependency: wall-clock parts come from the kernel calendar,
+ * and the search walks forward minute by minute, skipping whole days that
+ * cannot match.
  */
+
+import { isValidTimezone, wallClock, type WallClock } from '../calendar.ts';
+
+export { isValidTimezone };
 
 export interface CronFields {
   readonly minutes: ReadonlySet<number>;
@@ -48,36 +53,6 @@ export function parseCron(expression: string): CronFields {
   const months = field(mo, 1, 12, 'month');
   const weekdays = field(w.replace(/\b7\b/g, '0'), 0, 6, 'weekday');
   return { minutes: minutes.set, hours: hours.set, days: days.set, months: months.set, weekdays: weekdays.set, dayRestricted: days.restricted, weekdayRestricted: weekdays.restricted };
-}
-
-interface WallClock {
-  readonly minute: number;
-  readonly hour: number;
-  readonly day: number;
-  readonly month: number;
-  readonly weekday: number;
-}
-
-const formatters = new Map<string, Intl.DateTimeFormat>();
-
-function wallClock(instant: Date, timezone: string): WallClock {
-  let f = formatters.get(timezone);
-  if (!f) {
-    f = new Intl.DateTimeFormat('en-US', { timeZone: timezone, hourCycle: 'h23', minute: '2-digit', hour: '2-digit', day: '2-digit', month: '2-digit', weekday: 'short' });
-    formatters.set(timezone, f);
-  }
-  const parts = Object.fromEntries(f.formatToParts(instant).map((p) => [p.type, p.value]));
-  const weekdays: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  return { minute: Number(parts.minute), hour: Number(parts.hour), day: Number(parts.day), month: Number(parts.month), weekday: weekdays[parts.weekday!] ?? 0 };
-}
-
-export function isValidTimezone(timezone: string): boolean {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function matches(c: CronFields, w: WallClock): boolean {
