@@ -75,7 +75,7 @@ Workflow manifest: `construct-workflow` 1. User defaults:
 `construct work restore` refuses any other with its own error, not the
 reset instruction.
 
-Only the state database migrates. A complete store in format 2 or 3 is
+Only the state database migrates. A complete store in format 2, 3 or 4 is
 upgraded, one way, by `construct migrate` and nothing else: stop every
 Construct session on the project first, since one still running an older
 Construct would go on writing to the store without format 4's protections.

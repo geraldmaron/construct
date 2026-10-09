@@ -4,6 +4,7 @@
  */
 import { createHash } from 'node:crypto';
 import { dirname, resolve as resolvePath } from 'node:path';
+import { REDACTION_PLACEHOLDER } from '../render/redact.ts';
 import type { RefResolver, ResolvedRef } from '../project/evidence.ts';
 
 export const RESEARCH_LIMITS = Object.freeze({ documents: 48, links: 96, bytes: 2 * 1024 * 1024 });
@@ -27,14 +28,18 @@ function identity(hit: ResolvedRef | null, ref: string): string {
 /** Conservative URI and inline Markdown link extraction, not a full document parser. */
 export function referencesIn(text: string, from?: ResolvedRef): string[] {
   const refs = new Set<string>();
-  for (const match of text.matchAll(/\b[a-z][a-z0-9+.-]*:\/\/[^\s<>"'`()[\]{}]+/gi)) {
+  for (const match of text.matchAll(/\b[a-z][a-z0-9+.-]*:\/\/[^\s<>"'`(){}]+/gi)) {
+    if (match[0].includes(REDACTION_PLACEHOLDER)) continue;
     refs.add(match[0].replace(/[.,;:!?]+$/, ''));
   }
-  if (from?.path) {
-    for (const match of text.matchAll(/\[[^\]\n]*\]\(<?([^\s)<>]+)>?(?:\s+"[^"\n]*")?\)/g)) {
-      const target = match[1]!;
-      if (!target.startsWith('#') && !/^[a-z][a-z0-9+.-]*:/i.test(target)) refs.add(resolvePath(dirname(from.path), target));
-    }
+  const uriBase = [from?.url, from?.ref, from?.itemRef].find((value) => value && /^[a-z][a-z0-9+.-]*:\/\//i.test(value));
+  for (const match of text.matchAll(/\[[^\]\n]*\]\(<?([^\s)<>]+)>?(?:\s+"[^"\n]*")?\)/g)) {
+    const target = match[1]!;
+    if (target.includes(REDACTION_PLACEHOLDER) || target.startsWith('#') || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+    if (from?.path) refs.add(resolvePath(dirname(from.path), target));
+    else if (uriBase) {
+      try { refs.add(new URL(target, uriBase).href); } catch { refs.add(target); }
+    } else refs.add(target); // Unknown bases remain visible instead of silently dropping a dependency.
   }
   return [...refs];
 }

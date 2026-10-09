@@ -103,3 +103,22 @@ session is refused. It reaches `project_write` at most, so a step above that
 tier is refused with the reason, and a step that needs a decision waits for
 your answer; the runner cannot give it. It cannot delegate, use the work
 ledger, or remember anything.
+
+### Observed command verification
+
+A host with a terminal can invoke `construct run verify <run> --step=<step>
+--token=<current-token> --command='<JSON argv>'` inside its existing sandbox.
+The adapter launches exactly that argument array without an implicit shell,
+records the actual exit, timeout, output digest and redacted excerpt, and
+binds the receipt to the current leased attempt and artifact bytes. Additional
+`--subject` paths extend the checked subject. The MCP server does not execute
+commands. An expired lease, failed command, changed subject, or another run's
+receipt cannot satisfy execution verification.
+
+Submit the returned `executionRef` under `verification`. Work may retain
+structural validation and an assistant's inspection report, but acceptance
+and finalization of a workflow that requires `run_tests` also require valid
+observed execution. Receipt fields in an output cannot forge this observation.
+A command exit does not prove the command was sufficient, that every claim
+follows from its sources, or that a model applied a professional method well.
+Those limits remain explicit in the receipt and answer-check results.

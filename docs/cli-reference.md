@@ -232,6 +232,12 @@ Reads only: no.
 
 ## Workflows
 
+### `construct workflow executors`
+
+which hosts have an unattended adapter and which require provisioning
+
+Reads only: yes.
+
 ### `construct workflow list`
 
 the workflows this project can run, with versions and what starts them
@@ -314,6 +320,8 @@ fire a trigger now, as an external clock would
 |---|---|---|
 | `--key` | yes | the clock’s key for this tick (same key, same run) |
 | `--dry-run` | no | preflight only |
+| `--execute` | yes | explicit unattended host adapter (codex); otherwise only record the tick |
+| `--timeout-ms` | yes | bounded executor timeout (default 900000) |
 
 Reads only: no.
 
@@ -324,6 +332,7 @@ print the cron line or CI job that fires a trigger
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--clock` | yes | cron or github-actions (default cron) |
+| `--executor` | yes | explicit host adapter for the recipe; without one it remains unprovisioned |
 
 Reads only: yes.
 
@@ -556,6 +565,20 @@ one-way import of a frozen tracker JSONL snapshot
 Reads only: no.
 
 ## Runs
+
+### `construct run verify <id>`
+
+observe a verification command inside the invoking host sandbox and bind its exit to a held step
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--step` | yes | the currently leased step run id |
+| `--token` | yes | the current step lease token |
+| `--command` | yes | JSON array of program and arguments; no implicit shell |
+| `--subject` | yes, repeatable | additional project artifact to bind by content |
+| `--timeout-ms` | yes | bounded command timeout (default 120000) |
+
+Reads only: no.
 
 ### `construct run list`
 

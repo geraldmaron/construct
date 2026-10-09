@@ -86,14 +86,14 @@ export interface HostCapabilities {
 
 /**
  * Whether a required capability is provided, honoring scope.
- * `read_source:jira` needs that exact scope or the unscoped name.
+ * `read_source:jira` needs that exact scope. A generic host claim is not connector discovery.
  * An unscoped requirement (`read_source`) is met by the unscoped grant or
  * any scoped grant of the same base — a directory reader does not invent Jira.
  */
 export function provides(host: HostCapabilities, required: CapabilityName): boolean {
   if (host.available.has(required)) return true;
   const base = required.includes(':') ? required.slice(0, required.indexOf(':')) : required;
-  if (host.available.has(base)) return true;
+  if (host.available.has(base) && base !== 'read_source' && base !== 'write_source') return true;
   if (!required.includes(':')) {
     for (const name of host.available) {
       if (name.startsWith(`${required}:`)) return true;

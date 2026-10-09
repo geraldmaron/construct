@@ -14,7 +14,7 @@ import { TOOLS, ownerFor } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import { addSource } from '../../../src/kernel/state/sources.ts';
 import { skillQuality } from '../../../src/kernel/state/quality.ts';
-import { brokerFixture } from './support.ts';
+import { brokerFixture, observedVerification } from './support.ts';
 
 const call = async (fx: ReturnType<typeof brokerFixture>, name: string, args: Record<string, unknown> = {}): Promise<any> => {
   const t = TOOLS.find((x) => x.name === name)!;
@@ -58,7 +58,8 @@ test('work resting on confidential sources carries that label, and publishing it
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
     await submit(fx, await step(fx, runId), { summary: 'risk', findings: ['18%'], changes: ['docs/brief.md'], artifact: 'docs/brief.md' }, [{ ref: 'docs/finance.md' }]);
-    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
+    const verificationWork = await step(fx, runId);
+    const done = await submit(fx, verificationWork, { verification: await observedVerification(fx, verificationWork), passed: true }, [{ ref: 'docs/brief.md' }]);
     assert.equal(done.deliverable.trust, 'validated', JSON.stringify(done.validation));
     const status = await call(fx, 'run_status', { runId });
     assert.equal(status.deliverables.at(-1).body.sensitivity, 'confidential');

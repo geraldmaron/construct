@@ -1,3 +1,4 @@
+import { namedArtifactPath } from './verification.ts';
 /**
  * kernel/workflow/validators.ts — the deterministic checks a step output or
  * deliverable must pass. Each validator is named in a workflow manifest and
@@ -249,11 +250,7 @@ export function evaluateExpression(expr: string): number | null {
 }
 
 /** A file an output names: a path, or {path}; a {path, removed: true} entry names a file that is gone. */
-function namedPath(x: unknown): string | null {
-  if (typeof x === 'string') return x.trim() !== '' ? x.trim() : null;
-  if (isRecord(x) && typeof x.path === 'string' && x.path.trim() !== '' && x.removed !== true) return x.path.trim();
-  return null;
-}
+const namedPath = namedArtifactPath;
 
 /** The files an output lists under "changes". */
 function changedPaths(output: unknown): string[] {
@@ -512,11 +509,11 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const exit = verification.exitStatus ?? verification.exit ?? output.exitStatus;
     const revision = verification.revision ?? output.revision;
     const result = verification.result ?? output.result;
-    if (command === undefined && result === undefined && passed === undefined) {
-      problems.push('verification carries no command result, exit status, or passed flag');
+    if (!(typeof command === 'string' && command.trim() && typeof exit === 'number') && !(typeof result === 'string' && result.trim())) {
+      problems.push('verification needs a command with observed exit status, or a non-empty inspection result; passed:true alone is not evidence');
     }
     if (typeof result === 'string' && result.trim() === '') problems.push('verification result is empty');
-    if (exit !== undefined && exit !== 0 && passed === true) {
+    if (exit !== undefined && exit !== 0) {
       problems.push('a failing exit status cannot be recorded as passed');
     }
     if (revision === 'old' || verification.staleRevision === true) {

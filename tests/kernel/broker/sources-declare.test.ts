@@ -205,3 +205,37 @@ test('the person commits a declared source with construct source add, and what w
     fx.cleanup();
   }
 });
+
+
+test('the public source report preserves schema and access outcomes without treating empty results as deletion', async () => {
+  const fx = brokerFixture();
+  try {
+    await call(fx, 'sources', { action: 'declare', id: 'telemetry', kind: 'other' });
+    const initial = await call(fx, 'sources', { action: 'report', id: 'telemetry', items: [{ ref: 'measurement', text: 'reading 250', schema: { units: { reading: 'milliseconds' } }, fingerprint: 'provider-v1' }] });
+    const empty = await call(fx, 'sources', { action: 'report', id: 'telemetry', outcome: 'no_results', scope: 'search: unrelated topic', reason: 'Successful query returned no matches', coverage: { complete: true } });
+    assert.equal(empty.outcome, 'no_results');
+    const status = await call(fx, 'sources', { action: 'show', id: 'telemetry' });
+    assert.equal(status.lastSnapshot.id, initial.snapshot.id);
+    assert.equal(status.access.evidence.provenance, 'reported');
+    assert.equal(status.access.evidence.outcome, 'no_results');
+    assert.equal(status.access.evidence.sessionId, fx.broker.sessionId);
+  } finally { fx.cleanup(); }
+});
+
+
+test('scoped source reports do not mutate grants or disable other readable sources', async () => {
+  const fx = brokerFixture();
+  try {
+    const available = [...fx.broker.host.available].sort();
+    const permitted = [...fx.broker.host.permitted!].sort();
+    for (const id of ['handbook', 'contract']) await call(fx, 'sources', { action: 'declare', id, kind: 'docs' });
+    await call(fx, 'sources', { action: 'report', id: 'handbook', items: [{ ref: 'policy', text: 'Current policy' }] });
+    await call(fx, 'sources', { action: 'report', id: 'contract', outcome: 'permission_denied', scope: 'restricted-deed', reason: 'Provider denied this item' });
+    assert.deepEqual([...fx.broker.host.available].sort(), available);
+    assert.deepEqual([...fx.broker.host.permitted!].sort(), permitted);
+    assert.notEqual(fx.broker.host.available, fx.broker.host.permitted);
+    assert.equal(getSource(fx.broker.store, 'handbook')?.reachability, 'reachable');
+    assert.ok(fx.broker.host.reported?.includes('read_source:docs:handbook:read'));
+    assert.ok(!fx.broker.host.reported?.includes('read_source:docs'));
+  } finally { fx.cleanup(); }
+});

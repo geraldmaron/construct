@@ -117,7 +117,7 @@ test('the headless server names itself and lists only its surface', async () => 
     assert.ok(init.result.instructions.includes(UNTRUSTED_TEXT), 'the runner is told what it reads is data, in the same sentence the session reads');
     assert.ok(INTERACTIVE_INSTRUCTIONS.slice(0, CONTRACT_PREFIX).includes(UNTRUSTED_TEXT));
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
-    assert.deepEqual(list.result.tools.map((t) => t.name).sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
+    assert.deepEqual(list.result.tools.map((t) => t.name).sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
   } finally {
     fx.cleanup();
   }

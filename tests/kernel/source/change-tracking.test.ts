@@ -20,7 +20,7 @@ import { readDirectorySource } from '../../../src/hosts/sources/directory.ts';
 import { createJiraFixtureReader, FIXTURE_TEXT_CAP } from '../../../src/hosts/sources/jira-fixture.ts';
 import { hostReaders } from '../../../src/hosts/sources/readers.ts';
 import { createSourceService } from '../../../src/kernel/source/service.ts';
-import { brokerFixture } from '../broker/support.ts';
+import { brokerFixture, observedVerification } from '../broker/support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
 async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Record<string, unknown> = {}): Promise<Record<string, any>> {
@@ -144,7 +144,7 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     const { runId } = await runManaged(fx, [{ ref: 'notes/pricing.md', excerpt: 'Enterprise only' }], ['v1 is Enterprise only']);
     const w = (await call(fx, 'claim_work', { runId })).work;
-    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
+    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
     assert.equal(rec.run.state, 'succeeded');
     assert.deepEqual(rec.evidence, { witnessed: 1, reported: 0, unverified: 0, unresolved: 0 });
 
@@ -178,7 +178,7 @@ test('new files in a busy source raise one question for the refresh, not one per
     for (const n of [1, 2]) {
       const { runId } = await runManaged(fx, [{ ref: 'notes/a.md', excerpt: 'alpha' }], [`finding ${String(n)}`], `summarize the notes, pass ${String(n)}`);
       const w = (await call(fx, 'claim_work', { runId })).work;
-      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'notes/a.md' }] });
+      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'notes/a.md' }] });
     }
     const before = listOpenDecisions(s).length;
     writeFileSync(join(dir, 'b.md'), 'new');
@@ -247,7 +247,7 @@ test('removing a file only flags work that cited that file in that source, not a
     await call(fx, 'sources', { action: 'report', id: 'web', partial: true, items: [{ ref: 'https://example.com/plan.md', text: 'other plan' }] });
     const { runId } = await runManaged(fx, [{ ref: 'docs/plan.md' }, { ref: 'https://example.com/plan.md' }], ['other plan'], 'summarize the other plan');
     const w = (await call(fx, 'claim_work', { runId })).work;
-    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
+    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
     rmSync(join(dir, 'plan.md'));
     const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     assert.deepEqual(r.changes.removed, ['plan.md']);
@@ -261,7 +261,7 @@ async function finishedCiting(fx: ReturnType<typeof brokerFixture>, refs: string
   const { runId, done } = await runManaged(fx, refs.map((ref) => ({ ref })), ['the ledger is called synchronously'], `summarize the architecture page, cited as ${name}`);
   assert.equal(done.step.state, 'succeeded', JSON.stringify(done.validation));
   const w = (await call(fx, 'claim_work', { runId })).work;
-  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: refs.map((ref) => ({ ref })) });
+  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: refs.map((ref) => ({ ref })) });
   assert.equal(verified.run.state, 'succeeded', JSON.stringify(verified.validation));
   return runId;
 }

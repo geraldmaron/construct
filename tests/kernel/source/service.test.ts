@@ -12,8 +12,10 @@ import { createSourceService, REPORTED_TEXT_CAP } from '../../../src/kernel/sour
 import { locatorProblem, parseDocsLocator } from '../../../src/kernel/source/locators.ts';
 import { describeConnector, connectorDeclaration, BUILTIN_CONNECTOR_DECLARATIONS, type SourceReader } from '../../../src/kernel/source/connector.ts';
 import { validateSourcesFile } from '../../../src/kernel/project/sources-file.ts';
-import { getSource, listSources, authorityOf } from '../../../src/kernel/state/sources.ts';
+import { getSource, listSources, authorityOf, freshnessOf } from '../../../src/kernel/state/sources.ts';
 import { listObservations, recordObservation } from '../../../src/kernel/state/drift.ts';
+import { projectResolver } from '../../../src/kernel/source/resolver.ts';
+import { listEntities } from '../../../src/kernel/state/graph.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { freshStore, clock } from '../state/support.ts';
 
@@ -151,7 +153,7 @@ test('refresh records a snapshot once per digest, marks reachability, and observ
     digest = 'bbb';
     const third = await svc.refresh('jira', at(), nextId);
     assert.equal(third.outcome, 'changed');
-    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).map((o) => o.kind), ['source.changed', 'source.changed']);
+    assert.deepEqual(listObservations(fx.store, { sourceId: 'jira' }).filter((o) => o.kind === 'source.changed').map((o) => o.kind), ['source.changed', 'source.changed']);
 
     fail = true;
     const down = await svc.refresh('jira', at(), nextId);
@@ -297,4 +299,146 @@ test('unchanged provider versions cannot conceal corrected content, including be
   } finally {
     fx.cleanup();
   }
+});
+
+
+test('read revocation refuses refresh, reports, peeks and cached evidence without deleting audit history', async () => {
+  const fx = freshStore();
+  try {
+    let calls = 0, n = 0;
+    const at = clock();
+    const next = () => `permission-${++n}`;
+    const reader: SourceReader = async () => { calls += 1; return { outcome: 'read', report: { digest: 'one', evidence: 'witnessed', summary: 'one', items: [{ externalRef: 'SAME-1', kind: 'item', name: 'read', attributes: { text: 'private source text', fingerprint: 'one' } }] } }; };
+    const read = createSourceService(fx.store, { readers: new Map([['jira', reader]]) });
+    const reported = createSourceService(fx.store, { readers: new Map() });
+    read.syncDeclarations(file([jira]), at());
+    await read.refresh('jira', at(), next);
+    assert.equal(projectResolver(fx.store, fx.root)('jira:SAME-1')?.text, 'private source text');
+    read.syncDeclarations(file([{ ...jira, capabilities: { read: false, write: false } }]), at());
+    await assert.rejects(read.refresh('jira', at(), next), /read permission is disabled/);
+    assert.throws(() => reported.reportRead('jira', { items: [{ ref: 'SAME-1', text: 'new' }] }, at(), next), /read permission is disabled/);
+    assert.equal(await read.peek('jira'), null);
+    assert.equal(read.canRead('jira'), false);
+    assert.equal(calls, 1);
+    assert.equal(projectResolver(fx.store, fx.root)('jira:SAME-1'), null);
+    assert.equal(projectResolver(fx.store, fx.root, null, { hostReads: 'accept' })('SAME-1'), null);
+    assert.ok(currentManifest(fx.store, 'jira')?.length, 'history remains available to an explicit audit');
+  } finally { fx.cleanup(); }
+});
+
+test('observed artifacts in different sources retain different identities for the same item ref', async () => {
+  const fx = freshStore();
+  try {
+    let n = 0;
+    const at = clock();
+    const svc = createSourceService(fx.store, { readers: new Map([['jira', async () => ({ outcome: 'read', report: { digest: 'same', summary: 'same id', evidence: 'witnessed', items: [{ externalRef: 'SAME-1', kind: 'item', name: 'item' }] } })]]) });
+    svc.syncDeclarations(file([jira, { ...jira, id: 'second' }]), at());
+    await svc.refresh('jira', at(), () => `identity-${++n}`);
+    await svc.refresh('second', at(), () => `identity-${++n}`);
+    assert.deepEqual(listEntities(fx.store, { kind: 'artifact' }).map((e) => e.externalRef).sort(), ['source:jira:SAME-1', 'source:second:SAME-1']);
+  } finally { fx.cleanup(); }
+});
+
+
+test('empty queries and distinct access failures preserve previous evidence and scoped provenance', () => {
+  const fx = freshStore();
+  try {
+    const at = clock(); let n = 0;
+    const next = () => `observation-${++n}`;
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([jira]), at());
+    const original = svc.reportRead('jira', { items: [{ ref: '42', text: 'Known previous fact' }] }, at(), next);
+    for (const outcome of ['no_results', 'permission_denied', 'auth_required', 'unsupported', 'unreachable'] as const) {
+      const report = svc.reportRead('jira', { outcome, items: [], reason: 'Actual connector response', scope: 'query: the requested topic', sessionId: 'session-a', coverage: { complete: false } }, at(), next);
+      assert.equal(report.outcome, outcome);
+      assert.equal(report.snapshot, null);
+      assert.equal(svc.status('jira', at()).lastSnapshot?.id, original.snapshot?.id);
+      assert.equal(currentManifest(fx.store, 'jira')?.[0]?.text, 'Known previous fact');
+      assert.deepEqual(svc.status('jira', at()).access?.evidence, { provenance: 'reported', scope: 'query: the requested topic', reason: 'Actual connector response', sessionId: 'session-a', coverage: { complete: false }, outcome });
+    }
+    assert.throws(() => svc.reportRead('jira', { outcome: 'no_results', items: [] }, at(), next), /scope and reason/);
+    assert.throws(() => svc.reportRead('jira', { outcome: 'permission_denied', items: [{ ref: '42' }], reason: 'denied', scope: '42' }, at(), next), /cannot contain read items/);
+  } finally { fx.cleanup(); }
+});
+
+test('schema and units are content identity, independent of metadata ordering and provider timestamp', () => {
+  const fx = freshStore();
+  try {
+    const at = clock(); let n = 0; const next = () => `schema-${++n}`;
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([jira]), at());
+    const item = { ref: 'metric', updatedAt: '2026-10-01', text: 'value: 1.0' };
+    svc.reportRead('jira', { items: [{ ...item, schema: { version: 'v1', fields: { value: 'number' }, units: { value: 'percent' } } }] }, at(), next);
+    const reordered = svc.reportRead('jira', { items: [{ ...item, schema: { units: { value: 'percent' }, fields: { value: 'number' }, version: 'v1' } }] }, at(), next);
+    assert.equal(reordered.outcome, 'unchanged');
+    const changed = svc.reportRead('jira', { items: [{ ...item, schema: { version: 'v2', fields: { value: 'number' }, units: { value: 'basis_points' } } }] }, at(), next);
+    assert.deepEqual(changed.changes?.modified, ['metric']);
+    assert.deepEqual(currentManifest(fx.store, 'jira')?.[0]?.schema, { version: 'v2', fields: { value: 'number' }, units: { value: 'basis_points' } });
+  } finally { fx.cleanup(); }
+});
+
+
+test('complete and partial weak sightings preserve stronger explicitly observed items', () => {
+  for (const partial of [true, false]) {
+    const fx = freshStore();
+    try {
+      let n = 0; const next = () => `weak-${++n}`;
+      const svc = createSourceService(fx.store, { readers: new Map() });
+      svc.syncDeclarations(file([jira]), '2026-10-01T00:00:00Z');
+      svc.reportRead('jira', { items: [{ ref: 'alpha', text: 'Strong original body', updatedAt: '2026-10-01' }] }, '2026-10-01T00:00:00Z', next);
+      const result = svc.reportRead('jira', { partial, items: [{ ref: 'alpha', weak: true, title: 'A search sighting' }] }, '2026-10-09T00:00:00Z', next);
+      assert.equal(result.outcome, 'unchanged');
+      assert.equal(currentManifest(fx.store, 'jira')?.[0]?.text, 'Strong original body');
+    } finally { fx.cleanup(); }
+  }
+});
+
+test('one refreshed item cannot freshen an unread or weakly observed item', () => {
+  const fx = freshStore();
+  try {
+    let n = 0; const next = () => `fresh-${++n}`;
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([docs]), '2026-10-01T00:00:00Z');
+    svc.reportRead('docs', { items: [{ ref: 'a', text: 'First' }, { ref: 'b', text: 'Second' }] }, '2026-10-01T00:00:00Z', next);
+    svc.reportRead('docs', { partial: true, items: [{ ref: 'a', text: 'Corrected first' }, { ref: 'b', weak: true }] }, '2026-10-09T00:00:00Z', next);
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z'), 'stale');
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z', ['a']), 'fresh');
+    svc.reportRead('docs', { partial: true, items: [{ ref: 'b', text: 'Second' }] }, '2026-10-09T00:00:00Z', next);
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-09T00:00:00Z'), 'fresh');
+  } finally { fx.cleanup(); }
+});
+
+
+test('freshness follows successful item observations across unchanged and A-B-A content', () => {
+  const fx = freshStore();
+  try {
+    let n = 0; const next = () => `reread-${++n}`;
+    const svc = createSourceService(fx.store, { readers: new Map() });
+    svc.syncDeclarations(file([{ ...docs, freshnessHours: 1 }]), '2026-10-01T00:00:00Z');
+    const report = (text: string, at: string) => svc.reportRead('docs', { items: [{ ref: 'policy', text }] }, at, next);
+    report('A', '2026-10-01T00:00:00Z');
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
+    assert.equal(report('A', '2026-10-01T02:00:00Z').outcome, 'unchanged');
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
+    report('B', '2026-10-01T04:00:00Z'); report('A', '2026-10-01T06:00:00Z');
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T06:00:00Z'), 'fresh');
+    svc.reportRead('docs', { partial: true, items: [{ ref: 'policy', weak: true }] }, '2026-10-01T08:00:00Z', next);
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T08:00:00Z'), 'stale');
+    svc.reportRead('docs', { outcome: 'no_results', scope: 'other query', reason: 'empty search', items: [] }, '2026-10-01T08:00:00Z', next);
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T08:00:00Z'), 'stale');
+  } finally { fx.cleanup(); }
+});
+
+test('witnessed unchanged local rereads renew observation freshness without inventing a content change', async () => {
+  const fx = freshStore();
+  try {
+    let n = 0; const next = () => `local-reread-${++n}`;
+    const reader: SourceReader = async () => ({ outcome: 'read', report: { digest: 'unchanged', evidence: 'witnessed', summary: 'read', items: [{ externalRef: 'facts.csv', kind: 'file', name: 'facts', attributes: { text: 'a,b', fingerprint: 'same' } }] } });
+    const svc = createSourceService(fx.store, { readers: new Map([['docs', reader]]) });
+    svc.syncDeclarations(file([{ ...docs, freshnessHours: 1 }]), '2026-10-01T00:00:00Z');
+    await svc.refresh('docs', '2026-10-01T00:00:00Z', next);
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'stale');
+    assert.equal((await svc.refresh('docs', '2026-10-01T02:00:00Z', next)).outcome, 'unchanged');
+    assert.equal(freshnessOf(fx.store, 'docs', '2026-10-01T02:00:00Z'), 'fresh');
+  } finally { fx.cleanup(); }
 });

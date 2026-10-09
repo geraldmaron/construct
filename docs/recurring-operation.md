@@ -8,15 +8,15 @@ is no daemon.
 ```bash
 construct workflow schedule standing-review --cron="0 9 1 * *" --timezone=Europe/Berlin --max-tier=project_write --trigger-id=monthly
 construct workflow triggers
-construct workflow recipe monthly
-construct workflow recipe monthly --clock=github-actions
+construct workflow recipe monthly --executor=codex
+construct workflow recipe monthly --clock=github-actions --executor=codex
 ```
 
 A trigger names the workflow, the schedule expression and timezone (or an
 event name), the adapter that fires it (cron, CI, a host's own scheduler, or
 manual), an overlap policy (skip, queue, replace), a permission boundary no
 step may exceed, input, and delivery. `recipe` prints the crontab line or
-the CI job that fires it.
+the CI job that fires it only after an explicit executor is selected. The generated recipe requires a persistent project state and an authenticated host. A fresh checkout contains neither the ignored trigger database nor a running agent.
 
 From chat, the host reports a request to keep something up as a
 `classify_request` reading of kind `maintain`, with its schedule: a
@@ -29,7 +29,7 @@ trigger from chat; the person sets the clock.
 
 ```bash
 construct workflow fire monthly --key=2026-10-01T09:00 --dry-run
-construct workflow fire monthly --key=2026-10-01T09:00
+construct workflow fire monthly --key=2026-10-01T09:00  # exits 1
 construct workflow fire monthly --key=2026-10-01T09:00
 construct workflow disable monthly
 construct workflow enable monthly
@@ -43,6 +43,8 @@ when a source it reads is stale or unread, and a step that finds nothing
 either succeeds empty, blocks with a question, or fails, as the workflow
 declares. The person receives a finished no-drift record, a cited drift
 report, or a concise blocked decision.
+
+Without `--execute=codex`, these clock-only firings cannot provide model work; the first records a blocked run. `workflow executors` reports which unattended adapters are available. An explicit executor handoff remains bounded by its host sandbox and the run permissions.
 
 The two `fire` lines above are the same key on purpose; the second reports
 deduplicated. The `--dry-run` line resolves and starts nothing. A firing
@@ -109,3 +111,6 @@ construct workflow schedule weekly-digest --cron="0 9 * * 1" --input='period={"s
 
 The last line is refused: a fixed window on a standing trigger would cover
 the same dates on every firing.
+
+
+A normal scheduled request can now pass `kind: maintain` through `classify_request` and `start_outcome`. Construct saves an idempotent trigger containing the mapped inputs and original intake, and creates no immediate run. Repeating the identical definition does not duplicate it or re-enable a disabled trigger. The response states that the clock and executor are unprovisioned. This is a saved standing intent, not a promise that work will run after the session exits. The same boundary applies to event triggers, which need an authorized event sender.

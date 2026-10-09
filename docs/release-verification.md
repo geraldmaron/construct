@@ -34,8 +34,8 @@ an isolated home, and proves no per-user database appears.
    trailers. Push only when authorized, open a pull request to `main`, and wait
    for its checks before merging. Confirm the merged commit's checks too.
 6. Tag that verified `main` commit with `v` followed by the package version.
-   Pushing the tag starts `.github/workflows/release.yml`: it repeats the gate
-   and publishes through npm trusted publishing using
+   Pushing the tag starts `.github/workflows/release.yml`: it repeats the gate and enforces `evals:live -- check --cut`
+   before it publishes through npm trusted publishing using
    `npm publish --provenance --tag alpha`. Do not publish from a different tree
    or move `latest`.
 7. Confirm the workflow completed, npm's `alpha` tag names the new version,
@@ -165,3 +165,8 @@ result with the reason, never a pass. A live call that runs is passed or
 failed by its exit status and reply, so a missing credential is a failure.
 What was and was not exercised for a given version is recorded in the
 changelog entry for that version.
+
+
+The release job now fails closed when the canonical live intake record is absent, stale, incomplete or failing. This currently blocks release; local fixture successes must not be substituted for the required full host matrix. The existing record primarily measures intake/routing: it does not yet qualify the complete post-session executor, semantic-support or source-change contract. See the implementation intake backlog V9 for that remaining scope. No release action is implied by running the check.
+
+The canonical evidence identity now includes runtime source, host invocation scripts and the dependency lock alongside model-facing text. Changing verification, source access or execution behavior invalidates an old record even when the tool descriptions do not change. This is an identity check, not independent proof of the evaluator's judgments.

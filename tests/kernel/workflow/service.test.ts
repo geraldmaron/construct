@@ -884,3 +884,59 @@ test('a setup answer lands in the profile on the channel it arrives on and in th
     fx.cleanup();
   }
 });
+
+
+test('acceptance and finalization recheck artifact bytes after structural verification', () => {
+  let text = 'A bounded report based on current evidence.';
+  const resolve: RefResolver = (ref) => ref === 'report.md' ? { ref, kind: 'file', provenance: 'witnessed', text } : null;
+  const fx = fixture({ resolveEvidence: resolve });
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'write a report' }, trigger: 'manual' });
+    const work = fx.service.claimNext({ runId: started.run.id }).packet!;
+    const done = fx.service.submit({ leased: work.leased, output: { summary: 'Report ready', findings: [], artifact: 'report.md', verificationReceipt: { executionVerified: true } } });
+    assert.equal(done.deliverable!.trustState, 'validated');
+    const receipt = (done.deliverable!.verification as { receipt: { executionVerified: boolean } }).receipt;
+    assert.equal(receipt.executionVerified, false, 'a caller cannot forge executed assurance');
+    text = 'Changed after verification';
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /no longer covers current artifact bytes/);
+    text = 'A bounded report based on current evidence.';
+    fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'person', channel: 'tty_cli' });
+    text = 'Changed after acceptance';
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'final', by: 'model' }), /no longer covers current artifact bytes/);
+  } finally { fx.cleanup(); }
+});
+
+
+test('non-verification workflows recheck structured artifacts and source evidence before acceptance', () => {
+  const content = new Map([['report.md', 'A supported report'], ['policy.md', 'Current policy']]);
+  const resolve: RefResolver = (ref) => content.has(ref) ? { ref, kind: 'file', provenance: 'witnessed', text: content.get(ref)! } : null;
+  const fx = fixture({ resolveEvidence: resolve });
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'a report' }, trigger: 'manual' });
+    const done = fx.service.submit({ leased: fx.service.claimNext({ runId: started.run.id }).packet!.leased, output: { summary: 'Report ready', findings: [], artifact: { path: 'report.md' } }, evidence: [{ ref: 'policy.md' }] });
+    content.set('report.md', 'Changed report');
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /report.md/);
+    content.set('report.md', 'A supported report');
+    content.set('policy.md', 'Changed policy');
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /policy.md/);
+  } finally { fx.cleanup(); }
+});
+
+
+test('an interrupted lease does not spend the validation retry budget', () => {
+  const fx = fixture();
+  try {
+    const run = fx.service.start({ workflowId: 'review', input: { target: 'budget' }, trigger: 'manual' }).run;
+    assert.ok(fx.service.claimNext({ runId: run.id }).packet);
+    fx.tick(31 * 60_000);
+    const resumed = fx.service.claimNext({ runId: run.id }).packet!;
+    assert.ok(resumed);
+    const firstFailure = fx.service.submit({ leased: resumed.leased, output: { notes: 'uncited' } });
+    assert.equal(firstFailure.step.state, 'ready', 'lease expiry is not a failed check');
+    fx.tick(2000);
+    const retry = fx.service.claimNext({ runId: run.id }).packet!;
+    assert.ok(retry);
+    const secondFailure = fx.service.submit({ leased: retry.leased, output: { notes: 'still uncited' } });
+    assert.equal(secondFailure.run.state, 'waiting_for_decision', 'actual failed checks remain bounded');
+  } finally { fx.cleanup(); }
+});

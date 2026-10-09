@@ -327,6 +327,11 @@ async function checkHost(host) {
       for (let i = 0; i < 4; i += 1) {
         const c = await s.call('claim_work', { runId: started.run.id });
         if (!c.work) break;
+        if (c.work.step.id === 'deterministic') {
+          const observed = cli(['run', 'verify', started.run.id, '--step=' + c.work.stepRunId, '--token=' + c.work.token, '--subject=docs/design.md', '--command=' + JSON.stringify([process.execPath, '-e', 'require("node:assert").ok(require("node:fs").readFileSync("docs/design.md","utf8").length > 0)'])], project, env);
+          if (observed.code !== 0) throw new Error('observed verification failed: ' + observed.err);
+          outputs.deterministic.verification = { executionRef: JSON.parse(observed.out).executionRef };
+        }
         const r = await s.call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'docs/design.md' }] });
         if (r.step.state === 'succeeded') steps += 1;
       }

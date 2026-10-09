@@ -278,3 +278,29 @@ freshness and drift review, adversarial deliverable review,
 strategy-to-execution and capacity review, the standing review wrapper, one
 review per professional pack, PRD, RFC, and proposal authoring, a research
 brief, revising a deliverable, and publishing one. See [catalog.md](catalog.md).
+
+### Clock and executor are separate
+
+`workflow fire` uses a headless capability profile. Without an executor it
+records the tick and blocks model work with the missing capabilities. A ready
+run is not completed work. `workflow executors` reports unattended support
+for every interactive host; only the explicit local Codex CLI adapter is
+currently implemented. Other hosts retain interactive MCP support and report
+an unprovisioned unattended adapter rather than falling back to another host.
+
+`workflow fire <trigger> --execute=codex --key=<tick>` probes the installed
+host and authentication, launches one bounded host invocation with the runner
+MCP surface, and inspects durable run state afterward. The model and sandbox
+belong to the host. This adapter exposes local project files and Construct;
+external MCP/API connectors are not automatically provisioned into it.
+It does not choose a model, install a clock, publish, or answer a decision.
+After the owned process group stops, its abandoned leases are fenced so the
+same firing key can resume unfinished work. A successful host exit alone
+never counts as a completed run.
+
+Recipes require `--executor=codex` and the same persistent project state.
+Cron needs Node/npm, an authenticated host and a CRON_TZ-compatible clock.
+GitHub Actions recipes target an explicitly provisioned self-hosted runner,
+use the trigger's IANA timezone, and do not imply that a fresh checkout contains
+the ignored trigger database. Inspect and provision the recipe before
+installing it. No clock continues merely because an agent session once ran.

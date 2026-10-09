@@ -8,6 +8,7 @@
  * own output. Descriptions speak plainly; plumbing stays out of them.
  */
 
+import { scheduleIntake } from '../workflow/scheduling.ts';
 import { listStatements, getProfile, getStatement, missingProfileFields } from '../state/profile.ts';
 import { delegate } from './delegate.ts';
 import { listActiveRuns, listRuns } from '../state/runs.ts';
@@ -60,7 +61,7 @@ import { SOURCE_ID, locatorCarriesCredentials } from '../project/sources-file.ts
 import { urlProblem } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
 import { quoteHost } from '../render/person-prompt.ts';
-import { REPORTED_TEXT_CAP } from '../source/service.ts';
+import { REPORTED_TEXT_CAP, SOURCE_READ_OUTCOMES, type SourceReadOutcome } from '../source/service.ts';
 
 /** What a step may cite in this project, as it stands now. */
 export function projectResolver(ctx: BrokerContext): RefResolver {
@@ -161,7 +162,7 @@ const bootstrap = define<Record<string, never>, unknown>({
       // Sources only the host can read: when it reads them, it reports what it read so changes are tracked.
       sources: { ...sources, changedSinceRead: moved, reportWhenRead: hostRead },
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
-      capabilities: { available: [...ctx.host.available].sort(), maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
+      capabilities: { available: [...ctx.host.available].sort(), declared: [...(ctx.host.declared ?? [])].sort(), reported: ctx.host.reported ?? [], probed: ctx.host.probed ?? [], exercised: [...(ctx.host.exercised ?? [])].sort(), readiness: 'host-mediated capabilities remain unverified until observed for this session and scope; available is not a successful execution receipt', maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
       decisions: { open: open.length },
       runs: runs.map((r) => ({ id: r.id, workflow: r.workflowId, state: r.state })),
@@ -387,7 +388,7 @@ const INTAKE_SCHEMA: JsonSchema = {
     },
     schedule: {
       type: 'object',
-      description: 'For maintain: when it runs.',
+      description: 'For maintain: when it runs. For a current-state period at each firing, use period {semantics: as_of, relative: today}; do not freeze today into an absolute date unless the person explicitly wants a fixed historical reference.',
       properties: {
         cron: { type: 'string', description: 'Five fields.' },
         timezone: { type: 'string', description: 'IANA; required with cron.' },
@@ -514,7 +515,7 @@ function classifyNext(validated: ValidatedIntake, first: string | null, open: nu
     return `${prefix}No workflow here produces ${intake.deliverable?.kind ?? 'this'} ${intake.kind === 'maintain' ? 'on a schedule or an event; tell the person, and offer to run it once now instead (kind manage)' : 'for this reading; tell the person what the listed workflows can do instead'}.`;
   }
   if (open > 0) return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
-  return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` The person sets the clock: ${scheduleCommand(first, intake.schedule)}` : ''}`;
+  return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` start_outcome saves the standing intent without starting work now. The clock and executor still require provisioning; ${scheduleCommand(first, intake.schedule)} is only an alternate definition command, not an executing schedule.` : ''}`;
 }
 
 const classify = define<Record<string, unknown>, unknown>({
@@ -605,7 +606,7 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   name: 'skills',
   title: 'Skills',
   description: 'List the skills available to this project, show one (its full text only when you ask for it), or check whether the ones a host needs on disk are current.',
-  surface: 'interactive',
+  surface: 'both',
   readOnly: true,
   inputSchema: {
     type: 'object',
@@ -676,7 +677,7 @@ function startedResult(r: StartResult, normalized: readonly unknown[], assumptio
 const startOutcome = define<{ workflowId: string; input?: Record<string, unknown>; intake?: Record<string, unknown> }, unknown>({
   name: 'start_outcome',
   title: 'Start an outcome',
-  description: `Start a workflow run in this session. Pass the intake classify_request returned, with the person’s answers applied; Construct checks it again here, so skipping classify_request skips no check, and if a required detail or a blocking question is still open nothing starts and you get the questions back. Without an intake, pass the workflow input yourself. If this work is already running you get that run back, with what you gave differently named. Returns the run and what it needs; then call claim_work to do the next step here. Never start work for a plain question. ${PERSON_ASKED_ONLY}`,
+  description: `Start a one-time workflow run, or save a standing trigger for kind maintain without starting a run. Standing triggers remain unprovisioned until a host installs a clock/event sender and executor; never promise future execution from the saved definition alone. Pass the intake classify_request returned, with the person’s answers applied; Construct checks it again here, so skipping classify_request skips no check, and if a required detail or a blocking question is still open nothing starts and you get the questions back. Without an intake, pass the workflow input yourself. If this work is already running you get that run back, with what you gave differently named. Returns the run and what it needs; then call claim_work to do the next step here. Never start work for a plain question. ${PERSON_ASKED_ONLY}`,
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -716,6 +717,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
         return { started: false, recorded: false, questions, hostQuestions, normalized: validated.normalized, next: NOTHING_STARTED };
       }
       const { intake: reading, resolved } = validated;
+      if (reading.kind === 'maintain') return scheduleIntake(ctx.store, ctx.triggers, workflow, reading, mapped);
       const r = ctx.workflow.start({
         workflowId,
         input: mapped,
@@ -744,17 +746,17 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (text on request), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
+  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (its current-step body by default), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { runId: { type: 'string', description: 'A run id; omit to take from any active run.' }, includeSkillBody: { type: 'boolean', description: 'Include the bound skill’s full text (default false).' } },
+    properties: { runId: { type: 'string', description: 'A run id; omit to take from any active run.' }, includeSkillBody: { type: 'boolean', description: 'Include the bound skill’s full text (default true); false requests metadata only.' } },
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { runId: str(raw, 'runId', { optional: true }), includeSkillBody: bool(raw, 'includeSkillBody', false) };
+    return { runId: str(raw, 'runId', { optional: true }), includeSkillBody: bool(raw, 'includeSkillBody', true) };
   },
   run(ctx, { runId, includeSkillBody }) {
     const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
@@ -768,10 +770,11 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         leaseUntil: p.leased.leaseUntil,
         run: { id: p.run.id, workflow: p.run.workflowId },
         step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators, capabilities: p.step.capabilities },
-        skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: includeSkillBody ? p.skill.body() : undefined } : null,
+        skill: p.skill ? { id: p.skill.id, version: p.skill.version, digest: p.skill.digest, body: includeSkillBody ? p.skill.body() : undefined } : null,
         inputs: p.inputs,
         intake: p.intake,
         method: p.method,
+        methodCatalog: p.methodCatalog,
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -823,7 +826,7 @@ const submitWork = define<SubmitInput, unknown>({
       // How much of this step rests on what Construct opened itself versus what the host reports it read.
       evidence: provenanceOf(input.evidence, resolve),
       run: { id: r.run.id, state: r.run.state },
-      deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState } : null,
+      deliverable: r.deliverable ? { id: r.deliverable.id, trust: r.deliverable.trustState, verification: r.deliverable.verification } : null,
       // Restated keys whose value differs from what the step was handed: the deliverable carries what was handed.
       ...(r.ignored.length > 0 ? { ignored: r.ignored } : {}),
     };
@@ -977,6 +980,10 @@ const LOCATOR_CAP = 512;
 const LOCATOR_EXAMPLES: Readonly<Record<string, string>> = { github: 'owner/repo', jira: 'PROJ', docs: 'confluence:space:ENG' };
 
 interface SourcesInput {
+  outcome?: SourceReadOutcome;
+  reason?: string;
+  scope?: string;
+  coverage?: Record<string, unknown>;
   action: (typeof SOURCE_ACTIONS)[number];
   id?: string;
   items: Record<string, unknown>[];
@@ -1025,7 +1032,11 @@ const sources = define<SourcesInput, unknown>({
     properties: {
       action: { type: 'string', description: 'list, show, refresh, report, or declare.', enum: SOURCE_ACTIONS },
       id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
-      items: { type: 'array', description: 'For report: {ref, url?, title?, updatedAt?, text?, kind?} for each item you read; url is the http(s) address a person would open for it.', items: { type: 'object' } },
+      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness.' },
+      reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
+      scope: { type: 'string', description: 'For report: attempted query, item URI or scope; required for non-read outcomes.' },
+      coverage: { type: 'object', description: 'For report: observed completeness, pagination and coverage limitations; these remain host reports.' },
+      items: { type: 'array', description: 'For report: {ref, url?, title?, updatedAt?, text?, kind?, fingerprint?, weak?, schema?} for each item you read; url is the http(s) address a person would open for it.', items: { type: 'object' } },
       partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
       kind: { type: 'string', description: 'For declare: what kind of system it is; other covers chat, monitoring tools, and the open web.', enum: DECLARABLE_KINDS },
       purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
@@ -1044,9 +1055,9 @@ const sources = define<SourcesInput, unknown>({
     for (const key of DECLARE_ONLY) {
       if (raw[key] !== undefined && raw[key] !== null) throw new ToolInputError(`"${key}" is for declare only`, { field: key });
     }
-    return { action, id, items, partial };
+    return { action, id, items, partial, outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
   },
-  async run(ctx, { action, id, items, partial, kind, purpose, locator }) {
+  async run(ctx, { action, id, items, partial, kind, purpose, locator, outcome, reason, scope, coverage }) {
     const at = ctx.now();
     if (action === 'list') return ctx.sources.list().map((s) => ctx.sources.status(s.id, at));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
@@ -1071,16 +1082,22 @@ const sources = define<SourcesInput, unknown>({
     }
     if (action === 'show') return ctx.sources.status(id, at);
     if (action === 'report') {
-      if (items.length === 0) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
+      if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
         if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: 'items' });
         const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
         const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
         const problem = url === undefined ? null : urlProblem(url);
         if (problem) throw new ToolInputError(`items[${String(n)}].url ${problem}`, { field: `items[${String(n)}].url`, example: 'https://acme.atlassian.net/browse/PLAT-101' });
-        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text'), ...(url !== undefined ? { url } : {}) };
+        return { ref: i.ref.trim(), title: opt('title'), kind: opt('kind'), updatedAt: opt('updatedAt'), text: opt('text'), fingerprint: opt('fingerprint'), weak: i.weak === true, ...(i.schema && typeof i.schema === 'object' && !Array.isArray(i.schema) ? { schema: i.schema as Record<string, unknown> } : {}), ...(url !== undefined ? { url } : {}) };
       });
-      const reported = ctx.sources.reportRead(id, { items: parsed, partial }, at, () => ctx.nextId('snap'));
+      const reported = ctx.sources.reportRead(id, { items: parsed, partial, outcome, reason, scope, coverage, sessionId: ctx.sessionId ?? undefined }, at, () => ctx.nextId('snap'));
+      // Access observations are scoped reports, not grants or evidence that every source
+      // of the same kind is available. They never mutate permitted or available capabilities.
+      if (reported.outcome === 'changed' || reported.outcome === 'unchanged' || reported.outcome === 'no_results') {
+        const capability = `read_source:${active.find((s) => s.id === id)!.kind}:${id}:read`;
+        if (Array.isArray(ctx.host.reported) && !ctx.host.reported.includes(capability)) ctx.host.reported.push(capability);
+      }
       if (!reported.truncated?.length) return reported;
       return { ...reported, next: `Construct kept the first ${String(REPORTED_TEXT_CAP / 1024)} KiB of the text of ${reported.truncated.join(', ')}; a quote or figure past that cannot be checked, so report the passage you rely on as its own item.` };
     }
@@ -1180,11 +1197,14 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       : `; no recorded read holds ${unverified.slice(0, 5).join(', ')}${unverified.length > 5 ? ` (+${String(unverified.length - 5)} more)` : ''}, so say the parts resting on ${unverified.length === 1 ? 'it' : 'them'} are unverified, or record what you read with sources action report and check again`;
     return {
       ok: problems.length === 0,
+      assurance: 'structural',
+      semanticSupportVerified: false,
+      limits: 'Citation, excerpt, figure and policy checks do not establish that evidence entails every claim or that research is complete.',
       problems,
       evidence: provenanceOf(citations, resolve),
       ...(period ? { period: { from: period.from, to: period.to, timezone: period.timezone, assumptions: period.assumptions } } : {}),
       next: (problems.length === 0
-        ? 'give the answer; say which parts rest on reported sources if any'
+        ? 'Structural checks passed. Review whether the evidence actually supports each claim before answering; these checks do not establish semantic support. Name unsupported parts and reported sources.'
         : 'fix what is listed, or give the answer with the unsupported parts named as unsupported') + onWord,
     };
   },
@@ -1604,7 +1624,7 @@ const claimStep = define<{ runId?: string }, unknown>({
     const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, instructions: p.instructions }, waitingOn: null };
+    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog, instructions: p.instructions }, waitingOn: null };
   },
 });
 
@@ -1618,4 +1638,4 @@ export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unk
 }
 
 /** What the headless surface must never be able to do, by tool name. */
-export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'skills', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];
+export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];

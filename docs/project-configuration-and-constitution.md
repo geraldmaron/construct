@@ -24,7 +24,7 @@ and `construct project validate` notes when a worktree's copies differ.
 There is no home database, no shared workspace, and no settings file. A
 file from an earlier alpha is recognized by path or stamp, named exactly,
 and never parsed; `construct reset` shows what it would remove and removes
-only that when you confirm. A state database in format 2 or 3 is different:
+only that when you confirm. A state database in format 2, 3 or 4 is different:
 stop every Construct session on the project, then run `construct migrate`,
 which writes a backup beside it under `state/` and upgrades it. Read-only
 commands refuse an older store and name that step. A store written by a
