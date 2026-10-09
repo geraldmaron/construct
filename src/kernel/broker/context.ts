@@ -14,6 +14,7 @@ import type { TriggerService } from '../workflow/triggers.ts';
 import type { SourceService } from '../source/service.ts';
 import type { AskPerson } from '../policy/channels.ts';
 import type { DelegationService } from '../delegation/types.ts';
+import type { ProjectWorktree } from '../work/lanes.ts';
 
 export interface BrokerContext {
   readonly delegation?: DelegationService;
@@ -21,6 +22,12 @@ export interface BrokerContext {
   readonly root: string;
   /** The git worktree this session works in, when it is not the project's main checkout. */
   readonly lane: { readonly root: string; readonly checkout: string; readonly branch: string | null; readonly head: string | null } | null;
+  /**
+   * The project's git checkouts as they stand now, main checkout first, read
+   * by the adapter from the repository's files: what a claim may name as the
+   * worktree it edits in. Absent when the caller cannot read them.
+   */
+  readonly worktrees?: () => readonly ProjectWorktree[];
   /** The session Construct minted for this server process; null when a caller has none. */
   readonly sessionId: string | null;
   readonly layout: ProjectLayout;

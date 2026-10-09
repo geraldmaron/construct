@@ -6,7 +6,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { resolvePaths, type Paths } from '../kernel/paths.ts';
 import { findProjectRoot, hasProject, NoProjectError } from '../kernel/project/discover.ts';
@@ -17,6 +17,7 @@ import { validateProjectConfig, validateUserDefaults, userDefaultsPath, type Res
 import { openStateStore, type StateStore } from '../kernel/state/open.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { StoreProjectError, bindStoreToProject } from '../kernel/state/identity.ts';
+import type { ProjectWorktree } from '../kernel/work/lanes.ts';
 import { OperationError } from './output.ts';
 import type { TerminalFacts } from './person-channel.ts';
 
@@ -346,6 +347,86 @@ function realpathOr(path: string): string {
   } catch {
     return resolve(path);
   }
+}
+
+/**
+ * Every git checkout of the repository holding the project at `root` (its
+ * directory in the main checkout), read from files alone as a session's lane
+ * is: the main checkout first, then each linked worktree recorded under the
+ * common directory's `worktrees/` whose checkout still exists, in path order.
+ * Each names the project's directory inside it, spelled as the file system
+ * resolves it, and the branch it has checked out. A worktree whose project
+ * file names a different project, or cannot be read, is left out, as a
+ * session there is refused.
+ * Empty when the project is in no repository or its repository has no main
+ * checkout.
+ */
+export function projectWorktrees(root: string): ProjectWorktree[] {
+  const repo = resolveRepository(root);
+  if (repo === null || repo.mainRoot === null) return [];
+  const mainReal = realpathOr(repo.mainRoot);
+  const rel = relative(mainReal, realpathOr(root));
+  if (rel.startsWith('..') || isAbsolute(rel)) return [];
+  const main = repo.linked ? resolveRepository(repo.mainRoot) : repo;
+  const out: ProjectWorktree[] = [{ root: join(mainReal, rel), checkout: mainReal, branch: main?.branch ?? null, head: main?.head ?? null, main: true }];
+  const records = join(repo.commonDir, 'worktrees');
+  let names: string[];
+  try {
+    names = readdirSync(records);
+  } catch {
+    names = [];
+  }
+  const common = realpathOr(repo.commonDir);
+  const linked: ProjectWorktree[] = [];
+  for (const name of names) {
+    const recorded = readTrimmed(join(records, name, 'gitdir'));
+    if (!recorded) continue;
+    // Git writes an absolute path unless worktree.useRelativePaths is set; a relative one is relative to the record.
+    const checkout = realpathOr(dirname(isAbsolute(recorded) ? recorded : resolve(records, name, recorded)));
+    const found = existsSync(join(checkout, '.git')) ? resolveRepository(checkout) : null;
+    if (found === null || !found.linked || realpathOr(found.checkout) !== checkout || realpathOr(found.commonDir) !== common) continue;
+    const laneRoot = join(checkout, rel);
+    try {
+      requireSameProject(root, laneRoot);
+    } catch {
+      continue;
+    }
+    linked.push({ root: laneRoot, checkout, branch: found.branch, head: found.head, main: false });
+  }
+  linked.sort((a, b) => (a.checkout < b.checkout ? -1 : a.checkout > b.checkout ? 1 : 0));
+  return [...out, ...linked];
+}
+
+/** `path` as the file system resolves it, through its nearest existing directory when the path itself does not exist. */
+function realpathThrough(path: string): string {
+  const missing: string[] = [];
+  let dir = resolve(path);
+  for (;;) {
+    try {
+      return join(realpathSync(dir), ...missing.reverse());
+    } catch {
+      const parent = dirname(dir);
+      if (parent === dir) return resolve(path);
+      missing.push(basename(dir));
+      dir = parent;
+    }
+  }
+}
+
+/**
+ * Which of the project's checkouts holds `path`, and the path relative to its
+ * top: the deepest one containing it, since a worktree may sit inside the main
+ * checkout. Null when no checkout of the project holds it.
+ */
+export function worktreeHolding(root: string, path: string): { readonly worktree: ProjectWorktree; readonly path: string } | null {
+  const real = realpathThrough(path);
+  let best: { worktree: ProjectWorktree; path: string } | null = null;
+  for (const worktree of projectWorktrees(root)) {
+    const rel = relative(worktree.checkout, real);
+    if (rel.startsWith('..') || isAbsolute(rel)) continue;
+    if (best === null || worktree.checkout.length > best.worktree.checkout.length) best = { worktree, path: rel };
+  }
+  return best;
 }
 
 /** The nearest directory at or above `start`, up to `floor`, holding a project store. */
