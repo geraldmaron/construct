@@ -15,14 +15,14 @@ import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
  */
 
 import { createHash } from 'node:crypto';
-import { requestedFileProblems, persistedRecordProblems, artifactRefs, verificationReceipt, staleReceiptSubjects, executionCheck, type VerificationReceipt } from './verification.ts';
+import { requestedFileProblems, persistedRecordProblems, artifactRefs, verificationReceipt, inheritedEvidence, stalePriorEvidence, staleReceiptSubjects, executionCheck, type VerificationReceipt } from './verification.ts';
 import { methodReceipts } from './methods.ts';
 import { recordResolvedSkill, recordResolvedWorkflow } from '../state/resolved.ts';
 import { researchCoverage } from '../source/research.ts';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, expireDeadLeases, expiredAttempts, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { addStep, claimStep, completeStep, expireDeadLeases, expiredAttempts, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, StaleLeaseError, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
 import { getDecision, listOpenDecisions, listRunDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
 import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
@@ -160,7 +160,7 @@ export type WaitingOn =
   /** The run named is blocked: why, and each reason with what would clear it. */
   | { readonly kind: 'blocked'; readonly runId: string; readonly summary: string; readonly reasons: Preflight['reasons'] }
   | { readonly kind: 'nothing_ready' }
-  | { readonly kind: 're_resolve'; readonly reason: string };
+  | { readonly kind: 're_resolve'; readonly reason: string; readonly runId?: string };
 
 /** What a person may answer when checks keep failing. */
 export const WAIVER_OPTIONS = ['accept with these problems', 'another attempt', 'stop'] as const;
@@ -1248,6 +1248,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     readonly refused: Extract<WaitingOn, { kind: 'refused' }> | null;
   }
 
+  /** Old analysis cannot be repinned to new input bytes. A new run must reread/rederive it. */
+  function invalidateEvidenceGeneration(run: WorkflowRun, refs: readonly string[], at: string): WorkflowRun {
+    const reason = `Previously consumed evidence changed or became unavailable: ${refs.join(', ')}. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically.`;
+    for (const step of listSteps(store, run.id)) if (['pending', 'ready', 'leased', 'waiting_for_decision'].includes(step.state)) transitionStep(store, { id: step.id, to: 'cancelled', at, reason });
+    for (const decision of listOpenDecisions(store, run.id)) withdrawDecision(store, { id: decision.id, at, reason });
+    appendActivity(store, { at, kind: 'run.evidence_invalidated', runId: run.id, actor: 'kernel', payload: { refs, reason } });
+    return transitionRun(store, { id: run.id, to: 'failed', at, reason });
+  }
+
   /**
    * Gate and lease within one run. The caller holds the write transaction, so
    * no other session can make a step ready, or take one, between the gate
@@ -1267,6 +1276,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       run = transitionRun(store, { id: run.id, to: 'running', at });
     }
     if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return { outcome: null, held, refused };
+    const priorSteps = listSteps(store, run.id);
+    const stale = stalePriorEvidence(inheritedEvidence(priorSteps), priorSteps.flatMap((s) => artifactRefs(s.output)), deps.resolveEvidence);
+    if (stale.length) {
+      const failed = invalidateEvidenceGeneration(run, stale, at);
+      return stop({ kind: 're_resolve', runId: run.id, reason: failed.stateReason! });
+    }
     const firing = askedOf(run).firing;
     if (firing) {
       const prior = store.db.prepare(`SELECT r.id FROM trigger_firings f JOIN workflow_runs r ON r.id = f.run_id
@@ -2057,6 +2072,18 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const step = stepsOf(run).find((s) => s.id === leased.stepId);
       if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
       const currentWorkflow = deps.workflows.get(run.workflowId);
+      const priorSteps = listSteps(store, run.id);
+      const priorEvidence = inheritedEvidence(priorSteps);
+      // A project-write may intentionally edit an input file. Its old bytes remain a baseline,
+      // while unrelated evidence must still match what preceding steps actually consumed.
+      const produced = [...priorSteps.flatMap((s) => artifactRefs(s.output)), ...(step.tier === 'project_write' ? artifactRefs(output) : [])];
+      const stale = stalePriorEvidence(priorEvidence, produced, resolve);
+      if (stale.length) return store.transaction(() => {
+        const held = getStep(store, leased.id);
+        if (held?.state !== 'leased' || held.leaseOwner !== leased.leaseOwner || held.attempts !== leased.token) throw new StaleLeaseError(leased.id, leased.token);
+        const failed = invalidateEvidenceGeneration(run, stale, at);
+        return { step: getStep(store, leased.id)!, validation: [{ validator: 'evidence_generation', ok: false, problems: [failed.stateReason!] }], run: failed, deliverable: null, ignored: [] };
+      });
       if (noData && !step.capabilities.includes('run_tests')) {
         const policy = currentWorkflow?.manifest.onNoData ?? 'fail';
         return store.transaction(() => {
@@ -2137,7 +2164,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         // What was waived, and by whom on which channel, and what the run's citations carry so far (the highest
         // sensitivity, and those of unknown sensitivity) are the kernel's to record: the step's own keys of those
         // names are not kept. A later step's approval question reads them.
-        const receipt = verificationReceipt({ runId: run.id, stepRunId: leased.id, observedAt: at, actor: leased.leaseOwner, subjects: [...artifactRefs(output), ...listSteps(store, run.id).flatMap((s) => artifactRefs(s.output))], evidence: runEvidence(run.id, evidence), checks: validation, resolve });
+        const receipt = verificationReceipt({ runId: run.id, stepRunId: leased.id, observedAt: at, actor: leased.leaseOwner, subjects: [...artifactRefs(output), ...listSteps(store, run.id).flatMap((s) => artifactRefs(s.output))], evidence: runEvidence(run.id, evidence), priorEvidence, checks: validation, resolve });
         const done = completeStep(store, {
           id: leased.id,
           owner: leased.leaseOwner,

@@ -32,7 +32,7 @@ export type RunState = (typeof RUN_STATES)[number];
 export const RUN_TRANSITIONS: Readonly<Record<RunState, readonly RunState[]>> = {
   preflight: ['blocked', 'ready', 'failed', 'cancelled'],
   blocked: ['preflight', 'ready', 'failed', 'cancelled'],
-  ready: ['running', 'blocked', 'cancelled'],
+  ready: ['running', 'blocked', 'failed', 'cancelled'],
   running: ['waiting_for_decision', 'blocked', 'succeeded', 'failed', 'cancelled'],
   waiting_for_decision: ['running', 'failed', 'cancelled'],
   succeeded: [],

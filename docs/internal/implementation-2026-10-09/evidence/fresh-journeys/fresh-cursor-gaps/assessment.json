@@ -1,0 +1,127 @@
+{
+  "trial": "fresh-cursor-gaps",
+  "phases": {
+    "qa": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 14494,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    },
+    "initial": {
+      "name": "initial",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 66932,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 3,
+        "deliverables": 0,
+        "work_items": 1,
+        "sources": 1,
+        "source_snapshots": 2
+      },
+      "artifact": {
+        "sha256": "a0fa1d480754d8d48924b1d55f299a32be0ab20cd05fd088a5746b4bc89d2793",
+        "bytes": 4210
+      }
+    },
+    "changed": {
+      "name": "changed",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 49707,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 3,
+        "deliverables": 0,
+        "work_items": 1,
+        "sources": 1,
+        "source_snapshots": 3
+      },
+      "artifact": {
+        "sha256": "65e7ad5fb4d86e865bc740665e1852363cf317810123466a51e347c7b90297ba",
+        "bytes": 3654
+      }
+    }
+  },
+  "qaAnswer": "Searching the project for the local replenishment policy and how net stock of 60 units is handled.\n**Hold steady** \u2014 do not recommend replenishment.\n\nUnder the local replenishment policy in `docs/policy.md`, replenishment is recommended only when net stock (available minus reserved) is **below** 60 individual units. At **exactly** 60, the rule is explicit: hold steady.\n\nSo at net stock = 60, take no replenishment action; that level is treated as sufficient, not a trigger.",
+  "finalState": {
+    "runs": [
+      {
+        "id": "run-12e863d1",
+        "workflow_id": "managed-outcome",
+        "state": "waiting_for_decision",
+        "state_reason": "step verify needs the person's call on failing checks"
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-12e863d1",
+        "step_id": "plan",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-12e863d1",
+        "step_id": "do",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-12e863d1",
+        "step_id": "verify",
+        "state": "waiting_for_decision",
+        "state_reason": "checks still failing; waiting on the person"
+      }
+    ],
+    "work": [
+      {
+        "id": "work-run-12e863d1-delivery",
+        "status": "open"
+      }
+    ]
+  },
+  "independentChecks": {
+    "cases": [
+      {
+        "name": "initial",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The artifact recommends HOLD pending clarification. Recorded reads establish 12 cases available, reserved_quantity 4 without a current unit, and units_per_case null. It neither guesses 6 each/case nor subtracts incompatible units. It correctly states that exactly 60 each means hold steady, excludes the superseded cache, and does not direct an order.",
+          "uncertainty": "The brief explicitly says net individual units cannot be computed, identifies both missing field definitions, and requests authorized clarification. It does not infer supplier content from the access denial.",
+          "evidence": "Recorded fetches under PID 40136 substantiate the cited stock and reservation data. The recorded GET at 2026-10-09T21:35:21.025Z returned a null conversion and supplier reference; the supplier fetch at 21:35:23.944Z returned permission_denied. The brief distinguishes policy, current item-specific records, and superseded cache. These support the decision, not an inference of successful managed workflow or test execution. The separate preregistered QA no-registration condition cannot be assessed from these initial-case counts because no QA-specific post-run record is supplied.",
+          "requested_file": "The supplied artifact contains warehouse-brief.md bytes, not merely a completion claim. Independently encoding its text as UTF-8 yields 4210 bytes and SHA-256 a0fa1d480754d8d48924b1d55f299a32be0ab20cd05fd088a5746b4bc89d2793, matching both recorded digest fields and the recorded byte count."
+        }
+      },
+      {
+        "name": "changed",
+        "checks": {
+          "correctness": "fail",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The brief correctly computes 6 cases \u00d7 6 each/case \u2212 4 each = 32 each and recommends replenishment below 60. However, it omits the explicitly preregistered 28-each shortfall. Its operational instruction, 'Execute replenishment per West depot process', also exceeds a recommendation-only boundary. The supplied records do not establish that any order was actually placed.",
+          "uncertainty": "The change section preserves the prior unknown conversion and reservation unit rather than claiming they were previously known. It identifies their resolution through corrected current records, retains scope and timing questions, and accurately distinguishes the current supplier not_found response from the earlier permission denial.",
+          "evidence": "New recorded reads under PID 42134, distinct from the initial PID 40136, establish 6 cases available and 4 each reserved. The recorded GET at 2026-10-09T21:36:44.720Z establishes the current lot-specific conversion of 6 each/case. The artifact compares prior and current values and explicitly notes the unchanged provider timestamp. Changed payloads and stock/reservation digests, not timestamp equality, support the changed decision. These records do not independently prove managed workflow completion, test execution, external publication, or production authentication.",
+          "requested_file": "The updated artifact uses the same warehouse-brief.md path and contains changed decision and evidence sections. Independently encoding its text as UTF-8 yields 3654 bytes and SHA-256 65e7ad5fb4d86e865bc740665e1852363cf317810123466a51e347c7b90297ba, matching both recorded digest fields and the recorded byte count and differing from the initial artifact."
+        }
+      }
+    ]
+  }
+}

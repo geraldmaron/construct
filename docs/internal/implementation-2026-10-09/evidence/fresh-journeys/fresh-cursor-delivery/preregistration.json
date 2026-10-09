@@ -1,0 +1,32 @@
+{
+  "host": "cursor",
+  "tag": "delivery",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-delivery/project",
+  "git": true,
+  "packageSha256": "300aafbd66424b092e6aa7c3c187e42102638c03839d083a6f78e6ebde88efd1",
+  "fixtureBeforeInit": true,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-67b2a668",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T21:24:10.731Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T21:24:10.761Z",
+  "sourceOrigin": "http://127.0.0.1:52938"
+}

@@ -1,0 +1,32 @@
+{
+  "host": "cursor",
+  "tag": "recovery",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-recovery/project",
+  "git": true,
+  "packageSha256": "641fff7303ed5abbd7c2f26c49fa5fc15d798928423128e2f5a4fbe3a6ed4bda",
+  "fixtureBeforeInit": true,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-63d51404",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T21:02:17.463Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T21:02:17.492Z",
+  "sourceOrigin": "http://127.0.0.1:51700"
+}
