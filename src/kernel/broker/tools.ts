@@ -1,3 +1,4 @@
+import { recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
 import { claimChecks, assessClaims, type ClaimCheck } from '../workflow/claim-support.ts';
 import { accessDescriptor, accessRequest, assessAccess, type AccessDescriptor, type AccessRequest } from '../source/access.ts';
 import { dataMapping, sourceMapping, type DataMapping } from '../source/mapping.ts';
@@ -739,7 +740,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
 const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>({
   name: 'claim_work',
   title: 'Claim the next step',
-  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, the skill bound to it (its current-step body by default), and instructions. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
+  description: 'Take the next ready step of a run to do in this session. Returns the step, its inputs, bound skill, compact method index and instructions. For a requested local artifact, delivery includes its existing native work/path reservation and held draft: use that reservation instead of creating another commitment or work claim. Only the current step tier authorizes writing. If the run is waiting on a decision, returns that decision instead so you can surface it. A step the person approved for another session is held for it, and a step beyond what this session may do is refused; either comes back with who or why. A blocked run comes back with its reasons and what would unblock it.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
@@ -752,7 +753,11 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
     return { runId: str(raw, 'runId', { optional: true }), includeSkillBody: bool(raw, 'includeSkillBody', true) };
   },
   run(ctx, { runId, includeSkillBody }) {
-    const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+    recoverAbandonedSteps(ctx, runId);
+    const { c, delivery } = ctx.store.transaction(() => {
+      const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+      return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
+    });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
     return {
@@ -767,7 +772,9 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         inputs: p.inputs,
         intake: p.intake,
         method: p.method,
-        methodCatalog: p.methodCatalog,
+        methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
+        methodCatalogDetail: 'Compact index; skills list/show provides full activation, stand-down and method resources.',
+        delivery,
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -812,7 +819,11 @@ const submitWork = define<SubmitInput, unknown>({
     const leased = heldLease(ctx.store, { id: input.stepRunId, owner: ctx.host.executorId, nonce: input.token });
     if (!leased) throw new Error(`step ${input.stepRunId} is not held by this session under that token; claim it again`);
     const resolve = projectResolver(ctx);
-    const r = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData, resolve });
+    const r = ctx.store.transaction(() => {
+      const result = ctx.workflow.submit({ leased, output: input.output, evidence: input.evidence, noData: input.noData, resolve });
+      settleManagedDelivery(ctx, result.run.id, result.run.state);
+      return result;
+    });
     return {
       step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason },
       validation: r.validation,
@@ -1640,10 +1651,14 @@ const claimStep = define<{ runId?: string }, unknown>({
     return { runId: str(raw, 'runId', { optional: true }) };
   },
   run(ctx, { runId }) {
-    const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+    recoverAbandonedSteps(ctx, runId);
+    const { c, delivery } = ctx.store.transaction(() => {
+      const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+      return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
+    });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog, instructions: p.instructions }, waitingOn: null };
+    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
   },
 });
 

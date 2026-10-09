@@ -1,0 +1,21 @@
+# Managed delivery and resumption — 2026-10-09
+
+The fresh packed Codex warehouse attempt reached its record step but exhausted the unchanged 360-second prompt deadline before writing the requested file. The broker itself took 2–211 ms per call. Reference-coverage repair, large repeated packets, and a late second commitment/ledger sequence consumed model turns. The useful database draft is retained as a failed delivery, not a pass. Cursor's first attempt wrote a useful file while skipping failed Construct calls; its recovery replay reached a managed outcome but stopped at required execution verification. That fixture explicitly denies shell, so the latter is an exercised permission limit plus an unsuitable workflow selection, not evidence that Cursor cannot run commands in other configurations.
+
+## Shared correction
+
+[Broker coordination](../../../src/kernel/broker/managed-delivery.ts) reserves a managed run's explicitly requested project file atomically with its step. The task's admission basis is the already admitted managed run, not a new model-authored statement or claimed human approval. The coordination token stays inside the broker. A reservation never increases the current step tier or authorizes an external effect. The interactive and explicitly provisioned headless claim surfaces share the contract.
+
+A resumed writable step receives the held draft and a digest of an existing local artifact. These are checkpoints, not accepted results. Completed steps remain complete. Observed ended sessions or an adapter-confirmed absent process permit reclaiming the same abandoned step; live, unknown, remote-unobservable or missing session evidence does not. Attempt fencing and the separate expired-attempt budget remain in force. Requested files still have to exist and pass the run's actual checks. Completion and native delivery settlement share one transaction. Failed/blocked/decision-waiting submissions release the path without marking the task complete.
+
+Claim packets retain the primary method body by default and carry a compact method index; full activation and stand-down details remain available through `skills list/show`. Operating skill 3.0.3 and the shared all-host MCP instructions explain the existing reservation, tool-error repair, and when a file may actually be written.
+
+## Validation
+
+Eleven [public broker regressions](../../../tests/kernel/broker/managed-delivery.test.ts) cover reservation/renewal, no extra governing commitment, atomic collision rollback, ended/dead/live/unknown/unregistered holders, old-token rejection, preserving finished steps, actual artifact checkpoint identity, held draft recovery, failed verification, atomic completion rollback and explicit-versus-absent headless capability. All eleven pass. Required gate: lint/types, 979 passed/zero failed/one existing skip, packaged smoke. Test command is `npm test -- --test-concurrency=4`; no assertion or deadline was relaxed. All-host static conformance and fresh native ordinary-prompt replay are recorded separately.
+
+## Limits that remain acceptance work
+
+This does not force a host to make its first Construct call or stop a host that ignores an error and directly writes with another tool. It does not automatically reconcile two distinct intents aimed at the same file: a conflicting live reservation remains a refusal. Command-line recovery that bypasses the broker is outside automatic delivery settlement; reservations still expire, and native work can be inspected/released with its normal controls. Source changes do not become human approval. A checkpoint is not proof that prior reasoning is current: source revalidation and affected-step replay remain distinct requirements. No clock or persistent system job is installed by this change.
+
+The native evaluations run in bounded, detached task-owned processes with files written per case or prompt and explicit completion receipts. This survives loss of a tool handle; it is not a permanent executor or guarantee against host/process termination. The causes of earlier disappearing runners are unconfirmed. Retain their partial evidence and do not relabel an interrupted run a timeout or completed evaluation.
