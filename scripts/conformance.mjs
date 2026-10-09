@@ -323,7 +323,7 @@ async function checkHost(host) {
       const started = await s.call('start_outcome', { workflowId: 'design-conformance', intake: cls.intake });
       if (started.started !== true) throw new Error(`start_outcome started nothing: ${JSON.stringify(started.questions ?? started)}`);
       const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: ['Does host-agnostic cover the CLI?'] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
-      let steps = 0;
+      let steps = 0, reviewPending = null;
       for (let i = 0; i < 4; i += 1) {
         const c = await s.call('claim_work', { runId: started.run.id });
         if (!c.work) break;
@@ -334,9 +334,12 @@ async function checkHost(host) {
         }
         const r = await s.call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'docs/design.md' }] });
         if (r.step.state === 'succeeded') steps += 1;
+        if (r.semanticReview) reviewPending = r.semanticReview;
       }
       const status = await s.call('run_status', { runId: started.run.id });
-      record(host.id, 'managed workflow execution', status.run.state === 'succeeded' ? 'passed' : 'failed', `${steps}/4 steps; run ${status.run.state}`);
+      const heldForReview = steps === 3 && status.run.state === 'running' && !!reviewPending?.preparedRef && status.deliverables.some(d => d.trust === 'draft');
+      record(host.id, 'semantic review boundary', heldForReview ? 'passed' : 'failed', `${steps}/4 steps; final draft and lease wait for an observed native review`);
+      record(host.id, 'managed workflow execution', heldForReview ? 'untested' : 'failed', 'Static conformance exercises the final review gate; native semantic completion requires a separately authorized live host test.');
       const validated = status.deliverables.find((d) => d.trust === 'validated');
       // The session asks for acceptance; only the person gives it. A relayed
       // approval of that ask is refused and the deliverable's trust is unchanged.
@@ -349,7 +352,7 @@ async function checkHost(host) {
         const still = after.deliverables.find((d) => d.id === validated.id);
         handback = { held: asked?.personRequired === true && relayed?.personRequired === true && relayed?.decision?.state === 'open' && still?.trust === 'challenged' };
       }
-      record(host.id, 'final handback', handback?.held ? 'passed' : 'failed', handback ? (handback.held ? 'acceptance waits in the inbox for the person; a relayed approval is refused' : 'a relayed acceptance changed the deliverable’s trust') : 'no validated deliverable');
+      record(host.id, 'final handback', handback?.held ? 'passed' : heldForReview ? 'untested' : 'failed', handback ? (handback.held ? 'acceptance waits in the inbox for the person; a relayed approval is refused' : 'a relayed acceptance changed the deliverable’s trust') : 'Final handback requires a native review; this static run does not manufacture a semantic receipt.');
       // Decision relay: a fresh project with open onboarding questions, answered through decide.
       const list = await s.rpc('tools/list');
       record(host.id, 'no nested host spawn', !list.result.tools.some((t) => /spawn|launch|run_host/.test(t.name)) ? 'passed' : 'failed', 'no tool offers to start another host; the server and broker import no process spawning');

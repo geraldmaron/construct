@@ -1,3 +1,4 @@
+import { syntheticSemanticAdapter } from '../workflow/semantic-fixture.ts';
 /**
  * tests/kernel/broker/support.ts — a broker context over an initialized
  * project in a sandbox, with a deterministic clock and ids.
@@ -28,7 +29,7 @@ export interface BrokerFixture {
   cleanup(): void;
 }
 
-export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive', options: { now?: () => string } = {}): BrokerFixture {
+export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive', options: { now?: () => string; semanticReview?: 'synthetic' | 'none' } = {}): BrokerFixture {
   const box = sandbox();
   const at = '2026-09-02T12:00:00.000Z';
   const init = initializeProject({ root: box.cwd, projectId: 'proj-test', name: 'demo', at });
@@ -45,7 +46,8 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
     ? { client: 'claude-code', surface: 'interactive', sessionId: 'ses_fixture', executorId: 'session:claude-code', actor: 'person via claude-code' }
     : { client: 'unknown', surface: 'headless', sessionId: 'ses_runner', executorId: 'runner:ci', actor: 'runner:ci' };
   const ctx = options.now ? { ...box.ctx, now: options.now } : box.ctx;
-  const broker = createBrokerContext(ctx, project, binding);
+  const rawBroker = createBrokerContext(ctx, project, binding);
+  const broker = options.semanticReview === 'none' ? rawBroker : { ...rawBroker, workflow: syntheticSemanticAdapter(rawBroker.workflow, init.store, ctx.now) };
   return { box, ctx, broker, binding, cleanup: () => { init.store.close(); box.cleanup(); } };
 }
 

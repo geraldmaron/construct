@@ -589,6 +589,21 @@ Reads only: no.
 
 ## Runs
 
+### `construct run review <id>`
+
+review a prepared final artifact through an explicit native host inside the invoking sandbox
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--step` | yes | the currently leased step run id |
+| `--token` | yes | the current step lease token |
+| `--prepared` | yes | review reference returned by final submission |
+| `--host` | yes | explicit native reviewer host (currently codex) |
+| `--model` | yes | explicit native subscription model |
+| `--timeout-ms` | yes | bounded review timeout (default 180000; maximum 300000) |
+
+Reads only: no.
+
 ### `construct run verify <id>`
 
 observe a verification command inside the invoking host sandbox and bind its exit to a held step

@@ -197,8 +197,8 @@
       "interactionClass": "remember"
     },
     "research-brief": {
-      "version": "1.1.1",
-      "digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+      "version": "1.2.0",
+      "digest": "sha256:fa70f033af0c08863b962ee82dc652f7ddcaa89f62fbb753879971e1181bd2fb",
       "title": "Research a question",
       "interactionClass": "manage"
     },

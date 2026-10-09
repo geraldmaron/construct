@@ -1,3 +1,4 @@
+import { runExecutionProblems } from '../workflow/verification.ts';
 /** A managed run's requested local artifact already has an admitted purpose.
  * Reserve it with the step, instead of asking the host to invent another
  * outcome/statement and a second coordination sequence before delivery.
@@ -80,6 +81,7 @@ export function settleManagedDelivery(ctx: BrokerContext, runId: string, state: 
   if (scope?.kind !== 'managed_delivery' || scope.runId !== runId) return;
   const token = reservationToken(ctx, item.id);
   if (!token) throw new Error('managed delivery reservation lost its claim secret');
-  if (state === 'succeeded') completeWork(ctx.store, { id: item.id, owner: item.claimOwner, token, at: ctx.now(), reason: 'The managed run completed its required checks and requested artifact. This records delivery, not human acceptance or universal semantic verification.' });
+  if (state === 'succeeded' && runExecutionProblems(ctx.store, runId, projectResolver(ctx.store, ctx.root)).length) return;
+  if (state === 'succeeded') completeWork(ctx.store, { id: item.id, owner: item.claimOwner, token, at: ctx.now(), resolveEvidence: projectResolver(ctx.store, ctx.root), reason: 'The managed run completed its required checks and requested artifact. This records delivery, not human acceptance or universal semantic verification.' });
   else releaseWork(ctx.store, { id: item.id, owner: item.claimOwner, token, at: ctx.now() });
 }

@@ -1,3 +1,4 @@
+import { semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type NativeReviewerIdentity } from './semantic-review.ts';
 import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
@@ -15,7 +16,7 @@ import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
  */
 
 import { createHash } from 'node:crypto';
-import { requestedFileProblems, persistedRecordProblems, artifactRefs, verificationReceipt, inheritedEvidence, stalePriorEvidence, staleReceiptSubjects, executionCheck, type VerificationReceipt } from './verification.ts';
+import { requestedFileProblems, persistedRecordProblems, artifactRefs, verificationReceipt, inheritedEvidence, stalePriorEvidence, staleReceiptSubjects, executionCheck, runExecutionProblems, type VerificationReceipt } from './verification.ts';
 import { methodReceipts } from './methods.ts';
 import { recordResolvedSkill, recordResolvedWorkflow } from '../state/resolved.ts';
 import { researchCoverage } from '../source/research.ts';
@@ -74,6 +75,7 @@ export interface WorkflowServiceDeps {
   readonly resolveEvidence?: RefResolver;
   readonly targetSystemFor?: (step: WorkflowStep) => string;
   readonly defaultLeaseMs?: number;
+  readonly semanticReviewer?: NativeReviewerIdentity | null;
 }
 
 export interface StartInput {
@@ -275,6 +277,7 @@ export interface SubmitInput {
 }
 
 export interface SubmitResult {
+  readonly semanticReview?: { readonly preparedRef: string | null; readonly digest: string | null; readonly problems: readonly string[]; readonly next: string };
   readonly step: StepRun;
   readonly validation: readonly ValidatorResult[];
   readonly run: WorkflowRun;
@@ -885,6 +888,30 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     };
   };
 
+  /** Preserve the candidate without consuming its lease or asking for a waiver. */
+  function pendingSemanticReview(run: WorkflowRun, leased: LeasedStep, step: WorkflowStep, output: Readonly<Record<string, unknown>>, evidence: readonly { ref: string; excerpt?: string }[], resolve: RefResolver | undefined, at: string, validation: readonly ValidatorResult[], sensitivity: string | null, candidateBody?: Record<string, unknown>): SubmitResult | null {
+    if (!isLastStep(run, step) || !requiredSemanticContract(run)) return null;
+    const body = candidateBody ?? deliverableBody(run, output, handedTo(run, step), evidence, sensitivity, resolve);
+    // Preserve the exact candidate even when a bounded review cannot be prepared.
+    const draft = upsertDraft(store, { id: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: deps.workflows.get(run.workflowId)?.manifest.deliverable.kind ?? 'artifact', body, at });
+    let prepared: ReturnType<typeof prepareSemanticReview> | null = null;
+    let problems: string[];
+    try {
+      prepared = prepareSemanticReview(store, { run, leased, body, evidence: runEvidence(run.id, evidence), resolve, at });
+      problems = semanticReviewProblems(store, prepared, resolve);
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes('exceeds 512 KiB')) throw error;
+      problems = [error.message];
+    }
+    if (problems.length) {
+      const next = prepared
+        ? `Keep this draft and lease. From the invoking host's permitted command tool, run construct run review ${run.id} --step ${leased.id} --token <current-lease-token> --prepared ${prepared.ref} --host <native-host> --model <explicit-model>, then resubmit the identical final output. The reviewer is bounded to held text; unavailable permission or adapter leaves an unverified draft. No MCP background launch or host fallback is authorized.`
+        : 'The exact draft is preserved, but no review packet was prepared. Reduce the candidate or provide a supported bounded evidence representation and resubmit on this lease. Do not truncate material evidence or claim verification.';
+      return { step: getStep(store, leased.id)!, validation: [...validation, { validator: 'semantic_review', ok: false, problems }], run: getRun(store, run.id)!, deliverable: draft, ignored: [], semanticReview: { preparedRef: prepared?.ref ?? null, digest: prepared?.digest ?? null, problems, next } };
+    }
+    return null;
+  }
+
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
   const policyContext = (interactionClass: PolicyContext['interactionClass'], at: string): PolicyContext => ({
     at,
@@ -1038,7 +1065,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   }
 
   /** Mark every pending step whose needs are done as ready, and settle the run when everything is terminal. */
-  function advance(runId: string, at: string): WorkflowRun {
+  function advance(runId: string, at: string, resolveEvidence = deps.resolveEvidence): WorkflowRun {
     return store.transaction(() => {
       const run = getRun(store, runId)!;
       if (['succeeded', 'failed', 'cancelled'].includes(run.state)) return run;
@@ -1075,6 +1102,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (after.every((s) => s.state === 'succeeded' || s.state === 'skipped')) {
         // A run whose steps are all done still waits for a question its last step raised; it settles once that is answered.
         if (run.state === 'waiting_for_decision') return run;
+        const reviewProblems = runExecutionProblems(store, runId, resolveEvidence);
+        if (reviewProblems.length) return transitionRun(store, { id: runId, to: 'blocked', at, reason: `Semantic review incomplete: ${reviewProblems.join('; ')}` });
         return transitionRun(store, { id: runId, to: 'succeeded', at });
       }
       if (run.state === 'ready' && after.some((s) => s.state === 'leased')) return transitionRun(store, { id: runId, to: 'running', at });
@@ -1353,6 +1382,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
+    if (requiredSemanticContract(run)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Final submission prepares a review packet and preserves an unverified draft while keeping this lease. Follow semanticReview.next in its response, then resubmit the same final output. A reported review or passing shell command is insufficient. If the invoking host cannot run the review adapter, report that exact limitation and preserve the draft; do not widen permissions.');
     const destination = asked.intake?.destination;
     if (destination?.kind === 'project_file' && destination.ref) lines.push(`The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`);
     const p = asked.period;
@@ -1472,7 +1502,19 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (to === 'validated') throw new Error(VALIDATED_BY_CHECKS);
     if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
     const run = getRun(store, current.runId);
+    const ownStep = current.stepRunId ? getStep(store, current.stepRunId) : null;
+    if (ownStep && ['leased', 'ready', 'waiting_for_decision'].includes(ownStep.state)) {
+      const asking = listOpenDecisions(store, current.runId).find(d => d.kind === 'clarification');
+      if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
+      throw new Error('complete the pending final step before changing its draft trust; the exact reviewed generation must be resubmitted');
+    }
     if (run && (to === 'accepted' || to === 'final')) {
+      const asking = listOpenDecisions(store, run.id).find((d) => d.kind === 'clarification');
+      if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
+      const reviewProblems = runSemanticProblems(store, run.id, deps.resolveEvidence);
+      if (reviewProblems.length) throw new Error(`semantic review is not established: ${reviewProblems.join('; ')}`);
+      const finalStep = listSteps(store, run.id).at(-1);
+      if (requiredSemanticContract(run) && current.stepRunId !== finalStep?.id) throw new Error('only the exact final deliverable covered by semantic review may be accepted or finalized');
       if (deps.resolveEvidence) {
         const checked = current.stepRunId ? getStep(store, current.stepRunId) : null;
         const receipt = (checked?.output as { verificationReceipt?: VerificationReceipt } | null)?.verificationReceipt;
@@ -1485,8 +1527,6 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const execution = executionCheck(store, { runId: run.id, stepRunId: completed.id, attempt: completed.attempts, output: completed.output, resolve: deps.resolveEvidence, subjects: listSteps(store, run.id).flatMap((s) => artifactRefs(s.output)) });
         if (!execution.ok) throw new Error(`execution verification is not established: ${execution.problems.join('; ')}`);
       }
-      const asking = listOpenDecisions(store, run.id).find((d) => d.kind === 'clarification');
-      if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
       if (activeContradictionCount(store) > 0) {
         throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
       }
@@ -1994,7 +2034,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           invocationId: key,
           workIdentity,
           workflowDigest: workflow.digest,
-          bindings: { steps: m.steps, digest: workflow.digest, version: m.version, asked },
+          bindings: { steps: m.steps, digest: workflow.digest, version: m.version, asked, semanticContract: semanticContract({ input: given, asked }, deps.semanticReviewer ?? null) },
           at,
         });
         const superseding = `superseded by run ${run.id}`;
@@ -2085,11 +2125,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         return { step: getStep(store, leased.id)!, validation: [{ validator: 'evidence_generation', ok: false, problems: [failed.stateReason!] }], run: failed, deliverable: null, ignored: [] };
       });
       if (noData && !step.capabilities.includes('run_tests')) {
-        const policy = currentWorkflow?.manifest.onNoData ?? 'fail';
+        const continued = listStepDecisions(store, leased.id).some(d => d.state === 'resolved' && d.resolution === 'continue' && (d.subject as { noData?: boolean } | null)?.noData);
+        const policy = continued ? 'succeed_empty' : currentWorkflow?.manifest.onNoData ?? 'fail';
         return store.transaction(() => {
           if (policy === 'fail') {
             const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { noData: true }, reason: 'no data' });
-            return { step: failed, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
+            return { step: failed, validation: [], run: advance(run.id, at, resolve), deliverable: null, ignored: [] };
           }
           if (policy === 'block') {
             const decision = raiseDecision(store, { id: deps.nextId('decision'), kind: 'blocked', question: `Step ${step.id} found no data. Continue without it, or stop?`, runId: run.id, stepRunId: leased.id, options: ['continue', 'stop'], subject: { noData: true }, at });
@@ -2098,9 +2139,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             void decision;
             return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
+          const pending = pendingSemanticReview(run, leased, step, { noData: true, ...output }, evidence, resolve, at, [], sensitivityFor(run, evidence, resolve));
+          if (pending) return pending;
           // Only an accepted waiver writes what was waived and by whom, and only the kernel what a step's citations carry.
           const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined, citedSensitivity: undefined, citedUnclassified: undefined, verificationReceipt: undefined, verificationContractReceipt: undefined, executionVerification: undefined, methodReceipts: undefined, researchCoverage: undefined } });
-          return { step: done, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
+          return { step: done, validation: [], run: advance(run.id, at, resolve), deliverable: null, ignored: [] };
         });
       }
       const sensitivity = sensitivityFor(run, evidence, resolve);
@@ -2159,11 +2202,24 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           const reason = failures.map((f) => `${f.validator}: ${f.problems.join('; ')}`).join(' | ');
           const failed = failStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, error: { validation }, reason });
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
-          return { step: failed, validation, run: advance(run.id, at), deliverable: null, ignored: [] };
+          return { step: failed, validation, run: advance(run.id, at, resolve), deliverable: null, ignored: [] };
         }
         // What was waived, and by whom on which channel, and what the run's citations carry so far (the highest
         // sensitivity, and those of unknown sensitivity) are the kernel's to record: the step's own keys of those
         // names are not kept. A later step's approval question reads them.
+        const finalBody = deliverableBody(run, output, handedTo(run, step), evidence, sensitivity, resolve);
+        if (waived) finalBody.waived = [...runWaivers(run.id), ...failures.map(f => ({ stepId: step.id, validator: f.validator, problems: f.problems, acceptedBy: waiver.resolvedBy, channel: waiver.channel }))];
+        const finalBlockers = isLastStep(run, step) && step.outputs.includes('blockers') ? blockersOf(output.blockers) : [];
+        if (finalBlockers.length && !run.cancelRequested) {
+          const draft = upsertDraft(store, { id: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: finalBody, at });
+          raiseDecision(store, { id: deps.nextId('decision'), kind: 'clarification', runId: run.id, stepRunId: leased.id, question: `Before the work goes on, the plan needs your answer on: ${finalBlockers.map((b, i) => `${String(i + 1)}. ${b}`).join(' ')}`, subject: { clarification: { stepId: step.id, blockers: finalBlockers } }, at });
+          transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: PLAN_QUESTIONS_REASON });
+          if (getRun(store, run.id)!.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+          transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: PLAN_QUESTIONS_REASON });
+          return { step: getStep(store, leased.id)!, validation, run: getRun(store, run.id)!, deliverable: draft, ignored: [] };
+        }
+        const pendingReview = pendingSemanticReview(run, leased, step, output, evidence, resolve, at, validation, sensitivity, finalBody);
+        if (pendingReview) return pendingReview;
         const receipt = verificationReceipt({ runId: run.id, stepRunId: leased.id, observedAt: at, actor: leased.leaseOwner, subjects: [...artifactRefs(output), ...listSteps(store, run.id).flatMap((s) => artifactRefs(s.output))], evidence: runEvidence(run.id, evidence), priorEvidence, checks: validation, resolve });
         const done = completeStep(store, {
           id: leased.id,
@@ -2211,14 +2267,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         const judgment = judgmentOf(run);
         const needsChallenge = judgmentRequired(currentWorkflow?.manifest.deliverable.challenge ?? false, judgment);
         if (isLast || step.challenge) {
-          deliverable = upsertDraft(store, { id: deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: deliverableBody(run, output, handed, evidence, sensitivity, resolve), at });
+          deliverable = upsertDraft(store, { id: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: currentWorkflow?.manifest.deliverable.kind ?? 'artifact', body: finalBody, at });
           const executionSteps = listSteps(store, run.id).filter((s) => stepsOf(run).find((st) => st.id === s.stepId)?.capabilities.includes('run_tests'));
           const executionVerified = executionSteps.length > 0 && executionSteps.every((s) => executionCheck(store, { runId: run.id, stepRunId: s.id, attempt: s.attempts, output: s.output, resolve, subjects: receipt.subjects.map((x) => x.ref) }).ok);
           if (isLast && validation.every((v) => v.ok) && step.validators.length > 0 && !runHasWaiver(run.id) && (!executionSteps.length || executionVerified)) {
-            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, receipt, assurance: 'structural', executionVerified, semanticSupportVerified: false, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
+            deliverable = setTrustState(store, { id: deliverable.id, trustState: 'validated', actor: `validators:${step.validators.join(',')}`, at, verification: { validators: validation, receipt, assurance: 'structural', executionVerified, semanticSupportVerified: requiredSemanticContract(run) !== null && runSemanticProblems(store, run.id, resolve).length === 0, challengeRequired: needsChallenge, ...(resolve ? { evidence: provenanceOf(runEvidence(run.id, evidence), resolve) } : {}) } });
           }
         }
-        return { step: done, validation, run: advance(run.id, at), deliverable, ignored };
+        return { step: done, validation, run: advance(run.id, at, resolve), deliverable, ignored };
       });
     },
 
@@ -2277,7 +2333,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             }
           } else if (decision.kind === 'blocked' && subject.noData && decision.stepRunId) {
             if (resolution === 'continue') {
-              transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
+              const stepRun = getStep(store, decision.stepRunId);
+              const final = run && stepRun && stepsOf(run).find(s => s.id === stepRun.stepId);
+              if (run && final && requiredSemanticContract(run) && isLastStep(run, final)) {
+                grantExtraAttempt(store, { id: decision.stepRunId, at, by });
+                transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: 'continue with an explicit no-data candidate and semantic review' });
+              } else transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
             } else {
               transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by}` });
             }
@@ -2295,7 +2356,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             // The answer stays on the question, where every later step reads it; the run's input stays as it was given.
             if (decision.stepRunId) {
               const sr = getStep(store, decision.stepRunId);
-              if (sr?.state === 'waiting_for_decision') transitionStep(store, { id: sr.id, to: 'ready', at });
+              if (sr?.state === 'waiting_for_decision') {
+                grantExtraAttempt(store, { id: sr.id, at, by });
+                transitionStep(store, { id: sr.id, to: 'ready', at });
+              }
             }
           }
           if (run) {

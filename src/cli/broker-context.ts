@@ -4,6 +4,7 @@
  * This is the adapter edge: it reads env and cwd so the kernel need not.
  */
 
+import { pinSemanticReviewer } from '../hosts/semantic-review.ts';
 import { runnerCapabilities } from '../hosts/executors.ts';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
@@ -133,6 +134,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     host,
     sources: available,
     projectWritePolicy,
+    semanticReviewer: pinSemanticReviewer(binding.client, ctx.env, project.root),
     resolveEvidence: (ref) => projectResolver(project.store, project.root, null, { hostReads: policy.hostReads })(ref),
     now: ctx.now,
     nextId: ctx.nextId,

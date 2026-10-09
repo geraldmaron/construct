@@ -1,3 +1,4 @@
+import { runSemanticProblems } from './semantic-review.ts';
 import { selectedVerifier, verifierProblems } from './verifier-contract.ts';
 import type { StateStore } from '../state/open.ts';
 import type { WorkflowStep } from '../registry/models.ts';
@@ -165,9 +166,9 @@ export function runExecutionProblems(store: StateStore, runId: string, resolve?:
   if (!Array.isArray(frozen)) return ['run has no frozen step requirements'];
   const rows = listSteps(store, runId);
   const subjects = rows.flatMap((s) => artifactRefs(s.output));
-  return frozen.filter((s) => s.capabilities.includes('run_tests')).flatMap((step) => {
+  return [...runSemanticProblems(store, runId, resolve), ...frozen.filter((s) => s.capabilities.includes('run_tests')).flatMap((step) => {
     const row = rows.find((s) => s.stepId === step.id);
     if (!row || row.state !== 'succeeded') return [`${step.id}: required execution step has not succeeded`];
     return executionCheck(store, { runId, stepRunId: row.id, attempt: row.attempts, output: row.output, resolve, subjects }).problems.map((p) => `${step.id}: ${p}`);
-  });
+  })];
 }
