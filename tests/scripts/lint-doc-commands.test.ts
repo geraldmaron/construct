@@ -59,7 +59,7 @@ test('a documented subcommand outside a noun’s set fails, and the set is shown
   try {
     const r = await lint(root);
     assert.equal(r.code, 1);
-    assert.match(r.err, /'source' has no 'watch' subcommand \(it accepts: add, list, refresh, relate, retire, show\)/);
+    assert.match(r.err, /'source' has no 'watch' subcommand \(it accepts: add, list, refresh, relate, retire, show, traverse\)/);
   } finally {
     cleanup();
   }

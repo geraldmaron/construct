@@ -51,7 +51,7 @@ test('an unknown command is refused by name and still shows the grouped help, ex
 test('a noun without its subcommand names the subcommands, exit 2', async () => {
   const bare = await capture(() => run(['source']));
   assert.equal(bare.code, 2);
-  assert.match(bare.err, /needs a subcommand: add \| list \| refresh \| relate \| retire \| show|needs a subcommand: list \| show \| add \| retire \| refresh \| relate/);
+  assert.match(bare.err, /needs a subcommand: add \| list \| refresh \| relate \| retire \| show|needs a subcommand: list \| show \| add \| retire \| traverse \| refresh \| relate/);
   const wrong = await capture(() => run(['source', 'watch']));
   assert.equal(wrong.code, 2);
   assert.match(wrong.err, /no subcommand "watch"/);

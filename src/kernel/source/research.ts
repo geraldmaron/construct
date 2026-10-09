@@ -25,7 +25,7 @@ function identity(hit: ResolvedRef | null, ref: string): string {
   return hit?.path ?? (hit?.sourceId && hit.itemRef ? JSON.stringify([hit.sourceId, hit.itemRef]) : ref);
 }
 
-/** Conservative URI and inline Markdown link extraction, not a full document parser. */
+/** Conservative URI, inline and reference-style Markdown link extraction, not a full document parser. */
 export function referencesIn(text: string, from?: ResolvedRef): string[] {
   const refs = new Set<string>();
   for (const match of text.matchAll(/\b[a-z][a-z0-9+.-]*:\/\/[^\s<>"'`(){}]+/gi)) {
@@ -33,8 +33,14 @@ export function referencesIn(text: string, from?: ResolvedRef): string[] {
     refs.add(match[0].replace(/[.,;:!?]+$/, ''));
   }
   const uriBase = [from?.url, from?.ref, from?.itemRef].find((value) => value && /^[a-z][a-z0-9+.-]*:\/\//i.test(value));
-  for (const match of text.matchAll(/\[[^\]\n]*\]\(<?([^\s)<>]+)>?(?:\s+"[^"\n]*")?\)/g)) {
-    const target = match[1]!;
+  const targets = [...text.matchAll(/\[[^\]\n]*\]\(<?([^\s)<>]+)>?(?:\s+"[^"\n]*")?\)/g)].map((match) => match[1]!);
+  const definitions = new Map([...text.matchAll(/^ {0,3}\[([^\]\n]+)\]:\s*<?([^\s<>]+)>?/gm)].map((match) => [match[1]!.trim().toLowerCase(), match[2]!]));
+  for (const match of text.matchAll(/\[([^\]\n]+)\](?:\[([^\]\n]*)\])?(?![:(])/g)) {
+    const key = (match[2] || match[1])!.trim().toLowerCase();
+    const target = definitions.get(key);
+    if (target) targets.push(target);
+  }
+  for (const target of targets) {
     if (target.includes(REDACTION_PLACEHOLDER) || target.startsWith('#') || /^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
     if (from?.path) refs.add(resolvePath(dirname(from.path), target));
     else if (uriBase) {

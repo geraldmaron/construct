@@ -148,6 +148,17 @@ retire a source; its history stays
 
 Reads only: no.
 
+### `construct source traverse <id>`
+
+follow bounded references inside one declared readable directory source and record omissions
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--from` | yes | starting document relative to the declared directory |
+| `--max-documents` | yes | document budget, 1–48 (default 48) |
+
+Reads only: no.
+
 ### `construct source refresh <id>`
 
 read a source now and record what changed
