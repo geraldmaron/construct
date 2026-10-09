@@ -708,7 +708,7 @@ Reads only: yes.
 
 ### `construct hook <host-or-event> [event]`
 
-run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0
+run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, exits 0 once its command line parses
 
 | Flag | Takes a value | Meaning |
 |---|---|---|

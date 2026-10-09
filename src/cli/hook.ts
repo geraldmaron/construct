@@ -32,7 +32,7 @@ import { onPostTool, onSessionStart, onStop } from '../hosts/hooks/handlers.ts';
 
 export const HOOK_SPEC: CommandSpec = {
   path: ['hook'],
-  gloss: 'run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0',
+  gloss: 'run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, exits 0 once its command line parses',
   group: 'Host',
   positionals: ['<host-or-event>', '[event]'],
   flags: [
