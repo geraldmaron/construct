@@ -76,10 +76,14 @@ output that leans on it without saying so.
 A directory read fingerprints each file by content, so touching a file is
 not a change, and `construct source refresh <id>` reports which files were
 added, modified, or removed. When finished work cited a file that then
-changed, or drew on a source that gained files, the refresh opens a drift
-finding against that deliverable and puts a question in the inbox: revise,
-re-run, or dismiss. `bootstrap` names directory sources that moved since
-their last read, so a session refreshes before relying on them.
+changed or was removed, the refresh opens a drift finding against that
+deliverable and puts a question in the inbox: revise, re-run, or dismiss.
+Work that drew on a source that gained files gets a finding too, and the
+refresh asks one question covering all of it, so a busy folder does not
+flood the inbox. Only a run's latest deliverable counts, so a run that left
+a draft and a final deliverable gets one finding. `bootstrap` names
+directory sources that moved since their last read, so a session refreshes
+before relying on them.
 
 ## What the person settles governs
 

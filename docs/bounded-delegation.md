@@ -17,7 +17,10 @@ The project's `policy.projectWrite: never` also disables delegation.
 
 Attempts live in the existing project database as versioned native work events.
 Workflow links, sessions, reservations, review evidence, and activity reuse
-the existing tables. Native work remains the only task record.
+the existing tables. Native work remains the only task record. Attempt
+children end with their parent: completing or cancelling the parent cancels
+its unfinished attempts. An attempt whose claim is still live holds the
+parent open until it is cancelled or finishes.
 
 Workers have read-only tools. An implementation returns a unified patch;
 Construct checks its scope and file types before applying it to the isolated
@@ -116,8 +119,10 @@ No automatic worktree cleanup removes partial work.
 
 A short-lived watchdog owns each process group. Timeout, cancellation, or
 loss of the MCP supervisor's IPC connection terminates that group. A watchdog
-exit triggers a second termination attempt from the parent. Windows process
-tree controls are not implemented, so Windows execution is blocked.
+exit triggers a second termination attempt from the parent. When the lead's
+MCP server shuts down, its running attempts are cancelled and an integration
+in progress ends as `integration_failed`. Windows process tree controls are
+not implemented, so Windows execution is blocked.
 
 Recovery never treats an expired lease as proof that a process died. Unknown
 or live process identities stay `orphaned`, blocking new dispatch. A restart

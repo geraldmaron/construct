@@ -145,9 +145,13 @@ ignores.
 Automated CI is deterministic and credential-free. `npm run conformance`
 checks every supported host without a credential: whether it is installed
 here, whether `construct init` wires it and plants the operational skill
-where it reads, the MCP handshake, the typed intake (a wrong reading comes
-back naming its field, a right one matches by its deliverable, and the
-classify_request schema and description fit a host's budget), skill
+where it reads, that the host file names no machine path and starts the
+server exactly as written, that Claude Code's hooks stay in its
+machine-local settings, the MCP handshake, that every host reads
+byte-identical instructions, tool list, and skill with the operating
+contract in the first 512 characters, the typed intake (a wrong reading
+comes back naming its field, a right one matches by its deliverable, and
+the classify_request schema and description fit a host's budget), skill
 loading on request, a managed workflow run to a final deliverable, decision
 relay, and the limits of the headless surface. It prints a table and writes
 `.tmp-conformance/report.json`.
@@ -155,7 +159,9 @@ relay, and the limits of the headless surface. It prints a table and writes
 Live calls into an installed host run only with `--live`, outside any host
 session, with that host's credential present. Codex, Cursor, and OpenCode
 need `--model=<model>`, and Cursor also `--allow-cursor-state`. A host that
-is not installed, has no credential, lacks a required model or opt-in, or
-would be nested is an explicit untested result with the reason, never a
-pass. What was and was not exercised for a given version
-is recorded in the changelog entry for that version.
+is not installed, has no scripted prompt entry point (VS Code and Bob),
+lacks a required model or opt-in, or would be nested is an explicit untested
+result with the reason, never a pass. A live call that runs is passed or
+failed by its exit status and reply, so a missing credential is a failure.
+What was and was not exercised for a given version is recorded in the
+changelog entry for that version.

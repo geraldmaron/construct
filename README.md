@@ -19,6 +19,17 @@ the predecessor. Nothing here is promised stable.
 - Opt-in bounded delegation through Claude, Codex, and Cursor adapter paths:
   isolated patch proposals, independent review, cancellation, and serial
   integration with combined-result validation.
+- Typed intake: the host reports its own reading of each request to
+  `classify_request`, and Construct checks that reading instead of
+  classifying your words. Every host reads the same short contract first.
+  No live host run has measured it yet.
+- Grounding that is checked: a citation must resolve to something the
+  project holds (a project file, a declared source or an item a recorded
+  read holds, a deliverable, or a Construct record), quotes and figures are
+  checked against what was cited, and only passing checks make a
+  deliverable validated.
+- Portable wiring for all six hosts: no committed host file names a path on
+  your machine.
 
 **Delegation remains disabled by default and is not live-verified across the
 three tools.** Synthetic tests exercise all six directions; real subscription,
@@ -43,20 +54,24 @@ proposal naming where it came from. Proposed statements wait in
 `construct inbox` until you confirm or retire them.
 
 Init then connects the agent host you use. It wires the host you ran it
-from, or the only one installed on this machine; when it finds several and
-you are at your own terminal, it asks which you use. Otherwise it names the
-hosts it found, wires none, and says so: run `construct init --client=<host>`
-(claude-code, cursor, vscode, opencode, codex, or bob; comma-separate for
-more than one). For each host it writes the project MCP file and plants the
-operational `construct` skill in the project, where that host reads it.
+from (it can detect Claude Code, Cursor, and Bob), the hosts already wired
+in this project, or the only one installed on this machine; when it finds
+several and you are at your own terminal, it asks which you use. Otherwise it
+names the hosts it found, wires none, and says so: run
+`construct init --client=<host>` (claude-code, cursor, vscode, opencode,
+codex, or bob; comma-separate for more than one). For each host it writes
+the project MCP file and plants the operational `construct` skill in the
+project, where that host reads it. For Claude Code it also puts Construct's
+hooks in `.claude/settings.local.json`, which stays on this machine.
 
 Do the one-time step init prints for your host (in Claude Code: start a new
-session and approve the `construct` server), then ask for what you want in
-your own words. Construct tells the session to handle your request first
-and to ask the three setup questions (what this project is to you, what
-result matters most now, and what must not be violated) only when an answer
-changes that work, or all in one message when you have asked for nothing
-yet; `--scale`, `--outcome`, and `--constraint` answer them at init instead.
+session, approve the `construct` server, and allow its tools), then ask for
+what you want in your own words. Construct tells the session to handle your
+request first and to ask the three setup questions (what this project is to
+you, what result matters most now, and what must not be violated) only when
+an answer changes that work, or all in one message when you have asked for
+nothing yet; `--scale`, `--outcome`, and `--constraint` answer them at init
+instead.
 
 After that, work in your agent session. The command line is for setup,
 inspection, scripting, and recovery: `construct status`, `construct doctor`,
@@ -67,7 +82,12 @@ too (stop every Construct session on the project first).
 
 When upgrading an existing project, stop its Construct sessions before running
 `construct migrate`. Alpha.26 uses state format 4; older state must be upgraded
-explicitly. Migration takes a backup under its upgrade lock. Run
+explicitly. Migration takes a backup under its upgrade lock. Then run
+`construct init --client=<host>` for each host you use and commit the
+rewritten files: host files an earlier alpha wrote name this machine's Node
+and install, and `construct doctor` reports one whose path no longer exists
+as broken. For Claude Code, init also moves Construct's hooks from
+`.claude/settings.json` to `.claude/settings.local.json`. Run
 `construct doctor` afterward and follow any skill-update instructions before
 reopening agent sessions. Installing this package does not authorize workers.
 
@@ -83,9 +103,12 @@ npm run lint && npm run typecheck && npm test && npm run smoke
 ```
 
 That line is the whole gate. `npm run lint` is a chain of small checks: no
-absolute paths, glossary parity, no tracker ids in code, skill-spec
-conformance, terminal-escape safety, a documentation index, and a check that
-every command printed in the documentation is one the CLI accepts. `npm test`
+absolute paths, glossary parity, no tracker ids in code, skill-spec and
+skill-policy conformance, terminal-escape safety, a documentation index, a
+check that every command printed in the documentation is one the CLI accepts,
+a check that every tracker id the documentation cites exists, lockfile version
+parity, and checks that the registry index and the generated reference pages
+are current. `npm test`
 is the sterile suite through `node --test`. `npm run smoke` packs the
 package, installs it into a scratch project, and runs the spine from packaged
 bytes.
