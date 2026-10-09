@@ -404,7 +404,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         if (report.items.length) throw new Error(`${outcome} cannot contain read items`);
         if (!report.reason?.trim() || !report.scope?.trim()) throw new Error(`${outcome} needs the attempted scope and reason`);
         // A failed request or empty query says nothing about removal of prior items.
-        access(id, outcome, at, nextId, { ...(descriptor ?? {}), provenance: 'reported', scope: descriptor?.scope ?? redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
+        access(id, outcome, at, nextId, { ...(descriptor ?? { operation: '*', mode: 'read', applicability: 'scope' }), provenance: 'reported', scope: descriptor?.scope ?? redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
         // This attempted scope says nothing about access to other items of the source.
         return { sourceId: id, outcome, snapshot: null, reason: redact(report.reason) };
       }

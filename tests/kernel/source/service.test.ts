@@ -354,7 +354,7 @@ test('empty queries and distinct access failures preserve previous evidence and 
       assert.equal(report.snapshot, null);
       assert.equal(svc.status('jira', at()).lastSnapshot?.id, original.snapshot?.id);
       assert.equal(currentManifest(fx.store, 'jira')?.[0]?.text, 'Known previous fact');
-      assert.deepEqual(svc.status('jira', at()).access?.evidence, { provenance: 'reported', scope: 'query: the requested topic', reason: 'Actual connector response', sessionId: 'session-a', coverage: { complete: false }, outcome });
+      assert.deepEqual(svc.status('jira', at()).access?.evidence, { operation: '*', mode: 'read', applicability: 'scope', provenance: 'reported', scope: 'query: the requested topic', reason: 'Actual connector response', sessionId: 'session-a', coverage: { complete: false }, outcome });
     }
     assert.throws(() => svc.reportRead('jira', { outcome: 'no_results', items: [] }, at(), next), /scope and reason/);
     assert.throws(() => svc.reportRead('jira', { outcome: 'permission_denied', items: [{ ref: '42' }], reason: 'denied', scope: '42' }, at(), next), /cannot contain read items/);

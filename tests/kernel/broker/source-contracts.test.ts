@@ -247,3 +247,34 @@ for (const failed of ['scoped', 'legacy', 'throw'] as const) test(`a newer ${fai
     assert.equal((await source(ctx, { action: 'check', id: 'warehouse', request })).ready, true);
   } finally { fx.cleanup(); }
 });
+
+for (const value of [1.5, 2, null]) test(`nullable integer schema enforces integer semantics for ${String(value)}`, async () => {
+  const { fx, report, map } = await mappedFixture();
+  try {
+    const shape: any = structuredClone(schema);
+    shape.properties.rows.items.properties.stock.type = ['integer', 'null'];
+    await report([{ ...data()[0], stock: value }], shape);
+    const result = await map({ ...mapping, fields: mapping.fields.map((f) => f.name === 'stock' ? { ...f, nullable: true } : f) });
+    assert.equal(result.aggregationReady, value !== 1.5);
+    if (value === 1.5) { assert.deepEqual(result.rows, []); assert.match(result.problems.join(' '), /integer/); }
+  } finally { fx.cleanup(); }
+});
+
+test('a descriptor-free denied scope invalidates applicable witnessed access and cannot disappear behind older success', async () => {
+  const fx = brokerFixture();
+  try {
+    await declare(fx.broker);
+    const adapter = createSourceService(fx.broker.store, { root: fx.box.cwd, readers: new Map([['other', async () => ({ outcome: 'read' as const, report: { digest: 'same', summary: 'stock', evidence: 'witnessed' as const, observation, sessionId: fx.broker.sessionId!, items: [{ externalRef: 'stock', kind: 'item', name: 'stock', attributes: { text: '[]' } }] } })]]) });
+    const ctx = { ...fx.broker, sources: adapter };
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    const check = () => source(fx.broker, { action: 'check', id: 'warehouse', request });
+    assert.equal((await check()).ready, true);
+    await source(fx.broker, { action: 'report', id: 'warehouse', outcome: 'permission_denied', scope: 'payroll', reason: 'no access', items: [] });
+    assert.equal((await check()).ready, true, 'different scope is independent');
+    await source(fx.broker, { action: 'report', id: 'warehouse', outcome: 'permission_denied', scope: request.scope, reason: 'no access', items: [] });
+    assert.equal((await check()).ready, false);
+    assert.match((await check()).problems.join(' '), /permission_denied/);
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    assert.equal((await check()).ready, true, 'fresh matching adapter probe recovers readiness');
+  } finally { fx.cleanup(); }
+});
