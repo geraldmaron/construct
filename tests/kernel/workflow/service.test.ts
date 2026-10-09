@@ -9,7 +9,11 @@ import assert from 'node:assert/strict';
 import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
 import { listGrants } from '../../../src/kernel/state/grants.ts';
-import { listAttempts } from '../../../src/kernel/state/steps.ts';
+import { getStep, listAttempts } from '../../../src/kernel/state/steps.ts';
+import { getDecision } from '../../../src/kernel/state/decisions.ts';
+import { getDeliverable } from '../../../src/kernel/state/deliverables.ts';
+import { addSource } from '../../../src/kernel/state/sources.ts';
+import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 import { addEntity, addRelation } from '../../../src/kernel/state/graph.ts';
 import { fixture, T0 } from './support.ts';
 
@@ -83,7 +87,7 @@ test('a managed run: idempotent start, ordered leases, validated outputs, a draf
     assert.equal(view.deliverables.length, 2);
     const final = view.deliverables.find((d) => d.trustState === 'validated')!;
     assert.throws(() => fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' }), /only after it was accepted/);
-    fx.service.promote({ deliverableId: final.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted with controls' } });
+    fx.service.promote({ deliverableId: final.id, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [] } } });
     fx.service.promote({ deliverableId: final.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     const done = fx.service.promote({ deliverableId: final.id, to: 'final', by: 'gerald', channel: 'tty_cli' });
     assert.equal(done.trustState, 'final');
@@ -241,7 +245,7 @@ test('architectural work is challenged without magic words; a helper rename is n
       () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /recorded challenge/,
     );
-    fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'accepted' } });
+    fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [] } } });
     const accepted = fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
     assert.equal(accepted.trustState, 'accepted');
 
@@ -350,6 +354,179 @@ test('an active contradiction blocks trusted finish', () => {
       () => fx.service.promote({ deliverableId: submitted.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }),
       /active contradiction/,
     );
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('nothing but passing checks makes a deliverable validated: promotion to it is refused from draft and from challenged, on every channel', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'review', input: { target: 'trust' }, trigger: 'manual' });
+    const gather = fx.service.claimNext({ runId: started.run.id });
+    fx.service.submit({ leased: gather.packet!.leased, output: { notes: 'n' }, evidence: [{ ref: 'docs/design.md' }] });
+    const write = fx.service.claimNext({ runId: started.run.id });
+    const drafted = fx.service.submit({ leased: write.packet!.leased, output: { summary: 's', findings: [] }, evidence: [{ ref: 'docs/design.md' }] });
+    const draftId = drafted.deliverable!.id;
+    assert.equal(drafted.deliverable!.trustState, 'draft');
+    for (const channel of ['relay', 'tty_cli', 'elicitation'] as const) {
+      assert.throws(() => fx.service.promote({ deliverableId: draftId, to: 'validated', by: 'gerald', channel }), /validated is set when the step's checks pass, not by promotion/, `from draft on ${channel}`);
+    }
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: draftId, to: 'validated', by: 'relayed via claude-code' }), /validated is set when the step's checks pass/);
+    assert.equal(getDeliverable(fx.store, draftId)!.trustState, 'draft');
+
+    fx.service.promote({ deliverableId: draftId, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [{ objection: 'no figure is sourced', disposition: 'open' }] } } });
+    assert.throws(() => fx.service.promote({ deliverableId: draftId, to: 'validated', by: 'gerald', channel: 'tty_cli' }), /not by promotion/, 'from challenged on tty_cli');
+    assert.equal(getDeliverable(fx.store, draftId)!.trustState, 'challenged');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a challenge carries the objections it raised, merged over what the deliverable already held, and says whether the session that ran the work raised it', () => {
+  const fx = fixture();
+  try {
+    const run = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+    const c = fx.service.claimNext({ runId: run.run.id });
+    const id = fx.service.submit({ leased: c.packet!.leased, output: { summary: 'renamed', findings: [] } }).deliverable!.id;
+    assert.equal(getDeliverable(fx.store, id)!.trustState, 'validated');
+
+    assert.throws(() => fx.service.promote({ deliverableId: id, to: 'challenged', by: 'adversarial-review' }), /a challenge is recorded with the objections it raised/);
+    assert.throws(() => fx.service.promote({ deliverableId: id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'holds' } }), /objections/);
+    assert.throws(() => fx.service.promote({ deliverableId: id, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [{ objection: 'x', disposition: 'maybe' }] } } }), /disposition must be one of fixed, accepted, rejected, open/);
+    assert.throws(() => fx.service.promote({ deliverableId: id, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [{ objection: ' ', disposition: 'open' }] } } }), /objection must say what the challenge objected to/);
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: id, to: 'challenged', by: 'relayed via claude-code' }), /recorded with the objections it raised, through promote/);
+    assert.equal(getDeliverable(fx.store, id)!.trustState, 'validated', 'a refused challenge moves nothing');
+
+    const objections = [{ objection: '  the rename may break an import  ', disposition: 'fixed' }, { objection: 'no test covers the formatter', disposition: 'open' }];
+    const challenged = fx.service.promote({ deliverableId: id, to: 'challenged', by: 'adversarial-review', verification: { verdict: 'holds with one open objection', validators: [], challenge: { objections, by: 'someone else', sameSessionAsRun: false } } });
+    const v = challenged.verification as { validators?: unknown[]; verdict?: string; challenge: Record<string, unknown> };
+    assert.equal(challenged.trustState, 'challenged');
+    assert.ok(Array.isArray(v.validators) && v.validators.length > 0, 'what the checks found is kept beside the challenge, whatever the challenger sends');
+    assert.equal(v.verdict, 'holds with one open objection');
+    assert.deepEqual(v.challenge, {
+      objections: [{ objection: 'the rename may break an import', disposition: 'fixed' }, { objection: 'no test covers the formatter', disposition: 'open' }],
+      by: 'adversarial-review',
+      session: 'sess-1',
+      sameSessionAsRun: true,
+    });
+
+    // Another session challenging the work is recorded as another session.
+    const other = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the tax formatter' }, trigger: 'manual' });
+    const oc = fx.service.claimNext({ runId: other.run.id });
+    const otherId = fx.service.submit({ leased: oc.packet!.leased, output: { summary: 'renamed', findings: [] } }).deliverable!.id;
+    const peer = fx.peer({ host: { sessionId: 'sess-2' } });
+    const headless = fx.peer({ host: { sessionId: null } });
+    try {
+      const byPeer = peer.service.promote({ deliverableId: otherId, to: 'challenged', by: 'reviewer', verification: { challenge: { objections: [] } } });
+      assert.deepEqual((byPeer.verification as { challenge: unknown }).challenge, { objections: [], by: 'reviewer', session: 'sess-2', sameSessionAsRun: false });
+      fx.service.promote({ deliverableId: otherId, to: 'accepted', by: 'gerald', channel: 'tty_cli' });
+      const unknown = headless.service.promote({ deliverableId: otherId, to: 'challenged', by: 'runner', verification: { challenge: { objections: [] } } });
+      assert.deepEqual((unknown.verification as { challenge: unknown }).challenge, { objections: [], by: 'runner', session: null, sameSessionAsRun: null }, 'an unknown session is not called the same one');
+    } finally {
+      peer.close();
+      headless.close();
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a waiver the person gives on their own channel is on the deliverable with who gave it and how, the person is told before accepting, and the run is never called validated', () => {
+  const fx = fixture();
+  try {
+    // A declared confidential system whose page the step cites without a recorded read of it.
+    addSource(fx.store, { id: 'wiki', kind: 'docs', purpose: 'team wiki', authorityLevel: 'informative', sensitivity: 'confidential', canRead: true, canWrite: false, at: T0 });
+    const resolve: RefResolver = (ref) => (ref === 'docs/design.md' ? { ref, kind: 'file', provenance: 'witnessed', path: '/repo/docs/design.md' } : null);
+    const unread = [{ ref: 'wiki:cost-model' }];
+    const started = fx.service.start({ workflowId: 'review', input: { target: 'waived' }, trigger: 'manual' });
+    const first = fx.service.claimNext({ runId: started.run.id });
+    fx.service.submit({ leased: first.packet!.leased, output: { notes: 'n' }, evidence: unread, resolve });
+    const second = fx.service.claimNext({ runId: started.run.id });
+    const spent = fx.service.submit({ leased: second.packet!.leased, output: { notes: 'n' }, evidence: unread, resolve });
+    assert.equal(spent.step.state, 'waiting_for_decision');
+    const question = fx.service.status(started.run.id)!.openDecisions[0]!;
+    assert.deepEqual((question.subject as { validators: string[] }).validators, ['citations_present']);
+
+    fx.service.decide({ decisionId: question.id, resolution: 'accept with these problems', by: 'gerald', channel: 'tty_cli' });
+    assert.equal(getDecision(fx.store, question.id)!.channel, 'tty_cli');
+    const again = fx.service.claimNext({ runId: started.run.id });
+    const told = again.packet!.instructions.join(' ');
+    assert.match(told, /The person accepted this step's output with its failing checks \(citations_present\)\. Resubmit the output they reviewed; the deliverable will list these checks as waived and will not be called validated\./);
+    assert.doesNotMatch(told, /You relayed/);
+    const through = fx.service.submit({ leased: again.packet!.leased, output: { notes: 'n', waived: [], waivedBy: { by: 'forged', channel: 'tty_cli' } }, evidence: unread, resolve });
+    assert.equal(through.step.state, 'succeeded');
+    const recorded = getStep(fx.store, again.packet!.leased.id)!.output as { waived: { validator: string; problems: string[] }[]; waivedBy: unknown };
+    assert.deepEqual(recorded.waived.map((w) => w.validator), ['citations_present']);
+    assert.deepEqual(recorded.waivedBy, { by: 'gerald', channel: 'tty_cli' }, 'the kernel records who waived it, not the step');
+    const event = listActivity(fx.store, { runId: started.run.id }).find((e) => e.kind === 'step.checks_waived')!;
+    assert.deepEqual([(event.payload as { channel: string }).channel, (event.payload as { acceptedBy: string }).acceptedBy], ['tty_cli', 'gerald']);
+
+    const write = fx.service.claimNext({ runId: started.run.id });
+    fx.service.submit({ leased: write.packet!.leased, output: { summary: 's', findings: [] }, evidence: [{ ref: 'docs/design.md' }], resolve });
+    const record = fx.service.claimNext({ runId: started.run.id });
+    const done = fx.service.submit({ leased: record.packet!.leased, output: { recorded: true, waived: [], waivedBy: { by: 'forged', channel: 'tty_cli' } }, resolve });
+    assert.equal(done.run.state, 'succeeded');
+    assert.equal(done.deliverable!.trustState, 'draft', 'every check passed on the last step, but the run went through on a waiver');
+    const body = done.deliverable!.body as { waived: unknown[]; waivedBy?: unknown; sensitivity: string | null };
+    assert.equal(body.waivedBy, undefined, 'a waivedBy the step sent is not kept on the deliverable');
+    assert.deepEqual(body.waived, [{ stepId: 'gather', validator: 'citations_present', problems: recorded.waived[0]!.problems, acceptedBy: 'gerald', channel: 'tty_cli' }]);
+    assert.match(recorded.waived[0]!.problems.join(' '), /wiki:cost-model/);
+    assert.equal(body.sensitivity, 'confidential', 'a waived citation of a declared source it holds no read of still carries that source\'s label');
+    assert.ok(fx.service.status(started.run.id)!.deliverables.every((d) => Array.isArray((d.body as { waived?: unknown }).waived)), 'every deliverable of the run lists the waiver');
+
+    fx.service.promote({ deliverableId: done.deliverable!.id, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [] } } });
+    const asked = fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'relayed via claude-code' });
+    assert.match(asked.question, /^Move deliverable .* to accepted\? Checks waived on this run, so it was never called validated: citations_present on step gather \(accepted by you\)\.$/);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a check that fails anew after a waiver was put to no one, so the person is asked again, and a later call for another attempt ends the waiver', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'review', input: { target: 'anew' }, trigger: 'manual' });
+    const gather = fx.service.claimNext({ runId: started.run.id });
+    fx.service.submit({ leased: gather.packet!.leased, output: { notes: 'n' }, evidence: [{ ref: 'docs/design.md' }] });
+    for (let i = 0; i < 2; i++) {
+      const w = fx.service.claimNext({ runId: started.run.id });
+      fx.service.submit({ leased: w.packet!.leased, output: { summary: '', findings: [] }, evidence: [{ ref: 'docs/design.md' }] });
+    }
+    const first = fx.service.status(started.run.id)!.openDecisions[0]!;
+    assert.deepEqual((first.subject as { validators: string[] }).validators, ['deliverable_complete']);
+    fx.service.decide({ decisionId: first.id, resolution: 'accept with these problems', by: 'relayed via claude-code' });
+    assert.equal(getDecision(fx.store, first.id)!.channel, 'relay', 'a relayed waiver is recorded as relayed');
+
+    const retry = fx.service.claimNext({ runId: started.run.id });
+    assert.match(retry.packet!.instructions.join(' '), /You relayed "accept with these problems"; Construct records that as your relay, not as the person's own answer\. Resubmit the same output; the deliverable will list these checks \(deliverable_complete\) as waived/);
+    // The resubmission also fails schema, which no one accepted.
+    const anew = fx.service.submit({ leased: retry.packet!.leased, output: { summary: 's' }, evidence: [{ ref: 'docs/design.md' }] });
+    assert.equal(anew.step.state, 'waiting_for_decision');
+    assert.equal((getStep(fx.store, retry.packet!.leased.id)!.output as unknown), null, 'nothing was recorded as waived');
+    const second = fx.service.status(started.run.id)!.openDecisions[0]!;
+    assert.notEqual(second.id, first.id);
+    assert.deepEqual((second.subject as { validators: string[] }).validators, ['schema', 'deliverable_complete']);
+
+    fx.service.decide({ decisionId: second.id, resolution: 'another attempt', by: 'gerald', channel: 'tty_cli' });
+    const fresh = fx.service.claimNext({ runId: started.run.id });
+    assert.doesNotMatch(fresh.packet!.instructions.join(' '), /accept with these problems|accepted this step/, 'the latest answer asked for another attempt');
+    const fixed = fx.service.submit({ leased: fresh.packet!.leased, output: { summary: 's', findings: [] }, evidence: [{ ref: 'docs/design.md' }] });
+    assert.equal(fixed.step.state, 'succeeded');
+    assert.equal((fixed.deliverable!.body as { waived?: unknown }).waived, undefined, 'nothing was waived');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a step cannot write a waiver for itself: one that found no data keeps none of the waiver keys it sent', () => {
+  const fx = fixture();
+  try {
+    const started = fx.service.start({ workflowId: 'sweep', input: {}, trigger: 'manual' });
+    const claimed = fx.service.claimNext({ runId: started.run.id });
+    const empty = fx.service.submit({ leased: claimed.packet!.leased, output: { waived: [{ validator: 'citations_present', problems: [] }], waivedBy: { by: 'gerald', channel: 'tty_cli' } }, noData: true });
+    assert.equal(empty.step.state, 'succeeded');
+    assert.deepEqual(getStep(fx.store, claimed.packet!.leased.id)!.output, { noData: true });
   } finally {
     fx.cleanup();
   }

@@ -11,7 +11,7 @@ import {
   upsertDraft, getDeliverable, setTrustState, listDeliverables, TRUST_TRANSITIONS,
 } from '../../../src/kernel/state/deliverables.ts';
 import {
-  raiseDecision, resolveDecision, withdrawDecision, listOpenDecisions,
+  getDecision, raiseDecision, resolveDecision, withdrawDecision, listOpenDecisions, listRunDecisions,
 } from '../../../src/kernel/state/decisions.ts';
 import { IllegalTransitionError } from '../../../src/kernel/state/rows.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
@@ -91,6 +91,41 @@ test('decisions open once, resolve once, honor their options, and can be withdra
     const withdrawn = withdrawDecision(fx.store, { id: 'q-2', reason: 'answered by the constitution', at: at() });
     assert.equal(withdrawn.state, 'withdrawn');
     assert.equal(listOpenDecisions(fx.store).length, 0);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a decision keeps how its answer arrived, and a run lists its decisions in the order they were raised', () => {
+  const fx = freshStore();
+  try {
+    const at = clock();
+    seedRun(fx.store, at);
+    for (const id of ['q-relay', 'q-cli', 'q-prompt', 'q-unknown', 'q-open']) {
+      raiseDecision(fx.store, { id, kind: 'decision', question: `Which way for ${id}?`, runId: 'run-1', at: at() });
+    }
+    raiseDecision(fx.store, { id: 'q-elsewhere', kind: 'clarification', question: 'Not this run', at: at() });
+    resolveDecision(fx.store, { id: 'q-relay', resolution: 'yes', by: 'relayed via claude-code', at: at(), channel: 'relay' });
+    resolveDecision(fx.store, { id: 'q-cli', resolution: 'yes', by: 'person via cli', at: at(), channel: 'tty_cli' });
+    resolveDecision(fx.store, { id: 'q-prompt', resolution: 'yes', by: 'person via claude-code prompt', at: at(), channel: 'elicitation' });
+    resolveDecision(fx.store, { id: 'q-unknown', resolution: 'yes', by: 'gerald', at: at() });
+
+    assert.equal(getDecision(fx.store, 'q-relay')!.channel, 'relay');
+    assert.equal(getDecision(fx.store, 'q-cli')!.channel, 'tty_cli');
+    assert.equal(getDecision(fx.store, 'q-prompt')!.channel, 'elicitation');
+    assert.equal(getDecision(fx.store, 'q-unknown')!.channel, null, 'an answer given without a channel records none');
+    assert.equal(getDecision(fx.store, 'q-open')!.channel, null, 'an open question has no answer channel');
+    const stored = fx.store.db.prepare('SELECT channel FROM decisions WHERE id = ?').get('q-cli') as { channel: string };
+    assert.equal(stored.channel, 'tty_cli', 'the channel lands in the decision row itself');
+
+    assert.deepEqual(listRunDecisions(fx.store, 'run-1').map((d) => [d.id, d.state, d.channel]), [
+      ['q-relay', 'resolved', 'relay'],
+      ['q-cli', 'resolved', 'tty_cli'],
+      ['q-prompt', 'resolved', 'elicitation'],
+      ['q-unknown', 'resolved', null],
+      ['q-open', 'open', null],
+    ]);
+    assert.deepEqual(listRunDecisions(fx.store, 'run-none'), []);
   } finally {
     fx.cleanup();
   }

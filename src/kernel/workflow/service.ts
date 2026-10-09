@@ -25,7 +25,7 @@ import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
 import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
 import { tierAtLeast } from '../policy/lattice.ts';
-import { isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
+import { DECISION_CHANNELS, isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
 import { provides, type HostCapabilities } from '../registry/capability-registry.ts';
 import { readySteps } from '../registry/dependency-graph.ts';
 import type { RegisteredWorkflow, WorkflowManifest, WorkflowStep } from '../registry/models.ts';
@@ -155,6 +155,58 @@ export type WaitingOn =
 /** What a person may answer when checks keep failing. */
 export const WAIVER_OPTIONS = ['accept with these problems', 'another attempt', 'stop'] as const;
 
+/** A check a run went through without passing: on which step, what it found, and who accepted it on which channel. */
+export interface Waiver {
+  readonly stepId: string;
+  readonly validator: string;
+  readonly problems: readonly string[];
+  /** Who answered the waiver question; null for a waiver recorded without it. */
+  readonly acceptedBy: string | null;
+  /** How that answer reached Construct; null when it was not recorded. */
+  readonly channel: DecisionChannel | null;
+}
+
+/** What was done about one objection a challenge raised. */
+export const OBJECTION_DISPOSITIONS = ['fixed', 'accepted', 'rejected', 'open'] as const;
+export type ObjectionDisposition = (typeof OBJECTION_DISPOSITIONS)[number];
+
+export interface Objection {
+  readonly objection: string;
+  readonly disposition: ObjectionDisposition;
+}
+
+/** What a challenge record must carry, shown when it is missing or malformed. */
+export const OBJECTIONS_EXAMPLE: readonly Objection[] = [{ objection: 'the latency figure has no source', disposition: 'fixed' }];
+
+/**
+ * The objections a challenge raised, checked: a list (an empty one says the
+ * challenge found nothing) of {objection, disposition}. Returns the list with
+ * each objection trimmed, or the field that is wrong and why.
+ */
+export function readObjections(raw: unknown, field = 'objections'): { readonly objections: readonly Objection[] } | { readonly field: string; readonly message: string; readonly allowed?: readonly string[] } {
+  if (!Array.isArray(raw)) return { field, message: `"${field}" must be a list of {objection, disposition}; an empty list says the challenge found nothing` };
+  const objections: Objection[] = [];
+  for (const [i, entry] of raw.entries()) {
+    const at = `${field}[${String(i)}]`;
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return { field: at, message: `${at} must be an object {objection, disposition}` };
+    const { objection, disposition, ...rest } = entry as Record<string, unknown>;
+    const stray = Object.keys(rest);
+    if (stray.length) return { field: `${at}.${stray[0]!}`, message: `${at} takes only objection and disposition, not ${stray.join(', ')}` };
+    if (typeof objection !== 'string' || !objection.trim()) return { field: `${at}.objection`, message: `${at}.objection must say what the challenge objected to` };
+    if (typeof disposition !== 'string' || !(OBJECTION_DISPOSITIONS as readonly string[]).includes(disposition)) {
+      return { field: `${at}.disposition`, message: `${at}.disposition must be one of ${OBJECTION_DISPOSITIONS.join(', ')}`, allowed: OBJECTION_DISPOSITIONS };
+    }
+    objections.push({ objection: objection.trim(), disposition: disposition as ObjectionDisposition });
+  }
+  return { objections };
+}
+
+/** The verification keys the kernel writes when a step's checks pass, and the challenge record it writes itself: no caller sets them. */
+const CHECKS_RECORD: ReadonlySet<string> = new Set(['validators', 'challengeRequired', 'evidence', 'challenge']);
+
+/** Why a deliverable is never moved to validated by hand. */
+export const VALIDATED_BY_CHECKS = "validated is set when the step's checks pass, not by promotion";
+
 /** What each check needs from the output, said once to the host instead of discovered by failing. */
 const VALIDATOR_GUIDANCE: Readonly<Record<string, string>> = {
   deliverable_complete: 'deliverable_complete needs a non-empty "summary" and one of "findings", "body", or "decisions".',
@@ -258,9 +310,15 @@ export interface WorkflowService {
   cancel(input: { readonly runId: string; readonly by: string; readonly reason: string }): WorkflowRun;
   resume(runId: string): WorkflowRun;
   status(runId: string): RunView | null;
-  /** Trust promotions a person or a challenge performs; steps never do. Accepted and final need a person channel. */
+  /**
+   * Trust promotions a person or a challenge performs; steps never do.
+   * Accepted and final need a person channel. Validated is never promoted
+   * to: only a step's passing checks set it. Challenged needs
+   * verification.challenge.objections, the list of what the challenge
+   * raised (empty when it found nothing), and records who challenged it.
+   */
   promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly channel?: DecisionChannel; readonly verification?: unknown; readonly reason?: string }): Deliverable;
-  /** Ask the person to accept or finalize a deliverable: an inbox approval they answer directly. Reuses an open one. */
+  /** Ask the person to accept or finalize a deliverable: an inbox approval they answer directly, naming any waived checks. Reuses an open one. */
   requestPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly reason?: string }): Decision;
 }
 
@@ -418,6 +476,15 @@ function workIntakeOf(asked: AskedReading): WorkIntake | null {
   };
 }
 
+/** The declared source a citation names by its id (`<id>`, `<id>:<item>` or `source:<id>:<item>`), or null; a web address names none. */
+function namedSourceOf(ref: string, sources: ReadonlyMap<string, unknown>): string | null {
+  const raw = ref.trim().replace(/^source:/, '');
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) return null;
+  const colon = raw.indexOf(':');
+  const head = colon > 0 ? raw.slice(0, colon) : raw;
+  return sources.has(head) ? head : null;
+}
+
 /** Whether a step reads the project, its context, or a source. */
 function readsAnything(capabilities: readonly string[]): boolean {
   return capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'));
@@ -438,7 +505,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   };
   /** Terms the person settled against: constraints of the form Do not state "X" as current. */
   const settled = () => settledTerms(listStatements(store, { kind: 'constraint', status: 'confirmed' }));
-  /** The highest sensitivity among the sources the whole run cited, and the deliverable it acts on, if any. */
+  /**
+   * The highest sensitivity among the sources the whole run cited, and the
+   * deliverable it acts on, if any. A citation that names a declared source
+   * by its id counts against that source even when no recorded read holds
+   * the item, so a step that went through on a waiver keeps the label.
+   */
   const sensitivityFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): string | null => {
     let level: string | null = null;
     const input = (run.input ?? {}) as { deliverable?: unknown };
@@ -450,16 +522,47 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (!resolve) return level;
     const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
     for (const e of runEvidence(run.id, current)) {
-      const r = resolve(e.ref);
-      if (r?.sourceId) level = higherSensitivity(level, bySource.get(r.sourceId) ?? null);
+      const id = resolve(e.ref)?.sourceId ?? namedSourceOf(e.ref, bySource);
+      if (id) level = higherSensitivity(level, bySource.get(id) ?? null);
     }
     return level;
   };
-  /** The person accepted this step's output despite failing checks. */
-  const acceptedWaiver = (stepRunId: string): boolean =>
-    listStepDecisions(store, stepRunId).some((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId && String(d.resolution ?? '').toLowerCase().startsWith('accept'));
+  /**
+   * The answer that lets this step through its failing checks: the latest
+   * answered waiver question for it, when that answer accepted the output.
+   * Null when there is none, or when the latest answer asked for another
+   * attempt or stopped.
+   */
+  const waiverOf = (stepRunId: string): Decision | null => {
+    const answered = listStepDecisions(store, stepRunId).filter((d) => d.state === 'resolved' && (d.subject as { waiverFor?: string } | null)?.waiverFor === stepRunId);
+    const latest = answered[answered.length - 1];
+    return latest && String(latest.resolution ?? '').toLowerCase().startsWith('accept') ? latest : null;
+  };
+  /** The checks a waiver question named: the ones the answer to it accepted. */
+  const waivedChecks = (d: Decision): string[] => {
+    const subject = (d.subject ?? {}) as { validators?: unknown; problems?: unknown };
+    if (Array.isArray(subject.validators)) return subject.validators.filter((v): v is string => typeof v === 'string');
+    const problems = Array.isArray(subject.problems) ? subject.problems.filter((p): p is string => typeof p === 'string') : [];
+    return [...new Set(problems.map((p) => p.split(':')[0]!.trim()).filter(Boolean))];
+  };
   /** Any step of the run went through on a waiver; its deliverable is then never called validated. */
   const runHasWaiver = (runId: string): boolean => listSteps(store, runId).some((st) => Array.isArray((st.output as { waived?: unknown } | null)?.waived));
+  /** Every check the run's steps went through without passing, with who accepted it and how, in step order. */
+  const runWaivers = (runId: string): Waiver[] => {
+    const out: Waiver[] = [];
+    for (const st of listSteps(store, runId)) {
+      const output = (st.output ?? {}) as { waived?: unknown; waivedBy?: { by?: unknown; channel?: unknown } };
+      if (!Array.isArray(output.waived)) continue;
+      const by = typeof output.waivedBy?.by === 'string' ? output.waivedBy.by : null;
+      const channel = (DECISION_CHANNELS as readonly unknown[]).includes(output.waivedBy?.channel) ? (output.waivedBy!.channel as DecisionChannel) : null;
+      for (const w of output.waived as { validator?: unknown; problems?: unknown }[]) {
+        if (!w || typeof w.validator !== 'string') continue;
+        const problems = Array.isArray(w.problems) ? w.problems.filter((p): p is string => typeof p === 'string') : [];
+        out.push({ stepId: st.stepId, validator: w.validator, problems, acceptedBy: by, channel });
+      }
+    }
+    return out;
+  };
   /** Every distinct citation the run's finished steps made, plus this one's: what the deliverable rests on. */
   const runEvidence = (runId: string, current: readonly { readonly ref: string }[]): { ref: string }[] => {
     const refs = new Set(current.map((e) => e.ref));
@@ -500,17 +603,25 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    * was handed (which wins over a restatement), the step's evidence, the
    * highest sensitivity among what the run cited and the deliverable it acts
    * on (null when none carries a label), how much of the run's evidence
-   * Construct opened itself or holds only on the host's word, and where it
-   * falls against the period and the named sources.
+   * Construct opened itself or holds only on the host's word, where it
+   * falls against the period and the named sources, and every check the
+   * run went through without passing, with who accepted it and how. The
+   * kernel's keys win over the step's own; waived is left out when nothing
+   * was waived, and a waivedBy the step sent is never kept.
    */
-  const deliverableBody = (run: WorkflowRun, output: Readonly<Record<string, unknown>>, handed: Readonly<Record<string, unknown>>, evidence: readonly { readonly ref: string; readonly excerpt?: string }[], sensitivity: string | null, resolve?: RefResolver): Record<string, unknown> => ({
-    ...output,
-    ...handed,
-    evidence,
-    sensitivity: sensitivity ?? null,
-    provenance: resolve ? provenanceOf(runEvidence(run.id, evidence), resolve) : null,
-    ...coverageFor(run, evidence, output, resolve),
-  });
+  const deliverableBody = (run: WorkflowRun, output: Readonly<Record<string, unknown>>, handed: Readonly<Record<string, unknown>>, evidence: readonly { readonly ref: string; readonly excerpt?: string }[], sensitivity: string | null, resolve?: RefResolver): Record<string, unknown> => {
+    const waived = runWaivers(run.id);
+    return {
+      ...output,
+      ...handed,
+      evidence,
+      sensitivity: sensitivity ?? null,
+      provenance: resolve ? provenanceOf(runEvidence(run.id, evidence), resolve) : null,
+      ...coverageFor(run, evidence, output, resolve),
+      waived: waived.length ? waived : undefined,
+      waivedBy: undefined,
+    };
+  };
 
   const leaseMs = deps.defaultLeaseMs ?? 30 * 60_000;
   const policyContext = (interactionClass: PolicyContext['interactionClass'], at: string): PolicyContext => ({
@@ -937,6 +1048,23 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return skill ? { id: skill.manifest.id, version: skill.manifest.version, title: skill.manifest.title } : null;
   }
 
+  /**
+   * What a step accepted with its failing checks is told, by how that answer
+   * arrived: the person's own word, or the host's relay of it, which is
+   * recorded as the host's and never as the person's.
+   */
+  function waiverInstruction(waiver: Decision | null): string {
+    if (!waiver) return '';
+    const checks = waivedChecks(waiver).join(', ') || 'the ones the question named';
+    if (waiver.channel && isPersonChannel(waiver.channel)) {
+      return `The person accepted this step's output with its failing checks (${checks}). Resubmit the output they reviewed; the deliverable will list these checks as waived and will not be called validated.`;
+    }
+    if (waiver.channel === 'relay') {
+      return `You relayed "accept with these problems"; Construct records that as your relay, not as the person's own answer. Resubmit the same output; the deliverable will list these checks (${checks}) as waived, will not be called validated, and the person will see the waiver before accepting it.`;
+    }
+    return `This step's failing checks (${checks}) were accepted, and Construct holds no record of how that answer arrived. Resubmit the same output; the deliverable will list these checks as waived, will not be called validated, and the person will see the waiver before accepting it.`;
+  }
+
   /** Everything the claimer needs to do one leased step. */
   function packetFor(leased: LeasedStep, step: WorkflowStep): WorkPacket {
     const run = getRun(store, leased.runId)!;
@@ -966,7 +1094,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
       ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
-      acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
+      waiverInstruction(waiverOf(leased.id)),
       'Cite every source you read as evidence entries.',
       needsChallenge
         ? `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`
@@ -993,6 +1121,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function assertPromotable(deliverableId: string, to: TrustState): Deliverable {
     const current = getDeliverable(store, deliverableId);
     if (!current) throw new Error(`no deliverable ${deliverableId}`);
+    if (to === 'validated') throw new Error(VALIDATED_BY_CHECKS);
     if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
     const run = getRun(store, current.runId);
     if (run && (to === 'accepted' || to === 'final')) {
@@ -1013,9 +1142,40 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return current;
   }
 
+  /** What the person is told, before accepting, about the checks the run went through without passing. Empty when none were. */
+  function waiverLine(runId: string): string {
+    const waivers = runWaivers(runId);
+    if (waivers.length === 0) return '';
+    const said = (w: Waiver): string => (w.channel && isPersonChannel(w.channel) ? 'accepted by you' : w.channel === 'relay' ? 'relayed by your assistant' : 'no record of who answered');
+    const shown = waivers.slice(0, 3).map((w) => `${w.validator} on step ${w.stepId} (${said(w)})`);
+    return ` Checks waived on this run, so it was never called validated: ${shown.join('; ')}${waivers.length > 3 ? `; +${String(waivers.length - 3)} more` : ''}.`;
+  }
+
+  /**
+   * The verification a deliverable carries once challenged: what it already
+   * held, what the challenger gave, and the challenge record itself, with the
+   * objections it raised, who raised them, and whether they did so from the
+   * session that ran the work (null when either session is unknown).
+   */
+  function challengeVerification(current: Deliverable, verification: unknown, by: string): Record<string, unknown> {
+    const given = verification !== null && typeof verification === 'object' && !Array.isArray(verification) ? (verification as Record<string, unknown>) : {};
+    const read = readObjections((given.challenge as { objections?: unknown } | undefined)?.objections, 'verification.challenge.objections');
+    if (!('objections' in read)) {
+      throw new Error(`a challenge is recorded with the objections it raised: ${read.message} (each {objection, disposition: ${OBJECTION_DISPOSITIONS.join(' | ')}})`);
+    }
+    const held = current.verification !== null && typeof current.verification === 'object' && !Array.isArray(current.verification) ? (current.verification as Record<string, unknown>) : {};
+    // What the checks recorded stays as they recorded it; the challenger adds beside it.
+    const offered = Object.fromEntries(Object.entries(given).filter(([k]) => !CHECKS_RECORD.has(k)));
+    const session = deps.host.sessionId;
+    const runSession = getRun(store, current.runId)?.sessionId ?? null;
+    return { ...held, ...offered, challenge: { objections: read.objections, by, session, sameSessionAsRun: session && runSession ? session === runSession : null } };
+  }
+
   function applyPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly at: string; readonly verification?: unknown; readonly reason?: string | null }): Deliverable {
-    assertPromotable(input.deliverableId, input.to);
-    return setTrustState(store, { id: input.deliverableId, trustState: input.to, actor: input.by, at: input.at, verification: input.verification, reason: input.reason ?? undefined });
+    const current = assertPromotable(input.deliverableId, input.to);
+    // The verification column is replaced, not merged, so a challenge record is built over what it already holds.
+    const verification = input.to === 'challenged' ? challengeVerification(current, input.verification, input.by) : input.verification;
+    return setTrustState(store, { id: input.deliverableId, trustState: input.to, actor: input.by, at: input.at, verification, reason: input.reason ?? undefined });
   }
 
   return {
@@ -1263,7 +1423,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             void decision;
             return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
-          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output } });
+          // Only an accepted waiver writes what was waived and by whom.
+          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined } });
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
         });
       }
@@ -1272,7 +1433,10 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity, period: asked.period ?? null, sources: asked.sources?.registered ?? null });
       const failures = validation.filter((v) => !v.ok);
       return store.transaction(() => {
-        const waived = failures.length > 0 && acceptedWaiver(leased.id);
+        // An accepted waiver covers the checks its question named; a check that fails anew was never put to anyone.
+        const waiver = failures.length > 0 ? waiverOf(leased.id) : null;
+        const covered = new Set(waiver ? waivedChecks(waiver) : []);
+        const waived = waiver !== null && failures.every((f) => covered.has(f.validator));
         if (failures.length > 0 && !waived) {
           const current = getStep(store, leased.id)!;
           if (current.attempts >= current.maxAttempts && step.loadBearing) {
@@ -1285,7 +1449,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
               runId: run.id,
               stepRunId: leased.id,
               options: [...WAIVER_OPTIONS],
-              subject: { waiverFor: leased.id, problems },
+              subject: { waiverFor: leased.id, problems, validators: failures.map((f) => f.validator) },
               at,
             });
             transitionStep(store, { id: leased.id, to: 'waiting_for_decision', at, reason: 'checks still failing; waiting on the person' });
@@ -1298,8 +1462,20 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
           return { step: failed, validation, run: advance(run.id, at), deliverable: null, ignored: [] };
         }
-        const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { ...output, evidence, ...(waived ? { waived: failures.map((f) => ({ validator: f.validator, problems: f.problems })) } : {}) } });
-        if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
+        // What was waived, and by whom on which channel, is the kernel's to record: the step's own keys of those names are not kept.
+        const done = completeStep(store, {
+          id: leased.id,
+          owner: leased.leaseOwner,
+          token: leased.token,
+          at,
+          output: {
+            ...output,
+            evidence,
+            waived: waived ? failures.map((f) => ({ validator: f.validator, problems: f.problems })) : undefined,
+            waivedBy: waived ? { by: waiver.resolvedBy, channel: waiver.channel } : undefined,
+          },
+        });
+        if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), decisionId: waiver.id, acceptedBy: waiver.resolvedBy, channel: waiver.channel } });
         let deliverable: Deliverable | null = null;
         const isLast = isLastStep(run, step);
         // The last step hands the deliverable what earlier steps produced; a restatement that differs stays in the
@@ -1430,6 +1606,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     },
 
     promote({ deliverableId, to, by, channel = 'relay', verification, reason }) {
+      if (to === 'validated') throw new Error(VALIDATED_BY_CHECKS);
       if (PERSON_ONLY_TRUST.has(to) && !isPersonChannel(channel)) {
         throw new PersonChannelRequiredError(`Moving deliverable ${deliverableId} to ${to}`, null);
       }
@@ -1438,6 +1615,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
     requestPromotion({ deliverableId, to, by, reason }) {
       const at = deps.now();
+      if (to === 'validated') throw new Error(VALIDATED_BY_CHECKS);
+      if (to === 'challenged') throw new Error('a challenge is recorded with the objections it raised, through promote; it is not a question for the person');
       return store.transaction(() => {
         const current = assertPromotable(deliverableId, to);
         const open = listOpenDecisions(store, current.runId).find((d) => {
@@ -1448,7 +1627,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         return raiseDecision(store, {
           id: deps.nextId('decision'),
           kind: 'approval',
-          question: `Move deliverable ${deliverableId} (${current.kind}) from ${current.trustState} to ${to}?`,
+          question: `Move deliverable ${deliverableId} (${current.kind}) from ${current.trustState} to ${to}?${waiverLine(current.runId)}`,
           runId: current.runId,
           options: ['approve', 'decline'],
           subject: { promote: { deliverableId, to, reason: reason ?? null, requestedBy: by } satisfies PromotionSubject },

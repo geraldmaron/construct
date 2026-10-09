@@ -286,7 +286,7 @@ async function checkHost(host) {
       // approval of that ask is refused and the deliverable's trust is unchanged.
       let handback = null;
       if (validated) {
-        await s.call('promote_deliverable', { deliverableId: validated.id, to: 'challenged' });
+        await s.call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', objections: [] });
         const asked = await s.call('promote_deliverable', { deliverableId: validated.id, to: 'accepted' });
         const relayed = asked?.pendingDecision ? await s.call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }) : null;
         const after = await s.call('run_status', { runId: started.run.id });

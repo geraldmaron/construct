@@ -226,15 +226,18 @@ Surface: interactive. Reads only: yes.
 
 ### `promote_deliverable`
 
-Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge verdict, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. A finished step never moves trust.
+Move a deliverable’s trust. After the person has reviewed a deliverable: record a challenge with the objections it raised, or ask for their acceptance or to make it final. Accepted and final are the person’s own answer: Construct asks them directly when the host can, and otherwise the question waits in the inbox. Validated is set only by passing checks, never by this tool. A finished step never moves trust.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `deliverableId` | string | yes | The deliverable id. |
-| `to` | `draft`, `validated`, `challenged`, `accepted`, `final`, `rejected` | yes | The trust state to move to. |
+| `to` | `draft`, `challenged`, `accepted`, `final`, `rejected` | yes | The trust state to move to. |
 | `reason` | string | no | Why, in the person’s words. |
+| `objections` | list of object | no | For challenged: each objection the challenge raised and what was done about it (fixed, accepted, rejected, open); an empty list says it found nothing. |
+| `objections[].objection` | string | yes | What the challenge objected to. |
+| `objections[].disposition` | `fixed`, `accepted`, `rejected`, `open` | yes | What was done about it. |
 
 ### `work`
 
