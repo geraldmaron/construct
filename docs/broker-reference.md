@@ -211,7 +211,11 @@ Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `action` | `list`, `show`, `refresh`, `report`, `declare` | yes | list, show, refresh, report, or declare. |
+| `action` | `list`, `show`, `refresh`, `report`, `declare`, `check`, `map` | yes | Inspect, read, check scoped access, or map typed data. |
+| `observation` | object | no | Report: observed transport (api/mcp/local), operation, mode (read), principal, exact scope, expiresAt, inputSchema?, outputSchema?. This stays reported; session and provenance are adapter-owned. |
+| `request` | object | no | Check: principal, exact scope, operation and mode (read/write). Checks permission and current scoped access evidence without making a grant. |
+| `item` | string | no | Map: item ref; without mapping returns its recorded mapping or unknown shape. |
+| `mapping` | object | no | Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations. |
 | `id` | string | no | The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter. |
 | `outcome` | `read`, `no_results`, `permission_denied`, `auth_required`, `unsupported`, `unreachable` | no | For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness. |
 | `reason` | string | no | For non-read report outcomes: the actual result and what remains unknown. |

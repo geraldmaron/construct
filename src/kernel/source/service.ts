@@ -7,6 +7,7 @@
  * recording is this module's.
  */
 
+import { accessDescriptor, type AccessDescriptor } from './access.ts';
 import type { StateStore } from '../state/open.ts';
 import {
   addSource,
@@ -106,6 +107,7 @@ export interface HostReportItem {
 }
 
 export interface HostReport {
+  readonly observation?: AccessDescriptor;
   readonly outcome?: SourceReadOutcome;
   readonly reason?: string;
   readonly scope?: string;
@@ -370,8 +372,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
         return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
       }
+      const descriptor = outcome.report.observation ? accessDescriptor(outcome.report.observation) : undefined;
+      if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
       setReachability(store, id, 'reachable', at);
-      access(id, 'read', at, nextId, { provenance: 'witnessed', refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
+      access(id, 'read', at, nextId, { ...(descriptor ?? {}), sessionId: outcome.report.sessionId ?? null, provenance: outcome.report.evidence, refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
       return recordRead(id, outcome.report, false, at, nextId);
     },
     reportRead(id, report, at, nextId) {
@@ -380,13 +384,15 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);
       if (!source.canRead) throw new Error(`source ${id}: read permission is disabled`);
       if (deps.readers.has(source.kind)) throw new Error(`source ${id} is read by Construct itself; refresh it instead of reporting it`);
+      const descriptor = report.observation ? accessDescriptor(report.observation) : undefined;
+      if (descriptor?.mode === 'write') throw new Error('a source read cannot report a write operation');
       const outcome = report.outcome ?? 'read';
       if (!(SOURCE_READ_OUTCOMES as readonly string[]).includes(outcome)) throw new Error('unknown source read outcome');
       if (outcome !== 'read') {
         if (report.items.length) throw new Error(`${outcome} cannot contain read items`);
         if (!report.reason?.trim() || !report.scope?.trim()) throw new Error(`${outcome} needs the attempted scope and reason`);
         // A failed request or empty query says nothing about removal of prior items.
-        access(id, outcome, at, nextId, { provenance: 'reported', scope: redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
+        access(id, outcome, at, nextId, { ...(descriptor ?? {}), provenance: 'reported', scope: descriptor?.scope ?? redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
         // This attempted scope says nothing about access to other items of the source.
         return { sourceId: id, outcome, snapshot: null, reason: redact(report.reason) };
       }
@@ -442,7 +448,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const digest = `sha256:${createHash('sha256').update(items.map((i) => { const a = i.attributes as { fingerprint: string; text?: string; url?: string }; return `${i.externalRef}\t${a.fingerprint}\t${createHash('sha256').update(a.text ?? '').digest('hex')}${a.url ? `\t${a.url}` : ''}`; }).join('\n')).digest('hex')}`;
       setReachability(store, id, 'reachable', at);
       const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, coverage: report.coverage, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
-      access(id, 'read', at, nextId, { provenance: 'reported', operation: 'read', refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref), sessionId: report.sessionId ?? null, scope: report.scope ?? null, partial: report.partial === true, coverage: report.coverage ?? null });
+      access(id, 'read', at, nextId, { ...(descriptor ?? {}), provenance: 'reported', operation: descriptor?.operation ?? 'read', refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref), sessionId: report.sessionId ?? null, scope: descriptor?.scope ?? report.scope ?? null, partial: report.partial === true, coverage: report.coverage ?? null });
       return cut.length > 0 ? { ...result, truncated: cut } : result;
     },
     canRead(id) {
