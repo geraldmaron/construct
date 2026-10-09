@@ -434,7 +434,7 @@ Adopted from the synthesis: the isolation-first base, grafted with the strongest
 - A dependency change marks the premise stale.
 - No role or grant without a person channel.
 - `.env` is never admitted.
-- The eval's per-class precision and recall are recorded; outward acts come back `confirmBeforeProceeding:true`.
+- The eval's per-class precision and recall are recorded.
 
 ### Phase 4: template and validator substance
 

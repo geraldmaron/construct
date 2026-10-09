@@ -95,12 +95,14 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     assert.equal((boot.registry as { skills: number }).skills, 17);
     assert.match(boot.next as string, /listen/);
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
-    const cls = (await call(fx, 'classify_request', { text: 'What does this function do?' })) as { class: string };
-    assert.equal(cls.class, 'answer');
-    const rewrite = (await call(fx, 'classify_request', { text: 'I want you to rewrite the X document, naming it Y.' })) as { class: string; suggestedWorkflows: { id: string }[]; judgment: { challenge: boolean } };
-    assert.equal(rewrite.class, 'manage');
-    assert.ok(rewrite.suggestedWorkflows.length > 0);
-    assert.equal(listActivity(fx.broker.store).length, 0, 'classifying records nothing');
+    const cls = (await call(fx, 'classify_request', { words: 'What does this function do?', kind: 'answer' })) as { kind: string; matches: unknown[]; recorded: boolean };
+    assert.equal(cls.kind, 'answer');
+    assert.deepEqual(cls.matches, []);
+    assert.equal(cls.recorded, false);
+    const words = 'I want you to rewrite the X document, naming it Y.';
+    const rewrite = (await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'rewritten document' } })) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
+    assert.equal(rewrite.matches[0]!.workflowId, 'managed-outcome');
+    assert.equal(listActivity(fx.broker.store).length, 0, 'reading a request records nothing');
     const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as { remembered: { id: string }; nothingElseCreated: boolean };
     assert.equal(remembered.nothingElseCreated, true);
     assert.equal(listStatements(fx.broker.store).filter((s) => s.kind === 'decision').length, 1);
@@ -113,12 +115,12 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
   }
 });
 
-test('the interactive lifecycle: classify, start, claim, submit, status, promote', async () => {
+test('the interactive lifecycle: read, start, claim, submit, status, promote', async () => {
   const fx = brokerFixture();
   try {
-    const cls = (await call(fx, 'classify_request', { text: 'Review this feature against the project’s design principles' })) as { class: string; suggestedWorkflows: { id: string }[] };
-    assert.equal(cls.class, 'manage');
-    assert.ok(cls.suggestedWorkflows.some((w) => w.id === 'design-conformance'));
+    const cls = (await call(fx, 'classify_request', { words: 'Review this feature against the project’s design principles', kind: 'manage', deliverable: { kind: 'review/design-conformance' } })) as { matches: { workflowId: string; missing: string[] }[] };
+    assert.equal(cls.matches[0]!.workflowId, 'design-conformance');
+    assert.deepEqual(cls.matches[0]!.missing, ['target']);
     const resolved = (await call(fx, 'workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'src/kernel/state' } })) as { status: string; summary: string };
     assert.equal(resolved.status, 'runnable', resolved.summary);
     const started = (await call(fx, 'start_outcome', { workflowId: 'design-conformance', input: { target: 'src/kernel/state' } })) as { run: { id: string; state: string }; created: boolean };

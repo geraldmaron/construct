@@ -9,8 +9,8 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "2.7.0",
-      "digest": "sha256:2f21097b9af050996002fbca89a26f87ec57c28e5b43ba0b2a3c1cc03d7f86fc",
+      "version": "3.0.0",
+      "digest": "sha256:e735ace6c60d3f86938801aeb2a87ef293e39e5f475e3c8443eb33dc2678387a",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -125,8 +125,8 @@
       "interactionClass": "manage"
     },
     "design-conformance": {
-      "version": "1.0.0",
-      "digest": "sha256:8ba076e0162f895d63b7923c1afabe6341098a70aee7cffa2916023cca7e5be1",
+      "version": "2.0.0",
+      "digest": "sha256:ed72ae0d270757aedbee5db091448385b9aff7e43fc41bb4ec2dd28c5b8bf50d",
       "title": "Design-principle conformance review",
       "interactionClass": "manage"
     },

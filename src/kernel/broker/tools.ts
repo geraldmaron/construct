@@ -25,10 +25,9 @@ import { TIER_POLICIES } from '../policy/lattice.ts';
 import { STATEMENT_KINDS, type StatementKind } from '../state/profile.ts';
 import { getDeliverable, TRUST_STATES, type TrustState } from '../state/deliverables.ts';
 import type { BrokerContext } from './context.ts';
-import { bool, closed, list, num, obj, record, str, type ToolDefinition, ToolInputError } from './definition.ts';
-import { recordAgent } from '../state/sessions.ts';
+import { bool, closed, list, num, obj, record, str, type JsonSchema, type ToolDefinition, ToolInputError } from './definition.ts';
+import { getSession, recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
-import { createRouter, type Router } from '../skills/routing.ts';
 import { LEASE_MODES, MAIN_LANE, findOverlaps, leasesFor, normalizeLeasePath, type LeaseMode, type Overlap } from '../work/leases.ts';
 import { asPeerData, type Handoff, type PeerData } from '../work/handoff.ts';
 import { coordinationFor, presentSessions, recentActivity } from '../coord/awareness.ts';
@@ -36,9 +35,17 @@ import { acceptWork, claimWork as claimWorkItem, completeWork, handoffOf, handof
 import { fileWork, linkWork, unlinkWork, workStructure } from '../work/structure.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { runValidators } from '../workflow/validators.ts';
-import { checkSlot, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
-import { differsNext } from '../workflow/service.ts';
-import { askedOf } from '../workflow/asked.ts';
+import { checkSlot, PERIOD_RELATIVES, PERIOD_SEMANTICS, resolvePeriod, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
+import { inputProblems } from '../registry/resolver.ts';
+import type { RegisteredWorkflow } from '../registry/models.ts';
+import { differsNext, type StartResult } from '../workflow/service.ts';
+import { askedOf, type Assumption, type Declared, type JudgedBy } from '../workflow/asked.ts';
+import { STAKE_AREAS } from '../workflow/consequence.ts';
+import {
+  CORE_EXAMPLE, COORDINATION_ACTIONS, COORDINATION_NEXT, DESTINATION_KINDS, GENERAL_CARRIER, INTAKE_KINDS, IntakeError, OPEN_ABOUT, SOURCE_ROLES,
+  destinationConflict, matchWorkflows, questionsFor, slotQuestion, validateIntake, workflowInputFor,
+  type Intake, type IntakeCatalog, type ValidatedIntake, type WorkflowMatch,
+} from '../workflow/intake.ts';
 import { settledConstraintText, settledTerms } from '../project/governance.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
 import { appendActivity } from '../state/activity.ts';
@@ -222,72 +229,267 @@ const remember = define<{ kind: StatementKind; text: string; assumptions: string
   },
 });
 
-const classify = define<{ text: string }, unknown>({
+/** When to call classify_request and what to send, with the built-in deliverable kinds by family. */
+const CLASSIFY_DESCRIPTION = [
+  'Call this when the person wants something produced, reviewed, kept up on a schedule, or handed to another agent, however they phrase it, questions included ("can you put together…").',
+  'A plain question needs no call; the remember and work tools are called directly.',
+  'Report your own reading: Construct does not read intent from the words.',
+  'It checks the reading, works out periods and source ids, names the workflows whose declared deliverable fits, returns only the questions that block, and records nothing.',
+  'kind: answer, remember, manage (produce or review something), maintain (keep it up on a schedule or an event), or coordinate (work alongside other agents).',
+  'For manage or maintain, give deliverable: a listed kind, or other with describe.',
+  'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
+  'Prefer period.relative or quarter over computing dates.',
+  'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"other","describe":"architecture diagram"},"period":{"semantics":"evidence_window","from":"2026-07-01","to":"2026-09-30","phrase":"only covering 2026-07-01 to 2026-09-30"},"sources":[{"name":"Jira","role":"read"}]}.',
+  'Then ask the person every returned question in one message, and call start_outcome with the returned intake.',
+].join(' ');
+
+/** The typed reading a host reports, closed at every level; its vocabularies are the ones that never change with the registry. */
+const INTAKE_SCHEMA: JsonSchema = {
+  type: 'object',
+  properties: {
+    words: { type: 'string', description: 'The person’s request, verbatim.' },
+    kind: { type: 'string', description: 'What they ask for.', enum: INTAKE_KINDS },
+    deliverable: {
+      type: 'object',
+      description: 'For manage or maintain: what they want back.',
+      properties: {
+        kind: { type: 'string', description: 'A listed kind, a family, or other.' },
+        describe: { type: 'string', description: 'In a few words; required with other.' },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+    skill: { type: 'string', description: 'The skill whose method fits, by id.' },
+    workflowId: { type: 'string', description: 'A workflow to start, if you know it.' },
+    target: { type: 'string', description: 'The document, file or system worked on.' },
+    scope: { type: 'string', description: 'What it covers, if narrower.' },
+    period: {
+      type: 'object',
+      description: 'The period they named.',
+      properties: {
+        semantics: { type: 'string', description: 'as_of: how things stood at its end; changed_during: what changed in it; evidence_window: only evidence dated in it.', enum: PERIOD_SEMANTICS },
+        relative: { type: 'string', description: 'Relative to today.', enum: PERIOD_RELATIVES },
+        n: { type: 'number', description: 'Days, for last_n_days.' },
+        quarter: { type: 'number', description: '1 to 4.' },
+        year: { type: 'number', description: 'Four digits.' },
+        from: { type: 'string', description: 'YYYY-MM-DD.' },
+        to: { type: 'string', description: 'YYYY-MM-DD.' },
+        timezone: { type: 'string', description: 'IANA, such as Europe/Berlin.' },
+        phrase: { type: 'string', description: 'Their words for it.' },
+      },
+      required: ['semantics'],
+      additionalProperties: false,
+    },
+    sources: {
+      type: 'array',
+      description: 'The systems they named.',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'As named, such as Jira.' },
+          id: { type: 'string', description: 'Its declared id, if any.' },
+          role: { type: 'string', description: 'read (the default) or subject.', enum: SOURCE_ROLES },
+        },
+        required: ['name'],
+        additionalProperties: false,
+      },
+    },
+    destination: {
+      type: 'object',
+      description: 'Where the result goes.',
+      properties: {
+        kind: { type: 'string', description: 'What kind of place.', enum: DESTINATION_KINDS },
+        ref: { type: 'string', description: 'A file path, a place in the source, or an address.' },
+        name: { type: 'string', description: 'For registered_source: its id.' },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+    schedule: {
+      type: 'object',
+      description: 'For maintain: when it runs.',
+      properties: {
+        cron: { type: 'string', description: 'Five fields.' },
+        timezone: { type: 'string', description: 'IANA; required with cron.' },
+        event: { type: 'string', description: 'An event name.' },
+        phrase: { type: 'string', description: 'Their words for it.' },
+      },
+      additionalProperties: false,
+    },
+    coordination: { type: 'string', description: 'For coordinate: which action.', enum: COORDINATION_ACTIONS },
+    stakes: {
+      type: 'object',
+      description: 'What it touches; only raises rigor.',
+      properties: {
+        reversible: { type: 'boolean', description: 'False when it is hard to undo.' },
+        affects: { type: 'array', description: 'What it touches.', items: { type: 'string', enum: STAKE_AREAS } },
+      },
+      additionalProperties: false,
+    },
+    open: {
+      type: 'array',
+      description: 'What the conversation leaves open.',
+      items: {
+        type: 'object',
+        properties: {
+          about: { type: 'string', description: 'What it is about.', enum: OPEN_ABOUT },
+          question: { type: 'string', description: 'As you would put it to the person.' },
+          blocking: { type: 'boolean', description: 'True when work cannot start without it.' },
+          assumption: { type: 'string', description: 'If not blocking, what you take as given.' },
+        },
+        required: ['question', 'blocking'],
+        additionalProperties: false,
+      },
+    },
+    inputs: { type: 'object', description: 'Workflow inputs by their own keys.' },
+  },
+  required: ['words', 'kind'],
+  additionalProperties: false,
+};
+
+/** What a reading is checked against in this project, now. */
+function intakeCatalog(ctx: BrokerContext): IntakeCatalog {
+  return {
+    workflows: ctx.workflows.list(),
+    skills: ctx.skills.list(),
+    sources: ctx.sources.list().map((s) => ({ id: s.id, kind: s.kind, locator: s.locator })),
+    at: ctx.now(),
+    projectRoot: ctx.root,
+  };
+}
+
+/** A reading the host model can fix comes back as wrong input naming the field. */
+function fromIntake<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (error) {
+    if (error instanceof IntakeError) throw new ToolInputError(error.message, { field: error.field, ...(error.allowed ? { allowed: error.allowed } : {}), example: error.example });
+    throw error;
+  }
+}
+
+/** What the host declared beside the workflow input: the inputs to every later judgment. */
+function declaredOf(intake: Intake): Declared {
+  return { stakes: intake.stakes, chosenSkill: intake.skill, words: intake.words };
+}
+
+/** The host that reported the reading, and the client it named at the handshake. */
+function judgedByHost(ctx: BrokerContext): JudgedBy {
+  return { by: 'host', host: ctx.host.hostId, client: ctx.sessionId ? getSession(ctx.store, ctx.sessionId)?.clientName ?? null : null };
+}
+
+/**
+ * A workflow's input from the reading. Inputs given by a workflow's own keys
+ * belong to the first match; another match takes only the ones it declares.
+ * When the reading's destination and a given one disagree, the person's
+ * question settles it and neither is mapped.
+ */
+function mappedInput(intake: Intake, workflow: RegisteredWorkflow, explicit: Readonly<Record<string, unknown>>, own: boolean): { readonly input: Record<string, unknown>; readonly missing: readonly string[] } {
+  const declared = Object.keys(workflow.manifest.inputSchema);
+  const reading = own ? intake : { ...intake, inputs: Object.fromEntries(Object.entries(intake.inputs).filter(([k]) => declared.includes(k))) };
+  return fromIntake(() => workflowInputFor(destinationConflict(reading, explicit) ? { ...reading, destination: null } : reading, workflow, explicit));
+}
+
+/** A skill's use-when text: its first sentence, at most 200 characters. */
+function firstSentence(text: string, cap = 200): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  const end = flat.search(/[.!?](?:\s|$)/);
+  const sentence = end >= 0 ? flat.slice(0, end + 1) : flat;
+  return sentence.length <= cap ? sentence : `${sentence.slice(0, cap - 1).trimEnd()}…`;
+}
+
+/** The skills the matches bind, and the chosen one; for the general carrier with no method chosen, every method and professional skill. */
+function skillCatalog(ctx: BrokerContext, intake: Intake, found: readonly WorkflowMatch[]): Record<string, { title: string; category: string; useWhen: string }> {
+  const ids = new Set<string>([...(intake.skill ? [intake.skill] : []), ...found.flatMap((m) => m.skills)]);
+  if (found[0]?.workflowId === GENERAL_CARRIER && intake.skill === null) {
+    for (const s of ctx.skills.list()) if (s.manifest.category === 'method' || s.manifest.category === 'professional') ids.add(s.manifest.id);
+  }
+  const out: Record<string, { title: string; category: string; useWhen: string }> = {};
+  for (const id of ids) {
+    const s = ctx.skills.get(id);
+    if (s) out[id] = { title: s.manifest.title, category: s.manifest.category, useWhen: firstSentence(s.description) };
+  }
+  return out;
+}
+
+/** The command the person runs to put a standing workflow on a clock; only values Construct checked are filled in. */
+function scheduleCommand(workflowId: string, schedule: Intake['schedule']): string {
+  const event = schedule?.event && /^[A-Za-z0-9._:-]+$/.test(schedule.event) ? schedule.event : null;
+  if (event && !schedule?.cron) return `construct workflow schedule ${workflowId} --event=${event}`;
+  const cron = schedule?.cron && /^[A-Za-z0-9*,/\- ]+$/.test(schedule.cron) ? schedule.cron : '…';
+  return `construct workflow schedule ${workflowId} --cron='${cron}' --timezone=${schedule?.timezone ?? '…'}`;
+}
+
+/** The one instruction classify_request ends on. */
+function classifyNext(validated: ValidatedIntake, first: string | null, open: number, challenge: boolean): string {
+  const { intake } = validated;
+  if (intake.kind === 'answer') return 'Answer in chat. Nothing was recorded.';
+  if (intake.kind === 'remember') return 'Call remember with the person’s wording and the kind of statement it is. Nothing else is created.';
+  if (intake.kind === 'coordinate') return COORDINATION_NEXT[intake.coordination!];
+  const unregistered = validated.resolved.sources.filter((s) => !s.registered && !s.candidates?.length).length;
+  const prefix = unregistered > 0
+    ? `${String(unregistered)} of the systems in your reading ${unregistered === 1 ? 'is' : 'are'} not registered with Construct; declare each one the person named with sources action declare, then report what you read before citing it. `
+    : '';
+  if (first === null) {
+    return `${prefix}No workflow here produces ${intake.deliverable?.kind ?? 'this'} ${intake.kind === 'maintain' ? 'on a schedule or an event; tell the person, and offer to run it once now instead (kind manage)' : 'for this reading; tell the person what the listed workflows can do instead'}.`;
+  }
+  if (open > 0) return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
+  return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` The person sets the clock: ${scheduleCommand(first, intake.schedule)}` : ''}`;
+}
+
+const classify = define<Record<string, unknown>, unknown>({
   name: 'classify_request',
-  title: 'What kind of request is this',
-  description: 'Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, a standing outcome to maintain, or a matter of working alongside other agents (which the work tool serves), and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.',
+  title: 'Report your reading of a request',
+  description: CLASSIFY_DESCRIPTION,
   surface: 'interactive',
   readOnly: true,
-  inputSchema: { type: 'object', properties: { text: { type: 'string', description: 'The request in the person’s words.' } }, required: ['text'], additionalProperties: false },
+  inputSchema: INTAKE_SCHEMA,
   validate(raw) {
-    closed(raw, this.inputSchema);
-    return { text: str(raw, 'text')! };
-  },
-  run(ctx, { text }) {
-    const c = ctx.workflow.classify(text);
-    const ranked = routerFor(ctx.skills.list()).route(text);
-    const byId = new Map(ctx.skills.list().map((s) => [s.manifest.id, s]));
-    const skills = ranked
-      .filter((r) => r.band !== 'unlikely')
-      .map((r) => {
-        const s = byId.get(r.id)!;
-        return { id: r.id, band: r.band, title: s.manifest.title, category: s.manifest.category, useWhen: s.description, nearestExample: r.nearestExample, workflows: workflowsUsing(ctx, r.id) };
-      });
-    const likely = skills.filter((s) => s.band === 'likely');
-    let classification = { ...c };
-    if (c.class === 'answer' && c.confidence < 0.8 && !c.coordination && likely.some((s) => s.workflows.length > 0)) {
-      classification = {
-        class: 'manage',
-        confidence: Math.max(c.confidence, 0.6),
-        why: 'the request matches professional work even though it did not open with a work verb',
-        confirmBeforeProceeding: true,
-        rememberKind: null,
-        coordination: null,
-      };
+    try {
+      closed(raw, this.inputSchema);
+    } catch (error) {
+      // The person's words go in words, with the reading beside them.
+      if (error instanceof ToolInputError && error.field === 'text') {
+        throw new ToolInputError('"text" is not an input of this tool: put the person’s words, verbatim, in "words", with your reading of them beside it', { field: 'text', allowed: Object.keys(this.inputSchema.properties), example: CORE_EXAMPLE });
+      }
+      throw error;
     }
-    const workflowsForClass = ctx.workflows.list().filter((w) => w.manifest.interactionClass === classification.class || (classification.class === 'maintain' && w.manifest.triggers.includes('schedule')));
-    const suggestedWorkflows = [...new Set([...likely.flatMap((s) => s.workflows), ...workflowsForClass.map((w) => w.manifest.id)])]
-      .map((id) => ctx.workflows.get(id))
-      .filter((w) => w !== null)
-      .filter(() => !(classification.class === 'answer' || classification.class === 'remember' || classification.coordination))
-      .slice(0, 5)
-      // The inputs go with the suggestion, so starting it does not take a failed attempt to learn them.
-      .map((w) => ({ id: w.manifest.id, title: w.manifest.title, inputs: w.manifest.inputSchema, required: w.manifest.requiredInputs }));
-    const judgment = ctx.workflow.judge({ workflowId: null, input: { request: text } });
-    const next =
-      classification.coordination ? classification.coordination.next
-      : classification.class === 'answer' ? 'answer it yourself; load no skill and record nothing, unless a likely skill below plainly fits the question'
-      : classification.class === 'remember' ? 'call remember with the person’s wording'
-      : likely.length === 0 ? 'no skill is a clear fit; answer, or ask one question about what the person wants produced'
-      : judgment.challenge ? 'read the likely skills in order; this work needs professional challenge before it is treated as strongly validated; then resolve the workflow that carries the skill'
-      : 'read the likely skills in order and choose by their useWhen text, not by rank alone; ask one question only when two fit and the difference changes the work; then resolve the workflow that carries the skill';
-    return { ...classification, next, skills, suggestedWorkflows, judgment };
+    return raw;
+  },
+  run(ctx, raw) {
+    const catalog = intakeCatalog(ctx);
+    const validated = fromIntake(() => validateIntake(raw, catalog, 'classify'));
+    const { intake } = validated;
+    const declared = declaredOf(intake);
+    const found = matchWorkflows(intake, catalog);
+    const checked = found.map((m, i) => {
+      const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId)!, {}, i === 0);
+      const { preflight } = ctx.workflow.preflight(m.workflowId, input, { declared });
+      return {
+        match: { workflowId: m.workflowId, title: m.title, deliverableKind: m.deliverableKind, because: m.because, status: preflight.status, summary: preflight.summary, reasons: preflight.reasons, approvalsAhead: preflight.approvalsAhead, input, missing },
+        judgment: preflight.judgment,
+      };
+    });
+    const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, found[0] ?? null, catalog));
+    const judgment = checked[0]?.judgment ?? ctx.workflow.judge({ workflowId: null, input: {}, declared });
+    return {
+      recorded: false,
+      judgedBy: judgedByHost(ctx),
+      kind: intake.kind,
+      intake,
+      resolved: validated.resolved,
+      normalized: validated.normalized,
+      matches: checked.map((c) => c.match),
+      skills: skillCatalog(ctx, intake, found),
+      questions,
+      hostQuestions,
+      assumptions: validated.assumptions,
+      flags: validated.flags,
+      judgment,
+      next: classifyNext(validated, found[0]?.workflowId ?? null, questions.length + hostQuestions.length, judgment.challenge),
+    };
   },
 });
-
-// One router per catalog; the catalog changes only when a bundle digest does.
-let routerCache: { key: string; router: Router } | null = null;
-function routerFor(skills: readonly import('../registry/models.ts').RegisteredSkill[]): Router {
-  const key = skills.map((s) => s.digest).join('|');
-  if (routerCache && routerCache.key === key) return routerCache.router;
-  const router = createRouter(skills.map((s) => ({ id: s.manifest.id, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown, examples: s.examples })));
-  routerCache = { key, router };
-  return router;
-}
-
-function workflowsUsing(ctx: BrokerContext, skillId: string): string[] {
-  return ctx.workflows.list().filter((w) => w.manifest.steps.some((st) => st.skill?.id === skillId)).map((w) => w.manifest.id);
-}
 
 const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; input?: Record<string, unknown> }, unknown>({
   name: 'workflows',
@@ -358,32 +560,104 @@ const skills = define<{ action: 'list' | 'show' | 'status'; id?: string; include
   },
 });
 
-const startOutcome = define<{ workflowId: string; input: Record<string, unknown> }, unknown>({
+const NOTHING_STARTED = 'Nothing started. Put these to the person in one message, then call start_outcome again with their answers.';
+
+/** Input a workflow refuses: an undeclared key, or a value its type does not take. Each comes back naming input.<key>. */
+function refuseWrongInput(ctx: BrokerContext, workflow: RegisteredWorkflow, input: Readonly<Record<string, unknown>>): void {
+  const m = workflow.manifest;
+  const declared = Object.keys(m.inputSchema);
+  const slotContext = { at: ctx.now(), sourceIds: ctx.sources.list().map((s) => s.id) };
+  for (const [key, value] of Object.entries(input)) {
+    const problems = inputProblems({ ...m, requiredInputs: [] }, { [key]: value }, slotContext);
+    if (problems.length === 0) continue;
+    throw new ToolInputError(`${problems.map((p) => p.message).join('; ')}. ${problems[0]!.remedy}`, { field: `input.${key}`, ...(declared.includes(key) ? {} : { allowed: declared }) });
+  }
+}
+
+/** Workflows a session can start: manage or maintain, started by hand. */
+function startable(w: RegisteredWorkflow): boolean {
+  return (w.manifest.interactionClass === 'manage' || w.manifest.interactionClass === 'maintain') && w.manifest.triggers.includes('manual');
+}
+
+function startedResult(r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
+  return {
+    started: true,
+    run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
+    created: r.created,
+    preflight: r.preflight,
+    differs: r.differs,
+    superseded: r.superseded,
+    normalized,
+    assumptions,
+    ...(r.differs.length > 0 ? { next: differsNext(r.differs) } : {}),
+  };
+}
+
+const startOutcome = define<{ workflowId: string; input?: Record<string, unknown>; intake?: Record<string, unknown> }, unknown>({
   name: 'start_outcome',
   title: 'Start an outcome',
-  description: 'Start a managed outcome by running a workflow. It is resolved first; if something is missing, the run waits blocked with the reasons and what would fix them; starting again after the fix replaces it, or with unchanged input checks it again. If this work is already running you get that run back, with any inputs you gave differently named. Returns the run and what it needs. Then call claim_work to do the next step here.',
+  description: 'Start a workflow run in this session. Pass the intake classify_request returned, with the person’s answers applied; Construct checks it again here, so skipping classify_request skips no check, and if a required detail or a blocking question is still open nothing starts and you get the questions back. Without an intake, pass the workflow input yourself. If this work is already running you get that run back, with what you gave differently named. Returns the run and what it needs; then call claim_work to do the next step here. Never start work for a plain question.',
   surface: 'interactive',
   readOnly: false,
   inputSchema: {
     type: 'object',
-    properties: { workflowId: { type: 'string', description: 'Which workflow.' }, input: { type: 'object', description: 'The workflow input.' } },
-    required: ['workflowId', 'input'],
+    properties: {
+      workflowId: { type: 'string', description: 'Which workflow: one classify_request matched.' },
+      input: { type: 'object', description: 'Workflow inputs by their keys; with an intake, only what the reading does not carry.' },
+      intake: { type: 'object', description: 'The intake classify_request returned, with the person’s answers applied; Construct checks it again.' },
+    },
+    required: ['workflowId'],
     additionalProperties: false,
   },
   validate(raw) {
     closed(raw, this.inputSchema);
-    return { workflowId: str(raw, 'workflowId')!, input: obj(raw, 'input')! };
+    const workflowId = str(raw, 'workflowId')!;
+    const input = obj(raw, 'input', { optional: true });
+    const intake = obj(raw, 'intake', { optional: true });
+    if (!input && !intake) {
+      throw new ToolInputError('give "intake", the reading classify_request returned with the person’s answers applied, or "input", the workflow input', { field: 'intake', example: { intake: CORE_EXAMPLE } });
+    }
+    return { workflowId, ...(input ? { input } : {}), ...(intake ? { intake } : {}) };
   },
-  run(ctx, { workflowId, input }) {
-    const r = ctx.workflow.start({ workflowId, input, trigger: 'manual' });
-    return {
-      run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
-      created: r.created,
-      preflight: r.preflight,
-      differs: r.differs,
-      superseded: r.superseded,
-      ...(r.differs.length > 0 ? { next: differsNext(r.differs) } : {}),
-    };
+  run(ctx, { workflowId, input, intake }) {
+    const explicit = input ?? {};
+    if (intake) {
+      // The reading is checked again here: a start never rests on a check the host may have skipped.
+      const catalog = intakeCatalog(ctx);
+      const validated = fromIntake(() => validateIntake(intake, catalog, 'start'));
+      const matches = matchWorkflows(validated.intake, catalog);
+      const match = matches.find((m) => m.workflowId === workflowId);
+      if (!match) throw new ToolInputError(`${workflowId} does not carry this reading; start one of the workflows it matched`, { field: 'workflowId', allowed: matches.map((m) => m.workflowId) });
+      const workflow = ctx.workflows.get(workflowId)!;
+      const { input: mapped } = mappedInput(validated.intake, workflow, explicit, true);
+      refuseWrongInput(ctx, workflow, mapped);
+      const { questions, hostQuestions } = fromIntake(() => questionsFor(validated, match, catalog, explicit));
+      if (questions.length > 0 || hostQuestions.length > 0) {
+        return { started: false, recorded: false, questions, hostQuestions, normalized: validated.normalized, next: NOTHING_STARTED };
+      }
+      const { intake: reading, resolved } = validated;
+      const r = ctx.workflow.start({
+        workflowId,
+        input: mapped,
+        trigger: 'manual',
+        asked: {
+          intake: reading,
+          periodSpec: reading.period,
+          sources: { registered: [...new Set(reading.sources.filter((s) => s.role === 'read' && s.id !== null).map((s) => s.id!))], named: resolved.sources.map((s) => ({ name: s.name, id: s.id, registered: s.registered })) },
+          declared: declaredOf(reading),
+          judgedBy: judgedByHost(ctx),
+          assumptions: validated.assumptions,
+        },
+      });
+      return startedResult(r, validated.normalized, validated.assumptions);
+    }
+    const workflow = ctx.workflows.get(workflowId);
+    if (!workflow || !startable(workflow)) throw new ToolInputError(`no workflow "${workflowId}" can be started here`, { field: 'workflowId', allowed: ctx.workflows.list().filter(startable).map((w) => w.manifest.id) });
+    refuseWrongInput(ctx, workflow, explicit);
+    const missing = workflow.manifest.requiredInputs.filter((k) => explicit[k] === undefined);
+    if (missing.length > 0) return { started: false, recorded: false, questions: missing.map((slot) => slotQuestion(slot, workflow)), hostQuestions: [], normalized: [], next: NOTHING_STARTED };
+    const r = ctx.workflow.start({ workflowId, input: explicit, trigger: 'manual' });
+    return startedResult(r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
   },
 });
 
@@ -416,6 +690,8 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators, capabilities: p.step.capabilities },
         skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: includeSkillBody ? p.skill.body() : undefined } : null,
         inputs: p.inputs,
+        intake: p.intake,
+        method: p.method,
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -1170,7 +1446,7 @@ const claimStep = define<{ runId?: string }, unknown>({
     const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, instructions: p.instructions }, waitingOn: null };
+    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, instructions: p.instructions }, waitingOn: null };
   },
 });
 

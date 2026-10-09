@@ -1,8 +1,8 @@
 /**
- * kernel/workflow/index.ts — classify, validate, run, and schedule workflows.
+ * kernel/workflow/index.ts — read intake, validate, run, and schedule workflows.
  */
 
-export * from './classify.ts';
+export * from './intake.ts';
 export * from './consequence.ts';
 export * from './asked.ts';
 export * from './validators.ts';

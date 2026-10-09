@@ -23,15 +23,16 @@ built-in id.
 
 `evals/activation.json` lists requests in ordinary language with the
 expected outcome, activate or stand down. The activating cases do double
-duty: they are fixtures, and the router retrieves over them, so every case
-you add teaches Construct one more way a person phrases the need. Write
-them the way people talk, not the way the manifest does.
+duty: they are fixtures, and the router retrieves over them when the skill
+evals run. Write them the way people talk, not the way the manifest does.
 
-The router does not decide which skill loads; the host model does. The
-router orders every skill by how well the person's words match its
-description, its activation phrases, and its labeled cases, and hands the
-banded list back through `classify_request`; that ranking is lexical and is
-labeled so. Its regression floors run on a frozen copy of the catalog
+The router does not decide which skill loads, and it does not read requests:
+the host model reports its own reading to `classify_request`, which returns
+the workflows whose declared deliverable fits and the use-when text of the
+skills they bind, unranked. The router orders skills by how well words match
+a description, its activation phrases, and its labeled cases; that ordering
+is lexical, is labeled so, and may only raise rigor. Its regression floors
+run on a frozen copy of the catalog
 (`tests/fixtures/router-catalog.json`) and held-out requests
 (`tests/fixtures/router-cases.json`), so they test the router's code and
 never fail a description edit. A routing case is never copied into a

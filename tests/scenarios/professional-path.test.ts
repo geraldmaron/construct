@@ -32,17 +32,22 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, unknown>;
 }
 
+/** A host's reading of work it cannot name a workflow for: the general carrier takes it, and the words reach the judgment. */
+function work(words: string): Record<string, unknown> {
+  return { words, kind: 'manage', deliverable: { kind: 'other', describe: words } };
+}
+
 test('1–2, 11–12: consequence, fresh session recovery, and scale via classify_request', async () => {
   const fx = brokerFixture();
   try {
-    const arch = (await call(fx, 'classify_request', { text: 'Introduce a shared database for billing and identity' })) as { class: string; judgment: { challenge: boolean } };
-    assert.equal(arch.class, 'manage');
+    const arch = (await call(fx, 'classify_request', work('Introduce a shared database for billing and identity'))) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
+    assert.equal(arch.matches[0]!.workflowId, 'managed-outcome');
     assert.equal(arch.judgment.challenge, true, 'architecture is challenged without magic words');
 
-    const unusual = (await call(fx, 'classify_request', { text: 'Put identity and billing on the same postgres' })) as { judgment: { challenge: boolean } };
+    const unusual = (await call(fx, 'classify_request', work('Put identity and billing on the same postgres'))) as { judgment: { challenge: boolean } };
     assert.equal(unusual.judgment.challenge, true, 'unusual phrasing of a shared store still challenges');
 
-    const trivial = (await call(fx, 'classify_request', { text: 'Rename a private helper in the invoice formatter' })) as { judgment: { challenge: boolean; depth: string; signals: { kind: string }[] } };
+    const trivial = (await call(fx, 'classify_request', work('Rename a private helper in the invoice formatter'))) as { judgment: { challenge: boolean; depth: string; signals: { kind: string }[] } };
     assert.equal(trivial.judgment.challenge, false);
     assert.equal(trivial.judgment.depth, 'standard', 'an unanswered scale is treated as a team project');
     assert.ok(trivial.judgment.signals.some((s) => s.kind === 'scale'));
@@ -64,21 +69,21 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
 
     const mid = 'Refactor the ownership of the billing reports';
     upsertProfile(fx.broker.store, { scale: 'side_project' }, fx.broker.now());
-    const side = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    const side = (await call(fx, 'classify_request', work(mid))) as { judgment: { challenge: boolean; depth: string } };
     assert.equal(side.judgment.challenge, false, 'mid-weight stays light on a side project via classify_request');
     assert.equal(side.judgment.depth, 'light');
 
     upsertProfile(fx.broker.store, { scale: 'multi_team' }, fx.broker.now());
-    const team = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    const team = (await call(fx, 'classify_request', work(mid))) as { judgment: { challenge: boolean; depth: string } };
     assert.equal(team.judgment.challenge, false, 'one mid-weight word does not challenge at multi_team without declared stakes');
     assert.equal(team.judgment.depth, 'standard');
 
     upsertProfile(fx.broker.store, { scale: 'organization' }, fx.broker.now());
-    const org = (await call(fx, 'classify_request', { text: mid })) as { judgment: { challenge: boolean; depth: string } };
+    const org = (await call(fx, 'classify_request', work(mid))) as { judgment: { challenge: boolean; depth: string } };
     assert.equal(org.judgment.challenge, false);
     assert.equal(org.judgment.depth, 'standard');
     for (const text of ['Introduce a shared database for billing and identity', 'Put identity and billing on the same postgres']) {
-      const always = (await call(fx, 'classify_request', { text })) as { judgment: { challenge: boolean } };
+      const always = (await call(fx, 'classify_request', work(text))) as { judgment: { challenge: boolean } };
       assert.equal(always.judgment.challenge, true, `${text} is still challenged at organization`);
     }
   } finally {

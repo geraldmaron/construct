@@ -40,8 +40,10 @@ test('Scenario A: a basic question creates no run, decision, staff member, or re
   const fx = brokerFixture();
   try {
     const before = listActivity(fx.broker.store).length;
-    const c = await call(fx, 'classify_request', { text: 'What does this function do?' });
-    assert.equal(c.class, 'answer');
+    const c = await call(fx, 'classify_request', { words: 'What does this function do?', kind: 'answer' });
+    assert.equal(c.kind, 'answer');
+    assert.deepEqual(c.matches, []);
+    assert.equal(c.next, 'Answer in chat. Nothing was recorded.');
     assert.equal(listActivity(fx.broker.store).length, before);
     assert.equal(listRuns(fx.broker.store).length, 0);
     assert.deepEqual(await call(fx, 'inbox'), []);
@@ -54,9 +56,9 @@ test('Scenario A: a basic question creates no run, decision, staff member, or re
 test('Scenario B: minimal memory records one decision with the person’s wording and provenance, and nothing else', async () => {
   const fx = brokerFixture();
   try {
-    const c = await call(fx, 'classify_request', { text: 'Record that we will not add schema migration until stable.' });
-    assert.equal(c.class, 'remember');
-    assert.equal(c.rememberKind, 'decision');
+    const c = await call(fx, 'classify_request', { words: 'Record that we will not add schema migration until stable.', kind: 'remember' });
+    assert.equal(c.kind, 'remember');
+    assert.match(c.next as string, /^Call remember with the person’s wording/);
     const r = (await call(fx, 'remember', { kind: 'decision', text: 'we will not add schema migration until stable' })) as { remembered: { id: string; text: string }; nothingElseCreated: boolean };
     assert.equal(r.nothingElseCreated, true);
     const s = listStatements(fx.broker.store).find((x) => x.id === r.remembered.id)!;

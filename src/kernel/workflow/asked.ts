@@ -5,14 +5,16 @@
  * It lives in run.bindings.asked and holds the inputs to the judgment, never
  * the judgment itself: every judgment is recomputed from the run's structure
  * plus what was declared here, so resuming a run cannot drop what the host
- * declared. It also holds the period the run covers, worked out into dates
- * when the run was created, the sources it names, and the trigger firing
- * that started it; run.input keeps the period as it was given. A run with no
- * reading reads as an empty one.
+ * declared. It also holds the host's typed reading as Construct checked it,
+ * the period the run covers, worked out into dates when the run was created,
+ * the sources it names, and the trigger firing that started it; run.input
+ * keeps the period as it was given. A run with no reading reads as an empty
+ * one.
  */
 
 import { PERIOD_RELATIVES, PERIOD_SEMANTICS, type PeriodSpec, type ResolvedPeriod } from '../registry/slots.ts';
 import { STAKE_AREAS, type StakeArea, type Stakes } from './consequence.ts';
+import type { Intake } from './intake.ts';
 
 /** What the host declared about the work, beside the workflow input. */
 export interface Declared {
@@ -55,6 +57,8 @@ export interface Firing {
 }
 
 export interface AskedReading {
+  /** The host's typed reading as Construct checked it at the start, in the person's own form. */
+  readonly intake?: Intake | null;
   readonly declared?: Declared | null;
   readonly judgedBy?: JudgedBy | null;
   readonly assumptions?: readonly Assumption[];
@@ -158,6 +162,17 @@ function sourcesFrom(x: unknown): AskedSources | null {
   return { registered, named };
 }
 
+/** A stored reading: kept whole when its fields have the types the kernel wrote, otherwise left out. */
+function intakeFrom(x: unknown): Intake | null {
+  if (!isRecord(x) || typeof x.words !== 'string' || typeof x.kind !== 'string') return null;
+  const objectOrNull = (v: unknown): boolean => v === null || isRecord(v);
+  const textOrNull = (v: unknown): boolean => v === null || typeof v === 'string';
+  const shaped = [x.deliverable, x.period, x.destination, x.schedule, x.stakes].every(objectOrNull)
+    && [x.skill, x.workflowId, x.target, x.scope, x.coordination].every(textOrNull)
+    && Array.isArray(x.sources) && Array.isArray(x.open) && isRecord(x.inputs);
+  return shaped ? (x as unknown as Intake) : null;
+}
+
 function firingFrom(x: unknown): Firing | null {
   return isRecord(x) && typeof x.triggerId === 'string' && typeof x.dueAt === 'string' ? { triggerId: x.triggerId, dueAt: x.dueAt } : null;
 }
@@ -166,9 +181,10 @@ function firingFrom(x: unknown): Firing | null {
 export function askedFrom(raw: unknown): AskedReading {
   if (!isRecord(raw)) return {};
   const out: {
-    declared?: Declared | null; judgedBy?: JudgedBy | null; assumptions?: readonly Assumption[];
+    intake?: Intake | null; declared?: Declared | null; judgedBy?: JudgedBy | null; assumptions?: readonly Assumption[];
     period?: ResolvedPeriod | null; periodSpec?: PeriodSpec | null; sources?: AskedSources | null; firing?: Firing | null;
   } = {};
+  if ('intake' in raw) out.intake = intakeFrom(raw.intake);
   if ('declared' in raw) out.declared = declaredFrom(raw.declared);
   if ('judgedBy' in raw) out.judgedBy = judgedByFrom(raw.judgedBy);
   if ('assumptions' in raw) out.assumptions = assumptionsFrom(raw.assumptions);

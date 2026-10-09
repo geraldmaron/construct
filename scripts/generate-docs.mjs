@@ -47,14 +47,34 @@ function cliReference() {
   return parts.join('\n');
 }
 
+/** What a property holds, as the reference names it: its values when they are a closed set, else its type; a list says what it holds. */
+function typeOf(p) {
+  if (p.enum) return p.enum.map((e) => `\`${e}\``).join(', ');
+  if (p.type === 'array' && p.items?.enum) return `list of ${p.items.enum.map((e) => `\`${e}\``).join(', ')}`;
+  if (p.type === 'array' && p.items?.type) return `list of ${p.items.type}`;
+  return p.type;
+}
+
+/** One row per input, then one per field inside it: period.semantics, sources[].role. */
+function inputRows(properties, required, prefix) {
+  const rows = [];
+  for (const [k, p] of Object.entries(properties)) {
+    const name = `${prefix}${k}`;
+    rows.push([`\`${name}\``, typeOf(p), required.includes(k) ? 'yes' : 'no', p.description ?? '']);
+    if (p.type === 'object' && p.properties) rows.push(...inputRows(p.properties, p.required ?? [], `${name}.`));
+    if (p.type === 'array' && p.items?.properties) rows.push(...inputRows(p.items.properties, p.items.required ?? [], `${name}[].`));
+  }
+  return rows;
+}
+
 function brokerReference() {
   const parts = [HEADER('src/kernel/broker/tools.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). Wrong input comes back as a tool error result: `error` says what is wrong, `field` names the input, and `allowed` and `example` give the values it accepts and one that would pass, or are null when Construct has none to give. Only a call to a tool the surface does not carry is a JSON-RPC error (-32602). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
   for (const surface of ['interactive', 'headless']) {
     parts.push(`## ${surface === 'interactive' ? 'Interactive surface' : 'Headless surface'}`, '');
     for (const t of TOOLS.filter((x) => x.surface === 'both' || x.surface === surface)) {
       parts.push(`### \`${t.name}\``, '', `${t.title}. ${t.description}`, '', `Surface: ${t.surface}. Reads only: ${t.readOnly ? 'yes' : 'no'}.`, '');
-      const props = Object.entries(t.inputSchema.properties);
-      if (props.length) parts.push(table(['Input', 'Type', 'Required', 'Meaning'], props.map(([k, p]) => [`\`${k}\``, p.enum ? p.enum.map((e) => `\`${e}\``).join(', ') : p.type, (t.inputSchema.required ?? []).includes(k) ? 'yes' : 'no', p.description])), '');
+      const rows = inputRows(t.inputSchema.properties, t.inputSchema.required ?? [], '');
+      if (rows.length) parts.push(table(['Input', 'Type', 'Required', 'Meaning'], rows), '');
     }
   }
   parts.push('## Never on the headless surface', '', HEADLESS_FORBIDDEN.map((n) => `- \`${n}\``).join('\n'), '');

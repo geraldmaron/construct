@@ -1,7 +1,9 @@
 /**
- * kernel/skills/routing.ts — which skills a request in ordinary language
- * most plausibly asks for, ranked, so the host model reading the list can
- * choose without the person naming a skill.
+ * kernel/skills/routing.ts — a lexical ordering of the skills a request's
+ * words resemble. The skill evals and their regression floors use it, and
+ * its stemmer feeds the lexical floor that may only raise rigor; no request
+ * a session reports is routed through it, and classify_request does not
+ * call it.
  *
  * The final judge is the model in the session: measured on natural requests
  * that borrow no skill vocabulary, a host-class model reading the catalog
@@ -10,8 +12,7 @@
  * over each skill's description, its activation phrases, and the requests
  * its eval file labels as activating (BM25 over stems, plus nearest labeled
  * examples), and returns every skill with a band: likely, possible, or
- * unlikely. A host reads the likely ones first and may still pick another.
- * Stand-down phrases demote a skill they match better than its activation
+ * unlikely. Stand-down phrases demote a skill they match better than its activation
  * phrases do.
  *
  * The same module validates and scores the held-out intake corpus that real

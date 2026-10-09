@@ -222,16 +222,16 @@ const boot = await call('bootstrap'); must(boot.profile.openQuestions.length ===
 const scale = boot.profile.openQuestions.find((q) => q.options); await call('decide', { decisionId: scale.id, resolution: 'solo' });
 for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call('decide', { decisionId: q.id, resolution: q.question.includes('result') ? 'prove the packaged loop' : 'never write outside this project' });
 const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confirmed', 'onboarding confirmed after decisions');
-const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
+const cls = await call('classify_request', { words: 'Remember that we will not add schema migration until stable', kind: 'remember' }); must(/^Call remember/.test(cls.next) && cls.recorded === false, 'a remember reading is told to call remember');
 const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
 const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.items.length === 1, 'one statement remembered');
 const rooted = await call('work', { action: 'add', kind: 'outcome', title: 'Hold schema changes until stable', serves: mem.remembered.id }); must(rooted.status === 'open' && rooted.admittedBy === 'serves', 'work serving a remembered decision is admitted');
 const sub = await call('work', { action: 'add', title: 'Guard the migration path', parent: rooted.id, acceptance: ['no migration runs before 1.0'] }); must(sub.status === 'open', 'a child of admitted work is admitted');
 const loose = await call('work', { action: 'add', title: 'An idea with no reason' }); must(loose.status === 'proposed', 'unrooted work from a session is proposed');
 const ready = await call('work', { action: 'ready' }); must(ready.some((w) => w.id === sub.id) && !ready.some((w) => w.id === loose.id), 'ready holds admitted work only');
-const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
+const cls2 = await call('classify_request', { words: 'Review this implementation against our design principles', kind: 'manage', deliverable: { kind: 'review/design-conformance' }, target: 'README.md' }); must(cls2.matches[0]?.workflowId === 'design-conformance' && cls2.matches[0].missing.length === 0, `the typed reading matches design-conformance with nothing missing: ${JSON.stringify(cls2.matches[0])}`);
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
-const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
+const started = await call('start_outcome', { workflowId: 'design-conformance', intake: cls2.intake }); must(started.started === true && started.run.state === 'ready', 'run ready from the intake');
 const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: [] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
 for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: started.run.id, includeSkillBody: i === 0 }); must(c.work, `step ${i} claimable`); if (i === 0) must(typeof c.work.skill.body === 'string' && c.work.skill.body.startsWith('---'), 'skill body loaded only when asked'); const r = await call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'design.md' }] }); must(r.step.state === 'succeeded', `step ${c.work.step.id} succeeded: ${r.step.reason}`); }
 const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
@@ -247,7 +247,7 @@ const invented = await call('check_answer', { answer: 'Checkout retries each pay
 console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out" | grep -v '^pending=' || true

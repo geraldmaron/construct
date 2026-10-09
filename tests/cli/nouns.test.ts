@@ -14,7 +14,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
   await inProject(async (ctx, box) => {
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
-    assert.match(list.out, /^design-conformance\s+1\.0\.0\s+builtin\s+manage/m);
+    assert.match(list.out, /^design-conformance\s+2\.0\.0\s+builtin\s+manage/m);
     assert.match(list.out, /^remember\s+1\.0\.0\s+builtin\s+remember/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
@@ -48,7 +48,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.match(again.out, /already running: run /);
 
     const runs = await capture(() => run(['run', 'list'], ctx));
-    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@1\\.0\\.0\\s+ready\\s+manual`, 'm'));
+    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.0\\s+ready\\s+manual`, 'm'));
     const filtered = await capture(() => run(['run', 'list', '--state=succeeded', '--json'], ctx));
     assert.deepEqual(JSON.parse(filtered.out), []);
     const badState = await capture(() => run(['run', 'list', '--state=done'], ctx));

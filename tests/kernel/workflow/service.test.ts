@@ -16,7 +16,6 @@ import { fixture, T0 } from './support.ts';
 test('answer creates nothing; remember creates one confirmed statement, no run, no tasks', () => {
   const fx = fixture();
   try {
-    assert.equal(fx.service.classify('What does this function do?').class, 'answer');
     assert.equal(listActivity(fx.store).length, 0);
     const s = fx.service.remember({ kind: 'decision', text: 'We will not add schema migration until stable.', by: 'gerald' });
     assert.equal(s.status, 'confirmed');
