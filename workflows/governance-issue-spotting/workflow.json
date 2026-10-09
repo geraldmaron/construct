@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "governance-issue-spotting",
   "title": "Governance issue spotting",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Spot compliance, legal, and finance issues in a change, contract, data flow, or money flow: locate and quote the governing texts, state exposures and how they may apply as research, list expected controls and existing evidence, and prepare the questions and material a qualified reviewer needs; never advice or sign-off.",
   "activation": [
     "what exposure does this create",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

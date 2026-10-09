@@ -18,6 +18,7 @@
  */
 
 import { realpathSync } from 'node:fs';
+import { researchCoverage } from '../source/research.ts';
 import { holdsContent, normalizeQuote, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
 import { normalizeUrl } from '../project/urls.ts';
 import { redact } from '../render/redact.ts';
@@ -497,6 +498,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     if (resolvableRefs.size === 0) return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
     return evidence.filter((e) => !resolvableRefs.has(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
   },
+  reference_coverage: ({ output, evidence, resolve }) => [...researchCoverage(evidence, resolve, output).problems],
   verification_result: ({ output }) => {
     if (!isRecord(output)) return ['verification output is not an object'];
     const problems: string[] = [];

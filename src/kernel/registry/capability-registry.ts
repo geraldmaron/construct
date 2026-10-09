@@ -32,6 +32,7 @@ export const BUILTIN_VALIDATORS: readonly string[] = Object.freeze([
   'no_velocity_as_capacity',
   'evidence_refs_resolve',
   'verification_result',
+  'reference_coverage',
   'review_complete',
   'plan_complete',
   'artifacts_exist',

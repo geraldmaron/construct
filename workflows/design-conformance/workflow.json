@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "design-conformance",
   "title": "Design-principle conformance review",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "purpose": "Review an implementation or feature against the project's confirmed principles, constraints, and boundaries: deterministic checks first, then a cited semantic review, then an independent challenge; material drift is recorded and unknown principles are asked about, never invented.",
   "activation": [
     "review this against our design principles",
@@ -53,7 +53,8 @@
         "unknownPrinciples"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,
