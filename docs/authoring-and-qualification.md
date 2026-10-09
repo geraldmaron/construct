@@ -195,10 +195,13 @@ it, for the host to offer; nothing starts on its own.
 
 ## Settled terms, sensitivity, publishing, and skill impact
 
-`remember` with `contradicts` turns the terms a decision rules out into
-constraints ("Do not state \"exactly-once\" as current"), and
+`remember` with `contradicts` asks the person to confirm the terms a
+decision rules out; once they do, on their own channel, each becomes a
+constraint ("Do not state \"exactly-once\" as current"), and
 `settled_not_contradicted` sends back answers and drafts that state them
-as current without saying they were decided against. A deliverable records
+as current without saying they were decided against. A constraint in that
+form that an assistant relayed is refused, and one recorded without the
+person's own confirmation is never checked. A deliverable records
 the highest sensitivity among the sources its run cited;
 `publish-deliverable` needs `clearedFor` from the person when that is
 confidential or restricted, puts the write itself behind an action-time

@@ -24,12 +24,17 @@ const step = async (fx: ReturnType<typeof brokerFixture>, runId: string) => (awa
 const submit = (fx: ReturnType<typeof brokerFixture>, w: any, output: Record<string, unknown>, evidence: { ref: string; excerpt?: string }[]) =>
   call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence });
 
-test('a decision that rules terms out is enforced in answers and in work, unless the text says it was decided against', async () => {
+test('a decision that rules terms out is enforced in answers and in work once the person confirms it, unless the text says it was decided against', async () => {
   const fx = brokerFixture();
   try {
     writeFileSync(join(fx.broker.root, 'docs', 'rfc.md'), 'Delivery guarantee: exactly-once.\n');
     const r = await call(fx, 'remember', { kind: 'decision', text: 'Webhooks use at-least-once delivery with event_id dedupe.', contradicts: ['exactly-once'] });
-    assert.equal(r.rulesOut.length, 1);
+    assert.equal(r.remembered.voice, 'relayed');
+    assert.equal(r.personRequired, true);
+    assert.match(r.next, new RegExp(`construct inbox resolve ${r.pending.decisionId} approve`));
+    const relayed = await call(fx, 'check_answer', { answer: 'Webhooks guarantee exactly-once delivery.', citations: [{ ref: 'docs/rfc.md' }] });
+    assert.ok(!relayed.problems.some((p: { check: string }) => p.check === 'settled_not_contradicted'), 'a rule the person has not confirmed restricts nothing');
+    fx.broker.workflow.decide({ decisionId: r.pending.decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
     const bad = await call(fx, 'check_answer', { answer: 'Webhooks guarantee exactly-once delivery.', citations: [{ ref: 'docs/rfc.md' }] });
     assert.ok(bad.problems.some((p: { check: string }) => p.check === 'settled_not_contradicted'));
     const ok = await call(fx, 'check_answer', { answer: 'The old RFC said exactly-once, which was decided against; delivery is at-least-once.', citations: [{ ref: 'docs/rfc.md' }] });

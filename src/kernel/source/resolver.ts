@@ -9,13 +9,21 @@ import type { StateStore } from '../state/open.ts';
 import { listSources } from '../state/sources.ts';
 import { listLiveDeliverables } from '../state/deliverables.ts';
 import { getStatement, listStatements } from '../state/profile.ts';
-import { declaredSupersessions } from '../project/governance.ts';
+import { outdatedTerms } from '../project/governance.ts';
 import { getClaim, getEntity } from '../state/graph.ts';
 import { getDecision } from '../state/decisions.ts';
 import { getRun } from '../state/runs.ts';
 import { getDriftFinding } from '../state/drift.ts';
 import { createEvidenceResolver, type RecordKind, type RefResolver } from '../project/evidence.ts';
 import { currentManifestRecord, type ManifestEntry } from './manifest.ts';
+
+/** The statement that says a document is no longer current, as the reader sees it: its kind and its words, cut to 160 characters. */
+function sayingSo(store: StateStore, statementId: string): string | null {
+  const s = getStatement(store, statementId);
+  if (!s) return null;
+  const text = s.text.replace(/\s+/g, ' ').trim();
+  return `${s.kind} "${text.length > 160 ? `${text.slice(0, 159)}…` : text}"`;
+}
 
 export function projectResolver(store: StateStore, root: string, override?: { readonly sourceId: string; readonly manifest: readonly ManifestEntry[] | null; readonly provenance?: 'witnessed' | 'reported' } | null, options?: { readonly hostReads?: 'require' | 'accept' }): RefResolver {
   const knows = (kind: RecordKind, id: string): boolean => {
@@ -42,7 +50,8 @@ export function projectResolver(store: StateStore, root: string, override?: { re
         neverRead: !overridden && !s.lastSnapshotId,
       };
     }),
-    supersessions: declaredSupersessions(listStatements(store, { kind: 'decision', status: 'confirmed' })),
+    // Only what the person confirmed on their own channel marks a document outdated.
+    supersessions: outdatedTerms(listStatements(store, { kind: 'constraint', status: 'confirmed' }), (id) => sayingSo(store, id)),
     hostReads: options?.hostReads ?? 'require',
     deliverableIds: new Set(listLiveDeliverables(store).map((d) => d.id)),
     knows,

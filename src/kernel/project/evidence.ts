@@ -95,7 +95,7 @@ export interface ResolverInput {
   readonly deliverableIds?: ReadonlySet<string>;
   /** Whether Construct holds a record of this kind with this id. */
   readonly knows?: (kind: RecordKind, id: string) => boolean;
-  /** Documents or items the person has said are replaced. */
+  /** Documents or items the person said, on their own channel, are no longer current. */
   readonly supersessions?: readonly DeclaredSupersession[];
   /**
    * require: a reference into what only the host can read resolves only to an item a recorded read holds.
@@ -218,7 +218,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   const govern = (r: ResolvedRef | null): ResolvedRef | null => {
     if (!r || r.supersededBy || declared.length === 0 || (r.kind !== 'file' && r.kind !== 'item')) return r;
     const hit = supersessionFor([r.itemRef ?? '', r.path ?? '', stripLocator(r.ref)].filter(Boolean), declared);
-    return hit ? { ...r, supersededBy: `${hit.by} (remembered decision ${hit.statementId})` } : r;
+    return hit ? { ...r, supersededBy: `${hit.by} (statement:${hit.statementId})` } : r;
   };
   return (original: string): ResolvedRef | null => govern(resolveRaw(original));
   // One parser, in order; nothing is stripped before Construct knows what the reference is.

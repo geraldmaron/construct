@@ -318,11 +318,13 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
   const result = initializeProject({ root, projectId: ctx.nextId('proj'), name, at });
   try {
     const applied = applyDiscoveryDraft(result.store, { draft, at, nextId: ctx.nextId });
+    // A constraint given as a flag is the person's own rule only when they typed it at a terminal of theirs.
     const answers = applyOnboardingAnswers(result.store, {
       answers: flagAnswers(args),
       by: 'init',
       at,
       nextId: ctx.nextId,
+      channel: channelFor(ctx.env, ctx.terminal ?? terminalFacts()),
     });
     saveConstitution(result.layout.constitutionFile, composeConstitution(result.store, result.constitution));
     const sources = createSourceService(result.store, { readers: new Map() });

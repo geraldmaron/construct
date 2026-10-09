@@ -78,7 +78,7 @@ Surface: interactive. Reads only: yes.
 
 ### `remember`
 
-Remember one thing. Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff.
+Remember one thing. Record one decision, constraint, principle, note, or outcome in the person’s own words, when they ask to remember or record it. Creates exactly one record and nothing else: no run, no tasks, no staff. Replacing an earlier record, ruling terms out, or marking a document outdated needs the person’s own confirmation; Construct asks them when the host can.
 
 Surface: interactive. Reads only: no.
 
@@ -89,6 +89,7 @@ Surface: interactive. Reads only: no.
 | `assumptions` | list of string | no | Load-bearing assumptions this governing record rests on. |
 | `replaces` | string | no | The id of a statement this one supersedes. |
 | `contradicts` | list of string | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
+| `outdates` | list of string | no | Documents or items the person said are no longer current; only names they said. |
 
 ### `workflows`
 
@@ -175,7 +176,7 @@ Surface: interactive. Reads only: yes.
 
 ### `decide`
 
-Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, or accepting a deliverable, needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
+Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
 
 Surface: interactive. Reads only: no.
 

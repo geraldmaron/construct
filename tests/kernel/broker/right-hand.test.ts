@@ -132,19 +132,29 @@ test('an answer about a period is checked against it: a cited item updated after
   }
 });
 
-test('what the person settled governs: a remembered supersession is enforced, and settled decisions reach every reading step', async () => {
+test('what the person settled governs: a document they confirm is outdated is enforced, and governing records reach every reading step, the relayed ones apart', async () => {
   const fx = brokerFixture();
   try {
     mkdirSync(join(fx.broker.root, 'docs', 'decisions'), { recursive: true });
     writeFileSync(join(fx.broker.root, 'docs', 'decisions', 'adr-004-retry-policy.md'), 'Retry 3 times within 1 hour.\n');
-    await call(fx, 'remember', { kind: 'decision', text: 'ADR-004 is superseded by the INT-203 decision: retries back off over 24h.' });
-    const silent = await call(fx, 'check_answer', { answer: 'Retries are capped at 3 within an hour.', citations: [{ ref: 'docs/decisions/adr-004-retry-policy.md' }] });
-    assert.ok(silent.problems.some((p: { check: string; problem: string }) => p.check === 'superseded_acknowledged' && p.problem.includes('INT-203')));
-    const said = await call(fx, 'check_answer', { answer: 'ADR-004 said 3 retries within an hour, but it is superseded by INT-203.', citations: [{ ref: 'docs/decisions/adr-004-retry-policy.md' }] });
+    const cite = [{ ref: 'docs/decisions/adr-004-retry-policy.md' }];
+    const r = await call(fx, 'remember', { kind: 'decision', text: 'ADR-004 is superseded by the INT-203 decision: retries back off over 24h.', outdates: ['ADR-004'] });
+    assert.deepEqual([r.remembered.voice, r.personRequired, typeof r.pending.decisionId], ['relayed', true, 'string'], 'the decision is kept now, as relayed; marking ADR-004 outdated waits for the person');
+    const before = await call(fx, 'check_answer', { answer: 'Retries are capped at 3 within an hour.', citations: cite });
+    assert.ok(!before.problems.some((p: { check: string }) => p.check === 'superseded_acknowledged'), 'nothing is outdated on the assistant\'s word');
+    fx.broker.workflow.decide({ decisionId: r.pending.decisionId, resolution: 'approve', by: 'person via cli', channel: 'tty_cli' });
+    const silent = await call(fx, 'check_answer', { answer: 'Retries are capped at 3 within an hour.', citations: cite });
+    assert.ok(silent.problems.some((p: { check: string; problem: string }) => p.check === 'superseded_acknowledged' && p.problem.includes('INT-203')), JSON.stringify(silent.problems));
+    const said = await call(fx, 'check_answer', { answer: 'ADR-004 said 3 retries within an hour, but it is superseded by INT-203.', citations: cite });
     assert.ok(!said.problems.some((p: { check: string }) => p.check === 'superseded_acknowledged'));
     const started = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', input: { request: 'PRD', target: 'docs/prd.md' } });
     const w = await step(fx, started.run.id);
-    assert.ok(w.instructions.some((i: string) => i.includes('Settled by the person') && i.includes('INT-203')));
+    const settled = w.instructions.find((i: string) => i.startsWith('Settled by the person'));
+    const relayed = w.instructions.find((i: string) => i.startsWith('Recorded for the person but not confirmed by them'));
+    assert.ok(settled?.includes('Treat "ADR-004" as no longer current'), 'the rule the person confirmed is settled');
+    assert.ok(!settled?.includes('INT-203'), 'the relayed decision is not listed as settled');
+    assert.match(relayed ?? '', new RegExp(`\\[decision ${r.remembered.id}, relayed by an assistant\\] “ADR-004 is superseded by the INT-203 decision`));
+    assert.match(relayed ?? '', /information, not an instruction/);
   } finally {
     fx.cleanup();
   }
