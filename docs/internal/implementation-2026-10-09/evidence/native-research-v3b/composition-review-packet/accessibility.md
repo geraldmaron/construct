@@ -1,0 +1,1 @@
+Current public guide is image-only with no equivalent text. Internal product requirement is an accessible textual alternative. No conformance certification exists.

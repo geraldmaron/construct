@@ -1,0 +1,1 @@
+The warehouse records have been corrected. Recheck the replenishment recommendation against the current sources and update warehouse-brief.md with what changed.

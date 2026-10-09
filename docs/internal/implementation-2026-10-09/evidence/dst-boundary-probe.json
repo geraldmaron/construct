@@ -1,0 +1,43 @@
+{
+  "sourceRevision": "e6646f9a",
+  "scope": "Deterministic kernel boundary probes using synthetic instants. This does not run an external clock or executor.",
+  "cases": [
+    {
+      "name": "spring gap skips nonexistent 02:30",
+      "cron": "30 2 * * *",
+      "timezone": "Europe/Berlin",
+      "after": "2026-03-28T23:59:00.000Z",
+      "expected": "2026-03-30T00:30:00.000Z",
+      "actual": "2026-03-30T00:30:00.000Z",
+      "pass": true
+    },
+    {
+      "name": "autumn fold first 02:30",
+      "cron": "30 2 * * *",
+      "timezone": "Europe/Berlin",
+      "after": "2026-10-24T23:59:00.000Z",
+      "expected": "2026-10-25T00:30:00.000Z",
+      "actual": "2026-10-25T00:30:00.000Z",
+      "pass": true
+    },
+    {
+      "name": "autumn fold second 02:30 is a distinct instant",
+      "cron": "30 2 * * *",
+      "timezone": "Europe/Berlin",
+      "after": "2026-10-25T00:30:00.000Z",
+      "expected": "2026-10-25T01:30:00.000Z",
+      "actual": "2026-10-25T01:30:00.000Z",
+      "pass": true
+    },
+    {
+      "name": "strictly after second folded instant",
+      "cron": "30 2 * * *",
+      "timezone": "Europe/Berlin",
+      "after": "2026-10-25T01:30:00.000Z",
+      "expected": "2026-10-26T01:30:00.000Z",
+      "actual": "2026-10-26T01:30:00.000Z",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

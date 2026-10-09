@@ -1,0 +1,46 @@
+{
+  "disposition": "Do not use the quoted 30% causal claim as written. Give a corrected, descriptive result for the held trial.",
+  "arithmetic": {
+    "dry_seedlings": 120,
+    "dry_seeds": 200,
+    "dry_germination_percent": 60,
+    "soaked_seedlings": 150,
+    "soaked_seeds": 200,
+    "soaked_germination_percent": 75,
+    "difference_percentage_points": 15,
+    "relative_increase_percent": 25,
+    "superseded_soaked_seedlings": 156,
+    "superseded_relative_increase_percent": 30
+  },
+  "record_resolution": "C5 supersedes C3. Use S1=74, S2=76, D1=58, D2=62. Do not add successive events for S1 or average the old and corrected counts.",
+  "claim_specific_authority": {
+    "day_10_counts": "grow-lead count log under protocol replacement semantics",
+    "trial_design_and_denominators": "protocol.txt",
+    "communications_claim": "claim.txt and newsletter.txt record the claim, not independent measurements",
+    "future_booking_conditions": "planning-minute.txt"
+  },
+  "evidential_limits": [
+    "Treatment is confounded with bench; unmeasured bench conditions are a plausible alternative explanation.",
+    "Single lot, single trial, and no independent count audit limit replication/generalization; they do not make the recorded descriptive arithmetic unknowable.",
+    "Newsletter repeats the communications proof and offers no independent corroboration."
+  ],
+  "handbacks": {
+    "needed_to_answer_present_request": [],
+    "report_actions": [
+      "Revise or reject the quoted claim; any wording should be descriptive and bounded to the held trial."
+    ],
+    "optional_evidence_improvements": [
+      "A randomized or rotated repeat with bench observations could better test causation; historical missing environmental readings cannot be assumed recoverable."
+    ],
+    "future_implementation_conditions": [
+      "Choose keyholder and reserve benches before booking the larger spring trial."
+    ],
+    "not_a_present_prerequisite": [
+      "Greenhouse keyholder identity",
+      "Future bench reservation",
+      "A repeat experiment",
+      "Independent count audit"
+    ]
+  },
+  "action_scope": "Assessment and proposed wording/next steps only; no contact, booking, count-log edit, report publication, or assertion any such action occurred."
+}

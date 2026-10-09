@@ -1,0 +1,1 @@
+Investigate whether West depot needs replenishment today. Save a decision brief with evidence and unresolved questions to warehouse-brief.md.

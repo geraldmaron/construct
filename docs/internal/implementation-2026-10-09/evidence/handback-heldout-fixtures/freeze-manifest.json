@@ -1,0 +1,28 @@
+{
+  "formatVersion": 1,
+  "fixtureSet": "held-out-handback-v1",
+  "frozenAt": "2026-10-09T22:19:14.967015+00:00",
+  "producerRunsAtFreeze": 0,
+  "independence": "Authored without inspecting candidate skill text or existing producer outputs. Only native fixture setup and suite case shape were inspected.",
+  "changePolicy": "Do not edit frozen payload after any producer run. Any correction needs a new version and retained original evidence.",
+  "sha256": {
+    "private-grading/planetarium/expected.json": "d0f84e38463c70039d07cd947e88ab1cb099e94f56c8a6135f45ec592be14688",
+    "private-grading/planetarium/rubric.txt": "6f02d142a819f6d661997398f2d59f2ec1c835027331ba0648201e40525804db",
+    "private-grading/seed-club/expected.json": "49a1ced258d8516909fb88a5674583a71eac0c0c4c066802b1396483120122f9",
+    "private-grading/seed-club/rubric.txt": "43d596c4e8bc7cda0a2c234218c6a5fecd35ae7524694b9401638944c36cc092",
+    "producer-inputs/planetarium/committee-note.txt": "6bb4be6a019a846ed5e12a330b7ddeb062951087f2303367163abc2c4d353131",
+    "producer-inputs/planetarium/layout.tsv": "953a93b2823e163b79879369b9b83761fc074a03eb15fc5cf99a24b2de955c70",
+    "producer-inputs/planetarium/open-issues.txt": "3feb0a773f4715c19d1484b26b3b8bcb491af72d5084aaf3bef5dc726acb451b",
+    "producer-inputs/planetarium/room-bookings.ics": "feb3b98383d8c382c72291d75cf7283d08f9fbdd9ede0efca011a712dbf71ec0",
+    "producer-inputs/planetarium/running-order.txt": "08d9f94ac0ff039e607f52e5fab96554085b7ecdb7adce95412daf15c67176d5",
+    "producer-inputs/seed-club/claim.txt": "f095dc6e0e9d404f60e1d708787307898fe024e06db2fd9a2015cae3f95ee9c7",
+    "producer-inputs/seed-club/count-events.jsonl": "92a4ec3f53b6543aa1f589ea562068234d4bbeae9daf232f45461fc2e5cd1a3e",
+    "producer-inputs/seed-club/newsletter.txt": "9a6c5e3f9856895bcf7e12f95861bbe56328dafb61cd073280e4091a2295157c",
+    "producer-inputs/seed-club/planning-minute.txt": "50e75c4fd43d12723983c544155ccdb3fd973af6623dc896920287d2bb441b06",
+    "producer-inputs/seed-club/protocol.txt": "d035fff6f3777eae1dcdc5a06ab52a6dbf24d62d5d633e54f215d49b52e435be",
+    "prompts/planetarium.txt": "7f1c51bc6cd3a775aa90e6a1be1d7babfc4bcacb49b27b2dcada15df515a4798",
+    "prompts/seed-club.txt": "aabfdacf5d5331ae1f2dca104b31fa07aded0834f3577abe0e8f08960ca99578",
+    "suite-cases.json": "c1a200ae7977dbafdc53c282124f434df91e3ded21af2e1a739ae136d2b46b24",
+    "verify-fixtures.py": "d4cb9ea4e26a4301f11bcf296cb0a6763f1a88ccb7dfd22becaaa46dc6ba2e26"
+  }
+}

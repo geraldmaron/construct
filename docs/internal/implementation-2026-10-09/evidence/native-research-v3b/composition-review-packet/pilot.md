@@ -1,0 +1,1 @@
+Publish the public catalog tomorrow. The preservation masters are checksummed. This proves public readiness.

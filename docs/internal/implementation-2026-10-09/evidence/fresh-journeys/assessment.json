@@ -1,5 +1,5 @@
 {
-  "archivedAt": "2026-10-09T22:27:10.091349+00:00",
+  "archivedAt": "2026-10-09T22:52:55.491319+00:00",
   "trials": [
     {
       "trial": "fresh-codex-one",
@@ -747,9 +747,354 @@
           }
         ]
       }
+    },
+    {
+      "trial": "fresh-cursor-standalone-live",
+      "phases": {
+        "qa": {
+          "name": "qa",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 14343,
+          "countsAfter": {
+            "workflow_runs": 0,
+            "step_runs": 0,
+            "deliverables": 0,
+            "work_items": 0,
+            "sources": 0,
+            "source_snapshots": 0
+          },
+          "artifact": null
+        },
+        "initial": {
+          "name": "initial",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 91859,
+          "countsAfter": {
+            "workflow_runs": 1,
+            "step_runs": 4,
+            "deliverables": 2,
+            "work_items": 1,
+            "sources": 1,
+            "source_snapshots": 1
+          },
+          "artifact": {
+            "sha256": "45da6bddbdc1c70b3c20c5553dbc8ea6351c36aa3990e05cd27c8d6f9dce6280",
+            "bytes": 4829
+          }
+        },
+        "changed": {
+          "name": "changed",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 98641,
+          "countsAfter": {
+            "workflow_runs": 2,
+            "step_runs": 8,
+            "deliverables": 4,
+            "work_items": 2,
+            "sources": 2,
+            "source_snapshots": 2
+          },
+          "artifact": {
+            "sha256": "80e6647aabdf96b06269f775d708ef4e3fc314216edbf1603acd876180300570",
+            "bytes": 5472
+          }
+        }
+      },
+      "qaAnswer": "Checking Construct bootstrap and locating the local replenishment policy for net stock at 60 units.\n\n\nWhen **net stock** is **available minus reserved**, measured in **individual units**, the local replenishment policy in `docs/policy.md` says:\n\n**Hold steady** \u2014 do not recommend replenishment.\n\nReplenishment is only recommended when net stock is **below** 60. At exactly 60 you are at the threshold, not under it, so the policy treats that as sufficient and you maintain current levels rather than triggering a replenishment recommendation.",
+      "finalState": {
+        "runs": [
+          {
+            "id": "run-6a206b82",
+            "workflow_id": "research-brief",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "id": "run-ba559545",
+            "workflow_id": "research-brief",
+            "state": "succeeded",
+            "state_reason": null
+          }
+        ],
+        "steps": [
+          {
+            "run_id": "run-6a206b82",
+            "step_id": "gather",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-6a206b82",
+            "step_id": "synthesize",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-6a206b82",
+            "step_id": "challenge",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-6a206b82",
+            "step_id": "record",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-ba559545",
+            "step_id": "gather",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-ba559545",
+            "step_id": "synthesize",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-ba559545",
+            "step_id": "challenge",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-ba559545",
+            "step_id": "record",
+            "state": "succeeded",
+            "state_reason": null
+          }
+        ],
+        "work": [
+          {
+            "id": "work-run-6a206b82-delivery",
+            "status": "completed"
+          },
+          {
+            "id": "work-run-ba559545-delivery",
+            "status": "completed"
+          }
+        ]
+      },
+      "independentChecks": {
+        "cases": [
+          {
+            "name": "initial",
+            "checks": {
+              "correctness": "pass",
+              "uncertainty": "pass",
+              "evidence": "pass",
+              "requested_file": "pass"
+            },
+            "reasons": {
+              "correctness": "The brief correctly holds pending clarification: available stock is 12 cases, reserved quantity is 4 with no declared unit, and the current catalog conversion is null. It neither assumes six each per case nor subtracts incompatible units. It correctly states that exactly 60 each means hold steady and excludes the superseded cache from the current decision.",
+              "uncertainty": "The brief explicitly marks net stock as not calculable, distinguishes a mandatory hold from proof of sufficient stock, and identifies both missing reservation units and missing lot-specific packaging. It reports the supplier reference as inaccessible rather than inventing its contents.",
+              "evidence": "Recorded fetches at 22:37:53.858Z and 22:37:54.038Z support the stock and reservation facts. The catalog fetch and recorded GET at 22:37:56.673Z support the null conversion. The supplier fetch at 22:37:59.753Z returned permission_denied. Citations distinguish policy, inventory, operations, catalog, and superseded cache. The artifact's adversarial-review heading does not establish that an independent review or tests ran.",
+              "requested_file": "case.json contains the captured warehouse-brief.md artifact, not merely a claim of creation. Its decoded UTF-8 content is 4829 bytes and independently hashes to 45da6bddbdc1c70b3c20c5553dbc8ea6351c36aa3990e05cd27c8d6f9dce6280, matching the recorded artifact metadata."
+            }
+          },
+          {
+            "name": "changed",
+            "checks": {
+              "correctness": "fail",
+              "uncertainty": "pass",
+              "evidence": "pass",
+              "requested_file": "pass"
+            },
+            "reasons": {
+              "correctness": "The main calculation and recommendation are correct: 6 cases \u00d7 6 each/case \u2212 4 each = 32 each, triggering replenishment without authorizing an order. However, the brief omits the rubric's explicit 28-each shortfall calculation. Its alternative-readings table also incorrectly says reservations in cases would make net higher: four reserved cases would yield 12 each net, lower than 32. With the verified conversion, 12 available cases would yield 68 each net and support holding, contrary to its dismissal of all alternatives as unable to support holding.",
+              "uncertainty": "The change table preserves the previous null conversion, undeclared reservation unit, and not-calculable net rather than claiming those facts were previously known. It distinguishes a threshold recommendation from order sizing and authorization and limits the assessment to PART-19.",
+              "evidence": "Fresh recorded reads use PID 14305 rather than the initial PID 13163. Fetches at 22:39:31.347Z and 22:39:31.348Z establish six available cases and four reserved each; the recorded GET at 22:39:31.380Z establishes six each per case. Stock text and contentDigest differ from the initial record despite identical provider updatedAt values. The brief recognizes corrected content rather than treating timestamp equality as unchanged data. These records support the main decision, not the erroneous counterfactual arithmetic.",
+              "requested_file": "The updated captured artifact uses the same warehouse-brief.md path, includes a prior-versus-current change table, and differs from the initial artifact. Its decoded UTF-8 content is 5472 bytes and independently hashes to 80e6647aabdf96b06269f775d708ef4e3fc314216edbf1603acd876180300570, matching the recorded artifact metadata."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "trial": "fresh-codex-standalone-live",
+      "phases": {
+        "qa": {
+          "name": "qa",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 29759,
+          "countsAfter": {
+            "workflow_runs": 0,
+            "step_runs": 0,
+            "deliverables": 0,
+            "work_items": 0,
+            "sources": 0,
+            "source_snapshots": 0
+          },
+          "artifact": null
+        },
+        "initial": {
+          "name": "initial",
+          "code": null,
+          "timedOut": true,
+          "elapsedMs": 360019,
+          "countsAfter": {
+            "workflow_runs": 1,
+            "step_runs": 4,
+            "deliverables": 1,
+            "work_items": 1,
+            "sources": 5,
+            "source_snapshots": 4
+          },
+          "artifact": null
+        },
+        "changed": {
+          "name": "changed",
+          "code": null,
+          "timedOut": true,
+          "elapsedMs": 360017,
+          "countsAfter": {
+            "workflow_runs": 2,
+            "step_runs": 8,
+            "deliverables": 3,
+            "work_items": 2,
+            "sources": 5,
+            "source_snapshots": 7
+          },
+          "artifact": {
+            "sha256": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+            "bytes": 7356
+          }
+        }
+      },
+      "qaAnswer": "**Hold steady; do not recommend replenishment.** The policy triggers replenishment only when net stock (available minus reserved) is **below 60 individual units**, not at exactly 60. Source: `docs/policy.md:2`.",
+      "finalState": {
+        "runs": [
+          {
+            "id": "run-5fb9fb1e",
+            "workflow_id": "research-brief",
+            "state": "running",
+            "state_reason": null
+          },
+          {
+            "id": "run-093372d5",
+            "workflow_id": "research-brief",
+            "state": "succeeded",
+            "state_reason": null
+          }
+        ],
+        "steps": [
+          {
+            "run_id": "run-5fb9fb1e",
+            "step_id": "gather",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-5fb9fb1e",
+            "step_id": "synthesize",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-5fb9fb1e",
+            "step_id": "challenge",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-5fb9fb1e",
+            "step_id": "record",
+            "state": "leased",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-093372d5",
+            "step_id": "gather",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-093372d5",
+            "step_id": "synthesize",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-093372d5",
+            "step_id": "challenge",
+            "state": "succeeded",
+            "state_reason": null
+          },
+          {
+            "run_id": "run-093372d5",
+            "step_id": "record",
+            "state": "succeeded",
+            "state_reason": null
+          }
+        ],
+        "work": [
+          {
+            "id": "work-run-5fb9fb1e-delivery",
+            "status": "open"
+          },
+          {
+            "id": "work-run-093372d5-delivery",
+            "status": "completed"
+          }
+        ]
+      },
+      "independentChecks": {
+        "cases": [
+          {
+            "name": "initial",
+            "checks": {
+              "correctness": "unknown",
+              "uncertainty": "unknown",
+              "evidence": "unknown",
+              "requested_file": "fail"
+            },
+            "reasons": {
+              "correctness": "No initial artifact was captured: result.artifact, artifact.text, and artifact.digest are null. The recorded inputs require HOLD: 12 cases, null lot-specific conversion, and reservation quantity 4 without a unit. Reads alone cannot establish that the candidate issued that decision or avoided incompatible subtraction.",
+              "uncertainty": "The missing brief prevents verification that conversion and reservation units were explicitly left unresolved. The changed artifact's description of an earlier hold does not independently establish the initial output.",
+              "evidence": "Recorded reads establish substantive research: current stock and reservations were fetched, the catalog API returned units_per_case:null, and the supplier reference was followed at 2026-10-09T22:39:42.174Z and returned permission_denied. However, no initial artifact exists to verify the rubric's requirement for cited scoped authority and unknowns.",
+              "requested_file": "warehouse-brief.md is missing from the initial artifact capture. The run timed out. Nonzero deliverable and workflow counters are not substitutes for saved file bytes."
+            }
+          },
+          {
+            "name": "changed",
+            "checks": {
+              "correctness": "pass",
+              "uncertainty": "pass",
+              "evidence": "pass",
+              "requested_file": "pass"
+            },
+            "reasons": {
+              "correctness": "The captured brief correctly computes 6 cases \u00d7 6 each/case = 36 each, minus 4 each reserved = 32 each net, below 60 by 28 each. It recommends replenishment, correctly holds steady at exactly 60, rejects the superseded cache, and distinguishes the threshold gap from an approved order quantity. Recorded reads contain no order action, although they do not independently prove the artifact's broader claim that no external action occurred.",
+              "uncertainty": "The brief preserves the earlier unknown conversion and reservation units rather than claiming six each/case was previously established. It limits the conclusion to PART-19 at West at read time, identifies unverified supplier terms and inbound supply, and makes confidence conditional on upstream accuracy. The actual earlier recommendation remains unverified because its cited deliverable is not supplied.",
+              "evidence": "Fresh recorded reads under PID 17001, distinct from initial PID 13557, support the cited current inputs: stock at 22:45:45.836Z, reservations at 22:45:50.789Z, and the catalog API at 22:46:03.014Z, corroborated by the recorded loopback GET. Comparison with initial records establishes changed content despite identical provider timestamps: 12 cases became 6, null conversion became 6 each/case, and the missing reservation unit became each. The brief correctly scopes source authority and does not treat the catalog index or operator generalization as independent conversion evidence. Its claims about a challenged managed deliverable, completed checks, and passed citation checks are not independently verified and receive no credit.",
+              "requested_file": "The captured warehouse-brief.md text contains 7356 UTF-8 bytes. Independently computed SHA-256 is fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2, matching both recorded digests. This establishes a supplied changed artifact despite the run timeout. It does not establish an in-place update of a prior saved brief: the initial file was missing, and the changed artifact explicitly acknowledges that limitation."
+            }
+          }
+        ]
+      }
     }
   ],
-  "scope": "Seven fresh install/init trials, two Codex and five Cursor, each with ordinary Q&A, outcome and fresh-process correction prompts. Every fixture existed before init; Git on Cursor, non-Git on Codex. Full failures and one unreceipted interruption retained. All latest trials have bounded supervisor completion receipts.",
-  "result": "Seven Q&A outcomes have correct threshold answers and zero managed state. Of fourteen requested managed outcomes, only the latest Codex pair completes and passes independent artifact review. Ten Cursor outcomes are unmanaged or await verification; the earlier Codex initial times out, and its correction has no completion receipt.",
-  "limitations": "Synthetic local/MCP/loopback data. Cursor fixture denies Shell; Codex uses workspace-write sandbox. Default Cursor Composer2.5 and requested Codex gpt-6-astra; no universal host/model certificate, production authentication or live unattended cross-host support."
+  "scope": "Nine fresh project/package trials using the same ordinary Q&A, outcome and requested-correction prompts. Three Codex and six Cursor trials; actual native sessions, synthetic local/MCP/loopback sources. Earlier instrumented runs and new direct installed-package runs remain separate.",
+  "counts": {
+    "qaCorrectAndZeroManagedState": 9,
+    "requestedManagedOutcomes": 18,
+    "managedLifecycleCompleted": 4,
+    "managedLifecycleNotCompleted": 13,
+    "unreceiptedInterruption": 1,
+    "independentlyReviewedRequests": 12,
+    "actualArtifactsReviewed": 11,
+    "artifactPassUnderFrozenRubric": 7,
+    "artifactFailUnderFrozenRubric": 4,
+    "reviewedRequestWithNoArtifact": 1,
+    "jointLifecycleAndFrozenArtifactPass": 3
+  },
+  "result": "The prior Codex delivery pair and standalone Cursor pair complete native lifecycle. Standalone Cursor correction fails artifact correctness. Standalone Codex initial and correction time out; the latter writes a passing artifact but does not finish managed delivery. All failures remain.",
+  "rubricReview": "The explicit numeric gap criterion was stricter than the ordinary yes/no request. Preserve frozen scores and distinguish this presentation criterion from substantive defects; see RUBRIC-REVIEW.md. The latest Cursor counterfactual arithmetic is independently wrong.",
+  "limitations": "Explicit synthetic connector attachment and test permissions; no automatic arbitrary connector import or production auth proof. Requested source correction is not autonomous change detection. Configured host model and exposed version are retained; no universal quality or release certificate."
 }

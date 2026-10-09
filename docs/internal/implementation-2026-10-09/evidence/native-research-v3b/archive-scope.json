@@ -1,0 +1,6 @@
+{
+  "archivedAt": "2026-10-09T22:49:11.778858+00:00",
+  "basis": "Completed bounded native evaluation, all actual artifacts and unchanged fixture/rubric bytes, scoped completed public-read observations, independent producer/reviewer invocation identities and digest bindings.",
+  "excludes": "Raw private reasoning, raw full native transcripts, lease tokens and credentials. User home prefixes in metadata normalized. Artifact/input/rubric bytes preserved.",
+  "limitations": "Regression fixture exposure is declared; no cross-host competence, full composed execution chain or universal skill certificate. Model resolution beyond requested label is not observed. Earlier failures and passing no-skill baselines stay in the denominator."
+}

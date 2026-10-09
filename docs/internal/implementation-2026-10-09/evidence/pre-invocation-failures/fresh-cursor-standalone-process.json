@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "pid": 12150,
+  "childPid": 12154,
+  "host": "cursor",
+  "tag": "standalone",
+  "startedAt": "2026-10-09T22:36:39.104287+00:00",
+  "finishedAt": "2026-10-09T22:36:39.301673+00:00",
+  "exitStatus": 1,
+  "timedOut": false,
+  "interrupted": false
+}
