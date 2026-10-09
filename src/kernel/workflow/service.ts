@@ -19,7 +19,7 @@ import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
 import { addStep, claimStep, completeStep, expireDeadLeases, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
-import { getDecision, listOpenDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
+import { getDecision, listOpenDecisions, listRunDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
 import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
 import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
@@ -550,6 +550,64 @@ function counted(n: number, one: string, many = `${one}s`): string {
   return `${String(n)} ${n === 1 ? one : many}`;
 }
 
+/** How long one of a plan's questions for the person may be. */
+const BLOCKER_CAP = 300;
+
+/** What a step that returns blockers is told they do. */
+const BLOCKERS_INSTRUCTION = 'Under blockers, list only questions the person alone can answer where a wrong guess would be expensive to undo; Construct holds the run on them until they are answered, and the next claim_work returns them as one question for you to put to the person, whose answer you record with decide. Proceed on labeled assumptions for everything else; an empty list is the common case.';
+
+/** What a step handed the answers to the run's questions is told. */
+const ANSWERS_INSTRUCTION = "The answers to this run's questions are in inputs.answers, each with its question and how it reached Construct; work to them.";
+
+/** Why a run waits on the questions its plan raised. */
+const PLAN_QUESTIONS_REASON = 'the plan has questions only the person can answer';
+
+/**
+ * The questions a step that returns blockers says only the person can
+ * answer, each as one plain line: an entry is a string, or an object with a
+ * question or ask string. Entries that say nothing, and repeats, are left out.
+ */
+function blockersOf(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const entry of raw) {
+    const text = typeof entry === 'string' ? entry : isObject(entry) ? [entry.question, entry.ask].find((v): v is string => typeof v === 'string') ?? '' : '';
+    const line = flattenHost(text, BLOCKER_CAP);
+    if (line && !out.includes(line)) out.push(line);
+  }
+  return out;
+}
+
+/** Several questions as one numbered line; one question as itself. */
+function numbered(questions: readonly string[]): string {
+  return questions.length === 1 ? questions[0]! : questions.map((q, i) => `${String(i + 1)}. ${q}`).join(' ');
+}
+
+/**
+ * What a run's clarification asked: the plan's questions when the plan
+ * raised it, else the question as it was put.
+ */
+function clarificationAsked(d: Decision): string {
+  const raw = (d.subject as { clarification?: { blockers?: unknown } } | null)?.clarification?.blockers;
+  const blockers = Array.isArray(raw) ? raw.filter((b): b is string => typeof b === 'string' && b.trim() !== '') : [];
+  return blockers.length ? numbered(blockers) : d.question;
+}
+
+/** An answer as one line of text: a list of words joined, anything else as JSON. */
+function answerText(answer: unknown): string {
+  if (typeof answer === 'string') return answer;
+  if (Array.isArray(answer)) return answer.map(String).join(' ');
+  return JSON.stringify(answer) ?? '';
+}
+
+/** An answer to one of a run's questions, as every later step receives it. */
+interface RunAnswer {
+  readonly question: string;
+  readonly answer: unknown;
+  readonly answeredBy: string | null;
+  readonly channel: DecisionChannel | null;
+}
+
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
   /**
@@ -616,6 +674,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const latest = answered[answered.length - 1];
     return latest && String(latest.resolution ?? '').toLowerCase().startsWith('accept') ? latest : null;
   };
+  /**
+   * Every answered question of the run, oldest first, with what it asked,
+   * who answered and how the answer reached Construct. The answers live on
+   * the questions; the run's input stays as it was given.
+   */
+  const answersOf = (runId: string): RunAnswer[] =>
+    listRunDecisions(store, runId)
+      .filter((d) => d.kind === 'clarification' && d.state === 'resolved')
+      .map((d) => ({ question: clarificationAsked(d), answer: d.resolution, answeredBy: d.resolvedBy, channel: d.channel }));
   /** The checks a waiver question named: the ones the answer to it accepted. */
   const waivedChecks = (d: Decision): string[] => {
     const subject = (d.subject ?? {}) as { validators?: unknown; problems?: unknown };
@@ -891,6 +958,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         return transitionRun(store, { id: runId, to: 'cancelled', at, reason: cancelled.stateReason ?? `step ${cancelled.stepId} cancelled` });
       }
       if (after.every((s) => s.state === 'succeeded' || s.state === 'skipped')) {
+        // A run whose steps are all done still waits for a question its last step raised; it settles once that is answered.
+        if (run.state === 'waiting_for_decision') return run;
         return transitionRun(store, { id: runId, to: 'succeeded', at });
       }
       if (run.state === 'ready' && after.some((s) => s.state === 'leased')) return transitionRun(store, { id: runId, to: 'running', at });
@@ -898,7 +967,11 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     });
   }
 
-  /** A step's inputs; one read from a period input gets the period in dates the run was created with. */
+  /**
+   * A step's inputs; one read from a period input gets the period in dates
+   * the run was created with, and every step is given the answers to the
+   * run's questions under answers, each with the question it answers.
+   */
   function inputsFor(run: WorkflowRun, step: WorkflowStep): Record<string, unknown> {
     const runInput = (run.input ?? {}) as Record<string, unknown>;
     const stepRuns = listSteps(store, run.id);
@@ -915,8 +988,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         out[key] = upstream && upstream.output && typeof upstream.output === 'object' ? (upstream.output as Record<string, unknown>)[output] : undefined;
       }
     }
-    const answers = runInput.answers;
-    if (answers && typeof answers === 'object') out.answers = answers;
+    const answers = answersOf(run.id);
+    if (answers.length > 0) out.answers = answers;
     return out;
   }
 
@@ -1156,6 +1229,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     // A key the step also returns is its own to restate; the rest the deliverable already carries, the period and
     // named sources with what the run's citations cover.
     const method = methodFor(run, step, bound);
+    const inputs = inputsFor(run, step);
     const handed = Object.keys(handedTo(run, step)).filter((k) => !step.outputs.includes(k));
     const covered = coverageKeys(run);
     const asReceived = handed.filter((k) => !covered.includes(k));
@@ -1168,6 +1242,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       `Step ${step.id}: ${step.title}.`,
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
+      Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
@@ -1189,7 +1265,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       skill: bound && registered
         ? { id: bound.id, version: bound.version, digest: bound.digest, body: () => deps.skills.body(bound.id), file: (p) => deps.skills.file(bound.id, p) }
         : null,
-      inputs: inputsFor(run, step),
+      inputs,
       instructions,
       judgment,
       intake: workIntakeOf(askedOf(run)),
@@ -1205,6 +1281,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (to === 'final' && current.trustState !== 'accepted') throw new Error('a deliverable is final only after it was accepted');
     const run = getRun(store, current.runId);
     if (run && (to === 'accepted' || to === 'final')) {
+      const asking = listOpenDecisions(store, run.id).find((d) => d.kind === 'clarification');
+      if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
       if (activeContradictionCount(store) > 0) {
         throw new Error('an active contradiction stands against a governing obligation; it cannot become a trusted finished outcome');
       }
@@ -1291,14 +1369,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   /**
    * What the person is asked before a deliverable moves to accepted or
    * final: the move, from the trust it holds now; then what Construct holds,
-   * one fact per line (checks waived and by whom, the checks that passed,
-   * how much of what it rests on Construct opened itself, a verification the
-   * assistant reports running, the highest sensitivity cited, sources the
-   * assistant declared, systems named but never registered, where the
-   * citations fall against the period and the named sources, and the
-   * challenge record); then the assistant's own words, quoted under their
-   * label. Each list shows three entries and how many more. Cut at the
-   * prompt cap, pointing at `more` for the rest.
+   * one fact per line (checks waived and by whom, how many of the run's
+   * questions the assistant answered in the person's place, the checks that
+   * passed, how much of what it rests on Construct opened itself, a
+   * verification the assistant reports running, the highest sensitivity
+   * cited, sources the assistant declared, systems named but never
+   * registered, where the citations fall against the period and the named
+   * sources, and the challenge record); then the assistant's own words,
+   * quoted under their label, starting with each question it answered for
+   * the person and its answer. Each list shows three entries and how many
+   * more. Cut at the prompt cap, pointing at `more` for the rest.
    */
   function acceptanceBrief(d: Deliverable, to: TrustState, more?: string, cap?: number): string {
     const run = getRun(store, d.runId);
@@ -1310,6 +1390,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
     const waivers = run ? runWaivers(run.id) : [];
     if (waivers.length) facts.push(`Waived: ${capped(waivers.map((w) => `${w.validator} on step ${w.stepId} (${waivedHow(w)})`))}. A run that went through on a waiver is never called validated.`);
+    // Answers to the run's questions that did not reach Construct on the person's own channel: counted here, the first three quoted below.
+    const notYours = run ? answersOf(run.id).filter((a) => !(a.channel && isPersonChannel(a.channel))) : [];
+    const relayedAnswers = notYours.filter((a) => a.channel === 'relay').length;
+    const unrecordedAnswers = notYours.length - relayedAnswers;
+    if (relayedAnswers) facts.push(`Your assistant answered ${counted(relayedAnswers, 'question')} this run asked you; Construct holds no answer from you to ${relayedAnswers === 1 ? 'it' : 'them'}.`);
+    if (unrecordedAnswers) facts.push(`${counted(unrecordedAnswers, 'question')} this run asked you ${unrecordedAnswers === 1 ? 'was' : 'were'} answered with no record of who answered.`);
     const checks = Array.isArray(verification.validators) ? verification.validators.filter(isObject) : [];
     if (checks.length && checks.every((c) => c.ok === true)) facts.push(`Construct's checks passed on the last step: ${capped(checks.map((c) => String(c.validator)), 3, ', ')}.`);
 
@@ -1384,7 +1470,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       for (const o of open) if (typeof o.objection === 'string') said.push({ about: 'open objection', text: o.objection });
     }
 
-    // What the assistant said, quoted: its assumptions, its reasons for what falls after the period or was not read, the objections a challenge left open, where it says the result goes, the systems it named, and the request as it relayed it.
+    // What the assistant said, quoted: the answers it gave in the person's place, its assumptions, its reasons for what falls after the period or was not read, the objections a challenge left open, where it says the result goes, the systems it named, and the request as it relayed it.
     const hostAssumptions: { about: string; text: string }[] = [];
     const seen = new Set<string>();
     const assume = (about: string, text: string): void => {
@@ -1411,6 +1497,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       lead: `Move deliverable ${d.id} (${d.kind}) from ${d.trustState} to ${to}?`,
       facts,
       hostSaid: [
+        ...notYours.slice(0, 3).map((a) => ({ about: a.channel === 'relay' ? 'answered for you by your assistant' : 'answered with no record of who answered', text: a.question, answer: answerText(a.answer) })),
         ...hostAssumptions,
         ...acknowledged.map((x) => ({ about: 'dated after the period', text: `${String(x.ref)}: ${String(x.why)}` })),
         ...unreadWhy.map((x) => ({ about: 'not read', text: `${String(x.source)}: ${String(x.why)}` })),
@@ -1749,6 +1836,22 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           },
         });
         if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), decisionId: waiver.id, acceptedBy: waiver.resolvedBy, channel: waiver.channel } });
+        // Questions the plan says only the person can answer are put to them in one free-text question, and the run
+        // waits for the answer; every later step then receives it. A run being cancelled asks nothing.
+        const blockers = step.outputs.includes('blockers') ? blockersOf(output.blockers) : [];
+        const runNow = getRun(store, run.id)!;
+        if (blockers.length > 0 && !runNow.cancelRequested) {
+          raiseDecision(store, {
+            id: deps.nextId('decision'),
+            kind: 'clarification',
+            runId: run.id,
+            question: `Before the work goes on, the plan needs your answer on: ${blockers.map((b, i) => `${String(i + 1)}. ${b}`).join(' ')}`,
+            subject: { clarification: { stepId: step.id, blockers } },
+            at,
+          });
+          if (runNow.state === 'ready') transitionRun(store, { id: run.id, to: 'running', at });
+          if (runNow.state === 'ready' || runNow.state === 'running') transitionRun(store, { id: run.id, to: 'waiting_for_decision', at, reason: PLAN_QUESTIONS_REASON });
+        }
         let deliverable: Deliverable | null = null;
         const isLast = isLastStep(run, step);
         // The last step hands the deliverable what earlier steps produced; a restatement that differs stays in the
@@ -1827,9 +1930,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
               transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: choice === WAIVER_OPTIONS[0] ? `${by} accepted the output with its check failures` : `${by} asked for another attempt` });
             }
           } else if (decision.kind === 'clarification' && run) {
-            const input = { ...((run.input ?? {}) as Record<string, unknown>) };
-            const answers = { ...((input.answers as Record<string, unknown> | undefined) ?? {}), [decisionId]: resolution };
-            store.db.prepare('UPDATE workflow_runs SET input_json = ?, updated_at = ? WHERE id = ?').run(JSON.stringify({ ...input, answers }), at, run.id);
+            // The answer stays on the question, where every later step reads it; the run's input stays as it was given.
             if (decision.stepRunId) {
               const sr = getStep(store, decision.stepRunId);
               if (sr?.state === 'waiting_for_decision') transitionStep(store, { id: sr.id, to: 'ready', at });
