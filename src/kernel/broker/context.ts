@@ -16,7 +16,11 @@ import type { AskPerson } from '../policy/channels.ts';
 import type { DelegationService } from '../delegation/types.ts';
 import type { ProjectWorktree } from '../work/lanes.ts';
 
+/** Shared request lifecycle, rendered by bootstrap and native startup adapters. */
+export const INTERACTIVE_ENTRY_GUIDANCE = 'Answer plain questions directly and record nothing. For a requested artifact or review: classify_request kind=manage, start_outcome, then claim_work/submit_work until the requested file and run complete. Scheduled outcomes use kind=maintain and require an executor. Repair failed calls before proceeding.';
+
 export interface BrokerContext {
+  readonly surface?: 'interactive' | 'headless';
   readonly delegation?: DelegationService;
   readonly version: string;
   readonly root: string;

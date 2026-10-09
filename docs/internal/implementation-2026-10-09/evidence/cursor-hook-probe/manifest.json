@@ -1,0 +1,42 @@
+[
+  {
+    "path": "assessment.json",
+    "sha256": "d550b4258dadc88caa4b113b734641a8b11898b36a83fe79ead56e2f420fa9d0",
+    "bytes": 887
+  },
+  {
+    "path": "hook.mjs",
+    "sha256": "8238a5798e474c57e947c5ee95e130ce8b815a21a3a4ca948186b2e3e28affba",
+    "bytes": 919
+  },
+  {
+    "path": "hooks.json",
+    "sha256": "cd54c84f86e977d998b5c23fdf60df9cb5483141963d760d7059c4db27aa8f9c",
+    "bytes": 802
+  },
+  {
+    "path": "preregistration.json",
+    "sha256": "1db0a6b3589b32d09fb6ddb01d4220ddbe1e595eae61b7e5066d48b60f19e35a",
+    "bytes": 793
+  },
+  {
+    "path": "probe.md",
+    "sha256": "1ceb0ef39fe7886a5b7626dbd85fe5eff8536b5c728417fea8303337fb79ba17",
+    "bytes": 29
+  },
+  {
+    "path": "process.json",
+    "sha256": "9bf314c83bae659d0e9b9aab82e2c1f11f0e449243e07a1364f3bcfdd09e0fe0",
+    "bytes": 105
+  },
+  {
+    "path": "public-event-receipt.json",
+    "sha256": "0ffe94313312caae535f832fe98f18cbd88286419fd5360ab9ebb51df85aa081",
+    "bytes": 1352
+  },
+  {
+    "path": "result.json",
+    "sha256": "ca3d65d25affc2abd34d5031d6cc0bbfe30504ca42cdbe299e1a93bc7529ed0e",
+    "bytes": 109
+  }
+]

@@ -28,6 +28,7 @@ import { updateLock } from '../kernel/registry/lockfile.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
 import { inspectWiring, installWiring, type WiringState } from '../hosts/wiring/wire.ts';
 import { HOOK_SETTINGS_PATH, inspectHooks, installHooks, type HookWiringState } from '../hosts/wiring/hooks.ts';
+import { inspectStartup, installStartup, type StartupState } from '../hosts/wiring/startup.ts';
 import { projectStateDir } from '../kernel/project/layout.ts';
 import { clientWiring, launchFor, normalizeClient, parseClients, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { presentHosts, type PresentHost } from '../hosts/presence.ts';
@@ -51,7 +52,7 @@ export const INIT_SPEC: CommandSpec = {
     { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
     { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
     { name: 'client', gloss: `the agent host you use here: ${WIRABLE_CLIENTS.join(' | ')} (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine`, takesValue: true, repeatable: true },
-    { name: 'no-wire', gloss: 'do not write the hosts’ MCP configuration or hooks', takesValue: false },
+    { name: 'no-wire', gloss: 'do not write the hosts’ MCP configuration, hooks or startup rules', takesValue: false },
     { name: 'skills-dir', gloss: 'also plant a personal copy of the operational skill in this directory', takesValue: true },
     { name: 'dry-run', gloss: 'say what would happen and write nothing', takesValue: false },
   ],
@@ -207,6 +208,7 @@ interface HostRecord {
   /** What planting did, or `planned` in a dry run. */
   readonly skill: { readonly dir: string; readonly outcome: PlantResult['outcome'] | 'planned'; readonly why: string } | null;
   readonly hooks: { readonly path: string; readonly status: HookWiringState['status']; readonly detail: string } | null;
+  readonly startup: StartupState | null;
   readonly next: readonly string[];
 }
 
@@ -293,6 +295,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
         mcp: noWire ? null : { path: current.path, status: current.status, detail: `would write ${w.relativePath} to start \`${launchText(root)} serve\``, launch: launchText(root) },
         skill: shipped ? { dir, outcome: 'planned', why: `would plant; now ${skillState(shipped, dir).state}` } : null,
         hooks: client === 'claude-code' && !noWire ? plannedHooks(inspectHooks(root, { checkout, stateDir: projectStateDir(root) })) : null,
+        startup: noWire ? null : inspectStartup(client, root),
         next: noWire ? [] : nextSteps(client, draft.questions.length),
       };
     });
@@ -318,6 +321,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       say(`  host: would ${noWire ? 'set up' : 'wire'} ${h.client} (${h.mcp ? `${esc(h.mcp.detail)}; ` : 'no MCP configuration (--no-wire); '}${esc(h.how)})`);
       if (h.skill) say(`    skill: would plant in ${esc(h.skill.dir)}`);
       if (h.hooks) say(`    hooks: ${esc(h.hooks.detail)}`);
+      if (h.startup) say(`    startup: would install if absent (${esc(h.startup.detail)})`);
     }
     if (hosts.length === 0) {
       say(`  host: would wire none. ${pick.wouldAsk ? 'Several agent hosts are installed; init would ask which you use.' : pick.none}`);
@@ -375,6 +379,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
         mcp: mcp ? { path: mcp.path, status: mcp.status, detail: mcp.detail, launch: launchText(root) } : null,
         skill: skill ? { dir, outcome: skill.outcome, why: `${skill.why}${replaceHint(skill, dir)}` } : null,
         hooks: hooks ? { path: hooks.path, status: hooks.status, detail: hooks.detail } : null,
+        startup: noWire ? null : installStartup(client, root),
         next: mcp?.status === 'installed' ? nextSteps(client, status.openQuestions.length) : [],
       };
     });
@@ -442,6 +447,7 @@ export async function init(args: ParsedArgs, ctx: CliContext = createContext()):
       }
       say(h.skill ? `    skill: ${esc(`${h.skill.outcome} at ${join(h.skill.dir, OPERATIONAL_SKILL)} (${h.skill.why})`)}` : `    skill: skipped: this install ships no ${OPERATIONAL_SKILL} skill`);
       if (h.hooks) say(`    hooks: ${h.hooks.status} (${esc(h.hooks.detail)})`);
+      if (h.startup) say(`    startup: ${h.startup.status} (${esc(h.startup.detail)})`);
       if (h.next.length > 0) {
         say(`Next, in ${w.label}:`);
         h.next.forEach((step, i) => say(`  ${String(i + 1)}. ${step}`));

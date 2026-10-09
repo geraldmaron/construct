@@ -32,7 +32,7 @@ import { constitutionCompleteness } from '../project/constitution.ts';
 import { TIER_POLICIES } from '../policy/lattice.ts';
 import { STATEMENT_KINDS, type Statement, type StatementKind } from '../state/profile.ts';
 import { getDeliverable, TRUST_STATES, type TrustState } from '../state/deliverables.ts';
-import type { BrokerContext } from './context.ts';
+import { INTERACTIVE_ENTRY_GUIDANCE, type BrokerContext } from './context.ts';
 import { bool, closed, list, num, obj, record, str, type JsonSchema, type ToolDefinition, ToolInputError } from './definition.ts';
 import { getSession, recordAgent } from '../state/sessions.ts';
 import { PERSON_ONLY_TRUST, PersonChannelRequiredError, personStepFor } from '../policy/channels.ts';
@@ -174,7 +174,9 @@ const bootstrap = define<Record<string, never>, unknown>({
       runs: runs.map((r) => ({ id: r.id, workflow: r.workflowId, state: r.state })),
       drift: { open: drift.length },
       coordination: coordinationFor(ctx.store, { sessionId: ctx.sessionId, laneRoot: ctx.lane?.root, now: at }),
-      next,
+      next: ctx.surface === 'headless'
+        ? 'Continue only the assigned run with claim_step, heartbeat, submit_work and run_status. Do not create outcomes or record project decisions.'
+        : `${INTERACTIVE_ENTRY_GUIDANCE} Project state: ${next}`,
     };
   },
 });

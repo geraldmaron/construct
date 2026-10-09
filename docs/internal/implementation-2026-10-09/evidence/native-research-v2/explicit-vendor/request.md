@@ -1,0 +1,1 @@
+Vendor Delta says a migration cut failed jobs by 50%. Verify before we cite that claim. Work only from supplied files; no external action.

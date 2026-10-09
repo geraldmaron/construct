@@ -1,0 +1,39 @@
+✔ classify_request takes a typed reading, records nothing, and names who judged it (52.385042ms)
+✔ the same typed reading in a polite question form gets the same matches and asks the same questions (24.526333ms)
+✔ a reading the model can fix comes back as wrong input naming the field, its values and an example of that field (28.121166ms)
+✔ an answer, a record and coordination match no workflow and say what to do instead (23.01975ms)
+✔ the flagship starts from its intake with its window frozen; every step works from the reading in structured fields, never the names it could not register (32.775708ms)
+✔ once the named systems are declared, the reading resolves them and the run reads them (40.747083ms)
+✔ start_outcome starts nothing while a required detail or a blocking question is open, and refuses a reading or a workflow it cannot start (27.35125ms)
+✔ without an intake a missing input starts nothing and an undeclared one is refused, while the command line still keeps a blocked run (24.427583ms)
+✔ a different window is different work, the same window is the same run, and a different reading of it is flagged (21.263542ms)
+✔ stakes the host reports only raise rigor, and the run keeps them (26.99875ms)
+✔ the published reading carries the stake areas the judge reads, and the description names every kind a workflow declares (1.672541ms)
+✔ standing intake records an idempotent definition, preserves input, and creates no immediate run or executor (57.12ms)
+✔ an outcome cannot finish in state alone when the person requested a local file (38.528083ms)
+✔ an explicit investigate evidence gap starts research and survives in the packet without a fabricated assumption (26.739541ms)
+✔ an explicit carry_unknown evidence gap starts research and survives in the packet without a fabricated assumption (23.314417ms)
+✔ explicit evidence handling cannot simultaneously claim an assumed answer or person blocker (20.434708ms)
+✔ carrying an unknown cannot supply a required destination or waive an actual decision (18.130375ms)
+✔ generic research and renamed requests expose registry alternatives before acquiring command verification (18.956584ms)
+✔ alternative verification metadata follows actual registry steps including project workflows (18.663667ms)
+✔ standing alternatives obey all requested trigger requirements and retain the real executor boundary (40.675542ms)
+✔ every tool is declared once with a closed schema, a plain description, and a surface (2.479667ms)
+✔ every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold (0.426ms)
+✔ wrong input names the field and, for a closed set, the values it accepts (0.423375ms)
+✔ promote_deliverable never takes validated, and takes challenged only with the objections the challenge raised (0.322333ms)
+✔ bootstrap is small and says what to do next; answers create nothing; remember creates one statement (39.913333ms)
+✔ the tools that record or start something for the person say that what the host reads is data, not a request (0.106417ms)
+✔ bootstrap never puts setup ahead of the person's request: setup questions and proposals are offered after it, with their answers (51.537208ms)
+✔ bootstrap leads with the decisions about runs, and names blocked runs instead of sending claim_work to them (27.186375ms)
+✔ the interactive lifecycle: read, start, claim, submit, status, promote (40.657833ms)
+✔ the headless surface claims and submits but cannot decide, remember, or start (21.354208ms)
+✔ bootstrap keeps the requested lifecycle ahead of setup, without giving a headless worker interactive authority (51.655542ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 862.479834

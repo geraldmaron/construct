@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "pid": 1708,
+  "childPid": 1902,
+  "startedAt": "2026-10-09T22:02:49.423534+00:00",
+  "finishedAt": "2026-10-09T22:17:50.833999+00:00",
+  "exitStatus": 1,
+  "timedOut": false,
+  "interrupted": false
+}

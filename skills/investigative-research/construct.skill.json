@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "investigative-research",
   "title": "Investigative research",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [

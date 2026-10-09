@@ -19,7 +19,7 @@ set this project up: files, one database, a drafted profile, and the agent host 
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
 | `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |
-| `--no-wire` | no | do not write the hosts’ MCP configuration or hooks |
+| `--no-wire` | no | do not write the hosts’ MCP configuration, hooks or startup rules |
 | `--skills-dir` | yes | also plant a personal copy of the operational skill in this directory |
 | `--dry-run` | no | say what would happen and write nothing |
 

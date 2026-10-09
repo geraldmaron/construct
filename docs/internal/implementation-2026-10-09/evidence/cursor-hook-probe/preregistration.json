@@ -1,0 +1,25 @@
+{
+  "hostVersion": "2026.10.01-e373342",
+  "args": [
+    "-p",
+    "Create probe.md containing exactly the sentence: The local probe is complete. Then report whether the file was saved.",
+    "--output-format",
+    "stream-json",
+    "--sandbox",
+    "enabled",
+    "--workspace",
+    "<FIXTURE_ROOT>/cursor-hook-probe/project",
+    "--approve-mcps",
+    "--trust"
+  ],
+  "prompt": "Create probe.md containing exactly the sentence: The local probe is complete. Then report whether the file was saved.",
+  "events": [
+    "sessionStart",
+    "beforeSubmitPrompt",
+    "preToolUse",
+    "afterFileEdit",
+    "stop"
+  ],
+  "expected": "preToolUse invokes the configured local process and denial prevents the attempted write; absence of a file alone is insufficient evidence.",
+  "maxMs": 120000
+}

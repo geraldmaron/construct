@@ -1,0 +1,18 @@
+{
+  "name": "initial",
+  "code": 0,
+  "timedOut": false,
+  "elapsedMs": 58342,
+  "countsAfter": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "artifact": {
+    "sha256": "903e8d54ca4165a527f46b39956ca59ff09498cd978c196c44760847fb198bca",
+    "bytes": 5806
+  }
+}

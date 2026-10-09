@@ -13,7 +13,7 @@ Verification record
 - Ground exhausted:    answered - see <where>
 - Strongest objection: answered - see <where>
 - Pre-mortem:          answered - see <where> | not applicable: no recommendation made
-- Handbacks:           none | listed at <where>, each with material prerequisite and unavailable authority/access/decision
+- Handbacks:           none | listed at <where>, each needed for the current requested deliverable, with unavailable authority/access/decision; future action conditions are not handbacks
 - Quantities:          answered - see <where> | not applicable: no quantitative conclusion
 - Action scope:        answered - see <where>
 - Lookup observations: held result references at <where> | attempts only, results unobserved | no external lookup used

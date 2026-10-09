@@ -23,6 +23,7 @@ import { lockStatus } from '../kernel/registry/lockfile.ts';
 import { resolveHostConfigDirs, resolveHostSkillsDir, SKILLS_HOST_NAMES, type SkillsHostName } from '../kernel/paths.ts';
 import { inspectWiring, launchOf } from '../hosts/wiring/wire.ts';
 import { HOOK_SETTINGS_PATH, inspectHooks } from '../hosts/wiring/hooks.ts';
+import { inspectStartup } from '../hosts/wiring/startup.ts';
 import { LAUNCHER, normalizeClient, projectSkillsDirFor, WIRABLE_CLIENTS, type WirableClient } from '../hosts/wiring/clients.ts';
 import { findOnPath, presentHosts } from '../hosts/presence.ts';
 import type { CommandSpec, ParsedArgs } from './commands.ts';
@@ -258,7 +259,11 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     } else {
       checks.push({ name: 'host-wiring', ok: wired.every((w) => w.status === 'installed'), detail: wired.map((w) => `${w.client} ${w.status}${w.status === 'installed' ? '' : ` (${w.detail})`}`).join(', ') });
     }
-    for (const w of wired) checks.push(hostLaunchCheck(w.client, root, ctx.env));
+    for (const w of wired) {
+      checks.push(hostLaunchCheck(w.client, root, ctx.env));
+      const startup = inspectStartup(w.client, root);
+      if (startup) checks.push({ name: `host-startup:${w.client}`, ok: startup.status === 'installed', detail: `${startup.detail}${startup.status === 'absent' ? `; construct init --client=${w.client} adds it` : ''}` });
+    }
     checks.push(...projectSkillChecks(root, wiredClients));
   }
   if (ambient) {

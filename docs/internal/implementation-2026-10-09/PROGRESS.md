@@ -187,3 +187,21 @@ The latest successful pair now has an [archive supplement](evidence/fresh-journe
 The corrected-record prompt requested reanalysis. This pair does not prove automatic stale-work detection, interrupted-work recovery, unfamiliar schema inference, conditional lenses, or independent method quality. All six trials and their failures remain in the denominator. The routing candidate now exposes each registry workflow's actual verification requirement and eligible alternatives before general command-based work starts; fresh native behavior is still pending.
 
 Routing correction gate: 31 focused checks and full 995 pass/0 fail/1 existing skip; lint/types/packaged smoke pass; static all-host91/0/7. The unchanged fresh Cursor `verifier-fit` replay is running with the original six-minute phase limit and Shell(*) denial. Current research qualification has reproduced the archive handback failure; final six-case result is still pending.
+
+
+## 22:19 UTC — failure retained and next corrections bounded
+
+Method0.3.2's unchanged six-case replay completed in15m01s without timeout: five cases pass, while archive handbacks still fail. The composition packet now passes because the reviewer receives actual exposed external-read results; this is still consumption of a supplied specialist packet, not a real specialist execution chain. [Complete archive](evidence/native-research-v2/assessment.json). Method0.3.3 now distinguishes prerequisites for the deliverable requested now from conditions for hypothetical later execution. It is unqualified pending new native evidence.
+
+Cursor's seventh fresh trial (verifier-fit) completed all phases but bypassed classification/managed work: both files exist, zero runs/work/source registrations. It attempted source reports for undeclared IDs and skipped their failures. The routing metadata candidate therefore has no behavioral acceptance yet. Its independent artifact assessment is running. Bootstrap now puts the current request's lifecycle before setup/status, while headless workers receive only assigned-run instructions. This is a testable shared instruction correction, not deterministic semantic routing or proof that a host will obey it.
+
+
+## 22:36 UTC — startup integration rather than another prompt replay
+
+The installed Cursor skill is actually read, but its managed lifecycle is bypassed. The disposable CLI hook canary wrote its file with zero hook observations, despite a deny-all preToolUse callback. [Probe](evidence/cursor-hook-probe/assessment.json). The documented always-applied Cursor rule now carries the same lifecycle guidance as bootstrap; init and doctor report its state, preserve project edits, honor no-wire/dry-run and refuse symbolic links. This does not claim enforced handoff. Focused checks cover every supported host. Full gates are running before a fresh installed-package test.
+
+The complete denominator is now seven fresh trials/fourteen managed requests: two pass, eleven fail managed completion, one lacks a completion receipt. Of eight independently reviewed artifacts, five pass and three fail. Earlier failures and no-skill baselines remain retained. Method0.3.3 is still unqualified; a bounded eight-case native run includes two independently authored heldouts. The rejected 24-minute configuration attempted before it made no model calls; the active run uses the existing 20-minute product limit.
+
+Startup integration gate completed: lint/types, 999 pass/0 fail/1 existing skip, packaged smoke and static all-host91/0/7. [Gate receipt](evidence/startup-gate.json). Fresh Codex and Cursor standalone trials are now bounded at six minutes per phase, nineteen minutes total, with direct installed-package MCP launch and no checkout logging wrapper. Their explicit synthetic-source configuration remains part of the test setup; model resolution and host compliance are still measured limitations.
+
+The first standalone launch for both hosts failed during fixture setup because the outer sandbox denied binding 127.0.0.1; no package initialization or model call occurred. Both process receipts are retained in the workspace. The same bounded trials were relaunched with approved loopback access under the standalone-live tag; permissions inside each native host remain unchanged.

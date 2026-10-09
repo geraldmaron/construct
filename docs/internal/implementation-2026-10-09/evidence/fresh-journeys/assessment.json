@@ -1,5 +1,5 @@
 {
-  "archivedAt": "2026-10-09T21:41:59.978396+00:00",
+  "archivedAt": "2026-10-09T22:27:10.091349+00:00",
   "trials": [
     {
       "trial": "fresh-codex-one",
@@ -651,9 +651,105 @@
           }
         ]
       }
+    },
+    {
+      "trial": "fresh-cursor-verifier-fit",
+      "phases": {
+        "qa": {
+          "name": "qa",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 13638,
+          "countsAfter": {
+            "workflow_runs": 0,
+            "step_runs": 0,
+            "deliverables": 0,
+            "work_items": 0,
+            "sources": 0,
+            "source_snapshots": 0
+          },
+          "artifact": null
+        },
+        "initial": {
+          "name": "initial",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 58342,
+          "countsAfter": {
+            "workflow_runs": 0,
+            "step_runs": 0,
+            "deliverables": 0,
+            "work_items": 0,
+            "sources": 0,
+            "source_snapshots": 0
+          },
+          "artifact": {
+            "sha256": "903e8d54ca4165a527f46b39956ca59ff09498cd978c196c44760847fb198bca",
+            "bytes": 5806
+          }
+        },
+        "changed": {
+          "name": "changed",
+          "code": 0,
+          "timedOut": false,
+          "elapsedMs": 31338,
+          "countsAfter": {
+            "workflow_runs": 0,
+            "step_runs": 0,
+            "deliverables": 0,
+            "work_items": 0,
+            "sources": 0,
+            "source_snapshots": 0
+          },
+          "artifact": {
+            "sha256": "b2255e1dbce16debb5819e831e098a6ee81d120e2b6538352f5d43e45b3eb229",
+            "bytes": 5155
+          }
+        }
+      },
+      "qaAnswer": "Searching the project for the local replenishment policy and how net stock of 60 units is handled.\n**Hold steady** \u2014 do not recommend replenishment.\n\nUnder the local replenishment policy in `docs/policy.md`, net stock is **available minus reserved** stock in **individual units**. Replenishment is recommended only when that figure is **below 60**. At **exactly 60**, the rule is explicit: **hold steady** (no replenishment action).\n\nOther policy rules still apply if they matter in context (e.g. case conversion only with current lot-specific units per case; hold if conversion or reservation units are unknown). Authoritative stock and reservations are the connected depot records (`depot://stock/west`, `depot://reservations/west`), not cached exports.",
+      "finalState": {
+        "runs": [],
+        "steps": [],
+        "work": []
+      },
+      "independentChecks": {
+        "cases": [
+          {
+            "name": "initial",
+            "checks": {
+              "correctness": "pass",
+              "uncertainty": "pass",
+              "evidence": "pass",
+              "requested_file": "pass"
+            },
+            "reasons": {
+              "correctness": "The artifact recommends HOLD, states that exactly 60 each means hold steady, and excludes the superseded cache from the decision. Recorded reads establish 12 cases, null units_per_case, and reserved_quantity 4 without a current unit. The brief does not subtract incompatible units or adopt 6 each/case. Its hypothetical pack-size examples are explicitly sensitivity only, not evidence or grounds for action. No ordering action appears in the supplied records.",
+              "uncertainty": "The brief identifies both missing conversion and ambiguous reservation units, preserves an unknown net position, and requests authorized clarification. It reports the supplier permission denial without inventing the supplier's contents.",
+              "evidence": "Recorded stock and reservations fetches at 2026-10-09T22:15:46Z support the cited quantities and unit uncertainty. The catalog fetch and recorded HTTP GET establish the null conversion and supplier reference. A fetch of depot://supplier/lot-k at 2026-10-09T22:15:52.107Z returned permission_denied. Citations distinguish inventory availability, operations reservations, catalog conversion, and local policy. Recorded registration counts remain zero; no managed workflow or test execution is inferred.",
+              "requested_file": "The supplied warehouse-brief.md artifact contains actual brief text, not merely a completion claim. Its UTF-8 content independently measures 5806 bytes and hashes to 903e8d54ca4165a527f46b39956ca59ff09498cd978c196c44760847fb198bca, matching the recorded artifact size and SHA-256."
+            }
+          },
+          {
+            "name": "changed",
+            "checks": {
+              "correctness": "fail",
+              "uncertainty": "pass",
+              "evidence": "pass",
+              "requested_file": "pass"
+            },
+            "reasons": {
+              "correctness": "The brief correctly calculates 6 cases \u00d7 6 each/case \u2212 4 each = 32 each and recommends replenishment because 32 < 60. However, the preregistered changed rubric explicitly requires the 28-each shortfall; the actual artifact never states or computes 60 \u2212 32 = 28 each. This is a completeness failure against that requirement, not an incorrect net calculation. No ordering action appears in the supplied records.",
+              "uncertainty": "The change table explicitly preserves the prior null conversion, unstated reservation unit, unknown net position, and justified HOLD. It treats the newly explicit conversion and reservation unit as resolving those uncertainties, without claiming the denied supplier record was accessed.",
+              "evidence": "Fresh recorded fetches at 2026-10-09T22:16:37Z use PID 57331 rather than the initial PID 56277 and return 6 cases, 4 reserved each, and a current lot-specific conversion of 6 each/case. The catalog HTTP GET corroborates the conversion. Stock and reservation content digests differ between cases despite equal provider timestamps. The brief documents the changed values and reread time rather than treating timestamp equality as unchanged data. Recorded registration counts remain zero; no managed workflow or test execution is inferred.",
+              "requested_file": "The updated artifact retains the warehouse-brief.md path and contains the revised recommendation and change evidence. Its UTF-8 content independently measures 5155 bytes and hashes to b2255e1dbce16debb5819e831e098a6ee81d120e2b6538352f5d43e45b3eb229, matching the recorded artifact size and SHA-256 and differing from the initial artifact."
+            }
+          }
+        ]
+      }
     }
   ],
-  "scope": "Six fresh install/init trials, two Codex and four Cursor, each with ordinary Q&A, outcome and fresh-process correction prompts. Every fixture existed before init; Git on Cursor, non-Git on Codex. Full failures and one unreceipted interruption retained. All latest trials have bounded supervisor completion receipts.",
-  "result": "Six Q&A outcomes have correct threshold answers and zero managed state. Of twelve requested managed outcomes, only the latest Codex pair completes and passes independent artifact review. Eight Cursor outcomes are unmanaged or await verification; the earlier Codex initial times out, and its correction has no completion receipt.",
+  "scope": "Seven fresh install/init trials, two Codex and five Cursor, each with ordinary Q&A, outcome and fresh-process correction prompts. Every fixture existed before init; Git on Cursor, non-Git on Codex. Full failures and one unreceipted interruption retained. All latest trials have bounded supervisor completion receipts.",
+  "result": "Seven Q&A outcomes have correct threshold answers and zero managed state. Of fourteen requested managed outcomes, only the latest Codex pair completes and passes independent artifact review. Ten Cursor outcomes are unmanaged or await verification; the earlier Codex initial times out, and its correction has no completion receipt.",
   "limitations": "Synthetic local/MCP/loopback data. Cursor fixture denies Shell; Codex uses workspace-write sandbox. Default Cursor Composer2.5 and requested Codex gpt-6-astra; no universal host/model certificate, production authentication or live unattended cross-host support."
 }
