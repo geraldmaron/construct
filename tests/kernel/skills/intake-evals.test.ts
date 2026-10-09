@@ -504,7 +504,8 @@ test('the corpus is checked by classify_request\'s own reading check: a reading 
     [reading({ sources: [{ name: 'Jira', role: 'read' }] }), /not in the tool's normal form; it would be changed: .*sources\[0\]\.id/],
     [reading({ ...named, period: { semantics: 'as_of' } }), /not in the tool's normal form; it would be changed: .*period\.to/],
     [reading({ ...named, deliverable: { kind: 'prd' } }), /not in the tool's normal form; it would be changed: .*deliverable\.kind/],
-    [{ words, kind: 'answer', deliverable: { kind: 'other', describe: 'x' } }, /not in the tool's normal form; it would be changed: .*a answer reading takes no deliverable/],
+    [{ words, kind: 'answer', deliverable: { kind: 'other', describe: 'x' } }, /not in the tool's normal form; it would be changed: .*an answer reading takes no deliverable/],
+    [reading({ ...named, confidence: 0.9 }), /not a reading classify_request accepts: "confidence" is not an input of this tool/],
     [reading({ ...named, kind: 'work' }), /not a reading classify_request accepts: "kind" is "work"; it is one of answer, remember, manage, maintain, coordinate/],
     [reading({ ...named, period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-01-01' } }), /not a reading classify_request accepts: .*drop the dates or make them agree/],
   ];

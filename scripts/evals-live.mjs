@@ -161,12 +161,15 @@ function setup() {
 
 /**
  * The typed reading check the corpus is validated with: classify_request's
- * own validator, in classify mode, against the built-in workflows and skills
- * and the fixture project's declared sources at the current instant, and the
- * vocabularies it names. A gold reading therefore names each fixture source
- * by its id, and gives a period in a form that holds on any day.
+ * own input check, then its validator in classify mode, against the built-in
+ * workflows and skills and the fixture project's declared sources at the
+ * current instant, and the vocabularies it names. A gold reading therefore
+ * carries only the fields the tool takes, names each fixture source by its
+ * id, and gives a period in a form that holds on any day.
  */
 export function readingCheck({ at = new Date().toISOString() } = {}) {
+  const tool = toolsFor('interactive').find((t) => t.name === 'classify_request');
+  if (!tool) throw new Error('classify_request is not on the interactive surface, so a reading cannot be checked against it.');
   const { skills, workflows } = builtins();
   const catalog = {
     workflows: workflows.list(),
@@ -176,7 +179,7 @@ export function readingCheck({ at = new Date().toISOString() } = {}) {
     timezone: 'UTC',
     projectRoot: FIXTURE_PROJECT,
   };
-  return { validateReading: (raw) => validateIntake(raw, catalog, 'classify'), kinds: INTAKE_KINDS, periodSemantics: PERIOD_SEMANTICS };
+  return { validateReading: (raw) => validateIntake(tool.validate(raw), catalog, 'classify'), kinds: INTAKE_KINDS, periodSemantics: PERIOD_SEMANTICS };
 }
 
 function builtins() {
