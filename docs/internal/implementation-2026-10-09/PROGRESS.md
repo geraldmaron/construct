@@ -104,3 +104,16 @@ Code committed at 2b1720e0 after research commit 58146ab5. Native run run-0a70f6
 ## 18:59 UTC — retry approval budget corrected
 
 The reviewer’s P2 reproduced in four of six public-broker cases. Approval now counts the same non-expired attempts as validation enforcement. All six cases complete after a correctly bounded retry; existing waiver tests still pass. Full gate: 868 pass, zero failures, one existing skip; lint/types/smoke pass, static 91/0/7. See RETRY-GRANT-RECHECK.md. Independent recheck is pending. The user’s challenge of the limits framing is accepted: feasible supported behaviors will be classified and closed, with real external boundaries stated precisely.
+
+
+## Scope challenge progress — actual mechanisms, not closure by wording
+
+- V6: full-history search now filters before page limits for activity, runs, entities and work; context pages carry revision, selection reason, omitted count and continuation. Existing-record mutation rejects stale continuation; new append-only activity does not change the frozen snapshot. Resolved decisions and source revisions survive a new store and another host binding. Six new regressions plus ten public-tool tests pass.
+- V8: public `skill evaluate` explicitly executes a predetermined bounded evaluator; passing records are bound to skill digest/version, host/model, evaluator files, evidence bytes and expiry. Qualification has a real success path; changed bytes, wrong host/model, expiry, missing cases/checks, unknown, self-review, missing evidence, no-op commands, command failure and timeout cannot pass. Twenty-seven focused adapter/registry/tool tests pass. These protocol fixtures are not live model competence evidence.
+- Review P2: committed 48b72284, full required gate 868 pass/0 fail/1 existing skip plus lint/types/smoke. Independent focused recheck pending.
+- In progress next: V2/V5 source observation/mapping contracts, then V1/V7 substantive claim support and intended-verifier binding, then V4/V9 disposable scheduling, fresh packed-host/domain journeys, independent scoring and canonical release records. Original V1–V9 acceptance is preserved.
+- Host probes: Codex and Cursor existing subscription status confirmed; Claude Code explicitly reports loggedIn false/authMethod none. OpenCode lists a GitHub Copilot OAuth provider as well as other providers; the earlier blanket API-only assumption is stale, so that subscription-backed interface is being checked. VS Code exposes GUI chat but no CLI outcome stream; Bob version probe is ENOENT. No credentials were copied or displayed.
+
+Current retrieval/qualification changes are uncommitted and have focused tests/typecheck; the new combined full gate has not yet run. This progress entry does not replace an independent outcome evaluation.
+
+2026-10-09 retrieval/qualification checkpoint: combined required gate passed: lint, typecheck, 889 tests passed/0 failed/1 existing skip, packaged smoke; all-host static conformance 91 passed/0 failed/7 untested. No live qualification claim is inferred from the adapter protocol fixtures. Source access/mapping contracts are next.

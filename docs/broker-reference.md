@@ -82,13 +82,14 @@ Surface: interactive. Reads only: yes.
 
 ### `project_context`
 
-Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, or recent activity. Ask for one topic at a time; pass a query to narrow. Filter happens before the page; the result names how many matched and whether more remain.
+Project context. Targeted reads of what Construct knows: the constitution, sources, decisions, runs, entities, claims, relations, drift findings, remembered statements, work, the sessions present in the project, resolved decisions, activity history, or source_history (recorded source revisions). Ask for one topic at a time; pass a query to narrow. Search covers full history before paging. Results name their revision, selection reason and nextCursor; pass that cursor with the same topic/query to continue. A changed snapshot asks you to restart.
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality`, `work`, `sessions`, `activity` | yes | What to read. |
+| `topic` | `summary`, `constitution`, `sources`, `decisions`, `runs`, `entities`, `claims`, `relations`, `drift`, `statements`, `quality`, `work`, `sessions`, `activity`, `source_history` | yes | What to read. |
+| `cursor` | string | no | nextCursor from the previous page; keep topic and query unchanged. |
 | `query` | string | no | A word or id to narrow by. |
 | `limit` | number | no | At most this many items (default 50). |
 
@@ -129,6 +130,7 @@ Surface: both. Reads only: yes.
 |---|---|---|---|
 | `action` | `list`, `show`, `status` | yes | list, show, or status. |
 | `id` | string | no | The skill id, for show. |
+| `model` | string | no | Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `start_outcome`
@@ -344,6 +346,7 @@ Surface: both. Reads only: yes.
 |---|---|---|---|
 | `action` | `list`, `show`, `status` | yes | list, show, or status. |
 | `id` | string | no | The skill id, for show. |
+| `model` | string | no | Model identity whose measured qualification to inspect; omitted never assumes another model’s evidence applies. |
 | `includeBody` | boolean | no | Include the skill’s full text (default false). |
 
 ### `submit_work`

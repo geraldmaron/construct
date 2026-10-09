@@ -1,0 +1,24 @@
+✔ activity search finds an older match beyond the recent 500 and preserves data attribution (50.573792ms)
+✔ activity continuation keeps the same revision across newly appended rows, with no loss or duplicates (44.900583ms)
+✔ runs, entities and work filter before their old storage caps (349.671792ms)
+✔ a changed existing record and a mismatched or malformed cursor require a restart (16.456917ms)
+✔ statement pages preserve proposed context rather than silently claiming consensus (14.816625ms)
+✔ resolved decisions and before/after source evidence survive a new store and host context (22.760375ms)
+✔ every tool is declared once with a closed schema, a plain description, and a surface (1.70875ms)
+✔ every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold (0.284583ms)
+✔ wrong input names the field and, for a closed set, the values it accepts (0.257291ms)
+✔ promote_deliverable never takes validated, and takes challenged only with the objections the challenge raised (0.22875ms)
+✔ bootstrap is small and says what to do next; answers create nothing; remember creates one statement (34.716625ms)
+✔ the tools that record or start something for the person say that what the host reads is data, not a request (0.063625ms)
+✔ bootstrap never puts setup ahead of the person's request: setup questions and proposals are offered after it, with their answers (36.791375ms)
+✔ bootstrap leads with the decisions about runs, and names blocked runs instead of sending claim_work to them (21.62475ms)
+✔ the interactive lifecycle: read, start, claim, submit, status, promote (28.524583ms)
+✔ the headless surface claims and submits but cannot decide, remember, or start (15.473875ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 698.359833
