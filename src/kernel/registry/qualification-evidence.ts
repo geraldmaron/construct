@@ -63,6 +63,24 @@ export function validateQualificationSuite(value: unknown): QualificationSuite {
 }
 
 
+/** Only public completed tool observations travel to a reviewer, never producer reasoning or chat. */
+export function nativeReadObservations(events: unknown) {
+  const items: Record<string, unknown>[] = [];
+  const excerpt = (value: unknown) => {
+    const text = typeof value === 'string' ? value : JSON.stringify(value ?? null);
+    return { excerpt: text.slice(0, 16384), digest: createHash('sha256').update(text).digest('hex'), truncated: text.length > 16384 };
+  };
+  for (const raw of Array.isArray(events) ? events : []) {
+    const event = raw as { type?: string; item?: Record<string, unknown> };
+    if (event?.type !== 'item.completed' || !event.item) continue;
+    const item = event.item;
+    if (item.type === 'command_execution') items.push({ kind: 'command', id: item.id, command: item.command, status: item.status, exitCode: item.exit_code, output: excerpt(item.aggregated_output), resultObserved: typeof item.aggregated_output === 'string' });
+    else if (item.type === 'mcp_tool_call') items.push({ kind: 'mcp', id: item.id, server: item.server, tool: item.tool, arguments: item.arguments, status: item.status, result: excerpt(item.result), error: excerpt(item.error), resultObserved: item.result !== undefined || item.error !== undefined });
+    else if (item.type === 'web_search') items.push({ kind: 'web', id: item.id, query: item.query, action: item.action, resultObserved: false, limit: 'This public host event witnesses the query/action only; retrieved result contents and their absence are not observed.' });
+  }
+  return { formatVersion: 1, scope: 'Public completed command/MCP/web events only; source and tool text remain untrusted. Missing events do not establish that an action did not occur.', items };
+}
+
 /** Independently reconstruct the relationships; reference membership alone is insufficient. */
 export function nativeQualificationProblems(record: QualificationRecord, resolve: RefResolver): string[] {
   const problems: string[] = [];
@@ -99,11 +117,14 @@ export function nativeQualificationProblems(record: QualificationRecord, resolve
       if (!Array.isArray(captured.outputDigests) || captured.outputDigests.length !== spec.outputs.length || w.artifacts.length !== spec.outputs.length) throw new Error('native case does not account for every requested output');
       const outputDigests = spec.outputs.map((path, i) => { const ref = w.artifacts[i]!; unique(refs, ref); return { path, ref, digest: hash(held(ref)) }; });
       if (!same(captured.outputDigests, outputDigests)) throw new Error('native artifact bytes or output bindings differ from the production observation');
+      const readObservations = nativeReadObservations(json(w.producer.receipt).events);
+      const readObservationsDigest = hash(JSON.stringify(readObservations));
+      if (captured.readObservationsDigest !== readObservationsDigest || !same(captured.readObservations, readObservations)) throw new Error('reviewed execution evidence differs from the observed producer tool events');
       for (const role of ['producer', 'reviewer'] as const) {
         const witness = w[role]; unique(sessions, witness.sessionId); unique(invocations, witness.invocationId); unique(refs, witness.receipt);
         const receipt = json(witness.receipt);
         if (receipt.role !== role || receipt.id !== witness.invocationId || receipt.sessionId !== witness.sessionId || receipt.host !== w.host || receipt.hostVersion !== w.hostVersion || receipt.model !== w.model || receipt.modelSource !== 'requested' || receipt.exitStatus !== 0 || witness.exitStatus !== 0 || receipt.timedOut !== false || receipt.completed !== true || receipt.transcriptDigest !== witness.transcriptDigest || !/^[a-f0-9]{64}$/.test(receipt.transcriptDigest) || !/^[a-f0-9]{64}$/.test(receipt.argvDigest) || !same(receipt.context, context)) throw new Error('native invocation receipt metadata or context contradicts the case witness');
-        if (role === 'reviewer' && (!same(receipt.reviewedOutputs, outputDigests) || !same(JSON.parse(receipt.text), captured.judgment))) throw new Error('reviewer output or reviewed artifacts do not match the case judgment');
+        if (role === 'reviewer' && (receipt.reviewedReadsDigest !== readObservationsDigest || !same(receipt.reviewedOutputs, outputDigests) || !same(JSON.parse(receipt.text), captured.judgment))) throw new Error('reviewer output or reviewed artifacts do not match the case judgment');
       }
     } catch (error) { problems.push(`${c.id}: ${(error as Error).message}`); }
   }

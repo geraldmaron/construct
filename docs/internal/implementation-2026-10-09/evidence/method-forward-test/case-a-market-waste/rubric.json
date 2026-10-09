@@ -1,0 +1,41 @@
+{
+  "frozen_before_application": true,
+  "scoring": "20 points; 0=absent/wrong, partial credit if incomplete. Critical failure: endorse the 30% current claim, say rate target was met, claim causal attribution, or imply authorized external action.",
+  "criteria": [
+    {
+      "id": "A-R1",
+      "points": 3,
+      "expected": "Corrected matched net waste: 2025 (460-40)+(340-40)=720 kg; 2026 (380-40)+(260-40)=560 kg. Absolute fall 160 kg and relative mass fall 22.2222%; preliminary 504 kg yields 30% but omits 56 kg."
+    },
+    {
+      "id": "A-R2",
+      "points": 4,
+      "expected": "Matched vendor-days 500 vs440; combined rate 144 vs127.272727 kg/100 vendor-days. Rate reduction 11.616162%, not >=20%. Target <=115.2 kg/100 vendor-days inclusive; observed rate exceeds it by12.072727 kg/100 vendor-days; reduction shortfall8.383838 percentage points. Equivalent gap53.12 kg at440 vendor-days is optional and must not become a forecast or order."
+    },
+    {
+      "id": "A-R3",
+      "points": 3,
+      "expected": "Exclude Harbour from matched evaluation, distinguish gross/net and count/rate, do not average site percentages or use visitors as denominator. State four September Saturdays in both years, both markets, and exclusions."
+    },
+    {
+      "id": "A-R4",
+      "points": 3,
+      "expected": "Prefer reconciled signed ledger on measured totals; preserve and explain conflict. Newsletter and newspaper are one upstream, no independent waste corroboration. Operating register supports vendor-days only; protocol supplies target not achieved performance."
+    },
+    {
+      "id": "A-R5",
+      "points": 3,
+      "expected": "No causal attribution; missing shopper/weather/product mix/sales data cannot be filled or interpreted as no change. Complete collection records permit within-scope totals but not annual/general inference."
+    },
+    {
+      "id": "A-R6",
+      "points": 2,
+      "expected": "Load-bearing findings traceable to specific opened records with method markers; rival/refutation analysis and evidence matrix present. No unsupported citation or external-search claim."
+    },
+    {
+      "id": "A-R7",
+      "points": 2,
+      "expected": "Answer factual review, bounded unresolved causal question, no purchasing/publication/contact plan. Closing strongest objection and honest missing-template limitation. Useful conclusion not buried."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+SYNTHETIC RECORD A2 — September 2025 contractor weigh ledger, signed 30 September 2025
+Covers all four September Saturday collections at each listed market. Kilograms; each aggregate tare is the sum of recorded empty containers. These entries are closed collection totals.
+Market | Gross kg | Tare kg
+Eastbank | 460 | 40
+Ridgeway | 340 | 40
+No Harbour entry: that market was not operating in this period.

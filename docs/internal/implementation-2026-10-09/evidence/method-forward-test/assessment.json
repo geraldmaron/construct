@@ -1,0 +1,100 @@
+{
+  "assessment_time_utc": "2026-10-09T22:02:58.706301+00:00",
+  "test_type": "single-agent, self-authored held-out synthetic forward application; not blinded; not independent producer/reviewer qualification",
+  "scores": {
+    "case-a-market-waste": {
+      "points": 20,
+      "possible": 20,
+      "critical_failures": [],
+      "criteria": [
+        {
+          "id": "A-R1",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "A-R2",
+          "score": 4,
+          "possible": 4
+        },
+        {
+          "id": "A-R3",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "A-R4",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "A-R5",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "A-R6",
+          "score": 2,
+          "possible": 2
+        },
+        {
+          "id": "A-R7",
+          "score": 2,
+          "possible": 2
+        }
+      ]
+    },
+    "case-b-museum-provenance": {
+      "points": 20,
+      "possible": 20,
+      "critical_failures": [],
+      "criteria": [
+        {
+          "id": "B-R1",
+          "score": 4,
+          "possible": 4
+        },
+        {
+          "id": "B-R2",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "B-R3",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "B-R4",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "B-R5",
+          "score": 3,
+          "possible": 3
+        },
+        {
+          "id": "B-R6",
+          "score": 2,
+          "possible": 2
+        },
+        {
+          "id": "B-R7",
+          "score": 2,
+          "possible": 2
+        }
+      ]
+    }
+  },
+  "observed_process_limitations": [
+    "The mandatory referenced verification-record template was unavailable under the candidate-only input boundary; visible closing gates were recorded instead, transparently. Full skill execution is therefore not demonstrated.",
+    "The same agent created fixtures and expected answers, then produced and reviewed outputs in the same context. Rubric freeze prevents post-hoc rewriting but does not remove answer leakage.",
+    "Alternative-hypothesis sections were written after source inspection. No separately preserved initial hypothesis/draft proves that the disconfirmation pass changed reasoning.",
+    "The strongest residual objections about measurement error or unseen ownership instruments could not be tested with these deliberately bounded packets; stated as limitations rather than new evidence.",
+    "Outputs have 1360 and 1579 whitespace-delimited words, including citation text. They are clear up front but long relative to the small requests.",
+    "Source records directly flag provisional corrections, denominator definitions, field semantics and missing-data limits. Performance on less explicit, adversarial or live sources remains untested."
+  ],
+  "candidate_hash_unchanged_at_review": true,
+  "frozen_inputs_unchanged": true
+}

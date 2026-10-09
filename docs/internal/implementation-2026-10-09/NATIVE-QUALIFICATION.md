@@ -35,3 +35,15 @@ Independent review clearance (21:24 UTC): d1615f84's integrity repairs passed 30
 
 
 Attempt5 is complete and failed qualification. [Durable case archive](evidence/native-research-attempt5/assessment.json) includes all six outputs and judgments plus source/rubric bytes. Four cases pass every check; archive handbacks fail the predeclared method criterion; the composition case is correct on the main readiness facts but overall correctness remains unknown because its narrated external lookup was not evidenced to the reviewer. Unknown is not a pass. All twelve model invocations completed under the requested gpt-6-astra model setting; the resolved server model is not independently observed. This is supplied specialist-packet consumption, not an actual multi-specialist chain. The original suite and failures were not changed to obtain a pass.
+
+
+## Method0.3.2 and public execution observations
+
+The method now ranks factual sources per claim rather than by who supplied them, retains empirical gaps as unknown, narrows handbacks to material unavailable authority/access/decisions, checks quantitative completeness, and preserves requested action scope in recommendations. These are method obligations, not a claim that prose enforces itself. [Single-agent forward test](evidence/method-forward-test/REPORT.md) preserved frozen inputs in two new non-software domains and found no substantive failure, but its author/producer/reviewer shared a context and could not read the referenced closing template. It does not qualify the method.
+
+The native adapter now supplies the reviewer a bounded projection of public completed command/MCP/web events. Producer chat and private reasoning are excluded. Web query/action events witness an attempted lookup only; result contents or their absence are not inferred. Long results include a digest and explicit truncation. The case and reviewer receipt bind the exact projection reconstructed from the held producer events; substituting those events while refreshing outer file hashes fails. Old records without this relationship cannot claim the new assurance.
+
+Focused tests:16 pass; complete gate:992 pass/0 fail/1 existing skip, lint/types/packaged smoke; static91/0/7. The unchanged six-case version1 prompts, source bytes and rubrics are being replayed as a newly preregistered version2 suite in fresh native sessions under a twenty-minute overall bound. The prior failed run and baselines are unchanged. No current pass or qualification claim is made before that run completes.
+
+
+Independent review of the new observation transport found no confirmed defect. Fourteen native adapter tests and two additional isolated tests passed, covering four refreshed-hash binding mutations plus failed/missing-result boundaries. The reviewed source matched the isolated snapshot. [Additional review tests](evidence/method-evidence-review.test.ts). This review establishes protocol behavior only, not a live method pass.

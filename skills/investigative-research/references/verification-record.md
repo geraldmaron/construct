@@ -13,7 +13,10 @@ Verification record
 - Ground exhausted:    answered - see <where>
 - Strongest objection: answered - see <where>
 - Pre-mortem:          answered - see <where> | not applicable: no recommendation made
-- Handbacks:           none | listed at <where>, each with why it could not be settled here
+- Handbacks:           none | listed at <where>, each with material prerequisite and unavailable authority/access/decision
+- Quantities:          answered - see <where> | not applicable: no quantitative conclusion
+- Action scope:        answered - see <where>
+- Lookup observations: held result references at <where> | attempts only, results unobserved | no external lookup used
 ```
 
 A gate that was not done says `not done - <reason>` in its slot. Never

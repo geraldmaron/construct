@@ -210,3 +210,53 @@ test('public execution projection makes truncated and missing results explicit w
   assert.match((report.items[2]!.error as any).excerpt, /permission_denied/);
   assert.doesNotMatch(JSON.stringify(report), /private|searched successfully|incomplete/);
 });
+
+
+test('review-only: projection and reviewer digest edits fail even with fresh outer hashes', async () => {
+  const f = fixture('execution-evidence');
+  try {
+    const original = await f.evaluate();
+    assert.equal(original.passed, true, JSON.stringify(original.problems));
+    const held = new Map(original.evidence.map((entry) => [entry.ref, readFileSync(join(f.root, entry.ref), 'utf8')]));
+    for (const variant of ['case_items', 'case_digest', 'reviewer_digest', 'producer_output']) {
+      for (const [ref, text] of held) writeFileSync(join(f.root, ref), text);
+      const changed: any = structuredClone(original), w = changed.nativeWitnesses[0];
+      let ref = w.caseRef, value = JSON.parse(readFileSync(join(f.root, ref), 'utf8'));
+      if (variant === 'case_items') value.readObservations.items[1].output.excerpt = 'Contradictory read';
+      if (variant === 'case_digest') value.readObservationsDigest = 'f'.repeat(64);
+      if (variant === 'reviewer_digest') {
+        ref = w.reviewer.receipt; value = JSON.parse(readFileSync(join(f.root, ref), 'utf8'));
+        value.reviewedReadsDigest = 'f'.repeat(64);
+      }
+      if (variant === 'producer_output') {
+        ref = w.producer.receipt; value = JSON.parse(readFileSync(join(f.root, ref), 'utf8'));
+        value.events.find((e: any) => e.item?.type === 'command_execution').item.aggregated_output = 'Contradictory actual read';
+      }
+      writeFileSync(join(f.root, ref), JSON.stringify(value));
+      changed.evidence = changed.evidence.map((entry: any) => ({ ...entry, digest: createHash('sha256').update(readFileSync(join(f.root, entry.ref), 'utf8')).digest('hex') }));
+      appendActivity(f.fx.broker.store, { at: f.fx.ctx.now(), kind: 'skill.evaluation_observed', channel: 'host_evaluation', payload: changed });
+      assert.equal((await f.qualification()).state, 'degraded', variant);
+    }
+  } finally { f.fx.cleanup(); }
+});
+
+test('review-only: partial reads and failed commands retain their boundaries', () => {
+  const projected = nativeReadObservations([
+    { type: 'item.completed', item: { type: 'reasoning', text: 'SECRET_REASONING' } },
+    { type: 'item.completed', item: { type: 'thinking', text: 'SECRET_THINKING' } },
+    { type: 'item.completed', item: { type: 'agent_message', text: 'SECRET_CHAT' } },
+    { type: 'item.completed', item: { type: 'command_execution', command: 'read source', status: 'failed', exit_code: 1, aggregated_output: 'permission denied' } },
+    { type: 'item.completed', item: { type: 'command_execution', command: 'read another source', status: 'completed', exit_code: 0 } },
+    { type: 'item.completed', item: { type: 'mcp_tool_call', server: 'fixture', tool: 'read', status: 'failed', error: { message: 'permission denied' } } },
+    { type: 'item.completed', item: { type: 'mcp_tool_call', server: 'fixture', tool: 'read', status: 'completed' } },
+  ]);
+  assert.equal(projected.items.length, 4);
+  assert.doesNotMatch(JSON.stringify(projected), /SECRET/);
+  assert.equal(projected.items[0]!.status, 'failed');
+  assert.equal(projected.items[0]!.exitCode, 1);
+  assert.equal(projected.items[0]!.resultObserved, true);
+  assert.equal(projected.items[1]!.resultObserved, false);
+  assert.equal(projected.items[2]!.status, 'failed');
+  assert.equal(projected.items[2]!.resultObserved, true);
+  assert.equal(projected.items[3]!.resultObserved, false);
+});

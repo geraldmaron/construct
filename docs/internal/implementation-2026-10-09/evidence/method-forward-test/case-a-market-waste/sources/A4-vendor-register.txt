@@ -1,0 +1,9 @@
+SYNTHETIC RECORD A4 — Market operations register, extract certified 6 October 2026
+The gate registers record stalls that traded; the totals below cover the same four September Saturdays as the waste collection records in each year. Missing or cancelled trading dates: none. No transaction or visitor counts were collected.
+Period | Market | Vendor-days
+September 2025 | Eastbank | 300
+September 2025 | Ridgeway | 200
+September 2026 | Eastbank | 260
+September 2026 | Ridgeway | 180
+September 2026 | Harbour | 150
+Harbour opened 4 April 2026. There were no Harbour trading dates in September 2025.
