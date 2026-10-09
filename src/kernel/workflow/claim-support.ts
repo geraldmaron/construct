@@ -30,9 +30,10 @@ function proposition(text: string): { key: string; negative: boolean } | null {
   const verb = hit[3]!.replace(/s$/, '');
   return { key: `${hit[1]} ${verb} ${hit[4]}`, negative: ['does not ', "doesn't ", 'never '].includes(hit[2] ?? '') };
 }
-function sentences(text: string): string[] { return text.split(/(?<=[.!?])\s+|\n/).map((s) => s.trim()).filter(Boolean); }
 export function assessClaims(input: { answer: string; claims: readonly ClaimCheck[]; citations: readonly {ref: string}[]; resolve: RefResolver; store: StateStore; at: string }) {
-  const automatic = sentences(input.answer).filter((s) => proposition(s)).map((claim) => ({ claim, refs: input.citations.map((c) => c.ref) }));
+  // Never sever a clause from discourse that may reject, quote or condition it.
+  // This finite check accepts only a whole-document, whole-answer assertion.
+  const automatic = proposition(input.answer) ? [{ claim: input.answer, refs: input.citations.map((c) => c.ref) }] : [];
   const claims: ClaimCheck[] = [...input.claims, ...automatic.filter((c) => !input.claims.some((explicit) => normalize(explicit.claim) === normalize(c.claim)))];
   const results = claims.map((c) => {
     const problems: string[] = [];
@@ -70,15 +71,16 @@ export function assessClaims(input: { answer: string; claims: readonly ClaimChec
     } else {
       const target = proposition(c.claim);
       if (target) {
-        const observations = evidence.flatMap((e) => sentences(e.text).map(proposition).filter((p) => p?.key === target.key));
+        if (normalize(c.claim) !== normalize(input.answer)) problems.push('claim occurs inside broader answer context; independent semantic assessment is required');
+        const observations = evidence.map((e) => proposition(e.text)).filter((p) => p?.key === target.key);
         const support = observations.some((p) => p!.negative === target.negative);
         const opposition = observations.some((p) => p!.negative !== target.negative);
         if (support && opposition) { basis = 'Cited observations disagree on this scoped proposition; preserve both or justify a resolution.'; }
-        else if (support || opposition) { status = support ? 'supported' : 'contradicted'; basis = 'Compared full present-tense clauses with the same subject, predicate and object, preserving negation. Broader entailment is unassessed.'; }
+        else if (support || opposition) { status = support ? 'supported' : 'contradicted'; basis = 'Compared whole evidence documents that each contain only the same bounded assertion, preserving negation. Documents with additional discourse require independent semantic assessment.'; }
       }
     }
     if (problems.length) status = 'unknown';
     return { claim: c.claim, status, basis, problems, ...(status === 'supported' && derivation ? { derivation } : {}), evidence: evidence.map(({ ref, digest, provenance }) => ({ ref, digest, provenance })) };
   });
-  return { formatVersion: 1, verifier: 'bounded-claim-checks/1', answerDigest: createHash('sha256').update(input.answer).digest('hex'), checkedAt: input.at, scope: 'listed claims and recognized simple clauses only', semanticSupportVerified: false, results, complete: false, status: results.some((r) => r.status === 'contradicted') ? 'contradicted' : results.length && results.every((r) => r.status === 'supported') ? 'supported_within_checked_scope' : 'unknown', limits: 'Evidence assertions are not guaranteed truth. Unrecognized paraphrases, omitted claims, authority, semantic scope and prose around calculations require independent review.' };
+  return { formatVersion: 1, verifier: 'bounded-claim-checks/2', answerDigest: createHash('sha256').update(input.answer).digest('hex'), checkedAt: input.at, scope: 'typed calculations and standalone whole-document assertions only', semanticSupportVerified: false, results, complete: false, status: results.some((r) => r.status === 'contradicted') ? 'contradicted' : results.length && results.every((r) => r.status === 'supported') ? 'supported_within_checked_scope' : 'unknown', limits: 'Evidence assertions are not guaranteed truth. Unrecognized paraphrases, omitted claims, authority, semantic scope and prose around calculations require independent review.' };
 }

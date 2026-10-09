@@ -88,3 +88,31 @@ test('arithmetic support requires mapped units, complete coverage and the exact 
     assert.equal((await check()).claimSupport.results[0].status, 'contradicted');
   } finally { fx.cleanup(); }
 });
+
+for (const context of [
+  'The following statement is false.\nThe service stores passwords.',
+  'Rejected design:\nThe service stores passwords.',
+  'If the abandoned proposal were adopted:\nThe service stores passwords.',
+  'The service stores passwords.\nThe preceding statement was rejected.',
+  '# Hypothetical system\nThe service stores passwords.',
+  'The service stores passwords. The service encrypts passwords.',
+]) test(`discourse surrounding a matching clause remains unknown: ${context.split('\n')[0]}`, async () => {
+  const fx = brokerFixture();
+  try {
+    writeFileSync(join(fx.box.cwd, 'docs/context.md'), context);
+    const answer = 'The service stores passwords.';
+    const r = await call(fx, 'check_answer', { answer, citations: [{ ref: 'docs/context.md' }], claims: [{ claim: answer, refs: ['docs/context.md'] }] });
+    assert.equal(r.claimSupport.results[0].status, 'unknown');
+    assert.equal(r.ok, false);
+  } finally { fx.cleanup(); }
+});
+
+test('explicit claim cannot discard the answer context either', async () => {
+  const fx = brokerFixture();
+  try {
+    writeFileSync(join(fx.box.cwd, 'docs/context.md'), 'The service stores passwords.');
+    const r = await call(fx, 'check_answer', { answer: 'This statement is false. The service stores passwords.', citations: [{ ref: 'docs/context.md' }], claims: [{ claim: 'The service stores passwords.', refs: ['docs/context.md'] }] });
+    assert.equal(r.claimSupport.results[0].status, 'unknown');
+    assert.equal(r.ok, false);
+  } finally { fx.cleanup(); }
+});

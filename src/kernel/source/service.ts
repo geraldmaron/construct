@@ -375,7 +375,11 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       }
       if (outcome.outcome === 'unreachable') {
         setReachability(store, id, 'unreachable', at);
-        access(id, 'unreachable', at, nextId, { provenance: 'witnessed', reason: redact(outcome.reason) });
+        const descriptor = outcome.observation ? accessDescriptor(outcome.observation) : undefined;
+        if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
+        // Missing scope on a failed whole-source refresh is unknown access, never
+        // a reason to reuse an older success. It invalidates read readiness only.
+        access(id, 'unreachable', at, nextId, { ...(descriptor ?? { scope: '*', operation: '*', mode: 'read', applicability: 'source' }), sessionId: outcome.sessionId ?? null, provenance: 'witnessed', reason: redact(outcome.reason) });
         recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
         return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
       }

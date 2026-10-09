@@ -172,3 +172,78 @@ test('pagination metadata alone prevents deletion for both host reports and nati
     assert.equal(repeat.outcome, 'unchanged');
   } finally { fx.cleanup(); }
 });
+
+for (const mapped of [false, true]) test(`revoked access blocks both profiling and mapped rows (existing mapping ${String(mapped)})`, async () => {
+  const { fx, map } = await mappedFixture();
+  try {
+    if (mapped) await map(mapping);
+    fx.broker.store.db.prepare('UPDATE sources SET can_read = 0 WHERE id = ?').run('warehouse');
+    const result = await map();
+    assert.equal(result.calculationReady, false);
+    assert.equal(result.aggregationReady, false);
+    assert.ok(!JSON.stringify(result).includes('"shape"'), 'profile cannot expose denied data structure');
+    assert.ok(!JSON.stringify(result).includes('"sku"'), 'denied row values cannot leak through metadata');
+    if (mapped) assert.deepEqual(result.rows, []);
+    const explicit = await map(mapping);
+    assert.equal(explicit.calculationReady, false);
+    assert.deepEqual(explicit.rows, []);
+    assert.equal(explicit.fingerprint, null);
+  } finally { fx.cleanup(); }
+});
+
+for (const type of ['string', ['number', 'null'], undefined] as const) test(`mapped schema change blocks even unchanged numeric payload: ${JSON.stringify(type)}`, async () => {
+  const { fx, report, map } = await mappedFixture();
+  try {
+    await map(mapping);
+    const changed: any = structuredClone(schema);
+    changed.properties.rows.items.properties.stock.type = type;
+    await report(data(), changed);
+    const result = await map();
+    assert.equal(result.aggregationReady, false);
+    assert.equal(result.calculationReady, false);
+    assert.deepEqual(result.rows, []);
+    assert.match(result.problems.join(' '), /schema/);
+  } finally { fx.cleanup(); }
+});
+
+test('nullable mapping must match schema and current values; unrelated optional schema fields do not block', async () => {
+  const { fx, report, map } = await mappedFixture();
+  try {
+    const shape: any = structuredClone(schema);
+    shape.properties.rows.items.properties.stock.type = ['number', 'null'];
+    shape.properties.rows.items.properties.unused = { type: 'string' };
+    await report([{ ...data()[0], stock: null }], shape);
+    const result = await map({ ...mapping, fields: mapping.fields.map((field) => field.name === 'stock' ? { ...field, nullable: true } : field) });
+    assert.equal(result.calculationReady, true);
+    assert.equal(result.rows[0].values.stock, null, 'null stays null, never zero');
+    shape.properties.rows.items.properties.stock.type = 'number';
+    await report(data(), shape);
+    assert.equal((await map()).calculationReady, false, 'schema nullability narrowing requires a reviewed mapping');
+  } finally { fx.cleanup(); }
+});
+
+for (const failed of ['scoped', 'legacy', 'throw'] as const) test(`a newer ${failed} refresh failure invalidates an earlier applicable access witness`, async () => {
+  const fx = brokerFixture();
+  try {
+    await declare(fx.broker);
+    let fail = false;
+    const adapter = createSourceService(fx.broker.store, { root: fx.box.cwd, readers: new Map([['other', async () => {
+      if (fail && failed === 'throw') throw new Error('connection closed');
+      if (fail) return { outcome: 'unreachable' as const, reason: 'connection closed', ...(failed === 'scoped' ? { observation, sessionId: fx.broker.sessionId! } : {}) };
+      return { outcome: 'read' as const, report: { digest: 'stock', summary: 'stock', evidence: 'witnessed' as const, observation, sessionId: fx.broker.sessionId!, coverage: { complete: true }, items: [{ externalRef: 'stock', kind: 'item', name: 'stock', attributes: { text: '[]' } }] } };
+    }]]) });
+    const ctx = { ...fx.broker, sources: adapter };
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    assert.equal((await source(ctx, { action: 'check', id: 'warehouse', request })).ready, true);
+    fail = true;
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    const check = await source(ctx, { action: 'check', id: 'warehouse', request });
+    assert.equal(check.ready, false);
+    assert.match(check.problems.join(' '), /unreachable/);
+    if (failed === 'scoped') for (const key of ['principal', 'scope', 'operation']) assert.equal(check.observation.evidence[key], observation[key as keyof AccessDescriptor]);
+    assert.equal(currentManifest(ctx.store, 'warehouse')!.length, 1);
+    fail = false;
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    assert.equal((await source(ctx, { action: 'check', id: 'warehouse', request })).ready, true);
+  } finally { fx.cleanup(); }
+});
