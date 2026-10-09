@@ -183,6 +183,8 @@ export interface OnboardingAnswers {
  * Apply a person's answers. Each answer confirms its field, resolves its open
  * question, and, when the required fields are all present, marks onboarding
  * confirmed. Works the same for a conversation and for noninteractive flags.
+ * Each protected constraint keeps the channel its answer arrived on, so one
+ * an assistant relayed never counts as the person's own rule.
  */
 export function applyOnboardingAnswers(
   store: StateStore,
@@ -201,7 +203,7 @@ export function applyOnboardingAnswers(
     if (answers.primaryOutcome) patch.primaryOutcome = answers.primaryOutcome;
     for (const text of answers.protectedConstraints ?? []) {
       if (!text.trim()) continue;
-      confirmed.push(addStatement(store, { id: nextId('st'), kind: 'constraint', text: text.trim(), provenance: 'user', at }));
+      confirmed.push(addStatement(store, { id: nextId('st'), kind: 'constraint', text: text.trim(), provenance: 'user', ...(channel ? { channel } : {}), at }));
     }
     let profile = upsertProfile(store, patch, at);
     for (const unknown of listStatements(store, { kind: 'unknown', status: 'proposed' })) {
@@ -226,14 +228,15 @@ export function applyOnboardingAnswers(
   });
 }
 
-/** A person accepts one proposed statement; nothing else can. */
+/** Confirm one proposed statement, keeping the channel the confirmation arrived on: only one on the person's own channel is in their voice. */
 export function acceptProposal(
   store: StateStore,
   statementId: string,
   at: string,
   nextId: (prefix: string) => string,
+  channel?: DecisionChannel,
 ): Statement {
-  const statement = setStatementStatus(store, { id: statementId, status: 'confirmed', at });
+  const statement = setStatementStatus(store, { id: statementId, status: 'confirmed', at, ...(channel ? { channel } : {}) });
   bindGoverningStatement(store, statement, at, nextId);
   return statement;
 }
@@ -290,7 +293,8 @@ export function listInbox(store: StateStore, runId?: string): InboxRow[] {
 
 /**
  * Confirm or retire a proposed statement, recording who answered and on which
- * channel. A relayed confirmation is allowed and recorded as relayed.
+ * channel. A relayed confirmation is allowed and recorded as relayed, so the
+ * statement is in the assistant's voice, not the person's.
  */
 export function resolveProposal(
   store: StateStore,
@@ -302,7 +306,7 @@ export function resolveProposal(
     throw new Error(`a proposal is answered with confirm or retire, not ${JSON.stringify(input.resolution)}`);
   }
   return store.transaction(() => {
-    const statement = confirm ? acceptProposal(store, input.id, input.at, input.nextId) : declineProposal(store, input.id, input.at);
+    const statement = confirm ? acceptProposal(store, input.id, input.at, input.nextId, input.channel) : declineProposal(store, input.id, input.at);
     appendActivity(store, { at: input.at, kind: 'proposal.resolved', actor: input.by, payload: { statementId: statement.id, kind: statement.kind, status: statement.status, channel: input.channel } });
     return statement;
   });
