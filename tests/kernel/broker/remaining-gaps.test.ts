@@ -75,6 +75,11 @@ test('work resting on confidential sources carries that label, and publishing it
     assert.equal(waiting.work, null, 'the external write waits for the person');
     const approval = (await call(fx, 'inbox')).find((d: { decisionKind?: string; run: string }) => d.decisionKind === 'approval' && d.run === cleared.run.id);
     assert.ok(approval, 'an approval for exactly this write is in the inbox');
+    // The person sees where it goes, who it is for in the assistant's words, and the most sensitive material it rests on.
+    assert.match(approval.question, /^To “notion:Product\/Webhooks”\.$/m);
+    assert.match(approval.question, /^audience: “leadership”$/m);
+    assert.match(approval.question, /^It rests on confidential material\.$/m);
+    assert.match(approval.question, /covers only external “notion:Product\/Webhooks”, only session:claude-code, only this run, and expires\.$/m);
     const relayed = await call(fx, 'decide', { decisionId: approval.id, resolution: 'approve' });
     assert.equal(relayed.personRequired, true, 'a write that leaves the project is the person\'s own answer, never a relayed one');
     fx.broker.workflow.decide({ decisionId: approval.id, resolution: 'approve', by: 'person via terminal', channel: 'tty_cli' });

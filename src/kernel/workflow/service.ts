@@ -23,7 +23,7 @@ import { getDecision, listOpenDecisions, listRunDecisions, listStepDecisions, ra
 import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
 import { addClaim, getEntity, listRelations } from '../state/graph.ts';
 import { bindGoverningStatement, isGoverningKind, supersedeGoverning } from '../state/admission.ts';
-import { approveAction, evaluateAction, type ActionRequest, type PolicyContext } from '../policy/engine.ts';
+import { approveAction, evaluateAction, type ActionRequest, type Disclosure, type PolicyContext } from '../policy/engine.ts';
 import { tierAtLeast } from '../policy/lattice.ts';
 import { DECISION_CHANNELS, isPersonChannel, PERSON_ONLY_TIERS, PERSON_ONLY_TRUST, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
 import { provides, type HostCapabilities } from '../registry/capability-registry.ts';
@@ -35,11 +35,11 @@ import { calendarDate } from '../calendar.ts';
 import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
-import { INTAKE_FIELDS, OPEN_ABOUT, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
+import { canonicalDestination, INTAKE_FIELDS, OPEN_ABOUT, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
 import { assessConsequence, judgmentRequired, wordsOf, type Judgment } from './consequence.ts';
 import { askedFrom, askedOf, type AskedReading, type AskedSources, type Assumption, type Declared, type Firing } from './asked.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
-import { listSources } from '../state/sources.ts';
+import { listSources, SENSITIVITIES, type Sensitivity } from '../state/sources.ts';
 import { inRuleForm, outdatedConstraintText, RULE_FORM_REFUSAL, settledConstraintText, settledTerms } from '../project/governance.ts';
 import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
@@ -560,6 +560,11 @@ function isObject(x: unknown): x is Record<string, unknown> {
   return x !== null && typeof x === 'object' && !Array.isArray(x);
 }
 
+/** One of the sensitivity labels a source carries. */
+function isSensitivity(x: unknown): x is Sensitivity {
+  return typeof x === 'string' && (SENSITIVITIES as readonly string[]).includes(x);
+}
+
 /** What a resolved citation can be that the project holds itself, so no source's sensitivity label applies to it. */
 const PROJECT_HELD: ReadonlySet<string> = new Set(['file', 'directory', 'deliverable', 'record', 'surface']);
 
@@ -681,12 +686,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    */
   const sensitivityFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): string | null => {
     let level: string | null = null;
-    const input = (run.input ?? {}) as { deliverable?: unknown };
-    if (typeof input.deliverable === 'string') {
-      const d = getDeliverable(store, input.deliverable.replace(/^deliverable:/, ''));
-      const ds = (d?.body as { sensitivity?: unknown } | null)?.sensitivity;
-      if (typeof ds === 'string') level = higherSensitivity(level, ds);
-    }
+    const ds = (inputDeliverableOf(run)?.body as { sensitivity?: unknown } | null | undefined)?.sensitivity;
+    if (isSensitivity(ds)) level = higherSensitivity(level, ds);
     if (!resolve) return level;
     const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
     for (const e of runEvidence(run.id, current)) {
@@ -701,17 +702,67 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    * declared source covers, or a citation that resolves to nothing. Null
    * where no resolver was supplied to place them.
    */
-  const sensitivityUnknownFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): number | null => {
+  const sensitivityUnknownFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): number | null =>
+    unclassifiedRefsFor(run, current, resolve)?.length ?? null;
+  /** The run's citations that sensitivityUnknownFor counts, each once; null where no resolver was supplied. */
+  const unclassifiedRefsFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): string[] | null => {
     if (!resolve) return null;
     const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
-    let unknown = 0;
+    const unknown: string[] = [];
     for (const e of runEvidence(run.id, current)) {
       const r = resolve(e.ref);
       if (r?.sourceId ?? namedSourceOf(e.ref, bySource)) continue;
       if (r && PROJECT_HELD.has(r.kind)) continue;
-      unknown += 1;
+      unknown.push(e.ref);
     }
     return unknown;
+  };
+  /** The deliverable a run acts on, named by its deliverable input, if it names one that exists. */
+  const inputDeliverableOf = (run: WorkflowRun): Deliverable | null => {
+    const id = ((run.input ?? {}) as { deliverable?: unknown }).deliverable;
+    return typeof id === 'string' ? getDeliverable(store, id.replace(/^deliverable:/, '')) : null;
+  };
+  /**
+   * The highest sensitivity what the run rests on so far carries: the
+   * deliverable it acts on, and every citation its finished steps made, as
+   * each step recorded it when its work was submitted. Null when none
+   * carries a label.
+   */
+  const runSensitivity = (run: WorkflowRun): string | null => {
+    let level: string | null = null;
+    const ds = (inputDeliverableOf(run)?.body as { sensitivity?: unknown } | null | undefined)?.sensitivity;
+    if (isSensitivity(ds)) level = higherSensitivity(level, ds);
+    for (const st of listSteps(store, run.id)) {
+      const cited = st.state === 'succeeded' ? (st.output as { citedSensitivity?: unknown } | null)?.citedSensitivity : undefined;
+      if (isSensitivity(cited)) level = higherSensitivity(level, cited);
+    }
+    return level;
+  };
+  /**
+   * How many distinct citations the run rests on so far have no known
+   * sensitivity: the ones its finished steps recorded, and the ones the
+   * deliverable it acts on recorded (its count, where the step that made it
+   * recorded no list).
+   */
+  const runUnclassified = (run: WorkflowRun): number => {
+    const refs = new Set<string>();
+    const add = (output: unknown): boolean => {
+      const listed = isObject(output) ? output.citedUnclassified : undefined;
+      if (!Array.isArray(listed)) return false;
+      for (const ref of listed) if (typeof ref === 'string') refs.add(ref);
+      return true;
+    };
+    for (const st of listSteps(store, run.id)) if (st.state === 'succeeded') add(st.output);
+    const d = inputDeliverableOf(run);
+    let counted = 0;
+    if (d) {
+      const made = d.stepRunId ? getStep(store, d.stepRunId) : null;
+      if (!add(made?.output)) {
+        const n = (d.body as { sensitivityUnknown?: unknown } | null)?.sensitivityUnknown;
+        if (typeof n === 'number' && Number.isInteger(n) && n > 0) counted = n;
+      }
+    }
+    return refs.size + counted;
   };
   /**
    * The answer that lets this step through its failing checks: the latest
@@ -1073,20 +1124,60 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   }
 
   /**
+   * What the person approving a step's write outside the project is shown:
+   * where it goes (the destination the step is handed, else the run's
+   * reading's, and the declared source it names, if any), who it is for, the
+   * highest sensitivity and the count of citations of unknown sensitivity it
+   * rests on so far, and the checks waived earlier in the run.
+   */
+  function disclosureFor(run: WorkflowRun, destination: string | null): Disclosure {
+    const reading = askedOf(run).intake?.destination ?? null;
+    const fromReading = canonicalDestination(reading);
+    const where = destination ?? fromReading;
+    // The reading says what kind of place this is only when it names the same place the step is handed.
+    const same = reading !== null && where !== null && where === fromReading ? reading : null;
+    const sources = listSources(store, { status: 'active' });
+    const sourceId = !where || same?.kind === 'project_file'
+      ? null
+      : same?.kind === 'registered_source' && same.name ? same.name : namedSourceOf(where, new Map(sources.map((x) => [x.id, x])));
+    const source = sourceId ? (sources.find((x) => x.id === sourceId) ?? null) : null;
+    const audience = ((run.input ?? {}) as { audience?: unknown }).audience;
+    return {
+      ...(where ? { destination: where } : {}),
+      destinationSource: source ? { id: source.id, locator: source.locator, sensitivity: source.sensitivity, declaredByAssistant: source.origin === 'local' && declaredFromChat(source.id) } : null,
+      ...(typeof audience === 'string' && audience.trim() ? { audience } : {}),
+      sensitivity: runSensitivity(run),
+      unclassified: runUnclassified(run),
+      waived: runWaivers(run.id).map((w) => `${w.validator} on step ${w.stepId} (${waivedHow(w)})`),
+      external: same?.kind !== 'project_file',
+    };
+  }
+
+  /**
    * Gate a step for the executor about to claim it. An approval covers the
-   * executor it was given to, so a different session claiming the same step
-   * gets its own decision rather than inheriting another session's grant.
+   * executor it was given to and the run it was given in, so a different
+   * session claiming the same step gets its own decision rather than
+   * inheriting another session's grant, and another run is asked again. A
+   * write outside the project is approved for the exact destination the step
+   * is handed, else the run's target; one given blank names nothing, so the
+   * write waits for it to be named rather than being approved unnamed.
    */
   function gateStep(run: WorkflowRun, stepRun: StepRun, step: WorkflowStep, at: string, executorId: string): Gate {
     if (step.tier === 'observe' || step.tier === 'draft') return CLEARED;
+    const outside = step.tier !== 'project_write';
+    const handed = outside ? inputsFor(run, step).destination : undefined;
+    const target = (run.input as Record<string, unknown> | null)?.target;
+    const named = typeof handed === 'string' ? handed : typeof target === 'string' ? target : null;
+    const destination = typeof handed === 'string' && handed.trim() ? handed : null;
     const request: ActionRequest = {
       tier: step.tier,
       targetSystem: deps.targetSystemFor ? deps.targetSystemFor(step) : (step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external')),
-      targetResource: step.tier === 'project_write' ? run.id : ((run.input as Record<string, unknown> | null)?.target as string | undefined) ?? `${run.workflowId}:${step.id}`,
+      targetResource: !outside ? run.id : named === null ? `${run.id}:${step.id}` : named.trim() ? named : '',
       operation: `${step.title} (${run.workflowId}/${step.id})`,
       workflowId: run.workflowId,
       executorId,
       runId: run.id,
+      ...(outside ? { disclosure: disclosureFor(run, destination) } : {}),
     };
     const context = policyContext(run.interactionClass, at);
     const decision = evaluateAction(store, request, context);
@@ -1400,20 +1491,33 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const local = new Set(listSources(store, { status: 'active' }).filter((x) => x.origin === 'local').map((x) => x.id));
     if (local.size === 0) return [];
     const out: string[] = [];
+    for (const e of sourceDeclarations()) {
+      if (!local.has(e.sourceId) || out.includes(e.sourceId)) continue;
+      const sameSession = run.sessionId !== null && e.sessionId === run.sessionId;
+      const whileWorking = e.at <= d.createdAt && (sameSession || e.at >= run.createdAt);
+      if (cited.has(e.sourceId) || whileWorking) out.push(e.sourceId);
+    }
+    return out;
+  }
+
+  /** Every time a session declared a source from chat, oldest first. */
+  function* sourceDeclarations(): Generator<{ readonly sourceId: string; readonly at: string; readonly sessionId: string | null }> {
     const page = 1000;
     for (let after = 0; ; ) {
       const events = listActivity(store, { kind: 'source.declared', afterId: after, limit: page });
       for (const e of events) {
         const id = isObject(e.payload) ? e.payload.sourceId : undefined;
-        if (typeof id !== 'string' || !local.has(id) || out.includes(id)) continue;
-        const sameSession = run.sessionId !== null && e.sessionId === run.sessionId;
-        const whileWorking = e.at <= d.createdAt && (sameSession || e.at >= run.createdAt);
-        if (cited.has(id) || whileWorking) out.push(id);
+        if (typeof id === 'string') yield { sourceId: id, at: e.at, sessionId: e.sessionId };
       }
-      if (events.length < page) break;
+      if (events.length < page) return;
       after = events[events.length - 1]!.id;
     }
-    return out;
+  }
+
+  /** A session declared this source from chat; the person did not add it. Holds only while the source is a local one. */
+  function declaredFromChat(sourceId: string): boolean {
+    for (const e of sourceDeclarations()) if (e.sourceId === sourceId) return true;
+    return false;
   }
 
   /**
@@ -1915,12 +2019,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             void decision;
             return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
-          // Only an accepted waiver writes what was waived and by whom.
-          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined } });
+          // Only an accepted waiver writes what was waived and by whom, and only the kernel what a step's citations carry.
+          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined, citedSensitivity: undefined, citedUnclassified: undefined } });
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
         });
       }
       const sensitivity = sensitivityFor(run, evidence, resolve);
+      const unclassified = unclassifiedRefsFor(run, evidence, resolve);
       const asked = askedOf(run);
       const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity, period: asked.period ?? null, sources: asked.sources?.registered ?? null });
       const failures = validation.filter((v) => !v.ok);
@@ -1954,7 +2059,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           appendActivity(store, { at, kind: 'step.validation_failed', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator) } });
           return { step: failed, validation, run: advance(run.id, at), deliverable: null, ignored: [] };
         }
-        // What was waived, and by whom on which channel, is the kernel's to record: the step's own keys of those names are not kept.
+        // What was waived, and by whom on which channel, and what the run's citations carry so far (the highest
+        // sensitivity, and those of unknown sensitivity) are the kernel's to record: the step's own keys of those
+        // names are not kept. A later step's approval question reads them.
         const done = completeStep(store, {
           id: leased.id,
           owner: leased.leaseOwner,
@@ -1965,6 +2072,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             evidence,
             waived: waived ? failures.map((f) => ({ validator: f.validator, problems: f.problems })) : undefined,
             waivedBy: waived ? { by: waiver.resolvedBy, channel: waiver.channel } : undefined,
+            citedSensitivity: sensitivity,
+            citedUnclassified: unclassified ?? undefined,
           },
         });
         if (waived) appendActivity(store, { at, kind: 'step.checks_waived', runId: run.id, stepRunId: leased.id, actor: leased.leaseOwner, payload: { stepId: step.id, failures: failures.map((f) => f.validator), decisionId: waiver.id, acceptedBy: waiver.resolvedBy, channel: waiver.channel } });
