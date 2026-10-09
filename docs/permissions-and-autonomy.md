@@ -21,9 +21,19 @@ up front.
 ## Approvals do not widen, persist, or transfer
 
 An approval you give covers one action tier on one target system and
-resource, for one workflow and one executor, with an optional budget, and
-it expires. Another ticket, another executor, another workflow, or a later
-time is a new question.
+resource, for one workflow, one executor and the one run it was asked in,
+with an optional budget, and it expires. Another ticket, another executor,
+another workflow, another run, or a later time is a new question, even when
+the work goes to the same place.
+
+For a write that leaves the project, the resource is the destination the
+step is handed, so the question names where the work goes. It also says
+whether that is a source you or your assistant declared (with its address
+and sensitivity), the most sensitive material the work rests on, how many
+of its citations have no known sensitivity, which checks were waived
+earlier in the run, and that Construct cannot see where your assistant's
+connector writes. Who the work is for appears last, quoted as your
+assistant's description, which Construct did not check.
 
 ## Standing grants and break-glass
 

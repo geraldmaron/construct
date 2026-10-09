@@ -6,9 +6,11 @@
  * that names its basis. A denial always says what was attempted, which
  * capability or scope is missing, what remains safe to do now, and the
  * smallest step-up: an approval scoped to exactly this action, never a wider
- * one. Approvals it mints expire soon and name their executor, so they cannot
- * persist or transfer. Break-glass never turns off evidence, integrity, or
- * completion gates; the decision says so every time.
+ * one. Approvals it mints expire soon, name their executor, and cover only
+ * the run they were given in, so they cannot persist or transfer. The
+ * approval question names where the work goes and what it rests on, laid out
+ * as a person-only prompt. Break-glass never turns off evidence, integrity,
+ * or completion gates; the decision says so every time.
  */
 
 import type { StateStore } from '../state/open.ts';
@@ -16,6 +18,7 @@ import { appendActivity } from '../state/activity.ts';
 import { coveringGrants, createGrant, type Grant, type GrantableTier } from '../state/grants.ts';
 import type { ActionTier } from '../state/steps.ts';
 import { TIER_POLICIES } from './lattice.ts';
+import { capped, quoteHost, renderPersonPrompt } from '../render/person-prompt.ts';
 
 export const INTERACTION_CLASSES = ['answer', 'remember', 'manage', 'maintain'] as const;
 export type InteractionClass = (typeof INTERACTION_CLASSES)[number];
@@ -30,8 +33,39 @@ export interface ActionRequest {
   readonly operation: string;
   readonly workflowId?: string;
   readonly executorId: string;
+  /** The run the action is for; an approval given for it covers only that run. */
   readonly runId?: string;
   readonly budgetCents?: number;
+  /** What the person approving it is shown about where the work goes and what it rests on. */
+  readonly disclosure?: Disclosure;
+}
+
+/**
+ * What an approval question tells the person beyond the action itself.
+ * Every string the assistant supplied (the destination, a declared source's
+ * locator, the audience) is shown quoted as the assistant's.
+ */
+export interface Disclosure {
+  /** Where the result goes, as the run was given it. */
+  readonly destination?: string;
+  /** The declared source the destination names, when it names one. */
+  readonly destinationSource?: {
+    readonly id: string;
+    readonly locator: string | null;
+    readonly sensitivity: string;
+    /** The assistant declared it from chat; the person did not add it. */
+    readonly declaredByAssistant?: boolean;
+  } | null;
+  /** Who the result is for, in the assistant's words. */
+  readonly audience?: string;
+  /** The highest sensitivity label among what the work rests on, when any carries one. */
+  readonly sensitivity?: string | null;
+  /** How many of the citations it rests on come from no declared source, so their sensitivity is unknown. */
+  readonly unclassified?: number;
+  /** Each check waived earlier in the run, with its step and who accepted it. */
+  readonly waived?: readonly string[];
+  /** The write lands outside the project, through the assistant's own connector. */
+  readonly external?: boolean;
 }
 
 export interface PolicyContext {
@@ -92,6 +126,32 @@ function deny(attempted: string, missing: string, safeNow: readonly string[], st
 
 function allow(basis: Extract<PolicyDecision, { allowed: true }>['basis'], grant: Grant | null = null): PolicyDecision {
   return { allowed: true, basis, grant, gatesStillApply: true };
+}
+
+/**
+ * The question that asks the person to approve exactly this action: the
+ * action first, then where it goes and what it rests on, one fact a line,
+ * then what the approval covers; the audience last, as the assistant's own
+ * words.
+ */
+function approvalQuestion(request: ActionRequest): string {
+  const d = request.disclosure ?? {};
+  const facts: string[] = [];
+  if (d.destination) {
+    const s = d.destinationSource;
+    const about = s ? ` (registered source ${s.id}${s.locator ? `, ${quoteHost(s.locator)}` : ''}, ${s.sensitivity}${s.declaredByAssistant ? ', declared by your assistant, not added by you' : ''})` : '';
+    facts.push(`To ${quoteHost(d.destination)}${about}.`);
+  }
+  if (d.sensitivity) facts.push(`It rests on ${d.sensitivity} material.`);
+  if (d.unclassified) facts.push(`${String(d.unclassified)} ${d.unclassified === 1 ? 'citation has' : 'citations have'} no known sensitivity.`);
+  if (d.waived?.length) facts.push(`Checks waived earlier in this run: ${capped(d.waived)}.`);
+  if (d.external) facts.push('Construct cannot see where your assistant’s connector writes.');
+  facts.push(`The approval covers only ${request.targetSystem} ${quoteHost(request.targetResource!)}, only ${request.executorId}${request.runId ? ', only this run' : ''}, and expires.`);
+  return renderPersonPrompt({
+    lead: `Approve exactly this: ${request.operation}.`,
+    facts,
+    hostSaid: d.audience ? [{ about: 'audience', text: d.audience }] : [],
+  });
 }
 
 function proposedGrantFor(request: ActionRequest, ttlMs: number): ProposedGrant {
@@ -168,6 +228,7 @@ export function evaluateAction(store: StateStore, request: ActionRequest, contex
     targetResource: request.targetResource,
     workflowId: request.workflowId,
     executorId: request.executorId,
+    runId: request.runId,
     at: context.at,
   }).filter((g) => request.tier !== 'destructive' || g.breakGlass || g.executorId !== null);
   const withinBudget = covering.filter((g) => g.budgetCents === null || request.budgetCents === undefined || request.budgetCents <= g.budgetCents);
@@ -183,7 +244,7 @@ export function evaluateAction(store: StateStore, request: ActionRequest, contex
       : `${policy.requirement === 'action_time_approval' ? 'approval' : 'a grant'} for ${request.tier} on ${request.targetSystem} ${request.targetResource}${request.executorId ? ` by ${request.executorId}` : ''}`;
   return deny(attempted, missing, SAFE_BELOW_WRITE, {
     kind: 'approval',
-    description: `Approve exactly this: ${request.operation}. The approval covers only ${request.targetSystem} ${request.targetResource}, only ${request.executorId}, and expires.`,
+    description: approvalQuestion(request),
     proposedGrant: proposedGrantFor(request, DEFAULT_APPROVAL_TTL_MS),
   });
 }
@@ -212,8 +273,8 @@ export interface ApproveInput {
 
 /**
  * A person approves exactly this action. The grant names the resource,
- * workflow, executor, and budget from the request and expires after the TTL,
- * so it neither widens, persists, nor transfers.
+ * workflow, executor, budget, and run from the request and expires after the
+ * TTL, so it neither widens, persists, nor transfers.
  */
 export function approveAction(store: StateStore, input: ApproveInput): Grant {
   const { request } = input;
