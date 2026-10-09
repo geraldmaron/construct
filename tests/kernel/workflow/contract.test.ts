@@ -44,6 +44,7 @@ function stub(keys: readonly string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of keys) {
     if (LIST_KEYS.has(k)) out[k] = [];
+    else if (k === 'verification') out[k] = { result: 'Inspected declared outputs against the cited design record.' };
     else if (k === 'passed' || k === 'noDrift') out[k] = true;
     else if (k === 'artifact') out[k] = 'docs/design.md';
     else if (k === 'location') out[k] = 'https://example.com/published';

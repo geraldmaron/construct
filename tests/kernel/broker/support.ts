@@ -3,6 +3,10 @@
  * project in a sandbox, with a deterministic clock and ids.
  */
 
+import { executeVerification } from '../../../src/hosts/verification.ts';
+import { projectResolver } from '../../../src/kernel/source/resolver.ts';
+import { getStep, listSteps } from '../../../src/kernel/state/steps.ts';
+import { artifactRefs } from '../../../src/kernel/workflow/verification.ts';
 import { join } from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { initializeProject } from '../../../src/kernel/project/initialize.ts';
@@ -46,3 +50,15 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
 }
 
 export { createContext };
+
+
+/** Observe an actual local integrity check for positive tests whose workflow requires execution.
+ * This is not semantic qualification; negative execution tests submit without this helper.
+ */
+export async function observedVerification(fx: BrokerFixture, work: { stepRunId: string; token: string | number }): Promise<Record<string, unknown>> {
+  const row = getStep(fx.broker.store, work.stepRunId)!;
+  const subjects = listSteps(fx.broker.store, row.runId).flatMap((s) => artifactRefs(s.output));
+  const files = subjects.length ? subjects : ['docs/design.md'];
+  return executeVerification({ store: fx.broker.store, runId: row.runId, stepRunId: row.id, token: String(work.token), root: fx.box.cwd, env: fx.ctx.env, now: fx.ctx.now, resolve: projectResolver(fx.broker.store, fx.box.cwd), subjects,
+    argv: [process.execPath, '-e', 'const fs=require("node:fs"),assert=require("node:assert/strict");for(const p of process.argv.slice(1))assert.ok(fs.readFileSync(p).length>0, p+" must be nonempty");', ...files] });
+}

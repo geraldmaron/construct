@@ -54,3 +54,43 @@ test('relative Markdown references resolve against their document; source text g
   const malformed = researchCoverage([], resolver({}), { referenceDispositions: [{ ref: 'x', status: 'read', why: '' }] });
   assert.ok(malformed.problems.length > 0);
 });
+
+
+test('a redacted URL does not invent a shortened source address', () => {
+  assert.deepEqual(referencesIn('See https://public.[redacted].html and https://example.com/[redacted]/report'), []);
+});
+
+test('research accounting survives renaming, input order and splitting or merging linked documents', () => {
+  for (const prefix of ['archive', 'inventory', 'renamed-system']) {
+    const a = `${prefix}://root`, b = `${prefix}://record`, c = `${prefix}://restriction`;
+    const split = resolver({ [a]: `Read ${b}`, [b]: `A material dependency: ${c}` });
+    const merged = resolver({ [a]: `A material dependency: ${c}` });
+    const disposition = { referenceDispositions: [{ ref: c, status: 'inaccessible', why: 'Actual source permission response; decision remains conditional.' }] };
+    for (const [resolve, refs] of [[split, [a, b]], [split, [b, a]], [merged, [a]]] as const) {
+      const receipt = researchCoverage(refs.map((ref) => ({ ref })), resolve, disposition);
+      assert.deepEqual(receipt.problems, []);
+      assert.ok(receipt.links.some((link) => link.ref === c && link.status === 'inaccessible'));
+      assert.ok(researchCoverage(refs.map((ref) => ({ ref })), resolve, {}).problems.some((p) => p.includes(c)));
+    }
+  }
+});
+
+
+test('remote and local relative Markdown preserve the same reference graph', () => {
+  for (const base of ['https://records.example.test/team/', 'archive://records/team/']) {
+    const root = base + 'nested/index.md', target = base + 'policy.md';
+    for (const link of ['../policy.md', target]) {
+      const coverage = researchCoverage([{ ref: root }], resolver({ [root]: `[policy](${link})`, [target]: 'Current policy' }), {});
+      assert.equal(coverage.documents.length, 2);
+      assert.deepEqual(coverage.problems, []);
+      assert.equal(coverage.links[0]?.ref, target);
+    }
+  }
+  assert.deepEqual(referencesIn('[policy](../policy.md)', { ref: 'unknown-id', kind: 'item', provenance: 'reported' }), ['../policy.md']);
+});
+
+
+test('relative links use the recorded canonical URL when cited by a scoped item id', () => {
+  const source = { ref: 'wiki:123', itemRef: '123', url: 'https://example.test/team/deep/index.md', kind: 'item' as const, provenance: 'reported' as const };
+  assert.deepEqual(referencesIn('[policy](../policy.md)', source), ['https://example.test/team/policy.md']);
+});

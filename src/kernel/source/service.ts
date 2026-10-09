@@ -25,7 +25,7 @@ import {
   type Source,
   type SourceSnapshot,
 } from '../state/sources.ts';
-import { recordObservation } from '../state/drift.ts';
+import { recordObservation, latestObservationWith } from '../state/drift.ts';
 import type { DeclaredSource, SourcesFile } from '../project/sources-file.ts';
 import { addEntity, addClaim, findEntityByRef } from '../state/graph.ts';
 import { markPremisesStale } from '../work/service.ts';
@@ -38,7 +38,12 @@ import { flagStaleDeliverables } from '../drift/deliverables.ts';
 import { redact } from '../render/redact.ts';
 import { urlProblem } from '../project/urls.ts';
 
+export const SOURCE_READ_OUTCOMES = ['read', 'no_results', 'permission_denied', 'auth_required', 'unsupported', 'unreachable'] as const;
+export type SourceReadOutcome = (typeof SOURCE_READ_OUTCOMES)[number];
+
 export interface SourceStatus {
+  /** Latest access observation, not a guarantee of present access. */
+  readonly access: { readonly observedAt: string; readonly evidence: unknown } | null;
   readonly source: Source;
   readonly freshness: Freshness;
   readonly lastSnapshot: SourceSnapshot | null;
@@ -64,7 +69,7 @@ export interface SyncResult {
 
 export interface RefreshResult {
   readonly sourceId: string;
-  readonly outcome: 'changed' | 'unchanged' | 'unreachable';
+  readonly outcome: 'changed' | 'unchanged' | Exclude<SourceReadOutcome, 'read'>;
   readonly snapshot: SourceSnapshot | null;
   readonly reason?: string;
   /** Item by item, when the reader reports items. */
@@ -79,6 +84,8 @@ export interface RefreshResult {
 export const REPORTED_TEXT_CAP = 16 * 1024;
 
 export interface HostReportItem {
+  /** Observed schema/units metadata; part of content identity, never authority. */
+  readonly schema?: Readonly<Record<string, unknown>>;
   readonly ref: string;
   readonly title?: string;
   readonly kind?: string;
@@ -99,6 +106,12 @@ export interface HostReportItem {
 }
 
 export interface HostReport {
+  readonly outcome?: SourceReadOutcome;
+  readonly reason?: string;
+  readonly scope?: string;
+  readonly coverage?: Readonly<Record<string, unknown>>;
+  /** Set by the adapter, not by reported source content. */
+  readonly sessionId?: string;
   readonly items: readonly HostReportItem[];
   readonly partial?: boolean;
 }
@@ -135,11 +148,21 @@ export interface SourceServiceDeps {
   readonly root?: string;
 }
 
+function canonicalSchema(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalSchema).join(',')}]`;
+  if (value !== null && typeof value === 'object') return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonicalSchema(v)}`).join(',')}}`;
+  return JSON.stringify(value) ?? 'null';
+}
+
 function sameAuthority(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i]);
 }
 
 export function createSourceService(store: StateStore, deps: SourceServiceDeps): SourceService {
+  function access(id: string, outcome: SourceReadOutcome, at: string, nextId: () => string, evidence: Record<string, unknown>) {
+    recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.access', summary: `${id}: ${outcome}`, evidence: { ...evidence, ...(typeof evidence.scope === 'string' ? { scope: redact(evidence.scope) } : {}), ...(evidence.coverage ? { coverage: JSON.parse(redact(JSON.stringify(evidence.coverage))) } : {}), outcome }, at });
+  }
+
   function declare(d: DeclaredSource, at: string, existing: Source | null): 'added' | 'updated' | 'unchanged' {
     const problem = locatorProblem(d.kind, d.locator);
     if (problem) throw new Error(`source ${d.id}: ${problem}`);
@@ -212,8 +235,8 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       store.transaction(() => {
         for (const item of report.items ?? []) {
           const entity =
-            findEntityByRef(store, 'artifact', item.externalRef) ??
-            addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: item.externalRef, attributes: item.attributes, at });
+            findEntityByRef(store, 'artifact', `source:${id}:${item.externalRef}`) ??
+            addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: `source:${id}:${item.externalRef}`, attributes: item.attributes, at });
           const attributes = item.attributes as { contentDigest?: unknown; fingerprint?: unknown } | undefined;
           addClaim(store, {
             id: nextId(),
@@ -329,6 +352,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const source = getSource(store, id);
       if (!source) throw new Error(`no source ${id}`);
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);
+      if (!source.canRead) throw new Error(`source ${id}: read permission is disabled`);
       const reader = deps.readers.get(source.kind);
       let outcome: ReadOutcome;
       if (!reader) {
@@ -342,17 +366,32 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       }
       if (outcome.outcome === 'unreachable') {
         setReachability(store, id, 'unreachable', at);
+        access(id, 'unreachable', at, nextId, { provenance: 'witnessed', reason: redact(outcome.reason) });
         recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
         return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
       }
       setReachability(store, id, 'reachable', at);
+      access(id, 'read', at, nextId, { provenance: 'witnessed', refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
       return recordRead(id, outcome.report, false, at, nextId);
     },
     reportRead(id, report, at, nextId) {
       const source = getSource(store, id);
       if (!source) throw new Error(`no source ${id}`);
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);
+      if (!source.canRead) throw new Error(`source ${id}: read permission is disabled`);
       if (deps.readers.has(source.kind)) throw new Error(`source ${id} is read by Construct itself; refresh it instead of reporting it`);
+      const outcome = report.outcome ?? 'read';
+      if (!(SOURCE_READ_OUTCOMES as readonly string[]).includes(outcome)) throw new Error('unknown source read outcome');
+      if (outcome !== 'read') {
+        if (report.items.length) throw new Error(`${outcome} cannot contain read items`);
+        if (!report.reason?.trim() || !report.scope?.trim()) throw new Error(`${outcome} needs the attempted scope and reason`);
+        // A failed request or empty query says nothing about removal of prior items.
+        access(id, outcome, at, nextId, { provenance: 'reported', scope: redact(report.scope), reason: redact(report.reason), sessionId: report.sessionId ?? null, coverage: report.coverage ?? null });
+        // This attempted scope says nothing about access to other items of the source.
+        return { sourceId: id, outcome, snapshot: null, reason: redact(report.reason) };
+      }
+
+      if (new Set(report.items.map((i) => i.ref)).size !== report.items.length) throw new Error('a report cannot contain duplicate item references');
       const prior = new Map((currentManifest(store, id) ?? []).map((e) => [e.ref, e]));
       const contentHash = (ref: string, text: string | undefined, title: string | undefined) => createHash('sha256').update(text ?? `${ref}\t${title ?? ''}`).digest('hex');
       // Items whose fingerprint moves only because the basis did (an unversioned or passing sighting now read with a
@@ -367,8 +406,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         // Provider revisions and timestamps are claims about identity, not proof
         // that the observed bytes are unchanged. Include both in the fingerprint.
         const bodyHash = contentHash(i.ref, text, i.title);
-        const fingerprint = i.updatedAt || i.fingerprint
-          ? createHash('sha256').update(JSON.stringify([i.ref, i.fingerprint ?? null, i.updatedAt ?? null, bodyHash])).digest('hex')
+        const schema = i.schema === undefined ? undefined : JSON.parse(redact(JSON.stringify(i.schema))) as Record<string, unknown>;
+        const schemaHash = i.schema === undefined ? null : createHash('sha256').update(canonicalSchema(i.schema)).digest('hex');
+        const fingerprint = i.updatedAt || i.fingerprint || schemaHash
+          ? createHash('sha256').update(JSON.stringify([i.ref, i.fingerprint ?? null, i.updatedAt ?? null, bodyHash, ...(schemaHash ? [schemaHash] : [])])).digest('hex')
           : bodyHash;
         if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
         // What is kept is what was read with credentials removed, then capped; truncated says the cut happened. The cut
@@ -388,28 +429,30 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         }
         const url = i.url?.trim() ?? was?.url;
         if (truncated) cut.push(i.ref);
-        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title !== undefined ? redact(i.title) : i.ref, attributes: { fingerprint, ...(keptText !== undefined ? { text: keptText } : {}), ...(url ? { url } : {}), ...(truncated ? { truncated: true } : {}), ...(via ? { via } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
+        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title !== undefined ? redact(i.title) : i.ref, attributes: { fingerprint, ...(schema !== undefined ? { schema } : {}), ...(keptText !== undefined ? { text: keptText } : {}), ...(url ? { url } : {}), ...(truncated ? { truncated: true } : {}), ...(via ? { via } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
       });
       // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
-      const before = report.partial ? [...prior.values()] : [];
+      const weakSeen = new Set(report.items.filter((i) => i.weak).map((i) => i.ref));
+      const before = [...prior.values()].filter((entry) => report.partial || weakSeen.has(entry.ref));
       const seen = new Set(reported.map((r) => r.externalRef));
-      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
+      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.schema !== undefined ? { schema: e.schema } : {}), ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
       // The digest covers what was kept, not only versions, so fuller text or an address for the same version is
       // recorded; item changes are still judged by fingerprint, so that recording opens no drift.
       const digest = `sha256:${createHash('sha256').update(items.map((i) => { const a = i.attributes as { fingerprint: string; text?: string; url?: string }; return `${i.externalRef}\t${a.fingerprint}\t${createHash('sha256').update(a.text ?? '').digest('hex')}${a.url ? `\t${a.url}` : ''}`; }).join('\n')).digest('hex')}`;
       setReachability(store, id, 'reachable', at);
-      const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
+      const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, coverage: report.coverage, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
+      access(id, 'read', at, nextId, { provenance: 'reported', operation: 'read', refreshedRefs: report.items.filter((i) => !i.weak).map((i) => i.ref), sessionId: report.sessionId ?? null, scope: report.scope ?? null, partial: report.partial === true, coverage: report.coverage ?? null });
       return cut.length > 0 ? { ...result, truncated: cut } : result;
     },
     canRead(id) {
       const source = getSource(store, id);
-      return source !== null && deps.readers.has(source.kind);
+      return source !== null && source.status === 'active' && source.canRead && deps.readers.has(source.kind);
     },
     async peek(id) {
       const source = getSource(store, id);
       const reader = source ? deps.readers.get(source.kind) : undefined;
-      if (!source || !reader) return null;
+      if (!source || source.status !== 'active' || !source.canRead || !reader) return null;
       const last = latestSnapshot(store, id);
       if (!last) return null;
       try {
@@ -423,7 +466,9 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       const source = getSource(store, id);
       if (!source) throw new Error(`no source ${id}`);
       const authority = authorityOf(store, id);
+      const observed = latestObservationWith(store, id, 'source.access', 'outcome');
       return {
+        access: observed ? { observedAt: observed.observedAt, evidence: observed.evidence } : null,
         source,
         freshness: freshnessOf(store, id, at),
         lastSnapshot: latestSnapshot(store, id),

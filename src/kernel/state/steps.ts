@@ -85,7 +85,7 @@ function failedAttempts(store: StateStore, stepRunId: string): number {
   return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'failed'`).get(stepRunId) as { n: number }).n;
 }
 
-function expiredAttempts(store: StateStore, stepRunId: string): number {
+export function expiredAttempts(store: StateStore, stepRunId: string): number {
   return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'expired'`).get(stepRunId) as { n: number }).n;
 }
 

@@ -20,7 +20,7 @@ import { listGrants } from '../../src/kernel/state/grants.ts';
 import { getStep } from '../../src/kernel/state/steps.ts';
 import { HOST_SAID_LABEL } from '../../src/kernel/render/person-prompt.ts';
 import { WAIVER_OPTIONS } from '../../src/kernel/workflow/service.ts';
-import { brokerFixture } from '../kernel/broker/support.ts';
+import { brokerFixture, observedVerification } from '../kernel/broker/support.ts';
 
 type Fx = ReturnType<typeof brokerFixture>;
 
@@ -34,7 +34,7 @@ const submit = (fx: Fx, w: any, output: Record<string, unknown>, evidence: { ref
 const approvalFor = async (fx: Fx, runId: string) =>
   (await call(fx, 'inbox')).find((d: { decisionKind?: string; run: string | null }) => d.decisionKind === 'approval' && d.run === runId);
 
-/** A validated brief that rests on a confidential finance source, and a wiki the assistant declared from chat. */
+/** A structurally checked brief with an observed local command that rests on a confidential finance source, and a wiki the assistant declared from chat. */
 async function setUp(fx: Fx): Promise<string> {
   const root = fx.broker.root;
   writeFileSync(join(root, 'docs', 'finance.md'), 'Three accounts are 18% of Enterprise ARR.\n');
@@ -45,8 +45,9 @@ async function setUp(fx: Fx): Promise<string> {
   const runId = started.run.id;
   await submit(fx, await claim(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
   await submit(fx, await claim(fx, runId), { summary: 'risk', findings: ['18%'], changes: ['docs/brief.md'], artifact: 'docs/brief.md' }, [{ ref: 'docs/finance.md' }]);
-  const done = await submit(fx, await claim(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
-  assert.equal(done.deliverable.trust, 'validated', JSON.stringify(done.validation));
+  const verificationWork = await claim(fx, runId);
+  const done = await submit(fx, verificationWork, { verification: await observedVerification(fx, verificationWork), passed: true }, [{ ref: 'docs/brief.md' }]);
+  assert.equal(done.deliverable.trust, 'validated', 'the observed command and structural checks confer only the recorded bounded assurance');
   const declared = await call(fx, 'sources', { action: 'declare', id: 'confluence', kind: 'docs', locator: 'confluence:space:ACME' });
   assert.ok(declared, 'the assistant declares the wiki from chat');
   return done.deliverable.id;

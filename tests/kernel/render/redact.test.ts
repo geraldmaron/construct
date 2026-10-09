@@ -93,3 +93,19 @@ test('a generic high-entropy token is redacted, a long ordinary word is not', ()
   const word = 'internationalizationalization';
   assert.equal(redact(word), word);
 });
+
+
+test('public URL path segments survive while URL credentials and opaque values are redacted', () => {
+  const urls = [
+    'https://reference.example.org/2026-07-28/server/discover',
+    'https://standards.example.net/specs/open-protocol-core-1_0.html',
+    'https://docs.example.gov/800-63-4/sp800-63c/Federation/',
+    'https://access.example.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html',
+  ];
+  for (const url of urls) assert.equal(redact(url), url);
+  const token = 'ghp_' + BODY;
+  assert.ok(!redact(`https://api.example.com/${token}?token=${token}`).includes(token));
+  assert.ok(!redact('https://person:password@example.com/path').includes('password'));
+  assert.ok(!redact(`https://api.example.com/${BODY}`).includes(BODY));
+  assert.ok(!redact(`https://api.example.com/?access_token=${BODY}`).includes(BODY));
+});

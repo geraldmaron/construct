@@ -21,7 +21,7 @@ import { pathToFileURL } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { STATE_FORMAT_ID, STATE_FORMAT_VERSION, StateBusyError, UnsupportedStateError } from './format.ts';
 import { REQUIRED_TABLES, SCHEMA_SQL } from './schema.ts';
-import { isCompleteV2, isCompleteV3, migrateV2ToV3, migrateV3ToV4 } from './migrate.ts';
+import { isCompleteV2, isCompleteV3, isCompleteV4, migrateV2ToV3, migrateV3ToV4, migrateV4ToV5 } from './migrate.ts';
 
 /** How long one statement waits for another connection's lock. */
 export const BUSY_TIMEOUT_MS = 5000;
@@ -128,12 +128,12 @@ function readMeta(db: DatabaseSync, key: string): string | null {
   return row?.value ?? null;
 }
 
-function isComplete(db: DatabaseSync, version: 2 | 3): boolean {
-  return version === 2 ? isCompleteV2(db) : isCompleteV3(db);
+function isComplete(db: DatabaseSync, version: 2 | 3 | 4): boolean {
+  return version === 2 ? isCompleteV2(db) : version === 3 ? isCompleteV3(db) : isCompleteV4(db);
 }
 
 /**
- * Format 4 is current. A complete store in format 2 or 3 is upgraded in place
+ * Format 5 is current. A complete store in format 2, 3 or 4 is upgraded in place
  * (one way, through each format in turn) when `migrate` is set, and refused as
  * older otherwise. A store missing one of its format's tables is refused
  * unread. A newer format is refused as newer, never with an instruction that
@@ -155,7 +155,7 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
   if (versionOrNull !== null && versionOrNull > STATE_FORMAT_VERSION) {
     throw new UnsupportedStateError(format, versionOrNull, 'newer');
   }
-  if (versionOrNull === 2 || versionOrNull === 3) {
+  if (versionOrNull === 2 || versionOrNull === 3 || versionOrNull === 4) {
     if (!isComplete(db, versionOrNull)) throw new UnsupportedStateError(format, versionOrNull);
     if (!options.migrate || options.readOnly) throw new UnsupportedStateError(format, versionOrNull, 'older');
     let migrated: number | null = null;
@@ -167,11 +167,12 @@ function verifyFormat(db: DatabaseSync, path: string, options: OpenStateOptions)
       const foundOrNull = found !== null && Number.isFinite(found) ? found : null;
       if (nowFormat !== STATE_FORMAT_ID) throw new UnsupportedStateError(nowFormat, foundOrNull);
       if (foundOrNull !== null && foundOrNull > STATE_FORMAT_VERSION) throw new UnsupportedStateError(nowFormat, foundOrNull, 'newer');
-      if (foundOrNull === 2 || foundOrNull === 3) {
+      if (foundOrNull === 2 || foundOrNull === 3 || foundOrNull === 4) {
         if (!isComplete(db, foundOrNull)) throw new UnsupportedStateError(nowFormat, foundOrNull);
         options.beforeUpgrade?.(foundOrNull);
         if (foundOrNull === 2) migrateV2ToV3(db);
-        migrateV3ToV4(db);
+        if (foundOrNull <= 3) migrateV3ToV4(db);
+        migrateV4ToV5(db);
         migrated = foundOrNull;
       } else if (foundOrNull !== STATE_FORMAT_VERSION) {
         throw new UnsupportedStateError(nowFormat, foundOrNull);

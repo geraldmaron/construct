@@ -81,7 +81,7 @@ too (stop every Construct session on the project first).
 `construct help` lists everything.
 
 When upgrading an existing project, stop its Construct sessions before running
-`construct migrate`. Alpha.26 uses state format 4; older state must be upgraded
+`construct migrate`. Alpha.26 uses state format 5; older state must be upgraded
 explicitly. Migration takes a backup under its upgrade lock. Then run
 `construct init --client=<host>` for each host you use and commit the
 rewritten files: host files an earlier alpha wrote name this machine's Node

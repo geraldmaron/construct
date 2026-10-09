@@ -7,6 +7,7 @@
  */
 
 import type { StateStore } from './open.ts';
+import { latestObservationWith } from './drift.ts';
 import {
   boolFrom,
   parseJson,
@@ -418,12 +419,30 @@ export function latestSnapshot(store: StateStore, sourceId: string): SourceSnaps
 export type Freshness = 'fresh' | 'stale' | 'never_read' | 'no_expectation';
 
 /** How current a source's last read is against its declared expectation. */
-export function freshnessOf(store: StateStore, sourceId: string, at: string): Freshness {
+export function freshnessOf(store: StateStore, sourceId: string, at: string, requiredRefs?: readonly string[]): Freshness {
   const source = getSource(store, sourceId);
   if (!source) throw new Error(`no source ${sourceId}`);
   const snapshot = latestSnapshot(store, sourceId);
   if (!snapshot) return 'never_read';
   if (source.freshnessHours === null) return 'no_expectation';
+  // A partial refresh cannot freshen retained unread items. Older snapshots without
+  // item read observations retain their previous whole-snapshot behavior.
+  const coverage = latestObservationWith(store, sourceId, 'source.access', 'refreshedRefs');
+  if (coverage) {
+    const changed = latestObservationWith(store, sourceId, 'source.changed', 'manifest');
+    const manifest = (changed?.evidence as { manifest?: { ref: string }[] } | null)?.manifest ?? [];
+    const required = requiredRefs ?? manifest.map((entry) => entry.ref);
+    const times = store.db.prepare(`SELECT refs.value AS ref, MAX(observed_at) AS at
+      FROM observations, json_each(evidence_json, '$.refreshedRefs') AS refs
+      WHERE source_id = ? AND kind = 'source.access' AND json_extract(evidence_json, '$.outcome') = 'read'
+      GROUP BY refs.value`).all(sourceId) as unknown as { ref: string; at: string }[];
+    const readAt = new Map(times.map((row) => [row.ref, row.at]));
+    if (required.length) return required.every((ref) => readAt.has(ref) && Date.parse(at) - Date.parse(readAt.get(ref)!) <= source.freshnessHours! * 3_600_000) ? 'fresh' : 'stale';
+    // An empty complete read has no item timestamps. Its observation still proves freshness.
+    const complete = store.db.prepare(`SELECT MAX(observed_at) AS at FROM observations WHERE source_id = ? AND kind = 'source.access'
+      AND json_extract(evidence_json, '$.outcome') = 'read' AND json_extract(evidence_json, '$.partial') = 0`).get(sourceId) as { at: string | null };
+    if (complete.at) return Date.parse(at) - Date.parse(complete.at) <= source.freshnessHours * 3_600_000 ? 'fresh' : 'stale';
+  }
   const ageMs = Date.parse(at) - Date.parse(snapshot.takenAt);
   return ageMs <= source.freshnessHours * 3_600_000 ? 'fresh' : 'stale';
 }

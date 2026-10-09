@@ -106,13 +106,13 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
     const triggers = await capture(() => run(['workflow', 'triggers'], ctx));
     assert.match(triggers.out, /^monthly\s+design-conformance\s+schedule\s+enabled\s+0 9 1 \* \* Europe\/Berlin/m);
     const fired = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-1', '--json'], ctx));
-    assert.equal(fired.code, 0, fired.err);
+    assert.equal(fired.code, 1, fired.err);
     const first = JSON.parse(fired.out) as { outcome: string; runId: string };
-    assert.equal(first.outcome, 'started');
+    assert.equal(first.outcome, 'blocked');
     const dup = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-1'], ctx));
     assert.match(dup.out, /^deduplicated run /);
     const overlap = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-2'], ctx));
-    assert.match(overlap.out, /^skipped_overlap/);
+    assert.match(overlap.out, /^blocked/);
     const dry = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-3', '--dry-run'], ctx));
     assert.match(dry.out, /^dry_run/);
     const disabled = await capture(() => run(['workflow', 'disable', 'monthly'], ctx));
@@ -120,8 +120,8 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
     const off = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-4'], ctx));
     assert.match(off.out, /^disabled/);
     const recipe = await capture(() => run(['workflow', 'recipe', 'monthly'], ctx));
-    assert.match(recipe.out, /construct workflow fire monthly --key/);
-    const ci = await capture(() => run(['workflow', 'recipe', 'monthly', '--clock=github-actions'], ctx));
+    assert.match(recipe.out, /Unprovisioned/);
+    const ci = await capture(() => run(['workflow', 'recipe', 'monthly', '--clock=github-actions', '--executor=codex'], ctx));
     assert.match(ci.out, /schedule:/);
     const enabled = await capture(() => run(['workflow', 'enable', 'monthly', '--json'], ctx));
     assert.equal(JSON.parse(enabled.out).enabled, true);

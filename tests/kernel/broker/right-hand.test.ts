@@ -16,7 +16,7 @@ import { addSource } from '../../../src/kernel/state/sources.ts';
 import { listRuns } from '../../../src/kernel/state/runs.ts';
 import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { listOpenDecisions } from '../../../src/kernel/state/decisions.ts';
-import { brokerFixture } from './support.ts';
+import { brokerFixture, observedVerification } from './support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
 async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Record<string, unknown> = {}): Promise<any> {
@@ -67,7 +67,8 @@ test('what the host read from a tracker is tracked: citations resolve, quotes ar
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
     await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: [], artifact: null }, [{ ref: 'PLAT-101' }]);
-    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'PLAT-101' }]);
+    const verificationWork = await step(fx, runId);
+    const done = await submit(fx, verificationWork, { verification: await observedVerification(fx, verificationWork), passed: true }, [{ ref: 'PLAT-101' }]);
     assert.equal(done.run.state, 'succeeded');
 
     const partial = await call(fx, 'sources', { action: 'report', id: 'jira-plat', partial: true, items: [{ ref: 'PLAT-101', title: 'Platform events', updatedAt: '2026-09-29', text: 'Decision reversed: Pro at launch with caps' }] });
@@ -175,7 +176,8 @@ test('answering "revise" on stale work offers a linked revision, and the revisio
     const runId = started.run.id;
     await submit(fx, await step(fx, runId), { plan: ['read'], assumptions: [], blockers: [] }, []);
     await submit(fx, await step(fx, runId), { summary: 'Enterprise only', findings: ['gated'], changes: ['docs/brief.md'], artifact: 'docs/brief.md' }, [{ ref: 'notes/pricing.md' }]);
-    const done = await submit(fx, await step(fx, runId), { verification: 'read', passed: true }, [{ ref: 'docs/brief.md' }]);
+    const verificationWork = await step(fx, runId);
+    const done = await submit(fx, verificationWork, { verification: await observedVerification(fx, verificationWork), passed: true }, [{ ref: 'docs/brief.md' }]);
     const deliverableId = done.deliverable.id;
 
     writeFileSync(join(dir, 'pricing.md'), 'Pro at launch, capped at 5 subscriptions.\n');
@@ -210,7 +212,8 @@ test('the general carrier takes an honest code edit and an analysis that writes 
       await submit(fx, await step(fx, runId), { plan: ['read', 'change'], assumptions: [], blockers: [] }, []);
       const did = await submit(fx, await step(fx, runId), output, evidence);
       if (did.step.state !== 'succeeded') return { did, done: null, body: null };
-      const done = await submit(fx, await step(fx, runId), { verification: { command: 'npm test', exitStatus: 0 }, passed: true }, []);
+      const verificationWork = await step(fx, runId);
+      const done = await submit(fx, verificationWork, { verification: await observedVerification(fx, verificationWork), passed: true }, []);
       const status = await call(fx, 'run_status', { runId });
       return { did, done, body: status.deliverables.at(-1).body };
     };

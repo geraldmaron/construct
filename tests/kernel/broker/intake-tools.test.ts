@@ -290,3 +290,44 @@ test('the published reading carries the stake areas the judge reads, and the des
     assert.match(description, named, `the description names ${kind}`);
   }
 });
+
+
+test('standing intake records an idempotent definition, preserves input, and creates no immediate run or executor', async () => {
+  const fx = brokerFixture();
+  try {
+    for (const [workflowId, deliverable, kind] of [['managed-outcome', { kind: 'other', describe: 'a status brief' }, 'schedule'], ['source-drift-review', { kind: 'review/drift' }, 'event']] as const) {
+      const intake = { words: 'Keep the current policy and implementation reviewed; save a local status brief.', kind: 'maintain', workflowId, deliverable, scope: 'docs/design.md', schedule: kind === 'schedule' ? { cron: '0 9 * * 1', timezone: 'Pacific/Auckland' } : { event: 'source.corrected' } };
+      const first = await call(fx, 'start_outcome', { workflowId, intake });
+      assert.equal(first.started, false); assert.equal(first.scheduled, true);
+      assert.deepEqual(first.provisioning, { clock: 'unprovisioned', executor: 'unprovisioned' });
+      assert.equal(first.triggers[0].created, true);
+      assert.equal(first.triggers[0].trigger.kind, kind);
+      assert.equal(first.triggers[0].trigger.delivery.intake.words, intake.words);
+      const repeated = await call(fx, 'start_outcome', { intake: { ...intake }, workflowId });
+      assert.equal(repeated.triggers[0].created, false);
+      assert.equal(repeated.triggers[0].trigger.id, first.triggers[0].trigger.id);
+      assert.equal(listRuns(fx.broker.store).filter((run) => run.workflowId === workflowId).length, 0);
+      const fired = fx.broker.triggers.fire({ triggerId: first.triggers[0].trigger.id, firingKey: 'test-occurrence' });
+      const asked = askedOf(getRun(fx.broker.store, fired.runId!)!);
+      assert.equal(asked.intake?.words, intake.words);
+      assert.equal(asked.judgedBy?.by, 'trigger_definition');
+    }
+  } finally { fx.cleanup(); }
+});
+
+
+test('an outcome cannot finish in state alone when the person requested a local file', async () => {
+  const fx = brokerFixture();
+  try {
+    const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', intake: { words: 'Write a local design brief.', kind: 'manage', deliverable: { kind: 'other', describe: 'design brief' }, destination: { kind: 'project_file', ref: 'brief.md' } } });
+    const runId = started.run.id;
+    const submitNext = async (output: Record<string, unknown>) => { const w = (await call(fx, 'claim_work', { runId })).work; return call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence: [{ ref: 'docs/design.md' }] }); };
+    await submitNext({ plan: ['Read design and write brief'], assumptions: [], blockers: [] });
+    const work = await submitNext({ summary: 'Kernel stays host-agnostic', findings: ['The design keeps the kernel host-agnostic.'], changes: [], artifact: null });
+    assert.equal(work.step.state, 'succeeded');
+    const end = await submitNext({ verification: { result: 'Inspected design context' }, passed: true });
+    assert.ok(end.validation.some((check: any) => check.validator === 'requested_destination' && check.ok === false));
+    assert.notEqual(end.run.state, 'succeeded');
+    assert.equal(end.deliverable, null);
+  } finally { fx.cleanup(); }
+});

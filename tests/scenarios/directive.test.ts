@@ -21,7 +21,7 @@ import { listRuns } from '../../src/kernel/state/runs.ts';
 import { addSource, recordSnapshot } from '../../src/kernel/state/sources.ts';
 import { addEntity, addRelation, addClaim, setRelationStatus } from '../../src/kernel/state/graph.ts';
 import { addStatement } from '../../src/kernel/state/profile.ts';
-import { brokerFixture } from '../kernel/broker/support.ts';
+import { brokerFixture, observedVerification } from '../kernel/broker/support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
 async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
@@ -84,7 +84,7 @@ test('Scenario C: design conformance resolves, reads only what it needs, records
     await submit(fx, gather, { principles: ['The kernel never touches the network'], targetSummary: 'the state module', unknownPrinciples: ['Is "no network" meant to cover DNS lookups?'] }, [{ ref: 'docs/design.md' }]);
     const det = await claim(fx, started.run.id);
     assert.equal(det.work!.step.id, 'deterministic');
-    await submit(fx, det, { findings: [] }, [{ ref: 'docs/design.md' }]);
+    await submit(fx, det, { findings: [], verification: await observedVerification(fx, det.work!) }, [{ ref: 'docs/design.md' }]);
     const review = await claim(fx, started.run.id);
     assert.equal(review.work!.step.id, 'review');
     const bad = await submit(fx, review, { summary: 'x', findings: [{ text: 'kernel/fetch.ts opens a socket', material: true }], assumptions: [] }, [{ ref: 'src/kernel/fetch.ts:12' }]);
@@ -142,8 +142,8 @@ test('Scenario D: a standing review fires from an external clock; stale sources 
     assert.equal(deliver.work!.step.id, 'deliver');
     const finished = await submit(fx, deliver, { outcome: 'no drift', recordedIds: [] }, []);
     assert.equal((finished.run as { state: string }).state, 'succeeded', 'the person receives a finished no-drift record');
-    const recipe = fx.broker.triggers.recipe('monthly', 'cron');
-    assert.match(recipe, /construct workflow fire monthly/);
+    const recipe = fx.broker.triggers.recipe('monthly', 'cron', 'codex');
+    assert.match(recipe, /construct workflow fire 'monthly'/);
   } finally {
     fx.cleanup();
   }

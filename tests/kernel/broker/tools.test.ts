@@ -39,7 +39,7 @@ test('every tool is declared once with a closed schema, a plain description, and
     assert.ok(interactive.includes(forbidden), `${forbidden} exists interactively`);
     assert.ok(!headless.includes(forbidden), `${forbidden} is not on the headless surface`);
   }
-  assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
+  assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
 });
 
 test('every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold', () => {

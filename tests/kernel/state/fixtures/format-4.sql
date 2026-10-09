@@ -1,53 +1,4 @@
-/**
- * kernel/state/schema.ts — Construct state format 5.
- *
- * One database per project. Columns that take part in policy, selection,
- * uniqueness, or a state transition are normalized and CHECKed here; JSON
- * columns carry versioned payloads that the owning module validates on the
- * way in and out. The activity table is append-only by trigger, not by
- * caller discipline.
- */
 
-export const REQUIRED_TABLES = [
-  'meta',
-  'project_profile',
-  'statements',
-  'sources',
-  'source_authority',
-  'source_snapshots',
-  'entities',
-  'relations',
-  'claims',
-  'staff_members',
-  'staff_capabilities',
-  'staff_skills',
-  'resolved_skills',
-  'resolved_workflows',
-  'workflow_runs',
-  'step_runs',
-  'step_attempts',
-  'deliverables',
-  'decisions',
-  'grants',
-  'observations',
-  'drift_findings',
-  'lessons',
-  'triggers',
-  'trigger_firings',
-  'activity_events',
-  'work_items',
-  'work_dependencies',
-  'work_events',
-  'work_legacy_ids',
-  'work_runs',
-  'reviews',
-  'run_bindings',
-  'sessions',
-  'session_agents',
-  'path_leases',
-] as const;
-
-export const SCHEMA_SQL = `
 CREATE TABLE meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -451,12 +402,11 @@ CREATE TABLE triggers (
 CREATE TABLE trigger_firings (
   id              TEXT PRIMARY KEY,
   trigger_id      TEXT NOT NULL REFERENCES triggers(id),
-  idempotency_key TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL UNIQUE,
   fired_at        TEXT NOT NULL,
   run_id          TEXT REFERENCES workflow_runs(id),
   outcome         TEXT NOT NULL CHECK (outcome IN ('started', 'skipped_overlap', 'replaced', 'deduplicated', 'blocked', 'disabled')),
-  reason          TEXT,
-  UNIQUE (trigger_id, idempotency_key)
+  reason          TEXT
 );
 CREATE INDEX trigger_firings_trigger ON trigger_firings (trigger_id, fired_at);
 
@@ -648,4 +598,3 @@ CREATE TABLE path_leases (
   release_reason  TEXT
 );
 CREATE INDEX path_leases_live ON path_leases (released_at, until);
-`;

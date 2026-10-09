@@ -1,9 +1,10 @@
 /**
- * kernel/state/migrate.ts — one-way additive upgrades: construct-state 2 to 3
+ * kernel/state/migrate.ts — one-way upgrades: construct-state 2 to 3
  * (the native work ledger and provenance columns) and 3 to 4 (sessions, agent
- * attribution, fenced claims, path leases, and answer channels).
+ * attribution, fenced claims, path leases, and answer channels), then 4 to 5
+ * (trigger-scoped occurrence uniqueness).
  *
- * Format 1 and anything else remain refused unread. A format-2 or format-3
+ * Format 1 and anything else remain refused unread. A format-2, format-3 or format-4
  * store missing one of its format's tables is also refused unread: these
  * upgrades add to a complete store, they do not repair a truncated one.
  * After native writes begin, rolling back to an older snapshot would drop
@@ -319,4 +320,30 @@ export function migrateV3ToV4(db: DatabaseSync): void {
   const reissue = db.prepare('UPDATE work_items SET claim_token = ? WHERE id = ?');
   for (const { id } of held) reissue.run(randomUUID(), id);
   db.prepare(`UPDATE meta SET value = '4' WHERE key = 'format_version'`).run();
+}
+
+
+/** Complete format 4 adds coordination tables to format 3. */
+export function isCompleteV4(db: DatabaseSync): boolean {
+  const names = tableNames(db);
+  return [...V3_REQUIRED_TABLES, 'sessions', 'session_agents', 'path_leases'].every((t) => names.has(t));
+}
+
+/** Scope an occurrence key to its standing intent, preserving all recorded rows. */
+export function migrateV4ToV5(db: DatabaseSync): void {
+  db.exec(`CREATE TABLE trigger_firings_v5 (
+    id TEXT PRIMARY KEY,
+    trigger_id TEXT NOT NULL REFERENCES triggers(id),
+    idempotency_key TEXT NOT NULL,
+    fired_at TEXT NOT NULL,
+    run_id TEXT REFERENCES workflow_runs(id),
+    outcome TEXT NOT NULL CHECK (outcome IN ('started', 'skipped_overlap', 'replaced', 'deduplicated', 'blocked', 'disabled')),
+    reason TEXT,
+    UNIQUE (trigger_id, idempotency_key)
+  );
+  INSERT INTO trigger_firings_v5 SELECT * FROM trigger_firings ORDER BY rowid;
+  DROP TABLE trigger_firings;
+  ALTER TABLE trigger_firings_v5 RENAME TO trigger_firings;
+  CREATE INDEX trigger_firings_trigger ON trigger_firings (trigger_id, fired_at);`);
+  db.prepare("UPDATE meta SET value = '5' WHERE key = 'format_version'").run();
 }

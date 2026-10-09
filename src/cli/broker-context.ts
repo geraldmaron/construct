@@ -4,6 +4,7 @@
  * This is the adapter edge: it reads env and cwd so the kernel need not.
  */
 
+import { runnerCapabilities } from '../hosts/executors.ts';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
 import { join } from 'node:path';
@@ -14,6 +15,7 @@ import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts'
 import type { HostCapabilities } from '../kernel/registry/capability-registry.ts';
 import { createWorkflowService } from '../kernel/workflow/service.ts';
 import { createTriggerService } from '../kernel/workflow/triggers.ts';
+import { projectResolver } from '../kernel/source/resolver.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { hostReaders } from '../hosts/sources/readers.ts';
 import { emptyLock } from '../kernel/project/lock.ts';
@@ -39,22 +41,23 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
   // A local session always has the project checkout and the readers wired here. Interactivity adds a person and
   // the host's own tools for the systems the person already has open: what they read is recorded as evidence, and
   // every write to them is an external write that only the person approves, one action at a time.
-  const declared = new Set<string>(['read_project_context', 'write_project_context', 'run_validator', 'run_tests', 'kernel', 'read_project_files']);
+  const declared = new Set<string>(['read_project_context', 'write_project_context', 'run_validator', 'kernel', 'read_project_files']);
   for (const kind of readerKinds) declared.add(`read_source:${kind}`);
   const permitted = new Set<string>(declared);
   if (binding.surface === 'interactive') {
-    for (const c of ['ask_user', 'model_review', 'read_source', 'write_source']) {
+    for (const c of ['ask_user', 'model_review', 'read_source', 'write_source', 'run_tests']) {
       declared.add(c);
       permitted.add(c);
     }
     permitted.add('write_project_files');
   }
-  const unavailable = binding.surface === 'headless' ? ['ask_user', 'model_review', 'write_project_files', 'read_source', 'write_source'] : [];
+  if (binding.surface === 'headless') for (const capability of runnerCapabilities(binding.executorId)) { declared.add(capability); permitted.add(capability); }
+  const unavailable = binding.surface === 'headless' ? ['ask_user', 'model_review', 'write_project_files', 'read_source', 'write_source', 'run_tests'].filter((c) => !permitted.has(c)) : [];
   return {
     hostId: binding.client,
     sessionId,
     executorId: binding.executorId,
-    available: permitted,
+    available: new Set(permitted),
     declared,
     reported: [],
     probed: [],
@@ -63,8 +66,8 @@ export function hostCapabilitiesFor(binding: BrokerBinding, sessionId: string | 
     exercised: new Set(),
     maxTier: binding.surface === 'interactive' ? 'external_write' : 'project_write',
     restrictions: binding.surface === 'headless'
-      ? ['no person is present: nothing that needs a decision proceeds']
-      : ['writes to the person\'s systems go through the host\'s own tools and are external writes the person approves per action'],
+      ? ['no person is present: nothing that needs a decision proceeds', runnerCapabilities(binding.executorId).length ? 'explicit host adapter declares local model, file and command capabilities; external connectors are not provisioned, and execution is verified separately' : 'no model or test executor is supplied by this broker; a clock firing alone does not perform model work']
+      : ['host-mediated capabilities are declarations, not proof that a connector, test executable, or sandbox permission is available; discover and report actual access', 'writes to the person\'s systems go through the host\'s own tools and are external writes the person approves per action'],
     budgetCents: null,
   };
 }
@@ -120,7 +123,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
   };
   const available = () => sources.list().map((s) => {
     const st = sources.status(s.id, ctx.now());
-    return { kind: s.kind, id: s.id, reachability: s.reachability, freshness: st.freshness, lastReadAt: st.lastSnapshot?.takenAt ?? null };
+    return { kind: s.kind, id: s.id, reachability: s.canRead ? s.reachability : 'unreachable' as const, freshness: st.freshness, lastReadAt: st.lastSnapshot?.takenAt ?? null };
   });
   const workflow = createWorkflowService({
     store: project.store,
@@ -130,6 +133,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     host,
     sources: available,
     projectWritePolicy,
+    resolveEvidence: (ref) => projectResolver(project.store, project.root, null, { hostReads: policy.hostReads })(ref),
     now: ctx.now,
     nextId: ctx.nextId,
     targetSystemFor: (step) => step.sources[0]?.kind ?? (step.tier === 'project_write' ? 'project' : 'external'),
