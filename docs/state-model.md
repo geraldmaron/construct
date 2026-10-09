@@ -54,7 +54,7 @@ One SQLite database per project at `.construct/state/construct.sqlite`, format `
 |---|---|
 | `preflight` | `blocked`, `ready`, `failed`, `cancelled` |
 | `blocked` | `preflight`, `ready`, `failed`, `cancelled` |
-| `ready` | `running`, `blocked`, `cancelled` |
+| `ready` | `running`, `blocked`, `failed`, `cancelled` |
 | `running` | `waiting_for_decision`, `blocked`, `succeeded`, `failed`, `cancelled` |
 | `waiting_for_decision` | `running`, `failed`, `cancelled` |
 | `succeeded` | (terminal) |

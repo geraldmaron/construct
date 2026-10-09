@@ -1,0 +1,1139 @@
+[
+  {
+    "atMs": 1791579014822,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791579014829,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791579037248,
+    "call": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations"
+    ]
+  },
+  {
+    "atMs": 1791579037274,
+    "resultFor": "check_answer",
+    "isError": false
+  },
+  {
+    "atMs": 1791579057303,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791579057312,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791579064891,
+    "call": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "period",
+      "scope",
+      "words"
+    ],
+    "reading": {
+      "kind": "manage",
+      "deliverable": {
+        "kind": "research/brief"
+      }
+    }
+  },
+  {
+    "atMs": 1791579065043,
+    "resultFor": "classify_request",
+    "isError": false,
+    "recorded": false,
+    "questions": [],
+    "hostQuestions": []
+  },
+  {
+    "atMs": 1791579081662,
+    "call": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "workflowId": "research-brief"
+  },
+  {
+    "atMs": 1791579081713,
+    "resultFor": "start_outcome",
+    "isError": false,
+    "started": true,
+    "run": {
+      "id": "run-38981b21",
+      "state": "ready",
+      "workflow": "research-brief"
+    }
+  },
+  {
+    "atMs": 1791579090539,
+    "call": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579090550,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "gather",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579116700,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ]
+  },
+  {
+    "atMs": 1791579116713,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579124121,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ]
+  },
+  {
+    "atMs": 1791579124130,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579130169,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ]
+  },
+  {
+    "atMs": 1791579130171,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579136347,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ]
+  },
+  {
+    "atMs": 1791579136353,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579197100,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579197107,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579204417,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579204420,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579211069,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579211072,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579224166,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "coverage",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579224184,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579229991,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "outcome",
+      "reason",
+      "scope"
+    ]
+  },
+  {
+    "atMs": 1791579229993,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579252198,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579252232,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "named_sources_read",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "conflicts_declared",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "reference_coverage",
+        "ok": false,
+        "problems": [
+          "unread reference http://127.0.0.1:63154 from README.md: read and report material evidence, or give a referenceDispositions entry {ref, status, why}"
+        ]
+      }
+    ],
+    "run": {
+      "id": "run-38981b21",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579271044,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579271049,
+    "resultFor": "submit_work",
+    "isError": true,
+    "error": "step step-bcc8dc29 is not held by this session under that token; claim it again"
+  },
+  {
+    "atMs": 1791579278167,
+    "call": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579278173,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "gather",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579293286,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579293385,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "named_sources_read",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "conflicts_declared",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "reference_coverage",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-38981b21",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579298416,
+    "call": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579298423,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "synthesize",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579318484,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579318695,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "sources_diverse",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "numbers_grounded",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "superseded_acknowledged",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "no_uncited_material_findings",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "settled_not_contradicted",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-38981b21",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579323951,
+    "call": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579323965,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "challenge",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579344575,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579344606,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "no_uncited_material_findings",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-38981b21",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579352347,
+    "call": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ]
+  },
+  {
+    "atMs": 1791579352352,
+    "resultFor": "promote_deliverable",
+    "isError": false
+  },
+  {
+    "atMs": 1791579359528,
+    "call": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579359570,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "record",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579368262,
+    "call": "work",
+    "argumentKeys": [
+      "action"
+    ]
+  },
+  {
+    "atMs": 1791579368274,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579376743,
+    "call": "work",
+    "argumentKeys": [
+      "action",
+      "paths"
+    ]
+  },
+  {
+    "atMs": 1791579376745,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579385684,
+    "call": "remember",
+    "argumentKeys": [
+      "kind",
+      "text"
+    ]
+  },
+  {
+    "atMs": 1791579385688,
+    "resultFor": "remember",
+    "isError": false
+  },
+  {
+    "atMs": 1791579395533,
+    "call": "work",
+    "argumentKeys": [
+      "acceptance",
+      "action",
+      "description",
+      "kind",
+      "serves",
+      "title"
+    ]
+  },
+  {
+    "atMs": 1791579395542,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579401417,
+    "call": "work",
+    "argumentKeys": [
+      "action",
+      "id",
+      "paths"
+    ]
+  },
+  {
+    "atMs": 1791579401429,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579419114,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791579419157,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791579425416,
+    "call": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "scope",
+      "target",
+      "words"
+    ],
+    "reading": {
+      "kind": "manage",
+      "deliverable": {
+        "kind": "document/revision"
+      }
+    }
+  },
+  {
+    "atMs": 1791579425456,
+    "resultFor": "classify_request",
+    "isError": false,
+    "recorded": false,
+    "questions": [
+      {
+        "slot": "deliverable",
+        "ask": "Which finished piece of work should this use?",
+        "blocking": true,
+        "neededBy": "revise-deliverable",
+        "from": "kernel"
+      },
+      {
+        "slot": "change",
+        "ask": "What should change, and why?",
+        "blocking": true,
+        "neededBy": "revise-deliverable",
+        "from": "kernel"
+      }
+    ],
+    "hostQuestions": []
+  },
+  {
+    "atMs": 1791579439794,
+    "call": "project_context",
+    "argumentKeys": [
+      "topic"
+    ]
+  },
+  {
+    "atMs": 1791579439796,
+    "resultFor": "project_context",
+    "isError": false
+  },
+  {
+    "atMs": 1791579446997,
+    "call": "work",
+    "argumentKeys": [
+      "action",
+      "id"
+    ]
+  },
+  {
+    "atMs": 1791579447000,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579452231,
+    "call": "run_status",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579452234,
+    "resultFor": "run_status",
+    "isError": false,
+    "run": {
+      "id": "run-38981b21",
+      "state": "running",
+      "workflow": "research-brief"
+    }
+  },
+  {
+    "atMs": 1791579495285,
+    "call": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "workflowId": "revise-deliverable"
+  },
+  {
+    "atMs": 1791579495294,
+    "resultFor": "start_outcome",
+    "isError": false,
+    "started": true,
+    "run": {
+      "id": "run-cbfed516",
+      "state": "ready",
+      "workflow": "revise-deliverable"
+    }
+  },
+  {
+    "atMs": 1791579502930,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579502939,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579509681,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579509686,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579515255,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791579515266,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791579521862,
+    "call": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths",
+      "reason"
+    ]
+  },
+  {
+    "atMs": 1791579521864,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579526730,
+    "call": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579526737,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "gather",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579534585,
+    "call": "project_context",
+    "argumentKeys": [
+      "limit",
+      "query",
+      "topic"
+    ]
+  },
+  {
+    "atMs": 1791579534588,
+    "resultFor": "project_context",
+    "isError": false
+  },
+  {
+    "atMs": 1791579549523,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579549530,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "superseded_acknowledged",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "conflicts_declared",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "reference_coverage",
+        "ok": false,
+        "problems": [
+          "unread reference http://127.0.0.1:63154 from README.md: read and report material evidence, or give a referenceDispositions entry {ref, status, why}"
+        ]
+      }
+    ],
+    "run": {
+      "id": "run-cbfed516",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579555331,
+    "call": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579555335,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "gather",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579572868,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579572875,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "superseded_acknowledged",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "conflicts_declared",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "reference_coverage",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-cbfed516",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579581606,
+    "call": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579581607,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "revise",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579591737,
+    "call": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths"
+    ]
+  },
+  {
+    "atMs": 1791579591738,
+    "resultFor": "work",
+    "isError": false
+  },
+  {
+    "atMs": 1791579629455,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579629464,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "artifacts_exist",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "numbers_grounded",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "template_conformance",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "superseded_acknowledged",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "revision_linked",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "settled_not_contradicted",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-cbfed516",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579639584,
+    "call": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ]
+  },
+  {
+    "atMs": 1791579639588,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "challenge",
+    "managedDeliveryReservation": false
+  },
+  {
+    "atMs": 1791579659333,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791579659339,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "no_uncited_material_findings",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-cbfed516",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791579666555,
+    "call": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ]
+  },
+  {
+    "atMs": 1791579666557,
+    "resultFor": "promote_deliverable",
+    "isError": false
+  }
+]

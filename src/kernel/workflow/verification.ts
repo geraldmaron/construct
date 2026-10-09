@@ -2,7 +2,7 @@ import { selectedVerifier, verifierProblems } from './verifier-contract.ts';
 import type { StateStore } from '../state/open.ts';
 import type { WorkflowStep } from '../registry/models.ts';
 import { getRun } from '../state/runs.ts';
-import { listSteps } from '../state/steps.ts';
+import { listSteps, type StepRun } from '../state/steps.ts';
 /** Kernel content receipts separate byte identity and deterministic checks from host-reported execution. */
 import { createHash } from 'node:crypto';
 import type { RefResolver } from '../project/evidence.ts';
@@ -23,6 +23,8 @@ export interface VerificationReceipt {
   readonly semanticSupportVerified: false;
   readonly subjects: readonly ContentReceipt[];
   readonly evidence: readonly ContentReceipt[];
+  /** Earlier source bytes intentionally edited as production artifacts; historical, not current support. */
+  readonly baselines?: readonly ContentReceipt[];
   readonly checks: readonly { readonly validator: string; readonly ok: boolean }[];
 }
 
@@ -45,16 +47,52 @@ export function artifactRefs(output: unknown): string[] {
 }
 export function verificationReceipt(input: {
   runId: string; stepRunId: string; observedAt: string; actor: string; subjects: readonly string[];
+  priorEvidence?: readonly ContentReceipt[];
   evidence: readonly { readonly ref: string }[]; checks: readonly { readonly validator: string; readonly ok: boolean }[]; resolve?: RefResolver;
 }): VerificationReceipt {
+  const produced = (ref: string) => sameProducedFile(ref, input.subjects, input.resolve);
+  const prior = input.priorEvidence ?? [];
+  const held = new Map(prior.filter((e) => !produced(e.ref)).map((e) => [e.ref, e]));
+  for (const { ref } of input.evidence) if (!held.has(ref) && !produced(ref)) held.set(ref, contentReceipt(ref, input.resolve));
   return {
     formatVersion: 1, runId: input.runId, stepRunId: input.stepRunId, observedAt: input.observedAt, actor: input.actor,
     assurance: 'structural', executionVerified: false, semanticSupportVerified: false,
     subjects: [...new Set(input.subjects)].map((ref) => contentReceipt(ref, input.resolve)),
-    evidence: [...new Set(input.evidence.map((e) => e.ref))].map((ref) => contentReceipt(ref, input.resolve)),
+    evidence: [...held.values()],
+    ...(prior.some((e) => produced(e.ref)) ? { baselines: prior.filter((e) => produced(e.ref)) } : {}),
     checks: input.checks.map(({ validator, ok }) => ({ validator, ok })),
   };
 }
+/** A prior claim keeps its observed bytes. Legacy citations without receipts stay unwitnessed. */
+export function inheritedEvidence(steps: readonly StepRun[]): ContentReceipt[] {
+  const held = new Map<string, ContentReceipt>();
+  for (const step of steps.filter((s) => s.state === 'succeeded')) {
+    const output = step.output as { verificationReceipt?: VerificationReceipt; evidence?: { ref: string }[] } | null;
+    for (const entry of output?.verificationReceipt?.evidence ?? []) {
+      const key = JSON.stringify([entry.ref, entry.digest, entry.provenance]);
+      held.set(key, entry);
+    }
+    if (!output?.verificationReceipt) for (const { ref } of output?.evidence ?? []) held.set(ref, { ref, digest: null, provenance: 'legacy_unwitnessed' });
+  }
+  return [...held.values()];
+}
+function sameProducedFile(ref: string, subjects: readonly string[], resolve?: RefResolver): boolean {
+  const hit = resolve?.(ref);
+  return hit?.kind === 'file' && subjects.some((subject) => {
+    const output = resolve?.(subject);
+    return output?.kind === 'file' && (hit.path && output.path ? hit.path === output.path : subject.replace(/^\.\//, '') === ref.replace(/^\.\//, ''));
+  });
+}
+/** Run inputs changing between steps invalidates their derived work, even if the final command passes. */
+export function stalePriorEvidence(prior: readonly ContentReceipt[], subjects: readonly string[], resolve?: RefResolver): string[] {
+  if (!resolve) return [];
+  return [...new Set(prior.filter((entry) => {
+    if (entry.digest === null || sameProducedFile(entry.ref, subjects, resolve)) return false;
+    const current = contentReceipt(entry.ref, resolve);
+    return current.digest !== entry.digest || current.provenance !== entry.provenance;
+  }).map((entry) => entry.ref))];
+}
+
 /** Missing or changed content cannot inherit a receipt for previously observed bytes. */
 export function staleReceiptSubjects(receipt: VerificationReceipt, resolve: RefResolver): string[] {
   return [...new Set([...receipt.subjects, ...receipt.evidence.filter((entry) => entry.digest !== null)].filter((subject) => subject.digest === null || contentReceipt(subject.ref, resolve).digest !== subject.digest).map((subject) => subject.ref))];

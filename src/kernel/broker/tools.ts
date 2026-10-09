@@ -757,6 +757,11 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
     recoverAbandonedSteps(ctx, runId);
     const { c, delivery } = ctx.store.transaction(() => {
       const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
+      const settledRunId = runId ?? (c.waitingOn?.kind === 're_resolve' ? c.waitingOn.runId : undefined);
+      if (!c.packet && settledRunId) {
+        const run = getRun(ctx.store, settledRunId);
+        if (run) settleManagedDelivery(ctx, run.id, run.state);
+      }
       return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
     });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };

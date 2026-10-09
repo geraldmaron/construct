@@ -1,0 +1,111 @@
+{
+  "trial": "fresh-codex-one",
+  "phases": {
+    "qa": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 34608,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    },
+    "initial": {
+      "name": "initial",
+      "code": null,
+      "timedOut": true,
+      "elapsedMs": 360026,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 4,
+        "deliverables": 1,
+        "work_items": 1,
+        "sources": 4,
+        "source_snapshots": 4
+      },
+      "artifact": null
+    },
+    "changed": {
+      "status": "interrupted without a completion receipt; cause unconfirmed"
+    }
+  },
+  "qaAnswer": "**Hold steady; do not recommend replenishment.** The local policy triggers replenishment only when net stock (available minus reserved) is **below 60 individual units**, not exactly 60.\n\nSource: `docs/policy.md:2`.",
+  "finalState": {
+    "runs": [
+      {
+        "id": "run-38981b21",
+        "workflow_id": "research-brief",
+        "state": "running",
+        "state_reason": null
+      },
+      {
+        "id": "run-cbfed516",
+        "workflow_id": "revise-deliverable",
+        "state": "running",
+        "state_reason": null
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-38981b21",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-38981b21",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-38981b21",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-38981b21",
+        "step_id": "record",
+        "state": "leased",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-cbfed516",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-cbfed516",
+        "step_id": "revise",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-cbfed516",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-cbfed516",
+        "step_id": "record",
+        "state": "ready",
+        "state_reason": null
+      }
+    ],
+    "work": [
+      {
+        "id": "work-71bf0f5e",
+        "status": "claimed"
+      }
+    ]
+  }
+}

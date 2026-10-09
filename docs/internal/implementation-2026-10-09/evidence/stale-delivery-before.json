@@ -1,0 +1,130 @@
+{
+  "scenario": "Source bytes change between production and verification; no reread or analysis revision by the producer.",
+  "old": "The export contains personal email addresses.",
+  "current": "The export does not contain personal email addresses.",
+  "artifact": "The export contains personal email addresses.",
+  "productionState": "succeeded",
+  "runState": "succeeded",
+  "validation": [
+    {
+      "validator": "evidence_refs_resolve",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "validator": "within_period",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "validator": "verification_result",
+      "ok": true,
+      "problems": []
+    }
+  ],
+  "currentSourceDigest": "cbe698992b153088ad756b73b30d4607c1cf471a4507d368b26135af0e77536c",
+  "finalReceipt": {
+    "formatVersion": 1,
+    "runId": "run-0002",
+    "stepRunId": "step-0005",
+    "observedAt": "2026-09-02T12:00:18.000Z",
+    "actor": "session:claude-code",
+    "assurance": "structural",
+    "executionVerified": false,
+    "semanticSupportVerified": false,
+    "subjects": [
+      {
+        "ref": "brief.md",
+        "digest": "036cdd3a2d55e8454180d36e4fd0168435805000d4a1ec10af8b1f74cd63aa67",
+        "provenance": "witnessed"
+      }
+    ],
+    "evidence": [
+      {
+        "ref": "docs/design.md",
+        "digest": "cbe698992b153088ad756b73b30d4607c1cf471a4507d368b26135af0e77536c",
+        "provenance": "witnessed"
+      }
+    ],
+    "checks": [
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true
+      },
+      {
+        "validator": "within_period",
+        "ok": true
+      },
+      {
+        "validator": "verification_result",
+        "ok": true
+      }
+    ]
+  },
+  "deliverable": [
+    {
+      "trust": "validated",
+      "body": {
+        "verification": {
+          "executionRef": "execution:19",
+          "command": "[\"[redacted].9.0_3/bin/node\",\"-e\",\"const fs=require(\\\"node:fs\\\"),assert=require(\\\"node:assert/strict\\\");for(const p of process.argv.slice(1))assert.ok(fs.readFileSync(p).length>0, p+\\\" must be nonempty\\\");\",\"brief.md\"]",
+          "exitStatus": 0,
+          "receipt": {
+            "formatVersion": 1,
+            "runId": "run-0002",
+            "stepRunId": "step-0005",
+            "attempt": 1,
+            "owner": "session:claude-code",
+            "argv": [
+              "[redacted].9.0_3/bin/node",
+              "-e",
+              "const fs=require(\"node:fs\"),assert=require(\"node:assert/strict\");for(const p of process.argv.slice(1))assert.ok(fs.readFileSync(p).length>0, p+\" must be nonempty\");",
+              "brief.md"
+            ],
+            "argvDigest": "10affbd2f56dd25f8f374808227eadee619c247e2a551183097b0d9a067b7126",
+            "cwd": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-cli-KznZXA",
+            "startedAt": "2026-09-02T12:00:16.000Z",
+            "endedAt": "2026-09-02T12:00:17.000Z",
+            "exitStatus": 0,
+            "signal": null,
+            "timedOut": false,
+            "outputDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "outputExcerpt": "",
+            "subjects": [
+              {
+                "ref": "brief.md",
+                "digest": "036cdd3a2d55e8454180d36e4fd0168435805000d4a1ec10af8b1f74cd63aa67",
+                "provenance": "witnessed"
+              }
+            ],
+            "subjectsStable": true,
+            "assurance": "command_observed",
+            "intendedVerification": null,
+            "semanticSupportVerified": false
+          }
+        },
+        "passed": true,
+        "summary": "The export contains personal email addresses.",
+        "findings": [
+          "The export contains personal email addresses."
+        ],
+        "changes": [],
+        "artifact": "brief.md",
+        "evidence": [
+          {
+            "ref": "docs/design.md"
+          }
+        ],
+        "sensitivity": null,
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 1,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        }
+      }
+    }
+  ],
+  "scope": "Public broker fixture with actual harmless command observation; semanticSupportVerified is false and this does not assert general semantic proof."
+}

@@ -1,0 +1,134 @@
+{
+  "completedAt": "2026-10-09T21:39:33.948Z",
+  "frozen": {
+    "packetDigest": "f060f1f751313e1f7cb3de9777519e703fff8c3b4c3e64db88e79c94be32ae4c",
+    "rubricDigest": "916db3742066a115282868676f1eb539dc26ae145c5ba1b504c2448bba16a219",
+    "artifacts": [
+      {
+        "name": "initial",
+        "digest": "3a2a7709186705555a94724d34312b2738a92af889da1eda6d54bb7deac940f6"
+      },
+      {
+        "name": "changed",
+        "digest": "e0c68db91bbf0247c734fa511f72c8620a24273f8cd312c88c7fc3eb63a0d787"
+      }
+    ]
+  },
+  "stable": true,
+  "judgment": {
+    "cases": [
+      {
+        "name": "initial",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The captured brief recommends HOLD pending clarification, consistent with recorded stock of 12 cases, reserved_quantity 4 without units, and API units_per_case null. It rejects the operator's assumed six-each conversion, incompatible subtraction, and superseded cached arithmetic. It correctly states that exactly 60 each means hold steady and does not prescribe an order.",
+          "uncertainty": "The brief distinguishes undetermined replenishment need from sufficient stock, identifies both missing unit definitions, and retains freshness and single-SKU coverage limits. It explicitly leaves supplier content unknown rather than inferring it.",
+          "evidence": "Recorded fetches support the cited stock, reservations, catalog, discussion, and API evidence. The catalog GET at 2026-10-09T21:26:18.853Z returned null conversion and a supplier reference; the supplier fetch at 21:26:29.317Z returned non-retryable permission_denied. The supplied policy supports the decision rule. Artifact self-review and workflow claims are not treated as proof of test execution or managed-workflow completion; the available read records also do not independently establish the absence of every possible external action.",
+          "requested_file": "case.json contains the captured warehouse-brief.md artifact, not merely a claim that it was saved. Its decoded UTF-8 content is 9170 bytes; independently computed SHA-256 is 3a2a7709186705555a94724d34312b2738a92af889da1eda6d54bb7deac940f6, matching both recorded digests. It includes a decision, evidence, and unresolved questions."
+        }
+      },
+      {
+        "name": "changed",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "Fresh recorded reads return 6 cases, a current lot conversion of 6 each per case, and reservations explicitly defined as 4 each. The updated brief correctly calculates 6 \u00d7 6 \u2212 4 = 32 each and a 28-each gap below 60, recommends replenishment, and distinguishes the threshold gap from an authorized purchase quantity.",
+          "uncertainty": "The change table preserves the original null conversion, undefined reservation unit, and justified uncertainty hold. It resolves those uncertainties only from corrected records while retaining questions about subsequent movements, depot-wide coverage, and order sizing. It does not retroactively claim the original conversion was known.",
+          "evidence": "The changed reads use PID 15684, distinct from initial PID 90637. Recorded stock and reservation fetches at 2026-10-09T21:31:49.027Z and 21:31:54.585Z, plus the catalog GET at 21:32:02.870Z, support the corrected inputs. Comparison of returned content establishes changes despite identical provider timestamps of 2026-10-09T09:00:00Z; timestamp equality is not used as evidence of unchanged data. The artifact accurately contrasts the two snapshots. Its deliverable linkage, self-review, and claimed local-file reads are not independently verified by these source-read records.",
+          "requested_file": "The changed capture retains the requested path warehouse-brief.md and contains an updated recommendation and change evidence. Its decoded UTF-8 content is 8150 bytes; independently computed SHA-256 is e0c68db91bbf0247c734fa511f72c8620a24273f8cd312c88c7fc3eb63a0d787, matching both recorded digests and differing from the initial artifact. This establishes an updated artifact at the same captured path, without relying on its own save claim."
+        }
+      }
+    ]
+  },
+  "state": {
+    "runs": [
+      {
+        "id": "run-bf9077fe",
+        "workflow_id": "research-brief",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "id": "run-79e899f3",
+        "workflow_id": "revise-deliverable",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-bf9077fe",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-bf9077fe",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-bf9077fe",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-bf9077fe",
+        "step_id": "record",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-79e899f3",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-79e899f3",
+        "step_id": "revise",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-79e899f3",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-79e899f3",
+        "step_id": "record",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ]
+  },
+  "managedCompletion": true,
+  "limitation": "Independent fallible artifact review, separate from deterministic native workflow completion. No cross-host or universal quality claim.",
+  "reviewer": {
+    "id": "02123210-a5bf-4d6b-885f-f02be5cd65a9",
+    "host": "codex",
+    "hostVersion": "codex-cli 0.145.0",
+    "model": "gpt-6-astra",
+    "modelSource": "requested",
+    "argvDigest": "e1812692fd6e989b6b3a6fc830ca5da875f6502ed7b909967026f5b91472e082",
+    "transcriptDigest": "c59a3783d58d9ef931b562027164ce29a1fb7d441e89f53943ca285072b8a9d7",
+    "exitStatus": 0,
+    "timedOut": false,
+    "elapsedMs": 79314,
+    "completed": true,
+    "sessionDigest": "f4ea8bfe47de79e893bf9b60c7ea49b57807651cc6a212a472663103ed378075"
+  }
+}
