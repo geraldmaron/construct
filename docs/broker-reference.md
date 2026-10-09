@@ -15,13 +15,54 @@ Surface: both. Reads only: yes.
 
 ### `classify_request`
 
-What kind of request is this. Call this first for any request that is not obviously a plain question. Tells you whether it is a question (answer it, record nothing), something to remember, an outcome to manage, a standing outcome to maintain, or a matter of working alongside other agents (which the work tool serves), and ranks the skills that fit the person’s own words so you can choose without them naming one. You are the judge: the ranking orders, it does not decide.
+Report your reading of a request. Call this when the person wants something produced, reviewed, kept up on a schedule, or handed to another agent, however they phrase it, questions included ("can you put together…"). A plain question needs no call; the remember and work tools are called directly. Report your own reading: Construct does not read intent from the words. It checks the reading, works out periods and source ids, names the workflows whose declared deliverable fits, returns only the questions that block, and records nothing. kind: answer, remember, manage (produce or review something), maintain (keep it up on a schedule or an event), or coordinate (work alongside other agents). For manage or maintain, give deliverable: a listed kind, or other with describe. Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; memo/issue-spotting; constitution/review; publication; anything else: other with describe. Prefer period.relative or quarter over computing dates. Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"other","describe":"architecture diagram"},"period":{"semantics":"evidence_window","from":"2026-07-01","to":"2026-09-30","phrase":"only covering 2026-07-01 to 2026-09-30"},"sources":[{"name":"Jira","role":"read"}]}. Then ask the person every returned question in one message, and call start_outcome with the returned intake.
 
 Surface: interactive. Reads only: yes.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `text` | string | yes | The request in the person’s words. |
+| `words` | string | yes | The person’s request, verbatim. |
+| `kind` | `answer`, `remember`, `manage`, `maintain`, `coordinate` | yes | What they ask for. |
+| `deliverable` | object | no | For manage or maintain: what they want back. |
+| `deliverable.kind` | string | yes | A listed kind, a family, or other. |
+| `deliverable.describe` | string | no | In a few words; required with other. |
+| `skill` | string | no | The skill whose method fits, by id. |
+| `workflowId` | string | no | A workflow to start, if you know it. |
+| `target` | string | no | The document, file or system worked on. |
+| `scope` | string | no | What it covers, if narrower. |
+| `period` | object | no | The period they named. |
+| `period.semantics` | `as_of`, `changed_during`, `evidence_window` | yes | as_of: how things stood at its end; changed_during: what changed in it; evidence_window: only evidence dated in it. |
+| `period.relative` | `this_week`, `last_week`, `this_month`, `last_month`, `this_quarter`, `last_quarter`, `this_year`, `last_year`, `year_to_date`, `last_n_days` | no | Relative to today. |
+| `period.n` | number | no | Days, for last_n_days. |
+| `period.quarter` | number | no | 1 to 4. |
+| `period.year` | number | no | Four digits. |
+| `period.from` | string | no | YYYY-MM-DD. |
+| `period.to` | string | no | YYYY-MM-DD. |
+| `period.timezone` | string | no | IANA, such as Europe/Berlin. |
+| `period.phrase` | string | no | Their words for it. |
+| `sources` | list of object | no | The systems they named. |
+| `sources[].name` | string | yes | As named, such as Jira. |
+| `sources[].id` | string | no | Its declared id, if any. |
+| `sources[].role` | `read`, `subject` | no | read (the default) or subject. |
+| `destination` | object | no | Where the result goes. |
+| `destination.kind` | `chat`, `project_file`, `registered_source`, `external` | yes | What kind of place. |
+| `destination.ref` | string | no | A file path, a place in the source, or an address. |
+| `destination.name` | string | no | For registered_source: its id. |
+| `schedule` | object | no | For maintain: when it runs. |
+| `schedule.cron` | string | no | Five fields. |
+| `schedule.timezone` | string | no | IANA; required with cron. |
+| `schedule.event` | string | no | An event name. |
+| `schedule.phrase` | string | no | Their words for it. |
+| `coordination` | `handoff`, `accept`, `awareness`, `takeover`, `claim` | no | For coordinate: which action. |
+| `stakes` | object | no | What it touches; only raises rigor. |
+| `stakes.reversible` | boolean | no | False when it is hard to undo. |
+| `stakes.affects` | list of `none`, `production`, `shared_data`, `personal_data`, `security`, `money`, `legal`, `customers`, `other_teams`, `public` | no | What it touches. |
+| `open` | list of object | no | What the conversation leaves open. |
+| `open[].about` | `deliverable`, `period`, `sources`, `destination`, `audience`, `schedule`, `scope`, `other` | no | What it is about. |
+| `open[].question` | string | yes | As you would put it to the person. |
+| `open[].blocking` | boolean | yes | True when work cannot start without it. |
+| `open[].assumption` | string | no | If not blocking, what you take as given. |
+| `inputs` | object | no | Workflow inputs by their own keys. |
 
 ### `project_context`
 
@@ -45,9 +86,9 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `kind` | `decision`, `constraint`, `principle`, `note`, `outcome`, `non_goal`, `success_measure`, `unknown` | yes | What kind of thing this is. |
 | `text` | string | yes | The person’s wording, as they said it. |
-| `assumptions` | array | no | Load-bearing assumptions this governing record rests on. |
+| `assumptions` | list of string | no | Load-bearing assumptions this governing record rests on. |
 | `replaces` | string | no | The id of a statement this one supersedes. |
-| `contradicts` | array | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
+| `contradicts` | list of string | no | For a decision: short terms it rules out ("exactly-once"), so later work stating them as current is caught. Only terms the person named. |
 
 ### `workflows`
 
@@ -75,14 +116,15 @@ Surface: interactive. Reads only: yes.
 
 ### `start_outcome`
 
-Start an outcome. Start a managed outcome by running a workflow. It is resolved first; if something is missing, the run waits blocked with the reasons and what would fix them; starting again after the fix replaces it, or with unchanged input checks it again. If this work is already running you get that run back, with any inputs you gave differently named. Returns the run and what it needs. Then call claim_work to do the next step here.
+Start an outcome. Start a workflow run in this session. Pass the intake classify_request returned, with the person’s answers applied; Construct checks it again here, so skipping classify_request skips no check, and if a required detail or a blocking question is still open nothing starts and you get the questions back. Without an intake, pass the workflow input yourself. If this work is already running you get that run back, with what you gave differently named. Returns the run and what it needs; then call claim_work to do the next step here. Never start work for a plain question.
 
 Surface: interactive. Reads only: no.
 
 | Input | Type | Required | Meaning |
 |---|---|---|---|
-| `workflowId` | string | yes | Which workflow. |
-| `input` | object | yes | The workflow input. |
+| `workflowId` | string | yes | Which workflow: one classify_request matched. |
+| `input` | object | no | Workflow inputs by their keys; with an intake, only what the reading does not carry. |
+| `intake` | object | no | The intake classify_request returned, with the person’s answers applied; Construct checks it again. |
 
 ### `claim_work`
 
@@ -107,7 +149,7 @@ Surface: both. Reads only: no.
 | `token` | string | yes | From claim_work: the lease’s secret. |
 | `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
-| `evidence` | array | no | What was read: {ref, excerpt?} entries. |
+| `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
 
 ### `run_status`
@@ -152,7 +194,7 @@ Surface: interactive. Reads only: no.
 |---|---|---|---|
 | `action` | `list`, `show`, `refresh`, `report`, `declare` | yes | list, show, refresh, report, or declare. |
 | `id` | string | no | The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter. |
-| `items` | array | no | For report: {ref, url?, title?, updatedAt?, text?, kind?} for each item you read; url is the http(s) address a person would open for it. |
+| `items` | list of object | no | For report: {ref, url?, title?, updatedAt?, text?, kind?} for each item you read; url is the http(s) address a person would open for it. |
 | `partial` | boolean | no | For report: you read only some of the source; items you did not report are kept, not treated as removed. |
 | `kind` | `github`, `jira`, `docs`, `hris`, `other` | no | For declare: what kind of system it is; other covers chat, monitoring tools, and the open web. |
 | `purpose` | string | no | For declare: what the person uses it for, in one sentence. |
@@ -167,9 +209,9 @@ Surface: interactive. Reads only: no.
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `answer` | string | yes | The answer you are about to give, as you would give it. |
-| `citations` | array | no | What it rests on: {ref, excerpt?} entries. |
+| `citations` | list of object | no | What it rests on: {ref, excerpt?} entries. |
 | `period` | object | no | The period the answer covers, when it covers one: {semantics: as_of \| changed_during \| evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}. |
-| `outsidePeriod` | array | no | Cited items updated after the period that belong in the answer anyway: {ref, why} entries. |
+| `outsidePeriod` | list of object | no | Cited items updated after the period that belong in the answer anyway: {ref, why} entries. |
 
 ### `staff`
 
@@ -209,16 +251,16 @@ Surface: interactive. Reads only: no.
 | `description` | string | no | For add and update: what the work is, in enough detail to pick it up cold. |
 | `parent` | string | no | For add and link: the work item this one is part of. |
 | `serves` | string | no | For add and link: the decision, requirement, initiative, or metric this work serves, by entity id or governing statement id. |
-| `blockedBy` | array | no | For add, link, and unlink: work that must finish before this is ready. |
-| `related` | array | no | For add, link, and unlink: work that gives context without blocking. |
-| `acceptance` | array | no | For add and update: observable criteria a finished item meets, one each. update replaces the list. |
+| `blockedBy` | list of string | no | For add, link, and unlink: work that must finish before this is ready. |
+| `related` | list of string | no | For add, link, and unlink: work that gives context without blocking. |
+| `acceptance` | list of string | no | For add and update: observable criteria a finished item meets, one each. update replaces the list. |
 | `risk` | string | no | For add and update: what could go wrong. |
-| `sources` | array | no | For add and update: source ids whose refresh sends this work back for requalification. |
+| `sources` | list of string | no | For add and update: source ids whose refresh sends this work back for requalification. |
 | `removeParent` | boolean | no | For unlink: remove the parent. |
 | `reason` | string | no | Required for reopen, takeover, and requalify; for complete, required when the work has acceptance criteria, saying how they were met. |
 | `token` | string | no | The token your claim returned: renews a claim, completes or releases it. |
 | `agent` | string | no | Which agent in this session is acting, when the host runs several (for example a subagent’s name). Claims are held per agent. |
-| `paths` | array | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |
+| `paths` | list of string | no | Files or directories (ending in /) relative to the repository root, for claim and check. A claim reserves them while it is held. |
 | `mode` | `exclusive`, `shared` | no | exclusive (the default) keeps other claims in this checkout off the paths; shared lets other shared claims read alongside. |
 | `packet` | object | no | For handoff: state (where the work stands) and next (the next concrete step) are required; watchOut and openQuestions are lists; where holds branch, commit, and paths. |
 | `to` | string | no | For handoff: the claimant (session/agent) or session to offer it to. Without it anyone here may accept. |
@@ -238,14 +280,14 @@ Surface: interactive. Reads only: no.
 | `executor` | `claude`, `codex`, `cursor` | no | Explicitly configured local executor; installation alone grants nothing. |
 | `role` | `implement`, `review` | no | Implementation or read-only independent review. |
 | `instructions` | string | no | Bounded assignment, not the full lead conversation. |
-| `acceptance` | array | no | Observable acceptance checks. |
-| `paths` | array | no | Repository-relative files or directory prefixes ending in /. |
-| `couplingKeys` | array | no | Shared interface/schema keys that must execute serially despite disjoint paths. |
+| `acceptance` | list of string | no | Observable acceptance checks. |
+| `paths` | list of string | no | Repository-relative files or directory prefixes ending in /. |
+| `couplingKeys` | list of string | no | Shared interface/schema keys that must execute serially despite disjoint paths. |
 | `timeoutMs` | number | no | Per-attempt bound; default 1200000, capped by personal configuration. |
 | `runId` | string | no | Existing workflow run to link to the child work. |
 | `subject` | string | no | Successful implementation execution to review at its fixed snapshot. |
 | `repairOf` | string | no | Successful implementation being repaired; bounded repair counter is inherited. |
-| `dispositions` | array | no | Exactly one {findingId, decision: accepted\|rejected\|deferred, rationale} per review finding. |
+| `dispositions` | list of object | no | Exactly one {findingId, decision: accepted\|rejected\|deferred, rationale} per review finding. |
 
 ### `heartbeat`
 
@@ -279,7 +321,7 @@ Surface: both. Reads only: no.
 | `token` | string | yes | From claim_work: the lease’s secret. |
 | `owner` | string | no | Ignored: the lease holder is the calling session. |
 | `output` | object | yes | The step’s result, with the keys it declared. |
-| `evidence` | array | no | What was read: {ref, excerpt?} entries. |
+| `evidence` | list of object | no | What was read: {ref, excerpt?} entries. |
 | `noData` | boolean | no | The step found nothing to work on. |
 
 ### `run_status`

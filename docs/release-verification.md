@@ -133,7 +133,9 @@ ignores.
 Automated CI is deterministic and credential-free. `npm run conformance`
 checks every supported host without a credential: whether it is installed
 here, whether `construct init` wires it and plants the operational skill
-where it reads, the MCP handshake, ordinary-language classification, skill
+where it reads, the MCP handshake, the typed intake (a wrong reading comes
+back naming its field, a right one matches by its deliverable, and the
+classify_request schema and description fit a host's budget), skill
 loading on request, a managed workflow run to a final deliverable, decision
 relay, and the limits of the headless surface. It prints a table and writes
 `.tmp-conformance/report.json`.

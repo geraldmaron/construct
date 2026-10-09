@@ -1,42 +1,13 @@
 /**
- * tests/kernel/workflow/classify-validate.test.ts — the four classes from
- * ordinary language, the validators, and the cron clock.
+ * tests/kernel/workflow/validators-cron.test.ts — the validators and the
+ * cron clock.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyInteraction } from '../../../src/kernel/workflow/classify.ts';
 import { runValidators, knownValidators } from '../../../src/kernel/workflow/validators.ts';
 import { nextCronAfter, parseCron } from '../../../src/kernel/workflow/cron.ts';
 import { BUILTIN_VALIDATORS } from '../../../src/kernel/registry/capability-registry.ts';
-
-test('the directive’s examples classify as it says', () => {
-  const a = classifyInteraction('What does this function do?');
-  assert.equal(a.class, 'answer');
-  assert.ok(a.confidence >= 0.9);
-  const r = classifyInteraction('Remember that we will not support schema migration before stable');
-  assert.equal(r.class, 'remember');
-  assert.equal(r.rememberKind, 'decision');
-  const r2 = classifyInteraction('Record that we will not add schema migration until stable.');
-  assert.equal(r2.class, 'remember');
-  const m = classifyInteraction('Review this implementation against our design principles');
-  assert.equal(m.class, 'manage');
-  assert.equal(m.confirmBeforeProceeding, false);
-  const s = classifyInteraction('Every January, compare team strategies to active Jira work and capacity');
-  assert.equal(s.class, 'maintain');
-  assert.equal(s.confirmBeforeProceeding, false);
-  const vague = classifyInteraction('this happens every month and it is annoying');
-  assert.equal(vague.class, 'maintain');
-  assert.equal(vague.confirmBeforeProceeding, true, 'a recurring mention without a work verb asks before setting anything up');
-  const none = classifyInteraction('thanks');
-  assert.equal(none.class, 'answer');
-  assert.equal(classifyInteraction('').class, 'answer');
-  assert.equal(classifyInteraction('note: never deploy on Fridays').rememberKind, 'constraint');
-  const rewrite = classifyInteraction('I want you to rewrite the X document, naming it Y. I want it shorter, and I want it to consider A and B as inputs.');
-  assert.equal(rewrite.class, 'manage');
-  assert.ok(rewrite.confidence >= 0.8);
-  assert.equal(rewrite.confirmBeforeProceeding, false);
-});
 
 test('validators are deterministic and every shipped name has an implementation', () => {
   assert.deepEqual([...knownValidators()].sort(), [...BUILTIN_VALIDATORS].sort());
@@ -70,16 +41,4 @@ test('cron fires at the right wall-clock instant in a timezone, and refuses bad 
   assert.throws(() => parseCron('0 9 * *'), /five fields/);
   assert.throws(() => parseCron('0 25 * * *'), /outside/);
   assert.throws(() => nextCronAfter('0 9 * * *', 'Mars/Olympus', '2026-09-02T12:00:00.000Z'), /not a timezone/);
-});
-
-test('a deliverable named as a bare noun is work; a vague ask confirms before starting; questions about a document stay questions', () => {
-  for (const t of ['PRD for webhooks', 'an RFC on retry policy', 'proposal for funding webhooks']) {
-    const c = classifyInteraction(t);
-    assert.equal(c.class, 'manage', t);
-    assert.equal(c.confirmBeforeProceeding, false, t);
-  }
-  const vague = classifyInteraction('Write something for Sam about webhooks');
-  assert.equal(vague.class, 'manage');
-  assert.equal(vague.confirmBeforeProceeding, true);
-  for (const t of ['What does the PRD say about scope?', 'PRD is in the drive?', 'brief me on the incident']) assert.notEqual(classifyInteraction(t).class, 'manage', t);
 });

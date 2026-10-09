@@ -10,7 +10,8 @@ import assert from 'node:assert/strict';
 import { differsFlag } from '../../../src/kernel/workflow/service.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
-import { record } from '../../../src/kernel/broker/definition.ts';
+import { record, ToolInputError } from '../../../src/kernel/broker/definition.ts';
+import { listRuns } from '../../../src/kernel/state/runs.ts';
 import { fixture } from './support.ts';
 import { brokerFixture } from '../broker/support.ts';
 
@@ -203,22 +204,28 @@ test('a run that is reused says which declared inputs this start gave differentl
   }
 });
 
-test('through the tools: a claim on a blocked run says why, the corrected start replaces it, and a reused run asks the person about what differs', async () => {
+test('through the tools: an undeclared input is refused and leaves no run, a claim on a blocked run says why, and a reused run asks the person about what differs', async () => {
   const fx = brokerFixture();
   try {
-    const wrong = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' } });
-    assert.equal(wrong.run.state, 'blocked');
-    assert.equal(wrong.superseded, null);
-    assert.deepEqual(wrong.differs, []);
-    const told = await call(fx, 'claim_work', { runId: wrong.run.id });
+    const refused = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' } }).catch((e: unknown) => e);
+    assert.ok(refused instanceof ToolInputError, 'wrong input is the model’s to fix, not a run');
+    assert.equal(refused.field, 'input.dateRange');
+    assert.deepEqual(refused.allowed, ['request', 'target', 'period', 'sources']);
+    assert.match(refused.message, /dateRange/);
+    assert.deepEqual(listRuns(fx.broker.store), [], 'no run is left behind');
+
+    const blocked = fx.broker.workflow.start({ workflowId: 'managed-outcome', input: { request: 'brief on revenue risk', dateRange: '2026-07-01..2026-09-30' }, trigger: 'manual' });
+    assert.equal(blocked.run.state, 'blocked', 'the command line still keeps a blocked run to correct');
+    const told = await call(fx, 'claim_work', { runId: blocked.run.id });
     assert.equal(told.work, null);
     assert.equal(told.waitingOn.kind, 'blocked');
     assert.ok(told.waitingOn.reasons.some((r: { message: string; remedy: string }) => r.message.includes('dateRange') && r.remedy.length > 0));
 
     const fixed = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: { request: 'brief on revenue risk' } });
+    assert.equal(fixed.started, true);
     assert.equal(fixed.created, true);
     assert.equal(fixed.run.state, 'ready');
-    assert.equal(fixed.superseded, wrong.run.id);
+    assert.equal(fixed.superseded, blocked.run.id, 'the corrected start replaces the blocked run');
     assert.equal(fixed.next, undefined);
     const work = await call(fx, 'claim_work', { runId: fixed.run.id });
     assert.ok(work.work, 'the corrected run hands out work');
@@ -236,9 +243,10 @@ test('through the tools: a claim on a blocked run says why, the corrected start 
   }
 });
 
-test('the tool descriptions say what a blocked start and a blocked claim give back', () => {
+test('the tool descriptions say what a refused start and a blocked claim give back', () => {
   const start = TOOLS.find((t) => t.name === 'start_outcome')!;
   assert.doesNotMatch(start.description, /half-started/);
-  assert.match(start.description, /starting again after the fix replaces it, or with unchanged input checks it again/);
+  assert.match(start.description, /nothing starts and you get the questions back/);
+  assert.match(start.description, /If this work is already running you get that run back/);
   assert.match(TOOLS.find((t) => t.name === 'claim_work')!.description, /A blocked run comes back with its reasons and what would unblock it\./);
 });

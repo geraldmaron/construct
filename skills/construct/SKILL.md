@@ -10,7 +10,7 @@ description: >-
   nothing; stand down when nothing is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 2.7.0
+  version: 3.0.0
   source: geraldmaron/construct
 ---
 
@@ -45,19 +45,24 @@ relay each answer with `decide`.
    When a decision rules something out ("not exactly-once"), pass the terms
    the person named in `contradicts`, so later work that states them as
    current is caught. Only terms they said; never infer them.
-3. **Manage an outcome.** "Review this against our design principles",
-   "Write the requirements for…", or a situation described in the person's
-   own words with no skill or workflow named. Call `classify_request` with
-   their wording: it ranks the skills that fit and names the workflows that
-   carry them. You are the judge; read the likely skills' `useWhen` text
-   and choose, ask one question only when two fit and the difference
-   changes the work. Then `workflows` with `resolve` to learn whether that
-   workflow can run here and what would stop it. Only then `start_outcome`.
-   Never ask the person to name a skill or a workflow.
+3. **Manage an outcome.** The person wants something produced or reviewed,
+   however they put it, a question included ("Can you put together an
+   architecture diagram for Q3?"). Call `classify_request` with your own
+   reading: the `kind`, their `words` verbatim, the `deliverable` they want
+   back (a listed kind, or `other` with `describe`), and the `period`,
+   `sources`, `destination` and `open` items you can see. Construct does not
+   read intent from the words; it checks your reading, names the workflows
+   whose deliverable fits with the skills they bind, and returns only the
+   questions that block. Put every returned question to the person in one
+   message. Then call `start_outcome` with the workflow you choose and the
+   same `intake`, their answers applied; it checks the reading again and
+   starts nothing while a question is still open. Never ask the person to
+   name a skill or a workflow.
 4. **Maintain a standing outcome.** "Every January, compare strategies to
-   active work and capacity." Explain what the standing workflow needs
-   (sources, freshness, a clock, permissions, overlap policy) and define it
-   with the person; the clock is theirs, the ledger is Construct's.
+   active work and capacity." Call `classify_request` with `kind` maintain
+   and the `schedule` the person gave. Explain what the standing workflow
+   needs (sources, freshness, permissions, overlap policy); the clock is the
+   person's to set, the ledger is Construct's.
 
 Ask only when choosing a higher kind would change work, cost, persistence,
 permissions, or external side effects and the wording does not settle it.

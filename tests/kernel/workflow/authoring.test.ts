@@ -1,6 +1,6 @@
 /**
  * tests/kernel/workflow/authoring.test.ts — writing a PRD, RFC, or proposal
- * is a routed, gated outcome: the request finds the workflow and its inputs,
+ * is a matched, gated outcome: the reading finds the workflow and its inputs,
  * a draft that skips a template section or invents a figure is sent back,
  * and only an artifact that exists and holds up is handed over.
  */
@@ -19,21 +19,22 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, any>;
 }
 
-test('artifact requests route to the authoring workflows, with their inputs, without a failed start', async () => {
+test('a reading that asks for a PRD, an RFC or a proposal matches its authoring workflow, with its skill and its inputs, without a failed start', async () => {
   const fx = brokerFixture();
   try {
-    const cases: [string, string, string][] = [
-      ['Write a PRD for public webhooks using our PRD template.', 'requirements-structuring', 'prd-authoring'],
-      ['Draft an RFC for webhook event delivery, building on RFC-012.', 'system-architecture', 'rfc-authoring'],
-      ['Write a one-page proposal for Sam to fully fund webhooks this half.', 'decision-framing', 'proposal-authoring'],
+    const cases: [string, string, string, string][] = [
+      ['Write a PRD for public webhooks using our PRD template.', 'document/prd', 'requirements-structuring', 'prd-authoring'],
+      ['Draft an RFC for webhook event delivery, building on RFC-012.', 'document/rfc', 'system-architecture', 'rfc-authoring'],
+      ['Write a one-page proposal for Sam to fully fund webhooks this half.', 'document/proposal', 'decision-framing', 'proposal-authoring'],
     ];
-    for (const [text, skill, workflow] of cases) {
-      const c = await call(fx, 'classify_request', { text });
-      assert.equal(c.class, 'manage', text);
-      assert.ok(c.skills.slice(0, 3).some((s: { id: string }) => s.id === skill), `${text} -> ${c.skills.map((s: { id: string }) => s.id).join(',')}`);
-      const suggested = c.suggestedWorkflows.find((w: { id: string }) => w.id === workflow);
-      assert.ok(suggested, `${workflow} is suggested for: ${text}`);
-      assert.ok(suggested.required.includes('target'));
+    for (const [words, kind, skill, workflow] of cases) {
+      const c = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind } });
+      assert.equal(c.matches[0].workflowId, workflow, words);
+      assert.equal(c.matches[0].because, 'deliverable kind');
+      assert.ok(c.matches[0].missing.includes('target'), `${workflow} asks for its target: ${JSON.stringify(c.matches[0].missing)}`);
+      assert.ok(c.questions.some((q: { slot: string }) => q.slot === 'target'), 'the missing target is a question for the person');
+      assert.match(c.skills[skill]?.useWhen ?? '', /\S/, `${skill} comes with its use-when text`);
+      assert.ok(c.skills[skill].useWhen.length <= 200);
     }
   } finally {
     fx.cleanup();

@@ -4,8 +4,10 @@
  * diagram of our system from Jira/Confluence and GitHub, only covering
  * 2026-07-01 to 2026-09-30", in a product repository shaped like the one the
  * request was probed against. The session declares the named systems,
- * reports what it read from them, and runs the general carrier with the
- * period and the sources. The do step is sent back for a ticket dated after
+ * reports what it read from them, reports its typed reading to
+ * classify_request, and starts the general carrier with the intake it got
+ * back, so the period and the sources come from the reading. The do step,
+ * which carries the method the reading chose, is sent back for a ticket dated after
  * the period until it is explained, for a figure nothing cited contains, and
  * for a named source nothing was cited from; the verify step then hands back
  * a validated deliverable that carries the diagram, what it rests on, and
@@ -103,13 +105,22 @@ test('the architecture diagram request runs end to end through the tools: period
       { ref: 'acme/payments#311', url: 'https://github.com/acme/payments/pull/311', title: 'Add the payments-db healthcheck', updatedAt: '2026-09-20T16:00:00Z', text: 'Adds a healthcheck for payments-db in docker-compose.yml.' },
     ] });
 
-    // 3. The general carrier starts with the request, the period and the named sources as typed input.
+    // 3. The host reports its reading; the general carrier starts from the intake it gets back.
     const request = 'Create an architecture diagram of our system from Jira/Confluence and GitHub, only covering 2026-07-01 to 2026-09-30';
-    const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', input: {
-      request,
+    const read = await call(fx, 'classify_request', {
+      words: request,
+      kind: 'manage',
+      deliverable: { kind: 'other', describe: 'architecture diagram' },
+      skill: 'system-architecture',
       period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' },
-      sources: ['jira', 'confluence', 'github'],
-    } });
+      sources: [{ name: 'Jira' }, { name: 'Confluence' }, { name: 'GitHub' }],
+    });
+    assert.equal(read.matches[0].workflowId, 'managed-outcome');
+    assert.deepEqual(read.questions, []);
+    assert.deepEqual(read.intake.sources.map((s: { id: string }) => s.id), ['jira', 'confluence', 'github'], 'the named systems resolve to the sources the session declared');
+    assert.deepEqual(read.matches[0].input.sources, ['jira', 'confluence', 'github']);
+    const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', intake: read.intake });
+    assert.equal(started.started, true);
     assert.equal(started.run.state, 'ready', started.preflight.summary);
     assert.deepEqual([started.preflight.period.from, started.preflight.period.to, started.preflight.period.semantics], ['2026-07-01', '2026-09-30', 'evidence_window']);
     const runId = started.run.id as string;
@@ -128,6 +139,9 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.deepEqual([work.inputs.period.from, work.inputs.period.to], ['2026-07-01', '2026-09-30']);
     assert.deepEqual(work.inputs.sources, ['jira', 'confluence', 'github']);
     assert.deepEqual(work.inputs.plan, ['read the named sources and the repo', 'draw the containers as C4']);
+    assert.deepEqual(work.method, { id: 'system-architecture', version: work.method.version, title: 'System architecture' }, 'the do step binds no skill, so it carries the method the reading chose');
+    assert.ok(work.instructions.some((i: string) => i.startsWith('Use the System architecture method for this step')));
+    assert.deepEqual(work.intake.period, { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' });
     assert.ok(work.instructions.some((i: string) => i.startsWith('This run covers 2026-07-01 to 2026-09-30') && i.includes('An item updated after 2026-09-30 is refused')), work.instructions.join('\n'));
     assert.ok(work.instructions.some((i: string) => i.startsWith('Read the sources this run names: jira, confluence, github')));
 

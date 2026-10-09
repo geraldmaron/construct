@@ -2,13 +2,14 @@
  * kernel/workflow/service.ts — one service runs a workflow from binding to
  * handback.
  *
- * It binds to the project and the host, classifies the ask, resolves the
- * workflow through the registry, creates one idempotent run, leases ready
- * steps to whoever executes them (this session, or a pinned headless
- * runner), gates every step through the policy engine, records outputs,
- * evidence, attempts, and audit events transactionally, pauses for decisions,
- * resumes without repeating finished work, validates load-bearing outputs,
- * and promotes the deliverable only through the kernel's own transitions.
+ * It binds to the project and the host, resolves the workflow through the
+ * registry, creates one idempotent run with the reading it started from
+ * frozen on it, leases ready steps to whoever executes them (this session,
+ * or a pinned headless runner), gates every step through the policy engine,
+ * records outputs, evidence, attempts, and audit events transactionally,
+ * pauses for decisions, resumes without repeating finished work, validates
+ * load-bearing outputs, and promotes the deliverable only through the
+ * kernel's own transitions.
  * Nothing here can enqueue a step the registry did not resolve.
  */
 
@@ -34,9 +35,9 @@ import { calendarDate } from '../calendar.ts';
 import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
-import { classifyInteraction, type Classification } from './classify.ts';
+import { INTAKE_FIELDS, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
 import { assessConsequence, judgmentRequired, wordsOf, type Judgment } from './consequence.ts';
-import { askedFrom, askedOf, type AskedReading, type AskedSources, type Declared, type Firing } from './asked.ts';
+import { askedFrom, askedOf, type AskedReading, type AskedSources, type Assumption, type Declared, type Firing } from './asked.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { listSources } from '../state/sources.ts';
 import { settledTerms } from '../project/governance.ts';
@@ -109,6 +110,19 @@ export interface Preflight {
   readonly period: ResolvedPeriod | null;
   /** What was taken as given to work the input out, in plain words. */
   readonly assumptions: readonly string[];
+  /** One question for the person per required input that is missing. */
+  readonly questions: readonly Question[];
+}
+
+/** The reading a step works from, in structured fields only: never the person's words, and systems that are not registered only as a count. */
+export interface WorkIntake {
+  readonly deliverable: IntakeDeliverable | null;
+  readonly period: { readonly semantics: string; readonly from: string | null; readonly to: string; readonly phrase: string | null } | null;
+  /** The declared sources the reading names, and how many systems it names that are not registered with Construct. */
+  readonly sources: { readonly registered: readonly string[]; readonly unregistered: number };
+  /** Where the result goes, by kind. */
+  readonly destination: string | null;
+  readonly assumptions: readonly Assumption[];
 }
 
 export interface WorkPacket {
@@ -119,6 +133,10 @@ export interface WorkPacket {
   readonly inputs: Readonly<Record<string, unknown>>;
   readonly instructions: readonly string[];
   readonly judgment: Judgment;
+  /** The run's reading, when it started from one. */
+  readonly intake: WorkIntake | null;
+  /** For a step that binds no skill, the method the reading chose, when it is registered. */
+  readonly method: { readonly id: string; readonly version: string; readonly title: string } | null;
 }
 
 /** Why a claim handed nothing out. */
@@ -214,7 +232,6 @@ export interface RunView {
 }
 
 export interface WorkflowService {
-  classify(text: string): Classification;
   remember(input: {
     readonly kind: StatementKind;
     readonly text: string;
@@ -226,7 +243,7 @@ export interface WorkflowService {
   }): Statement;
   /** Resolve without starting; a period is worked out at `periodAt` (now when absent) in the caller's timezone. */
   preflight(workflowId: string, input: Readonly<Record<string, unknown>>, opts?: { readonly declared?: Declared | null; readonly periodAt?: string; readonly timezone?: string }): { readonly resolution: Resolution; readonly preflight: Preflight };
-  /** The one judgment of how much rigor work gets: classify, preflight, packets, resume and acceptance all read it. */
+  /** The one judgment of how much rigor work gets: classify_request, preflight, packets, resume and acceptance all read it. */
   judge(input: { readonly workflowId: string | null; readonly input: Readonly<Record<string, unknown>>; readonly declared?: Declared | null }): Judgment;
   start(input: StartInput): StartResult;
   claimNext(input: { readonly runId?: string; readonly owner?: string; readonly leaseMs?: number }): ClaimOutcome;
@@ -341,24 +358,69 @@ export function differsNext(keys: readonly string[]): string {
   return `Tell the person this work is already running with different ${listed(keys)}, and ask whether to carry on with it or cancel it and start again.`;
 }
 
+/** The fields of a reading on which two readings differ. */
+function readingDiffers(was: Intake | null | undefined, now: Intake | null | undefined): string[] {
+  if (!was || !now) return [];
+  return INTAKE_FIELDS.filter((k) => canonicalJson(was[k]) !== canonicalJson(now[k]));
+}
+
+/** The flag a start carries when the run it found was started from a different reading. */
+export function readingDiffersFlag(runId: string, fields: readonly string[]): string {
+  const named = fields.map((f) => (f === 'open' ? 'open items' : f));
+  return `run ${runId} was started from a reading that differs in its ${listed(named)}; it keeps its own reading, so carry on with it, or cancel it and start again for this reading to apply`;
+}
+
 /**
  * The reading frozen on a new run: what the caller declared, with the period,
  * the source ids and the firing taken from the start itself rather than from
- * anything the caller said about them. Null when there is nothing to keep.
+ * anything the caller said about them. A period the reading names for a
+ * workflow that takes none is worked out here from the reading; declared
+ * sources it names, when the workflow takes no source ids, are kept only
+ * while they are declared. Null when there is nothing to keep.
  */
-function frozenReading(given: AskedReading | undefined, normalized: NormalizedInput, firing: Firing | null): AskedReading | null {
+function frozenReading(given: AskedReading | undefined, normalized: NormalizedInput, firing: Firing | null, clock: { readonly at: string; readonly timezone?: string; readonly sourceIds: readonly string[] }): AskedReading | null {
   const caller = given ? askedFrom(given) : null;
   const named = caller?.sources?.named ?? [];
-  const sources: AskedSources | null = normalized.sourceIds || named.length ? { registered: normalized.sourceIds ?? [], named } : null;
-  if (!caller && !normalized.period && !sources && !firing) return null;
+  let period = normalized.period;
+  let periodSpec = normalized.periodSpec;
+  const read = caller?.intake?.period ?? caller?.periodSpec ?? null;
+  if (!period && read && checkSlot('period', 'period', read, { at: clock.at, timezone: clock.timezone, sourceIds: [] }).length === 0) {
+    periodSpec = read;
+    period = resolvePeriod(read, clock.at, clock.timezone);
+  }
+  const registered = normalized.sourceIds ?? (caller?.sources?.registered ?? []).filter((id) => clock.sourceIds.includes(id));
+  const sources: AskedSources | null = normalized.sourceIds || registered.length || named.length ? { registered, named } : null;
+  if (!caller && !period && !sources && !firing) return null;
   return {
+    ...(caller && 'intake' in caller ? { intake: caller.intake } : {}),
     ...(caller && 'declared' in caller ? { declared: caller.declared } : {}),
     ...(caller && 'judgedBy' in caller ? { judgedBy: caller.judgedBy } : {}),
     ...(caller && 'assumptions' in caller ? { assumptions: caller.assumptions } : {}),
-    ...(normalized.period ? { period: normalized.period, periodSpec: normalized.periodSpec } : {}),
+    ...(period ? { period, periodSpec } : {}),
     ...(sources ? { sources } : {}),
     ...(firing ? { firing } : {}),
   };
+}
+
+/** What a step is handed of the run's reading: structured fields only. */
+function workIntakeOf(asked: AskedReading): WorkIntake | null {
+  const intake = asked.intake;
+  if (!intake) return null;
+  const p = asked.period ?? null;
+  const named = asked.sources?.named ?? [];
+  return {
+    deliverable: intake.deliverable,
+    period: p ? { semantics: p.semantics, from: p.from, to: p.to, phrase: p.phrase ?? null } : null,
+    sources: { registered: [...(asked.sources?.registered ?? [])], unregistered: named.filter((n) => !n.registered).length },
+    destination: intake.destination?.kind ?? null,
+    // A kernel note about an unregistered system names it; the count above stands in for it.
+    assumptions: (asked.assumptions ?? []).filter((a) => !(a.by === 'kernel' && a.about === 'sources')),
+  };
+}
+
+/** Whether a step reads the project, its context, or a source. */
+function readsAnything(capabilities: readonly string[]): boolean {
+  return capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'));
 }
 
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
@@ -368,7 +430,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    * decision or constraint is a conflict to name, not a fact to adopt.
    */
   const governingInstructions = (capabilities: readonly string[]): string[] => {
-    if (!capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'))) return [];
+    if (!readsAnything(capabilities)) return [];
     const settled = listStatements(store, { status: 'confirmed' }).filter((st) => st.kind === 'decision' || st.kind === 'constraint');
     if (settled.length === 0) return [];
     const shown = settled.slice(-12).map((st) => `[${st.kind} ${st.id}] ${st.text.length > 200 ? `${st.text.slice(0, 200)}…` : st.text}`);
@@ -556,6 +618,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     flags.push(...coverageFlags(period, slots.sourceIds ?? null));
     const judgment = judgmentFor(resolution.workflow, resolution.plan.map((p) => p.step), input, declared);
     if (judgment.challenge) flags.push(`challenge required: ${judgment.why}`);
+    const workflow = resolution.workflow;
     return {
       status: resolution.status,
       summary: resolution.summary,
@@ -565,6 +628,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       judgment,
       period,
       assumptions: period?.assumptions ?? [],
+      questions: workflow ? resolution.reasons.flatMap((r) => (r.code === 'missing_step_input' && r.slot ? [slotQuestion(r.slot, workflow)] : [])) : [],
     };
   }
 
@@ -835,13 +899,17 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   /**
    * What every step of a run is told about the period it covers and the
    * sources it names; a step that checks citations against the period is
-   * also told what it refuses.
+   * also told what it refuses. A period the workflow takes no input for is
+   * named as unchecked, and systems the reading names that are not
+   * registered are counted, never named.
    */
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
     const p = asked.period;
-    if (p) {
+    const schema = deps.workflows.get(run.workflowId)?.manifest.inputSchema;
+    const checksPeriod = !schema || Object.values(schema).includes('period');
+    if (p && checksPeriod) {
       const covers = p.semantics === 'as_of'
         ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. Describe them as they stood at the end of that day.`
         : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`;
@@ -849,10 +917,24 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         ? ` An item updated after ${p.to} is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`
         : '';
       lines.push(covers + refused);
+    } else if (p) {
+      lines.push(`The period in this run's reading is ${p.from ? `${p.from}..${p.to}` : `as of ${p.to}`} (${p.semantics}); this workflow does not check it, so keep to it yourself.`);
     }
     const ids = asked.sources?.registered ?? [];
     if (ids.length) lines.push(`Read the sources this run names: ${ids.join(', ')}; cite items as <source>:<item>. Before you submit, record what you read with sources action report; a source Construct reads itself takes action refresh instead. A named source you could not read goes under "unread" as {source, why}.`);
+    const unregistered = (asked.sources?.named ?? []).filter((n) => !n.registered).length;
+    if (unregistered > 0 && readsAnything(step.capabilities)) {
+      lines.push(`This request named ${String(unregistered)} system(s) that are not registered with Construct. Read only ones the person named, declare each with sources action declare and report what you read before citing it; say plainly that Construct could not check anything you did not report.`);
+    }
     return lines;
+  }
+
+  /** The method the run's reading chose, for a step that binds no skill of its own and does judgment work. */
+  function methodFor(run: WorkflowRun, step: WorkflowStep, bound: unknown): WorkPacket['method'] {
+    if (bound || step.skill || !step.capabilities.includes('model_review')) return null;
+    const chosen = askedOf(run).declared?.chosenSkill ?? null;
+    const skill = chosen ? deps.skills.get(chosen) : null;
+    return skill ? { id: skill.manifest.id, version: skill.manifest.version, title: skill.manifest.title } : null;
   }
 
   /** Everything the claimer needs to do one leased step. */
@@ -865,6 +947,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const needsChallenge = judgmentRequired(workflowChallenge, judgment);
     // A key the step also returns is its own to restate; the rest the deliverable already carries, the period and
     // named sources with what the run's citations cover.
+    const method = methodFor(run, step, bound);
     const handed = Object.keys(handedTo(run, step)).filter((k) => !step.outputs.includes(k));
     const covered = coverageKeys(run);
     const asReceived = handed.filter((k) => !covered.includes(k));
@@ -880,6 +963,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
+      method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
       ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
       acceptedWaiver(leased.id) ? 'The person accepted this step despite its failing checks; resubmit the output they reviewed. The deliverable will say the checks were waived.' : '',
@@ -900,6 +984,8 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       inputs: inputsFor(run, step),
       instructions,
       judgment,
+      intake: workIntakeOf(askedOf(run)),
+      method,
     };
   }
 
@@ -933,8 +1019,6 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   }
 
   return {
-    classify: classifyInteraction,
-
     remember({ kind, text, by, channel = 'relay', assumptions = [], replaces }) {
       const at = deps.now();
       const decision = evaluateAction(store, { tier: 'project_write', targetSystem: 'construct-state', targetResource: 'statements', operation: `remember: ${text}`, executorId: deps.host.executorId }, policyContext('remember', at));
@@ -1000,7 +1084,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const clock: PeriodClock = { periodAt: input.periodAt ?? at, timezone: input.timezone };
       const normalized = normalizeInput(m, input.input, { at: clock.periodAt!, timezone: clock.timezone, sourceIds: deps.sources().map((s) => s.id) });
       const given = normalized.input;
-      const asked = frozenReading(input.asked, normalized, input.firing ?? null);
+      const asked = frozenReading(input.asked, normalized, input.firing ?? null, { at: clock.periodAt!, timezone: clock.timezone, sourceIds: deps.sources().map((s) => s.id) });
       const declared = asked?.declared ?? null;
       const keyExplicit = input.idempotencyKey;
       const workIdentity = idempotencyKeyFor(workflow, given, input.trigger === 'manual' ? 'manual' : `${input.trigger}:${at.slice(0, 16)}`, normalized.identities);
@@ -1020,7 +1104,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           : resolutionFor(existing.workflowId, existingInput, existing.executorId, clockOf(existing));
         const pf = runPreflight(existing, resolution);
         const differs = Object.keys(m.inputSchema).filter((k) => !sameValue(existing, k));
-        return { run: existing, created: false, resolution, preflight: { ...pf, flags: [...pf.flags, ...flags, ...(differs.length ? [differsFlag(existing.id, differs)] : [])] }, differs, superseded: null };
+        const readingOther = readingDiffers(askedOf(existing).intake, asked?.intake);
+        return {
+          run: existing,
+          created: false,
+          resolution,
+          preflight: { ...pf, flags: [...pf.flags, ...flags, ...(differs.length ? [differsFlag(existing.id, differs)] : []), ...(readingOther.length ? [readingDiffersFlag(existing.id, readingOther)] : [])] },
+          differs,
+          superseded: null,
+        };
       };
       if (keyExplicit) {
         const existingByKey = getRunByKey(store, keyExplicit);

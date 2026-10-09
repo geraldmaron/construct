@@ -16,7 +16,6 @@ import type { RegisteredWorkflow, WorkflowManifest } from '../../../src/kernel/r
 import { PERIOD_SEMANTICS } from '../../../src/kernel/registry/slots.ts';
 import { DEPTHS } from '../../../src/kernel/workflow/consequence.ts';
 import { createWorkflowService } from '../../../src/kernel/workflow/service.ts';
-import { classifyInteraction } from '../../../src/kernel/workflow/classify.ts';
 import {
   COORDINATION_ACTIONS,
   COORDINATION_NEXT,
@@ -503,7 +502,7 @@ test('explicit input wins over the reading’s inputs, which win over mapped fie
 
 // ---------------------------------------------------------------- questions
 
-test('the kernel asks only what it can see is missing; the host’s own blocking items go back to the model', () => {
+test('the kernel asks only what it can see is missing or contradicts itself; the host’s own blocking items go back to the model', () => {
   const unscheduled = v({ ...STANDING, schedule: { phrase: 'regularly' } });
   const first = matchWorkflows(unscheduled.intake, CATALOG)[0]!;
   assert.deepEqual(questionsFor(unscheduled, first, CATALOG).questions, [{ slot: 'schedule', ask: 'When should this run? A schedule, for example every Monday at 9, or an event.', blocking: true, neededBy: first.workflowId, from: 'kernel' }]);
@@ -517,6 +516,21 @@ test('the kernel asks only what it can see is missing; the host’s own blocking
   assert.deepEqual(asked.hostQuestions, [{ about: 'audience', question: 'Is this for the board or the team?' }]);
 
   assert.deepEqual(questionsFor(v(FLAGSHIP), matchWorkflows(v(FLAGSHIP).intake, CATALOG)[0]!, CATALOG), { questions: [], hostQuestions: [] }, 'the flagship asks nothing');
+
+  const routed = v({ ...REVIEW, deliverable: { kind: 'publication' }, destination: { kind: 'project_file', ref: 'docs/c4.md' } });
+  const publish = matchWorkflows(routed.intake, CATALOG)[0]!;
+  assert.equal(publish.workflowId, 'publish-deliverable');
+  const where = questionsFor(routed, publish, CATALOG, { destination: 'confluence:ENG', deliverable: 'deliverable-1', audience: 'engineering' });
+  assert.deepEqual(where.questions, [{
+    slot: 'destination',
+    ask: 'Where should the result go: docs/c4.md, or confluence:ENG?',
+    options: [{ value: 'docs/c4.md', label: 'as read from the request' }, { value: 'confluence:ENG', label: 'as given in input.destination' }],
+    blocking: true,
+    neededBy: 'publish-deliverable',
+    from: 'kernel',
+  }], 'two places for the result is a question for the person, not a guess');
+  assert.deepEqual(questionsFor(routed, publish, CATALOG, { destination: 'docs/c4.md', deliverable: 'deliverable-1', audience: 'engineering' }).questions, [], 'an explicit destination that agrees asks nothing');
+  assert.deepEqual(questionsFor(routed, publish, CATALOG).questions.map((q) => q.slot), ['deliverable', 'audience'], 'explicit input counts toward what is missing');
   const answer = v({ words: 'What is the payments service?', kind: 'answer' });
   assert.deepEqual(questionsFor(answer, null, CATALOG), { questions: [], hostQuestions: [] });
 });
@@ -536,10 +550,9 @@ test('each missing input has one plain ask; the kernel-typed ones are asked by t
   assert.deepEqual(slotQuestion('target', DIGEST), { slot: 'target', ask: 'Which document, file, or system should this work on?', blocking: true, neededBy: GENERAL_CARRIER, from: 'kernel' });
 });
 
-test('every way of working alongside other agents names its ledger action, and the word classifier reads the same lines', () => {
+test('every way of working alongside other agents names its ledger action', () => {
   assert.deepEqual(Object.keys(COORDINATION_NEXT).sort(), [...COORDINATION_ACTIONS].sort());
   for (const action of COORDINATION_ACTIONS) assert.match(COORDINATION_NEXT[action], action === 'awareness' ? /project_context topic sessions/ : new RegExp(`work \\(action ${action === 'accept' ? 'offers' : action}\\)`));
-  assert.equal(classifyInteraction('Hand this off to the other agent').coordination?.next, COORDINATION_NEXT.handoff);
 });
 
 // ---------------------------------------------------------------- round trip and words invariance

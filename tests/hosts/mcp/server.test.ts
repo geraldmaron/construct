@@ -82,6 +82,17 @@ test('wrong input comes back as a tool error naming the field and the values it 
     assert.equal(noId.error, undefined);
     assert.equal(noId.result.isError, true, 'an input one action needs is named too');
     assert.equal(noId.result.structuredContent.field, 'id');
+
+    const reading = (await handle({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'classify_request', arguments: { words: 'x', kind: 'work' } } })) as ToolError;
+    assert.equal(reading.error, undefined, 'a wrong reading is a tool error the model reads, not a protocol error');
+    assert.equal(reading.result.isError, true);
+    assert.equal(reading.result.structuredContent.field, 'kind');
+    assert.deepEqual(reading.result.structuredContent.allowed, ['answer', 'remember', 'manage', 'maintain', 'coordinate']);
+    assert.deepEqual(reading.result.structuredContent.example, { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } });
+    const old = (await handle({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'classify_request', arguments: { text: 'Review this against our principles' } } })) as ToolError;
+    assert.equal(old.result.isError, true);
+    assert.equal(old.result.structuredContent.field, 'text');
+    assert.match(old.result.structuredContent.error, /"words"/);
     assert.equal(listStatements(fx.broker.store).length, before, 'a refused call records nothing');
   } finally {
     fx.cleanup();

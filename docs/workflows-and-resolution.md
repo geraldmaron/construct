@@ -8,6 +8,45 @@ validators, retry and timeout, triggers, no-data and stale-data policies,
 concurrency and deduplication, cancellation, a deliverable contract, and
 what the workflow may propose afterwards.
 
+## How a session picks a workflow
+
+Construct does not read intent from the person's words. The host model
+reads the request and reports its reading to `classify_request` as typed
+fields: the kind of request (answer, remember, manage, maintain, or
+coordinate), the person's words verbatim, the deliverable they want back
+(a kind a workflow declares, a family such as `review` or `document`, or
+`other` with a few words of description), and the period, the systems
+named, the destination, the schedule, the stakes, and anything the
+conversation leaves open. A kind outside that set, a missing deliverable for
+work, or any other value Construct would have to guess comes back as wrong
+input naming the field, the values it takes, and an example of that field.
+
+Construct checks the reading, works the period out from the calendar,
+resolves the named systems to declared source ids, and names every
+workflow whose declared deliverable fits, in a fixed order: a workflow the
+reading names, then the exact kind, then the rest of its family, with
+workflows that bind the chosen skill first in each group. `other`, and work
+nothing else fits, goes to the general carrier, `managed-outcome`. Each
+match comes with whether it can run here, what it still needs, and the
+use-when text of the skills it binds. Construct asks only what it can see
+is missing: a required input of the first match, a schedule for maintain,
+which declared source an ambiguous name means, or where the result goes
+when two destinations disagree. The host's own blocking items go back to it
+to ask. Nothing is recorded.
+
+`start_outcome` takes the same intake and checks it again, so skipping
+`classify_request` skips no check. While a question is open or an input is
+wrong, nothing starts and no run is left behind. Otherwise the run freezes
+the reading in its bindings, once: the intake, the period in dates, the
+named and declared sources, the stakes and the chosen method as declared,
+who judged the reading, and what was assumed. Every step is handed the
+reading in structured fields, without the person's words; Construct's own
+instructions count the systems that are not registered and never name
+them. A review step that binds no skill of its own is given the chosen
+method. The same target over a different window is different work. The
+command line and standing triggers start through the same service and still
+keep a blocked run to correct.
+
 ## Resolving before running
 
 ```bash

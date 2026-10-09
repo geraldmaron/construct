@@ -9,8 +9,9 @@
  * skills directory the host reads, that Claude Code's hooks stay in its
  * machine-local settings, that `construct serve` completes the MCP handshake the host would
  * perform, that the interactive surface preserves the current host (no
- * spawn path exists in the server or the broker), that ordinary language
- * classifies as the directive's examples say, that a skill body loads only
+ * spawn path exists in the server or the broker), that a wrong typed reading
+ * comes back naming its field while a right one matches by its deliverable
+ * and the classify_request schema fits a host's budget, that a skill body loads only
  * when asked, that a managed workflow runs end to end with decisions relayed
  * and a final handback, and that the headless surface cannot decide.
  *
@@ -247,14 +248,29 @@ async function checkHost(host) {
       if (!initMsg.result) throw new Error(initMsg.error?.message ?? 'no initialize reply');
       const boot = await s.call('bootstrap');
       record(host.id, 'bootstrap summary', boot.session?.host === host.id && typeof boot.next === 'string' ? 'passed' : 'failed', `host ${boot.session?.host}; next: ${boot.next}`);
-      const cls = [['What does this function do?', 'answer'], ['Remember that we will not add schema migration until stable', 'remember'], ['Review this implementation against our design principles', 'manage'], ['Every January, compare team strategies to active Jira work and capacity', 'maintain']];
-      const results = [];
-      for (const [text, expected] of cls) results.push((await s.call('classify_request', { text })).class === expected);
-      record(host.id, 'ordinary-language classification', results.every(Boolean) ? 'passed' : 'failed', `${results.filter(Boolean).length}/${results.length} directive examples`);
+      // The host reports a typed reading; a wrong one is a tool error naming the field, and the right one matches by its deliverable.
+      const refusedField = async (args) => {
+        const r = await s.rpc('tools/call', { name: 'classify_request', arguments: args });
+        return r.result?.isError ? r.result.structuredContent ?? null : null;
+      };
+      const kindless = await refusedField({ words: 'Review this implementation against our design principles' });
+      const wrongKind = await refusedField({ words: 'Review this implementation against our design principles', kind: 'work' });
+      const reading = { words: 'Review this implementation against our design principles', kind: 'manage', deliverable: { kind: 'review/design-conformance' }, target: 'README.md' };
+      const cls = await s.call('classify_request', reading);
+      const listed = (await s.rpc('tools/list')).result.tools.find((t) => t.name === 'classify_request');
+      const schemaBytes = Buffer.byteLength(JSON.stringify(listed.inputSchema));
+      const typed = [
+        ['words without kind is refused on kind', kindless?.field === 'kind'],
+        ['kind work is refused with the five kinds', wrongKind?.field === 'kind' && JSON.stringify(wrongKind.allowed) === JSON.stringify(['answer', 'remember', 'manage', 'maintain', 'coordinate'])],
+        ['the design-conformance reading matches with nothing missing', cls.matches?.[0]?.workflowId === 'design-conformance' && cls.matches[0].missing.length === 0 && cls.recorded === false],
+        [`schema ${String(schemaBytes)} bytes, description ${String(listed.description.length)} characters`, schemaBytes < 4500 && listed.description.length <= 2048],
+      ];
+      record(host.id, 'typed intake', typed.every(([, ok]) => ok) ? 'passed' : 'failed', typed.map(([what, ok]) => `${ok ? '' : 'NOT '}${what}`).join('; '));
       const meta = await s.call('skills', { action: 'show', id: 'context-mapping' });
       const body = await s.call('skills', { action: 'show', id: 'context-mapping', includeBody: true });
       record(host.id, 'targeted skill loading', meta.body === undefined && typeof body.body === 'string' ? 'passed' : 'failed', 'body absent by default, present on request');
-      const started = await s.call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } });
+      const started = await s.call('start_outcome', { workflowId: 'design-conformance', intake: cls.intake });
+      if (started.started !== true) throw new Error(`start_outcome started nothing: ${JSON.stringify(started.questions ?? started)}`);
       const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: ['Does host-agnostic cover the CLI?'] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
       let steps = 0;
       for (let i = 0; i < 4; i += 1) {

@@ -257,6 +257,13 @@ function exampleFor(field: string): unknown {
   return EXAMPLES[/^[A-Za-z]+/.exec(field)?.[0] ?? ''] ?? null;
 }
 
+/** The smallest reading of work: the words, the kind, and what the person wants back. */
+export const CORE_EXAMPLE: Readonly<Record<string, unknown>> = {
+  words: '<the person’s request, verbatim>',
+  kind: 'manage',
+  deliverable: { kind: OTHER_KIND, describe: '<what they want back>' },
+};
+
 // ---------------------------------------------------------------- reading helpers
 
 function isRecord(x: unknown): x is Record<string, unknown> {
@@ -419,7 +426,7 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
   // Fields an answer, a record or coordination has no use for are ignored.
   const work = isWork(kind);
   for (const key of ['deliverable', 'period', 'schedule'] as const) {
-    if (!work && given(r[key])) coerce(key, r[key], null, `a ${kind} reading takes no ${key}, so it is ignored`);
+    if (!work && given(r[key])) coerce(key, r[key], null, `${kind === 'answer' ? 'an' : 'a'} ${kind} reading takes no ${key}, so it is ignored`);
   }
 
   // deliverable: what the person wants back.
@@ -766,15 +773,22 @@ export function workflowInputFor(intake: Intake, workflow: RegisteredWorkflow, e
   if (sourcesKey !== undefined && readIds.length) mapped[sourcesKey] = readIds;
   const destination = canonicalDestination(intake.destination);
   if (m.inputSchema.destination === 'string' && destination !== null) mapped.destination = destination;
-  if (destination !== null) {
-    for (const [where, from] of [['inputs', intake.inputs], ['input', explicit]] as const) {
-      if (from.destination !== undefined && from.destination !== destination) {
-        throw new IntakeError(`"${where}.destination" is ${JSON.stringify(from.destination)}, but the reading's destination is ${destination}; drop one or make them agree`, `${where}.destination`, { allowed: [destination], example: null });
-      }
-    }
+  const conflict = destinationConflict(intake, explicit);
+  if (conflict) {
+    throw new IntakeError(`"${conflict.field}" is ${JSON.stringify(conflict.given)}, but the reading's destination is ${conflict.reading}; drop one or make them agree`, conflict.field, { allowed: [conflict.reading], example: null });
   }
   const input: Record<string, unknown> = { ...mapped, ...intake.inputs, ...explicit };
   return { input, missing: m.requiredInputs.filter((k) => input[k] === undefined) };
+}
+
+/** A destination given as a workflow input that disagrees with the reading's own, or null when they agree or only one is given. */
+export function destinationConflict(intake: Intake, explicit: Readonly<Record<string, unknown>> = {}): { readonly field: string; readonly reading: string; readonly given: unknown } | null {
+  const reading = canonicalDestination(intake.destination);
+  if (reading === null) return null;
+  for (const [where, from] of [['inputs', intake.inputs], ['input', explicit]] as const) {
+    if (from.destination !== undefined && from.destination !== reading) return { field: `${where}.destination`, reading, given: from.destination };
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------- questions
@@ -806,13 +820,14 @@ export function slotQuestion(slot: string, workflow: RegisteredWorkflow): Questi
 
 /**
  * The questions the reading leaves for the person. The kernel asks only what
- * it can see is missing: a schedule for maintain, each required input the
- * first match still lacks, and which declared source an ambiguous name
- * means. The host's own blocking items go back to the model as
- * hostQuestions. Throws an IntakeError when the reading's inputs name a key
- * the first match does not take.
+ * it can see is missing or contradicts itself: a schedule for maintain, each
+ * required input the workflow still lacks once `explicit` input is applied,
+ * where the result goes when two destinations disagree, and which declared
+ * source an ambiguous name means. The host's own blocking items go back to
+ * the model as hostQuestions. Throws an IntakeError when the reading's
+ * inputs name a key the workflow does not take.
  */
-export function questionsFor(validated: ValidatedIntake, firstMatch: WorkflowMatch | null, catalog: IntakeCatalog): { readonly questions: readonly Question[]; readonly hostQuestions: readonly HostQuestion[] } {
+export function questionsFor(validated: ValidatedIntake, firstMatch: WorkflowMatch | null, catalog: IntakeCatalog, explicit: Readonly<Record<string, unknown>> = {}): { readonly questions: readonly Question[]; readonly hostQuestions: readonly HostQuestion[] } {
   const { intake } = validated;
   const neededBy = firstMatch?.workflowId ?? null;
   const questions: Question[] = [];
@@ -820,7 +835,21 @@ export function questionsFor(validated: ValidatedIntake, firstMatch: WorkflowMat
     questions.push({ slot: 'schedule', ask: SCHEDULE_ASK, blocking: true, neededBy, from: 'kernel' });
   }
   const workflow = firstMatch ? catalog.workflows.find((w) => w.manifest.id === firstMatch.workflowId) ?? null : null;
-  if (workflow) for (const slot of workflowInputFor(intake, workflow).missing) questions.push(slotQuestion(slot, workflow));
+  if (workflow) {
+    const conflict = destinationConflict(intake, explicit);
+    if (conflict) {
+      const given = typeof conflict.given === 'string' ? conflict.given : JSON.stringify(conflict.given);
+      questions.push({
+        slot: 'destination',
+        ask: `Where should the result go: ${conflict.reading}, or ${given}?`,
+        options: [{ value: conflict.reading, label: 'as read from the request' }, { value: given, label: `as given in ${conflict.field}` }],
+        blocking: true,
+        neededBy,
+        from: 'kernel',
+      });
+    }
+    for (const slot of workflowInputFor(conflict ? { ...intake, destination: null } : intake, workflow, explicit).missing) questions.push(slotQuestion(slot, workflow));
+  }
   const kinds = new Map(catalog.sources.map((s) => [s.id, s.kind]));
   for (const s of validated.resolved.sources) {
     if (!s.candidates?.length) continue;
