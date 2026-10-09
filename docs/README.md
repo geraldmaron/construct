@@ -18,11 +18,15 @@ moment someone decides it is documentation rather than a record.
 - [`workflows-and-resolution.md`](workflows-and-resolution.md) — workflows, resolution before running, runs, deliverables and trust.
 - [`permissions-and-autonomy.md`](permissions-and-autonomy.md) — the action lattice, approvals, standing grants, break-glass, the headless runner.
 - [`bounded-delegation.md`](bounded-delegation.md) — opt-in local workers, review and integration, lifecycle limits, and the unverified release boundary.
+- [`work-ledger.md`](work-ledger.md) — filing work with its place, admission, readiness, claims, handoffs, and export and restore.
 - [`recurring-operation.md`](recurring-operation.md) — standing outcomes fired by an external clock.
 - [`connectors-and-semantics.md`](connectors-and-semantics.md) — what a connector declares, locators, credentials, and systems a session declares.
 - [`troubleshooting-and-recovery.md`](troubleshooting-and-recovery.md) — failures, state in an older format and `construct migrate`, reset, blocked runs, registry skew, host wiring.
 
-## Reference (generated from the definitions)
+## Reference
+
+All but `exit-codes.md` are generated from the definitions; that one is
+written by hand, and `tests/cli/exit-codes.test.ts` holds it to `src/cli/`.
 
 - [`cli-reference.md`](cli-reference.md) — every command and flag.
 - [`broker-reference.md`](broker-reference.md) — every MCP tool on both surfaces.
