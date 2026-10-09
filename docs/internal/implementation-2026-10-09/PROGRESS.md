@@ -99,3 +99,8 @@ Local code checkpoint: `2b1720e0` (implementation and regression tests), followi
 ## 18:47 UTC — final local handoff
 
 Code committed at 2b1720e0 after research commit 58146ab5. Native run run-0a70f6ba succeeded with actual command receipt execution:871 and current content hashes; deliverable-8c6497bf has structural plus observed-command assurance, not semantic proof. All owned controls/fixtures and claims are closed; native review item remains open for the independent recheck now underway. User-authorized signing change is repository-only: local false, global true, 1Password unchanged. No publication or deployment.
+
+
+## 18:59 UTC — retry approval budget corrected
+
+The reviewer’s P2 reproduced in four of six public-broker cases. Approval now counts the same non-expired attempts as validation enforcement. All six cases complete after a correctly bounded retry; existing waiver tests still pass. Full gate: 868 pass, zero failures, one existing skip; lint/types/smoke pass, static 91/0/7. See RETRY-GRANT-RECHECK.md. Independent recheck is pending. The user’s challenge of the limits framing is accepted: feasible supported behaviors will be classified and closed, with real external boundaries stated precisely.

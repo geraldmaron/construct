@@ -253,7 +253,9 @@ export function grantExtraAttempt(store: StateStore, input: { readonly id: strin
   return store.transaction(() => {
     const current = getStep(store, input.id);
     if (!current) throw new Error(`no step ${input.id}`);
-    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts + 1), updated_at = ? WHERE id = ?').run(input.at, input.id);
+    // Match validation enforcement: expired leases spend recovery allowance, not approved check attempts.
+    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts - ? + 1), updated_at = ? WHERE id = ?')
+      .run(expiredAttempts(store, input.id), input.at, input.id);
     appendActivity(store, { at: input.at, kind: 'step.attempt_granted', runId: current.runId, stepRunId: input.id, actor: input.by, payload: { stepId: current.stepId, attempts: current.attempts } });
     return getStep(store, input.id)!;
   });
