@@ -1,0 +1,14 @@
+[
+  {
+    "path": "evidence/evidence-generation-conformance.log",
+    "originalDigest": "41e5a00c504407d3cdd011e3b785a96d969b6e6d70ce2862beb4e26b69222ae7",
+    "normalizedDigest": "1f3853b69e13b59de8169ac288dbb6b7918caed2a3dddfb84f5196e8ddabfe02",
+    "change": "home prefix only; original in task workspace"
+  },
+  {
+    "path": "evidence/evidence-generation-tests-concurrent-failure.log",
+    "originalDigest": "58e1fb14cf226428015bb5d8a1ae8f32edbfb4902b7bb09773b01ca22b576d16",
+    "normalizedDigest": "3016b3a7203c3154623e085eaa12da4b087569385e4c7276f78a6b2d58ea1697",
+    "change": "home prefix only; original in task workspace"
+  }
+]

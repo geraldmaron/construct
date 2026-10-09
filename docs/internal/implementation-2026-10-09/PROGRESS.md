@@ -168,7 +168,7 @@ Native executable children remain open: `work-bc13f708` (non-code routing/verifi
 The execution transport briefly disconnected during a read-only inspection, then recovered. No model trial was running. The task control session and claim were renewed successfully. No push, merge, deployment, publication or permanent system job was performed.
 
 
-## 22:01 UTC — consumed evidence generation is now fenced
+## 21:59 UTC — consumed evidence generation is now fenced
 
 The shared workflow service now preserves inherited evidence bytes and rejects changed/lost consumed input both before claiming dependent work and when submitting under an existing lease. It cancels outstanding work/decisions with an explicit re-derivation reason, releases broker-owned delivery, preserves previous successful outputs, and does not replay an explicit occurrence key. Intended edits to a produced local file retain old bytes as historical baselines rather than current external support. [Before](evidence/stale-delivery-before.json), [after](evidence/stale-delivery-after.json), [six public regressions](../../../tests/kernel/broker/evidence-generation.test.ts).
 
