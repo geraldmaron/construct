@@ -236,6 +236,7 @@ Surface: interactive. Reads only: no.
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `answer` | string | yes | The answer you are about to give, as you would give it. |
+| `claims` | list of object | no | Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown. |
 | `citations` | list of object | no | What it rests on: {ref, excerpt?} entries. |
 | `period` | object | no | The period the answer covers, when it covers one: {semantics: as_of \| changed_during \| evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}. |
 | `outsidePeriod` | list of object | no | Cited items updated after the period that belong in the answer anyway: {ref, why} entries. |
