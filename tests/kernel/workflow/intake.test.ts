@@ -202,8 +202,12 @@ test('a deliverable kind resolves by the same words, a bare family stays a famil
   assert.deepEqual(review.normalized, [{ field: 'deliverable.kind', from: 'architecture review', to: 'review/architecture', why: 'the same words as a declared deliverable kind' }]);
 
   const prd = kindOf('prd');
-  assert.deepEqual(prd.intake.deliverable, { kind: 'other', describe: 'prd' });
-  assert.deepEqual(prd.normalized.map((n) => [n.field, n.from, n.to]), [['deliverable.kind', 'prd', 'other'], ['deliverable.describe', null, 'prd']]);
+  assert.deepEqual(prd.intake.deliverable, { kind: 'document/prd', describe: null });
+  assert.equal(matchWorkflows(prd.intake, CATALOG)[0]?.workflowId, 'prd-authoring');
+  assert.deepEqual(prd.normalized.map((n) => [n.field, n.from, n.to]), [['deliverable.kind', 'prd', 'document/prd']]);
+
+  const ambiguous = catalogOf({ workflows: replaced(withManifest('architecture-decision-review', { deliverable: { ...manifest('architecture-decision-review').deliverable, kind: 'review/prd' } })) });
+  assert.deepEqual(validateIntake({ ...REVIEW, deliverable: { kind: 'prd' } }, ambiguous, 'classify').intake.deliverable, { kind: 'other', describe: 'prd' }, 'an ambiguous leaf does not guess a specialist');
 
   const diagram = kindOf('architecture diagram');
   assert.deepEqual(diagram.intake.deliverable, { kind: 'other', describe: 'architecture diagram' });

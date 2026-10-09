@@ -62,10 +62,12 @@ export function qualifySkill(skill: RegisteredSkill, lockRow: LockRow | undefine
     return { ...base, state: 'degraded', why: lockRow.why };
   }
   if (!hasActivationEvals(skill)) {
-    return { ...base, state: 'experimental', why: 'no activation evals have been exercised' };
+    return { ...base, state: 'experimental', why: 'no activation evaluation cases are declared' };
   }
   if (!hasBehaviorEvals(skill)) {
-    return { ...base, state: 'experimental', why: 'activation evals only; behavior has not been exercised for this digest' };
+    return { ...base, state: 'experimental', why: 'activation cases only; no behavior evaluation cases are declared' };
   }
-  return { ...base, state: 'qualified', why: 'lock matches the digest and evals exercise activation and behavior' };
+  // Case files describe what should be tested. They contain no authenticated
+  // execution record for this digest or host, and cannot confer qualification.
+  return { ...base, state: 'experimental', why: 'lock and evaluation cases are present; no passing execution record is bound to this digest and host' };
 }

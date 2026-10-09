@@ -346,7 +346,7 @@ function deliverableVocabulary(catalog: IntakeCatalog): { readonly kinds: readon
 /**
  * A model-supplied deliverable kind as a declared one: kept when it is
  * declared, a family, or other; otherwise the one declared kind (or family)
- * with exactly the same words; otherwise null.
+ * with exactly the same words; or an unambiguous leaf identifier such as prd; otherwise null.
  */
 function declaredKind(kind: string, catalog: IntakeCatalog): string | null {
   const { kinds, families } = deliverableVocabulary(catalog);
@@ -356,7 +356,11 @@ function declaredKind(kind: string, catalog: IntakeCatalog): string | null {
   const family = [...families].find((f) => tokenKey(f) === key);
   if (family !== undefined) return family;
   const hits = kinds.filter((k) => tokenKey(k) === key);
-  return hits.length === 1 ? hits[0]! : null;
+  if (hits.length === 1) return hits[0]!;
+  // Normalize the host's typed enum, never infer intent from the person's prose.
+  // A unique registered leaf must not silently lose its specialist workflow.
+  const leaves = kinds.filter((k) => k.includes('/') && tokenKey(k.slice(k.lastIndexOf('/') + 1)) === key);
+  return leaves.length === 1 ? leaves[0]! : null;
 }
 
 // ---------------------------------------------------------------- sources
@@ -449,7 +453,7 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
         describe = asked;
       }
     } else if (resolved !== asked) {
-      coerce('deliverable.kind', asked, resolved, resolved.includes('/') ? 'the same words as a declared deliverable kind' : 'the same words as a deliverable family');
+      coerce('deliverable.kind', asked, resolved, resolved.includes('/') ? (tokenKey(asked) === tokenKey(resolved) ? 'the same words as a declared deliverable kind' : 'the unique leaf of a declared deliverable kind') : 'the same words as a deliverable family');
     }
     if (resolved === OTHER_KIND && describe === null) fail('deliverable.describe', '"deliverable.describe" is required with other: say in a few words what the person wants back');
     deliverable = { kind: resolved, describe };
