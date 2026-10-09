@@ -1,0 +1,23 @@
+{
+  "derivedAt": "2026-10-09T22:10:52.211782+00:00",
+  "basis": "Existing read-only SQLite snapshot, invocation configurations, public event stream and local fixture bytes. No rerun, no artifact or rubric changes.",
+  "excluded": "Lease/claim tokens and private reasoning are excluded. User home prefix normalized in metadata; local fixture and prompt bytes unchanged. Native source manifests are host-reported observations, accompanied by the previously archived actual HTTP/MCP reads. Reported method application is not proof of quality.",
+  "sourceChangeLimit": "The third prompt explicitly asks for corrected-record reanalysis. This pair does not establish autonomous change detection or interrupted-work recovery. Separate deterministic stale-evidence and recovery trials cover bounded mechanisms.",
+  "freshnessLimit": "Synthetic fixtures disclose authority, supersession and unit warnings. Unfamiliar-domain/schema inference requires additional held-out trials.",
+  "denominator": "Preserve all six trials: 2 of 12 managed requests complete, 9 do not complete and 1 has an unreceipted interruption. Six Q&A trials pass.",
+  "redactedFields": [
+    "native-lineage-and-bindings.json/step_runs/0/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/1/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/2/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/3/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/4/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/5/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/6/lease_nonce",
+    "native-lineage-and-bindings.json/step_runs/7/lease_nonce",
+    "native-lineage-and-bindings.json/work_items/0/claim_token",
+    "native-lineage-and-bindings.json/work_items/1/claim_token",
+    "native-lineage-and-bindings.json/sessions/0/machine",
+    "native-lineage-and-bindings.json/sessions/1/machine",
+    "native-lineage-and-bindings.json/sessions/2/machine"
+  ]
+}

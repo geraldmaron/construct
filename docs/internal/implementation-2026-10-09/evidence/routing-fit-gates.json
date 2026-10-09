@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-09T22:15:17.432603+00:00",
+  "focused": "31 pass",
+  "full": "995 pass, 0 fail, 1 existing skip",
+  "lint": "pass",
+  "typecheck": "pass",
+  "smoke": "pass",
+  "staticConformance": "91 pass, 0 fail, 7 untested",
+  "logs": [
+    {
+      "path": "routing-fit-tests.log",
+      "sourceSha256": "a00690156c4bba0c564c14b581f6a370b39e7ceac5def1533ebc160d62433d70",
+      "archiveSha256": "a00690156c4bba0c564c14b581f6a370b39e7ceac5def1533ebc160d62433d70",
+      "normalization": "user home prefix in gate metadata only"
+    },
+    {
+      "path": "routing-fit-smoke.log",
+      "sourceSha256": "1c5df33ee57edf0300374770fbc4eb5ac5d808f2562676f1bece2a2dfda28697",
+      "archiveSha256": "1c5df33ee57edf0300374770fbc4eb5ac5d808f2562676f1bece2a2dfda28697",
+      "normalization": "user home prefix in gate metadata only"
+    },
+    {
+      "path": "routing-fit-conformance.log",
+      "sourceSha256": "967107162571024e3bd27d51de3e48afacb57a147f8c177614c0aff11b2ab1a0",
+      "archiveSha256": "647cb37fca8b4a535db24c9997828820557bb3a93de140bb9741df0f6c5c2f89",
+      "normalization": "user home prefix in gate metadata only"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "path": "archive-scope.json",
+    "sha256": "ff23a9c4d51d808f4b53999e089748a82e1e9ac90336ac0ff7b08d9a1023c31d",
+    "bytes": 1975
+  },
+  {
+    "path": "changed-prompt.txt",
+    "sha256": "ce2322d1765b6540c515940b3641d295a3b43e24fca4ec3f593902a8d85f7f57",
+    "bytes": 160
+  },
+  {
+    "path": "initial-prompt.txt",
+    "sha256": "ae58a83340aed56b637d8dc354c07f58da81dd9e82f1543de47b825f398a6536",
+    "bytes": 141
+  },
+  {
+    "path": "local-fixtures/README.md",
+    "sha256": "b0f84a3a514307572f7ca803fc5a011911b65fde793e7a4d167f5e4f2c184fa3",
+    "bytes": 475
+  },
+  {
+    "path": "local-fixtures/docs/cached.json",
+    "sha256": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+    "bytes": 132
+  },
+  {
+    "path": "local-fixtures/docs/policy.md",
+    "sha256": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+    "bytes": 390
+  },
+  {
+    "path": "local-fixtures/manifest.json",
+    "sha256": "20c95ad6a9789dff90ee932b89ab3a4c4dc758bbbc2d416a8613d073aaed13a1",
+    "bytes": 624
+  },
+  {
+    "path": "native-invocations.json",
+    "sha256": "01c5692b745b6776ee968282e81438a386c8010f83d0609f2be3911e900043d7",
+    "bytes": 22116
+  },
+  {
+    "path": "native-lineage-and-bindings.json",
+    "sha256": "e2a8e79a363b3a1a8107718a784f59db544072808f0752cb2cc15af4974077e4",
+    "bytes": 182084
+  },
+  {
+    "path": "native-source-history.json",
+    "sha256": "9c414bb4f4f1cc003192bdd3311586d4efcd8228f1fcd27bf4b2266877e755c6",
+    "bytes": 12383
+  },
+  {
+    "path": "qa-prompt.txt",
+    "sha256": "e8afb28f64e1949f5917dce1817bc20405984c26558a3b3062c75a6d3889399a",
+    "bytes": 100
+  },
+  {
+    "path": "setup.json",
+    "sha256": "8eb7af116269fb2697543efe3c2a08ac7da84a26c5dbb7540603d214448ba9c5",
+    "bytes": 2543
+  }
+]

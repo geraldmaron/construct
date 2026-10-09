@@ -178,3 +178,12 @@ Focused related checks: 22 pass. Required gate: 990 pass/0 fail/1 existing skip,
 ## 22:08 UTC — research method and scoped reviewer evidence
 
 Method0.3.2 and reviewer public-execution transport pass16 focused checks and the full992-pass/zero-failure/one-skip gate, lint/types/smoke; static91/0/7. [Current qualification notes](NATIVE-QUALIFICATION.md). An independently authored two-domain forward test is archived with its single-agent limitations. The original six-case corpus is running in fresh native sessions with unchanged inputs/rubrics; all previous failures/baselines stay in the denominator. The native run is bounded and task-owned, with a durable supervisor receipt; no permanent service exists. Non-code routing/verifier selection and the broad original acceptance remain open.
+
+
+## 22:13 UTC — existing Codex evidence made independently inspectable
+
+The latest successful pair now has an [archive supplement](evidence/fresh-journeys/fresh-codex-delivery/supplement/archive-scope.json): exact ordinary prompts, sanitized invocation arguments, distinct native thread-start and completion events, actual local fixture bytes, both native source snapshots and manifests, all eight step outputs/receipts, deliverable ancestry, frozen workflow/skill digests and native delivery state. This is a projection from existing records, not a model rerun. Private reasoning and lease tokens are omitted; archive hashes identify every file.
+
+The corrected-record prompt requested reanalysis. This pair does not prove automatic stale-work detection, interrupted-work recovery, unfamiliar schema inference, conditional lenses, or independent method quality. All six trials and their failures remain in the denominator. The routing candidate now exposes each registry workflow's actual verification requirement and eligible alternatives before general command-based work starts; fresh native behavior is still pending.
+
+Routing correction gate: 31 focused checks and full 995 pass/0 fail/1 existing skip; lint/types/packaged smoke pass; static all-host91/0/7. The unchanged fresh Cursor `verifier-fit` replay is running with the original six-minute phase limit and Shell(*) denial. Current research qualification has reproduced the archive handback failure; final six-case result is still pending.
