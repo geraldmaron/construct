@@ -1,3 +1,7 @@
+import { randomUUID, createHash } from 'node:crypto';
+import { relative } from 'node:path';
+import { traverseDirectory } from '../hosts/sources/traverse-directory.ts';
+import { appendActivity } from '../kernel/state/activity.ts';
 /**
  * cli/source.ts — declare and inspect the ground the project reads. Declared
  * sources live in the committed sources file; local ones stay in state.
@@ -41,6 +45,7 @@ export const SOURCE_SPECS: readonly CommandSpec[] = [
     readOnly: false,
   },
   { path: ['source', 'retire'], gloss: 'retire a source; its history stays', group, positionals: ['<id>'], flags: [], readOnly: false },
+  { path: ['source', 'traverse'], gloss: 'follow bounded references inside one declared readable directory source and record omissions', group, positionals: ['<id>'], flags: [{ name: 'from', gloss: 'starting document relative to the declared directory', takesValue: true }, { name: 'max-documents', gloss: 'document budget, 1–48 (default 48)', takesValue: true }], readOnly: false },
   { path: ['source', 'refresh'], gloss: 'read a source now and record what changed', group, positionals: ['<id>'], flags: [], readOnly: false },
   {
     path: ['source', 'relate'],
@@ -89,6 +94,22 @@ function declaredFrom(id: string, args: ParsedArgs, root: string): DeclaredSourc
 
 export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   switch (sub) {
+    case 'traverse': {
+      const project = openProject(ctx);
+      try {
+        const svc = createSourceService(project.store, { readers: readers(), root: project.root });
+        const source = svc.list().find((s) => s.id === args.positionals[0]);
+        const from = stringFlag(args, 'from');
+        if (!source || !from) throw new UsageError('source traverse needs an active source id and --from=<document>');
+        const sessionId = `traverse:${randomUUID()}`;
+        const result = await traverseDirectory({ source, from, sessionId, now: ctx.now, maxDocuments: stringFlag(args, 'max-documents') ? Number(stringFlag(args, 'max-documents')) : undefined });
+        const snapshot = createSourceService(project.store, { root: project.root, readers: new Map([['directory', async () => ({ outcome: 'read' as const, report: { digest: createHash('sha256').update(JSON.stringify(result.documents.map((d) => [d.ref, d.digest]))).digest('hex'), summary: 'bounded reference traversal', evidence: 'witnessed' as const, coverage: { complete: false, traversal: result.coverage, omissions: result.dispositions }, items: result.documents.map((d) => ({ externalRef: relative(source.locator!, d.ref), name: relative(source.locator!, d.ref), kind: 'document', attributes: { fingerprint: d.digest, text: d.text, truncated: d.truncated } })) } })]]) });
+        if (result.documents.length) await snapshot.refresh(source.id, ctx.now(), () => ctx.nextId('traverse'));
+        appendActivity(project.store, { at: ctx.now(), kind: 'source.traversed', actor: 'local source adapter', channel: 'host_source', payload: { sourceId: source.id, sessionId, ...result, documents: result.documents.map(({ text: _text, ...d }) => d) } });
+        writeJson(result);
+        return result.coverage === 'incomplete' ? 1 : 0;
+      } finally { project.store.close(); }
+    }
     case 'list':
       return withProject(ctx, ({ store }) => {
         const svc = createSourceService(store, { readers: readers() });

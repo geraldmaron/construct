@@ -26,26 +26,22 @@ test('under another process’s write lock the handshake answers at once and a c
     holder.exec('PRAGMA journal_mode = DELETE');
     holder.exec('BEGIN EXCLUSIVE');
     holder.exec(`INSERT INTO meta (key, value) VALUES ('lock-probe', 'x')`);
-    const lockedAt = Date.now();
     const session = new Session(dir, envFor(fx));
     try {
       const init = await session.request('initialize', INIT);
-      const answeredAfter = Date.now() - lockedAt;
-      assert.ok(answeredAfter < 3000, `the handshake waited ${String(answeredAfter)} ms on a lock held for 4 s`);
+      // The lock remains held until both responses arrive. Prove ordering,
+      // not process startup speed under the full suite's CPU contention.
       assert.doesNotMatch(init.result?.instructions ?? '', /could not bind|construct init/);
       const during = await session.call('bootstrap');
-      if (Date.now() - lockedAt < 3800) {
-        assert.equal(during.result?.isError, true, 'while the lock is held, a call is told to wait');
-        assert.match(String(during.result?.structuredContent?.next ?? ''), /call again/);
-      }
-      const wait = 4000 - (Date.now() - lockedAt);
-      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      assert.equal(during.result?.isError, true, 'while the lock is held, a call is told to wait');
+      assert.match(String(during.result?.structuredContent?.next ?? ''), /call again/);
       holder.exec('ROLLBACK');
       holder.close();
       const after = await session.call('bootstrap');
       assert.notEqual(after.result?.isError, true, JSON.stringify(after.result?.structuredContent));
       assert.ok(after.result?.structuredContent?.profile, 'a bound bootstrap reports the project profile');
     } finally {
+      if (holder.isOpen) { holder.exec('ROLLBACK'); holder.close(); }
       await session.close();
     }
   } finally {
