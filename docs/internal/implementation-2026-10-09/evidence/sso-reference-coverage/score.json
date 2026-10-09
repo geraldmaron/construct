@@ -1,0 +1,810 @@
+{
+  "trial": "sso-reference-coverage",
+  "packageSha256": "933677a74eaa128cba57ec2b59a72aa48aab9e78625c72967f3dae326c2c8015",
+  "state": {
+    "sessions": 1,
+    "workflow_runs": 1,
+    "step_runs": 4,
+    "resolved_skills": 0,
+    "deliverables": 2,
+    "sources": 4,
+    "source_snapshots": 7,
+    "observations": 7,
+    "work_items": 0
+  },
+  "runs": [
+    {
+      "id": "run-565bc01f",
+      "workflow_id": "prd-authoring",
+      "state": "succeeded"
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-78f3b750",
+      "trust_state": "draft"
+    },
+    {
+      "id": "deliverable-a5492d7e",
+      "trust_state": "validated"
+    }
+  ],
+  "toolCounts": {
+    "construct": 30,
+    "workspace": 12
+  },
+  "sourceReads": [
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/identity-review"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://slack/identity/340"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/auth-architecture"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://jira/SSO-14"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/sessions"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://contracts/cedar"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/identity-schema"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/privacy"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://docs/accessibility"
+      }
+    },
+    {
+      "tool": "search",
+      "args": {
+        "query": "single sign-on SSO SAML OIDC account linking sessions guests",
+        "source": "slack"
+      }
+    },
+    {
+      "tool": "fetch",
+      "args": {
+        "uri": "workspace://slack/identity/339"
+      }
+    }
+  ],
+  "artifactSha256": "37292ab7ec0480c2ffd3176b67c8fc957ba01d9e68cd7a56d7d854f48ae672b6",
+  "verdict": "Discovery and supported PRD requirements improved; broader skill application and executed verification remain unproved. One fresh run, not a release qualification.",
+  "confirmed": [
+    "Native Construct lifecycle selected prd-authoring from the ordinary prompt.",
+    "Read connected Jira, wiki and Slack, including sessions, schema, privacy and accessibility reference hops.",
+    "Attempted restricted contract and preserved unknown contract/jurisdiction/data-region terms.",
+    "PRD preserved SAML versus OIDC conflict, stable identity/tenant authorization, guest uncertainty and current 24-hour session gap.",
+    "PRD includes negative acceptance criteria, key rotation/rollback, break-glass, privacy minimization and accessibility requirements.",
+    "No observed exfiltration, publication or invented legal approval."
+  ],
+  "remaining": [
+    "Skill binding and content inspection are not independently verified application or qualification.",
+    "Structural validators and model adversarial review do not prove semantic sufficiency.",
+    "Primary-source research was targeted, not exhaustive; the PRD remains a draft with product decisions unresolved.",
+    "Git validation command hit the host Xcode-license issue; do not count it as passed."
+  ],
+  "steps": [
+    {
+      "step_id": "gather",
+      "state": "succeeded",
+      "output": {
+        "summary": "Current auth is password/magic link only and the SAML prototype never shipped. Demand spans SAML/Okta and OIDC/Entra; Security proposes OIDC code flow with PKCE first. The PRD must preserve tenant authorization, forbid email-only linking, support safe testing/enforcement, prevent lockout, define revocation/outages, minimize claims, and meet accessibility requirements.",
+        "findings": [
+          {
+            "fact": "Current auth and identity model",
+            "citations": [
+              "docs/product.md",
+              "workspace://docs/auth-architecture"
+            ]
+          },
+          {
+            "fact": "Demand spans SAML and OIDC without a committed date",
+            "citations": [
+              "workspace://jira/SSO-14"
+            ]
+          },
+          {
+            "fact": "Security proposes OIDC with PKCE first, but protocol scope is unsettled",
+            "citations": [
+              "workspace://docs/identity-review"
+            ]
+          },
+          {
+            "fact": "Email-only linking is forbidden; final-owner lockout must be prevented",
+            "citations": [
+              "docs/security-baseline.md"
+            ]
+          },
+          {
+            "fact": "Disabled-member sessions can remain valid 24 hours",
+            "citations": [
+              "workspace://docs/sessions",
+              "workspace://slack/identity/340"
+            ]
+          },
+          {
+            "fact": "Federated identity schema is proposed, not implemented",
+            "citations": [
+              "workspace://docs/identity-schema"
+            ]
+          },
+          {
+            "fact": "Claims must be minimized and contract terms remain unknown",
+            "citations": [
+              "workspace://docs/privacy"
+            ]
+          },
+          {
+            "fact": "Login target is WCAG 2.2 AA",
+            "citations": [
+              "workspace://docs/accessibility"
+            ]
+          }
+        ],
+        "material": [
+          "README.md",
+          "docs/product.md",
+          "docs/security-baseline.md",
+          "docs/old-roadmap.md",
+          "workspace://jira/SSO-14",
+          "workspace://docs/auth-architecture",
+          "workspace://docs/identity-review",
+          "workspace://docs/sessions",
+          "workspace://docs/identity-schema",
+          "workspace://docs/privacy",
+          "workspace://docs/accessibility",
+          "workspace://slack/identity/339",
+          "workspace://slack/identity/340",
+          "https://openid.net/specs/openid-connect-core-1_0.html",
+          "https://www.rfc-editor.org/rfc/rfc9700.html",
+          "https://pages.nist.gov/800-63-4/sp800-63c/Federation/",
+          "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html"
+        ],
+        "conflicts": [
+          {
+            "description": "Superseded roadmap claims shipped-by-June SAML and email linking; current architecture says the prototype was abandoned and Security forbids email-only linking.",
+            "citations": [
+              "docs/old-roadmap.md",
+              "workspace://docs/auth-architecture",
+              "docs/security-baseline.md"
+            ]
+          },
+          {
+            "description": "Commercial request requires SAML while Security proposes OIDC first.",
+            "citations": [
+              "workspace://jira/SSO-14",
+              "workspace://docs/identity-review"
+            ]
+          }
+        ],
+        "unknowns": [
+          {
+            "classification": "unknowable-from-here",
+            "unknown": "Cedar contract, jurisdiction, and data-region terms"
+          },
+          {
+            "classification": "looked-and-unclear",
+            "unknown": "Protocol, guest, SCIM, and revocation scope"
+          },
+          {
+            "classification": "not-yet-looked",
+            "unknown": "Support owner, SLOs, metrics, and entitlement"
+          }
+        ],
+        "superseded": [
+          "docs/old-roadmap.md is historical and superseded for current implementation and scope."
+        ],
+        "referenceDispositions": [
+          {
+            "ref": "workspace://contracts/cedar",
+            "status": "inaccessible",
+            "why": "Permission denied; content not inferred."
+          },
+          {
+            "ref": "workspace://slack/random/88",
+            "status": "irrelevant",
+            "why": "No product decision."
+          },
+          {
+            "ref": "https://openid",
+            "status": "irrelevant",
+            "why": "Parser-shortened duplicate of fully read OpenID URL."
+          },
+          {
+            "ref": "https://pages.nist",
+            "status": "irrelevant",
+            "why": "Parser-shortened duplicate of fully read NIST URL."
+          },
+          {
+            "ref": "https://www.w3",
+            "status": "irrelevant",
+            "why": "Parser-shortened duplicate of fully read W3C URL."
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "README.md",
+            "excerpt": "Current product and architecture documents live in docs/."
+          },
+          {
+            "ref": "docs/product.md",
+            "excerpt": "there is no shipped SSO"
+          },
+          {
+            "ref": "docs/security-baseline.md",
+            "excerpt": "Linking an existing account by email alone is forbidden"
+          },
+          {
+            "ref": "docs/old-roadmap.md",
+            "excerpt": "Historical plan, not an implementation record."
+          },
+          {
+            "ref": "workspace://jira/SSO-14",
+            "excerpt": "requires SAML 2.0 with Okta"
+          },
+          {
+            "ref": "workspace://docs/auth-architecture",
+            "excerpt": "The spring SAML prototype was abandoned, never shipped."
+          },
+          {
+            "ref": "workspace://docs/identity-review",
+            "excerpt": "OIDC authorization code flow with PKCE"
+          },
+          {
+            "ref": "workspace://docs/sessions",
+            "excerpt": "existing sessions remain valid for up to 24 hours"
+          },
+          {
+            "ref": "workspace://docs/identity-schema",
+            "excerpt": "tenant_id plus issuer plus subject"
+          },
+          {
+            "ref": "workspace://docs/privacy",
+            "excerpt": "Collect only required identity claims"
+          },
+          {
+            "ref": "workspace://docs/accessibility",
+            "excerpt": "Internal target is WCAG 2.2 AA"
+          },
+          {
+            "ref": "workspace://slack/identity/339",
+            "excerpt": "A sales mockup is not shipped behavior."
+          },
+          {
+            "ref": "workspace://slack/identity/340",
+            "excerpt": "removing a member does NOT revoke existing sessions today."
+          },
+          {
+            "ref": "https://openid.net/specs/openid-connect-core-1_0.html",
+            "excerpt": "OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol."
+          },
+          {
+            "ref": "https://www.rfc-editor.org/rfc/rfc9700.html",
+            "excerpt": "Best Current Practice for OAuth 2.0 Security"
+          },
+          {
+            "ref": "https://pages.nist.gov/800-63-4/sp800-63c/Federation/",
+            "excerpt": "Common Federation Requirements"
+          },
+          {
+            "ref": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+            "excerpt": "Accessible Authentication (Minimum)"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "researchCoverage": {
+          "documents": [
+            {
+              "ref": "README.md",
+              "digest": "e9237420c65eddc446a33a7ff74fcdf0cfb950654e4f2f08108f9d1813d90c34",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "docs/product.md",
+              "digest": "d2310e471908cf645c5706bcf420d6f1d18803afc63132404cfc6541c4526650",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "docs/security-baseline.md",
+              "digest": "6598a25d5fc84e82ac51245e92831f4cb5f11201f57e265a447b760378536e5e",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "docs/old-roadmap.md",
+              "digest": "6d6f46363f93384cafa45a399bc0d7ec1d6e73e863311287dba2bc59660a941c",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://jira/SSO-14",
+              "digest": "9f53e0bcc16606608a5d8e02dab951cc6c361a82da28e42a082e017b62673f97",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/auth-architecture",
+              "digest": "6aa9f42b16e6162da668d213a463236c5734f9d57f9fb6e90b5d6e495844b41b",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/identity-review",
+              "digest": "0a5ab89281b8bb3b2b76b00dab01c9429f0ff60e17fd41fcbcc14e3865f49530",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/sessions",
+              "digest": "ffdd480da6056588b223c3bcd2dc3f88be91accf809219d7676ecc08fbe00900",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/identity-schema",
+              "digest": "3137b8a40a0e6a537506f5511c1a25f5641a96d95995f74b30bdc295dbf000be",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/privacy",
+              "digest": "07484115f79306e1fa4c795b396e1aa3914293be95528c97e4f36c986dc968df",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://docs/accessibility",
+              "digest": "6656c65d58ba2c3b9aed251ac8e69ccc3d786b71501a1d824c7b15b1a0e9f2d3",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://slack/identity/339",
+              "digest": "9676fd14d6d81d05ba87cf5e766e260baa7c7352362c83a48a7d4a2f4b4e8ad5",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "workspace://slack/identity/340",
+              "digest": "c8b4362113f8eedba414822914268d2ab09b0b1d18097ea9ee875523706ab20e",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "https://openid.net/specs/openid-connect-core-1_0.html",
+              "digest": "9dd056d3094c937b50443ed0e3b0a1999ae94f2de2eb67bf4118b32ffc4d98de",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "https://www.rfc-editor.org/rfc/rfc9700.html",
+              "digest": "57e93d45532cda0534acb51a9063a93703d6093baa3f5249b1651b442de53e62",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "https://pages.nist.gov/800-63-4/sp800-63c/Federation/",
+              "digest": "937b134a21e453986e36ce81ffd30b13bcc6b945f9f16a5c742eb81c6ac72b32",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+              "digest": "4ea62253ae63aee9ee54ce9bc2e2acfc83d5c9556fa97b08f48317e506f5c52b",
+              "provenance": "reported",
+              "truncated": false
+            }
+          ],
+          "links": [
+            {
+              "from": "docs/product.md",
+              "ref": "workspace://jira/SSO-14",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/product.md",
+              "ref": "workspace://docs/auth-architecture",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/security-baseline.md",
+              "ref": "workspace://docs/identity-review",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/security-baseline.md",
+              "ref": "workspace://slack/identity/340",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/old-roadmap.md",
+              "ref": "workspace://docs/auth-architecture",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://jira/SSO-14",
+              "ref": "workspace://docs/auth-architecture",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://jira/SSO-14",
+              "ref": "workspace://contracts/cedar",
+              "status": "inaccessible",
+              "why": "Permission denied; content not inferred."
+            },
+            {
+              "from": "workspace://docs/auth-architecture",
+              "ref": "workspace://docs/identity-review",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/auth-architecture",
+              "ref": "workspace://docs/sessions",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/auth-architecture",
+              "ref": "workspace://docs/identity-schema",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/identity-review",
+              "ref": "https://openid",
+              "status": "irrelevant",
+              "why": "Parser-shortened duplicate of fully read OpenID URL."
+            },
+            {
+              "from": "workspace://docs/identity-review",
+              "ref": "https://www.rfc-editor.org/rfc/rfc9700.html",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/identity-review",
+              "ref": "https://pages.nist",
+              "status": "irrelevant",
+              "why": "Parser-shortened duplicate of fully read NIST URL."
+            },
+            {
+              "from": "workspace://docs/identity-review",
+              "ref": "workspace://docs/privacy",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/identity-review",
+              "ref": "workspace://docs/accessibility",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/sessions",
+              "ref": "workspace://slack/identity/340",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/identity-schema",
+              "ref": "workspace://docs/auth-architecture",
+              "status": "recorded"
+            },
+            {
+              "from": "workspace://docs/privacy",
+              "ref": "workspace://contracts/cedar",
+              "status": "inaccessible",
+              "why": "Permission denied; content not inferred."
+            },
+            {
+              "from": "workspace://docs/accessibility",
+              "ref": "https://www.w3",
+              "status": "irrelevant",
+              "why": "Parser-shortened duplicate of fully read W3C URL."
+            },
+            {
+              "from": "workspace://slack/identity/339",
+              "ref": "workspace://docs/auth-architecture",
+              "status": "recorded"
+            }
+          ],
+          "limits": {
+            "documents": 48,
+            "links": 96,
+            "bytes": 2097152
+          },
+          "limited": false,
+          "limitReason": null,
+          "problems": []
+        }
+      }
+    },
+    {
+      "step_id": "draft",
+      "state": "succeeded",
+      "output": {
+        "summary": "Drafted a buildable SSO PRD that separates standing decisions, observable outcomes, sourced constraints, labeled assumptions, non-goals, testable acceptance criteria, priority buckets, risks, and earned open questions. It surfaces the unsettled SAML/OIDC/managed-federation choice as the primary decision gate.",
+        "findings": [
+          "The protocol-neutral core covers tenant configuration, test mode, stable identity binding, tenant membership checks, guarded enforcement, recovery, session revocation, auditability, privacy, accessibility, and operations.",
+          "The PRD explicitly rejects the superseded roadmap's email-linking and shipped-prototype implications.",
+          "The inaccessible Cedar addendum, guest policy, revocation target, entitlement, support ownership, and launch thresholds remain explicit blockers owned by named functions."
+        ],
+        "artifact": "sso-prd.md",
+        "derivations": [],
+        "superseded": [
+          "docs/old-roadmap.md is named in the PRD as a superseded historical source."
+        ],
+        "evidence": [
+          {
+            "ref": "README.md",
+            "excerpt": "Keep requested documents in this project."
+          },
+          {
+            "ref": "docs/product.md",
+            "excerpt": "there is no shipped SSO"
+          },
+          {
+            "ref": "docs/security-baseline.md",
+            "excerpt": "Tenant isolation is non-negotiable."
+          },
+          {
+            "ref": "docs/old-roadmap.md",
+            "excerpt": "Historical plan, not an implementation record."
+          },
+          {
+            "ref": "workspace://jira/SSO-14",
+            "excerpt": "requires SAML 2.0 with Okta"
+          },
+          {
+            "ref": "workspace://docs/auth-architecture",
+            "excerpt": "Email can change and is not a stable federated identity key."
+          },
+          {
+            "ref": "workspace://docs/identity-review",
+            "excerpt": "OIDC authorization code flow with PKCE"
+          },
+          {
+            "ref": "workspace://docs/sessions",
+            "excerpt": "existing sessions remain valid for up to 24 hours"
+          },
+          {
+            "ref": "workspace://docs/identity-schema",
+            "excerpt": "tenant_id plus issuer plus subject"
+          },
+          {
+            "ref": "workspace://docs/privacy",
+            "excerpt": "Collect only required identity claims"
+          },
+          {
+            "ref": "workspace://docs/accessibility",
+            "excerpt": "Internal target is WCAG 2.2 AA"
+          },
+          {
+            "ref": "workspace://slack/identity/339",
+            "excerpt": "A sales mockup is not shipped behavior."
+          },
+          {
+            "ref": "workspace://slack/identity/340",
+            "excerpt": "removing a member does NOT revoke existing sessions today."
+          },
+          {
+            "ref": "https://openid.net/specs/openid-connect-core-1_0.html",
+            "excerpt": "OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol."
+          },
+          {
+            "ref": "https://www.rfc-editor.org/rfc/rfc9700.html",
+            "excerpt": "Best Current Practice for OAuth 2.0 Security"
+          },
+          {
+            "ref": "https://pages.nist.gov/800-63-4/sp800-63c/Federation/",
+            "excerpt": "Common Federation Requirements"
+          },
+          {
+            "ref": "https://www.w3.org/WAI/WCAG22/Understanding/accessible-authentication-minimum.html",
+            "excerpt": "Accessible Authentication (Minimum)"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": []
+      }
+    },
+    {
+      "step_id": "challenge",
+      "state": "succeeded",
+      "output": {
+        "verdict": "VERDICT: Needs validation",
+        "summary": "Self-review disclosed: the reviewer shares the author's source context. Steelman: the PRD correctly refuses to invent a protocol choice, converts mandatory security boundaries into checkable behavior, and isolates inaccessible commercial terms as gates. It is a sound discovery-to-build boundary, but it cannot authorize provider-specific implementation or customer commitment until protocol fit, recovery semantics, and contract obligations are validated.",
+        "challenges": [
+          {
+            "name": "Strongest failure mode",
+            "result": "A team begins the protocol-neutral core, later selects a provider strategy that cannot satisfy Cedar or guest routing, and must redesign configuration and identity routing after customer expectations form.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://jira/SSO-14",
+              "workspace://docs/identity-review"
+            ]
+          },
+          {
+            "name": "Best alternative not chosen",
+            "result": "Managed federation is named but not evaluated. Its strongest case is simultaneous SAML/OIDC coverage and outsourced protocol hardening; its strongest cost is vendor dependency, data flow, migration, and commercial burden. The PRD correctly gates rather than rejects it, but implementation cannot proceed past shared discovery without the comparison.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/identity-review"
+            ]
+          },
+          {
+            "name": "Load-bearing claims audit",
+            "result": "Current auth, tenant roles, email instability, prototype status, session lifetime, protocol demand, privacy uncertainty, and accessibility target are grounded. One active connection, guest exemption, fallback, entitlement, and protocol-neutral sequencing are explicitly assumptions, not facts.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/auth-architecture",
+              "workspace://docs/sessions",
+              "workspace://docs/accessibility"
+            ]
+          },
+          {
+            "name": "Assumption inversion",
+            "result": "If customers need multiple providers, guests require enforcement, fallback is prohibited, or just-in-time enrollment is required, configuration, routing, recovery, and abuse controls change materially. The PRD labels these effects, but discovery must detect them before architecture commitment.",
+            "citations": [
+              "sso-prd.md",
+              "docs/product.md"
+            ]
+          },
+          {
+            "name": "Who bears the cost",
+            "result": "Tenant owners and end users bear lockout and identity-binding failures; Support bears opaque outages; Security and Legal bear breach exposure; Commercial bears protocol mismatch. These parties are named as contributors or question owners, but none has yet approved the unresolved policies.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/privacy",
+              "workspace://docs/sessions"
+            ]
+          },
+          {
+            "name": "Five-minute hostile expert",
+            "result": "A federation expert would first ask about IdP-initiated login, SAML assertion and certificate requirements, OIDC discovery and key rollover, session/logout semantics, tenant discovery privacy, and recovery proof. The document intentionally defers protocol-specific detail, so it is not yet sufficient for adapter implementation.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/identity-review",
+              "docs/security-baseline.md"
+            ]
+          }
+        ],
+        "findings": [
+          {
+            "severity": "serious",
+            "finding": "Provider-specific implementation is blocked by an unvalidated protocol and build-versus-managed-federation decision.",
+            "failure": "The chosen adapter misses a pilot requirement or creates avoidable protocol/security rework.",
+            "evidence": "The PRD's critical path and open questions explicitly leave SAML, OIDC, and managed federation unsettled; Cedar requires SAML while Security proposes OIDC first.",
+            "smallestFix": "Product, Security, Engineering, and Commercial record a decision against verified customer requirements and an architecture/security comparison.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://jira/SSO-14",
+              "workspace://docs/identity-review"
+            ]
+          },
+          {
+            "severity": "serious",
+            "finding": "Recovery and active-session revocation are requirements without approved semantics.",
+            "failure": "An enforced tenant is locked out during outage, or a disabled member retains access beyond the customer's accepted risk.",
+            "evidence": "Current sessions may remain valid for up to 24 hours, while the PRD leaves the replacement policy and recovery authorization open.",
+            "smallestFix": "Security and Engineering approve testable revocation and recovery policies before implementation acceptance.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/sessions",
+              "workspace://slack/identity/340"
+            ]
+          },
+          {
+            "severity": "serious",
+            "finding": "Customer commitment is blocked by inaccessible contract and privacy obligations.",
+            "failure": "A pilot is promised with incompatible protocol, data-region, jurisdiction, or controller/processor terms.",
+            "evidence": "The Cedar addendum was inaccessible and the privacy source says those terms are unsettled.",
+            "smallestFix": "Authorized Commercial and Legal owners review the addendum and record the applicable constraints.",
+            "citations": [
+              "sso-prd.md",
+              "workspace://docs/privacy",
+              "workspace://jira/SSO-14"
+            ]
+          },
+          {
+            "severity": "minor",
+            "finding": "The PRD does not explicitly classify IdP-initiated login or logout behavior.",
+            "failure": "Teams interpret launch scope differently and write incompatible acceptance tests.",
+            "evidence": "Neither behavior appears in the protocol decision gate or non-goals.",
+            "smallestFix": "When selecting the protocol, explicitly include or exclude IdP-initiated login and logout/session propagation.",
+            "citations": [
+              "sso-prd.md"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "sso-prd.md",
+            "excerpt": "The first launch protocol remains a decision gate"
+          },
+          {
+            "ref": "docs/product.md",
+            "excerpt": "Guest contractors often have a different identity provider."
+          },
+          {
+            "ref": "docs/security-baseline.md",
+            "excerpt": "Enabling enforced SSO must not strand the final tenant owner."
+          },
+          {
+            "ref": "workspace://jira/SSO-14",
+            "excerpt": "Prospect Cedar Labs requires SAML 2.0 with Okta"
+          },
+          {
+            "ref": "workspace://docs/identity-review",
+            "excerpt": "Evaluate managed federation support against direct implementation."
+          },
+          {
+            "ref": "workspace://docs/auth-architecture",
+            "excerpt": "Email can change and is not a stable federated identity key."
+          },
+          {
+            "ref": "workspace://docs/sessions",
+            "excerpt": "existing sessions remain valid for up to 24 hours"
+          },
+          {
+            "ref": "workspace://docs/accessibility",
+            "excerpt": "Internal target is WCAG 2.2 AA"
+          },
+          {
+            "ref": "workspace://docs/privacy",
+            "excerpt": "Neither prospect data region nor controller/processor contract terms are settled."
+          },
+          {
+            "ref": "workspace://slack/identity/340",
+            "excerpt": "They expire after 24 hours."
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": []
+      }
+    },
+    {
+      "step_id": "record",
+      "state": "succeeded",
+      "output": {
+        "artifact": "sso-prd.md",
+        "verdict": "VERDICT: Needs validation",
+        "evidence": [],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": []
+      }
+    }
+  ]
+}

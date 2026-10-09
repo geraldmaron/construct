@@ -1,0 +1,62 @@
+{
+  "status": {
+    "root": "$FIXTURE/project",
+    "project": {
+      "id": "proj-c7816b6a",
+      "name": "harbor-launch"
+    },
+    "onboarding": {
+      "state": "drafted",
+      "missing": [
+        "scale",
+        "primaryOutcome"
+      ],
+      "openQuestions": 3,
+      "proposalsAwaitingReview": 6
+    },
+    "runs": {
+      "active": 0,
+      "byState": {}
+    },
+    "decisions": {
+      "open": 3
+    },
+    "sources": {
+      "total": 3,
+      "reachable": 0,
+      "unreachable": 0,
+      "unknown": 3,
+      "fresh": 0,
+      "stale": 0,
+      "neverRead": 3
+    },
+    "registry": {
+      "skills": 17,
+      "workflows": 22,
+      "skew": []
+    },
+    "drift": {
+      "open": 0
+    },
+    "sessions": [],
+    "habits": {
+      "answersChecked": 0,
+      "answersClean": 0,
+      "uncheckedCaught": 0,
+      "readsRecorded": 0,
+      "checksWaived": 0
+    }
+  },
+  "table_counts": {
+    "sessions": 0,
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "step_attempts": 0,
+    "deliverables": 0,
+    "source_snapshots": 0,
+    "resolved_skills": 0,
+    "resolved_workflows": 0,
+    "observations": 0,
+    "work_items": 0
+  }
+}

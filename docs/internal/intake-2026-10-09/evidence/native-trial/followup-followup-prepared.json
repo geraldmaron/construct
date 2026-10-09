@@ -1,0 +1,7 @@
+{
+  "preparedAt": "2026-10-09T14:53:17.169470+00:00",
+  "scenario": "same observation timestamp, corrected content and changed rate unit",
+  "expected": "Hold only for error rate exactly 1.0 percent, not strictly below 1.0; no open P1; complete 24h window. Cite fresh reads; do not retain HBR-17 as open.",
+  "prompt": "Please check the latest sources and update launch-recommendation.md.",
+  "construct_invalidation_limit": "No source snapshots or managed run exist from trial one; follow-up cannot establish Construct invalidation or workflow resumption."
+}

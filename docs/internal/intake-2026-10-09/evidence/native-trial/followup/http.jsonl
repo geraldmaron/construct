@@ -1,0 +1,5 @@
+{"at": "2026-10-09T14:44:33.487Z", "method": "GET", "path": "/health"}
+{"at": "2026-10-09T14:47:25.197Z", "method": "GET", "path": "/openapi.json"}
+{"at": "2026-10-09T14:47:45.030Z", "method": "GET", "path": "/v1/metrics/rollout"}
+{"at": "2026-10-09T15:00:11.640Z", "method": "GET", "path": "/v1/metrics/rollout"}
+{"at": "2026-10-09T15:02:41.092Z", "method": "POST", "path": "/_stop"}

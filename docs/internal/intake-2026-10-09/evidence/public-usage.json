@@ -1,0 +1,882 @@
+[
+  {
+    "id": "U01-public-bootstrap",
+    "version": "3.0.0-alpha.26",
+    "sourceHealth": {
+      "total": 3,
+      "reachable": 3,
+      "unreachable": 0,
+      "unknown": 0,
+      "fresh": 3,
+      "stale": 0,
+      "neverRead": 0,
+      "changedSinceRead": [],
+      "reportWhenRead": []
+    },
+    "capabilities": {
+      "available": [
+        "ask_user",
+        "kernel",
+        "model_review",
+        "read_project_context",
+        "read_project_files",
+        "read_source",
+        "read_source:directory",
+        "run_tests",
+        "run_validator",
+        "write_project_context",
+        "write_project_files",
+        "write_source"
+      ],
+      "maxTier": "external_write",
+      "restrictions": [
+        "writes to the person's systems go through the host's own tools and are external writes the person approves per action"
+      ],
+      "budgetCents": null
+    },
+    "tools": [
+      "bootstrap",
+      "classify_request",
+      "project_context",
+      "remember",
+      "workflows",
+      "skills",
+      "start_outcome",
+      "claim_work",
+      "submit_work",
+      "run_status",
+      "inbox",
+      "decide",
+      "sources",
+      "check_answer",
+      "staff",
+      "promote_deliverable",
+      "work",
+      "delegate",
+      "heartbeat"
+    ]
+  },
+  {
+    "id": "U02-question",
+    "reading": {
+      "recorded": false,
+      "judgedBy": {
+        "by": "host",
+        "host": "codex",
+        "client": "isolated-public-usage-audit"
+      },
+      "kind": "answer",
+      "intake": {
+        "words": "What must this project avoid?",
+        "kind": "answer",
+        "deliverable": null,
+        "skill": null,
+        "workflowId": null,
+        "target": null,
+        "scope": null,
+        "period": null,
+        "sources": [],
+        "destination": null,
+        "schedule": null,
+        "coordination": null,
+        "stakes": null,
+        "open": [],
+        "inputs": {}
+      },
+      "resolved": {
+        "period": null,
+        "schedule": null,
+        "sources": []
+      },
+      "normalized": [],
+      "matches": [],
+      "skills": {},
+      "questions": [],
+      "hostQuestions": [],
+      "assumptions": [],
+      "flags": [],
+      "judgment": {
+        "depth": "standard",
+        "challenge": false,
+        "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+        "signals": [
+          {
+            "kind": "scale",
+            "detail": "not answered; treated as a team project",
+            "raises": false
+          }
+        ]
+      },
+      "next": "Answer in chat. Nothing was recorded."
+    },
+    "contradictoryAnswer": {
+      "ok": true,
+      "problems": [],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "next": "give the answer; say which parts rest on reported sources if any"
+    }
+  },
+  {
+    "id": "U03-real-controlled-source-reads",
+    "api": {
+      "url": "http://127.0.0.1:55209/metric",
+      "read": {
+        "id": "metric",
+        "value": 100,
+        "unit": "USD",
+        "status": "healthy",
+        "updatedAt": "2026-10-01T12:00:00Z"
+      }
+    },
+    "mcp": {
+      "tools": {
+        "tools": [
+          {
+            "name": "read_metric",
+            "description": "Read the controlled Harbor metric.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          }
+        ]
+      },
+      "read": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"id\": \"metric\", \"value\": 100, \"unit\": \"USD\", \"status\": \"degraded\", \"updatedAt\": \"2026-10-01T12:00:00Z\"}"
+          }
+        ]
+      }
+    },
+    "beforeDeclaration": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"source\": {\"id\": \"local-docs\", \"kind\": \"directory\", \"origin\": \"declared\", \"purpose\": \"local architecture decisions\", \"locator\": \"$AUDIT/consumer/project/docs\", \"authorityLevel\": \"informative\", \"freshnessHours\": null, \"sensitivity\": \"internal\", \"retention\": null, \"canRead\": true, \"canWrite\": false, \"identityMapping\": null, \"reachability\": \"reachable\", \"lastSnapshotId\": \"snap-8ff93779\", \"status\": \"active\", \"createdAt\": \"2026-10-09T14:06:29.476Z\", \"updatedAt\": \"2026-10-09T14:06:29.597Z\", \"retiredAt\": null}, \"freshness\": \"no_expectation\", \"lastSnapshot\": {\"id\": \"snap-8ff93779\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:98a2336c818894cfa820ce73d348d14b7d3952df4bf8360fcf40e5602e287121\", \"summary\": \"1 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:06:29.597Z\"}, \"authoritativeFor\": [], \"notAuthoritativeFor\": []}, {\"source\": {\"id\": \"metrics-api\", \"kind\": \"other\", \"origin\": \"local\", \"purpose\": \"Controlled local HTTP metric\", \"locator\": null, \"authorityLevel\": \"informative\", \"freshnessHours\": null, \"sensitivity\": \"confidential\", \"retention\": null, \"canRead\": true, \"canWrite\": false, \"identityMapping\": null, \"reachability\": \"reachable\", \"lastSnapshotId\": \"snap-4da7fa5b\", \"status\": \"active\", \"createdAt\": \"2026-10-09T14:08:13.109Z\", \"updatedAt\": \"2026-10-09T14:08:13.345Z\", \"retiredAt\": null}, \"freshness\": \"no_expectation\", \"lastSnapshot\": {\"id\": \"snap-4da7fa5b\", \"sourceId\": \"metrics-api\", \"digest\": \"sha256:95acb0fba9c0f2d9fc2df7bd29243fe4b69962601a8f44a88fc91aaaa6828436\", \"summary\": \"1 item(s) reported by the host\", \"evidenceRef\": \"host:metrics-api\", \"takenAt\": \"2026-10-09T14:08:13.345Z\"}, \"authoritativeFor\": [], \"notAuthoritativeFor\": []}, {\"source\": {\"id\": \"metrics-mcp\", \"kind\": \"other\", \"origin\": \"local\", \"purpose\": \"Controlled MCP metric\", \"locator\": null, \"authorityLevel\": \"informative\", \"freshnessHours\": null, \"sensitivity\": \"confidential\", \"retention\": null, \"canRead\": true, \"canWrite\": false, \"identityMapping\": null, \"reachability\": \"reachable\", \"lastSnapshotId\": \"snap-0dd17077\", \"status\": \"active\", \"createdAt\": \"2026-10-09T14:08:13.112Z\", \"updatedAt\": \"2026-10-09T14:08:13.113Z\", \"retiredAt\": null}, \"freshness\": \"no_expectation\", \"lastSnapshot\": {\"id\": \"snap-0dd17077\", \"sourceId\": \"metrics-mcp\", \"digest\": \"sha256:0f8d1120c457e540dfdb40b336fb43e92e5c38cf524498aacfd45a80157d2a9b\", \"summary\": \"1 item(s) reported by the host\", \"evidenceRef\": \"host:metrics-mcp\", \"takenAt\": \"2026-10-09T14:08:13.113Z\"}, \"authoritativeFor\": [], \"notAuthoritativeFor\": []}]"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U04-public-outcome",
+    "started": {
+      "started": true,
+      "run": {
+        "id": "run-f49c5fb4",
+        "state": "ready",
+        "workflow": "managed-outcome"
+      },
+      "created": true,
+      "preflight": {
+        "status": "runnable",
+        "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+        "approvalsAhead": [],
+        "reasons": [],
+        "flags": [],
+        "judgment": {
+          "depth": "standard",
+          "challenge": false,
+          "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+          "signals": [
+            {
+              "kind": "scale",
+              "detail": "not answered; treated as a team project",
+              "raises": false
+            }
+          ]
+        },
+        "period": null,
+        "assumptions": [],
+        "questions": []
+      },
+      "differs": [],
+      "superseded": null,
+      "normalized": [],
+      "assumptions": []
+    },
+    "done": {
+      "step": {
+        "id": "step-2e55fe08",
+        "state": "succeeded",
+        "reason": null
+      },
+      "validation": [
+        {
+          "validator": "citations_present",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "evidence_refs_resolve",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "excerpts_match",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "within_period",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "named_sources_read",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "numbers_grounded",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "artifacts_exist",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "deliverable_complete",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "no_placeholder_facts",
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 1,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "run": {
+        "id": "run-f49c5fb4",
+        "state": "running"
+      },
+      "deliverable": null
+    },
+    "actualTestExit": 0,
+    "verified": {
+      "step": {
+        "id": "step-52990231",
+        "state": "succeeded",
+        "reason": null
+      },
+      "validation": [
+        {
+          "validator": "evidence_refs_resolve",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "within_period",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "verification_result",
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "run": {
+        "id": "run-f49c5fb4",
+        "state": "succeeded"
+      },
+      "deliverable": {
+        "id": "deliverable-bd6b1234",
+        "trust": "validated"
+      }
+    }
+  },
+  {
+    "id": "U05-api-schema-and-content-change",
+    "sameTimestamp": {
+      "sourceId": "metrics-api",
+      "outcome": "changed",
+      "snapshot": {
+        "id": "snap-08eb81ea",
+        "sourceId": "metrics-api",
+        "digest": "sha256:1a81ba414f927d0c456aef753069938169685727f760ca5d4433b731cb1ecd14",
+        "summary": "1 item(s) reported by the host",
+        "evidenceRef": "host:metrics-api",
+        "takenAt": "2026-10-09T14:09:24.087Z"
+      },
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "staleDeliverables": []
+    },
+    "newTimestamp": {
+      "sourceId": "metrics-api",
+      "outcome": "changed",
+      "snapshot": {
+        "id": "snap-10d529ff",
+        "sourceId": "metrics-api",
+        "digest": "sha256:d0d6810c8890d0a2b59750380e69503230861b1cb37e7927ba0a7abb2b05cb14",
+        "summary": "1 item(s) reported by the host",
+        "evidenceRef": "host:metrics-api",
+        "takenAt": "2026-10-09T14:09:24.090Z"
+      },
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": [
+          "metric"
+        ]
+      },
+      "staleDeliverables": [
+        "drift-snap-66de55aa"
+      ]
+    },
+    "status": {
+      "run": {
+        "id": "run-f49c5fb4",
+        "workflow": "managed-outcome",
+        "state": "succeeded",
+        "reason": null,
+        "preflight": {
+          "status": "runnable",
+          "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+          "approvalsAhead": [],
+          "reasons": [],
+          "flags": [],
+          "judgment": {
+            "depth": "standard",
+            "challenge": false,
+            "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+            "signals": [
+              {
+                "kind": "scale",
+                "detail": "not answered; treated as a team project",
+                "raises": false
+              }
+            ]
+          },
+          "period": null,
+          "assumptions": [],
+          "questions": []
+        },
+        "asked": {
+          "period": null,
+          "sources": {
+            "registered": [
+              "metrics-api",
+              "local-docs"
+            ],
+            "named": [
+              {
+                "name": "metric API",
+                "id": "metrics-api",
+                "registered": true
+              },
+              {
+                "name": "local architecture decisions",
+                "id": "local-docs",
+                "registered": true
+              }
+            ]
+          },
+          "judgedBy": {
+            "by": "host",
+            "host": "codex",
+            "client": "isolated-public-usage-audit"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "step-66153b52",
+          "step": "plan",
+          "state": "succeeded",
+          "attempts": 1,
+          "reason": null
+        },
+        {
+          "id": "step-2e55fe08",
+          "step": "do",
+          "state": "succeeded",
+          "attempts": 1,
+          "reason": null
+        },
+        {
+          "id": "step-52990231",
+          "step": "verify",
+          "state": "succeeded",
+          "attempts": 1,
+          "reason": null
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "deliverable-bd6b1234",
+          "kind": "outcome/managed",
+          "trust": "validated",
+          "verification": {
+            "validators": [
+              {
+                "validator": "evidence_refs_resolve",
+                "ok": true,
+                "problems": []
+              },
+              {
+                "validator": "within_period",
+                "ok": true,
+                "problems": []
+              },
+              {
+                "validator": "verification_result",
+                "ok": true,
+                "problems": []
+              }
+            ],
+            "challengeRequired": false,
+            "evidence": {
+              "witnessed": 2,
+              "reported": 1,
+              "unverified": 0,
+              "unresolved": 0
+            }
+          },
+          "body": {
+            "verification": {
+              "command": "npm test",
+              "exitStatus": 0,
+              "revision": "disposable-fixture",
+              "result": "The report names its source."
+            },
+            "passed": true,
+            "summary": "The metric API reports healthy status.",
+            "findings": [
+              "The metric API reports healthy status.",
+              "The service does not store customer passwords."
+            ],
+            "changes": [
+              "digest.md"
+            ],
+            "artifact": "digest.md",
+            "evidence": [
+              {
+                "ref": "checks.test.mjs"
+              }
+            ],
+            "sensitivity": "confidential",
+            "sensitivityUnknown": 0,
+            "provenance": {
+              "witnessed": 2,
+              "reported": 1,
+              "unverified": 0,
+              "unresolved": 0
+            },
+            "sources": {
+              "named": [
+                "metrics-api",
+                "local-docs"
+              ],
+              "read": [
+                "metrics-api",
+                "local-docs"
+              ],
+              "unread": []
+            }
+          }
+        }
+      ],
+      "openDecisions": []
+    }
+  },
+  {
+    "id": "U06-permission-boundary",
+    "acceptanceRequest": {
+      "deliverable": {
+        "id": "deliverable-bd6b1234",
+        "trust": "unchanged"
+      },
+      "pendingDecision": "decision-ecc38680",
+      "personRequired": true,
+      "next": "The person answers this directly: they run `construct inbox resolve decision-ecc38680 approve` (or decline) in their own terminal. A model relaying their words cannot give this answer."
+    }
+  },
+  {
+    "id": "U07-resume-new-server",
+    "status": {
+      "run": {
+        "id": "run-681717ba",
+        "workflow": "managed-outcome",
+        "state": "running",
+        "reason": null,
+        "preflight": {
+          "status": "runnable",
+          "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+          "approvalsAhead": [],
+          "reasons": [],
+          "flags": [],
+          "judgment": {
+            "depth": "standard",
+            "challenge": false,
+            "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+            "signals": [
+              {
+                "kind": "scale",
+                "detail": "not answered; treated as a team project",
+                "raises": false
+              }
+            ]
+          },
+          "period": null,
+          "assumptions": [],
+          "questions": []
+        },
+        "asked": {
+          "period": null,
+          "sources": null,
+          "judgedBy": null
+        }
+      },
+      "steps": [
+        {
+          "id": "step-b84bb5ab",
+          "step": "plan",
+          "state": "succeeded",
+          "attempts": 1,
+          "reason": null
+        },
+        {
+          "id": "step-27d9890c",
+          "step": "do",
+          "state": "ready",
+          "attempts": 0,
+          "reason": null
+        },
+        {
+          "id": "step-db2020b4",
+          "step": "verify",
+          "state": "pending",
+          "attempts": 0,
+          "reason": null
+        }
+      ],
+      "deliverables": [],
+      "openDecisions": []
+    },
+    "claimed": {
+      "work": {
+        "stepRunId": "step-27d9890c",
+        "owner": "session:codex:ses_d3e1e782-92fe-4e4a-a96c-96d3155481fd",
+        "token": "[redacted lease token]",
+        "leaseUntil": "2026-10-09T14:39:24.242Z",
+        "run": {
+          "id": "run-681717ba",
+          "workflow": "managed-outcome"
+        },
+        "step": {
+          "id": "do",
+          "title": "Do the work in this session, citing what was read",
+          "tier": "project_write",
+          "outputs": [
+            "summary",
+            "findings",
+            "changes",
+            "artifact"
+          ],
+          "validators": [
+            "citations_present",
+            "evidence_refs_resolve",
+            "excerpts_match",
+            "within_period",
+            "named_sources_read",
+            "numbers_grounded",
+            "artifacts_exist",
+            "deliverable_complete",
+            "no_placeholder_facts"
+          ],
+          "capabilities": [
+            "write_project_files",
+            "read_project_files",
+            "model_review"
+          ]
+        },
+        "skill": null,
+        "inputs": {
+          "request": "Write a second local summary after resumption.",
+          "plan": [
+            "Read project files after resume."
+          ],
+          "assumptions": []
+        },
+        "intake": null,
+        "method": null,
+        "instructions": [
+          "Step do: Do the work in this session, citing what was read.",
+          "This step may act at project_write; the gate has already been passed for exactly this step.",
+          "Return an object with: summary, findings, changes, artifact.",
+          "It will be checked by: citations_present, evidence_refs_resolve, excerpts_match, within_period, named_sources_read, numbers_grounded, artifacts_exist, deliverable_complete, no_placeholder_facts.",
+          "citations_present needs evidence entries whose ref names a real project file (docs/a.md), a deliverable, or an item a recorded read holds (PLAT-101, confluence:98765, or the page's url); record what you read with sources action report before citing it.",
+          "evidence_refs_resolve rejects any evidence ref that names nothing this project holds.",
+          "excerpts_match needs every evidence excerpt to appear in the file or item it cites (case and spacing do not matter); an excerpt from something Construct holds no text for is not checked and supports nothing.",
+          "within_period refuses a cited item whose recorded updatedAt falls after the period this run covers ends; an item that belongs anyway passes when the output lists it under \"outsidePeriod\" as {ref, why}. Items last updated before the period, items with no date, and project files pass and are counted in the deliverable.",
+          "named_sources_read needs, for each source this run names, a cited item, file or folder read from it (cite it as <source>:<item>; naming the whole source does not count); a named source you could not read passes when the output lists it under \"unread\" as {source, why}.",
+          "numbers_grounded rejects any figure in the output, or in a document this step wrote (an artifact or changed file that is .md, .txt, .html, .csv and the like; code and configuration are not read for figures), that no cited source contains; a figure counts only when it is in text Construct holds (a file, or what you recorded reading), never in a document this step wrote, and a code or configuration file you changed may be cited for the values it now holds; an excerpt alone does not ground it. List computed figures under \"derivations\" as {value, expression}, where expression is arithmetic over cited figures.",
+          "artifacts_exist needs \"artifact\" (or \"changes\") naming the file you wrote, and that file must exist and not be empty; a step whose outputs include \"changes\" may list none (\"changes\": [], \"artifact\": null).",
+          "deliverable_complete needs a non-empty \"summary\" and one of \"findings\", \"body\", or \"decisions\".",
+          "Cite every source you read as evidence entries."
+        ],
+        "judgment": {
+          "depth": "standard",
+          "challenge": false,
+          "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+          "signals": [
+            {
+              "kind": "scale",
+              "detail": "not answered; treated as a team project",
+              "raises": false
+            }
+          ]
+        }
+      },
+      "waitingOn": null
+    }
+  },
+  {
+    "id": "U08-schedule",
+    "reading": {
+      "recorded": false,
+      "judgedBy": {
+        "by": "host",
+        "host": "codex",
+        "client": "isolated-public-usage-audit"
+      },
+      "kind": "maintain",
+      "intake": {
+        "words": "Every Monday at nine UTC give me a digest of this project.",
+        "kind": "maintain",
+        "deliverable": {
+          "kind": "other",
+          "describe": "project digest"
+        },
+        "skill": null,
+        "workflowId": null,
+        "target": null,
+        "scope": null,
+        "period": null,
+        "sources": [],
+        "destination": null,
+        "schedule": {
+          "cron": "0 9 * * 1",
+          "timezone": "UTC"
+        },
+        "coordination": null,
+        "stakes": null,
+        "open": [],
+        "inputs": {}
+      },
+      "resolved": {
+        "period": null,
+        "schedule": {
+          "nextFirings": [
+            "2026-10-12T09:00:00.000Z",
+            "2026-10-19T09:00:00.000Z",
+            "2026-10-26T09:00:00.000Z"
+          ]
+        },
+        "sources": []
+      },
+      "normalized": [],
+      "matches": [
+        {
+          "workflowId": "managed-outcome",
+          "title": "Managed outcome with verification",
+          "deliverableKind": "outcome/managed",
+          "because": "other: general carrier",
+          "status": "runnable",
+          "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+          "reasons": [],
+          "approvalsAhead": [],
+          "input": {
+            "request": "Every Monday at nine UTC give me a digest of this project."
+          },
+          "missing": []
+        }
+      ],
+      "skills": {
+        "intake": {
+          "title": "Intake",
+          "category": "method",
+          "useWhen": "Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions."
+        },
+        "adversarial-review": {
+          "title": "Adversarial review",
+          "category": "method",
+          "useWhen": "Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work."
+        },
+        "context-mapping": {
+          "title": "Context mapping",
+          "category": "method",
+          "useWhen": "Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed."
+        },
+        "decision-framing": {
+          "title": "Decision framing",
+          "category": "method",
+          "useWhen": "Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation."
+        },
+        "experience-design": {
+          "title": "Experience design",
+          "category": "professional",
+          "useWhen": "Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system."
+        },
+        "governance-risk": {
+          "title": "Governance and risk",
+          "category": "professional",
+          "useWhen": "Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle."
+        },
+        "investigative-research": {
+          "title": "Investigative research",
+          "category": "method",
+          "useWhen": "Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept."
+        },
+        "operations-reliability": {
+          "title": "Operations and reliability",
+          "category": "professional",
+          "useWhen": "Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery."
+        },
+        "product-management": {
+          "title": "Product management",
+          "category": "professional",
+          "useWhen": "Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut."
+        },
+        "program-delivery": {
+          "title": "Program delivery",
+          "category": "professional",
+          "useWhen": "Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it."
+        },
+        "requirements-structuring": {
+          "title": "Requirements structuring",
+          "category": "method",
+          "useWhen": "Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like."
+        },
+        "security-privacy": {
+          "title": "Security and privacy",
+          "category": "professional",
+          "useWhen": "Defensive review of threat model, access, secrets, data handling, and privacy, with fixes."
+        },
+        "software-engineering": {
+          "title": "Software engineering",
+          "category": "professional",
+          "useWhen": "Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability."
+        },
+        "strategy-research": {
+          "title": "Strategy and research",
+          "category": "professional",
+          "useWhen": "Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs."
+        },
+        "system-architecture": {
+          "title": "System architecture",
+          "category": "professional",
+          "useWhen": "Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths."
+        },
+        "written-voice": {
+          "title": "Written voice",
+          "category": "method",
+          "useWhen": "One plain, direct house voice for prose: what it says, for whom, and nothing decorative."
+        }
+      },
+      "questions": [],
+      "hostQuestions": [],
+      "assumptions": [],
+      "flags": [],
+      "judgment": {
+        "depth": "standard",
+        "challenge": false,
+        "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+        "signals": [
+          {
+            "kind": "scale",
+            "detail": "not answered; treated as a team project",
+            "raises": false
+          }
+        ]
+      },
+      "next": "Call start_outcome with workflowId \"managed-outcome\" and this intake, or another match whose skills fit better. The person sets the clock: construct workflow schedule managed-outcome --cron='0 9 * * 1' --timezone=UTC"
+    },
+    "definition": {
+      "command": [
+        "construct",
+        "workflow",
+        "schedule",
+        "managed-outcome",
+        "--cron=0 9 * * 1",
+        "--timezone=UTC",
+        "--trigger-id=weekly",
+        "--max-tier=project_write",
+        "--input=request=Produce the weekly digest"
+      ],
+      "exit": 0,
+      "stdout": "defined trigger weekly for managed-outcome; next due 2026-10-12T09:00:00.000Z\nNext: `construct workflow recipe weekly` prints the cron line or CI job that fires it. Construct keeps the ledger; the clock only ticks.\n",
+      "stderr": ""
+    },
+    "recipe": {
+      "command": [
+        "construct",
+        "workflow",
+        "recipe",
+        "weekly",
+        "--clock=github-actions"
+      ],
+      "exit": 0,
+      "stdout": "name: construct weekly\non:\n  schedule:\n    - cron: \"0 9 * * 1\"  # UTC; GitHub schedules run in UTC, so convert or accept the offset\njobs:\n  fire:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '22' }\n      - run: npm ci\n      - run: npx construct workflow fire weekly --key \"$GITHUB_RUN_ID\"\n",
+      "stderr": ""
+    },
+    "fire": {
+      "command": [
+        "construct",
+        "workflow",
+        "fire",
+        "weekly",
+        "--key=disposable-tick",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\"firing\": {\"id\": \"firing-2f04b7e6\", \"triggerId\": \"weekly\", \"idempotencyKey\": \"disposable-tick\", \"firedAt\": \"2026-10-09T14:09:24.788Z\", \"runId\": \"run-681717ba\", \"outcome\": \"skipped_overlap\", \"reason\": \"run run-681717ba is still active; overlap policy is skip\"}, \"outcome\": \"skipped_overlap\", \"runId\": \"run-681717ba\", \"reason\": \"run run-681717ba is still active; overlap policy is skip\", \"nextDueAt\": \"2026-10-12T09:00:00.000Z\"}",
+      "stderr": ""
+    },
+    "repeat": {
+      "command": [
+        "construct",
+        "workflow",
+        "fire",
+        "weekly",
+        "--key=disposable-tick",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\"firing\": {\"id\": \"firing-2f04b7e6\", \"triggerId\": \"weekly\", \"idempotencyKey\": \"disposable-tick\", \"firedAt\": \"2026-10-09T14:09:24.788Z\", \"runId\": \"run-681717ba\", \"outcome\": \"skipped_overlap\", \"reason\": \"run run-681717ba is still active; overlap policy is skip\"}, \"outcome\": \"deduplicated\", \"runId\": \"run-681717ba\", \"reason\": \"firing disposable-tick was already handled (skipped_overlap)\", \"nextDueAt\": \"2026-10-12T09:00:00.000Z\"}",
+      "stderr": ""
+    }
+  },
+  {
+    "id": "U09-no-external-source-write",
+    "externalWrites": 0,
+    "clockInstalled": false,
+    "productionSchedule": false
+  }
+]
