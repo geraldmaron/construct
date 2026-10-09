@@ -10,7 +10,7 @@ description: >-
   obligations.
 license: Apache-2.0
 metadata:
-  version: 0.3.2
+  version: 0.3.3
   source: geraldmaron/construct
 ---
 
@@ -142,6 +142,13 @@ requested comparison needs, not only that its displayed arithmetic is right.
 
 ## 8. Handbacks are earned
 
+Judge a prerequisite against the deliverable requested **now**. An assessment
+can be complete while concluding that later execution is unready. A condition
+for carrying out a possible next project is not a blocker to finishing this
+assessment. Put unmeasured effort, missing records and hypothetical follow-up
+checks in evidence limits; do not turn them into assignments for the person.
+An unresolved issue may be important without requiring a handback.
+
 Before listing an open question: could you have answered from held
 material, something reachable, or one more bounded pass? If yes, answer
 it. Hand back only what needs authority, access, or a decision you lack and is
@@ -155,7 +162,8 @@ Preserve the requested action boundary in the artifact itself: investigate,
 recommend, prepare and execute are different outcomes. Recommendations and
 proposed next steps must not imply permission to spend, publish, contact
 others or operate a system. A recommendation-only request ends with the
-supported recommendation and any actual decision needed to act.
+supported recommendation and its conditions. Describe later action conditions
+without claiming that the person must resolve them to receive this answer.
 
 ## 9. Closing gates
 
@@ -167,7 +175,7 @@ supported recommendation and any actual decision needed to act.
 6. Ground exhausted - named docs read or why not.
 7. Strongest objection - own words, own heading.
 8. Pre-mortem - on any recommendation: most likely failure story.
-9. Handbacks earned - only material prerequisites the current scope cannot settle.
+9. Handbacks earned - only unavailable prerequisites to the current requested deliverable; later action conditions remain limits.
 10. Quantities complete - units, denominators, scope, boundary and required differences checked.
 11. Action scope preserved - the artifact and next steps stay within the request.
 

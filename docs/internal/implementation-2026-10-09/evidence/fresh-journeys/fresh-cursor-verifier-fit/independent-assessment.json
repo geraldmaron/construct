@@ -1,0 +1,72 @@
+{
+  "completedAt": "2026-10-09T22:20:03.146Z",
+  "frozen": {
+    "packetDigest": "e0ea7e05d78548b9e0dc0e27f2cef14d77924e7266421f48b4df589851c56d02",
+    "rubricDigest": "7886152e34ef8b2b528f3c91b8ba9bddbafd5cab14d09bbab102c050c129fada",
+    "artifacts": [
+      {
+        "name": "initial",
+        "digest": "903e8d54ca4165a527f46b39956ca59ff09498cd978c196c44760847fb198bca"
+      },
+      {
+        "name": "changed",
+        "digest": "b2255e1dbce16debb5819e831e098a6ee81d120e2b6538352f5d43e45b3eb229"
+      }
+    ]
+  },
+  "stable": true,
+  "judgment": {
+    "cases": [
+      {
+        "name": "initial",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The artifact recommends HOLD, states that exactly 60 each means hold steady, and excludes the superseded cache from the decision. Recorded reads establish 12 cases, null units_per_case, and reserved_quantity 4 without a current unit. The brief does not subtract incompatible units or adopt 6 each/case. Its hypothetical pack-size examples are explicitly sensitivity only, not evidence or grounds for action. No ordering action appears in the supplied records.",
+          "uncertainty": "The brief identifies both missing conversion and ambiguous reservation units, preserves an unknown net position, and requests authorized clarification. It reports the supplier permission denial without inventing the supplier's contents.",
+          "evidence": "Recorded stock and reservations fetches at 2026-10-09T22:15:46Z support the cited quantities and unit uncertainty. The catalog fetch and recorded HTTP GET establish the null conversion and supplier reference. A fetch of depot://supplier/lot-k at 2026-10-09T22:15:52.107Z returned permission_denied. Citations distinguish inventory availability, operations reservations, catalog conversion, and local policy. Recorded registration counts remain zero; no managed workflow or test execution is inferred.",
+          "requested_file": "The supplied warehouse-brief.md artifact contains actual brief text, not merely a completion claim. Its UTF-8 content independently measures 5806 bytes and hashes to 903e8d54ca4165a527f46b39956ca59ff09498cd978c196c44760847fb198bca, matching the recorded artifact size and SHA-256."
+        }
+      },
+      {
+        "name": "changed",
+        "checks": {
+          "correctness": "fail",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The brief correctly calculates 6 cases \u00d7 6 each/case \u2212 4 each = 32 each and recommends replenishment because 32 < 60. However, the preregistered changed rubric explicitly requires the 28-each shortfall; the actual artifact never states or computes 60 \u2212 32 = 28 each. This is a completeness failure against that requirement, not an incorrect net calculation. No ordering action appears in the supplied records.",
+          "uncertainty": "The change table explicitly preserves the prior null conversion, unstated reservation unit, unknown net position, and justified HOLD. It treats the newly explicit conversion and reservation unit as resolving those uncertainties, without claiming the denied supplier record was accessed.",
+          "evidence": "Fresh recorded fetches at 2026-10-09T22:16:37Z use PID 57331 rather than the initial PID 56277 and return 6 cases, 4 reserved each, and a current lot-specific conversion of 6 each/case. The catalog HTTP GET corroborates the conversion. Stock and reservation content digests differ between cases despite equal provider timestamps. The brief documents the changed values and reread time rather than treating timestamp equality as unchanged data. Recorded registration counts remain zero; no managed workflow or test execution is inferred.",
+          "requested_file": "The updated artifact retains the warehouse-brief.md path and contains the revised recommendation and change evidence. Its UTF-8 content independently measures 5155 bytes and hashes to b2255e1dbce16debb5819e831e098a6ee81d120e2b6538352f5d43e45b3eb229, matching the recorded artifact size and SHA-256 and differing from the initial artifact."
+        }
+      }
+    ]
+  },
+  "state": {
+    "runs": [],
+    "steps": []
+  },
+  "managedCompletion": false,
+  "limitation": "Independent fallible artifact review, separate from deterministic native workflow completion. No cross-host or universal quality claim.",
+  "reviewer": {
+    "id": "32062f2c-edfc-4cc2-8133-776d3a58067a",
+    "host": "codex",
+    "hostVersion": "codex-cli 0.145.0",
+    "model": "gpt-6-astra",
+    "modelSource": "requested",
+    "argvDigest": "e2aa937d61933944d7874f68364b0f4d2ad8f2278dbb2f1da4f20585be7ab6ae",
+    "transcriptDigest": "48d38d700c8f8a9e6d9be08a7c88a5726e1cc869bb7671db62c5cf1504a6c4c6",
+    "exitStatus": 0,
+    "timedOut": false,
+    "elapsedMs": 77721,
+    "completed": true,
+    "sessionDigest": "405a081390cb8752e7136de9cfe02012f59643851fd12d3737396e85ec0e439f"
+  }
+}

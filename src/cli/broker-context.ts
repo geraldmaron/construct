@@ -143,7 +143,7 @@ export function createBrokerContext(ctx: CliContext, project: OpenProject, bindi
     store: project.store, sessionId: binding.sessionId, target: project.lane?.root ?? project.root, now: ctx.now,
     driver: createDelegationDriver({ configDir: ctx.paths.configDir, artifactsDir: join(project.layout.stateDir, 'delegation'), env: ctx.env, machine: hostname(), processAlive }),
   }) : undefined;
-  return { version: packageVersion(), root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root), sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
+  return { surface: binding.surface, version: packageVersion(), root: project.root, lane: project.lane, worktrees: () => projectWorktrees(project.root), sessionId: binding.sessionId, layout: project.layout, files: project.files, store: project.store, skills, workflows, host, workflow, triggers, sources, now: ctx.now, nextId: ctx.nextId, actor: binding.actor, processAlive, delegation, policy };
 }
 
 export function openBroker(ctx: CliContext, flags: { readonly client?: string; readonly headless?: boolean; readonly executor?: string }): { readonly project: OpenProject; readonly binding: BrokerBinding; readonly broker: BrokerContext } {

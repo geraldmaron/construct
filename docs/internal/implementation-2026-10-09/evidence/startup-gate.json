@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-09T22:37:06.473373+00:00",
+  "lint": true,
+  "typecheck": true,
+  "test": {
+    "pass": 999,
+    "fail": 0,
+    "skip": 1
+  },
+  "packagedSmoke": true,
+  "staticConformance": {
+    "pass": 91,
+    "fail": 0,
+    "untested": 7
+  },
+  "focused": {
+    "pass": 20,
+    "fail": 0
+  },
+  "earlierInvocation": "A preparation command used the wrong working directory and did not create the new test file. Its log remains startup-focused.log; startup-focused-corrected.log is the complete successful focused run.",
+  "files": [
+    {
+      "path": "startup-focused.log",
+      "sha256": "bb92409a6a260c92d29254b5f90fe44926e4b70112995f2d03d2e4eb2c0ed785",
+      "bytes": 2089
+    },
+    {
+      "path": "startup-tests.log",
+      "sha256": "30eb04280193f152b6ba9823091dc424091b55a962f216d2d41d0375ae3d6cb6",
+      "bytes": 103892
+    },
+    {
+      "path": "startup-focused-corrected.log",
+      "sha256": "dcd742630c4de927124581a7939d4c7a367b06ac88a452a127d1a3eec6a08524",
+      "bytes": 2422
+    },
+    {
+      "path": "startup-conformance.log",
+      "sha256": "185700b597e38638d2597aaaef184d0f59d917016f6b982bbcd12d0e6246f66d",
+      "bytes": 15845
+    },
+    {
+      "path": "startup-smoke.log",
+      "sha256": "75b067c2dd75b680e5a816262ca87ad9cac7e87a24844c06bb4bbfffba8a0d44",
+      "bytes": 4807
+    },
+    {
+      "path": "startup-types.log",
+      "sha256": "ca28f6f51e8c4ea0f862fe9656c82dff444655e5edbbe7c4c4a82b7c51e4c9dd",
+      "bytes": 67
+    },
+    {
+      "path": "startup-lint.log",
+      "sha256": "17f809e4a0f82c3b965ad41a0bd90bcb4c3c41d7bdb0ae18f84d0bfeb2e440ab",
+      "bytes": 1237
+    }
+  ]
+}
