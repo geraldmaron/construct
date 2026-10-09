@@ -1016,7 +1016,7 @@ test at tests/hooks/hook-failsafe.test.ts:49:1
   + ]
   - []
   
-      at TestContext.<anonymous> (file:///Users/geralddagher/Developer/Projects/construct/tests/hooks/hook-failsafe.test.ts:143:12)
+      at TestContext.<anonymous> (file://<USER_HOME>/Developer/Projects/construct/tests/hooks/hook-failsafe.test.ts:143:12)
       at async Test.run (node:internal/test_runner/test:1208:7)
       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
     generatedMessage: false,
