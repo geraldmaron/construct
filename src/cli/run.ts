@@ -39,7 +39,7 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         const subjects = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
         const result = await executeVerification({ store: project.store, runId: args.positionals[0]!, stepRunId, token, argv, subjects, root: project.root, env: ctx.env, now: ctx.now, resolve: (ref) => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
         writeJson(result);
-        return result.receipt.exitStatus === 0 && !result.receipt.timedOut && result.receipt.subjectsStable ? 0 : 1;
+        return result.receipt.exitStatus === 0 && !result.receipt.timedOut && result.receipt.subjectsStable && result.receipt.intendedVerification?.satisfied !== false ? 0 : 1;
       }
       case 'list': {
         const state = stringFlag(args, 'state');

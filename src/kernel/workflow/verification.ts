@@ -1,3 +1,4 @@
+import { selectedVerifier, verifierProblems } from './verifier-contract.ts';
 import type { StateStore } from '../state/open.ts';
 import type { WorkflowStep } from '../registry/models.ts';
 import { getRun } from '../state/runs.ts';
@@ -66,10 +67,15 @@ export function executionCheck(store: StateStore, input: { runId: string; stepRu
   const v = out.verification && typeof out.verification === 'object' ? out.verification as Record<string, unknown> : out;
   const ref = typeof v.executionRef === 'string' ? v.executionRef : null;
   const id = ref?.match(/^execution:(\d+)$/)?.[1];
-  const row = id ? store.db.prepare("SELECT payload_json FROM activity_events WHERE id = ? AND kind = 'verification.executed' AND run_id = ? AND step_run_id = ?").get(Number(id), input.runId, input.stepRunId) as { payload_json: string } | undefined : undefined;
+  const row = id ? store.db.prepare("SELECT payload_json FROM activity_events WHERE id = ? AND kind = 'verification.executed' AND channel = 'host_command' AND run_id = ? AND step_run_id = ?").get(Number(id), input.runId, input.stepRunId) as { payload_json: string } | undefined : undefined;
   if (!row) return { ok: false, ref, problems: ['No observed execution receipt for this step. Run construct run verify inside the host sandbox; a reported result is not execution proof.'] };
-  const receipt = JSON.parse(row.payload_json) as { argv: string[]; attempt: number; exitStatus: number | null; timedOut: boolean; signal: string | null; subjectsStable: boolean; subjects: ContentReceipt[] };
+  const receipt = JSON.parse(row.payload_json) as { argv: string[]; argvDigest?: string; attempt: number; exitStatus: number | null; timedOut: boolean; signal: string | null; subjectsStable: boolean; subjects: ContentReceipt[]; intendedVerification?: { digest: string; satisfied: boolean; problems: string[] } | null };
   const problems: string[] = [];
+  const intended = selectedVerifier(store, input.runId);
+  if (intended) {
+    problems.push(...verifierProblems(intended, receipt.argv, input.resolve, receipt.argvDigest));
+    if (receipt.intendedVerification?.digest !== intended.digest || !receipt.intendedVerification.satisfied) problems.push('execution did not satisfy the frozen intended verification criteria');
+  }
   if (v.command !== undefined && v.command !== JSON.stringify(receipt.argv)) problems.push('reported command differs from the observed argv; use command returned by run verify');
   if (v.exitStatus !== undefined && v.exitStatus !== receipt.exitStatus) problems.push('reported exit status differs from the observed exit');
   if (receipt.attempt !== input.attempt) problems.push('execution receipt belongs to a different attempt');

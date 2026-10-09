@@ -218,7 +218,14 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
     return 'updated';
   }
 
-  function recordRead(id: string, report: SnapshotReport, partial: boolean, at: string, nextId: () => string, notChanged: ReadonlySet<string> = new Set()): RefreshResult {
+  function recordRead(id: string, received: SnapshotReport, partial: boolean, at: string, nextId: () => string, notChanged: ReadonlySet<string> = new Set()): RefreshResult {
+    let report = received;
+    if (partial && received.items) {
+      const seen = new Set(received.items.map((item) => item.externalRef));
+      const carried = (currentManifest(store, id) ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
+      const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
+      if (carried.length) report = { ...received, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
+    }
     const { snapshot, changed } = recordSnapshot(store, {
       id: nextId(),
       sourceId: id,
@@ -376,9 +383,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
       setReachability(store, id, 'reachable', at);
       access(id, 'read', at, nextId, { ...(descriptor ?? {}), sessionId: outcome.report.sessionId ?? null, provenance: outcome.report.evidence, refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
-      return recordRead(id, outcome.report, false, at, nextId);
+      return recordRead(id, outcome.report, outcome.report.coverage?.complete === false || !!outcome.report.coverage?.nextCursor, at, nextId);
     },
-    reportRead(id, report, at, nextId) {
+    reportRead(id, received, at, nextId) {
+      const report = received.coverage?.complete === false || received.coverage?.nextCursor ? { ...received, partial: true } : received;
       const source = getSource(store, id);
       if (!source) throw new Error(`no source ${id}`);
       if (source.status !== 'active') throw new Error(`source ${id} is retired`);

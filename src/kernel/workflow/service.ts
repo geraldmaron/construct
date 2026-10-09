@@ -1,3 +1,4 @@
+import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
  * handback.
@@ -1410,6 +1411,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
       step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
+      step.outputs.includes('plan') ? 'Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.' : '',
       Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
@@ -2067,7 +2069,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             return { step: getStep(store, leased.id)!, validation: [], run: getRun(store, run.id)!, deliverable: null, ignored: [] };
           }
           // Only an accepted waiver writes what was waived and by whom, and only the kernel what a step's citations carry.
-          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined, citedSensitivity: undefined, citedUnclassified: undefined, verificationReceipt: undefined, executionVerification: undefined, methodReceipts: undefined, researchCoverage: undefined } });
+          const done = completeStep(store, { id: leased.id, owner: leased.leaseOwner, token: leased.token, at, output: { noData: true, ...output, waived: undefined, waivedBy: undefined, citedSensitivity: undefined, citedUnclassified: undefined, verificationReceipt: undefined, verificationContractReceipt: undefined, executionVerification: undefined, methodReceipts: undefined, researchCoverage: undefined } });
           return { step: done, validation: [], run: advance(run.id, at), deliverable: null, ignored: [] };
         });
       }
@@ -2077,6 +2079,13 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       const validation = runValidators(step.validators, { output, expectedKeys: step.outputs, evidence, resolvableRefs, resolve, input: run.input, settled: settled(), sensitivity, period: asked.period ?? null, sources: asked.sources?.registered ?? null });
       const destinationProblems = isLastStep(run, step) ? requestedFileProblems(asked.intake?.destination, [...artifactRefs(output), ...listSteps(store, run.id).flatMap((s) => artifactRefs(s.output))], resolve) : [];
       if (destinationProblems.length) validation.push({ validator: 'requested_destination', ok: false, problems: destinationProblems });
+      let verifierContract: FrozenVerifier | undefined;
+      if (output.verificationContract !== undefined) {
+        try {
+          if (step.capabilities.includes('run_tests') || artifactRefs(output).length) throw new Error('freeze intended verification in a prior planning step, before submitting production artifacts or verification');
+          verifierContract = freezeVerifier(store, run.id, output.verificationContract, resolve);
+        } catch (error) { validation.push({ validator: 'verification_contract', ok: false, problems: [(error as Error).message] }); }
+      }
       const recordProblems = persistedRecordProblems(store, output);
       if (recordProblems.length) validation.push({ validator: 'persisted_records', ok: false, problems: recordProblems });
       const boundMethod = (leased.input as { skill?: { id: string; digest: string } | null } | null)?.skill;
@@ -2139,6 +2148,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
             citedSensitivity: sensitivity,
             citedUnclassified: unclassified ?? undefined,
             verificationReceipt: receipt,
+            verificationContractReceipt: verifierContract,
             executionVerification: execution,
             methodReceipts: { provenance: 'host_report', outputDigest: createHash('sha256').update(canonicalJson(output)).digest('hex'), methods: methods.receipts },
             researchCoverage: step.validators.includes('reference_coverage') ? researchCoverage(evidence, resolve, output) : undefined,

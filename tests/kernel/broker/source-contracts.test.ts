@@ -151,3 +151,24 @@ test('mapping preserves pagination uncertainty and invalidates changed interpret
     await assert.rejects(map({ ...mapping, fields: [{ name: 'stock', path: '/stock', type: 'number' }] }), /need observed units/);
   } finally { fx.cleanup(); }
 });
+
+test('pagination metadata alone prevents deletion for both host reports and native adapter pages', async () => {
+  const fx = brokerFixture();
+  try {
+    await declare(fx.broker);
+    await source(fx.broker, { action: 'report', id: 'warehouse', items: [{ ref: 'A', text: 'one' }, { ref: 'B', text: 'two' }], coverage: { complete: true } });
+    const partial = await source(fx.broker, { action: 'report', id: 'warehouse', items: [{ ref: 'A', text: 'new one' }], coverage: { nextCursor: 'next' } });
+    assert.deepEqual(partial.changes.removed, []);
+    assert.deepEqual(currentManifest(fx.broker.store, 'warehouse')!.map((e) => e.ref).sort(), ['A', 'B']);
+    let first = true;
+    const adapter = createSourceService(fx.broker.store, { root: fx.box.cwd, readers: new Map([['other', async () => ({ outcome: 'read' as const, report: { digest: first ? 'full' : 'page', summary: 'adapter page', evidence: 'witnessed' as const, coverage: first ? { complete: true } : { complete: false, nextCursor: 'next' }, items: (first ? ['A', 'B', 'C'] : ['A']).map((ref) => ({ externalRef: ref, kind: 'item', name: ref, attributes: { text: ref, fingerprint: ref } })) } })]]) });
+    const ctx = { ...fx.broker, sources: adapter };
+    await source(ctx, { action: 'refresh', id: 'warehouse' });
+    first = false;
+    const page = await source(ctx, { action: 'refresh', id: 'warehouse' });
+    assert.deepEqual(page.changes.removed, []);
+    assert.deepEqual(currentManifest(ctx.store, 'warehouse')!.map((e) => e.ref).sort(), ['A', 'B', 'C']);
+    const repeat = await source(ctx, { action: 'refresh', id: 'warehouse' });
+    assert.equal(repeat.outcome, 'unchanged');
+  } finally { fx.cleanup(); }
+});
