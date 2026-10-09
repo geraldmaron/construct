@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.0-alpha.26 — 2026-10-01
+## 3.0.0-alpha.26 — 2026-10-09
 
 It follows 3.0.0-alpha.25, which was published under `alpha`; alpha.25's
 changes are folded into this entry. It adds coordination between agent
@@ -136,7 +136,10 @@ Each item applies to both releases unless it names one.
   holds them. A claim can reserve the paths it changes. Claimed work passes
   on only through an accepted handoff. Sessions learn what their peers hold
   on the calls they already make. An opt-in pre-commit guard warns about
-  reserved paths and never blocks a commit.
+  reserved paths and never blocks a commit. A claim can name the worktree
+  it edits in when that is not the session's own; its reservations then
+  record that worktree and its branch, and an overlap with work in another
+  worktree comes back as a merge risk naming where it is held.
 - **Bounded delegation, disabled by default.** The `delegate` tool starts,
   checks, cancels, triages, and integrates worker attempts. Workers get
   read-only snapshots and return scoped patches. Construct validates each
