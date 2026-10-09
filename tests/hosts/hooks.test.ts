@@ -15,7 +15,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { addSource } from '../../src/kernel/state/sources.ts';
 import { listActivity } from '../../src/kernel/state/activity.ts';
-import { jiraItemsIn, onPostTool, onSessionStart, onStop, readableText } from '../../src/hosts/hooks/handlers.ts';
+import { jiraItemsIn, onPostTool, onSessionStart, onStop, readableText, SESSION_START_LINE } from '../../src/hosts/hooks/handlers.ts';
+import { raiseDecision } from '../../src/kernel/state/decisions.ts';
+import { ONBOARDING_QUESTIONS } from '../../src/kernel/project/discovery.ts';
 import { currentManifest } from '../../src/kernel/source/manifest.ts';
 import { installHooks, inspectHooks, HOOK_SETTINGS_PATH, SHARED_HOOK_SETTINGS_PATH } from '../../src/hosts/wiring/hooks.ts';
 import { holdsSet, installClaudeLocal, uninstallClaudeLocal } from '../../src/hosts/wiring/claude-local.ts';
@@ -96,7 +98,25 @@ test('session start says what waits and which sources only the host can read', a
   const fx = brokerFixture();
   try {
     addSource(fx.broker.store, { id: 'jira-plat', kind: 'jira', locator: 'PLAT', purpose: 'tickets', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: false, at: fx.ctx.now() });
-    assert.match(await onSessionStart(fx.broker), /jira-plat/);
+    const note = await onSessionStart(fx.broker);
+    assert.ok(note.startsWith(SESSION_START_LINE), note);
+    assert.match(note, /Only you can read jira-plat; report what you cite from them with sources action report\./);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('session start always says to read the person\'s request with classify_request, and a setup question is offered after it, never counted as waiting', async () => {
+  const fx = brokerFixture();
+  try {
+    assert.equal(await onSessionStart(fx.broker), SESSION_START_LINE, 'nothing waits: the one line');
+    assert.equal(SESSION_START_LINE, 'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.');
+    const at = fx.broker.now();
+    for (const q of ONBOARDING_QUESTIONS) raiseDecision(fx.broker.store, { id: `q-${q.id}`, kind: 'clarification', question: q.question, options: q.options, subject: { onboarding: q.id }, at });
+    const note = await onSessionStart(fx.broker);
+    assert.doesNotMatch(note, /decision\(s\)/, 'setup questions are not decisions that wait');
+    assert.match(note, /After the person's request, offer the 3 setup question\(s\) bootstrap lists\./);
+    assert.ok(note.startsWith(SESSION_START_LINE));
   } finally {
     fx.cleanup();
   }

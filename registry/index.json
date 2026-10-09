@@ -10,13 +10,13 @@
     },
     "construct": {
       "version": "3.0.0",
-      "digest": "sha256:e735ace6c60d3f86938801aeb2a87ef293e39e5f475e3c8443eb33dc2678387a",
+      "digest": "sha256:b26e418a6336480b63b10acc95eb904cc71f221393a2fd759368fc37b77fedf2",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
-      "version": "0.4.0",
-      "digest": "sha256:decff7cea183cca27095a4a848882a7da7db1129a10e468df9f4129ab5535dba",
+      "version": "0.4.1",
+      "digest": "sha256:7efedf491f1328df2d9c14f75293dd755f5b7c58234e2f3d5be4b1c57d96759f",
       "category": "method",
       "title": "Context mapping"
     },
@@ -33,8 +33,8 @@
       "title": "Experience design"
     },
     "governance-risk": {
-      "version": "1.0.1",
-      "digest": "sha256:1811a102ba8e9401b9668bef440c30b34ecbd1f3fd2c8e84ba0fb648171ee11f",
+      "version": "1.0.2",
+      "digest": "sha256:8388bdc43386f9749f0d6599478db04cda9cdba0d5c3ec4211f8f974823e68ea",
       "category": "professional",
       "title": "Governance and risk"
     },
@@ -57,8 +57,8 @@
       "title": "Operations and reliability"
     },
     "product-management": {
-      "version": "1.0.1",
-      "digest": "sha256:29676a6a5a21db396f8ee2f7ad60087b50ba72a899517f77027925d226860c78",
+      "version": "1.0.2",
+      "digest": "sha256:5f82b17659285d7111e2b92d23d849b5208144785ac4784195ee7895b9dbce68",
       "category": "professional",
       "title": "Product management"
     },

@@ -6,7 +6,11 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TOOLS, toolsFor, HEADLESS_FORBIDDEN } from '../../../src/kernel/broker/tools.ts';
+import { TOOLS, toolsFor, HEADLESS_FORBIDDEN, PERSON_ASKED_ONLY } from '../../../src/kernel/broker/tools.ts';
+import { raiseDecision } from '../../../src/kernel/state/decisions.ts';
+import { onSessionStart } from '../../../src/hosts/hooks/handlers.ts';
+import { addStatement } from '../../../src/kernel/state/profile.ts';
+import { ONBOARDING_QUESTIONS, SCALE_CHOICES, SCALE_OPTIONS } from '../../../src/kernel/project/discovery.ts';
 import { mcpTool, ToolInputError, record } from '../../../src/kernel/broker/definition.ts';
 import { listStatements } from '../../../src/kernel/state/profile.ts';
 import { listActivity } from '../../../src/kernel/state/activity.ts';
@@ -151,6 +155,66 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     const constCtxRead = (await call(fx, 'project_context', { topic: 'statements', query: 'migration' })) as { items: unknown[]; total: number };
     assert.equal(constCtxRead.items.length, 1);
     assert.equal(constCtxRead.total, 1);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('the tools that record or start something for the person say that what the host reads is data, not a request', () => {
+  for (const name of ['remember', 'decide', 'start_outcome', 'classify_request']) assert.ok(tool(name).description.includes(PERSON_ASKED_ONLY), name);
+});
+
+test('bootstrap never puts setup ahead of the person\'s request: setup questions and proposals are offered after it, with their answers', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.broker.now();
+    raiseDecision(fx.broker.store, { id: 'q-scale', kind: 'clarification', question: `${ONBOARDING_QUESTIONS[0]!.question} From README.md this looks like a team project (team); say whether that is right.`, options: SCALE_OPTIONS, subject: { onboarding: 'scale', suggested: 'team', basis: 'CODEOWNERS in README.md' }, at });
+    raiseDecision(fx.broker.store, { id: 'q-outcome', kind: 'clarification', question: ONBOARDING_QUESTIONS[1]!.question, subject: { onboarding: 'primary_outcome' }, at });
+    addStatement(fx.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
+    const boot = (await call(fx, 'bootstrap')) as { next: string; decisions: { open: number }; profile: { openQuestions: { id: string; choices: { id: string; label: string }[] | null; suggested: string | null }[]; proposals: number } };
+    assert.match(boot.next, /^handle what the person asked first/, 'the person\'s request comes first');
+    assert.match(boot.next, /ask a setup question only when its answer changes that work/);
+    assert.match(boot.next, /put the 2 setup question\(s\) to them in one message/);
+    assert.match(boot.next, /offer the 1 proposed statement\(s\) from inbox for confirmation; never before their request/);
+    assert.doesNotMatch(boot.next, /decision\(s\) wait/, 'a setup question is not a decision that waits');
+    assert.equal(boot.decisions.open, 2);
+    assert.equal(boot.profile.proposals, 1);
+    const scale = boot.profile.openQuestions.find((q) => q.id === 'q-scale')!;
+    assert.deepEqual(scale.choices, SCALE_CHOICES.map((c) => ({ id: c.id, label: c.label })));
+    assert.equal(scale.suggested, 'team');
+    const outcome = boot.profile.openQuestions.find((q) => q.id === 'q-outcome')!;
+    assert.equal(outcome.choices, null);
+    assert.equal(outcome.suggested, null);
+    assert.ok(JSON.stringify(boot).length < 4000, 'bootstrap stays bounded with its questions');
+
+    // Only proposals left: still after the request.
+    const fx2 = brokerFixture();
+    try {
+      addStatement(fx2.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
+      assert.equal(((await call(fx2, 'bootstrap')) as { next: string }).next, 'when the person is free, offer the 1 proposed statement(s) from inbox for confirmation; never before their request');
+    } finally {
+      fx2.cleanup();
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('bootstrap leads with the decisions about runs, and names blocked runs instead of sending claim_work to them', async () => {
+  const fx = brokerFixture();
+  try {
+    const at = fx.broker.now();
+    raiseDecision(fx.broker.store, { id: 'q-scale', kind: 'clarification', question: ONBOARDING_QUESTIONS[0]!.question, options: SCALE_OPTIONS, subject: { onboarding: 'scale' }, at });
+    const blocked = (await call(fx, 'start_outcome', { workflowId: 'design-conformance', input: {} })) as { started: boolean };
+    assert.equal(blocked.started, false, 'a session start with a missing input creates no run');
+    const run = fx.broker.workflow.start({ workflowId: 'design-conformance', input: {}, trigger: 'manual' });
+    assert.equal(run.run.state, 'blocked');
+    const boot = (await call(fx, 'bootstrap')) as { next: string };
+    assert.match(boot.next, new RegExp(`^1 run\\(s\\) blocked \\(${run.run.id}\\); claim_work with a runId says what would unblock it$`));
+    assert.doesNotMatch(boot.next, /continue with claim_work/);
+    raiseDecision(fx.broker.store, { id: 'q-run', kind: 'decision', question: 'Which target?', runId: run.run.id, at });
+    assert.equal(((await call(fx, 'bootstrap')) as { next: string }).next, '1 decision(s) about runs wait on the person; show them with inbox');
+    assert.match(await onSessionStart(fx.broker), /1 decision\(s\) about runs wait on the person \(inbox\)\./, 'the session-start note counts only the decisions about runs');
   } finally {
     fx.cleanup();
   }

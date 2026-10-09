@@ -38,10 +38,13 @@ project. Re-running `init` leaves an unchanged file exactly as it is. One copy
 of the skill serves every host that reads its directory, so wiring Claude
 Code and Cursor together plants only `.claude/skills/construct`.
 
-Without the answer flags, `init` leaves three questions open and the host
-asks them in conversation: what this project is to you, what result matters
-most now, and what Construct must be careful not to violate. Nothing
-inferred becomes fact until you confirm it.
+Without the answer flags, `init` leaves three questions open: what this
+project is to you, what result matters most now, and what Construct must be
+careful not to violate. Construct tells the host never to ask them before
+your request: to ask one only when its answer changes the work you asked
+for, in the same message, or all three in one message when you have asked
+for nothing yet.
+Nothing inferred becomes fact until you confirm it.
 
 `--dry-run` says what would happen and writes nothing. `--no-wire` skips the
 hosts' MCP files and hooks, and sets up only a host you name or are running
@@ -246,8 +249,11 @@ a chat message) is that tool's content and is not recorded. When the host is
 about to stop, `construct hook stop` sends it back once if its reply named
 project facts (a declared ticket key, a file, a source) without
 `check_answer` or a gated step; `policy.answerCheck` set to off turns that
-off. At session start, `construct hook session-start` adds a short note of
-what waits.
+off. At session start, `construct hook session-start` adds one line telling
+the host to report its own reading of any work you ask for with
+`classify_request`, then a short note of the decisions about runs that wait
+on you, which sources it should report, and the setup questions to offer
+after your request.
 
 Each hook finds Node and Construct through the launcher file in
 `.construct/state/`, never through PATH, so the hooks keep working after a

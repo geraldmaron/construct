@@ -17,8 +17,10 @@
  *   source id) and it neither checked the answer nor did the work through a
  *   gated step, the host is sent back once to run check_answer. Once: a
  *   hook that can loop is worse than none.
- * - At session start: a short note of what waits (decisions, sources to
- *   report, sources that moved), added to the host's context.
+ * - At session start: one line saying to report a reading of any work the
+ *   person asks for with classify_request, then what waits (decisions about
+ *   runs, sources to report, sources that moved, setup questions to offer
+ *   after the person's request), added to the host's context.
  *
  * Every hook fails open. An error is logged and the host carries on; a
  * hook must never wedge someone's session.
@@ -28,6 +30,7 @@ import { readFileSync } from 'node:fs';
 import type { BrokerContext } from '../../kernel/broker/context.ts';
 import { appendActivity } from '../../kernel/state/activity.ts';
 import { listOpenDecisions } from '../../kernel/state/decisions.ts';
+import { waitingOn } from '../../kernel/broker/tools.ts';
 import type { HostReportItem } from '../../kernel/source/service.ts';
 import { projectResolver } from '../../kernel/source/resolver.ts';
 import { urlProblem } from '../../kernel/project/urls.ts';
@@ -272,10 +275,18 @@ export function onStop(ctx: BrokerContext, input: StopInput): StopVerdict {
   };
 }
 
-/** A short note for the start of a session: what waits on the person, what the host should read and report. */
+/** The line every session starts with, whatever waits: the person's request is read by the host, through classify_request. */
+export const SESSION_START_LINE = 'Construct is bound to this project: for work the person asks for, call classify_request with your own reading first.';
+
+/**
+ * A short note for the start of a session: the classify_request line, then
+ * the decisions about runs, what the host should read and report, and the
+ * setup questions to offer once the person's request is handled. A setup
+ * question is never counted as a decision that waits.
+ */
 export async function onSessionStart(ctx: BrokerContext): Promise<string> {
   const at = ctx.now();
-  const decisions = listOpenDecisions(ctx.store).length;
+  const waits = waitingOn(listOpenDecisions(ctx.store));
   const toReport: string[] = [];
   const moved: string[] = [];
   for (const s of ctx.sources.list()) {
@@ -285,8 +296,9 @@ export async function onSessionStart(ctx: BrokerContext): Promise<string> {
     } else if ((await ctx.sources.peek(s.id)) === true) moved.push(s.id);
   }
   const parts: string[] = [];
-  if (decisions > 0) parts.push(`${String(decisions)} decision(s) wait on the person (inbox).`);
+  if (waits.inRuns.length > 0) parts.push(`${String(waits.inRuns.length)} decision(s) about runs wait on the person (inbox).`);
   if (moved.length > 0) parts.push(`Changed since last read: ${moved.join(', ')}; refresh before relying on them.`);
-  if (toReport.length > 0) parts.push(`Only you can read ${toReport.join(', ')}; Construct records what your tools return from them, or report reads with sources action report.`);
-  return parts.length ? `Construct: ${parts.join(' ')} State project facts only after check_answer.` : '';
+  if (toReport.length > 0) parts.push(`Only you can read ${toReport.join(', ')}; report what you cite from them with sources action report.`);
+  if (waits.setup.length > 0) parts.push(`After the person's request, offer the ${String(waits.setup.length)} setup question(s) bootstrap lists.`);
+  return parts.length ? `${SESSION_START_LINE} ${parts.join(' ')} State project facts only after check_answer.` : SESSION_START_LINE;
 }
