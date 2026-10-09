@@ -15,7 +15,7 @@ set this project up: files, one database, a drafted profile, and the agent host 
 |---|---|---|
 | `--name` | yes | the project’s name (default: the directory or package name) |
 | `--purpose` | yes | what the project is for, in a sentence |
-| `--scale` | yes | what this is to you: solo \| side_project \| team \| multi_team \| organization |
+| `--scale` | yes | what this project is to you: side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one |
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
 | `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |

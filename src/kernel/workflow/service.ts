@@ -41,6 +41,7 @@ import { askedFrom, askedOf, type AskedReading, type AskedSources, type Assumpti
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
 import { listSources, SENSITIVITIES, type Sensitivity } from '../state/sources.ts';
 import { inRuleForm, outdatedConstraintText, RULE_FORM_REFUSAL, settledConstraintText, settledTerms } from '../project/governance.ts';
+import { applyOnboardingAnswers, onboardingAnswerFor } from '../project/onboarding.ts';
 import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
@@ -321,7 +322,9 @@ export interface WorkflowService {
    * a deliverable, and such an approval leaves the decision open. The
    * person's approval of a question about a deliverable that has changed
    * since it was asked moves nothing: the question is withdrawn and asked
-   * again as it stands, and the refusal names the new one.
+   * again as it stands, and the refusal names the new one. A setup question's
+   * answer lands in the project profile on any channel, except that only the
+   * person's own channel can make the project a side project.
    */
   decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string; readonly channel?: DecisionChannel }): { readonly decision: Decision; readonly run: WorkflowRun | null };
   cancel(input: { readonly runId: string; readonly by: string; readonly reason: string }): WorkflowRun;
@@ -2124,6 +2127,12 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
         return store.transaction(() => {
           const decision = getDecision(store, decisionId);
           if (!decision) throw new Error(`no decision ${decisionId}`);
+          // A setup question is answered into the profile, the same answer init takes as a flag; it belongs to no run.
+          const setup = decision.kind === 'clarification' && decision.state === 'open' ? onboardingAnswerFor(decision.subject, resolution) : null;
+          if (setup) {
+            applyOnboardingAnswers(store, { answers: setup, by, at, nextId: deps.nextId, channel });
+            return { decision: getDecision(store, decisionId)!, run: null };
+          }
           const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject; settle?: SettlementSubject; driftFindingId?: string; driftFindingIds?: string[] };
           if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
             if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {

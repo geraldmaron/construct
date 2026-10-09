@@ -55,7 +55,12 @@ test('init refuses a bad scale before writing, and an earlier-alpha file with th
   try {
     const bad = await capture(() => run(['init', '--scale=huge'], box.ctx));
     assert.equal(bad.code, 2);
-    assert.match(bad.err, /--scale must be one of/);
+    assert.match(bad.err, /--scale must be one of side_project \| solo \| team \| multi_team \| organization, or the setup question's words for one: a side project \| your primary product, just you/);
+    // Off the person's own terminal, a side project is refused before anything is written.
+    const relayed = await capture(() => run(['init', '--no-wire', '--scale=a side project'], { ...box.ctx, terminal: { interactive: false, agentAncestor: null } }));
+    assert.equal(relayed.code, 1);
+    assert.match(relayed.err, /side project, which lowers how much challenge work gets, needs your own answer/);
+    assert.equal(existsSync(join(box.cwd, '.construct')), false);
     mkdirSync(join(box.cwd, '.construct'));
     writeFileSync(join(box.cwd, '.construct', 'settings.json'), 'not json', 'utf8');
     const legacy = await capture(() => run(['init'], box.ctx));
@@ -310,4 +315,19 @@ test('an unreadable state directory is a failure sentence, not a stack trace', a
       chmodSync(db, 0o600);
     }
   });
+});
+
+test('init takes --scale in the setup question\'s words, and a side project from the person at their own terminal', async () => {
+  const box = sandbox();
+  try {
+    const solo = await capture(() => run(['init', '--no-wire', '--scale=my primary product', '--json'], box.ctx));
+    assert.equal(solo.code, 0, solo.err);
+    assert.equal(JSON.parse(readFileSync(join(box.cwd, '.construct', 'constitution.json'), 'utf8')).scale, 'solo');
+    const person = { ...box.ctx, terminal: { interactive: true, agentAncestor: null } };
+    const light = await capture(() => run(['init', '--no-wire', '--scale=a side project', '--json'], person));
+    assert.equal(light.code, 0, light.err);
+    assert.equal(JSON.parse(readFileSync(join(box.cwd, '.construct', 'constitution.json'), 'utf8')).scale, 'side_project');
+  } finally {
+    box.cleanup();
+  }
 });

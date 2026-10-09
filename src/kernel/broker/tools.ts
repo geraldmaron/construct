@@ -12,7 +12,7 @@ import { listStatements, getProfile, getStatement, missingProfileFields } from '
 import { delegate } from './delegate.ts';
 import { listActiveRuns, listRuns } from '../state/runs.ts';
 import { getDecision, listOpenDecisions } from '../state/decisions.ts';
-import { applyOnboardingAnswers, listInbox, onboardingStatus, resolveProposal, type OnboardingAnswers } from '../project/onboarding.ts';
+import { listInbox, onboardingQuestionOf, onboardingStatus, resolveProposal } from '../project/onboarding.ts';
 import { listStaffMembers, getStaffMember } from '../state/staff.ts';
 import { listEntities, listClaims, listRelations } from '../state/graph.ts';
 import { listDriftFindings } from '../state/drift.ts';
@@ -846,7 +846,7 @@ export function ownerFor(owners: readonly { readonly name: string; readonly deci
 const decide = define<{ decisionId: string; resolution: string | string[] }, unknown>({
   name: 'decide',
   title: 'Relay the person’s decision',
-  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.',
+  description: 'Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, making the project a side project, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.',
   surface: 'interactive',
   readOnly: false,
   destructive: true,
@@ -864,8 +864,6 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
     // Whatever arrives here was relayed by the model in the host, so it is
     // recorded as relayed through that host, never as the person.
     const by = `relayed via ${ctx.host.hostId}`;
-    // A setup question answered here is the same answer init would have taken
-    // as a flag: it lands in the profile, and the question closes with it.
     const existing = getDecision(ctx.store, decisionId);
     const proposed = existing ? null : getStatement(ctx.store, decisionId);
     if (proposed?.status === 'proposed') {
@@ -873,15 +871,15 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       const statement = resolveProposal(ctx.store, { id: decisionId, resolution: answer, at: ctx.now(), nextId: ctx.nextId, by, channel: 'relay' });
       return { decision: { id: statement.id, state: statement.status, resolvedBy: by }, run: null, statement: { id: statement.id, kind: statement.kind, status: statement.status } };
     }
-    const onboarding = existing?.kind === 'clarification' && existing.state === 'open' ? onboardingAnswerFor(existing.subject, resolution) : null;
-    if (onboarding) {
-      const applied = applyOnboardingAnswers(ctx.store, { answers: onboarding, by, at: ctx.now(), nextId: ctx.nextId, channel: 'relay' });
-      const decision = getDecision(ctx.store, decisionId)!;
-      return { decision: { id: decision.id, state: decision.state, resolvedBy: decision.resolvedBy }, run: null, profile: { onboarding: applied.profile.onboardingState, missing: applied.missing } };
-    }
+    // A setup question's answer lands in the profile; the reply says what setup still needs.
+    const setup = (): Record<string, unknown> => {
+      if (onboardingQuestionOf(existing?.subject) === null) return {};
+      const profile = getProfile(ctx.store);
+      return { profile: { onboarding: profile?.onboardingState ?? 'incomplete', missing: missingProfileFields(profile) } };
+    };
     try {
       const r = ctx.workflow.decide({ decisionId, resolution, by, channel: 'relay' });
-      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)) };
+      return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy }, run: r.run ? { id: r.run.id, state: r.run.state } : null, ...followUp(ctx, existing, String(resolution)), ...setup() };
     } catch (error) {
       if (!(error instanceof PersonChannelRequiredError)) throw error;
       const relayed = `Your assistant relayed ${quoteHost(Array.isArray(resolution) ? resolution.join(' ') : resolution)}.`;
@@ -890,9 +888,9 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
       const current = promote ? ctx.workflow.requestPromotion({ deliverableId: promote.deliverableId, to: promote.to, by: ctx.actor, reason: promote.reason ?? undefined }) : null;
       const askedId = current?.id ?? decisionId;
       const replaced = askedId !== decisionId ? { replaces: decisionId } : {};
-      const asked = await askThePerson(ctx, askedId, relayed);
-      if (asked) return { ...asked, ...replaced };
-      return { decision: { id: askedId, state: 'open' }, ...replaced, personRequired: true, next: current ? personStepFor(askedId) : error.message };
+      const asked = await askThePerson(ctx, askedId, relayed, error.answer);
+      if (asked) return { ...asked, ...replaced, ...setup() };
+      return { decision: { id: askedId, state: 'open' }, ...replaced, personRequired: true, next: current ? personStepFor(askedId) : error.message, ...setup() };
     }
   },
 });
@@ -900,10 +898,11 @@ const decide = define<{ decisionId: string; resolution: string | string[] }, unk
 /**
  * Put an open decision to the person directly, when the host can show it to
  * them and nothing answers it for them. Their choice resolves the decision on
- * the elicitation channel; no answer leaves it open, and says so. Null when
- * the host cannot ask.
+ * the elicitation channel; no answer leaves it open, and says how they answer
+ * it themselves, with the answer the assistant relayed when there was one.
+ * Null when the host cannot ask.
  */
-async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: string | null): Promise<Record<string, unknown> | null> {
+async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: string | null, relayedAnswer: string | null = null): Promise<Record<string, unknown> | null> {
   if (!ctx.askPerson) return null;
   const decision = getDecision(ctx.store, decisionId);
   if (!decision || decision.state !== 'open') return null;
@@ -916,20 +915,11 @@ async function askThePerson(ctx: BrokerContext, decisionId: string, relayed: str
   });
   if (!answer.answered) {
     const why = { declined: 'the person declined the prompt', cancelled: 'the person closed the prompt', timeout: 'the person did not answer the prompt in time', unavailable: 'the host could not show the prompt' }[answer.why];
-    return { decision: { id: decisionId, state: 'open' }, personRequired: true, asked: why, next: personStepFor(decisionId) };
+    return { decision: { id: decisionId, state: 'open' }, personRequired: true, asked: why, next: personStepFor(decisionId, relayedAnswer) };
   }
   const by = `person via ${ctx.host.hostId} prompt`;
   const r = ctx.workflow.decide({ decisionId, resolution: answer.choice, by, channel: 'elicitation' });
   return { decision: { id: r.decision.id, state: r.decision.state, resolvedBy: r.decision.resolvedBy, resolution: answer.choice }, channel: 'elicitation', run: r.run ? { id: r.run.id, state: r.run.state } : null };
-}
-
-function onboardingAnswerFor(subject: unknown, resolution: string | readonly string[]): OnboardingAnswers | null {
-  const id = subject !== null && typeof subject === 'object' ? (subject as { onboarding?: unknown }).onboarding : undefined;
-  const answers = Array.isArray(resolution) ? (resolution as readonly string[]) : [resolution as string];
-  if (id === 'scale') return { scale: answers.join(' ') as OnboardingAnswers['scale'] };
-  if (id === 'primary_outcome') return { primaryOutcome: answers.join(' ') };
-  if (id === 'protected_constraints') return { protectedConstraints: answers };
-  return null;
 }
 
 const SOURCE_ACTIONS = ['list', 'show', 'refresh', 'report', 'declare'] as const;

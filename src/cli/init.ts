@@ -14,10 +14,11 @@ import { createInterface } from 'node:readline';
 import { gatherProjectMaterial } from '../hosts/repo/material.ts';
 import { detectAmbientHost } from '../hosts/ambient.ts';
 import { initializeProject } from '../kernel/project/initialize.ts';
-import { draftFromMaterial } from '../kernel/project/discovery.ts';
-import { applyDiscoveryDraft, applyOnboardingAnswers, composeConstitution, onboardingStatus } from '../kernel/project/onboarding.ts';
+import { draftFromMaterial, SCALE_CHOICES } from '../kernel/project/discovery.ts';
+import { applyDiscoveryDraft, applyOnboardingAnswers, composeConstitution, onboardingStatus, scaleFromAnswer, SIDE_PROJECT_NEEDS_PERSON } from '../kernel/project/onboarding.ts';
 import { saveConstitution } from '../kernel/project/constitution.ts';
-import { listStatements, PROJECT_SCALES, type ProjectScale } from '../kernel/state/profile.ts';
+import { listStatements, type ProjectScale } from '../kernel/state/profile.ts';
+import { isPersonChannel } from '../kernel/policy/channels.ts';
 import { createSourceService } from '../kernel/source/service.ts';
 import { ensureSourceEntities } from '../kernel/source/entities.ts';
 import { listShippedSkills, readShippedSkill, plantSkill, skillState, OPERATIONAL_SKILL, type PlantResult, type ShippedSkill } from '../kernel/skills/bundle.ts';
@@ -35,7 +36,7 @@ import { boolFlag, listFlag, stringFlag, type CommandSpec, type ParsedArgs } fro
 import { channelFor, terminalFacts } from './person-channel.ts';
 import { hasProject } from '../kernel/project/discover.ts';
 import { createContext, initRootFor, mainCheckoutOf, resolveRepository, WorktreeBindingError, type CliContext } from './context.ts';
-import { esc, say, shellWord, writeJson, UsageError } from './output.ts';
+import { esc, say, shellWord, writeJson, OperationError, UsageError } from './output.ts';
 import { basename, join } from 'node:path';
 
 export const INIT_SPEC: CommandSpec = {
@@ -46,7 +47,7 @@ export const INIT_SPEC: CommandSpec = {
   flags: [
     { name: 'name', gloss: 'the project’s name (default: the directory or package name)', takesValue: true },
     { name: 'purpose', gloss: 'what the project is for, in a sentence', takesValue: true },
-    { name: 'scale', gloss: `what this is to you: ${PROJECT_SCALES.join(' | ')}`, takesValue: true },
+    { name: 'scale', gloss: `what this project is to you: ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one`, takesValue: true },
     { name: 'outcome', gloss: 'the result that matters most right now', takesValue: true },
     { name: 'constraint', gloss: 'something Construct must be careful not to change or violate', takesValue: true, repeatable: true },
     { name: 'client', gloss: `the agent host you use here: ${WIRABLE_CLIENTS.join(' | ')} (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine`, takesValue: true, repeatable: true },
@@ -57,6 +58,17 @@ export const INIT_SPEC: CommandSpec = {
   readOnly: false,
 };
 
+/** --scale as a scale: its id, or the setup question's own words for it. */
+function scaleFlag(args: ParsedArgs): ProjectScale | undefined {
+  const scale = stringFlag(args, 'scale');
+  if (scale === undefined) return undefined;
+  try {
+    return scaleFromAnswer(scale);
+  } catch {
+    throw new UsageError(`--scale must be one of ${SCALE_CHOICES.map((c) => c.id).join(' | ')}, or the setup question's words for one: ${SCALE_CHOICES.map((c) => c.label).join(' | ')}`);
+  }
+}
+
 function flagAnswers(args: ParsedArgs): {
   readonly name?: string;
   readonly purpose?: string;
@@ -64,11 +76,10 @@ function flagAnswers(args: ParsedArgs): {
   readonly primaryOutcome?: string;
   readonly protectedConstraints?: readonly string[];
 } {
-  const scale = stringFlag(args, 'scale');
   return {
     name: stringFlag(args, 'name'),
     purpose: stringFlag(args, 'purpose'),
-    scale: scale as ProjectScale | undefined,
+    scale: scaleFlag(args),
     primaryOutcome: stringFlag(args, 'outcome'),
     protectedConstraints: listFlag(args, 'constraint'),
   };
@@ -233,9 +244,12 @@ function notConnected(pick: HostPick): string[] {
 }
 
 export async function init(args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
-  const scale = stringFlag(args, 'scale');
-  if (scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(scale)) {
-    throw new UsageError(`--scale must be one of ${PROJECT_SCALES.join(' | ')}`);
+  // A side project makes work lighter, so only the person, at a terminal of their own, may say so; refused before anything is written.
+  if (scaleFlag(args) === 'side_project' && !isPersonChannel(channelFor(ctx.env, ctx.terminal ?? terminalFacts()))) {
+    throw new OperationError(
+      `${SIDE_PROJECT_NEEDS_PERSON} needs your own answer, and this command is not running in a terminal of yours`,
+      'Run init yourself in a terminal outside your agent host (not the host’s built-in terminal), or leave --scale out and answer the scale question with `construct inbox resolve` in your own terminal.',
+    );
   }
   const repo = resolveRepository(ctx.cwd);
   const mainRoot = repo === null ? null : mainCheckoutOf(repo);

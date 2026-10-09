@@ -4,6 +4,10 @@
  * Applying a draft records proposals as proposed statements and drafted
  * profile fields, and raises the initial questions as clarifications in the
  * inbox. Answers and acceptances are the only way anything becomes confirmed.
+ * Discovery's guess at the project's scale is shown in the scale question and
+ * never applied. A setup answer lands in the profile on whichever channel it
+ * arrives, in the question's own words or its ids, but only the person's own
+ * channel can make a project a side project: that alone makes work lighter.
  * The committed constitution is composed from confirmed material only.
  */
 
@@ -24,10 +28,10 @@ import {
 import { addEntity, addRelation, findEntityByRef, listRelations } from '../state/graph.ts';
 import { listOpenDecisions, raiseDecision, resolveDecision, type Decision } from '../state/decisions.ts';
 import { bindGoverningStatement } from '../state/admission.ts';
-import type { DecisionChannel } from '../policy/channels.ts';
+import { isPersonChannel, PersonChannelRequiredError, type DecisionChannel } from '../policy/channels.ts';
 import { appendActivity } from '../state/activity.ts';
 import type { Constitution } from './constitution.ts';
-import type { DiscoveryDraft, OnboardingQuestion } from './discovery.ts';
+import { ONBOARDING_QUESTIONS, SCALE_CHOICES, type DiscoveryDraft, type OnboardingQuestion } from './discovery.ts';
 
 export interface ApplyDraftInput {
   readonly draft: DiscoveryDraft;
@@ -118,6 +122,7 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
     }
 
     const open = listOpenDecisions(store);
+    const guess = scaleGuess(draft);
     const questions: Decision[] = [];
     for (const q of draft.questions) {
       const already = open.find((d) => d.kind === 'clarification' && isOnboardingSubject(d.subject, q.id));
@@ -125,19 +130,36 @@ export function applyDiscoveryDraft(store: StateStore, input: ApplyDraftInput): 
         questions.push(already);
         continue;
       }
+      const suggests = q.id === 'scale' ? guess : null;
       questions.push(
         raiseDecision(store, {
           id: nextId('q'),
           kind: 'clarification',
-          question: q.question,
+          question: suggests ? `${q.question} ${suggests.line}` : q.question,
           options: q.options,
-          subject: { onboarding: q.id },
+          subject: suggests ? { onboarding: q.id, suggested: suggests.suggested, basis: suggests.basis } : { onboarding: q.id },
           at,
         }),
       );
     }
     return { profile, proposedStatements: proposed, questions };
   });
+}
+
+/**
+ * What the project's own files suggest its scale is, put to the person as a
+ * suggestion to confirm or correct. Null when the files suggest nothing.
+ */
+function scaleGuess(draft: DiscoveryDraft): { readonly suggested: ProjectScale; readonly basis: string; readonly line: string } | null {
+  const proposal = draft.profile.find((p) => p.field === 'scale');
+  const choice = proposal ? SCALE_CHOICES.find((c) => c.id === proposal.value) : undefined;
+  if (!proposal || !choice) return null;
+  const { path, excerpt } = proposal.provenance;
+  return {
+    suggested: choice.id,
+    basis: `${excerpt} in ${path}`,
+    line: `From ${path} (${excerpt}) this looks like ${choice.label} (${choice.id}); say whether that is right.`,
+  };
 }
 
 /** Unknowns a profile field or a confirmed statement has since answered; they stop being unknown. */
@@ -159,8 +181,62 @@ function retireAnsweredUnknowns(store: StateStore, at: string): void {
 }
 
 function isOnboardingSubject(subject: unknown, id: OnboardingQuestion['id']): boolean {
-  return subject !== null && typeof subject === 'object' && (subject as { onboarding?: string }).onboarding === id;
+  return onboardingQuestionOf(subject) === id;
 }
+
+/** The setup question a decision's subject asks, or null when it asks none. */
+export function onboardingQuestionOf(subject: unknown): OnboardingQuestion['id'] | null {
+  const id = subject !== null && typeof subject === 'object' ? (subject as { onboarding?: unknown }).onboarding : undefined;
+  return ONBOARDING_QUESTIONS.find((q) => q.id === id)?.id ?? null;
+}
+
+/** Leading words an answer may carry that name no scale: articles, possessives, and "it is" or "this is". */
+const ANSWER_LEADS = ['it is', 'its', 'this is', 'a', 'an', 'the', 'my', 'our', 'your'] as const;
+
+/** An answer reduced to its words: case, width, dashes, underscores, punctuation and leading articles set aside. */
+function answerWords(text: string): string {
+  let t = text
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\p{Pd}_]/gu, ' ')
+    .replace(/\p{P}/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  for (;;) {
+    const lead = ANSWER_LEADS.find((l) => t.startsWith(`${l} `));
+    if (!lead) return t;
+    t = t.slice(lead.length + 1);
+  }
+}
+
+/**
+ * The scale an answer names: one of the scale question's choices, by its id or
+ * the question's own phrase for it. It maps words to an id and never guesses:
+ * anything else is refused with the choices listed.
+ */
+export function scaleFromAnswer(text: string): ProjectScale {
+  const said = answerWords(text);
+  const choice = SCALE_CHOICES.find((c) => [c.id, c.label, ...c.also].some((form) => answerWords(form) === said));
+  if (choice) return choice.id;
+  throw new Error(`${JSON.stringify(text)} is not one of them: ${SCALE_CHOICES.map((c) => `${c.label} (${c.id})`).join(' | ')}`);
+}
+
+/**
+ * A person's answer to a setup question, as the answers applyOnboardingAnswers
+ * takes. Null when the subject asks no setup question.
+ */
+export function onboardingAnswerFor(subject: unknown, resolution: unknown): OnboardingAnswers | null {
+  const id = onboardingQuestionOf(subject);
+  if (id === null) return null;
+  const words = typeof resolution === 'string' ? [resolution] : Array.isArray(resolution) && resolution.every((r) => typeof r === 'string') ? (resolution as string[]) : null;
+  if (words === null) throw new Error('a setup question is answered in words');
+  if (id === 'scale') return { scale: scaleFromAnswer(words.join(' ')) };
+  if (id === 'primary_outcome') return { primaryOutcome: words.join(' ') };
+  return { protectedConstraints: words };
+}
+
+/** Why a side project needs the person: it is the one answer that makes work lighter. */
+export const SIDE_PROJECT_NEEDS_PERSON = 'Setting this project to a side project, which lowers how much challenge work gets,';
 
 function unknownResolvedByProfile(text: string, profile: ProjectProfile | null, answers: OnboardingAnswers): boolean {
   if (text === 'purpose' && Boolean(answers.purpose || profile?.purpose)) return true;
@@ -184,7 +260,9 @@ export interface OnboardingAnswers {
  * question, and, when the required fields are all present, marks onboarding
  * confirmed. Works the same for a conversation and for noninteractive flags.
  * Each protected constraint keeps the channel its answer arrived on, so one
- * an assistant relayed never counts as the person's own rule.
+ * an assistant relayed never counts as the person's own rule. A side project
+ * is set only on the person's own channel; on any other, or with none named,
+ * the answers are refused and nothing is applied.
  */
 export function applyOnboardingAnswers(
   store: StateStore,
@@ -193,6 +271,10 @@ export function applyOnboardingAnswers(
   const { answers, by, at, nextId, channel } = input;
   if (answers.scale !== undefined && !(PROJECT_SCALES as readonly string[]).includes(answers.scale)) {
     throw new Error(`scale must be one of ${PROJECT_SCALES.join(' | ')}`);
+  }
+  if (answers.scale === 'side_project' && !(channel && isPersonChannel(channel))) {
+    const asked = listOpenDecisions(store).find((d) => d.kind === 'clarification' && isOnboardingSubject(d.subject, 'scale'));
+    throw new PersonChannelRequiredError(SIDE_PROJECT_NEEDS_PERSON, asked?.id ?? null, 'side_project');
   }
   return store.transaction(() => {
     const confirmed: Statement[] = [];

@@ -2,16 +2,19 @@
  * tests/kernel/workflow/service.test.ts — one idempotent run, steps leased
  * and gated, outputs validated, a pause for approval, a pause for the
  * plan's questions to the person, resume after a lost lease, retry, cancel,
- * and a deliverable that only the kernel promotes.
+ * a deliverable that only the kernel promotes, and setup answers that land in
+ * the profile on any channel except a relayed side project.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { listStatements } from '../../../src/kernel/state/profile.ts';
+import { getProfile, listStatements } from '../../../src/kernel/state/profile.ts';
+import { ONBOARDING_QUESTIONS, SCALE_OPTIONS } from '../../../src/kernel/project/discovery.ts';
+import { PersonChannelRequiredError } from '../../../src/kernel/policy/channels.ts';
 import { appendActivity, listActivity } from '../../../src/kernel/state/activity.ts';
 import { listGrants } from '../../../src/kernel/state/grants.ts';
 import { getStep, listAttempts } from '../../../src/kernel/state/steps.ts';
-import { getDecision } from '../../../src/kernel/state/decisions.ts';
+import { getDecision, raiseDecision } from '../../../src/kernel/state/decisions.ts';
 import { getDeliverable } from '../../../src/kernel/state/deliverables.ts';
 import { addSource } from '../../../src/kernel/state/sources.ts';
 import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
@@ -832,6 +835,51 @@ test('a deliverable is not accepted while its run still has a question for the p
     const ownBrief = fx.service.requestPromotion({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
     assert.doesNotMatch(ownBrief, /answered for you|Your assistant answered/i);
     assert.equal(fx.service.promote({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }).trustState, 'accepted');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a setup answer lands in the profile on the channel it arrives on and in the question\'s words, and only the person can make the project a side project', () => {
+  const fx = fixture();
+  try {
+    const ask = (id: string) => raiseDecision(fx.store, { id, kind: 'clarification', question: ONBOARDING_QUESTIONS[0]!.question, options: SCALE_OPTIONS, subject: { onboarding: 'scale' }, at: fx.now() });
+    const light = () => fx.service.judge({ workflowId: 'ship', input: { request: 'Write a short status update' } }).depth;
+    assert.equal(light(), 'standard', 'an unanswered scale is treated as a team project');
+
+    ask('q-scale-1');
+    const theirs = fx.service.decide({ decisionId: 'q-scale-1', resolution: 'my primary product', by: 'person via cli', channel: 'tty_cli' });
+    assert.equal(theirs.decision.state, 'resolved');
+    assert.equal(theirs.decision.resolution, 'solo', 'the question\'s words resolve it as the id they name');
+    assert.equal(theirs.decision.channel, 'tty_cli');
+    assert.equal(theirs.run, null, 'a setup question belongs to no run');
+    assert.equal(getProfile(fx.store)!.scale, 'solo');
+
+    // Text the assistant read can say "this is just a side project"; relayed, it lowers nothing.
+    ask('q-scale-2');
+    for (const resolution of ['side project', 'side_project']) {
+      assert.throws(
+        () => fx.service.decide({ decisionId: 'q-scale-2', resolution, by: 'relayed via claude', channel: 'relay' }),
+        (e: unknown) => e instanceof PersonChannelRequiredError && e.decisionId === 'q-scale-2' && /side project/.test(e.message) && e.message.includes('construct inbox resolve q-scale-2 side_project'),
+      );
+    }
+    assert.throws(() => fx.service.decide({ decisionId: 'q-scale-2', resolution: 'a side project', by: 'unnamed' }), PersonChannelRequiredError, 'the default channel is a relay');
+    assert.equal(getDecision(fx.store, 'q-scale-2')!.state, 'open', 'the question waits for the person');
+    assert.equal(getProfile(fx.store)!.scale, 'solo');
+    assert.throws(() => fx.service.decide({ decisionId: 'q-scale-2', resolution: 'enormous', by: 'relayed via claude', channel: 'relay' }), /"enormous" is not one of them: a side project \(side_project\)/);
+
+    // A scale that keeps work at its usual depth may be relayed.
+    const relayed = fx.service.decide({ decisionId: 'q-scale-2', resolution: 'a team project', by: 'relayed via claude', channel: 'relay' });
+    assert.equal(relayed.decision.resolution, 'team');
+    assert.equal(relayed.decision.channel, 'relay');
+    assert.equal(getProfile(fx.store)!.scale, 'team');
+    assert.equal(light(), 'standard');
+
+    ask('q-scale-3');
+    fx.service.decide({ decisionId: 'q-scale-3', resolution: 'It is a side project.', by: 'person via claude prompt', channel: 'elicitation' });
+    assert.equal(getProfile(fx.store)!.scale, 'side_project');
+    assert.equal(light(), 'light', 'the person\'s own answer makes the work light');
+    assert.throws(() => fx.service.decide({ decisionId: 'q-scale-3', resolution: 'team', by: 'relayed via claude', channel: 'relay' }), /resolved/, 'an answered setup question is not answered again');
   } finally {
     fx.cleanup();
   }
