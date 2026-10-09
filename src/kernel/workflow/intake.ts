@@ -610,8 +610,8 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
     const named = catalog.workflows.find((w) => w.manifest.id === workflowId);
     const ids = catalog.workflows.filter(matchable).map((w) => w.manifest.id);
     if (!named || !matchable(named)) fail('workflowId', `no workflow "${workflowId}" carries work here`, ids);
-    if (work && !carries(named, kind, schedule)) {
-      const fits = catalog.workflows.filter((w) => matchable(w) && carries(w, kind, schedule)).map((w) => w.manifest.id);
+    if (work && !workflowCarries(named, kind, schedule)) {
+      const fits = catalog.workflows.filter((w) => matchable(w) && workflowCarries(w, kind, schedule)).map((w) => w.manifest.id);
       fail('workflowId', `${workflowId} cannot carry this ${kind} reading: it starts on ${named.manifest.triggers.join(', ')}`, fits);
     }
   }
@@ -678,7 +678,7 @@ function projectPath(ref: string, root: string): string | null {
 // ---------------------------------------------------------------- matchWorkflows
 
 /** Whether a workflow can be started for this kind of reading, by its triggers. */
-function carries(w: RegisteredWorkflow, kind: IntakeKind, schedule: IntakeSchedule | null): boolean {
+export function workflowCarries(w: RegisteredWorkflow, kind: IntakeKind, schedule: IntakeSchedule | null): boolean {
   if (!matchable(w)) return false;
   const triggers = w.manifest.triggers;
   if (kind === 'manage') return triggers.includes('manual');
@@ -705,7 +705,7 @@ function boundSkills(w: RegisteredWorkflow): string[] {
  */
 export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): WorkflowMatch[] {
   if (!isWork(intake.kind)) return [];
-  const pool = catalog.workflows.filter((w) => carries(w, intake.kind, intake.schedule));
+  const pool = catalog.workflows.filter((w) => workflowCarries(w, intake.kind, intake.schedule));
   const out = new Map<string, WorkflowMatch>();
   const binds = (w: RegisteredWorkflow): boolean => intake.skill !== null && boundSkills(w).includes(intake.skill);
   const skillFirst = (ws: readonly RegisteredWorkflow[]): RegisteredWorkflow[] => [...ws.filter(binds), ...ws.filter((w) => !binds(w))];

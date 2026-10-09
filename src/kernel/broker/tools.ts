@@ -52,7 +52,7 @@ import { askedOf, type Assumption, type Declared, type JudgedBy } from '../workf
 import { STAKE_AREAS } from '../workflow/consequence.ts';
 import {
   CORE_EXAMPLE, COORDINATION_ACTIONS, COORDINATION_NEXT, DESTINATION_KINDS, GENERAL_CARRIER, INTAKE_KINDS, IntakeError, OPEN_ABOUT, SOURCE_ROLES,
-  destinationConflict, matchWorkflows, questionsFor, slotQuestion, validateIntake, workflowInputFor,
+  destinationConflict, matchWorkflows, workflowCarries, questionsFor, slotQuestion, validateIntake, workflowInputFor,
   type Intake, type IntakeCatalog, type ValidatedIntake, type WorkflowMatch,
 } from '../workflow/intake.ts';
 import { inRuleForm, RULE_FORM_REFUSAL, settledTerms } from '../project/governance.ts';
@@ -309,10 +309,10 @@ const CLASSIFY_DESCRIPTION = [
   'Report your own reading: Construct does not read intent from the words.',
   'It checks the reading, works out periods and source ids, names the workflows whose declared deliverable fits, returns only the questions that block, and records nothing.',
   'kind: answer, remember, manage (produce or review something), maintain (keep it up on a schedule or an event), or coordinate (work alongside other agents).',
-  'For manage or maintain, give deliverable: a listed kind, or other with describe.',
+  'Use a declared deliverable kind; other selects the general carrier and requires actual project commands. Inspect its alternatives before starting.',
   'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
   'Prefer period.relative or quarter over computing dates.',
-  'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"other","describe":"architecture diagram"},"period":{"semantics":"evidence_window","from":"2026-07-01","to":"2026-09-30","phrase":"only covering 2026-07-01 to 2026-09-30"},"sources":[{"name":"Jira","role":"read"}]}.',
+  'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"research/brief"},"sources":[{"name":"<their connected source>","role":"read"}]}.',
   'Evidence gaps do not block an investigation: open items use blocking=false with handling=investigate or carry_unknown; never invent an assumption. Only required scope, permission or destination decisions block. Start with the returned intake.',
   PERSON_ASKED_ONLY,
 ].join(' ');
@@ -508,8 +508,15 @@ function classifyNext(validated: ValidatedIntake, first: string | null, open: nu
   if (first === null) {
     return `${prefix}No workflow here produces ${intake.deliverable?.kind ?? 'this'} ${intake.kind === 'maintain' ? 'on a schedule or an event; tell the person, and offer to run it once now instead (kind manage)' : 'for this reading; tell the person what the listed workflows can do instead'}.`;
   }
+  if (first === GENERAL_CARRIER && open === 0) return `${prefix}The general carrier requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this carrier only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
   if (open > 0) return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
   return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` start_outcome saves the standing intent without starting work now. The clock and executor still require provisioning; ${scheduleCommand(first, intake.schedule)} is only an alternate definition command, not an executing schedule.` : ''}`;
+}
+
+function workflowVerification(w: RegisteredWorkflow) {
+  const execution = w.manifest.steps.some((step) => step.capabilities.includes('run_tests'));
+  const challenge = w.manifest.steps.some((step) => step.challenge);
+  return { kind: execution ? 'observed_project_command' : challenge ? 'evidence_and_model_challenge' : 'declared_structural_checks', executionRequired: execution, assurance: execution ? 'observed command; intended criteria need a frozen verifier contract' : 'deterministic checks and host-reported judgment; no independent semantic proof' };
 }
 
 const classify = define<Record<string, unknown>, unknown>({
@@ -541,7 +548,7 @@ const classify = define<Record<string, unknown>, unknown>({
       const { input, missing } = mappedInput(intake, ctx.workflows.get(m.workflowId)!, {}, i === 0);
       const { preflight } = ctx.workflow.preflight(m.workflowId, input, { declared });
       return {
-        match: { workflowId: m.workflowId, title: m.title, deliverableKind: m.deliverableKind, because: m.because, status: preflight.status, summary: preflight.summary, reasons: preflight.reasons, approvalsAhead: preflight.approvalsAhead, input, missing },
+        match: { workflowId: m.workflowId, title: m.title, deliverableKind: m.deliverableKind, because: m.because, verification: workflowVerification(ctx.workflows.get(m.workflowId)!), status: preflight.status, summary: preflight.summary, reasons: preflight.reasons, approvalsAhead: preflight.approvalsAhead, input, missing },
         judgment: preflight.judgment,
       };
     });
@@ -555,6 +562,7 @@ const classify = define<Record<string, unknown>, unknown>({
       resolved: validated.resolved,
       normalized: validated.normalized,
       matches: checked.map((c) => c.match),
+      ...((intake.kind === 'manage' || intake.kind === 'maintain') && (intake.deliverable?.kind === 'other' || found[0]?.workflowId === GENERAL_CARRIER) ? { carrierAlternatives: catalog.workflows.filter((w) => w.manifest.id !== GENERAL_CARRIER && workflowCarries(w, intake.kind, intake.schedule)).map((w) => ({ workflowId: w.manifest.id, deliverableKind: w.manifest.deliverable.kind, title: w.manifest.title, verification: workflowVerification(w) })) } : {}),
       skills: skillCatalog(ctx, intake, found),
       questions,
       hostQuestions,
@@ -587,7 +595,7 @@ const workflows = define<{ action: 'list' | 'show' | 'resolve'; id?: string; inp
     return { action: str(raw, 'action', { oneOf: ['list', 'show', 'resolve'] }) as 'list' | 'show' | 'resolve', id: str(raw, 'id', { optional: true }), input: obj(raw, 'input', { optional: true }) };
   },
   run(ctx, { action, id, input }) {
-    if (action === 'list') return ctx.workflows.list().map((w) => ({ id: w.manifest.id, title: w.manifest.title, version: w.manifest.version, interactionClass: w.manifest.interactionClass, purpose: w.manifest.purpose, triggers: w.manifest.triggers }));
+    if (action === 'list') return ctx.workflows.list().map((w) => ({ id: w.manifest.id, title: w.manifest.title, version: w.manifest.version, interactionClass: w.manifest.interactionClass, purpose: w.manifest.purpose, deliverableKind: w.manifest.deliverable.kind, verification: workflowVerification(w), triggers: w.manifest.triggers }));
     if (!id) throw new ToolInputError(`"id" is required for ${action}`, { field: 'id' });
     const w = ctx.workflows.get(id);
     if (!w) throw new Error(`no workflow "${id}"; list shows the ones this project has`);

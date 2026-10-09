@@ -53,7 +53,7 @@ test('classify_request takes a typed reading, records nothing, and names who jud
     const unregistered = r.assumptions.filter((a: { about: string; by: string }) => a.about === 'sources' && a.by === 'kernel');
     assert.equal(unregistered.length, 5, 'each named system that is not registered is an assumption');
     assert.match(r.next, UNREGISTERED);
-    assert.match(r.next, /Call start_outcome with workflowId "managed-outcome" and this intake/);
+    assert.match(r.next, /First inspect carrierAlternatives/);
     assert.match(r.skills['system-architecture'].useWhen, /\S/);
     assert.ok(Object.values(r.skills).every((s: any) => s.useWhen.length <= 200));
     assert.deepEqual([r.matches[0].input.period, r.matches[0].input.request], [WINDOW, WORDS], 'the period goes into the carrier’s input as the person framed it');
@@ -377,5 +377,65 @@ test('carrying an unknown cannot supply a required destination or waive an actua
     assert.equal(blocked.started, false);
     assert.deepEqual(blocked.hostQuestions, [{ about: 'scope', question: 'Has the owner permitted this access?' }]);
     assert.deepEqual(listRuns(fx.broker.store), []);
+  } finally { fx.cleanup(); }
+});
+
+
+test('generic research and renamed requests expose registry alternatives before acquiring command verification', async () => {
+  const fx = brokerFixture();
+  try {
+    const results = [];
+    for (const words of ['Investigate current evidence for a depot decision.', 'Compare archive accession records.', 'Review the renamed flarn data.']) {
+      const result = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'a decision brief' } });
+      assert.equal(result.matches[0].workflowId, GENERAL_CARRIER);
+      assert.equal(result.matches[0].verification.executionRequired, true);
+      const research = result.carrierAlternatives.find((w: any) => w.workflowId === 'research-brief');
+      assert.equal(research.deliverableKind, 'research/brief');
+      assert.equal(research.verification.kind, 'evidence_and_model_challenge');
+      assert.equal(research.verification.executionRequired, false);
+      assert.match(research.verification.assurance, /no independent semantic proof/);
+      assert.match(result.next, /never request broader shell permission/);
+      results.push(result.carrierAlternatives);
+    }
+    assert.deepEqual(results[0], results[1]); assert.deepEqual(results[1], results[2]);
+    assert.equal(listRuns(fx.broker.store).length, 0);
+    const reclassified = await call(fx, 'classify_request', { words: 'Review the renamed flarn data.', kind: 'manage', deliverable: { kind: 'research/brief' } });
+    assert.equal(reclassified.matches[0].workflowId, 'research-brief');
+    assert.equal(reclassified.matches[0].verification.executionRequired, false);
+    assert.equal(reclassified.carrierAlternatives, undefined);
+  } finally { fx.cleanup(); }
+});
+
+test('alternative verification metadata follows actual registry steps including project workflows', async () => {
+  const fx = brokerFixture();
+  try {
+    const research = fx.broker.workflows.get('research-brief')!;
+    const clone = { ...research, manifest: { ...research.manifest, id: 'local-measurement-review', title: 'Local measurement review', deliverable: { ...research.manifest.deliverable, kind: 'review/measurement' }, steps: research.manifest.steps.map((s, i) => i === 0 ? { ...s, capabilities: [...s.capabilities, 'run_tests'] } : s) } };
+    const original = fx.broker.workflows;
+    (fx.broker as any).workflows = { ...original, list: () => [...original.list(), clone], get: (id: string) => id === clone.manifest.id ? clone : original.get(id) };
+    const result = await call(fx, 'classify_request', { words: 'Review measurements.', kind: 'manage', deliverable: { kind: 'other', describe: 'measurement review' } });
+    const alternative = result.carrierAlternatives.find((w: any) => w.workflowId === clone.manifest.id);
+    assert.equal(alternative.deliverableKind, 'review/measurement');
+    assert.equal(alternative.verification.executionRequired, true);
+    assert.equal(alternative.verification.kind, 'observed_project_command');
+    const listed = await call(fx, 'workflows', { action: 'list' });
+    assert.deepEqual(listed.find((w: any) => w.id === clone.manifest.id).verification, alternative.verification);
+  } finally { fx.cleanup(); }
+});
+
+test('standing alternatives obey all requested trigger requirements and retain the real executor boundary', async () => {
+  const fx = brokerFixture();
+  try {
+    for (const schedule of [{ cron: '0 9 * * 1', timezone: 'UTC' }, { event: 'source.corrected' }, { cron: '0 9 * * 1', timezone: 'UTC', event: 'source.corrected' }]) {
+      const result = await call(fx, 'classify_request', { words: 'Maintain a current evidence summary.', kind: 'maintain', deliverable: { kind: 'other', describe: 'evidence summary' }, schedule });
+      if (result.matches.length) assert.match(result.next, /separately provisioned clock and executor/);
+      else assert.match(result.next, /No workflow here produces other on a schedule or an event/);
+      assert.ok(!result.carrierAlternatives.some((w: any) => w.workflowId === 'research-brief'), 'manual-only research is not offered as an executing schedule');
+      for (const alternative of result.carrierAlternatives) {
+        const manifest = fx.broker.workflows.get(alternative.workflowId)!.manifest;
+        if ('cron' in schedule) assert.ok(manifest.triggers.includes('schedule'));
+        if ('event' in schedule) assert.ok(manifest.triggers.includes('event'));
+      }
+    }
   } finally { fx.cleanup(); }
 });

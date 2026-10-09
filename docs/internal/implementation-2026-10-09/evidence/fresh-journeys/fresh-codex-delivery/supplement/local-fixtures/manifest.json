@@ -1,0 +1,20 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "b0f84a3a514307572f7ca803fc5a011911b65fde793e7a4d167f5e4f2c184fa3",
+    "bytes": 475,
+    "source": "actual trial workspace file; unchanged fixture bytes"
+  },
+  {
+    "path": "docs/policy.md",
+    "sha256": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+    "bytes": 390,
+    "source": "actual trial workspace file; unchanged fixture bytes"
+  },
+  {
+    "path": "docs/cached.json",
+    "sha256": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+    "bytes": 132,
+    "source": "actual trial workspace file; unchanged fixture bytes"
+  }
+]
