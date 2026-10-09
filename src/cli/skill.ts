@@ -29,7 +29,7 @@ const clientFlag = { name: 'client', gloss: `the host whose skills directory to 
 
 export const SKILL_SPECS: readonly CommandSpec[] = [
   { path: ['skill', 'evaluate'], gloss: 'execute a predetermined skill evaluation and record scoped qualification evidence', group, positionals: ['<name>'], flags: [
-    { name: 'suite', gloss: 'project JSON suite with host/model, predefined cases and explicit evaluator command', takesValue: true },
+    { name: 'suite', gloss: 'project JSON suite with host/model, cases and evaluator argv; native.adapter=codex adds fresh producer/reviewer calls', takesValue: true },
     { name: 'timeout-ms', gloss: 'bounded evaluation timeout, at most 1200000', takesValue: true },
     { name: 'valid-hours', gloss: 'qualification expiry, at most 720 hours', takesValue: true },
   ], readOnly: false },

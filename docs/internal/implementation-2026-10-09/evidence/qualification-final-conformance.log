@@ -1,0 +1,106 @@
+
+> @geraldmaron/construct@3.0.0-alpha.26 conformance
+> node scripts/conformance.mjs
+
+| Host | Check | Status | Detail |
+|---|---|---|---|
+| claude-code | installed | passed | /opt/homebrew/bin/claude |
+| claude-code | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-evblHo/project |
+| claude-code | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-evblHo/project/.mcp.json installed |
+| claude-code | portable wiring | passed | .mcp.json starts construct serve --client=claude-code; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-evblHo/project |
+| claude-code | machine-local hooks | passed | .claude/settings.local.json runs the three hooks through the launcher; git ignores it; .claude/settings.json holds none |
+| claude-code | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-evblHo/project/.claude/skills/construct/SKILL.md is the shipped bytes |
+| claude-code | bootstrap invocation | passed | initialize → construct |
+| claude-code | bootstrap summary | passed | host claude-code; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| claude-code | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| claude-code | targeted skill loading | passed | body absent by default, present on request |
+| claude-code | managed workflow execution | passed | 4/4 steps; run succeeded |
+| claude-code | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| claude-code | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| claude-code | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| claude-code | headless surface is limited | passed | max tier project_write |
+| claude-code | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| cursor | installed | passed | <USER_HOME>/.local/bin/cursor-agent |
+| cursor | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-9OcvuV/project |
+| cursor | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-9OcvuV/project/.cursor/mcp.json installed |
+| cursor | portable wiring | passed | .cursor/mcp.json starts construct serve --client=cursor --project=${workspaceFolder}; bootstrap bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-9OcvuV/project |
+| cursor | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-9OcvuV/project/.agents/skills/construct/SKILL.md is the shipped bytes |
+| cursor | bootstrap invocation | passed | initialize → construct |
+| cursor | bootstrap summary | passed | host cursor; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| cursor | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| cursor | targeted skill loading | passed | body absent by default, present on request |
+| cursor | managed workflow execution | passed | 4/4 steps; run succeeded |
+| cursor | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| cursor | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| cursor | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| cursor | headless surface is limited | passed | max tier project_write |
+| cursor | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| vscode | installed | passed | /opt/homebrew/bin/code |
+| vscode | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-7ZHRkK/project |
+| vscode | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-7ZHRkK/project/.vscode/mcp.json installed |
+| vscode | portable wiring | passed | .vscode/mcp.json starts construct serve --client=vscode; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-7ZHRkK/project |
+| vscode | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-7ZHRkK/project/.agents/skills/construct/SKILL.md is the shipped bytes |
+| vscode | bootstrap invocation | passed | initialize → construct |
+| vscode | bootstrap summary | passed | host vscode; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| vscode | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| vscode | targeted skill loading | passed | body absent by default, present on request |
+| vscode | managed workflow execution | passed | 4/4 steps; run succeeded |
+| vscode | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| vscode | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| vscode | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| vscode | headless surface is limited | passed | max tier project_write |
+| vscode | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| opencode | installed | passed | /opt/homebrew/bin/opencode |
+| opencode | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-F1xo3I/project |
+| opencode | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-F1xo3I/project/opencode.json installed |
+| opencode | portable wiring | passed | opencode.json starts construct serve --client=opencode; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-F1xo3I/project |
+| opencode | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-F1xo3I/project/.agents/skills/construct/SKILL.md is the shipped bytes |
+| opencode | bootstrap invocation | passed | initialize → construct |
+| opencode | bootstrap summary | passed | host opencode; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| opencode | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| opencode | targeted skill loading | passed | body absent by default, present on request |
+| opencode | managed workflow execution | passed | 4/4 steps; run succeeded |
+| opencode | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| opencode | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| opencode | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| opencode | headless surface is limited | passed | max tier project_write |
+| opencode | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| codex | installed | passed | /opt/homebrew/bin/codex |
+| codex | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-YqHqbb/project |
+| codex | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-YqHqbb/project/.codex/config.toml installed |
+| codex | portable wiring | passed | .codex/config.toml starts construct serve --client=codex; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-YqHqbb/project |
+| codex | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-YqHqbb/project/.agents/skills/construct/SKILL.md is the shipped bytes |
+| codex | bootstrap invocation | passed | initialize → construct |
+| codex | bootstrap summary | passed | host codex; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| codex | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| codex | targeted skill loading | passed | body absent by default, present on request |
+| codex | managed workflow execution | passed | 4/4 steps; run succeeded |
+| codex | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| codex | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| codex | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| codex | headless surface is limited | passed | max tier project_write |
+| codex | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| bob | installed | untested | bob is not installed here |
+| bob | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-XGCqs3/project |
+| bob | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-XGCqs3/project/.bob/mcp.json installed |
+| bob | portable wiring | passed | .bob/mcp.json starts construct serve --client=bob; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-XGCqs3/project |
+| bob | operational skill discovery | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-XGCqs3/project/.bob/skills/construct/SKILL.md is the shipped bytes |
+| bob | bootstrap invocation | passed | initialize → construct |
+| bob | bootstrap summary | passed | host bob; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request |
+| bob | typed intake | passed | words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters |
+| bob | targeted skill loading | passed | body absent by default, present on request |
+| bob | managed workflow execution | passed | 4/4 steps; run succeeded |
+| bob | final handback | passed | acceptance waits in the inbox for the person; a relayed approval is refused |
+| bob | no nested host spawn | passed | no tool offers to start another host; the server and broker import no process spawning |
+| bob | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
+| bob | headless surface is limited | passed | max tier project_write |
+| bob | live host call | untested | run with --live outside any host session, with the host’s credential present |
+| claude-code | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| cursor | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| vscode | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| opencode | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| codex | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| bob | host text parity | passed | instructions 1834 characters, the contract inside the first 512; tools/list 33715 bytes for 19 tools; skill description 616 characters; identical on 6 host(s) |
+| all | current host preserved (static) | passed | no process spawning in the server, broker, or workflow service |
+
+conformance: 91 passed, 0 failed, 7 untested (static; pass --live for host calls)

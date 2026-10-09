@@ -32,13 +32,14 @@ function fixture() {
   return { fx, suite, suitePath, results, evaluate, qualification, tick: (hours: number) => { time += hours * 3600000; } };
 }
 
-test('an actual passing evaluator can qualify only its digest, host, scope and live evidence, then expires', async () => {
+test('a passing evaluator report alone cannot qualify a host or skill, and still expires', async () => {
   const f = fixture();
   try {
     assert.equal((await f.qualification()).state, 'experimental');
     const receipt = await f.evaluate({ validForHours: 1 });
     assert.equal(receipt.passed, true, JSON.stringify(receipt.problems));
-    const q = await f.qualification(); assert.equal(q.state, 'qualified'); assert.match(q.evidence.scope, /protocol fixtures only/);
+    const q = await f.qualification(); assert.equal(q.state, 'experimental'); assert.match(q.why, /reported only/);
+    assert.equal(receipt.assurance, 'executed_evaluator_report');
     assert.equal((await f.qualification('another-model')).state, 'experimental');
     f.tick(2); assert.equal((await f.qualification()).state, 'degraded');
   } finally { f.fx.cleanup(); }
@@ -95,6 +96,6 @@ test('the public skill evaluate command records a usable scoped receipt', async 
     const observed = JSON.parse(result.stdout);
     f.tick((Date.parse(observed.endedAt) + 1000 - Date.parse(f.fx.ctx.now())) / 3600000);
     assert.match(observed.evaluationRef, /^evaluation:/);
-    assert.equal((await f.qualification()).state, 'qualified');
+    assert.equal((await f.qualification()).state, 'experimental');
   } finally { f.fx.cleanup(); }
 });
