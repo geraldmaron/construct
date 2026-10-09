@@ -11,7 +11,10 @@
  * the period until it is explained, for a figure nothing cited contains, and
  * for a named source nothing was cited from; the verify step then hands back
  * a validated deliverable that carries the diagram, what it rests on, and
- * where that falls against the period and the named sources.
+ * where that falls against the period and the named sources. Accepting it
+ * waits on the person, whose question says how much of it Construct opened,
+ * that the verification was the assistant's report, and quotes the
+ * assistant's assumptions and reasons as the assistant's.
  */
 
 import { test } from 'node:test';
@@ -228,6 +231,25 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.deepEqual(figuresIn(drawn), ['8080', '9090', '16', '5432']);
     assert.deepEqual(figuresIn(COMPOSE), [], 'the compose file writes them inside other tokens');
     assert.ok(figuresIn(drawn).every((f) => citedFiguresIn(COMPOSE).includes(f)));
+
+    // 6. Accepting it is the person's own answer, and the question says what it rests on.
+    const accept = await call(fx, 'promote_deliverable', { deliverableId: done.deliverable.id, to: 'accepted' });
+    assert.equal(accept.personRequired, true);
+    const inbox = (await call(fx, 'inbox', { runId })) as { id: string; question: string }[];
+    const question = inbox.find((d) => d.id === accept.pendingDecision)!.question;
+    assert.deepEqual(question.split('\n'), [
+      `Move deliverable ${done.deliverable.id} (outcome/managed) from validated to accepted?`,
+      "Construct's checks passed on the last step: evidence_refs_resolve, within_period, verification_result.",
+      "Construct opened 4 of 8 things this rests on; 4 are your assistant's report of what it read; 0 could not be checked.",
+      'Verification: \u201cnpx -y @mermaid-js/mermaid-cli -i docs/architecture.md -o /tmp/architecture.svg\u201d was run and reported by your assistant (exit 0); Construct did not run it.',
+      'Highest sensitivity cited: confidential.',
+      'Declared by your assistant, not added by you: jira, confluence, github.',
+      'Covers 2026-07-01..2026-09-30 (only evidence dated in it); 4 cited items are dated before it or undated; 1 dated after it.',
+      "Your assistant's description, not checked by Construct:",
+      'assumption (step plan): \u201cthe compose file is the deployed topology\u201d',
+      'dated after the period: \u201cjira:PAY-430: it records the cart split decided after the quarter; the diagram leaves it out and says so\u201d',
+      `request: \u201c${request}\u201d`,
+    ], 'what Construct opened and what the assistant only reported come before the assistant\'s own words');
   } finally {
     fx.cleanup();
   }

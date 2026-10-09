@@ -88,6 +88,11 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     step('gather', { capabilities: ['read_project_context'], inputs: { target: 'input.target', period: 'input.period', sources: 'input.sources' }, outputs: ['notes'], validators: ['citations_present', 'within_period'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
     step('write', { needs: ['gather'], tier: 'draft', capabilities: ['model_review'], inputs: { notes: 'steps.gather.notes', period: 'input.period' }, outputs: ['summary', 'findings'], validators: ['schema', 'deliverable_complete'], loadBearing: true }),
   ], { triggers: ['manual', 'schedule'], concurrency: 'per_input', interactionClass: 'manage', inputSchema: { target: 'string', period: 'period', sources: 'source_ids' }, requiredInputs: ['period'], dedupeKey: ['target', 'period', 'sources'], deliverable: { kind: 'digest', schema: 'digest/v1', challenge: false } }));
+  // Read, then run a check the host reports: the verification an acceptance question names.
+  writeWorkflow(join(dirs.root, 'workflows'), 'check', workflowManifest('check', '1.0.0', [
+    step('gather', { capabilities: ['read_project_context'], outputs: ['notes'], validators: ['citations_present'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
+    step('verify', { needs: ['gather'], capabilities: ['run_tests'], inputs: { notes: 'steps.gather.notes' }, outputs: ['verification'], validators: ['verification_result'] }),
+  ], { concurrency: 'per_input', dedupeKey: ['target'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false } }));
   const registry = createSkillRegistry({ builtinDir: join(dirs.root, 'skills'), projectDir: null });
   const skills: SkillRegistry = { ...registry, get: (id) => (self.onSkillLookup?.(), registry.get(id)) };
   const workflows = createWorkflowRegistry({ builtinDir: join(dirs.root, 'workflows'), projectDir: null });

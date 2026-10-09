@@ -28,9 +28,10 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
         const rows = listInbox(project.store);
         if (args.json) writeJson(rows);
         else if (rows.length === 0) say('nothing waits on you');
+        // One line per item: a decision shows its question's first line, and inbox show prints the rest.
         else for (const d of rows) {
           if (d.kind === 'proposal') say(`${esc(d.id)}  proposal  ${esc(d.text)}  [${d.options.join(' | ')}]`);
-          else say(`${esc(d.id)}  ${d.decisionKind}  ${esc(d.question)}${d.options ? `  [${d.options.join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`);
+          else say(`${esc(d.id)}  ${d.decisionKind}  ${esc(d.question.split('\n')[0] ?? '')}${d.options ? `  [${d.options.join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`);
         }
         return 0;
       }
@@ -41,9 +42,12 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
         if (!d && !proposal) throw new OperationError(`no inbox item ${id}`);
         if (args.json) writeJson(d ?? proposal);
         else if (d) {
-          say(`${esc(d.id)} (${d.kind}, ${d.state}): ${esc(d.question)}`);
+          // A question cut to fit a prompt keeps its whole text beside it.
+          const { brief, ...about } = d.subject !== null && typeof d.subject === 'object' && !Array.isArray(d.subject) ? (d.subject as Record<string, unknown>) : {};
+          const whole = typeof brief === 'string' ? brief : null;
+          say(`${esc(d.id)} (${d.kind}, ${d.state}): ${esc(whole ?? d.question)}`);
           if (d.options) say(`  options: ${d.options.join(' | ')}`);
-          if (d.subject) say(`  about: ${esc(JSON.stringify(d.subject))}`);
+          if (d.subject) say(`  about: ${esc(JSON.stringify(whole === null ? d.subject : about))}`);
           if (d.resolution !== null) say(`  answered by ${esc(d.resolvedBy ?? '?')}: ${esc(JSON.stringify(d.resolution))}`);
         } else if (proposal) {
           say(`${esc(proposal.id)} (proposal, ${proposal.status}): ${esc(proposal.text)}`);

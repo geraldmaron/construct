@@ -17,6 +17,8 @@ import { PassThrough } from 'node:stream';
 import { createMcpHandler, serveHandler } from '../../../src/hosts/mcp/server.ts';
 import { HostRequests } from '../../../src/hosts/mcp/outbound.ts';
 import { raiseDecision, getDecision } from '../../../src/kernel/state/decisions.ts';
+import { getDeliverable } from '../../../src/kernel/state/deliverables.ts';
+import { HOST_SAID_LABEL } from '../../../src/kernel/render/person-prompt.ts';
 import { listGrants } from '../../../src/kernel/state/grants.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
 import type { BrokerContext } from '../../../src/kernel/broker/context.ts';
@@ -117,7 +119,7 @@ test('the person’s own answer through the host resolves an approval a relay co
     host.answer = () => ({ action: 'accept', content: { answer: 'approve' } });
     const r = await decide(host, 'decision-ext');
     assert.equal(host.asked.length, 1);
-    assert.match(host.asked[0]!.params!.message!, /^Construct needs your own answer; your assistant cannot give it for you\. Approve exactly this: push PROJ-14 Your assistant relayed "approve"\./);
+    assert.match(host.asked[0]!.params!.message!, /^Construct needs your own answer; your assistant cannot give it for you\. Approve exactly this: push PROJ-14\nYour assistant relayed “approve”\.$/);
     assert.deepEqual(host.asked[0]!.params!.requestedSchema, { type: 'object', properties: { answer: { type: 'string', title: 'Your answer', enum: ['approve', 'decline'] } }, required: ['answer'] });
     assert.equal((r.decision as { state: string }).state, 'resolved');
     assert.equal(r.channel, 'elicitation');
@@ -213,6 +215,62 @@ test('accepting a deliverable asks the person the same way', async () => {
     const no: AskPerson = async () => ({ answered: false, why: 'declined' });
     const r2 = (await promote.run({ ...ctx, askPerson: no } as BrokerContext, { deliverableId, to: 'final' })) as { deliverable: { trust: string }; personRequired: boolean; asked: string };
     assert.deepEqual([r2.deliverable.trust, r2.personRequired, r2.asked], ['unchanged', true, 'the person declined the prompt']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+/** A deliverable the person was asked to accept and did not answer, then challenged with one objection left open. */
+async function askedThenChallenged(fx: ReturnType<typeof fixture>): Promise<{ deliverableId: string; oldId: string; ctx: BrokerContext; asked: string[] }> {
+  const started = fx.service.start({ workflowId: 'ship', input: { request: 'Rename a private helper in the invoice formatter' }, trigger: 'manual' });
+  const claimed = fx.service.claimNext({ runId: started.run.id });
+  const deliverableId = fx.service.submit({ leased: claimed.packet!.leased, output: { summary: 'renamed the helper', findings: [] } }).deliverable!.id;
+  const asked: string[] = [];
+  const no: AskPerson = async (q) => (asked.push(q.message), { answered: false, why: 'declined' });
+  const ctx = { store: fx.store, workflow: fx.service, actor: 'model via claude-code', host: { hostId: 'claude-code' }, askPerson: no } as unknown as BrokerContext;
+  const promote = toolsFor('interactive').find((t) => t.name === 'promote_deliverable')!;
+  const first = (await promote.run(ctx, { deliverableId, to: 'accepted' })) as { pendingDecision: string };
+  assert.match(asked[0]!, /from validated to accepted\?/);
+  fx.service.promote({ deliverableId, to: 'challenged', by: 'adversarial-review', verification: { challenge: { objections: [{ objection: 'the rename misses a caller', disposition: 'open' }] } } });
+  return { deliverableId, oldId: first.pendingDecision, ctx, asked };
+}
+
+test('a relayed approval of a question asked before a challenge puts the question as it stands now to the person', async () => {
+  const fx = fixture();
+  try {
+    const { deliverableId, oldId, ctx, asked } = await askedThenChallenged(fx);
+    const decideTool = toolsFor('interactive').find((t) => t.name === 'decide')!;
+    const yes: AskPerson = async (q) => (asked.push(q.message), { answered: true, choice: 'approve' });
+    const r = (await decideTool.run({ ...ctx, askPerson: yes } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as { decision: { id: string; state: string }; channel: string; replaces: string };
+    const lines = asked[1]!.split('\n');
+    assert.equal(lines[0], `Construct needs your own answer; your assistant cannot give it for you. Move deliverable ${deliverableId} (outcome) from challenged to accepted?`);
+    assert.equal(lines[1], 'Your assistant relayed \u201capprove\u201d.', 'Construct says what was relayed on a line of its own, outside the assistant\u2019s quoted words');
+    assert.ok(lines.includes('Challenged by adversarial-review, from the session that ran the work: 1 objection, 1 open.'), asked[1]);
+    assert.ok(lines.indexOf('open objection: \u201cthe rename misses a caller\u201d') > lines.indexOf(HOST_SAID_LABEL), asked[1]);
+    const old = getDecision(fx.store, oldId)!;
+    assert.equal(old.state, 'withdrawn');
+    assert.deepEqual(old.resolution, { withdrawn: true, reason: 'superseded by a current brief' });
+    assert.notEqual(r.decision.id, oldId);
+    assert.equal(r.replaces, oldId);
+    assert.deepEqual([r.decision.state, r.channel], ['resolved', 'elicitation']);
+    assert.equal(getDeliverable(fx.store, deliverableId)!.trustState, 'accepted', 'the person approved the question as it stands');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a relayed approval of a stale question where the host cannot ask names the question as it stands now', async () => {
+  const fx = fixture();
+  try {
+    const { deliverableId, oldId, ctx } = await askedThenChallenged(fx);
+    const decideTool = toolsFor('interactive').find((t) => t.name === 'decide')!;
+    const r = (await decideTool.run({ ...ctx, askPerson: undefined } as BrokerContext, { decisionId: oldId, resolution: 'approve' })) as { decision: { id: string; state: string }; replaces: string; personRequired: boolean; next: string };
+    assert.notEqual(r.decision.id, oldId);
+    assert.deepEqual([r.decision.state, r.replaces, r.personRequired], ['open', oldId, true]);
+    assert.match(r.next, new RegExp(`construct inbox resolve ${r.decision.id} approve`));
+    assert.match(getDecision(fx.store, r.decision.id)!.question, /^Move deliverable \S+ \(outcome\) from challenged to accepted\?\n/);
+    assert.equal(getDecision(fx.store, oldId)!.state, 'withdrawn');
+    assert.equal(getDeliverable(fx.store, deliverableId)!.trustState, 'challenged');
   } finally {
     fx.cleanup();
   }

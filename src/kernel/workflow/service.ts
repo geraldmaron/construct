@@ -35,7 +35,7 @@ import { calendarDate } from '../calendar.ts';
 import type { SkillRegistry } from '../registry/skill-registry.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
 import type { RegistryLock } from '../project/lock.ts';
-import { INTAKE_FIELDS, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
+import { INTAKE_FIELDS, OPEN_ABOUT, slotQuestion, type Intake, type IntakeDeliverable, type Question } from './intake.ts';
 import { assessConsequence, judgmentRequired, wordsOf, type Judgment } from './consequence.ts';
 import { askedFrom, askedOf, type AskedReading, type AskedSources, type Assumption, type Declared, type Firing } from './asked.ts';
 import { provenanceOf, type RefResolver } from '../project/evidence.ts';
@@ -45,6 +45,7 @@ import { higherSensitivity } from './validators.ts';
 import { getDriftFinding, setDriftStatus } from '../state/drift.ts';
 import { detectDrift, recordDrift } from '../drift/detect.ts';
 import { outsidePeriodOf, periodCoverage, runValidators, sourcesCoverage, unreadOf, type OutsidePeriod, type Unread, type ValidatorResult } from './validators.ts';
+import { capped, flattenHost, quoteHost, renderPersonPrompt, type HostSaid } from '../render/person-prompt.ts';
 
 function activeContradictionCount(store: StateStore): number {
   return listRelations(store, { kind: 'contradicts' }).filter((r) => {
@@ -304,7 +305,10 @@ export interface WorkflowService {
   /**
    * Resolve an open decision. `channel` says how the answer arrived; a relay
    * (the default) cannot approve an external or destructive action or accept
-   * a deliverable, and such an approval leaves the decision open.
+   * a deliverable, and such an approval leaves the decision open. The
+   * person's approval of a question about a deliverable that has changed
+   * since it was asked moves nothing: the question is withdrawn and asked
+   * again as it stands, and the refusal names the new one.
    */
   decide(input: { readonly decisionId: string; readonly resolution: unknown; readonly by: string; readonly channel?: DecisionChannel }): { readonly decision: Decision; readonly run: WorkflowRun | null };
   cancel(input: { readonly runId: string; readonly by: string; readonly reason: string }): WorkflowRun;
@@ -318,16 +322,39 @@ export interface WorkflowService {
    * raised (empty when it found nothing), and records who challenged it.
    */
   promote(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly channel?: DecisionChannel; readonly verification?: unknown; readonly reason?: string }): Deliverable;
-  /** Ask the person to accept or finalize a deliverable: an inbox approval they answer directly, naming any waived checks. Reuses an open one. */
+  /**
+   * Ask the person to accept or finalize a deliverable: an inbox approval
+   * they answer directly, whose question leads with what Construct checked,
+   * waived, and could not check, and quotes the assistant's own words as the
+   * assistant's. Reuses an open one while its question still describes the
+   * deliverable as it stands; otherwise withdraws it and asks again.
+   */
   requestPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly reason?: string }): Decision;
 }
 
 /** What an approval to move a deliverable's trust carries. */
-interface PromotionSubject {
+export interface PromotionSubject {
   readonly deliverableId: string;
   readonly to: TrustState;
   readonly reason: string | null;
   readonly requestedBy: string;
+}
+
+/**
+ * An approval of a question that no longer describes its deliverable as it
+ * stands. Thrown inside the decision's transaction, so nothing of it is
+ * applied, and caught outside it, where the question is asked again.
+ */
+class StaleAcceptance extends Error {
+  readonly decisionId: string;
+  readonly promote: PromotionSubject;
+
+  constructor(decisionId: string, promote: PromotionSubject) {
+    super(`${decisionId} no longer describes deliverable ${promote.deliverableId} as it stands`);
+    this.name = 'StaleAcceptance';
+    this.decisionId = decisionId;
+    this.promote = promote;
+  }
 }
 
 /** The inputs that say which piece of work a run is: the dedupe key, or every declared input when there is none. */
@@ -490,6 +517,39 @@ function readsAnything(capabilities: readonly string[]): boolean {
   return capabilities.some((c) => c === 'read_project_context' || c === 'read_project_files' || c.startsWith('read_source'));
 }
 
+function isObject(x: unknown): x is Record<string, unknown> {
+  return x !== null && typeof x === 'object' && !Array.isArray(x);
+}
+
+/** What a resolved citation can be that the project holds itself, so no source's sensitivity label applies to it. */
+const PROJECT_HELD: ReadonlySet<string> = new Set(['file', 'directory', 'deliverable', 'record', 'surface']);
+
+/** How long the whole acceptance prompt kept beside a cut one may be. */
+const BRIEF_RECORD_CAP = 8000;
+
+/** What each period semantics means, in the person's terms. */
+const PERIOD_MEANS: Readonly<Record<string, string>> = {
+  as_of: 'how things stood at its end',
+  changed_during: 'what changed during it',
+  evidence_window: 'only evidence dated in it',
+};
+
+/** The text of one entry of a step's assumptions list: a string, or an object's text, assumption or statement. */
+function assumptionText(entry: unknown): string | null {
+  if (typeof entry === 'string') return entry.trim() || null;
+  if (!isObject(entry)) return null;
+  for (const key of ['text', 'assumption', 'statement']) {
+    const v = entry[key];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+/** A count with its noun, singular or plural. */
+function counted(n: number, one: string, many = `${one}s`): string {
+  return `${String(n)} ${n === 1 ? one : many}`;
+}
+
 export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowService {
   const { store } = deps;
   /**
@@ -526,6 +586,24 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       if (id) level = higherSensitivity(level, bySource.get(id) ?? null);
     }
     return level;
+  };
+  /**
+   * How many of the run's citations name no declared source and nothing the
+   * project holds itself, so no sensitivity label applies to them: a page no
+   * declared source covers, or a citation that resolves to nothing. Null
+   * where no resolver was supplied to place them.
+   */
+  const sensitivityUnknownFor = (run: WorkflowRun, current: readonly { readonly ref: string }[], resolve?: RefResolver): number | null => {
+    if (!resolve) return null;
+    const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
+    let unknown = 0;
+    for (const e of runEvidence(run.id, current)) {
+      const r = resolve(e.ref);
+      if (r?.sourceId ?? namedSourceOf(e.ref, bySource)) continue;
+      if (r && PROJECT_HELD.has(r.kind)) continue;
+      unknown += 1;
+    }
+    return unknown;
   };
   /**
    * The answer that lets this step through its failing checks: the latest
@@ -602,8 +680,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
    * What a deliverable says: what the step returned, then what the last step
    * was handed (which wins over a restatement), the step's evidence, the
    * highest sensitivity among what the run cited and the deliverable it acts
-   * on (null when none carries a label), how much of the run's evidence
-   * Construct opened itself or holds only on the host's word, where it
+   * on (null when none carries a label), how many citations come from no
+   * declared source so their sensitivity is unknown, how much of the run's
+   * evidence Construct opened itself or holds only on the host's word, where it
    * falls against the period and the named sources, and every check the
    * run went through without passing, with who accepted it and how. The
    * kernel's keys win over the step's own; waived is left out when nothing
@@ -616,6 +695,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       ...handed,
       evidence,
       sensitivity: sensitivity ?? null,
+      sensitivityUnknown: sensitivityUnknownFor(run, evidence, resolve),
       provenance: resolve ? provenanceOf(runEvidence(run.id, evidence), resolve) : null,
       ...coverageFor(run, evidence, output, resolve),
       waived: waived.length ? waived : undefined,
@@ -1142,13 +1222,206 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     return current;
   }
 
-  /** What the person is told, before accepting, about the checks the run went through without passing. Empty when none were. */
-  function waiverLine(runId: string): string {
-    const waivers = runWaivers(runId);
-    if (waivers.length === 0) return '';
-    const said = (w: Waiver): string => (w.channel && isPersonChannel(w.channel) ? 'accepted by you' : w.channel === 'relay' ? 'relayed by your assistant' : 'no record of who answered');
-    const shown = waivers.slice(0, 3).map((w) => `${w.validator} on step ${w.stepId} (${said(w)})`);
-    return ` Checks waived on this run, so it was never called validated: ${shown.join('; ')}${waivers.length > 3 ? `; +${String(waivers.length - 3)} more` : ''}.`;
+  /**
+   * The open question asking the person to move a deliverable to `to`, as
+   * the deliverable stands now: an open one whose question still describes
+   * it, or a new one. Every other open question about the same move is
+   * withdrawn, so only the current one waits.
+   */
+  function askForPromotion(input: { readonly deliverableId: string; readonly to: TrustState; readonly by: string; readonly reason?: string | null }, at: string): Decision {
+    const { deliverableId, to, by, reason } = input;
+    return store.transaction(() => {
+      const current = assertPromotable(deliverableId, to);
+      const asking = listOpenDecisions(store, current.runId).filter((d) => {
+        const p = (d.subject as { promote?: PromotionSubject } | null)?.promote;
+        return d.kind === 'approval' && p?.deliverableId === deliverableId && p.to === to;
+      });
+      const standing = asking.find((d) => d.question === acceptanceBrief(current, to, d.id));
+      for (const d of asking) if (d !== standing) withdrawDecision(store, { id: d.id, reason: 'superseded by a current brief', at });
+      if (standing) return standing;
+      const id = deps.nextId('decision');
+      const question = acceptanceBrief(current, to, id);
+      const whole = acceptanceBrief(current, to, undefined, BRIEF_RECORD_CAP);
+      return raiseDecision(store, {
+        id,
+        kind: 'approval',
+        question,
+        runId: current.runId,
+        options: ['approve', 'decline'],
+        // The whole prompt is kept beside a cut one, for construct inbox show.
+        subject: { promote: { deliverableId, to, reason: reason ?? null, requestedBy: by } satisfies PromotionSubject, ...(whole !== question ? { brief: whole } : {}) },
+        at,
+      });
+    });
+  }
+
+  /** How a waiver's answer reached Construct, in the person's terms. */
+  function waivedHow(w: Waiver): string {
+    if (w.channel && isPersonChannel(w.channel)) return 'by you';
+    return w.channel === 'relay' ? 'relayed by your assistant' : 'with no record of who answered';
+  }
+
+  /**
+   * The declared sources an assistant declared from chat, and the person has
+   * not added since, that this deliverable rests on: ones the run cited or
+   * names, and ones declared by the run's session or while the run worked,
+   * up to when the deliverable was made. A declaration after that, by any
+   * session, is not this deliverable's.
+   */
+  function assistantDeclared(run: WorkflowRun, d: Deliverable, cited: ReadonlySet<string>): string[] {
+    const local = new Set(listSources(store, { status: 'active' }).filter((x) => x.origin === 'local').map((x) => x.id));
+    if (local.size === 0) return [];
+    const out: string[] = [];
+    const page = 1000;
+    for (let after = 0; ; ) {
+      const events = listActivity(store, { kind: 'source.declared', afterId: after, limit: page });
+      for (const e of events) {
+        const id = isObject(e.payload) ? e.payload.sourceId : undefined;
+        if (typeof id !== 'string' || !local.has(id) || out.includes(id)) continue;
+        const sameSession = run.sessionId !== null && e.sessionId === run.sessionId;
+        const whileWorking = e.at <= d.createdAt && (sameSession || e.at >= run.createdAt);
+        if (cited.has(id) || whileWorking) out.push(id);
+      }
+      if (events.length < page) break;
+      after = events[events.length - 1]!.id;
+    }
+    return out;
+  }
+
+  /**
+   * What the person is asked before a deliverable moves to accepted or
+   * final: the move, from the trust it holds now; then what Construct holds,
+   * one fact per line (checks waived and by whom, the checks that passed,
+   * how much of what it rests on Construct opened itself, a verification the
+   * assistant reports running, the highest sensitivity cited, sources the
+   * assistant declared, systems named but never registered, where the
+   * citations fall against the period and the named sources, and the
+   * challenge record); then the assistant's own words, quoted under their
+   * label. Each list shows three entries and how many more. Cut at the
+   * prompt cap, pointing at `more` for the rest.
+   */
+  function acceptanceBrief(d: Deliverable, to: TrustState, more?: string, cap?: number): string {
+    const run = getRun(store, d.runId);
+    const body = isObject(d.body) ? d.body : {};
+    const verification = isObject(d.verification) ? d.verification : {};
+    const asked = run ? askedOf(run) : {};
+    const facts: string[] = [];
+    const said: HostSaid[] = [];
+
+    const waivers = run ? runWaivers(run.id) : [];
+    if (waivers.length) facts.push(`Waived: ${capped(waivers.map((w) => `${w.validator} on step ${w.stepId} (${waivedHow(w)})`))}. A run that went through on a waiver is never called validated.`);
+    const checks = Array.isArray(verification.validators) ? verification.validators.filter(isObject) : [];
+    if (checks.length && checks.every((c) => c.ok === true)) facts.push(`Construct's checks passed on the last step: ${capped(checks.map((c) => String(c.validator)), 3, ', ')}.`);
+
+    const p = isObject(body.provenance) ? body.provenance : null;
+    if (p) {
+      const n = (k: string): number => (typeof p[k] === 'number' ? (p[k] as number) : 0);
+      const total = n('witnessed') + n('reported') + n('unverified') + n('unresolved');
+      const unchecked = n('unverified') + n('unresolved');
+      facts.push(total === 0
+        ? 'Nothing this rests on was cited.'
+        : `Construct opened ${String(n('witnessed'))} of ${counted(total, 'thing')} this rests on; ${String(n('reported'))} ${n('reported') === 1 ? 'is' : 'are'} your assistant's report of what it read; ${String(unchecked)} could not be checked.`);
+    }
+
+    if (run) {
+      const verifying = new Set(stepsOf(run).filter((st) => st.validators.includes('verification_result')).map((st) => st.id));
+      const verified = listSteps(store, run.id).filter((st) => st.state === 'succeeded' && verifying.has(st.stepId) && isObject(st.output));
+      const out = verified.length ? (verified[verified.length - 1]!.output as Record<string, unknown>) : null;
+      if (out) {
+        const v = isObject(out.verification) ? out.verification : out;
+        const command = v.command ?? out.command;
+        const exit = v.exitStatus ?? v.exit ?? out.exitStatus;
+        const status = typeof exit === 'number' && Number.isInteger(exit) ? `exit ${String(exit)}` : 'no exit status given';
+        facts.push(typeof command === 'string' && command.trim()
+          ? `Verification: ${quoteHost(command)} was run and reported by your assistant (${status}); Construct did not run it.`
+          : `Verification was reported by your assistant without a command (${status}); Construct did not run it.`);
+      }
+    }
+
+    const level = typeof body.sensitivity === 'string' ? body.sensitivity : null;
+    const unknown = typeof body.sensitivityUnknown === 'number' ? body.sensitivityUnknown : 0;
+    const unknownText = unknown > 0 ? `${counted(unknown, 'citation')} ${unknown === 1 ? 'comes' : 'come'} from no declared source, so ${unknown === 1 ? 'its' : 'their'} sensitivity is unknown` : '';
+    if (level) facts.push(`Highest sensitivity cited: ${level}${unknownText ? `; ${unknownText}` : ''}.`);
+    else if (unknownText) facts.push(`No cited source carries a sensitivity label; ${unknownText}.`);
+
+    // Coverage is read only where the kernel wrote it: a run with no period or named sources leaves those keys to the step.
+    const coverage = (asked.sources?.registered ?? []).length && isObject(body.sources) ? body.sources : null;
+    const named = Array.isArray(coverage?.named) ? coverage.named.filter((x): x is string => typeof x === 'string') : [...(asked.sources?.registered ?? [])];
+    const readFrom = Array.isArray(coverage?.read) ? coverage.read.filter((x): x is string => typeof x === 'string') : [];
+    if (run) {
+      const cited = new Set([...named, ...readFrom]);
+      const bySource = new Map(listSources(store, {}).map((x) => [x.id, x.sensitivity]));
+      for (const e of runEvidence(run.id, [])) {
+        const id = namedSourceOf(e.ref, bySource);
+        if (id) cited.add(id);
+      }
+      const declared = assistantDeclared(run, d, cited);
+      if (declared.length) facts.push(`Declared by your assistant, not added by you: ${capped(declared, 3, ', ')}.`);
+    }
+    const unregistered = (asked.sources?.named ?? []).filter((x) => !x.registered);
+    if (unregistered.length) facts.push(`${counted(unregistered.length, 'system')} the request named ${unregistered.length === 1 ? 'is' : 'are'} not registered with Construct, so Construct could not check anything read from ${unregistered.length === 1 ? 'it' : 'them'}.`);
+
+    const period = asked.period && isObject(body.period) ? body.period : null;
+    if (period && typeof period.to === 'string') {
+      const range = typeof period.from === 'string' ? `${period.from}..${period.to}` : `as of ${period.to}`;
+      const means = PERIOD_MEANS[String(period.semantics)] ?? String(period.semantics);
+      const cov = isObject(period.coverage) ? period.coverage : null;
+      const len = (k: string): number => (Array.isArray(cov?.[k]) ? (cov[k] as unknown[]).length : 0);
+      const placed = cov ? `; ${counted(len('before') + len('undated'), 'cited item')} ${len('before') + len('undated') === 1 ? 'is' : 'are'} dated before it or undated${len('after') ? `; ${String(len('after'))} dated after it` : ''}` : '';
+      facts.push(`Covers ${range} (${means})${placed}.`);
+    }
+    // Only a run whose reads were placed can say a named source gave it nothing.
+    const notCited = Array.isArray(coverage?.read) ? named.filter((id) => !readFrom.includes(id)) : [];
+    if (notCited.length) facts.push(`Nothing was cited from ${capped(notCited, 3, ', ')}, which this run names.`);
+
+    const challenge = isObject(verification.challenge) ? verification.challenge : null;
+    if (challenge) {
+      const objections = Array.isArray(challenge.objections) ? challenge.objections.filter(isObject) : [];
+      const open = objections.filter((o) => o.disposition === 'open');
+      const where = challenge.sameSessionAsRun === true ? 'the session that ran the work' : challenge.sameSessionAsRun === false ? 'another session' : 'a session Construct could not identify';
+      const by = typeof challenge.by === 'string' && challenge.by.trim() ? flattenHost(challenge.by, 80) : 'someone not recorded';
+      facts.push(`Challenged by ${by}, from ${where}: ${counted(objections.length, 'objection')}, ${String(open.length)} open.`);
+      for (const o of open) if (typeof o.objection === 'string') said.push({ about: 'open objection', text: o.objection });
+    }
+
+    // What the assistant said, quoted: its assumptions, its reasons for what falls after the period or was not read, the objections a challenge left open, where it says the result goes, the systems it named, and the request as it relayed it.
+    const hostAssumptions: { about: string; text: string }[] = [];
+    const seen = new Set<string>();
+    const assume = (about: string, text: string): void => {
+      const key = flattenHost(text).toLowerCase();
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      hostAssumptions.push({ about, text });
+    };
+    for (const a of asked.assumptions ?? []) if (a.by === 'host') assume(`assumption (${(OPEN_ABOUT as readonly string[]).includes(a.about) ? a.about : 'other'})`, a.text);
+    if (run) {
+      for (const st of listSteps(store, run.id)) {
+        if (st.state !== 'succeeded' || !isObject(st.output) || !Array.isArray(st.output.assumptions)) continue;
+        for (const entry of st.output.assumptions) {
+          const text = assumptionText(entry);
+          if (text) assume(`assumption (step ${st.stepId})`, text);
+        }
+      }
+    }
+    const acknowledged = Array.isArray((period?.coverage as { acknowledged?: unknown } | undefined)?.acknowledged) ? ((period!.coverage as { acknowledged: unknown[] }).acknowledged.filter(isObject)) : [];
+    const unreadWhy = Array.isArray(coverage?.unread) ? coverage.unread.filter(isObject) : [];
+    const destination = asked.intake?.destination?.name ?? null;
+    const words = asked.intake?.words ?? asked.declared?.words ?? null;
+    return renderPersonPrompt({
+      lead: `Move deliverable ${d.id} (${d.kind}) from ${d.trustState} to ${to}?`,
+      facts,
+      hostSaid: [
+        ...hostAssumptions,
+        ...acknowledged.map((x) => ({ about: 'dated after the period', text: `${String(x.ref)}: ${String(x.why)}` })),
+        ...unreadWhy.map((x) => ({ about: 'not read', text: `${String(x.source)}: ${String(x.why)}` })),
+        ...said,
+        ...(destination ? [{ about: 'destination', text: destination }] : []),
+        ...unregistered.map((x) => ({ about: 'named, not registered', text: x.name })),
+        ...(words ? [{ about: 'request', text: words }] : []),
+      ],
+      more,
+      cap,
+    });
   }
 
   /**
@@ -1503,68 +1776,83 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
     decide({ decisionId, resolution, by, channel = 'relay' }) {
       const at = deps.now();
-      return store.transaction(() => {
-        const decision = getDecision(store, decisionId);
-        if (!decision) throw new Error(`no decision ${decisionId}`);
-        const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject; driftFindingId?: string; driftFindingIds?: string[] };
-        if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
-          if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {
-            throw new PersonChannelRequiredError(`Approving ${subject.request.tier} (${subject.request.operation})`, decisionId);
+      try {
+        return store.transaction(() => {
+          const decision = getDecision(store, decisionId);
+          if (!decision) throw new Error(`no decision ${decisionId}`);
+          const subject = (decision.subject ?? {}) as { request?: ActionRequest; noData?: boolean; promote?: PromotionSubject; driftFindingId?: string; driftFindingIds?: string[] };
+          if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && !isPersonChannel(channel)) {
+            if (subject.request && PERSON_ONLY_TIERS.has(subject.request.tier)) {
+              throw new PersonChannelRequiredError(`Approving ${subject.request.tier} (${subject.request.operation})`, decisionId);
+            }
+            if (subject.promote) throw new PersonChannelRequiredError(`Moving deliverable ${subject.promote.deliverableId} to ${subject.promote.to}`, decisionId);
           }
-          if (subject.promote) throw new PersonChannelRequiredError(`Moving deliverable ${subject.promote.deliverableId} to ${subject.promote.to}`, decisionId);
-        }
-        const resolved = resolveDecision(store, { id: decisionId, resolution, by, at, channel });
-        let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
-        for (const fid of [...(subject.driftFindingIds ?? []), ...(subject.driftFindingId ? [subject.driftFindingId] : [])]) {
-          const finding = getDriftFinding(store, fid);
-          if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
-            const to = resolution === 'dismiss' ? 'dismissed' : 'acknowledged';
-            if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
+          // The person's approval moves the deliverable only when the question they answered describes it as it stands.
+          if (decision.kind === 'approval' && resolution === 'approve' && decision.state === 'open' && subject.promote) {
+            const current = getDeliverable(store, subject.promote.deliverableId);
+            if (current && decision.question !== acceptanceBrief(current, subject.promote.to, decision.id)) throw new StaleAcceptance(decisionId, subject.promote);
           }
-        }
-        if (decision.kind === 'approval' && subject.promote) {
-          if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
-        } else if (decision.kind === 'approval' && subject.request) {
-          if (resolution === 'approve') {
-            approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at, stepRunId: decision.stepRunId ?? undefined, channel });
-            if (decision.stepRunId) transitionStep(store, { id: decision.stepRunId, to: 'ready', at });
-          } else if (decision.stepRunId) {
-            transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `declined by ${by}` });
+          const resolved = resolveDecision(store, { id: decisionId, resolution, by, at, channel });
+          let run: WorkflowRun | null = decision.runId ? getRun(store, decision.runId) : null;
+          for (const fid of [...(subject.driftFindingIds ?? []), ...(subject.driftFindingId ? [subject.driftFindingId] : [])]) {
+            const finding = getDriftFinding(store, fid);
+            if (finding && (finding.status === 'open' || finding.status === 'acknowledged')) {
+              const to = resolution === 'dismiss' ? 'dismissed' : 'acknowledged';
+              if (to !== finding.status) setDriftStatus(store, { id: finding.id, status: to, by, at });
+            }
           }
-        } else if (decision.kind === 'blocked' && subject.noData && decision.stepRunId) {
-          if (resolution === 'continue') {
-            transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
-          } else {
-            transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by}` });
+          if (decision.kind === 'approval' && subject.promote) {
+            if (resolution === 'approve') applyPromotion({ ...subject.promote, by, at });
+          } else if (decision.kind === 'approval' && subject.request) {
+            if (resolution === 'approve') {
+              approveAction(store, { id: deps.nextId('grant'), request: subject.request, by, at, stepRunId: decision.stepRunId ?? undefined, channel });
+              if (decision.stepRunId) transitionStep(store, { id: decision.stepRunId, to: 'ready', at });
+            } else if (decision.stepRunId) {
+              transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `declined by ${by}` });
+            }
+          } else if (decision.kind === 'blocked' && subject.noData && decision.stepRunId) {
+            if (resolution === 'continue') {
+              transitionStep(store, { id: decision.stepRunId, to: 'skipped', at, reason: 'continued without data' });
+            } else {
+              transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by}` });
+            }
+          } else if (decision.kind === 'decision' && (subject as { waiverFor?: string }).waiverFor && decision.stepRunId) {
+            // The checks kept failing. The person either takes the output with its named problems,
+            // gives the host another attempt, or stops; any of them is recorded against the step.
+            const said = String(resolution).toLowerCase();
+            const choice = said.startsWith('accept') ? WAIVER_OPTIONS[0] : said.startsWith('stop') ? WAIVER_OPTIONS[2] : WAIVER_OPTIONS[1];
+            if (choice === WAIVER_OPTIONS[2]) transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by} after checks kept failing` });
+            else {
+              grantExtraAttempt(store, { id: decision.stepRunId, at, by });
+              transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: choice === WAIVER_OPTIONS[0] ? `${by} accepted the output with its check failures` : `${by} asked for another attempt` });
+            }
+          } else if (decision.kind === 'clarification' && run) {
+            const input = { ...((run.input ?? {}) as Record<string, unknown>) };
+            const answers = { ...((input.answers as Record<string, unknown> | undefined) ?? {}), [decisionId]: resolution };
+            store.db.prepare('UPDATE workflow_runs SET input_json = ?, updated_at = ? WHERE id = ?').run(JSON.stringify({ ...input, answers }), at, run.id);
+            if (decision.stepRunId) {
+              const sr = getStep(store, decision.stepRunId);
+              if (sr?.state === 'waiting_for_decision') transitionStep(store, { id: sr.id, to: 'ready', at });
+            }
           }
-        } else if (decision.kind === 'decision' && (subject as { waiverFor?: string }).waiverFor && decision.stepRunId) {
-          // The checks kept failing. The person either takes the output with its named problems,
-          // gives the host another attempt, or stops; any of them is recorded against the step.
-          const said = String(resolution).toLowerCase();
-          const choice = said.startsWith('accept') ? WAIVER_OPTIONS[0] : said.startsWith('stop') ? WAIVER_OPTIONS[2] : WAIVER_OPTIONS[1];
-          if (choice === WAIVER_OPTIONS[2]) transitionStep(store, { id: decision.stepRunId, to: 'cancelled', at, reason: `stopped by ${by} after checks kept failing` });
-          else {
-            grantExtraAttempt(store, { id: decision.stepRunId, at, by });
-            transitionStep(store, { id: decision.stepRunId, to: 'ready', at, reason: choice === WAIVER_OPTIONS[0] ? `${by} accepted the output with its check failures` : `${by} asked for another attempt` });
+          if (run) {
+            const fresh = getRun(store, run.id)!;
+            if (fresh.state === 'waiting_for_decision' && listOpenDecisions(store, run.id).length === 0) {
+              transitionRun(store, { id: run.id, to: 'running', at, reason: `decision ${decisionId} resolved by ${by}` });
+            }
+            run = advance(run.id, at);
           }
-        } else if (decision.kind === 'clarification' && run) {
-          const input = { ...((run.input ?? {}) as Record<string, unknown>) };
-          const answers = { ...((input.answers as Record<string, unknown> | undefined) ?? {}), [decisionId]: resolution };
-          store.db.prepare('UPDATE workflow_runs SET input_json = ?, updated_at = ? WHERE id = ?').run(JSON.stringify({ ...input, answers }), at, run.id);
-          if (decision.stepRunId) {
-            const sr = getStep(store, decision.stepRunId);
-            if (sr?.state === 'waiting_for_decision') transitionStep(store, { id: sr.id, to: 'ready', at });
-          }
-        }
-        if (run) {
-          const fresh = getRun(store, run.id)!;
-          if (fresh.state === 'waiting_for_decision' && listOpenDecisions(store, run.id).length === 0) {
-            transitionRun(store, { id: run.id, to: 'running', at, reason: `decision ${decisionId} resolved by ${by}` });
-          }
-          run = advance(run.id, at);
-        }
-        return { decision: resolved, run };
-      });
+          return { decision: resolved, run };
+        });
+      } catch (error) {
+        if (!(error instanceof StaleAcceptance)) throw error;
+        // Asked again outside the refused transaction, so the new question stays asked.
+        const asked = askForPromotion({ deliverableId: error.promote.deliverableId, to: error.promote.to, by: error.promote.requestedBy, reason: error.promote.reason }, at);
+        throw new Error(
+          `${error.decisionId} asked about deliverable ${error.promote.deliverableId} as it stood when the question was put, not as it stands now, so this approval moved nothing. ` +
+            `It is asked again as ${asked.id}; read it with \`construct inbox show ${asked.id}\` and answer that one.`,
+        );
+      }
     },
 
     cancel({ runId, by, reason }) {
@@ -1614,26 +1902,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     },
 
     requestPromotion({ deliverableId, to, by, reason }) {
-      const at = deps.now();
       if (to === 'validated') throw new Error(VALIDATED_BY_CHECKS);
       if (to === 'challenged') throw new Error('a challenge is recorded with the objections it raised, through promote; it is not a question for the person');
-      return store.transaction(() => {
-        const current = assertPromotable(deliverableId, to);
-        const open = listOpenDecisions(store, current.runId).find((d) => {
-          const p = (d.subject as { promote?: PromotionSubject } | null)?.promote;
-          return d.kind === 'approval' && p?.deliverableId === deliverableId && p.to === to;
-        });
-        if (open) return open;
-        return raiseDecision(store, {
-          id: deps.nextId('decision'),
-          kind: 'approval',
-          question: `Move deliverable ${deliverableId} (${current.kind}) from ${current.trustState} to ${to}?${waiverLine(current.runId)}`,
-          runId: current.runId,
-          options: ['approve', 'decline'],
-          subject: { promote: { deliverableId, to, reason: reason ?? null, requestedBy: by } satisfies PromotionSubject },
-          at,
-        });
-      });
+      return askForPromotion({ deliverableId, to, by, reason }, deps.now());
     },
   };
 }
