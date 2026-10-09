@@ -52,10 +52,11 @@ operational `construct` skill in the project, where that host reads it.
 
 Do the one-time step init prints for your host (in Claude Code: start a new
 session and approve the `construct` server), then ask for what you want in
-your own words. The session asks the three setup questions (what this
-project is to you, what result matters most now, and what must not be
-violated) in conversation; `--scale`, `--outcome`, and `--constraint` answer
-them at init instead.
+your own words. Construct tells the session to handle your request first
+and to ask the three setup questions (what this project is to you, what
+result matters most now, and what must not be violated) only when an answer
+changes that work, or all in one message when you have asked for nothing
+yet; `--scale`, `--outcome`, and `--constraint` answer them at init instead.
 
 After that, work in your agent session. The command line is for setup,
 inspection, scripting, and recovery: `construct status`, `construct doctor`,

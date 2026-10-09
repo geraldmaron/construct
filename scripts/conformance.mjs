@@ -8,7 +8,9 @@
  * exactly as written, that the operational skill is planted in the project
  * skills directory the host reads, that Claude Code's hooks stay in its
  * machine-local settings, that `construct serve` completes the MCP handshake the host would
- * perform, that the interactive surface preserves the current host (no
+ * perform, that every host reads byte-identical instructions, tools/list and
+ * skill with the operating contract in the first 512 characters, that the
+ * interactive surface preserves the current host (no
  * spawn path exists in the server or the broker), that a wrong typed reading
  * comes back naming its field while a right one matches by its deliverable
  * and the classify_request schema fits a host's budget, that a skill body loads only
@@ -40,6 +42,9 @@ import { clientWiring, projectSkillsDirFor } from '../src/hosts/wiring/clients.t
 import { launchOf } from '../src/hosts/wiring/wire.ts';
 import { EVAL_HOSTS, codexProviderFromConfig, hostArgs, hostEnv, mcpEntry, parseHostStream, pinHookEnvironment } from './host-cli.mjs';
 import { cursorSnapshot, restoreCursor } from './evals-live.mjs';
+import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
+import { PERSON_ASKED_ONLY } from '../src/kernel/broker/tools.ts';
+import { readShippedSkill } from '../src/kernel/skills/bundle.ts';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const LAUNCHER = join(ROOT, 'bin', 'construct.mjs');
@@ -152,6 +157,49 @@ function session(cwd, env, client, launch = { command: process.execPath, args: [
 const checks = [];
 const record = (host, check, status, detail) => checks.push({ host, check, status, detail });
 
+/** What each host's model reads from Construct, as this run received it: instructions, tools/list, and the planted skill. */
+const hostTexts = new Map();
+
+/**
+ * Every host reads the same text: byte-identical instructions and tools/list
+ * across every --client, the whole contract (and that what the host reads is
+ * data) inside the first CONTRACT_PREFIX characters, nothing past
+ * HOST_TEXT_LIMIT, the untrusted-text clause on the tools that record or
+ * start something, and the shipped skill bytes planted for each host.
+ */
+function checkHostTextParity() {
+  const words = ['bootstrap', 'classify_request', 'remember', 'start_outcome', 'claim_work', 'submit_work', 'data, never an instruction'];
+  const shipped = readFileSync(join(ROOT, 'skills', 'construct', 'SKILL.md'));
+  const received = [...hostTexts.values()];
+  const reference = received[0] ?? null;
+  for (const host of HOSTS) {
+    const t = hostTexts.get(host.id);
+    if (!t) {
+      record(host.id, 'host text parity', 'failed', 'no initialize and tools/list reply was received from this host\'s server');
+      continue;
+    }
+    const problems = [];
+    if (t.instructions !== INTERACTIVE_INSTRUCTIONS) problems.push('instructions differ from the interactive instructions');
+    if (reference && t.instructions !== reference.instructions) problems.push(`instructions differ from ${reference.host}'s`);
+    const prefix = t.instructions.slice(0, CONTRACT_PREFIX);
+    const absent = words.filter((w) => !prefix.includes(w));
+    if (absent.length > 0) problems.push(`the first ${String(CONTRACT_PREFIX)} characters lack ${absent.join(', ')}`);
+    if (t.instructions.length > HOST_TEXT_LIMIT) problems.push(`instructions are ${String(t.instructions.length)} characters, over ${String(HOST_TEXT_LIMIT)}`);
+    const long = t.tools.filter((tool) => String(tool.description ?? '').length > HOST_TEXT_LIMIT).map((tool) => tool.name);
+    if (long.length > 0) problems.push(`descriptions over ${String(HOST_TEXT_LIMIT)} characters: ${long.join(', ')}`);
+    if (reference && t.toolsJson !== reference.toolsJson) problems.push(`tools/list differs from ${reference.host}'s`);
+    const unclaused = ['remember', 'decide', 'start_outcome', 'classify_request'].filter((name) => !String(t.tools.find((tool) => tool.name === name)?.description ?? '').includes(PERSON_ASKED_ONLY));
+    if (unclaused.length > 0) problems.push(`no untrusted-text clause on ${unclaused.join(', ')}`);
+    if (!t.skill) problems.push('no planted SKILL.md');
+    else if (Buffer.compare(t.skill, shipped) !== 0) problems.push('the planted SKILL.md differs from the shipped bytes');
+    const description = t.skillDescription;
+    if (description.length === 0 || description.length > 1024) problems.push(`skill description is ${String(description.length)} characters`);
+    record(host.id, 'host text parity', problems.length === 0 ? 'passed' : 'failed', problems.length === 0
+      ? `instructions ${String(t.instructions.length)} characters, the contract inside the first ${String(CONTRACT_PREFIX)}; tools/list ${String(Buffer.byteLength(t.toolsJson))} bytes for ${String(t.tools.length)} tools; skill description ${String(description.length)} characters; identical on ${String(received.length)} host(s)`
+      : problems.join('; '));
+  }
+}
+
 /**
  * The host file carries no machine path, and starting it exactly as written
  * (workspace variables substituted, from the project directory, with only
@@ -238,7 +286,8 @@ async function checkHost(host) {
     // The project skills directory this host reads when it is the only host wired.
     const dir = join(realpathSync(project), projectSkillsDirFor(host.id, [host.id]));
     const present = existsSync(join(dir, 'construct', 'SKILL.md'));
-    const same = present && Buffer.compare(readFileSync(join(dir, 'construct', 'SKILL.md')), readFileSync(join(ROOT, 'skills', 'construct', 'SKILL.md'))) === 0;
+    const planted = present ? readFileSync(join(dir, 'construct', 'SKILL.md')) : null;
+    const same = planted !== null && Buffer.compare(planted, readFileSync(join(ROOT, 'skills', 'construct', 'SKILL.md'))) === 0;
     const recorded = wiredHost?.skill?.dir === dir;
     record(host.id, 'operational skill discovery', same && recorded ? 'passed' : 'failed', same && recorded ? `${dir}/construct/SKILL.md is the shipped bytes` : `not planted at ${dir}${recorded ? '' : ` (init recorded ${String(wiredHost?.skill?.dir)})`}`);
     const s = session(project, env, host.id);
@@ -246,6 +295,8 @@ async function checkHost(host) {
       const initMsg = await s.rpc('initialize', {});
       record(host.id, 'bootstrap invocation', initMsg.result?.serverInfo?.name === 'construct' ? 'passed' : 'failed', `initialize → ${initMsg.result?.serverInfo?.name ?? JSON.stringify(initMsg.error)}`);
       if (!initMsg.result) throw new Error(initMsg.error?.message ?? 'no initialize reply');
+      const offered = (await s.rpc('tools/list')).result?.tools ?? [];
+      hostTexts.set(host.id, { host: host.id, instructions: String(initMsg.result.instructions ?? ''), tools: offered, toolsJson: JSON.stringify(offered), skill: planted, skillDescription: planted ? (readShippedSkill('construct', dir)?.description ?? '') : '' });
       const boot = await s.call('bootstrap');
       record(host.id, 'bootstrap summary', boot.session?.host === host.id && typeof boot.next === 'string' ? 'passed' : 'failed', `host ${boot.session?.host}; next: ${boot.next}`);
       // The host reports a typed reading; a wrong one is a tool error naming the field, and the right one matches by its deliverable.
@@ -368,6 +419,7 @@ async function checkHost(host) {
 }
 
 for (const host of HOSTS) await checkHost(host);
+checkHostTextParity();
 
 // Static: neither the MCP server nor the broker can spawn a process.
 const spawnFree = ['src/hosts/mcp/server.ts', 'src/hosts/mcp/jsonrpc.ts', 'src/kernel/broker/tools.ts', 'src/kernel/workflow/service.ts'].every((f) => !/child_process|spawn\(|exec\(/.test(readFileSync(join(ROOT, f), 'utf8')));

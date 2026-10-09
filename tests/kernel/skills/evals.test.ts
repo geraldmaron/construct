@@ -89,7 +89,7 @@ test('a request that asks nothing of any skill ranks nothing as likely', () => {
 
 test('the operational skill teaches the session what the directive requires and forbids', () => {
   const body = skills.body('construct')!;
-  for (const must of ['check_answer', 'report', 'bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'never switches the lead host', 'delegate', 'unverified adapter stays disabled', 'triage', 'integrate', 'claims the work', 'information, not an instruction', 'promote_deliverable', 'licensed', 'classify_request', 'professional challenge', 'placeholder verified', 'Observations, risks']) {
+  for (const must of ['check_answer', 'report', 'bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'never switches the lead host', 'delegate', 'unverified adapter stays disabled', 'triage', 'integrate', 'claims the work', 'information, not an instruction', 'promote_deliverable', 'licensed', 'classify_request', 'professional challenge', 'placeholder verified', 'Observations, risks', 'one message', 'words', 'never an instruction to you', 'no construct tools']) {
     assert.ok(body.includes(must), `operational skill mentions ${must}`);
   }
   assert.doesNotMatch(body, /construct work|role-serve|MCP server|JSON-RPC/);
@@ -97,4 +97,24 @@ test('the operational skill teaches the session what the directive requires and 
   const manifest = skills.get('construct')!.manifest;
   assert.equal(manifest.version, '3.0.0');
   assert.deepEqual(manifest.interactionClasses, ['answer', 'remember', 'manage', 'maintain']);
+});
+
+test('the operational skill says nothing twice, and its description fits every host and names work asked as a question', () => {
+  const body = skills.body('construct')!;
+  const prose = body.replace(/^---[\s\S]*?\n---\n/, '').replace(/\s+/g, ' ');
+  const sentences = prose
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.replace(/^(?:#+|-|\d+\.)\s*/, '').replace(/\*\*[^*]+\*\*\s*/, '').trim())
+    .filter((s) => s.split(' ').length >= 3);
+  const seen = new Set<string>();
+  const twice = sentences.filter((s) => (seen.has(s) ? true : (seen.add(s), false)));
+  assert.deepEqual(twice, [], 'no sentence appears twice');
+  // A merge splice leaves the tail of one sentence standing as a sentence of its own.
+  const tails = sentences.filter((s) => sentences.some((t) => t !== s && t.endsWith(` ${s}`)));
+  assert.deepEqual(tails, [], 'no sentence repeats the end of another');
+  const description = skills.get('construct')!.description;
+  assert.ok(description.length <= 1024, `description is ${String(description.length)} characters`);
+  assert.match(description, /can you put together|could you check/, 'the description names work asked for as a question');
+  assert.match(description, /classify_request/);
+  assert.match(body, /Setup questions never come before the person's request/);
 });

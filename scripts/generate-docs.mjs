@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { COMMANDS } from '../src/cli/index.ts';
 import { GLOBAL_FLAGS } from '../src/cli/commands.ts';
 import { TOOLS, HEADLESS_FORBIDDEN } from '../src/kernel/broker/tools.ts';
+import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_CONTRACT, INTERACTIVE_INSTRUCTIONS, RUNNER_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
 import { CONFIG_KEYS } from '../src/kernel/project/config.ts';
 import { createSkillRegistry } from '../src/kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../src/kernel/registry/workflow-registry.ts';
@@ -68,7 +69,13 @@ function inputRows(properties, required, prefix) {
 }
 
 function brokerReference() {
-  const parts = [HEADER('src/kernel/broker/tools.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). Wrong input comes back as a tool error result: `error` says what is wrong, `field` names the input, and `allowed` and `example` give the values it accepts and one that would pass, or are null when Construct has none to give. Only a call to a tool the surface does not carry is a JSON-RPC error (-32602). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
+  const parts = [HEADER('src/kernel/broker/tools.ts and src/hosts/mcp/instructions.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). Wrong input comes back as a tool error result: `error` says what is wrong, `field` names the input, and `allowed` and `example` give the values it accepts and one that would pass, or are null when Construct has none to give. Only a call to a tool the surface does not carry is a JSON-RPC error (-32602). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
+  const quote = (text) => text.split('\n').map((line) => `> ${line}`).join('\n');
+  const count = (n) => n.toLocaleString('en-US');
+  parts.push('## Server instructions', '', 'Every host receives the same text at `initialize`, whatever `--client` it starts the server with.', '',
+    `Codex keeps the first ${count(CONTRACT_PREFIX)} characters as the self-contained part and Claude Code cuts at ${count(HOST_TEXT_LIMIT)}; the contract is the first ${count(INTERACTIVE_CONTRACT.length)} characters, the whole is ${count(INTERACTIVE_INSTRUCTIONS.length)}.`, '',
+    '### Interactive instructions', '', quote(INTERACTIVE_INSTRUCTIONS), '',
+    '### Headless instructions', '', `${count(RUNNER_INSTRUCTIONS.length)} characters.`, '', quote(RUNNER_INSTRUCTIONS), '');
   for (const surface of ['interactive', 'headless']) {
     parts.push(`## ${surface === 'interactive' ? 'Interactive surface' : 'Headless surface'}`, '');
     for (const t of TOOLS.filter((x) => x.surface === 'both' || x.surface === surface)) {
