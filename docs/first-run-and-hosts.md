@@ -13,30 +13,40 @@ construct init --client=cursor --scale=solo --outcome="ship the first paying ver
 `init` finds the repository root, writes `.construct/` (project, constitution,
 sources, and registry lock files, all committed) and one runtime database
 under `.construct/state/` (ignored), and reads what the project already says
-about itself (README, agent instructions, architecture documents, ownership
-files, the package manifest) to propose a profile with provenance for each
-proposal. Re-running it says what is new and what an earlier run already
+about itself (README, agent instructions, contributing guide, architecture
+and strategy documents, decision records in an ADR directory, glossary,
+ownership files, the package manifest) to propose a profile with provenance
+for each proposal: the file, and the line and a digest of its content where
+it has them. A rule quoted inside a code block is an example, not a
+constraint. Re-running it says what is new and what an earlier run already
 proposed.
 
 Then it connects the agent hosts you use here. `--client=<host>` names them
 (repeat it, or comma-separate: `--client=claude-code,cursor`). Without it,
-`init` picks in this order: the host it is running inside; the hosts already
-wired in this project, so re-running `init` repairs them; the only agent host
-installed on this machine, found by its command on PATH or its configuration
-directory. When it finds several and you are at a terminal of your own, it
-asks once which you use; otherwise it names what it found, wires none, and
-says that no agent session can reach Construct until you run
-`construct init --client=<host>`. `construct doctor` fails until a host is
-wired.
+`init` picks in this order: the host it is running inside, when that host
+marks its sessions (Claude Code and Cursor do; IBM Bob does only through its
+IDE integration); the hosts already wired in this project, so re-running
+`init` repairs them; the only agent host installed on this machine, found by
+its command on PATH or its configuration directory. When it finds several
+and you are at a terminal of your own, it asks once which you use; otherwise
+it names what it found, wires none, and says that no agent session can reach
+Construct until you run `construct init --client=<host>`.
+`construct doctor` fails until a host is wired.
 
 For each host, `init` writes the host's project MCP file so the host starts
 `construct serve` in this project, and plants the operational `construct`
 skill in the project skills directory that host reads. That file names no
 path on your machine: it starts `construct` from your PATH, or `npx
---no-install construct` when Construct is installed as a dependency of the
-project. Re-running `init` leaves an unchanged file exactly as it is. One copy
-of the skill serves every host that reads its directory, so wiring Claude
-Code and Cursor together plants only `.claude/skills/construct`.
+--no-install construct` when the Construct that runs `init` is installed in
+the project's own `node_modules`. In a repository the project is the
+repository root, so a dependency hoisted to that root counts as the
+project's own; outside git the project is the directory `init` ran in, and
+a dependency hoisted above it gets the PATH form. A teammate whose `init` runs from the other kind of install,
+a global `construct` against a project dependency or the reverse, rewrites
+the committed file to that form. Re-running `init` leaves an unchanged file
+exactly as it is. One copy of the skill serves every host
+that reads its directory, so wiring Claude Code and Cursor together plants
+only `.claude/skills/construct`.
 
 Without the answer flags, `init` leaves three questions open: what this
 project is to you, what result matters most now, and what Construct must be
@@ -45,6 +55,19 @@ your request: to ask one only when its answer changes the work you asked
 for, in the same message, or all three in one message when you have asked
 for nothing yet.
 Nothing inferred becomes fact until you confirm it.
+
+`--scale` takes `side_project`, `solo`, `team`, `multi_team`, or
+`organization`, or the question's own words for one ("a side project",
+"your primary product, just you", "a team project", "several teams'
+work", "an organization-wide system"); anything else is refused with the
+choices listed. An answer given in the host, relayed with `decide`, or
+given with `construct inbox resolve` is read the same way. A side project
+gets less challenge work, so only you can make a project one:
+`--scale=side_project` is refused before anything is written unless you
+run `init` in a terminal of your own, outside the agent host (not the
+host's built-in terminal). A relayed `decide` puts that question to you,
+and an agent's `construct inbox resolve` is refused; answer it with
+`construct inbox resolve <id> <answer>` in your own terminal.
 
 `--dry-run` says what would happen and writes nothing. `--no-wire` skips the
 hosts' MCP files and hooks, and sets up only a host you name or are running
@@ -67,8 +90,10 @@ Construct. `init` prints it, and writes none of these settings for you.
 | Codex | `.codex/config.toml` | `.agents/skills` | Trust the project when Codex asks (it reads `.codex/config.toml` only in trusted projects), and approve `construct`'s tool calls |
 | IBM Bob | `.bob/mcp.json` | `.bob/skills` | Open the folder in Bob and approve `construct`'s tools |
 
-How each host prompts for these approvals is as its own documentation
-describes; Construct has not exercised every prompt.
+How each host prompts for these approvals, and which project skills
+directory it reads, are as its own documentation describes. Construct has
+not checked those prompts against live hosts, nor whether Cursor, OpenCode,
+and VS Code read `.claude/skills`.
 
 ## What the host does with it
 
@@ -110,6 +135,16 @@ Construct keeps them from stepping on each other:
 
 - Every session is recorded under an id Construct gives it, and what it does
   is recorded against that session, as the model acting, never as you.
+- Work enters the backlog with a reason: an admitted parent item, or the
+  decision, requirement, initiative, or metric it serves. Work a session
+  files without one, outcomes included, is proposed: listed, but never ready
+  or claimable until a link gives it a reason or you run
+  `construct work admit <id>` from your own terminal, which admits its
+  proposed children too. Work you file from your own terminal is admitted.
+  An item with open children cannot be completed or cancelled, completing
+  one with acceptance criteria needs a reason saying how they were met, and
+  a source refresh that changes a premise holds the work until
+  `construct work requalify <id> --reason=...` records what was checked.
 - A work item is claimed before it is edited. A claim belongs to one session
   and one agent, returns a token only that claimant sees, and needs the token
   to renew, complete, or release it. Another session's claim is refused until
@@ -177,7 +212,8 @@ Construct keeps them from stepping on each other:
   cannot. When the host can show you a question from Construct itself (MCP
   elicitation), Construct asks you there and waits a minute for your choice.
   Otherwise, or if you decline or close it, the question waits in
-  `construct inbox` for you to answer from a terminal of your own. A host
+  `construct inbox` for you to answer from a terminal of your own (a
+  terminal inside an editor or an agent host does not count). A host
   hook that could answer such questions for you (Claude Code's `Elicitation`
   or `ElicitationResult` hooks, in project, user, managed, or plugin
   settings) turns the prompt off, because its answer would not be yours.
@@ -201,6 +237,13 @@ absolute path that no longer exists, such as another machine's Node or an
 upgraded one, is reported broken with the `construct init --client=<host>`
 that rewrites it.
 
+For each project skills directory a wired host reads, `doctor` also checks
+that the operational skill there is the copy this release ships
+(`operational-skill`). Re-running `init` upgrades an older copy and keeps a
+current one. A copy someone edited is left alone, and `doctor` names the
+`construct skill install construct --force --dir=<dir>` that replaces it;
+any edits in it are lost.
+
 ## Supported hosts
 
 All six hosts are wired by file, with `init --client=<host>`:
@@ -219,9 +262,11 @@ Construct sets its tool timeout to 120 seconds so a question Construct shows
 you is not cut off by Codex's 60-second default. Construct edits only its
 own `[mcp_servers.construct]` table there, and refuses a file it cannot
 read safely (multi-line strings, or the server written as a dotted key or
-an inline table) rather than rewrite it. What was exercised against a real
-host is recorded in [release-verification.md](release-verification.md);
-anything not listed there is untested, not assumed.
+an inline table) rather than rewrite it. What was and was not exercised
+against a real host is recorded in each version's [changelog](../CHANGELOG.md)
+entry; anything not listed there is untested, not assumed.
+[release-verification.md](release-verification.md) says how live host
+conformance is run.
 
 ## What to commit
 
@@ -252,21 +297,25 @@ records Jira issues that a Jira or Atlassian connector tool returned from a
 declared project as a host read, so reporting reads is automatic. Each issue
 is kept as readable text, with its browse address and the tool that carried
 it. Jira-shaped text in any other tool's response (a wiki page, a web fetch,
-a chat message) is that tool's content and is not recorded. When the host is
-about to stop, `construct hook stop` sends it back once if its reply named
-project facts (a declared ticket key, a file, a source) without
-`check_answer` or a gated step; `policy.answerCheck` set to off turns that
-off. At session start, `construct hook session-start` adds one line telling
-the host to report its own reading of any work you ask for with
-`classify_request`, then a short note of the decisions about runs that wait
-on you, which sources it should report, and the setup questions to offer
-after your request.
+a chat message) is that tool's content and is not recorded. The match is on
+the tool's name, so Confluence and Rovo tools served through the Atlassian
+connector count as Atlassian tools: Jira-shaped text in a Confluence page
+fetched that way is recorded as a Jira read. When the host is about to stop,
+`construct hook stop` sends it back once if its reply named project facts (a
+declared ticket key, a file, a source) without `check_answer` or a gated
+step; `policy.answerCheck` set to off turns that off. At session start,
+`construct hook session-start` adds one line telling the host to report its
+own reading of any work you ask for with `classify_request`, then a short
+note of the decisions about runs that wait on you, which sources changed
+since their last read, which sources it should report, and the setup
+questions to offer after your request.
 
 Each hook finds Node and Construct through the launcher file in
-`.construct/state/`, never through PATH, so the hooks keep working after a
-Node upgrade and name nothing a teammate's machine lacks. The server
-repoints the launcher at the install that serves the project. Every hook
-exits 0 and never blocks a session on its own failure, and
+`.construct/state/`, never through PATH, so they name nothing a teammate's
+machine lacks. The server repoints the launcher at the install that serves
+the project. After a Node upgrade the hooks do nothing until a server starts
+and repoints it, and `construct doctor` reports them stale until then.
+Every hook exits 0 and never blocks a session on its own failure, and
 `CONSTRUCT_HOOKS=off` silences them. Re-running `init` rewrites a hook that
 differs from what it writes now, and moves hooks an earlier release put in
 the shared `.claude/settings.json` out of it, leaving your own hooks there.

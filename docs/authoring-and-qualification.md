@@ -13,6 +13,15 @@ licensed-review boundaries, observations (which may not claim success
 without naming a run), and eval files. Name and version must agree with the
 frontmatter.
 
+`npm run lint` also checks each shipped skill's `SKILL.md` against the
+Agent Skills format (`scripts/lint-skill-spec.mjs`: only the format's six
+frontmatter fields, a name equal to the directory, a description of at most
+1024 characters, under 500 lines, no tracker ids or repository or absolute
+paths) and against Construct's policy for method skills
+(`scripts/lint-skill-policy.mjs`: a stand-down rule, and a warning above 350
+lines). [`skills/AUTHORING.md`](../skills/AUTHORING.md) sets out the layers
+of rules.
+
 Bundles are digested in path order; content that changes without a version
 bump fails `npm run lint` through the registry index check.
 
@@ -25,6 +34,12 @@ built-in id.
 expected outcome, activate or stand down. The activating cases do double
 duty: they are fixtures, and the router retrieves over them when the skill
 evals run. Write them the way people talk, not the way the manifest does.
+
+`evals/behavior.json` (format `construct-skill-behavior`) checks behavior:
+`stand_down` requests the router must not rank the skill likely for,
+`activate` requests it must not rank unlikely for, `forbids_invention` (the
+body forbids inventing unknown facts), and `authority_boundary` (an injected
+override is recognized as one, and the body itself attempts none).
 
 The router does not decide which skill loads, and it does not read requests:
 the host model reports its own reading to `classify_request`, which returns
@@ -40,10 +55,13 @@ skill's own eval file, or the measurement stops being held out.
 
 Whether hosts read requests well is measured through real hosts, not by
 word overlap. The held-out corpus, `skills/evals/intake.json`, holds
-requests in ordinary language, some with earlier turns, each labeled by two
-model families with the readings either would accept. A hash of each case
-puts it in the tune or the test split; descriptions are tuned only on the
-tune split. `npm run evals:live -- run` drives Claude Code, Codex, and Cursor
+requests in ordinary language, some with earlier turns, each labeled with
+the readings its labelers would accept. Two model families labeled the 48
+cases from the typed-intake design work; the routing and authored cases
+carry Claude's labels alone, so `agreed` is false on them (see
+[release-verification.md](release-verification.md#live-intake-eval)). A
+hash of each case puts it in the tune or the test split; descriptions are
+tuned only on the tune split. `npm run evals:live -- run` drives Claude Code, Codex, and Cursor
 one request at a time against a sterile project, with Construct alone, among
 competing servers (on Claude Code also with tool search off), after a
 first-run init, and with a page that carries planted instructions. `npm run evals:live -- record` writes
@@ -53,8 +71,10 @@ verdicts from the stored outcomes; `npm run evals:live -- check` fails when
 the record is missing, does not cover the current cases, or was made against
 different model-facing text (server instructions, tool descriptions and
 schemas, the operational skill, or skill and workflow text), so changing any
-of them means running it again. Neither the corpus nor a record is committed
-yet; until one is, `check` says that no record exists.
+of them means running it again. The corpus is committed; no record exists
+yet, so `check` fails and says that no record exists. A cut needs
+`npm run evals:live -- check --cut`, which passes only on a full-scope
+record.
 
 Professional packs add `evals/fixtures.json` with positive, negative, edge,
 and adversarial cases, and `references/sources.md` with citations, what each
@@ -87,7 +107,8 @@ the step reads them by, so a last step declares as outputs only what it
 adds. An output it also reads as an input is its own to restate, and the
 handed value is the one the deliverable keeps.
 
-Project-authored workflows live under `.construct/workflows/`.
+Project-authored workflows live under `.construct/workflows/` and may not
+shadow a built-in id.
 
 ```bash
 construct workflow validate
@@ -95,12 +116,22 @@ construct workflow validate
 
 ## Qualification
 
-A skill or workflow is qualified when: the manifest validates and agrees
-with its frontmatter; the registry index is current; its activating cases
-rank first when held out and the routing floors still hold; its fixtures
-cover the four kinds; a consuming workflow
-resolves against it; and, for anything called working on a host, the
-conformance command recorded the run.
+A skill's qualification, which the `skills` tool reports with `show`, comes
+from the lock and the bundle. It is qualified when the project's lock
+matches its content digest and its evals cover activation
+(`evals/activation.json`) and behavior (`evals/behavior.json` or
+`evals/fixtures.json`). A skill that is not locked, or whose evals do not
+cover both, is experimental. An outdated or blocked lock entry makes it
+degraded, and the same version with different bytes, or text that tries to
+raise Construct's authority, makes it unsafe. A locked skill that is no
+longer present cannot be shown; the `status` action reports it as
+`missing`. A quality claim belongs to the digest it was
+made on, so a changed copy at the same version does not inherit it.
+
+Before a skill or workflow ships, its manifest validates and agrees with its
+frontmatter, the registry index is current, a professional pack's fixtures
+cover the four kinds, a consuming workflow resolves against it, and, for
+anything called working on a host, the conformance command recorded the run.
 
 ## Grounding and quality checks
 
@@ -165,8 +196,10 @@ project does not resolve.
 When a load-bearing step still fails its checks after its last attempt,
 the run is not failed and the work is not thrown away: the person is asked
 to accept it with the named problems, give it another attempt, or stop. An
-accepted waiver is recorded on the step, and a deliverable that went
-through one is never marked validated.
+accepted waiver is recorded on the step with who accepted it and on which
+channel. It covers only the checks its question named: a check that fails
+anew is handled like any other failing check. A deliverable that went
+through one lists its waived checks and is never marked validated.
 
 The `prd-authoring`, `rfc-authoring`, and `proposal-authoring` workflows
 apply them in a gather, draft, challenge, record sequence; `research-brief`
@@ -179,13 +212,19 @@ challenge step's and the person's.
 
 ## Plain answers and revisions
 
-`check_answer` runs the citation, quote, figure, and supersession checks on
-an answer before the host gives it, and records nothing. Given the period
-the answer covers, it also flags a cited item updated after the period
-ends, unless the call lists it under `outsidePeriod` with why it belongs,
-and returns the period in dates. The operational
+`check_answer` runs the citation, quote, figure, supersession, and
+settled-term checks on an answer before the host gives it. It starts
+nothing and records only that a check happened and how it went. Given the
+period the answer covers, it also flags a cited item updated after the
+period ends, unless the call lists it under `outsidePeriod` with why it
+belongs, and returns the period in dates. A citation that resolves only on
+the host's word (`policy.hostReads` set to accept) is named in the result,
+with the instruction to call the parts resting on it unverified or to
+report the read with `sources` and check again. The operational
 skill asks the host to use it whenever an answer states facts about the
-project.
+project. On Claude Code, a hook that `construct init` installs sends a reply
+that states project facts without `check_answer` back once
+(`policy.answerCheck`: `nudge` by default, or `off`).
 
 `revise-deliverable` revises an earlier deliverable for a stated change and
 keeps the two linked; `revision_linked` asks for the deliverable it revises

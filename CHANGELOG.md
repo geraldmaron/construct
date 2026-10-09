@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- **The documentation describes 3.0.0-alpha.26 as it ships.** The guides,
+  README, glossary, and skill docs now cover typed intake, checked
+  grounding, portable host wiring, the work ledger's full action set, and
+  worktree claims, and no longer describe removed behavior. A new guide,
+  `docs/work-ledger.md`, explains filing, admission, claims, and handoffs.
+  The native-work cutover records moved to `docs/internal/construct-cutover/`
+  beside the other development records.
+- **Operational skill 3.0.1.** The `construct` skill names every `work`
+  action, the required `period.semantics` and the `stakes` field in
+  `classify_request`, the `outdates` and `replaces` fields of `remember`,
+  path checks and worktree claims, and where an acceptance question goes.
+  `construct doctor` counts a project's lock entry for it as outdated, and
+  `construct status` names it, until `construct skill update` locks the new
+  version.
+- **Correction to the alpha.26 known limitations.** A Construct dependency
+  hoisted to a monorepo's root gets the `npx --no-install construct` form
+  when the monorepo is a git repository, because init's project is the
+  repository root. Only a directory outside git whose dependency is hoisted
+  above it gets the PATH form.
+
 ## 3.0.0-alpha.26 — 2026-10-09
 
 It follows 3.0.0-alpha.25, which was published under `alpha`; alpha.25's

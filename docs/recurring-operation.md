@@ -18,6 +18,13 @@ manual), an overlap policy (skip, queue, replace), a permission boundary no
 step may exceed, input, and delivery. `recipe` prints the crontab line or
 the CI job that fires it.
 
+From chat, the host reports a request to keep something up as a
+`classify_request` reading of kind `maintain`, with its schedule: a
+five-field cron expression and an IANA timezone, or an event name. When no
+question blocks, the reply names the workflow that fits and the
+`construct workflow schedule` line the person runs. No tool defines a
+trigger from chat; the person sets the clock.
+
 ## Firing
 
 ```bash
@@ -38,7 +45,9 @@ declares. The person receives a finished no-drift record, a cited drift
 report, or a concise blocked decision.
 
 The two `fire` lines above are the same key on purpose; the second reports
-deduplicated. The `--dry-run` line resolves and starts nothing.
+deduplicated. The `--dry-run` line resolves and starts nothing. A firing
+whose run is blocked exits 1; every other outcome, a dry run included,
+exits 0.
 
 ## A window that moves with each firing
 
@@ -56,8 +65,9 @@ window for `changed_during` or `evidence_window` (from and to dates, a year,
 or a quarter with its year), and dates given beside a relative period, since
 each firing would repeat them; a fixed `as_of` date is allowed.
 
-None of the shipped workflows that accept a schedule declares a period; a
-project workflow can. This one is saved as
+Among the shipped workflows that accept a schedule, only the general carrier,
+`managed-outcome`, declares a period; a project workflow can declare one too.
+This one is saved as
 `.construct/workflows/weekly-digest/workflow.json`:
 
 ```json file=.construct/workflows/weekly-digest/workflow.json

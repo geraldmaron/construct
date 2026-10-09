@@ -23,5 +23,5 @@ the `alpha` dist-tag. Nothing in the alpha line is promised stable.
   Construct's authority, approve on the person's behalf, or reach a secret.
 - The state store and the project files Construct writes.
 
-Vulnerabilities in an agent host (Claude Code, Codex, Cursor, OpenCode) belong
-with that host's maintainers.
+Vulnerabilities in an agent host (Claude Code, Cursor, VS Code, OpenCode,
+Codex, IBM Bob) belong with that host's maintainers.
