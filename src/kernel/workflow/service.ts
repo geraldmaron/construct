@@ -131,6 +131,7 @@ export interface WorkIntake {
   /** Where the result goes, by kind. */
   readonly destination: string | null;
   readonly assumptions: readonly Assumption[];
+  readonly evidenceGaps?: readonly { readonly about: string; readonly question: string; readonly handling: 'investigate' | 'carry_unknown' }[];
 }
 
 export interface WorkPacket {
@@ -551,6 +552,7 @@ function workIntakeOf(asked: AskedReading): WorkIntake | null {
     destination: intake.destination?.kind ?? null,
     // A kernel note about an unregistered system names it; the count above stands in for it.
     assumptions: (asked.assumptions ?? []).filter((a) => !(a.by === 'kernel' && a.about === 'sources')),
+    ...(intake.open.some((item) => item.handling) ? { evidenceGaps: intake.open.filter((item) => item.handling).map((item) => ({ about: item.about, question: item.question, handling: item.handling! })) } : {}),
   };
 }
 
@@ -1424,6 +1426,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       waiverInstruction(waiverOf(leased.id)),
       ...(step.outputs.some((key) => ['recordedIds', 'recordedFindingIds', 'lessonIds'].includes(key)) ? ['Persistence fields must contain existing native record IDs returned by an actual write, never invented names. If no additional records were written, return empty arrays; findings remain in the durable run output and are not admitted lessons.'] : []),
       ...(step.capabilities.includes('run_tests') ? [`This step requires observed execution before it can complete. Use your host's terminal: construct run verify ${run.id} --step=${leased.id} --token=<this step token> --command='<JSON argv array>'. Use verification.executionRef, command and exitStatus exactly as returned. The wrapper runs inside your host sandbox; a reported inspection remains structural and cannot prove command execution.`] : []),
+      ...(askedOf(run).intake?.open.some((item) => item.handling) ? ['The intake evidenceGaps are not assumed facts. Investigate only through permitted sources; retain inaccessible or unresolved facts as unknown in the deliverable. This does not remove required inputs, permissions, verification or acceptance gates.'] : []),
       'Cite every source you read as evidence entries.',
       needsChallenge
         ? `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`

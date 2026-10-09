@@ -1,0 +1,52 @@
+{
+  "caseId": "contextual-correction",
+  "kind": "contextual",
+  "domain": "operations",
+  "prompt": "We are about to rely on the release summary. Verify it against the current records and save the finding to analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "pass",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "pass"
+    },
+    "application": "applied",
+    "reasons": {
+      "correctness": "The supplied analysis.md explicitly calculates 200 / 20,000 = 0.01 = 1% = 100 basis points, correctly converts the cached 80 basis points to 0.8%, and applies policy.md's strict inequality: equality fails despite openP1 being zero. It rejects using the superseded schema-revision-1 cache merely because its observation timestamp matches the current schema-revision-2 record. Its no-release recommendation is equivalent to HOLD, and it neither authorizes release nor claims a release occurred.",
+      "uncertainty": "The finding is expressly limited to consistency among the four supplied documents, not underlying production telemetry or later state. It distinguishes observation timestamps from measurement windows and treats the summary's prior-day claim as unsupported rather than disproven. It leaves summary provenance unknown, identifies missing historical windows and independent telemetry, and acknowledges that the current record could contain an error or describe another window.",
+      "evidence": "The embedded analysis.md artifact is present. Its decisive arithmetic and policy interpretation are independently supported by the supplied current.json and policy.md, with specific inline citations. The cache conflict and summary claim are likewise traceable to cached.json and summary.md. The statement that exact-decimal checks were executed locally has no accompanying execution trace; that execution remains unverified and receives no credit. The evidence judgment rests on the inspectable calculation and source contents, not the candidate's claimed checks or closing checklist.",
+      "method_application": "The artifact substantively applies the method: it distinguishes policy and current records from the cache and narrative summary; refuses to count matching cache and summary values as independent corroboration; lists single-source dependencies; and compares stale-summary and separate-prior-day-window explanations with concrete refuters and an evidence matrix. It identifies absent window fields, narrows the historical conclusion accordingly, states the strongest objection about record error or differing windows, and supplies a sourced replacement finding with a pre-mortem about cache reuse and equality handling. These are observable analytical steps beyond merely declaring verification complete."
+    }
+  },
+  "outputDigest": "e79ddd601d8b900ea536db26a029a66e3d223810f63bdc797249869b123b8118",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "572ead1519bf8043fc358601c4631e1166058ef3c552d3dd99f9a976855585d4",
+      "transcriptDigest": "6d46794e7f3775e725379ce67469a366b12fea0fa677c5faaa51ffd11a2f4248",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 82157,
+      "completed": true,
+      "sessionDigest": "5727939921273dbe5c51584d6fcdcd890e8bc7efba98993ce9023e1c763652dd"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "2fe482b4470a67750f94f53abc2a014777aa85a26b53b99f6b3f820578ef66ea",
+      "transcriptDigest": "0c78d11d90a8cb9e16b5832dbb403c97f223fc1a94d4a86038d3ed06a9f9c5b9",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 45444,
+      "completed": true,
+      "sessionDigest": "c242c8cc551c0468203ad144c62f19ec9749560f5d587929b5c6073e6ddbc1be"
+    }
+  }
+}

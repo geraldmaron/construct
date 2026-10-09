@@ -1,0 +1,52 @@
+{
+  "caseId": "negative-single-fact",
+  "kind": "negative",
+  "domain": "archive",
+  "prompt": "Using registry.md, what year did the gallery open? Save a one-sentence answer with the source in analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "pass",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "pass"
+    },
+    "application": "stood_down",
+    "reasons": {
+      "correctness": "The supplied analysis.md contains one sentence stating that the gallery opened in 1998, exactly matching registry.md: \"Gallery public register: the gallery opened in 1998.\" It adds no unsupported facts.",
+      "uncertainty": "The answer gives a bounded conclusion about the opening year without invented uncertainty. The provided authoritative source explicitly supplies that year, so no qualification or competing hypotheses are needed.",
+      "evidence": "The opening-year claim is attributed to the Gallery public register and accompanied by the source link [registry.md](registry.md). The supplied source text directly supports the claim; this judgment relies on the artifact contents, not a claimed verification pass.",
+      "method_application": "The artifact appropriately stands down from the heavyweight investigative workflow: it provides only the requested sourced sentence, without a plan, multi-hypothesis investigation, or long report. This matches the rubric and the method's stand-down provision for single-fact questions with one authoritative source. No execution beyond the supplied artifacts is inferred."
+    }
+  },
+  "outputDigest": "29a9665b0f44d1b626f136003678a94d7fbc50e79674cb48afc1941c65755fef",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "56473be6b00b62463dfdf8c81dabf442d1e75e9b02cb9ec82dae92e471745c30",
+      "transcriptDigest": "868e9aa61f82a56385e1c805e80280242a7ff2ddff540afe412e94c183f87341",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 24018,
+      "completed": true,
+      "sessionDigest": "6e370f604f0d895c3b7917dda49c22fa01427eef19effce80d65b87a9ded8751"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "59d79b95b3fb2c27ff21f6358c9a47848985db07409ccd63f8ac8aebff00c871",
+      "transcriptDigest": "39a49e36d42f8ccc9c2bb0d9097ca4955a4d0aee1a47d1465c809ffcba0e23a0",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 21010,
+      "completed": true,
+      "sessionDigest": "bcaadc458e8cc992e87d6212c03e62ac6a1f221b093fe8d1f711d5c41245a0c9"
+    }
+  }
+}

@@ -281,3 +281,20 @@ test('a store that fails under the format guard yields an error reply, not a cra
     fx.cleanup();
   }
 });
+
+
+test('a missing run execution error returns repair guidance, not only input-validation failures', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const reply = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'run_status', arguments: { runId: 'absent-run' } } }) as any;
+    assert.equal(reply.result.isError, true);
+    const body = reply.result.structuredContent;
+    assert.match(body.error, /no run absent-run/);
+    assert.equal(body.recovery.tool, 'run_status');
+    assert.deepEqual(body.recovery.inputSchema, toolsFor('interactive').find((t) => t.name === 'run_status')!.inputSchema);
+    assert.match(body.recovery.next, /prerequisite before retrying/);
+    assert.match(body.recovery.next, /bypass a permission refusal/);
+    assert.equal(fx.broker.sources.list().length, 0);
+  } finally { fx.cleanup(); }
+});

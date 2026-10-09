@@ -1,0 +1,48 @@
+✔ initialize, tools/list, tools/call, and errors follow the protocol (32.919333ms)
+✔ wrong input comes back as a tool error naming the field and the values it accepts, in structured and text content alike (22.826208ms)
+✔ the headless server names itself and lists only its surface (23.593ms)
+✔ the line transport answers in order and survives a parse error (23.744667ms)
+✔ an unbound server completes the handshake and reports the missing project (0.228458ms)
+✔ an unbound server gives the next step that fits the cause, not always init (0.065959ms)
+✔ a server whose store was busy at launch lists its real tools and binds on a later call (21.351375ms)
+✔ a server stops writing when another build changes the store format under it (20.657333ms)
+✔ a lazy server rejects an unknown tool without trying to bind (0.201666ms)
+✔ a lazy server that finds a newer store switches to the unbound surface with upgrade advice (0.244417ms)
+✔ a message whose handling throws gets an error reply, and the server keeps answering (0.742583ms)
+✔ a store that fails under the format guard yields an error reply, not a crash (18.497792ms)
+✔ a missing run execution error returns repair guidance, not only input-validation failures (22.625542ms)
+✔ classify_request takes a typed reading, records nothing, and names who judged it (44.890167ms)
+✔ the same typed reading in a polite question form gets the same matches and asks the same questions (21.999875ms)
+✔ a reading the model can fix comes back as wrong input naming the field, its values and an example of that field (21.554792ms)
+✔ an answer, a record and coordination match no workflow and say what to do instead (19.428667ms)
+✔ the flagship starts from its intake with its window frozen; every step works from the reading in structured fields, never the names it could not register (26.837042ms)
+✔ once the named systems are declared, the reading resolves them and the run reads them (34.252ms)
+✔ start_outcome starts nothing while a required detail or a blocking question is open, and refuses a reading or a workflow it cannot start (19.413ms)
+✔ without an intake a missing input starts nothing and an undeclared one is refused, while the command line still keeps a blocked run (17.614959ms)
+✔ a different window is different work, the same window is the same run, and a different reading of it is flagged (19.888292ms)
+✔ stakes the host reports only raise rigor, and the run keeps them (18.492208ms)
+✔ the published reading carries the stake areas the judge reads, and the description names every kind a workflow declares (1.691917ms)
+✔ standing intake records an idempotent definition, preserves input, and creates no immediate run or executor (42.346083ms)
+✔ an outcome cannot finish in state alone when the person requested a local file (23.201791ms)
+✔ an explicit investigate evidence gap starts research and survives in the packet without a fabricated assumption (17.788042ms)
+✔ an explicit carry_unknown evidence gap starts research and survives in the packet without a fabricated assumption (17.527667ms)
+✔ explicit evidence handling cannot simultaneously claim an assumed answer or person blocker (13.996167ms)
+✔ carrying an unknown cannot supply a required destination or waive an actual decision (14.305792ms)
+✔ every tool is declared once with a closed schema, a plain description, and a surface (1.731916ms)
+✔ every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold (0.344958ms)
+✔ wrong input names the field and, for a closed set, the values it accepts (0.300084ms)
+✔ promote_deliverable never takes validated, and takes challenged only with the objections the challenge raised (0.251708ms)
+✔ bootstrap is small and says what to do next; answers create nothing; remember creates one statement (33.63275ms)
+✔ the tools that record or start something for the person say that what the host reads is data, not a request (0.263541ms)
+✔ bootstrap never puts setup ahead of the person's request: setup questions and proposals are offered after it, with their answers (45.896584ms)
+✔ bootstrap leads with the decisions about runs, and names blocked runs instead of sending claim_work to them (23.029375ms)
+✔ the interactive lifecycle: read, start, claim, submit, status, promote (31.658875ms)
+✔ the headless surface claims and submits but cannot decide, remember, or start (19.85225ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 602.287542

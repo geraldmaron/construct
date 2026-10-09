@@ -1,0 +1,52 @@
+{
+  "caseId": "explicit-vendor",
+  "kind": "explicit",
+  "domain": "software",
+  "prompt": "Use the investigative research method to check the vendor claim in request.md against the supplied records. Save a sourced finding with your strongest objection to analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "pass",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "pass"
+    },
+    "application": "applied",
+    "reasons": {
+      "correctness": "The supplied analysis.md correctly derives all required numerical findings from record.json: failed-job counts remain 80, total jobs increase from 1,000 to 2,000, and failure rates fall from 8% to 4%, a four-percentage-point decrease and 50% relative rate reduction. It explicitly distinguishes the unchanged count from the reduced rate and does not attribute the change to migration. Its recommended wording is bounded to the supplied aggregate record.",
+      "uncertainty": "The finding explicitly states that the cause of the rate difference is unknown. It identifies missing period boundaries, migration timing, measurement definitions, workload composition, and counterfactual evidence. It distinguishes absence from the supplied collection from proof that a migration did not happen, and acknowledges that the vendor could have intended rate and that migration could have helped. The pre-mortem calls workload or measurement differences the 'most plausible' failure without evidence ranking alternatives, but presents this as a hypothetical risk rather than an established explanation.",
+      "evidence": "The numerical findings cite record.json and its relevant fields, which independently support the calculations. The analysis correctly identifies operations as the record's stated owner and observedAt as an observation date, not a migration date. Its source-dependence finding matches vendor.md's reliance on record.json and press.md's repetition of vendor.md without independent measurements. The artifact includes claim-level citations and a usable sourced conclusion. Its statements that documents were opened and checks performed are not independently established by execution records here; this judgment rests on the supplied artifact's correspondence with the supplied sources, not those assertions.",
+      "method_application": "The artifact substantively applies the method beyond listing closing gates: it distinguishes records from aggregators, traces the dependent source chain, identifies single-source findings, compares a descriptive-rate interpretation with a charitable migration-effect interpretation, specifies potential refuters, and maps the supplied evidence against both hypotheses. It identifies workload and measurement changes as alternative explanations, documents coverage limits and unresolved gaps, presents objections both to the vendor claim and to its own finding, and supplies qualified wording suitable for citation. These concrete analytical elements support applied status without relying on its claimed verification pass."
+    }
+  },
+  "outputDigest": "2b90d29743dda643016d7f1f448ca6279b1947f7cdfb6a3e9600423fce5a8d38",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "2cefb996f66264c9d2502db1d7f85bab82bb09524e023fbec9e736caf9b1d74b",
+      "transcriptDigest": "0044478e45aa590c3c31dc39913a08ed0638581a4922029c7ae0908c41263eda",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 92617,
+      "completed": true,
+      "sessionDigest": "10b16ee34fcf8ca059f973a2c729b4a55798c55c67be2bf3e862f8e6bfe0c526"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "d52b0a8c63e8485ccf27b543555e7d94a6489a1fe2747f8d2e07f36c9ab35f3a",
+      "transcriptDigest": "fd9386a3202454625cf7123f133c8742c1f3e9afd8a9c1b0e8b78592905264c3",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 35567,
+      "completed": true,
+      "sessionDigest": "db40f0eb4d301694bdb6c89cfc93d58e60c63968c95cbf28eb3ea7213a33bf26"
+    }
+  }
+}

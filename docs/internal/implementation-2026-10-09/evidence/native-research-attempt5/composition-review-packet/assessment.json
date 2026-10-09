@@ -1,0 +1,52 @@
+{
+  "caseId": "composition-review-packet",
+  "kind": "composition",
+  "domain": "archive",
+  "prompt": "Research whether this pilot is ready, using the specialist review packet as an input and challenging the strongest contrary explanation. Save a sourced finding and specific next actions to analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "unknown",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "pass"
+    },
+    "application": "applied",
+    "reasons": {
+      "correctness": "The substantive readiness analysis matches the supplied records: operations.md distinguishes integrity from readiness; sample.csv contains donor_email and donor@example.invalid; accessibility.md reports an image-only guide without the required textual alternative; review.json reports unapproved distribution rights and explicitly disclaims approval authority. The output correctly treats privacy and accessibility as separate issues and does not claim an actual multi-agent chain. However, analysis.md additionally asserts that a public search and attempted primary RFC open returned no usable content. No execution record or search artifact is supplied to establish those events. That assertion is unverifiable, not demonstrably false, so overall factual correctness remains unknown rather than an unconditional pass.",
+      "uncertainty": "The output distinguishes the observed sample field from unproven real-person exposure, the specialist's reported rights gap from independently established rights status, and the described guide from an inspected release artifact. It explicitly says missing approval evidence is not proof that approvals do not exist elsewhere. It also treats October 10, 2026 as a conditional interpretation of the undated proposal's 'tomorrow,' not an established publication date. The conclusion is bounded to readiness not being established by the supplied evidence.",
+      "evidence": "The supplied analysis.md artifact contains specific citations whose substantive claims can be checked against all five input documents. It checks the specialist's email observation against the actual CSV header and row, cites accessibility.md for the distinct textual-alternative requirement, and uses operations.md to reject the checksum-to-readiness inference. It expressly counts review.json and sample.csv as one evidence chain rather than independent corroboration. This pass concerns the observable source support for the readiness finding; it does not credit the unsupported external-search execution claim or imply live-release verification.",
+      "method_application": "The artifact demonstrates substantive investigation beyond its closing checklist. It compares H1, an unsupported readiness rationale, with H2, a harmless sample and separately cleared build omitted from the packet. Its evidence matrix distinguishes consistent, inconsistent, and silent evidence; its refutation discussion identifies the approvals, accessible guide, and clean export that would undermine H1, while explaining how the supplied guide and rights statements challenge H2. The rival narrows the privacy allegation without removing the accessibility gap. Dedicated sections identify source classes, single-source dependencies, coverage limitations, classified absences, the strongest objection, and a pre-mortem. Specific handoffs require inspection of the exact public candidate and authorized approvals. These observable features support applied status independently of the output's claimed completion; external research execution and use of unavailable reference templates are not established."
+    }
+  },
+  "outputDigest": "ccdcb87608168903630c2e52b488753c452ec1f8386d3e4f53f2d92c3150e856",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "9af4f7ed17431f5dce0c725ef43eb279a6e95fdb6efed69c29b22f038dced210",
+      "transcriptDigest": "a72fc98cbb6c0d090c0364ccb32a2c7c25ca8747abe14d7b459d313cf5d4f17e",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 149178,
+      "completed": true,
+      "sessionDigest": "17cded685674b50d9d257130f2689d86228d8ae0e06332b57c55278e3f283363"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "d6ca58ed9a84f2da3533f5730d4c3fe1e45aeef1101b6bb82e3b7195cea5625e",
+      "transcriptDigest": "20dfb2a8edb55457aea551021e96efabc65124f8efd625a63ce1f30ec933a440",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 50389,
+      "completed": true,
+      "sessionDigest": "f71ba006a4690a3f9ba24f089f314a93b5bdc3608176be37a684402ba8707604"
+    }
+  }
+}

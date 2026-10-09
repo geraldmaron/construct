@@ -1,0 +1,52 @@
+{
+  "caseId": "implicit-archive",
+  "kind": "implicit",
+  "domain": "archive",
+  "prompt": "Is the proposed archive pilot actually feasible from the held records? Save an evidence-backed assessment and unresolved issues in analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "pass",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "fail"
+    },
+    "application": "applied",
+    "reasons": {
+      "correctness": "The supplied analysis.md rejects the all-600 public-release proposal and corrects the allocation to 12 shared operator-hours, not 24. Its capacity table calculates 12 \u00d7 15 = 180 before overhead, 600 \u00f7 15 = 40 scan-hours, and 120 \u00f7 15 = 8 scan-hours. It confines conditional internal feasibility to the 120 reportedly cleared photographs and explicitly preserves unresolved public rights and the absence of legal approval. Describing 180 as a sample-dependent estimate rather than a proven hard ceiling is consistent with treating it as a raw planning ceiling, not a delivery promise.",
+      "uncertainty": "The finding is explicitly bounded to the three held records. The analysis distinguishes reported rights status from independently verified legal conclusions, identifies excluded setup and metadata time, questions transferability of the sampled rate, and does not convert the undated proposal's 'next month' into a calendar deadline. It treats missing clearance evidence as unknown rather than proof of permanent prohibition and labels the internal pilot conditionally plausible, not ready.",
+      "evidence": "The candidate artifact is present in case.json. Its load-bearing findings and calculations cite proposal.md:1, operations.md:1, and rights.md:1, and those citations substantively match the supplied source texts. It distinguishes the proposal, operational status statement, and rights-status statement from unavailable underlying records. This judgment rests on the artifact's actual content, not its closing claims that verification gates were answered; separate filesystem persistence or execution is not established.",
+      "method_application": "The method was substantively applied: the analysis identifies source classes and single-source dependencies, avoids claiming independent corroboration, tests the incomplete-record rival against the held evidence, supplies an evidence matrix, classifies absences, and presents a strongest objection and a bounded sourced finding. However, it does not satisfy the rubric's explicit restriction that handbacks be only for the unavailable deed or owner decisions. Unresolved issue 2 hands back obtaining the original sample log and conducting a representative workflow measurement, and issue 1 additionally requests an item-level clearance register. These are reasonable validation needs, but they exceed that restricted handback category. They could remain stated evidence limitations rather than additional handbacks. Accordingly, application is applied, but the method_application check fails."
+    }
+  },
+  "outputDigest": "42e582869906702cf578569cbe087e5ad4aa1592953e9bb036efc4a6db2aea72",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "da013deb587d63296820e912038bbfd0d871d17ba4a24e9cde5be480c2296eb4",
+      "transcriptDigest": "9486661d6f27e5fe450d2a8f1d53c73a4295cbfdc796b7e851891b758166f4a1",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 92225,
+      "completed": true,
+      "sessionDigest": "57c8b6240a713f9021a37c43597dd2b6e81358bc033a2ac54e5a8715d7aa8217"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "71ac424c8667d712c7b76e1181fc085168bd93f29260e2add4a11de91e68ab90",
+      "transcriptDigest": "553dfeaef06b8a6ba8f1469489c2d63f152721a1a9b20a9521e2454b76c3c50e",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 45456,
+      "completed": true,
+      "sessionDigest": "6cec2a23373e7783d97abab5a0d4d269cd2689918c2dbbaa1d1256cf5e1ce6c7"
+    }
+  }
+}
