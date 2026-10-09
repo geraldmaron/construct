@@ -205,3 +205,26 @@ The complete denominator is now seven fresh trials/fourteen managed requests: tw
 Startup integration gate completed: lint/types, 999 pass/0 fail/1 existing skip, packaged smoke and static all-host91/0/7. [Gate receipt](evidence/startup-gate.json). Fresh Codex and Cursor standalone trials are now bounded at six minutes per phase, nineteen minutes total, with direct installed-package MCP launch and no checkout logging wrapper. Their explicit synthetic-source configuration remains part of the test setup; model resolution and host compliance are still measured limitations.
 
 The first standalone launch for both hosts failed during fixture setup because the outer sandbox denied binding 127.0.0.1; no package initialization or model call occurred. Both process receipts are retained in the workspace. The same bounded trials were relaunched with approved loopback access under the standalone-live tag; permissions inside each native host remain unchanged.
+
+
+## 22:43 UTC — standalone Cursor lifecycle passes, artifact acceptance fails
+
+Direct installed-package Cursor now completes both ordinary managed requests through research-brief (eight steps, two completed work reservations, four deliverables) in92s and99s. Ordinary Q&A still creates zero managed state. The independently verified initial file passes all four checks. The corrected file fails correctness: it omits the28-unit shortfall and adds incorrect counterfactual arithmetic about reservations in cases and retained12-case stock. Its main32-unit calculation, source refresh, uncertainty and recommendation-only scope pass. [Complete standalone evidence](evidence/fresh-journeys/fresh-cursor-standalone-live/assessment.json), [independent judgment](evidence/fresh-journeys/fresh-cursor-standalone-live/independent-assessment.json).
+
+This establishes a candidate lifecycle improvement, not a passing full journey or causation from the startup rule alone. The candidate also changes bootstrap and method wording; no ablation was run. The corrected run's synthesis/challenge method application remains unreported, not independently executed. Broad acceptance stays open. Next correction needs actual artifact-obligation and verifier coverage, including all material counterfactual calculations; another instruction-only replay or fixture-specific28 check is insufficient.
+
+
+## 22:49 UTC — eight-case qualification ended within its bound
+
+The runner exited1 at20m01s. Six case reviews pass, including both new heldouts; archive evidence remains unknown, and the composition reviewer hit the original deadline without a judgment. Qualification is false, with all eight artifacts retained. [Full result](evidence/native-research-v3b/assessment.json). No automatic rerun or deadline extension follows. The remaining standalone Codex correction is independently bounded by its original six-minute phase timer.
+
+The parent requested a gut-check of the rubric. [Recorded distinction](RUBRIC-REVIEW.md):32 versus60 settles the ordinary threshold decision; an explicit28 gap was stricter than this request and must not become a universal release condition. Frozen scores and all failures remain intact. Wrong counterfactual arithmetic is a separate substantive defect. Prospective verification must cover actual material obligations before managed success.
+
+
+## 22:53 UTC — bounded checkpoint complete
+
+Standalone Codex initial and correction each hit360seconds. The correction saves7356bytes and passes independent correctness/uncertainty/evidence/file review, but the managed lifecycle remains incomplete. The initial requested file is absent. [Full direct-package evidence](evidence/fresh-journeys/fresh-codex-standalone-live/assessment.json). Both supervisors have final receipts; the native research supervisor has also ended. No model trial is left running.
+
+The complete warehouse cohort is9Q&A passes with zero state;18managed requests,4native completions,13incomplete and1unreceipted interruption. Independent review covers11actual artifacts (7pass/4fail under their frozen rubrics) plus1missing artifact. Only3requests have both native completion and a passing artifact. The rubric critique preserves these scores while separating optional numeric-gap presentation from actual decision quality.
+
+Code remains e6646f9a, verified by lint/types/999pass/0fail/1skip/packaged smoke/static91/0/7. Later changes are evidence and analysis only. Remaining implementation is explicit in VALIDATION-STATUS.md and RUBRIC-REVIEW.md and the open native children; no semantic-verification or full release acceptance is claimed.

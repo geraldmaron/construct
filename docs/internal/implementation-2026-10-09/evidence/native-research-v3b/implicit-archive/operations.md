@@ -1,0 +1,1 @@
+Current allocation is 12 operator-hours total shared by two staff, not 12 each. Observed throughput sample was 15 photographs/hour excluding setup and metadata.

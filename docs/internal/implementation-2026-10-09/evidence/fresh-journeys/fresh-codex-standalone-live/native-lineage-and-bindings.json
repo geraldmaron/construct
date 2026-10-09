@@ -1,0 +1,4800 @@
+{
+  "workflow_runs": [
+    {
+      "id": "run-5fb9fb1e",
+      "workflow_id": "research-brief",
+      "workflow_version": "1.1.1",
+      "interaction_class": "manage",
+      "state": "running",
+      "trigger_kind": "manual",
+      "idempotency_key": "research-brief:09b1b6905ff28930917e52f1:inv-1f1ef060",
+      "executor_kind": "interactive",
+      "executor_id": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "host_id": "codex",
+      "session_id": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "input_json": {
+        "question": "Investigate whether West depot needs replenishment today. Save a decision brief with evidence and unresolved questions to warehouse-brief.md.",
+        "scope": "West depot replenishment need; investigate only, do not place orders or modify inventory",
+        "period": {
+          "semantics": "as_of",
+          "relative": "today",
+          "timezone": "America/New_York"
+        }
+      },
+      "preflight_json": {
+        "status": "runnable",
+        "summary": "research-brief 1.1.1 can run: 4 step(s)",
+        "approvalsAhead": [],
+        "reasons": [],
+        "flags": [
+          "challenge required: challenge before treating the result as strongly validated: the workflow declares that its deliverable must be challenged"
+        ],
+        "judgment": {
+          "depth": "challenged",
+          "challenge": true,
+          "why": "challenge before treating the result as strongly validated: the workflow declares that its deliverable must be challenged",
+          "signals": [
+            {
+              "kind": "workflow",
+              "detail": "the workflow declares that its deliverable must be challenged",
+              "raises": true
+            }
+          ]
+        },
+        "period": {
+          "semantics": "as_of",
+          "from": null,
+          "to": "2026-10-09",
+          "timezone": "America/New_York",
+          "how": "relative",
+          "relative": "today",
+          "resolvedAt": "2026-10-09T22:38:26.969Z",
+          "endsAfterToday": false,
+          "assumptions": [
+            "dates are in America/New_York",
+            "as_of keeps only the end date"
+          ]
+        },
+        "assumptions": [
+          "dates are in America/New_York",
+          "as_of keeps only the end date"
+        ],
+        "questions": []
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:38:26.969Z",
+      "updated_at": "2026-10-09T22:38:31.689Z",
+      "finished_at": null,
+      "invocation_id": "research-brief:09b1b6905ff28930917e52f1:inv-1f1ef060",
+      "work_identity": "research-brief:09b1b6905ff28930917e52f1",
+      "work_id": null,
+      "workflow_digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+      "bindings_json": {
+        "steps": [
+          {
+            "id": "gather",
+            "title": "Find and read what bears on the question, inside the project and out; note where sources disagree",
+            "needs": [],
+            "skill": {
+              "id": "investigative-research",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_context",
+              "read_project_files",
+              "read_source"
+            ],
+            "sources": [
+              {
+                "kind": "directory",
+                "freshness": "any",
+                "required": false
+              },
+              {
+                "kind": "jira",
+                "freshness": "any",
+                "required": false
+              },
+              {
+                "kind": "docs",
+                "freshness": "any",
+                "required": false
+              }
+            ],
+            "tier": "observe",
+            "inputs": {
+              "question": "input.question",
+              "scope": "input.scope",
+              "target": "input.target",
+              "period": "input.period",
+              "sources": "input.sources"
+            },
+            "outputs": [
+              "summary",
+              "findings",
+              "conflicts",
+              "unknowns"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "excerpts_match",
+              "within_period",
+              "named_sources_read",
+              "conflicts_declared",
+              "deliverable_complete",
+              "reference_coverage"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 1800000
+          },
+          {
+            "id": "synthesize",
+            "title": "Answer the question: what holds, how sure, what it rests on, what is still unknown",
+            "needs": [
+              "gather"
+            ],
+            "skill": {
+              "id": "investigative-research",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_files",
+              "write_project_files",
+              "model_review"
+            ],
+            "sources": [],
+            "tier": "draft",
+            "inputs": {
+              "question": "input.question",
+              "target": "input.target",
+              "findings": "steps.gather.findings",
+              "conflicts": "steps.gather.conflicts",
+              "unknowns": "steps.gather.unknowns"
+            },
+            "outputs": [
+              "summary",
+              "findings",
+              "confidence",
+              "unknowns",
+              "derivations"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "excerpts_match",
+              "within_period",
+              "sources_diverse",
+              "numbers_grounded",
+              "superseded_acknowledged",
+              "no_uncited_material_findings",
+              "settled_not_contradicted",
+              "deliverable_complete"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 1800000
+          },
+          {
+            "id": "challenge",
+            "title": "Challenge the answer: single-source claims, stale or superseded sources, figures without a trail, conclusions the evidence does not reach",
+            "needs": [
+              "synthesize"
+            ],
+            "skill": {
+              "id": "adversarial-review",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_files",
+              "model_review"
+            ],
+            "sources": [],
+            "tier": "draft",
+            "inputs": {
+              "summary": "steps.synthesize.summary",
+              "findings": "steps.synthesize.findings"
+            },
+            "outputs": [
+              "verdict",
+              "findings",
+              "summary"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "within_period",
+              "no_uncited_material_findings",
+              "deliverable_complete"
+            ],
+            "loadBearing": true,
+            "challenge": true,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 900000
+          },
+          {
+            "id": "record",
+            "title": "Record the answer and hand it back",
+            "needs": [
+              "challenge",
+              "synthesize"
+            ],
+            "skill": null,
+            "capabilities": [
+              "write_project_context"
+            ],
+            "sources": [],
+            "tier": "project_write",
+            "inputs": {
+              "summary": "steps.synthesize.summary",
+              "verdict": "steps.challenge.verdict"
+            },
+            "outputs": [
+              "summary",
+              "verdict"
+            ],
+            "validators": [
+              "schema"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 1,
+              "backoffMs": 0
+            },
+            "timeoutMs": 30000
+          }
+        ],
+        "digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+        "version": "1.1.1",
+        "asked": {
+          "intake": {
+            "words": "Investigate whether West depot needs replenishment today. Save a decision brief with evidence and unresolved questions to warehouse-brief.md.",
+            "kind": "manage",
+            "deliverable": {
+              "kind": "research/brief",
+              "describe": null
+            },
+            "skill": null,
+            "workflowId": null,
+            "target": null,
+            "scope": "West depot replenishment need; investigate only, do not place orders or modify inventory",
+            "period": {
+              "semantics": "as_of",
+              "relative": "today",
+              "timezone": "America/New_York"
+            },
+            "sources": [],
+            "destination": {
+              "kind": "project_file",
+              "ref": "warehouse-brief.md",
+              "name": null
+            },
+            "schedule": null,
+            "coordination": null,
+            "stakes": null,
+            "open": [
+              {
+                "about": "sources",
+                "question": "What current stock, demand, inbound supply and replenishment rules apply to West depot?",
+                "blocking": false,
+                "assumption": null,
+                "handling": "investigate"
+              }
+            ],
+            "inputs": {}
+          },
+          "declared": {
+            "stakes": null,
+            "chosenSkill": null,
+            "words": "Investigate whether West depot needs replenishment today. Save a decision brief with evidence and unresolved questions to warehouse-brief.md."
+          },
+          "judgedBy": {
+            "by": "host",
+            "host": "codex",
+            "client": "codex-mcp-client"
+          },
+          "assumptions": [
+            {
+              "about": "period",
+              "text": "Reading the period as a point in time: how things stood at its end",
+              "by": "kernel"
+            },
+            {
+              "about": "period",
+              "text": "dates are in America/New_York",
+              "by": "kernel"
+            },
+            {
+              "about": "period",
+              "text": "as_of keeps only the end date",
+              "by": "kernel"
+            }
+          ],
+          "period": {
+            "semantics": "as_of",
+            "from": null,
+            "to": "2026-10-09",
+            "timezone": "America/New_York",
+            "how": "relative",
+            "relative": "today",
+            "resolvedAt": "2026-10-09T22:38:26.969Z",
+            "endsAfterToday": false,
+            "assumptions": [
+              "dates are in America/New_York",
+              "as_of keeps only the end date"
+            ]
+          },
+          "periodSpec": {
+            "semantics": "as_of",
+            "relative": "today",
+            "timezone": "America/New_York"
+          }
+        }
+      },
+      "cancel_requested": 0
+    },
+    {
+      "id": "run-093372d5",
+      "workflow_id": "research-brief",
+      "workflow_version": "1.1.1",
+      "interaction_class": "manage",
+      "state": "succeeded",
+      "trigger_kind": "manual",
+      "idempotency_key": "research-brief:8212f0534bcc2a7de133ca2b:inv-d62e023d",
+      "executor_kind": "interactive",
+      "executor_id": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "host_id": "codex",
+      "session_id": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "input_json": {
+        "question": "The warehouse records have been corrected. Recheck the replenishment recommendation against the current sources and update warehouse-brief.md with what changed.",
+        "scope": "Recheck prior replenishment recommendation against corrected current warehouse sources and document what changed; no orders or external actions.",
+        "period": {
+          "relative": "today",
+          "semantics": "as_of",
+          "timezone": "America/New_York"
+        }
+      },
+      "preflight_json": {
+        "status": "runnable",
+        "summary": "research-brief 1.1.1 can run: 4 step(s)",
+        "approvalsAhead": [],
+        "reasons": [],
+        "flags": [
+          "challenge required: challenge before treating the result as strongly validated: the workflow declares that its deliverable must be challenged"
+        ],
+        "judgment": {
+          "depth": "challenged",
+          "challenge": true,
+          "why": "challenge before treating the result as strongly validated: the workflow declares that its deliverable must be challenged",
+          "signals": [
+            {
+              "kind": "workflow",
+              "detail": "the workflow declares that its deliverable must be challenged",
+              "raises": true
+            }
+          ]
+        },
+        "period": {
+          "semantics": "as_of",
+          "from": null,
+          "to": "2026-10-09",
+          "timezone": "America/New_York",
+          "how": "relative",
+          "relative": "today",
+          "resolvedAt": "2026-10-09T22:44:42.192Z",
+          "endsAfterToday": false,
+          "assumptions": [
+            "dates are in America/New_York",
+            "as_of keeps only the end date"
+          ]
+        },
+        "assumptions": [
+          "dates are in America/New_York",
+          "as_of keeps only the end date"
+        ],
+        "questions": []
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:44:42.192Z",
+      "updated_at": "2026-10-09T22:49:49.592Z",
+      "finished_at": "2026-10-09T22:49:49.592Z",
+      "invocation_id": "research-brief:8212f0534bcc2a7de133ca2b:inv-d62e023d",
+      "work_identity": "research-brief:8212f0534bcc2a7de133ca2b",
+      "work_id": null,
+      "workflow_digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+      "bindings_json": {
+        "steps": [
+          {
+            "id": "gather",
+            "title": "Find and read what bears on the question, inside the project and out; note where sources disagree",
+            "needs": [],
+            "skill": {
+              "id": "investigative-research",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_context",
+              "read_project_files",
+              "read_source"
+            ],
+            "sources": [
+              {
+                "kind": "directory",
+                "freshness": "any",
+                "required": false
+              },
+              {
+                "kind": "jira",
+                "freshness": "any",
+                "required": false
+              },
+              {
+                "kind": "docs",
+                "freshness": "any",
+                "required": false
+              }
+            ],
+            "tier": "observe",
+            "inputs": {
+              "question": "input.question",
+              "scope": "input.scope",
+              "target": "input.target",
+              "period": "input.period",
+              "sources": "input.sources"
+            },
+            "outputs": [
+              "summary",
+              "findings",
+              "conflicts",
+              "unknowns"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "excerpts_match",
+              "within_period",
+              "named_sources_read",
+              "conflicts_declared",
+              "deliverable_complete",
+              "reference_coverage"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 1800000
+          },
+          {
+            "id": "synthesize",
+            "title": "Answer the question: what holds, how sure, what it rests on, what is still unknown",
+            "needs": [
+              "gather"
+            ],
+            "skill": {
+              "id": "investigative-research",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_files",
+              "write_project_files",
+              "model_review"
+            ],
+            "sources": [],
+            "tier": "draft",
+            "inputs": {
+              "question": "input.question",
+              "target": "input.target",
+              "findings": "steps.gather.findings",
+              "conflicts": "steps.gather.conflicts",
+              "unknowns": "steps.gather.unknowns"
+            },
+            "outputs": [
+              "summary",
+              "findings",
+              "confidence",
+              "unknowns",
+              "derivations"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "excerpts_match",
+              "within_period",
+              "sources_diverse",
+              "numbers_grounded",
+              "superseded_acknowledged",
+              "no_uncited_material_findings",
+              "settled_not_contradicted",
+              "deliverable_complete"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 1800000
+          },
+          {
+            "id": "challenge",
+            "title": "Challenge the answer: single-source claims, stale or superseded sources, figures without a trail, conclusions the evidence does not reach",
+            "needs": [
+              "synthesize"
+            ],
+            "skill": {
+              "id": "adversarial-review",
+              "range": "^0.3.0"
+            },
+            "capabilities": [
+              "read_project_files",
+              "model_review"
+            ],
+            "sources": [],
+            "tier": "draft",
+            "inputs": {
+              "summary": "steps.synthesize.summary",
+              "findings": "steps.synthesize.findings"
+            },
+            "outputs": [
+              "verdict",
+              "findings",
+              "summary"
+            ],
+            "validators": [
+              "citations_present",
+              "evidence_refs_resolve",
+              "within_period",
+              "no_uncited_material_findings",
+              "deliverable_complete"
+            ],
+            "loadBearing": true,
+            "challenge": true,
+            "retry": {
+              "maxAttempts": 3,
+              "backoffMs": 1000
+            },
+            "timeoutMs": 900000
+          },
+          {
+            "id": "record",
+            "title": "Record the answer and hand it back",
+            "needs": [
+              "challenge",
+              "synthesize"
+            ],
+            "skill": null,
+            "capabilities": [
+              "write_project_context"
+            ],
+            "sources": [],
+            "tier": "project_write",
+            "inputs": {
+              "summary": "steps.synthesize.summary",
+              "verdict": "steps.challenge.verdict"
+            },
+            "outputs": [
+              "summary",
+              "verdict"
+            ],
+            "validators": [
+              "schema"
+            ],
+            "loadBearing": true,
+            "challenge": false,
+            "retry": {
+              "maxAttempts": 1,
+              "backoffMs": 0
+            },
+            "timeoutMs": 30000
+          }
+        ],
+        "digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+        "version": "1.1.1",
+        "asked": {
+          "intake": {
+            "words": "The warehouse records have been corrected. Recheck the replenishment recommendation against the current sources and update warehouse-brief.md with what changed.",
+            "kind": "manage",
+            "deliverable": {
+              "kind": "research/brief",
+              "describe": null
+            },
+            "skill": null,
+            "workflowId": null,
+            "target": null,
+            "scope": "Recheck prior replenishment recommendation against corrected current warehouse sources and document what changed; no orders or external actions.",
+            "period": {
+              "relative": "today",
+              "semantics": "as_of",
+              "timezone": "America/New_York"
+            },
+            "sources": [],
+            "destination": {
+              "kind": "project_file",
+              "ref": "warehouse-brief.md",
+              "name": null
+            },
+            "schedule": null,
+            "coordination": null,
+            "stakes": null,
+            "open": [],
+            "inputs": {}
+          },
+          "declared": {
+            "stakes": null,
+            "chosenSkill": null,
+            "words": "The warehouse records have been corrected. Recheck the replenishment recommendation against the current sources and update warehouse-brief.md with what changed."
+          },
+          "judgedBy": {
+            "by": "host",
+            "host": "codex",
+            "client": "codex-mcp-client"
+          },
+          "assumptions": [
+            {
+              "about": "period",
+              "text": "Reading the period as a point in time: how things stood at its end",
+              "by": "kernel"
+            },
+            {
+              "about": "period",
+              "text": "dates are in America/New_York",
+              "by": "kernel"
+            },
+            {
+              "about": "period",
+              "text": "as_of keeps only the end date",
+              "by": "kernel"
+            }
+          ],
+          "period": {
+            "semantics": "as_of",
+            "from": null,
+            "to": "2026-10-09",
+            "timezone": "America/New_York",
+            "how": "relative",
+            "relative": "today",
+            "resolvedAt": "2026-10-09T22:44:42.192Z",
+            "endsAfterToday": false,
+            "assumptions": [
+              "dates are in America/New_York",
+              "as_of keeps only the end date"
+            ]
+          },
+          "periodSpec": {
+            "relative": "today",
+            "semantics": "as_of",
+            "timezone": "America/New_York"
+          }
+        }
+      },
+      "cancel_requested": 0
+    }
+  ],
+  "step_runs": [
+    {
+      "id": "step-20c5a39e",
+      "run_id": "run-5fb9fb1e",
+      "step_id": "gather",
+      "ordinal": 0,
+      "permission_tier": "observe",
+      "state": "succeeded",
+      "attempts": 2,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "summary": "Hold pending clarification per policy; replenishment need cannot be established.",
+        "findings": [
+          "Policy: replenish only below 60 individual units net of reservations; exactly 60 hold steady; unknown conversion or reservation units require hold. [cite: docs/policy.md]",
+          "PART-19 available 12 cases; cached each export superseded. [cite: depot://stock/west]",
+          "Reserved quantity 4 with unspecified current unit; legacy each and AUX-22 units do not settle PART-19. [cite: depot://reservations/west]",
+          "Current API units_per_case is null; unit each supplies no conversion. Schema allows null. [cite: http://127.0.0.1:58676/catalog/part-19] [cite: http://127.0.0.1:58676/openapi.json]"
+        ],
+        "conflicts": [
+          {
+            "text": "Six-per-case operator suggestion lacks lot-specific confirmation and cannot override current unknown conversion.",
+            "citations": [
+              "depot://chat/staffing",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Current units per case; referenced supplier record permission denied.",
+          "Current reservation unit.",
+          "Net individual stock and distance from threshold; neither calculable.",
+          "All-SKU coverage and end-of-day physical state not certified; no inference of absent inbound supply or demand from limited search."
+        ],
+        "referenceDispositions": [
+          {
+            "ref": "depot://supplier/lot-k",
+            "status": "inaccessible",
+            "why": "Workspace fetch returned permission_denied, retryable false."
+          },
+          {
+            "ref": "http://127.0.0.1:58676",
+            "status": "irrelevant",
+            "why": "API base address, not a separate evidence record; read its linked schema and current item endpoint through MCP successfully."
+          }
+        ],
+        "methods": [
+          {
+            "id": "investigative-research",
+            "disposition": "applied",
+            "why": "Primary records read, linked API and schema checked, rival six-per-case explanation tested without assuming unknown units.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "README.md"
+          },
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/openapi.json"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-5fb9fb1e",
+          "stepRunId": "step-20c5a39e",
+          "observedAt": "2026-10-09T22:42:04.436Z",
+          "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "README.md",
+              "digest": "2cdb5c207242873f589ced3ef318813b4f5d77112722a5d4c07101d1c75acab1",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "digest": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+              "provenance": "reported"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "excerpts_match",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "named_sources_read",
+              "ok": true
+            },
+            {
+              "validator": "conflicts_declared",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            },
+            {
+              "validator": "reference_coverage",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "c7e552acfa542d2d367825ac24e03692318e1857c120dbf16cd773e50496f1c7",
+          "methods": [
+            {
+              "id": "investigative-research",
+              "version": "0.3.3",
+              "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+              "status": "reported_applied",
+              "why": "Primary records read, linked API and schema checked, rival six-per-case explanation tested without assuming unknown units.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                  "provenance": "reported"
+                }
+              ]
+            }
+          ]
+        },
+        "researchCoverage": {
+          "documents": [
+            {
+              "ref": "README.md",
+              "digest": "2cdb5c207242873f589ced3ef318813b4f5d77112722a5d4c07101d1c75acab1",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "digest": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+              "provenance": "reported",
+              "truncated": false
+            }
+          ],
+          "links": [
+            {
+              "from": "README.md",
+              "ref": "http://127.0.0.1:58676",
+              "status": "irrelevant",
+              "why": "API base address, not a separate evidence record; read its linked schema and current item endpoint through MCP successfully."
+            },
+            {
+              "from": "README.md",
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/policy.md",
+              "ref": "depot://stock/west",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/policy.md",
+              "ref": "depot://reservations/west",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://stock/west",
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://stock/west",
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://stock/west",
+              "ref": "depot://reservations/west",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://chat/staffing",
+              "ref": "depot://catalog/part-19",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://catalog/part-19",
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "status": "recorded"
+            },
+            {
+              "from": "http://127.0.0.1:58676/catalog/part-19",
+              "ref": "depot://supplier/lot-k",
+              "status": "inaccessible",
+              "why": "Workspace fetch returned permission_denied, retryable false."
+            }
+          ],
+          "limits": {
+            "documents": 48,
+            "links": 96,
+            "bytes": 2097152
+          },
+          "limited": false,
+          "limitReason": null,
+          "problems": []
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:38:26.969Z",
+      "updated_at": "2026-10-09T22:42:04.436Z",
+      "finished_at": "2026-10-09T22:42:04.436Z"
+    },
+    {
+      "id": "step-526f6a96",
+      "run_id": "run-5fb9fb1e",
+      "step_id": "synthesize",
+      "ordinal": 1,
+      "permission_tier": "draft",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "summary": "Recommendation/inference: hold the replenishment decision pending unit clarification. This is not proof West has enough stock. [cite: docs/policy.md] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+        "findings": [
+          "Policy uses net individual units: replenish below 60, hold steady at exactly 60, hold pending clarification if conversion or reservation units unknown. [cite: docs/policy.md]",
+          "Available PART-19 stock is 12 cases; reserved_quantity is 4 in an unspecified unit. Net each = available cases \u00d7 confirmed each per case \u2212 reservations converted to each. Net each and distance from 60 cannot be computed. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: docs/policy.md]",
+          "API conversion is null; schema allows null; neither API unit each nor stock unit case defines reservations. [cite: http://127.0.0.1:58676/catalog/part-19] [cite: http://127.0.0.1:58676/openapi.json] [cite: depot://reservations/west]",
+          "Operator six-per-case claim is unconfirmed; cached each export is superseded and not used. [cite: depot://chat/staffing] [cite: depot://stock/west]",
+          "Hypotheses net below threshold and net at/above threshold both remain possible. Sought refuters in current catalog, schema and reservations; missing conversion and unit prevent rejection of either. [cite: http://127.0.0.1:58676/catalog/part-19] [cite: depot://reservations/west]"
+        ],
+        "confidence": "High confidence in policy-required hold; insufficient evidence for actual replenishment need. Sources establish distinct facts, not independent corroboration of stock count. Index and API are one upstream packaging chain.",
+        "unknowns": [
+          "Catalog owner or authorized supplier evidence must establish current lot conversion; supplier lot-k access denied.",
+          "Warehouse operations must establish current PART-19 reservation unit; legacy units and unrelated SKU are inadequate.",
+          "Depot-wide SKU completeness and final end-of-day stock not verified. Assessment limited to accessible PART-19 records as of investigation time."
+        ],
+        "derivations": [],
+        "conflicts": [
+          {
+            "text": "Unconfirmed six-per-case suggestion cannot replace missing authoritative conversion.",
+            "citations": [
+              "depot://chat/staffing",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "id": "investigative-research",
+            "disposition": "applied",
+            "why": "Explicit facts/inference, units and threshold boundaries, rival hypotheses and limits.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "README.md"
+          },
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/openapi.json"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-5fb9fb1e",
+          "stepRunId": "step-526f6a96",
+          "observedAt": "2026-10-09T22:42:32.885Z",
+          "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "README.md",
+              "digest": "2cdb5c207242873f589ced3ef318813b4f5d77112722a5d4c07101d1c75acab1",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "digest": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+              "provenance": "reported"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "excerpts_match",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "sources_diverse",
+              "ok": true
+            },
+            {
+              "validator": "numbers_grounded",
+              "ok": true
+            },
+            {
+              "validator": "superseded_acknowledged",
+              "ok": true
+            },
+            {
+              "validator": "no_uncited_material_findings",
+              "ok": true
+            },
+            {
+              "validator": "settled_not_contradicted",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "e7bc6ac8c367a5a20ac1d051032e7e89acd24f4d957ff2a48e3be7ca58408e38",
+          "methods": [
+            {
+              "id": "investigative-research",
+              "version": "0.3.3",
+              "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+              "status": "reported_applied",
+              "why": "Explicit facts/inference, units and threshold boundaries, rival hypotheses and limits.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                  "provenance": "reported"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:38:26.969Z",
+      "updated_at": "2026-10-09T22:42:32.885Z",
+      "finished_at": "2026-10-09T22:42:32.885Z"
+    },
+    {
+      "id": "step-b84a86ee",
+      "run_id": "run-5fb9fb1e",
+      "step_id": "challenge",
+      "ordinal": 2,
+      "permission_tier": "draft",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "adversarial-review",
+          "version": "0.3.1",
+          "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "verdict": "Accepted with controls",
+        "summary": "VERDICT: Accepted with controls. Self-review, not independent review or user acceptance. Steelman: the brief correctly follows the explicit unknown-unit hold rule and avoids fabricating a threshold comparison. It can finish the assessment without pretending the later replenishment decision is ready.",
+        "findings": [
+          {
+            "severity": "serious",
+            "failure": "A reader treats hold as adequate inventory and delays needed supply.",
+            "evidence": "Unknown conversion and reservation unit leave shortage possible. [cite: docs/policy.md] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+            "smallestFix": "State prominently that need remains undetermined; hold is not hold-steady or proof of sufficiency.",
+            "disposition": "fixed in final brief"
+          },
+          {
+            "severity": "minor",
+            "failure": "Reader generalizes PART-19 evidence to every West SKU or completed end-of-day state.",
+            "evidence": "Stock record is scoped to PART-19. [cite: depot://stock/west]",
+            "smallestFix": "Limit conclusion to observed records; disclose incomplete depot-wide and end-of-day coverage.",
+            "disposition": "fixed in final brief"
+          }
+        ],
+        "challenges": {
+          "strongestFailure": "Hypothetical shortage occurs while hold is misread as no need; require explicit unknown-status label.",
+          "bestAlternative": "Compute from operator six-per-case and legacy each. Rejected: both current unit premises lack authority. [cite: depot://chat/staffing] [cite: depot://reservations/west]",
+          "claimsAudit": "Available 12 cases, reserved 4 unit unknown, threshold 60 individual units verified in cited records; no computed net or gap. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: docs/policy.md]",
+          "assumptionInversion": "If reservations are cases rather than each, subtraction changes; if actual packaging differs from six, net changes. Neither is assumed; both hypotheses remain live.",
+          "costBearers": "Hypothetically, depot staff and customers bear delay/stockout costs; purchasing bears excess-stock cost of unsupported orders. No cost magnitude established.",
+          "hostileExpert": "Cannot subtract untyped reservation quantity from case stock; cannot treat catalog unit each as conversion. Current recommendation survives only as an evidence hold."
+        },
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "disposition": "applied",
+            "why": "Self-review ran all challenges; uncertainty and coverage controls required.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-5fb9fb1e",
+          "stepRunId": "step-b84a86ee",
+          "observedAt": "2026-10-09T22:42:57.629Z",
+          "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "README.md",
+              "digest": "2cdb5c207242873f589ced3ef318813b4f5d77112722a5d4c07101d1c75acab1",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/openapi.json",
+              "digest": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+              "provenance": "reported"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "no_uncited_material_findings",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "368e302dc72f01b22ad0c15d14f609b8c7a6aee71831252a02e730ab6e07f6b5",
+          "methods": [
+            {
+              "id": "adversarial-review",
+              "version": "0.3.1",
+              "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+              "status": "reported_applied",
+              "why": "Self-review ran all challenges; uncertainty and coverage controls required.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                  "provenance": "reported"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:38:26.969Z",
+      "updated_at": "2026-10-09T22:42:57.629Z",
+      "finished_at": "2026-10-09T22:42:57.629Z"
+    },
+    {
+      "id": "step-94938321",
+      "run_id": "run-5fb9fb1e",
+      "step_id": "record",
+      "ordinal": 3,
+      "permission_tier": "project_write",
+      "state": "leased",
+      "attempts": 1,
+      "max_attempts": 1,
+      "lease_owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "lease_until": "2026-10-09T23:13:09.415Z",
+      "input_json": {
+        "skill": null,
+        "needsApproval": false
+      },
+      "output_json": null,
+      "state_reason": null,
+      "created_at": "2026-10-09T22:38:26.969Z",
+      "updated_at": "2026-10-09T22:43:09.415Z",
+      "finished_at": null
+    },
+    {
+      "id": "step-32149669",
+      "run_id": "run-093372d5",
+      "step_id": "gather",
+      "ordinal": 0,
+      "permission_tier": "observe",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "summary": "Corrected records resolve the prior evidence hold: recommend replenishment for West PART-19. Inference: 6 cases \u00d7 6 each/case \u2212 4 each = 32 each net, 28 below the 60-each threshold. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+        "findings": [
+          "Record: revision2 stock is 6 cases, corrected from prior 12 cases documented in the prior challenged brief. Provider updatedAt remains 2026-10-09T09:00:00Z; changed bytes, not timestamp advancement, establish correction. [cite: depot://stock/west] [cite: deliverable-b0732c85]",
+          "Record: reservations now explicitly 4 each; current lot-specific API confirms 6 each per case, schemaRevision2, observedAt 2026-10-09T09:00:00Z. API observation is not an update timestamp. [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+          "Prior assessed recommendation was hold pending unit clarification, not proof of sufficiency. Historical deliverable is now stale for current facts. No warehouse-brief.md exists on disk in current checkout. [cite: deliverable-b0732c85]",
+          "Scope is West PART-19 records fetched on October 9, not all inventory or a completed end-of-day census. Single-source dependencies: stock/inventory, units/operations, conversion/catalog, threshold/local policy; index and API are not independent corroboration. [cite: depot://catalog/part-19]"
+        ],
+        "conflicts": [
+          {
+            "description": "Superseded cached export says 72 available and 12 reserved each, suggesting exactly 60; current records say 6 cases and 4 each reserved. Current connected records control under policy.",
+            "citations": [
+              "docs/cached.json",
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west"
+            ]
+          },
+          {
+            "description": "Operator generalized all cases as six and lacked lot confirmation; only current lot-specific API now establishes conversion for this SKU, not all cases.",
+            "citations": [
+              "depot://chat/staffing",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          },
+          {
+            "description": "Prior challenged assessment held need undetermined; corrected current stock, explicit reservation units and lot conversion remove those blockers.",
+            "citations": [
+              "deliverable-b0732c85",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Supplier order increments, minimums, lead times and inbound supply not established; 28 each is arithmetic threshold gap, not an executable purchase order.",
+          "Independent physical count not collected; source authority does not independently verify physical stock."
+        ],
+        "methods": [
+          {
+            "id": "investigative-research",
+            "disposition": "applied",
+            "why": "Compared current primary records to historical assessment/cache; tested hold-steady rival via current counts and unknown-units rival via explicit definitions. Both rivals fail under corrected records. All material current links fetched; read-only scope retained.",
+            "evidence": [
+              "docs/policy.md",
+              "docs/cached.json",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "depot://catalog/part-19",
+              "http://127.0.0.1:58676/catalog/part-19",
+              "depot://chat/staffing",
+              "deliverable-b0732c85"
+            ]
+          }
+        ],
+        "referenceDispositions": [
+          {
+            "ref": "depot://supplier/lot-k",
+            "status": "deferred",
+            "why": "Historical denied supplier link is not present in corrected API, which now directly confirms conversion. Supplier order terms outside recommendation scope."
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "deliverable-b0732c85"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-093372d5",
+          "stepRunId": "step-32149669",
+          "observedAt": "2026-10-09T22:47:33.443Z",
+          "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "deliverable-b0732c85",
+              "digest": null,
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "excerpts_match",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "named_sources_read",
+              "ok": true
+            },
+            {
+              "validator": "conflicts_declared",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            },
+            {
+              "validator": "reference_coverage",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "4cf557294c8b82369dd8dcd8f0de5f6575a73d00be37c08d2c0283e80ed9a12c",
+          "methods": [
+            {
+              "id": "investigative-research",
+              "version": "0.3.3",
+              "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+              "status": "reported_applied",
+              "why": "Compared current primary records to historical assessment/cache; tested hold-steady rival via current counts and unknown-units rival via explicit definitions. Both rivals fail under corrected records. All material current links fetched; read-only scope retained.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "docs/cached.json",
+                  "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://catalog/part-19",
+                  "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://chat/staffing",
+                  "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "deliverable-b0732c85",
+                  "digest": null,
+                  "provenance": "witnessed"
+                }
+              ]
+            }
+          ]
+        },
+        "researchCoverage": {
+          "documents": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed",
+              "truncated": false
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported",
+              "truncated": false
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported",
+              "truncated": false
+            }
+          ],
+          "links": [
+            {
+              "from": "docs/policy.md",
+              "ref": "depot://stock/west",
+              "status": "recorded"
+            },
+            {
+              "from": "docs/policy.md",
+              "ref": "depot://reservations/west",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://stock/west",
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://stock/west",
+              "ref": "depot://reservations/west",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://catalog/part-19",
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "status": "recorded"
+            },
+            {
+              "from": "depot://chat/staffing",
+              "ref": "depot://catalog/part-19",
+              "status": "recorded"
+            }
+          ],
+          "limits": {
+            "documents": 48,
+            "links": 96,
+            "bytes": 2097152
+          },
+          "limited": false,
+          "limitReason": null,
+          "problems": []
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:44:42.192Z",
+      "updated_at": "2026-10-09T22:47:33.443Z",
+      "finished_at": "2026-10-09T22:47:33.443Z"
+    },
+    {
+      "id": "step-873b6de9",
+      "run_id": "run-093372d5",
+      "step_id": "synthesize",
+      "ordinal": 1,
+      "permission_tier": "draft",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "summary": "Recommend replenishment for West PART-19: inferred net stock is 32 each, below 60; threshold gap is 28 each. This replaces the prior hold pending clarification. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19] [cite: deliverable-b0732c85]",
+        "findings": [
+          "Current record: 6 cases available; API now confirms 6 each per case for this lot; operations defines reservations as 4 each. Inference: gross 36 each, net 32 each, threshold gap 28 each. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19] [cite: docs/policy.md]",
+          "Historical comparison: prior assessment used 12 cases, unknown reservation units and unknown conversion; it correctly held need undetermined on that evidence. That historical deliverable is superseded for current recommendation. Corrections at unchanged provider timestamp require content comparison, not timestamp-only freshness. [cite: deliverable-b0732c85] [cite: depot://stock/west]",
+          "Superseded docs/cached.json gives 72 minus 12 = 60 each, but current connected records supersede cache. Operator all-cases generalization is not conversion authority; current lot-specific API is. [cite: docs/cached.json] [cite: docs/policy.md] [cite: depot://chat/staffing] [cite: depot://catalog/part-19] [cite: http://127.0.0.1:58676/catalog/part-19]"
+        ],
+        "confidence": "High in policy application to the current reported records; conditional on upstream record accuracy, not an independently verified physical count. Snapshot for this SKU only, not full depot/end-of-day inventory.",
+        "unknowns": [
+          "Order increments, minimums, supplier terms, lead times and inbound stock were not established. Arithmetic gap is not purchase authorization. No order placed."
+        ],
+        "derivations": [
+          {
+            "value": "36",
+            "expression": "6 * 6"
+          },
+          {
+            "value": "32",
+            "expression": "6 * 6 - 4"
+          },
+          {
+            "value": "28",
+            "expression": "60 - (6 * 6 - 4)"
+          }
+        ],
+        "methods": [
+          {
+            "id": "investigative-research",
+            "disposition": "applied",
+            "why": "Resolved conflicting cache and prior assessment using corrected content and explicit unit authority; maintained scope and single-source limitations.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "deliverable-b0732c85"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-093372d5",
+          "stepRunId": "step-873b6de9",
+          "observedAt": "2026-10-09T22:47:57.894Z",
+          "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "deliverable-b0732c85",
+              "digest": null,
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "excerpts_match",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "sources_diverse",
+              "ok": true
+            },
+            {
+              "validator": "numbers_grounded",
+              "ok": true
+            },
+            {
+              "validator": "superseded_acknowledged",
+              "ok": true
+            },
+            {
+              "validator": "no_uncited_material_findings",
+              "ok": true
+            },
+            {
+              "validator": "settled_not_contradicted",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "e09066bfcf9983a2bcc2cf6651f4f0a7ab12cfb5d62cfcd6c2b59a355bb51084",
+          "methods": [
+            {
+              "id": "investigative-research",
+              "version": "0.3.3",
+              "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+              "status": "reported_applied",
+              "why": "Resolved conflicting cache and prior assessment using corrected content and explicit unit authority; maintained scope and single-source limitations.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                  "provenance": "reported"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:44:42.192Z",
+      "updated_at": "2026-10-09T22:47:57.894Z",
+      "finished_at": "2026-10-09T22:47:57.894Z"
+    },
+    {
+      "id": "step-86945f6c",
+      "run_id": "run-093372d5",
+      "step_id": "challenge",
+      "ordinal": 2,
+      "permission_tier": "draft",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 3,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": {
+          "id": "adversarial-review",
+          "version": "0.3.1",
+          "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc"
+        },
+        "needsApproval": false
+      },
+      "output_json": {
+        "verdict": "Accepted with controls",
+        "summary": "VERDICT: Accepted with controls. Shared-context self-review, not independent review or user acceptance. Steelman: authoritative corrected counts and typed units allow the policy calculation that the prior review could not support. The recommendation is sound as a replenishment trigger, not a purchase order. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+        "findings": [
+          {
+            "severity": "serious",
+            "failure": "Purchasing interprets the threshold gap as an executable order and ignores unverified supplier constraints.",
+            "evidence": "Policy establishes trigger, not purchasing terms. [cite: docs/policy.md]",
+            "smallestFix": "Explicitly distinguish arithmetic gap from order quantity; no order placement.",
+            "disposition": "retain as explicit control in final brief"
+          }
+        ],
+        "challenges": {
+          "strongestFailure": "Buyer orders exact gap without terms; control is arithmetic-only gap and explicit no-order status.",
+          "bestAlternative": "Retain hold due unchanged timestamp. Rejected: current corrected bytes, explicit each reservation unit and lot-specific conversion resolve original blockers. Cache hold-steady alternative is superseded. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19] [cite: docs/cached.json]",
+          "claimsAudit": "Validated arithmetic locally: 6*6=36; 36-4=32; 60-32=28; exactly 60 holds. Inputs checked against cited records, not operator assertion. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+          "assumptionInversion": "If upstream stock or lot applicability is wrong, conclusion changes; no independent physical count. API explicitly scopes authority to current lot, so no inferred universal packaging rule.",
+          "costBearers": "Hypothetically purchasing bears excess-stock costs and depot customers bear shortage costs; amounts unknown.",
+          "hostileExpert": "Threshold gap is not order target/lot size; scope is one SKU at read time, not a full depot census or future end-of-day assurance."
+        },
+        "verificationRecord": "Steelman stated: answered - 'authoritative corrected counts and typed units'. All six run: answered - finding from strongest failure, alternative and hostile expert checked. Findings concrete: answered - one serious finding, no fatal/minor findings. VERDICT: accepted with controls. Self-review: answered - shared-context, disclosed. No improvement drift: answered - breakage only.",
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "disposition": "applied",
+            "why": "All six challenges run; operational purchase interpretation requires explicit control.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-093372d5",
+          "stepRunId": "step-86945f6c",
+          "observedAt": "2026-10-09T22:48:31.875Z",
+          "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [],
+          "evidence": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "deliverable-b0732c85",
+              "digest": null,
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "citations_present",
+              "ok": true
+            },
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "no_uncited_material_findings",
+              "ok": true
+            },
+            {
+              "validator": "deliverable_complete",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "cfdddd71e6b7ce9fdbbf002a1b973000f8fc2173eabc5d4f8f434130d87cbb50",
+          "methods": [
+            {
+              "id": "adversarial-review",
+              "version": "0.3.1",
+              "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+              "status": "reported_applied",
+              "why": "All six challenges run; operational purchase interpretation requires explicit control.",
+              "evidence": [
+                {
+                  "ref": "docs/policy.md",
+                  "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                  "provenance": "witnessed"
+                },
+                {
+                  "ref": "depot://stock/west",
+                  "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "depot://reservations/west",
+                  "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                  "provenance": "reported"
+                },
+                {
+                  "ref": "http://127.0.0.1:58676/catalog/part-19",
+                  "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                  "provenance": "reported"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:44:42.192Z",
+      "updated_at": "2026-10-09T22:48:31.875Z",
+      "finished_at": "2026-10-09T22:48:31.875Z"
+    },
+    {
+      "id": "step-3fdcbbad",
+      "run_id": "run-093372d5",
+      "step_id": "record",
+      "ordinal": 3,
+      "permission_tier": "project_write",
+      "state": "succeeded",
+      "attempts": 1,
+      "max_attempts": 1,
+      "lease_owner": null,
+      "lease_until": null,
+      "input_json": {
+        "skill": null,
+        "needsApproval": false
+      },
+      "output_json": {
+        "summary": "Recorded corrected replenishment recommendation and historical comparison in warehouse-brief.md. Net 32 individual units is below 60; gap 28 each is arithmetic only, not an order. Prior evidence hold and superseded cache explicitly distinguished. Current same-timestamp corrections, source authority, uncertainty and self-review controls documented. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+        "verdict": "Accepted with controls; self-review, not user acceptance.",
+        "artifact": "warehouse-brief.md",
+        "derivations": [
+          {
+            "value": "36",
+            "expression": "6*6"
+          },
+          {
+            "value": "32",
+            "expression": "6*6-4"
+          },
+          {
+            "value": "28",
+            "expression": "60-(6*6-4)"
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "warehouse-brief.md"
+          },
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "deliverable-b0732c85"
+          }
+        ],
+        "citedSensitivity": "confidential",
+        "citedUnclassified": [],
+        "verificationReceipt": {
+          "formatVersion": 1,
+          "runId": "run-093372d5",
+          "stepRunId": "step-3fdcbbad",
+          "observedAt": "2026-10-09T22:49:49.592Z",
+          "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [
+            {
+              "ref": "warehouse-brief.md",
+              "digest": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+              "provenance": "witnessed"
+            }
+          ],
+          "evidence": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "deliverable-b0732c85",
+              "digest": null,
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "schema",
+              "ok": true
+            }
+          ]
+        },
+        "methodReceipts": {
+          "provenance": "host_report",
+          "outputDigest": "b2b2d76272d290569abdc9468119105185b76d0637bd93ae0f5017e843ba9b3e",
+          "methods": []
+        }
+      },
+      "state_reason": null,
+      "created_at": "2026-10-09T22:44:42.192Z",
+      "updated_at": "2026-10-09T22:49:49.592Z",
+      "finished_at": "2026-10-09T22:49:49.592Z"
+    }
+  ],
+  "step_attempts": [
+    {
+      "id": 1,
+      "step_run_id": "step-20c5a39e",
+      "attempt": 1,
+      "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "started_at": "2026-10-09T22:38:31.689Z",
+      "ended_at": "2026-10-09T22:41:40.894Z",
+      "outcome": "failed",
+      "error_json": {
+        "validation": [
+          {
+            "validator": "citations_present",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "evidence_refs_resolve",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "excerpts_match",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "within_period",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "named_sources_read",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "conflicts_declared",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "deliverable_complete",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "reference_coverage",
+            "ok": false,
+            "problems": [
+              "unread reference http://127.0.0.1:58676 from README.md: read and report material evidence, or give a referenceDispositions entry {ref, status, why}"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "step_run_id": "step-20c5a39e",
+      "attempt": 2,
+      "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "started_at": "2026-10-09T22:41:46.212Z",
+      "ended_at": "2026-10-09T22:42:04.436Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 3,
+      "step_run_id": "step-526f6a96",
+      "attempt": 1,
+      "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "started_at": "2026-10-09T22:42:13.964Z",
+      "ended_at": "2026-10-09T22:42:32.885Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 4,
+      "step_run_id": "step-b84a86ee",
+      "attempt": 1,
+      "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "started_at": "2026-10-09T22:42:37.930Z",
+      "ended_at": "2026-10-09T22:42:57.629Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 5,
+      "step_run_id": "step-94938321",
+      "attempt": 1,
+      "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "started_at": "2026-10-09T22:43:09.415Z",
+      "ended_at": null,
+      "outcome": null,
+      "error_json": null
+    },
+    {
+      "id": 6,
+      "step_run_id": "step-32149669",
+      "attempt": 1,
+      "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "started_at": "2026-10-09T22:45:26.937Z",
+      "ended_at": "2026-10-09T22:47:33.443Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 7,
+      "step_run_id": "step-873b6de9",
+      "attempt": 1,
+      "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "started_at": "2026-10-09T22:47:38.563Z",
+      "ended_at": "2026-10-09T22:47:57.894Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 8,
+      "step_run_id": "step-86945f6c",
+      "attempt": 1,
+      "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "started_at": "2026-10-09T22:48:04.937Z",
+      "ended_at": "2026-10-09T22:48:31.875Z",
+      "outcome": "succeeded",
+      "error_json": null
+    },
+    {
+      "id": 9,
+      "step_run_id": "step-3fdcbbad",
+      "attempt": 1,
+      "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "started_at": "2026-10-09T22:48:45.912Z",
+      "ended_at": "2026-10-09T22:49:49.592Z",
+      "outcome": "succeeded",
+      "error_json": null
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-b0732c85",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "kind": "research/brief",
+      "body_json": {
+        "verdict": "Accepted with controls",
+        "summary": "VERDICT: Accepted with controls. Self-review, not independent review or user acceptance. Steelman: the brief correctly follows the explicit unknown-unit hold rule and avoids fabricating a threshold comparison. It can finish the assessment without pretending the later replenishment decision is ready.",
+        "findings": [
+          {
+            "severity": "serious",
+            "failure": "A reader treats hold as adequate inventory and delays needed supply.",
+            "evidence": "Unknown conversion and reservation unit leave shortage possible. [cite: docs/policy.md] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+            "smallestFix": "State prominently that need remains undetermined; hold is not hold-steady or proof of sufficiency.",
+            "disposition": "fixed in final brief"
+          },
+          {
+            "severity": "minor",
+            "failure": "Reader generalizes PART-19 evidence to every West SKU or completed end-of-day state.",
+            "evidence": "Stock record is scoped to PART-19. [cite: depot://stock/west]",
+            "smallestFix": "Limit conclusion to observed records; disclose incomplete depot-wide and end-of-day coverage.",
+            "disposition": "fixed in final brief"
+          }
+        ],
+        "challenges": {
+          "strongestFailure": "Hypothetical shortage occurs while hold is misread as no need; require explicit unknown-status label.",
+          "bestAlternative": "Compute from operator six-per-case and legacy each. Rejected: both current unit premises lack authority. [cite: depot://chat/staffing] [cite: depot://reservations/west]",
+          "claimsAudit": "Available 12 cases, reserved 4 unit unknown, threshold 60 individual units verified in cited records; no computed net or gap. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: docs/policy.md]",
+          "assumptionInversion": "If reservations are cases rather than each, subtraction changes; if actual packaging differs from six, net changes. Neither is assumed; both hypotheses remain live.",
+          "costBearers": "Hypothetically, depot staff and customers bear delay/stockout costs; purchasing bears excess-stock cost of unsupported orders. No cost magnitude established.",
+          "hostileExpert": "Cannot subtract untyped reservation quantity from case stock; cannot treat catalog unit each as conversion. Current recommendation survives only as an evidence hold."
+        },
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "disposition": "applied",
+            "why": "Self-review ran all challenges; uncertainty and coverage controls required.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          }
+        ],
+        "sensitivity": "confidential",
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 2,
+          "reported": 6,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "period": {
+          "semantics": "as_of",
+          "from": null,
+          "to": "2026-10-09",
+          "timezone": "America/New_York",
+          "how": "relative",
+          "relative": "today",
+          "resolvedAt": "2026-10-09T22:38:26.969Z",
+          "endsAfterToday": false,
+          "assumptions": [
+            "dates are in America/New_York",
+            "as_of keeps only the end date"
+          ],
+          "coverage": {
+            "inside": [
+              "depot://stock/west",
+              "depot://reservations/west",
+              "depot://chat/staffing",
+              "depot://catalog/part-19"
+            ],
+            "before": [],
+            "after": [],
+            "undated": [
+              "docs/policy.md",
+              "http://127.0.0.1:58676/catalog/part-19",
+              "README.md",
+              "http://127.0.0.1:58676/openapi.json"
+            ],
+            "acknowledged": []
+          }
+        }
+      },
+      "trust_state": "challenged",
+      "verification_json": {
+        "challenge": {
+          "objections": [
+            {
+              "objection": "Hold may be mistaken for stock sufficiency; final text must explicitly say need is undetermined.",
+              "disposition": "fixed"
+            },
+            {
+              "objection": "Single-SKU morning records do not establish depot-wide end-of-day sufficiency; final text must limit scope.",
+              "disposition": "fixed"
+            }
+          ],
+          "by": "model via codex",
+          "session": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+          "sameSessionAsRun": true
+        }
+      },
+      "created_at": "2026-10-09T22:42:57.629Z",
+      "updated_at": "2026-10-09T22:43:04.395Z"
+    },
+    {
+      "id": "deliverable-a79ff911",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "kind": "research/brief",
+      "body_json": {
+        "verdict": "Accepted with controls",
+        "summary": "VERDICT: Accepted with controls. Shared-context self-review, not independent review or user acceptance. Steelman: authoritative corrected counts and typed units allow the policy calculation that the prior review could not support. The recommendation is sound as a replenishment trigger, not a purchase order. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+        "findings": [
+          {
+            "severity": "serious",
+            "failure": "Purchasing interprets the threshold gap as an executable order and ignores unverified supplier constraints.",
+            "evidence": "Policy establishes trigger, not purchasing terms. [cite: docs/policy.md]",
+            "smallestFix": "Explicitly distinguish arithmetic gap from order quantity; no order placement.",
+            "disposition": "retain as explicit control in final brief"
+          }
+        ],
+        "challenges": {
+          "strongestFailure": "Buyer orders exact gap without terms; control is arithmetic-only gap and explicit no-order status.",
+          "bestAlternative": "Retain hold due unchanged timestamp. Rejected: current corrected bytes, explicit each reservation unit and lot-specific conversion resolve original blockers. Cache hold-steady alternative is superseded. [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19] [cite: docs/cached.json]",
+          "claimsAudit": "Validated arithmetic locally: 6*6=36; 36-4=32; 60-32=28; exactly 60 holds. Inputs checked against cited records, not operator assertion. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19]",
+          "assumptionInversion": "If upstream stock or lot applicability is wrong, conclusion changes; no independent physical count. API explicitly scopes authority to current lot, so no inferred universal packaging rule.",
+          "costBearers": "Hypothetically purchasing bears excess-stock costs and depot customers bear shortage costs; amounts unknown.",
+          "hostileExpert": "Threshold gap is not order target/lot size; scope is one SKU at read time, not a full depot census or future end-of-day assurance."
+        },
+        "verificationRecord": "Steelman stated: answered - 'authoritative corrected counts and typed units'. All six run: answered - finding from strongest failure, alternative and hostile expert checked. Findings concrete: answered - one serious finding, no fatal/minor findings. VERDICT: accepted with controls. Self-review: answered - shared-context, disclosed. No improvement drift: answered - breakage only.",
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "disposition": "applied",
+            "why": "All six challenges run; operational purchase interpretation requires explicit control.",
+            "evidence": [
+              "docs/policy.md",
+              "depot://stock/west",
+              "depot://reservations/west",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          }
+        ],
+        "sensitivity": "confidential",
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 3,
+          "reported": 5,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "period": {
+          "semantics": "as_of",
+          "from": null,
+          "to": "2026-10-09",
+          "timezone": "America/New_York",
+          "how": "relative",
+          "relative": "today",
+          "resolvedAt": "2026-10-09T22:44:42.192Z",
+          "endsAfterToday": false,
+          "assumptions": [
+            "dates are in America/New_York",
+            "as_of keeps only the end date"
+          ],
+          "coverage": {
+            "inside": [
+              "depot://stock/west",
+              "depot://reservations/west",
+              "depot://catalog/part-19",
+              "depot://chat/staffing"
+            ],
+            "before": [],
+            "after": [],
+            "undated": [
+              "docs/policy.md",
+              "docs/cached.json",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ],
+            "acknowledged": []
+          }
+        }
+      },
+      "trust_state": "challenged",
+      "verification_json": {
+        "challenge": {
+          "objections": [
+            {
+              "objection": "Threshold gap could be mistaken for an executable order; final brief must distinguish arithmetic gap from supplier terms and explicitly prohibit implied order placement.",
+              "disposition": "fixed"
+            }
+          ],
+          "by": "model via codex",
+          "session": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "sameSessionAsRun": true
+        }
+      },
+      "created_at": "2026-10-09T22:48:31.875Z",
+      "updated_at": "2026-10-09T22:48:38.890Z"
+    },
+    {
+      "id": "deliverable-ea95d952",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "kind": "research/brief",
+      "body_json": {
+        "summary": "Recommend replenishment for West PART-19: inferred net stock is 32 each, below 60; threshold gap is 28 each. This replaces the prior hold pending clarification. [cite: docs/policy.md] [cite: depot://stock/west] [cite: depot://reservations/west] [cite: http://127.0.0.1:58676/catalog/part-19] [cite: deliverable-b0732c85]",
+        "verdict": "Accepted with controls",
+        "artifact": "warehouse-brief.md",
+        "derivations": [
+          {
+            "value": "36",
+            "expression": "6*6"
+          },
+          {
+            "value": "32",
+            "expression": "6*6-4"
+          },
+          {
+            "value": "28",
+            "expression": "60-(6*6-4)"
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "warehouse-brief.md"
+          },
+          {
+            "ref": "docs/policy.md"
+          },
+          {
+            "ref": "docs/cached.json"
+          },
+          {
+            "ref": "depot://stock/west"
+          },
+          {
+            "ref": "depot://reservations/west"
+          },
+          {
+            "ref": "depot://catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "depot://chat/staffing"
+          },
+          {
+            "ref": "deliverable-b0732c85"
+          }
+        ],
+        "sensitivity": "confidential",
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 4,
+          "reported": 5,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "period": {
+          "semantics": "as_of",
+          "from": null,
+          "to": "2026-10-09",
+          "timezone": "America/New_York",
+          "how": "relative",
+          "relative": "today",
+          "resolvedAt": "2026-10-09T22:44:42.192Z",
+          "endsAfterToday": false,
+          "assumptions": [
+            "dates are in America/New_York",
+            "as_of keeps only the end date"
+          ],
+          "coverage": {
+            "inside": [
+              "depot://stock/west",
+              "depot://reservations/west",
+              "depot://catalog/part-19",
+              "depot://chat/staffing"
+            ],
+            "before": [],
+            "after": [],
+            "undated": [
+              "warehouse-brief.md",
+              "docs/policy.md",
+              "docs/cached.json",
+              "http://127.0.0.1:58676/catalog/part-19"
+            ],
+            "acknowledged": []
+          }
+        }
+      },
+      "trust_state": "validated",
+      "verification_json": {
+        "validators": [
+          {
+            "validator": "schema",
+            "ok": true,
+            "problems": []
+          }
+        ],
+        "receipt": {
+          "formatVersion": 1,
+          "runId": "run-093372d5",
+          "stepRunId": "step-3fdcbbad",
+          "observedAt": "2026-10-09T22:49:49.592Z",
+          "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [
+            {
+              "ref": "warehouse-brief.md",
+              "digest": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+              "provenance": "witnessed"
+            }
+          ],
+          "evidence": [
+            {
+              "ref": "docs/policy.md",
+              "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/cached.json",
+              "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "depot://stock/west",
+              "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://reservations/west",
+              "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://catalog/part-19",
+              "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+              "provenance": "reported"
+            },
+            {
+              "ref": "http://127.0.0.1:58676/catalog/part-19",
+              "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+              "provenance": "reported"
+            },
+            {
+              "ref": "depot://chat/staffing",
+              "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+              "provenance": "reported"
+            },
+            {
+              "ref": "deliverable-b0732c85",
+              "digest": null,
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "schema",
+              "ok": true
+            }
+          ]
+        },
+        "assurance": "structural",
+        "executionVerified": false,
+        "semanticSupportVerified": false,
+        "challengeRequired": true,
+        "evidence": {
+          "witnessed": 4,
+          "reported": 5,
+          "unverified": 0,
+          "unresolved": 0
+        }
+      },
+      "created_at": "2026-10-09T22:49:49.592Z",
+      "updated_at": "2026-10-09T22:49:49.592Z"
+    }
+  ],
+  "run_bindings": [
+    {
+      "run_id": "run-5fb9fb1e",
+      "workflow_id": "research-brief",
+      "workflow_version": "1.1.1",
+      "workflow_digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+      "skill_bindings_json": [
+        {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        {
+          "id": "adversarial-review",
+          "version": "0.3.1",
+          "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc"
+        },
+        null
+      ],
+      "policy_digest": null,
+      "frozen_at": "2026-10-09T22:38:26.969Z"
+    },
+    {
+      "run_id": "run-093372d5",
+      "workflow_id": "research-brief",
+      "workflow_version": "1.1.1",
+      "workflow_digest": "sha256:22011379c10a6213ccd6b7e7d4853a44c7cf018926ba37dbdcbaa025f6af46c3",
+      "skill_bindings_json": [
+        {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        {
+          "id": "investigative-research",
+          "version": "0.3.3",
+          "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+        },
+        {
+          "id": "adversarial-review",
+          "version": "0.3.1",
+          "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc"
+        },
+        null
+      ],
+      "policy_digest": null,
+      "frozen_at": "2026-10-09T22:44:42.192Z"
+    }
+  ],
+  "resolved_skills": [
+    {
+      "skill_id": "investigative-research",
+      "version": "0.3.3",
+      "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+      "origin": "builtin",
+      "resolved_at": "2026-10-09T22:47:38.563Z"
+    },
+    {
+      "skill_id": "adversarial-review",
+      "version": "0.3.1",
+      "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+      "origin": "builtin",
+      "resolved_at": "2026-10-09T22:48:04.937Z"
+    }
+  ],
+  "work_items": [
+    {
+      "id": "work-run-5fb9fb1e-delivery",
+      "kind": "task",
+      "title": "Deliver warehouse-brief.md",
+      "description": "Coordinate the requested local artifact of managed run run-5fb9fb1e. This does not admit a statement or grant any additional action tier.",
+      "status": "open",
+      "scope_json": {
+        "kind": "managed_delivery",
+        "runId": "run-5fb9fb1e",
+        "path": "warehouse-brief.md"
+      },
+      "premises_json": null,
+      "acceptance_json": [
+        "The existing managed run succeeds with its requested local artifact held and verified at its actual assurance level."
+      ],
+      "risk_json": null,
+      "entity_id": "ent-work-run-5fb9fb1e-delivery",
+      "parent_id": null,
+      "superseded_by": null,
+      "revision": 8,
+      "claim_owner": null,
+      "claim_until": null,
+      "created_at": "2026-10-09T22:38:31.694Z",
+      "updated_at": "2026-10-09T22:45:18.188Z",
+      "completed_at": null,
+      "reason": null,
+      "claim_session": null,
+      "claim_agent": null,
+      "claim_lane": null,
+      "claim_touched_at": "2026-10-09T22:45:11.574Z",
+      "handoff_json": null
+    },
+    {
+      "id": "work-run-093372d5-delivery",
+      "kind": "task",
+      "title": "Deliver warehouse-brief.md",
+      "description": "Coordinate the requested local artifact of managed run run-093372d5. This does not admit a statement or grant any additional action tier.",
+      "status": "completed",
+      "scope_json": {
+        "kind": "managed_delivery",
+        "runId": "run-093372d5",
+        "path": "warehouse-brief.md"
+      },
+      "premises_json": null,
+      "acceptance_json": [
+        "The existing managed run succeeds with its requested local artifact held and verified at its actual assurance level."
+      ],
+      "risk_json": null,
+      "entity_id": "ent-work-run-093372d5-delivery",
+      "parent_id": null,
+      "superseded_by": null,
+      "revision": 6,
+      "claim_owner": null,
+      "claim_until": null,
+      "created_at": "2026-10-09T22:45:26.942Z",
+      "updated_at": "2026-10-09T22:49:49.602Z",
+      "completed_at": "2026-10-09T22:49:49.602Z",
+      "reason": "The managed run completed its required checks and requested artifact. This records delivery, not human acceptance or universal semantic verification.",
+      "claim_session": null,
+      "claim_agent": null,
+      "claim_lane": null,
+      "claim_touched_at": "2026-10-09T22:48:45.921Z",
+      "handoff_json": null
+    }
+  ],
+  "work_events": [
+    {
+      "id": 1,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "created",
+      "actor": "kernel",
+      "expected_revision": 1,
+      "payload_json": {
+        "kind": "task",
+        "status": "open"
+      }
+    },
+    {
+      "id": 2,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "claimed",
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "expected_revision": 2,
+      "payload_json": {
+        "until": "2026-10-09T23:08:31.689Z",
+        "session": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "agent": "main",
+        "lane": null
+      }
+    },
+    {
+      "id": 3,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:41:46.214Z",
+      "kind": "renewed",
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "expected_revision": 3,
+      "payload_json": {
+        "until": "2026-10-09T23:11:46.212Z"
+      }
+    },
+    {
+      "id": 4,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:42:13.969Z",
+      "kind": "renewed",
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "expected_revision": 4,
+      "payload_json": {
+        "until": "2026-10-09T23:12:13.964Z"
+      }
+    },
+    {
+      "id": 5,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:42:37.935Z",
+      "kind": "renewed",
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "expected_revision": 5,
+      "payload_json": {
+        "until": "2026-10-09T23:12:37.930Z"
+      }
+    },
+    {
+      "id": 6,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:43:09.422Z",
+      "kind": "renewed",
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "expected_revision": 6,
+      "payload_json": {
+        "until": "2026-10-09T23:13:09.415Z"
+      }
+    },
+    {
+      "id": 7,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:45:11.574Z",
+      "kind": "taken_over",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 7,
+      "payload_json": {
+        "from": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+        "reason": "User requests corrected-source recheck. Original holder is absent from the complete current sessions listing; recover its unfinished artifact reservation."
+      }
+    },
+    {
+      "id": 8,
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "at": "2026-10-09T22:45:18.188Z",
+      "kind": "released",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 8,
+      "payload_json": {}
+    },
+    {
+      "id": 9,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "created",
+      "actor": "kernel",
+      "expected_revision": 1,
+      "payload_json": {
+        "kind": "task",
+        "status": "open"
+      }
+    },
+    {
+      "id": 10,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "claimed",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 2,
+      "payload_json": {
+        "until": "2026-10-09T23:15:26.937Z",
+        "session": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "agent": "main",
+        "lane": null
+      }
+    },
+    {
+      "id": 11,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:47:38.572Z",
+      "kind": "renewed",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 3,
+      "payload_json": {
+        "until": "2026-10-09T23:17:38.563Z"
+      }
+    },
+    {
+      "id": 12,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:48:04.947Z",
+      "kind": "renewed",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 4,
+      "payload_json": {
+        "until": "2026-10-09T23:18:04.937Z"
+      }
+    },
+    {
+      "id": 13,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:48:45.921Z",
+      "kind": "renewed",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 5,
+      "payload_json": {
+        "until": "2026-10-09T23:18:45.912Z"
+      }
+    },
+    {
+      "id": 14,
+      "work_id": "work-run-093372d5-delivery",
+      "at": "2026-10-09T22:49:49.602Z",
+      "kind": "completed",
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "expected_revision": 6,
+      "payload_json": {
+        "reason": "The managed run completed its required checks and requested artifact. This records delivery, not human acceptance or universal semantic verification."
+      }
+    }
+  ],
+  "work_runs": [
+    {
+      "work_id": "work-run-5fb9fb1e-delivery",
+      "run_id": "run-5fb9fb1e",
+      "role": "implements",
+      "created_at": "2026-10-09T22:38:31.694Z"
+    },
+    {
+      "work_id": "work-run-093372d5-delivery",
+      "run_id": "run-093372d5",
+      "role": "implements",
+      "created_at": "2026-10-09T22:45:26.942Z"
+    }
+  ],
+  "activity_events": [
+    {
+      "id": 1,
+      "at": "2026-10-09T22:37:25.835Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-e1e3e2b2",
+        "kind": "clarification"
+      },
+      "session_id": null,
+      "agent": null,
+      "channel": null
+    },
+    {
+      "id": 2,
+      "at": "2026-10-09T22:37:25.835Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-588f47a6",
+        "kind": "clarification"
+      },
+      "session_id": null,
+      "agent": null,
+      "channel": null
+    },
+    {
+      "id": 3,
+      "at": "2026-10-09T22:37:25.835Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-47066df0",
+        "kind": "clarification"
+      },
+      "session_id": null,
+      "agent": null,
+      "channel": null
+    },
+    {
+      "id": 4,
+      "at": "2026-10-09T22:37:48.892Z",
+      "kind": "answer.checked",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "ok": true,
+        "problems": 0,
+        "citations": 1
+      },
+      "session_id": "ses_1c4f150e-94a0-4384-9a55-9c331df752d9",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 5,
+      "at": "2026-10-09T22:38:26.969Z",
+      "kind": "run.created",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "workflowId": "research-brief",
+        "workflowVersion": "1.1.1"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 6,
+      "at": "2026-10-09T22:38:26.969Z",
+      "kind": "run.transition",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "from": "preflight",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 7,
+      "at": "2026-10-09T22:38:31.689Z",
+      "kind": "step.leased",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:08:31.689Z"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 8,
+      "at": "2026-10-09T22:38:31.689Z",
+      "kind": "skill.assigned",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "id": "investigative-research",
+        "version": "0.3.3",
+        "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 9,
+      "at": "2026-10-09T22:38:31.689Z",
+      "kind": "run.transition",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "from": "ready",
+        "to": "running",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 10,
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "step.session_bound",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+        "attempt": 1,
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 11,
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "work.created",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "kernel",
+      "payload_json": {
+        "workId": "work-run-5fb9fb1e-delivery"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 12,
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "work.admitted",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": "kernel",
+      "payload_json": {
+        "workId": "work-run-5fb9fb1e-delivery",
+        "basis": "existing_managed_run",
+        "path": "warehouse-brief.md"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 13,
+      "at": "2026-10-09T22:38:31.694Z",
+      "kind": "work.claimed",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+      "payload_json": {
+        "workId": "work-run-5fb9fb1e-delivery",
+        "until": "2026-10-09T23:08:31.689Z",
+        "paths": [
+          "warehouse-brief.md"
+        ]
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 14,
+      "at": "2026-10-09T22:39:58.632Z",
+      "kind": "source.declared",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "sourceId": "inventory",
+        "kind": "other",
+        "by": "relayed"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 15,
+      "at": "2026-10-09T22:40:16.376Z",
+      "kind": "source.declared",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "sourceId": "operations",
+        "kind": "other",
+        "by": "relayed"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 16,
+      "at": "2026-10-09T22:40:30.773Z",
+      "kind": "source.declared",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "sourceId": "catalog",
+        "kind": "other",
+        "by": "relayed"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 17,
+      "at": "2026-10-09T22:40:55.830Z",
+      "kind": "source.declared",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "sourceId": "conversations",
+        "kind": "other",
+        "by": "relayed"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 18,
+      "at": "2026-10-09T22:41:09.928Z",
+      "kind": "source.declared",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "model via codex",
+      "payload_json": {
+        "sourceId": "supplier",
+        "kind": "other",
+        "by": "relayed"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 19,
+      "at": "2026-10-09T22:41:40.894Z",
+      "kind": "step.retry_scheduled",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 1,
+        "reason": "reference_coverage: unread reference http://127.0.0.1:58676 from README.md: read and report material evidence, or give a referenceDispositions entry {ref, status, why}"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 20,
+      "at": "2026-10-09T22:41:40.894Z",
+      "kind": "step.validation_failed",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "gather",
+        "failures": [
+          "reference_coverage"
+        ]
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 21,
+      "at": "2026-10-09T22:41:46.212Z",
+      "kind": "step.leased",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 2,
+        "leaseUntil": "2026-10-09T23:11:46.212Z"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 22,
+      "at": "2026-10-09T22:41:46.212Z",
+      "kind": "skill.assigned",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "id": "investigative-research",
+        "version": "0.3.3",
+        "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 23,
+      "at": "2026-10-09T22:41:46.214Z",
+      "kind": "step.session_bound",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+        "attempt": 2,
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 24,
+      "at": "2026-10-09T22:42:04.436Z",
+      "kind": "step.succeeded",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 2,
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 25,
+      "at": "2026-10-09T22:42:04.436Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-20c5a39e",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "investigative-research",
+            "version": "0.3.3",
+            "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+            "status": "reported_applied",
+            "why": "Primary records read, linked API and schema checked, rival six-per-case explanation tested without assuming unknown units.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                "provenance": "reported"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 26,
+      "at": "2026-10-09T22:42:04.436Z",
+      "kind": "step.transition",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": null,
+      "payload_json": {
+        "stepId": "synthesize",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 27,
+      "at": "2026-10-09T22:42:13.964Z",
+      "kind": "step.leased",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "synthesize",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:12:13.964Z"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 28,
+      "at": "2026-10-09T22:42:13.964Z",
+      "kind": "skill.assigned",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "id": "investigative-research",
+        "version": "0.3.3",
+        "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 29,
+      "at": "2026-10-09T22:42:13.969Z",
+      "kind": "step.session_bound",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+        "attempt": 1,
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 30,
+      "at": "2026-10-09T22:42:32.885Z",
+      "kind": "step.succeeded",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "synthesize",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 31,
+      "at": "2026-10-09T22:42:32.885Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-526f6a96",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "investigative-research",
+            "version": "0.3.3",
+            "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+            "status": "reported_applied",
+            "why": "Explicit facts/inference, units and threshold boundaries, rival hypotheses and limits.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                "provenance": "reported"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 32,
+      "at": "2026-10-09T22:42:32.885Z",
+      "kind": "step.transition",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": null,
+      "payload_json": {
+        "stepId": "challenge",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 33,
+      "at": "2026-10-09T22:42:37.930Z",
+      "kind": "step.leased",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "challenge",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:12:37.930Z"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 34,
+      "at": "2026-10-09T22:42:37.930Z",
+      "kind": "skill.assigned",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "id": "adversarial-review",
+        "version": "0.3.1",
+        "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 35,
+      "at": "2026-10-09T22:42:37.935Z",
+      "kind": "step.session_bound",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+        "attempt": 1,
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 36,
+      "at": "2026-10-09T22:42:57.629Z",
+      "kind": "step.succeeded",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "challenge",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 37,
+      "at": "2026-10-09T22:42:57.629Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "version": "0.3.1",
+            "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+            "status": "reported_applied",
+            "why": "Self-review ran all challenges; uncertainty and coverage controls required.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "7da3e1855b56b1c8d458b3f8a631a05b4ac08dafca7e240ff3ce366b1515bf25",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "fae9271cb883220c50b587adc1fe3e14243721ab3772afb6bba7ff8dff74b186",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+                "provenance": "reported"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 38,
+      "at": "2026-10-09T22:42:57.629Z",
+      "kind": "deliverable.drafted",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": null,
+      "payload_json": {
+        "deliverableId": "deliverable-b0732c85",
+        "kind": "research/brief"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 39,
+      "at": "2026-10-09T22:42:57.629Z",
+      "kind": "step.transition",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-94938321",
+      "actor": null,
+      "payload_json": {
+        "stepId": "record",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 40,
+      "at": "2026-10-09T22:43:04.395Z",
+      "kind": "deliverable.trust",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-b84a86ee",
+      "actor": "model via codex",
+      "payload_json": {
+        "deliverableId": "deliverable-b0732c85",
+        "from": "draft",
+        "to": "challenged",
+        "reason": null
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 41,
+      "at": "2026-10-09T22:43:09.415Z",
+      "kind": "step.leased",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-94938321",
+      "actor": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+      "payload_json": {
+        "stepId": "record",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:13:09.415Z"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 42,
+      "at": "2026-10-09T22:43:09.422Z",
+      "kind": "step.session_bound",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": "step-94938321",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_15057578-07d7-432f-8670-4fa58348940b",
+        "attempt": 1,
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b"
+      },
+      "session_id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 43,
+      "at": "2026-10-09T22:44:42.192Z",
+      "kind": "run.created",
+      "run_id": "run-093372d5",
+      "step_run_id": null,
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "workflowId": "research-brief",
+        "workflowVersion": "1.1.1"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 44,
+      "at": "2026-10-09T22:44:42.192Z",
+      "kind": "run.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "from": "preflight",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 45,
+      "at": "2026-10-09T22:45:11.574Z",
+      "kind": "work.taken_over",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "payload_json": {
+        "workId": "work-run-5fb9fb1e-delivery",
+        "from": "ses_15057578-07d7-432f-8670-4fa58348940b/main",
+        "reason": "User requests corrected-source recheck. Original holder is absent from the complete current sessions listing; recover its unfinished artifact reservation."
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": "main",
+      "channel": "relay"
+    },
+    {
+      "id": 46,
+      "at": "2026-10-09T22:45:26.937Z",
+      "kind": "step.leased",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-32149669",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:15:26.937Z"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 47,
+      "at": "2026-10-09T22:45:26.937Z",
+      "kind": "skill.assigned",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-32149669",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "id": "investigative-research",
+        "version": "0.3.3",
+        "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 48,
+      "at": "2026-10-09T22:45:26.937Z",
+      "kind": "run.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "from": "ready",
+        "to": "running",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 49,
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "step.session_bound",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-32149669",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "attempt": 1,
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 50,
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "work.created",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "kernel",
+      "payload_json": {
+        "workId": "work-run-093372d5-delivery"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 51,
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "work.admitted",
+      "run_id": "run-093372d5",
+      "step_run_id": null,
+      "actor": "kernel",
+      "payload_json": {
+        "workId": "work-run-093372d5-delivery",
+        "basis": "existing_managed_run",
+        "path": "warehouse-brief.md"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 52,
+      "at": "2026-10-09T22:45:26.942Z",
+      "kind": "work.claimed",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "payload_json": {
+        "workId": "work-run-093372d5-delivery",
+        "until": "2026-10-09T23:15:26.937Z",
+        "paths": [
+          "warehouse-brief.md"
+        ]
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 53,
+      "at": "2026-10-09T22:46:31.389Z",
+      "kind": "drift.found",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "findingId": "drift-snap-381cd18b",
+        "kind": "stale_dependent_claims",
+        "confidence": 0.9
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 54,
+      "at": "2026-10-09T22:46:31.389Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-snap-984c9147",
+        "kind": "decision"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 55,
+      "at": "2026-10-09T22:46:37.729Z",
+      "kind": "drift.found",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "findingId": "drift-snap-81b3806e",
+        "kind": "stale_dependent_claims",
+        "confidence": 0.9
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 56,
+      "at": "2026-10-09T22:46:37.729Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-snap-97a03f00",
+        "kind": "decision"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 57,
+      "at": "2026-10-09T22:46:47.904Z",
+      "kind": "drift.found",
+      "run_id": "run-5fb9fb1e",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "findingId": "drift-snap-5361b996",
+        "kind": "stale_dependent_claims",
+        "confidence": 0.9
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 58,
+      "at": "2026-10-09T22:46:47.904Z",
+      "kind": "decision.raised",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "decisionId": "q-snap-0f002a23",
+        "kind": "decision"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 59,
+      "at": "2026-10-09T22:47:33.443Z",
+      "kind": "step.succeeded",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-32149669",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "gather",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 60,
+      "at": "2026-10-09T22:47:33.443Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-32149669",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "investigative-research",
+            "version": "0.3.3",
+            "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+            "status": "reported_applied",
+            "why": "Compared current primary records to historical assessment/cache; tested hold-steady rival via current counts and unknown-units rival via explicit definitions. Both rivals fail under corrected records. All material current links fetched; read-only scope retained.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "docs/cached.json",
+                "digest": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://catalog/part-19",
+                "digest": "ece60cbb23c6bbc858252b58207d9d5206ceda552ea6abb1f1e0d72435cf335c",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://chat/staffing",
+                "digest": "17837dd29c0c4ae8356865de56f92635080c3229a9fc103571b09ef5dffc54f6",
+                "provenance": "reported"
+              },
+              {
+                "ref": "deliverable-b0732c85",
+                "digest": null,
+                "provenance": "witnessed"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 61,
+      "at": "2026-10-09T22:47:33.443Z",
+      "kind": "step.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": null,
+      "payload_json": {
+        "stepId": "synthesize",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 62,
+      "at": "2026-10-09T22:47:38.563Z",
+      "kind": "step.leased",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "synthesize",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:17:38.563Z"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 63,
+      "at": "2026-10-09T22:47:38.563Z",
+      "kind": "skill.assigned",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "id": "investigative-research",
+        "version": "0.3.3",
+        "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 64,
+      "at": "2026-10-09T22:47:38.572Z",
+      "kind": "step.session_bound",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "attempt": 1,
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 65,
+      "at": "2026-10-09T22:47:57.894Z",
+      "kind": "step.succeeded",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "synthesize",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 66,
+      "at": "2026-10-09T22:47:57.894Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-873b6de9",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "investigative-research",
+            "version": "0.3.3",
+            "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1",
+            "status": "reported_applied",
+            "why": "Resolved conflicting cache and prior assessment using corrected content and explicit unit authority; maintained scope and single-source limitations.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                "provenance": "reported"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 67,
+      "at": "2026-10-09T22:47:57.894Z",
+      "kind": "step.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": null,
+      "payload_json": {
+        "stepId": "challenge",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 68,
+      "at": "2026-10-09T22:48:04.937Z",
+      "kind": "step.leased",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "challenge",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:18:04.937Z"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 69,
+      "at": "2026-10-09T22:48:04.937Z",
+      "kind": "skill.assigned",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "id": "adversarial-review",
+        "version": "0.3.1",
+        "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+        "basis": "frozen workflow binding; application is not established"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 70,
+      "at": "2026-10-09T22:48:04.947Z",
+      "kind": "step.session_bound",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "attempt": 1,
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 71,
+      "at": "2026-10-09T22:48:31.875Z",
+      "kind": "step.succeeded",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "challenge",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 72,
+      "at": "2026-10-09T22:48:31.875Z",
+      "kind": "skill.application_reported",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "methods": [
+          {
+            "id": "adversarial-review",
+            "version": "0.3.1",
+            "digest": "sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc",
+            "status": "reported_applied",
+            "why": "All six challenges run; operational purchase interpretation requires explicit control.",
+            "evidence": [
+              {
+                "ref": "docs/policy.md",
+                "digest": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+                "provenance": "witnessed"
+              },
+              {
+                "ref": "depot://stock/west",
+                "digest": "0a3f63170ec01b2a0555b947230ab4b4825c82c688328e69ee2a16d032b0914e",
+                "provenance": "reported"
+              },
+              {
+                "ref": "depot://reservations/west",
+                "digest": "f68251508571a5c582eaadde64088b873a909bcc84dc3dadd5e57f2d949bfa71",
+                "provenance": "reported"
+              },
+              {
+                "ref": "http://127.0.0.1:58676/catalog/part-19",
+                "digest": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+                "provenance": "reported"
+              }
+            ]
+          }
+        ],
+        "assurance": "reported; not independently execution-verified"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 73,
+      "at": "2026-10-09T22:48:31.875Z",
+      "kind": "deliverable.drafted",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": null,
+      "payload_json": {
+        "deliverableId": "deliverable-a79ff911",
+        "kind": "research/brief"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 74,
+      "at": "2026-10-09T22:48:31.875Z",
+      "kind": "step.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": null,
+      "payload_json": {
+        "stepId": "record",
+        "from": "pending",
+        "to": "ready",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 75,
+      "at": "2026-10-09T22:48:38.890Z",
+      "kind": "deliverable.trust",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-86945f6c",
+      "actor": "model via codex",
+      "payload_json": {
+        "deliverableId": "deliverable-a79ff911",
+        "from": "draft",
+        "to": "challenged",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 76,
+      "at": "2026-10-09T22:48:45.912Z",
+      "kind": "step.leased",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "record",
+        "attempt": 1,
+        "leaseUntil": "2026-10-09T23:18:45.912Z"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 77,
+      "at": "2026-10-09T22:48:45.921Z",
+      "kind": "step.session_bound",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": "kernel",
+      "payload_json": {
+        "owner": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "attempt": 1,
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 78,
+      "at": "2026-10-09T22:49:49.592Z",
+      "kind": "step.succeeded",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": "session:codex:ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "payload_json": {
+        "stepId": "record",
+        "attempt": 1,
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 79,
+      "at": "2026-10-09T22:49:49.592Z",
+      "kind": "deliverable.drafted",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": null,
+      "payload_json": {
+        "deliverableId": "deliverable-ea95d952",
+        "kind": "research/brief"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 80,
+      "at": "2026-10-09T22:49:49.592Z",
+      "kind": "deliverable.trust",
+      "run_id": "run-093372d5",
+      "step_run_id": "step-3fdcbbad",
+      "actor": "validators:schema",
+      "payload_json": {
+        "deliverableId": "deliverable-ea95d952",
+        "from": "draft",
+        "to": "validated",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 81,
+      "at": "2026-10-09T22:49:49.592Z",
+      "kind": "run.transition",
+      "run_id": "run-093372d5",
+      "step_run_id": null,
+      "actor": null,
+      "payload_json": {
+        "from": "running",
+        "to": "succeeded",
+        "reason": null
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    },
+    {
+      "id": 82,
+      "at": "2026-10-09T22:49:49.602Z",
+      "kind": "work.completed",
+      "run_id": null,
+      "step_run_id": null,
+      "actor": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb/main",
+      "payload_json": {
+        "workId": "work-run-093372d5-delivery"
+      },
+      "session_id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "agent": null,
+      "channel": "relay"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "ses_1c4f150e-94a0-4384-9a55-9c331df752d9",
+      "host": "codex",
+      "surface": "interactive",
+      "host_session_id": null,
+      "host_session_source": null,
+      "client_name": "codex-mcp-client",
+      "client_version": "0.145.0",
+      "model": null,
+      "model_source": null,
+      "pid": 12512,
+      "serve_version": "3.0.0-alpha.26",
+      "lane_root": null,
+      "branch": null,
+      "head": null,
+      "started_at": "2026-10-09T22:37:26.199Z",
+      "last_seen_at": "2026-10-09T22:37:55.380Z",
+      "ended_at": "2026-10-09T22:37:55.380Z",
+      "end_reason": "the host closed the connection",
+      "activity_cursor": 4
+    },
+    {
+      "id": "ses_15057578-07d7-432f-8670-4fa58348940b",
+      "host": "codex",
+      "surface": "interactive",
+      "host_session_id": null,
+      "host_session_source": null,
+      "client_name": "codex-mcp-client",
+      "client_version": "0.145.0",
+      "model": null,
+      "model_source": null,
+      "pid": 13556,
+      "serve_version": "3.0.0-alpha.26",
+      "lane_root": null,
+      "branch": null,
+      "head": null,
+      "started_at": "2026-10-09T22:37:56.043Z",
+      "last_seen_at": "2026-10-09T22:43:55.655Z",
+      "ended_at": "2026-10-09T22:43:55.655Z",
+      "end_reason": "the host closed the connection",
+      "activity_cursor": 42
+    },
+    {
+      "id": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+      "host": "codex",
+      "surface": "interactive",
+      "host_session_id": null,
+      "host_session_source": null,
+      "client_name": "codex-mcp-client",
+      "client_version": "0.145.0",
+      "model": null,
+      "model_source": null,
+      "pid": 17000,
+      "serve_version": "3.0.0-alpha.26",
+      "lane_root": null,
+      "branch": null,
+      "head": null,
+      "started_at": "2026-10-09T22:43:55.995Z",
+      "last_seen_at": "2026-10-09T22:49:55.679Z",
+      "ended_at": "2026-10-09T22:49:55.679Z",
+      "end_reason": "the host closed the connection",
+      "activity_cursor": 82
+    }
+  ]
+}

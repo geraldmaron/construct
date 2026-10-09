@@ -47,3 +47,14 @@ Focused tests:16 pass; complete gate:992 pass/0 fail/1 existing skip, lint/types
 
 
 Independent review of the new observation transport found no confirmed defect. Fourteen native adapter tests and two additional isolated tests passed, covering four refreshed-hash binding mutations plus failed/missing-result boundaries. The reviewed source matched the isolated snapshot. [Additional review tests](evidence/method-evidence-review.test.ts). This review establishes protocol behavior only, not a live method pass.
+
+
+## Method0.3.3 — complete bounded result
+
+The eight-case run ended at the original20-minute product deadline, exit1, qualification false. [All eight artifacts and scoped receipts](evidence/native-research-v3b/assessment.json). Six case reviews pass every predetermined check, including both independently authored heldouts. The archive case now passes method application but remains evidence-unknown: its completed read command's exposed result contains a trailing Git error without the preceding source contents. This does not establish that the reads failed, and the producer's assertion cannot fill the observation gap.
+
+The composition producer saved its artifact; its independent reviewer ran for87.8seconds before the shared deadline and returned no completed judgment. Its checks remain unknown. The final deterministic aggregation also exhausted the remaining deadline; no partial case pass is a qualified suite. The outer supervisor completed normally after20m01s with the product's failure status. No deadline was extended and no completed rubric or artifact was changed.
+
+The [heldout package](evidence/handback-heldout-fixtures/README.md) preserves independent author provenance, exact prompts,18 frozen files and producer/grader separation. Its manifest digest is309b39db21e4be5dce4fc3df1a1b8ec88efdfd03326ff4030b4fc8cb4c4620d2. These six passing case reviews coexist with all prior failures, two passing no-skill baselines and two rejected bad controls; they do not establish incremental benefit, universal competence or actual specialist composition.
+
+Next bounded implementation: make qualification resumable at completed case boundaries under one frozen suite/skill/evidence identity, or schedule bounded independent cases without starving later reviews. Preserve per-invocation and total authorized budgets; do not manufacture a complete record by copying unrelated case receipts or increasing a completed attempt's deadline. Resolve public execution-observation uncertainty separately from method quality.

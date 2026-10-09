@@ -1,0 +1,142 @@
+[
+  {
+    "path": "api-reads.jsonl",
+    "sha256": "3ac7ac1e05489fb41fdfc56256df5dd21d75c45cb51535910ac5a50d5ce68a08",
+    "bytes": 603
+  },
+  {
+    "path": "archive-scope.json",
+    "sha256": "98554325d381ca610f8eab37b705376df84b1c838c820fb0a8d686ef048ae79b",
+    "bytes": 1024
+  },
+  {
+    "path": "assessment.json",
+    "sha256": "87f04378f350d7ff4049d0bc483db86b40efda488eeb5cd2e69c48e1d127e3c3",
+    "bytes": 7305
+  },
+  {
+    "path": "change.json",
+    "sha256": "a45aec91f3428d6cd605c78cb814a04883709f77eb96438b61b3df4d32c85de5",
+    "bytes": 265
+  },
+  {
+    "path": "changed-artifact.md",
+    "sha256": "80e6647aabdf96b06269f775d708ef4e3fc314216edbf1603acd876180300570",
+    "bytes": 5472
+  },
+  {
+    "path": "changed-prompt.txt",
+    "sha256": "ce2322d1765b6540c515940b3641d295a3b43e24fca4ec3f593902a8d85f7f57",
+    "bytes": 160
+  },
+  {
+    "path": "changed-result.json",
+    "sha256": "1b0adcc32bdb9ba332f066bd4d91fdf6b4e48c6397c9fceeab0e394052e9b6dd",
+    "bytes": 357
+  },
+  {
+    "path": "complete.json",
+    "sha256": "b8033821d6cdba83d71232eb12fe537dff26268689fcdc275b947ebaef431709",
+    "bytes": 72
+  },
+  {
+    "path": "connection-before-init.json",
+    "sha256": "584f15259002f4ecd0ee2f1f5960b9c6902dcc63eb7798f3519e8d3135ceb926",
+    "bytes": 182
+  },
+  {
+    "path": "independent-assessment.json",
+    "sha256": "f469d9659b56b107271d7d54eff92dfe08ecd539204971b83ce2a46d617e18e4",
+    "bytes": 6496
+  },
+  {
+    "path": "initial-artifact.md",
+    "sha256": "45da6bddbdc1c70b3c20c5553dbc8ea6351c36aa3990e05cd27c8d6f9dce6280",
+    "bytes": 4829
+  },
+  {
+    "path": "initial-prompt.txt",
+    "sha256": "ae58a83340aed56b637d8dc354c07f58da81dd9e82f1543de47b825f398a6536",
+    "bytes": 141
+  },
+  {
+    "path": "initial-result.json",
+    "sha256": "0e1e8deb6f063abd0360ab0731f5378816a7de1bee45f15574f06f9e4d8ce80b",
+    "bytes": 357
+  },
+  {
+    "path": "installed-host-config-after-init.txt",
+    "sha256": "2dbdc013be537813bfc4cef7682d0bbd55bf23064a734d9abbfe21261087e9f3",
+    "bytes": 2233
+  },
+  {
+    "path": "local-fixtures/README.md",
+    "sha256": "3538b060e719aa16b7bd6529c59eb20a5d1ba80a9e61a69d6745b4a14b97b12b",
+    "bytes": 475
+  },
+  {
+    "path": "local-fixtures/docs/cached.json",
+    "sha256": "e61b3941a91e020da5df675b971b7972ebb6ddd2ff16432966ab539c830f9d13",
+    "bytes": 132
+  },
+  {
+    "path": "local-fixtures/docs/policy.md",
+    "sha256": "5011aaf2b5eedc280326202df72e97d54e26df5a077f51a8e5f398fada0bd981",
+    "bytes": 390
+  },
+  {
+    "path": "native-invocations.json",
+    "sha256": "3656e9d62890d01853899196b7967d1aadb3231f46942cf7e4cfa00a79b5c039",
+    "bytes": 5540
+  },
+  {
+    "path": "native-lineage-and-bindings.json",
+    "sha256": "5e276f929fb94f181d91c7801c8628f9008faa51370b5d3aac772e8e0a283fee",
+    "bytes": 174493
+  },
+  {
+    "path": "native-source-history.json",
+    "sha256": "939a66c5c2ef3e18f484e17116c326660a6d886138cd2b8112c23b33e4ced632",
+    "bytes": 8615
+  },
+  {
+    "path": "preregistration.json",
+    "sha256": "aee36b15f615720b2ec74ba9f77fa71df79de9785faa829c608d712c1d98911c",
+    "bytes": 984
+  },
+  {
+    "path": "qa-prompt.txt",
+    "sha256": "e8afb28f64e1949f5917dce1817bc20405984c26558a3b3062c75a6d3889399a",
+    "bytes": 100
+  },
+  {
+    "path": "qa-result.json",
+    "sha256": "8608eca6bf7927620ec7f821c5802ec94d2b737ac50d2fe9df61f79df429161c",
+    "bytes": 251
+  },
+  {
+    "path": "reads.jsonl",
+    "sha256": "ac05c930c2fd070a33c0fc62dd4b3722d1c258665b29fcdf9c8829d73a1591a3",
+    "bytes": 7558
+  },
+  {
+    "path": "rubric.json",
+    "sha256": "cfdecdfc7cb8055c1e21e9ea01b55f3557f8a7602a5df177a0319ac9b1959bc9",
+    "bytes": 848
+  },
+  {
+    "path": "setup.json",
+    "sha256": "3ff432a29a34c20ad183d73452543c7d4bd9106048adf05f98211577374143a8",
+    "bytes": 2941
+  },
+  {
+    "path": "supervisor.json",
+    "sha256": "bca7f1722491e72c5b4d3f1a63c02187da1b6c97f743b13ce919eabe599dbc32",
+    "bytes": 280
+  },
+  {
+    "path": "tool-timeline.json",
+    "sha256": "b96b3b555de22613cddf3d714513b7f248cfc0093f65493f5e0b75720b6cf014",
+    "bytes": 33909
+  }
+]

@@ -1,0 +1,8 @@
+[mcp_servers.workspace]
+command="/opt/homebrew/Cellar/node/25.9.0_3/bin/node"
+args=["<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/sources.mjs"]
+
+[mcp_servers.construct]
+command = "npx"
+args = ["--no-install", "construct", "serve", "--client=codex"]
+tool_timeout_sec = 120

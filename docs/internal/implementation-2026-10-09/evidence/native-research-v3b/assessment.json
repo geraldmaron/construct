@@ -1,0 +1,145 @@
+{
+  "evaluationRef": "evaluation:4",
+  "formatVersion": 1,
+  "skill": {
+    "id": "investigative-research",
+    "version": "0.3.3",
+    "digest": "sha256:7c7a6f8a86a7d18cbc9ee4aace9fd7368ef163d89a456647486b75bda21106d1"
+  },
+  "suiteDigest": "e1925707acec77645b0db8cca356f8ab599e79976a2d17ba33f4576409be4739",
+  "startedAt": "2026-10-09T22:28:55.725Z",
+  "endedAt": "2026-10-09T22:48:56.087Z",
+  "expiresAt": "2026-10-16T22:48:56.087Z",
+  "exitStatus": null,
+  "passed": false,
+  "assurance": "native_execution_and_independent_review",
+  "problems": [
+    "implicit-archive: independent native review did not establish all required checks and application",
+    "composition-review-packet: independent reviewer did not return one JSON judgment",
+    "composition-review-packet: independent native review did not establish all required checks and application",
+    "evaluation command failed, timed out or exceeded its output budget",
+    "evaluator did not return one JSON result",
+    "evaluation needs formatVersion 1 and case results",
+    "evaluation case identities do not exactly match the predetermined suite",
+    "implicit-archive: a required independent check did not pass",
+    "implicit-archive: producer and independent reviewer identities are required",
+    "implicit-archive: evaluation evidence references are required",
+    "held-out-handback-seed-club: a required independent check did not pass",
+    "held-out-handback-seed-club: producer and independent reviewer identities are required",
+    "held-out-handback-seed-club: evaluation evidence references are required",
+    "held-out-handback-planetarium: a required independent check did not pass",
+    "held-out-handback-planetarium: producer and independent reviewer identities are required",
+    "held-out-handback-planetarium: evaluation evidence references are required",
+    "explicit-vendor: a required independent check did not pass",
+    "explicit-vendor: producer and independent reviewer identities are required",
+    "explicit-vendor: evaluation evidence references are required",
+    "contextual-correction: a required independent check did not pass",
+    "contextual-correction: producer and independent reviewer identities are required",
+    "contextual-correction: evaluation evidence references are required",
+    "negative-single-fact: a required independent check did not pass",
+    "negative-single-fact: producer and independent reviewer identities are required",
+    "negative-single-fact: evaluation evidence references are required",
+    "held-out-denominator: a required independent check did not pass",
+    "held-out-denominator: producer and independent reviewer identities are required",
+    "held-out-denominator: evaluation evidence references are required",
+    "composition-review-packet: a required independent check did not pass",
+    "composition-review-packet: producer and independent reviewer identities are required",
+    "composition-review-packet: evaluation evidence references are required",
+    "implicit-archive: native independent application or checks did not pass",
+    "composition-review-packet: native case judgment or invocation links contradict its witness"
+  ],
+  "limitation": "Scoped executed evaluator result; reviewer judgments remain fallible and host/model labels describe this suite. No permission or universal qualification is inferred.",
+  "requestedModel": "gpt-6-astra",
+  "resolvedModel": "not independently exposed",
+  "sourceResultSha256": "9796fc8fa42c19cbbea86a69055e290ff6f02c9fd5fc30c45095ee42ce862a0c",
+  "cases": [
+    {
+      "id": "implicit-archive",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "unknown",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "d9a91caf37d2cce760160284ec8d7dca3332a02d54e618b3dba3fe7ea5996988"
+    },
+    {
+      "id": "held-out-handback-seed-club",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "9dbf8abe0ccc88cb650386d5c2cc592e157f8513273f02aa15f9d465ff02489c"
+    },
+    {
+      "id": "held-out-handback-planetarium",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "d9e64e1157ac02e063edc8104338ab1aeb8b101e3bba0ea742f7f85b66839501"
+    },
+    {
+      "id": "explicit-vendor",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "0c3e27feb39806b2d6ba9f4860ace6a32652e26b8c1fac141505b4df44f93592"
+    },
+    {
+      "id": "contextual-correction",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "720765898e889a7873c102ac5679d75caf6150ba29d1f3fb1ff257a71443ef2c"
+    },
+    {
+      "id": "negative-single-fact",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "stood_down",
+      "outputDigest": "59a6dc2f258ab1a97dce97a92a2b9d46b9f591710699c297fac89e4740a17abb"
+    },
+    {
+      "id": "held-out-denominator",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "59d76dbe7622cddd499460cfc5e55d3d2d6dbb041ce8dbfcf509243ef00ad3c2"
+    },
+    {
+      "id": "composition-review-packet",
+      "checks": {
+        "correctness": "unknown",
+        "uncertainty": "unknown",
+        "evidence": "unknown",
+        "method_application": "unknown"
+      },
+      "application": "unknown",
+      "outputDigest": "bab2e664de19cfc08ea599610a01eca98bf68e315047bdd4071b640b7f98704e"
+    }
+  ]
+}

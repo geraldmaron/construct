@@ -1,0 +1,18 @@
+{
+  "name": "changed",
+  "code": null,
+  "timedOut": true,
+  "elapsedMs": 360017,
+  "countsAfter": {
+    "workflow_runs": 2,
+    "step_runs": 8,
+    "deliverables": 3,
+    "work_items": 2,
+    "sources": 5,
+    "source_snapshots": 7
+  },
+  "artifact": {
+    "sha256": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+    "bytes": 7356
+  }
+}

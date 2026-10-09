@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "pid": 12456,
+  "childPid": 12457,
+  "host": "cursor",
+  "tag": "standalone-live",
+  "startedAt": "2026-10-09T22:37:24.638564+00:00",
+  "finishedAt": "2026-10-09T22:40:50.732860+00:00",
+  "exitStatus": 0,
+  "timedOut": false,
+  "interrupted": false
+}

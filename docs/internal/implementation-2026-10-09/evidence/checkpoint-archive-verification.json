@@ -1,0 +1,17 @@
+[
+  {
+    "archive": "fresh-journeys/fresh-cursor-standalone-live",
+    "files": 28,
+    "allHashesMatch": true
+  },
+  {
+    "archive": "fresh-journeys/fresh-codex-standalone-live",
+    "files": 27,
+    "allHashesMatch": true
+  },
+  {
+    "archive": "native-research-v3b",
+    "files": 60,
+    "allHashesMatch": true
+  }
+]

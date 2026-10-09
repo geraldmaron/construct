@@ -1,0 +1,7 @@
+{
+  "archivedAt": "2026-10-09T22:42:48.508313+00:00",
+  "basis": "Completed bounded fresh consumer, exact ordinary prompts, actual fixtures/artifacts, public native invocation identities, source transport logs and read-only native database snapshot.",
+  "packageOnly": "Construct MCP executes directly from the freshly installed package. No checkout logging wrapper. The external fixture orchestrator imports checkout helper functions for subscription environment and TOML formatting; these are not consumer dependencies.",
+  "instrumentation": "Explicit MCP attachment and sterile Construct environment isolate synthetic source access. This does not test automatic import of arbitrary user connections, production authentication or untouched global host configuration.",
+  "limits": "Requested correction is not autonomous change detection. Fixture authority/supersession warnings do not prove unfamiliar inference. Source/application reports retain their reported assurance. Private reasoning and claim tokens omitted."
+}

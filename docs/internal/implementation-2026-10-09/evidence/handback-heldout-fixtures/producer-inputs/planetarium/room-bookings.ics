@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Synthetic Larkfield Venue//Fixture//EN
+BEGIN:VEVENT
+UID:LARK-431-confirmed
+DTSTAMP:20261008T090000Z
+DTSTART:20261015T180000Z
+DTEND:20261015T194000Z
+STATUS:CONFIRMED
+SUMMARY:Planetarium room hire
+DESCRIPTION:Venue bookings desk confirms access 18:00 to 19:40 only. All preparation and clearance must be inside this period.
+END:VEVENT
+BEGIN:VEVENT
+UID:LARK-431-extension-request
+DTSTAMP:20261009T110000Z
+DTSTART:20261015T194000Z
+DTEND:20261015T200000Z
+STATUS:TENTATIVE
+SUMMARY:Requested extension - not accepted
+DESCRIPTION:Request logged by circle chair. No venue approval. Existing confirmation remains unchanged.
+END:VEVENT
+END:VCALENDAR

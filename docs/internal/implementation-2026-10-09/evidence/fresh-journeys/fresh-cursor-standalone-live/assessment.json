@@ -1,0 +1,167 @@
+{
+  "trial": "fresh-cursor-standalone-live",
+  "phases": {
+    "qa": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 14343,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    },
+    "initial": {
+      "name": "initial",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 91859,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 4,
+        "deliverables": 2,
+        "work_items": 1,
+        "sources": 1,
+        "source_snapshots": 1
+      },
+      "artifact": {
+        "sha256": "45da6bddbdc1c70b3c20c5553dbc8ea6351c36aa3990e05cd27c8d6f9dce6280",
+        "bytes": 4829
+      }
+    },
+    "changed": {
+      "name": "changed",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 98641,
+      "countsAfter": {
+        "workflow_runs": 2,
+        "step_runs": 8,
+        "deliverables": 4,
+        "work_items": 2,
+        "sources": 2,
+        "source_snapshots": 2
+      },
+      "artifact": {
+        "sha256": "80e6647aabdf96b06269f775d708ef4e3fc314216edbf1603acd876180300570",
+        "bytes": 5472
+      }
+    }
+  },
+  "qaAnswer": "Checking Construct bootstrap and locating the local replenishment policy for net stock at 60 units.\n\n\nWhen **net stock** is **available minus reserved**, measured in **individual units**, the local replenishment policy in `docs/policy.md` says:\n\n**Hold steady** \u2014 do not recommend replenishment.\n\nReplenishment is only recommended when net stock is **below** 60. At exactly 60 you are at the threshold, not under it, so the policy treats that as sufficient and you maintain current levels rather than triggering a replenishment recommendation.",
+  "finalState": {
+    "runs": [
+      {
+        "id": "run-6a206b82",
+        "workflow_id": "research-brief",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "id": "run-ba559545",
+        "workflow_id": "research-brief",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-6a206b82",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-6a206b82",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-6a206b82",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-6a206b82",
+        "step_id": "record",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-ba559545",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-ba559545",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-ba559545",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-ba559545",
+        "step_id": "record",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ],
+    "work": [
+      {
+        "id": "work-run-6a206b82-delivery",
+        "status": "completed"
+      },
+      {
+        "id": "work-run-ba559545-delivery",
+        "status": "completed"
+      }
+    ]
+  },
+  "independentChecks": {
+    "cases": [
+      {
+        "name": "initial",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The brief correctly holds pending clarification: available stock is 12 cases, reserved quantity is 4 with no declared unit, and the current catalog conversion is null. It neither assumes six each per case nor subtracts incompatible units. It correctly states that exactly 60 each means hold steady and excludes the superseded cache from the current decision.",
+          "uncertainty": "The brief explicitly marks net stock as not calculable, distinguishes a mandatory hold from proof of sufficient stock, and identifies both missing reservation units and missing lot-specific packaging. It reports the supplier reference as inaccessible rather than inventing its contents.",
+          "evidence": "Recorded fetches at 22:37:53.858Z and 22:37:54.038Z support the stock and reservation facts. The catalog fetch and recorded GET at 22:37:56.673Z support the null conversion. The supplier fetch at 22:37:59.753Z returned permission_denied. Citations distinguish policy, inventory, operations, catalog, and superseded cache. The artifact's adversarial-review heading does not establish that an independent review or tests ran.",
+          "requested_file": "case.json contains the captured warehouse-brief.md artifact, not merely a claim of creation. Its decoded UTF-8 content is 4829 bytes and independently hashes to 45da6bddbdc1c70b3c20c5553dbc8ea6351c36aa3990e05cd27c8d6f9dce6280, matching the recorded artifact metadata."
+        }
+      },
+      {
+        "name": "changed",
+        "checks": {
+          "correctness": "fail",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The main calculation and recommendation are correct: 6 cases \u00d7 6 each/case \u2212 4 each = 32 each, triggering replenishment without authorizing an order. However, the brief omits the rubric's explicit 28-each shortfall calculation. Its alternative-readings table also incorrectly says reservations in cases would make net higher: four reserved cases would yield 12 each net, lower than 32. With the verified conversion, 12 available cases would yield 68 each net and support holding, contrary to its dismissal of all alternatives as unable to support holding.",
+          "uncertainty": "The change table preserves the previous null conversion, undeclared reservation unit, and not-calculable net rather than claiming those facts were previously known. It distinguishes a threshold recommendation from order sizing and authorization and limits the assessment to PART-19.",
+          "evidence": "Fresh recorded reads use PID 14305 rather than the initial PID 13163. Fetches at 22:39:31.347Z and 22:39:31.348Z establish six available cases and four reserved each; the recorded GET at 22:39:31.380Z establishes six each per case. Stock text and contentDigest differ from the initial record despite identical provider updatedAt values. The brief recognizes corrected content rather than treating timestamp equality as unchanged data. These records support the main decision, not the erroneous counterfactual arithmetic.",
+          "requested_file": "The updated captured artifact uses the same warehouse-brief.md path, includes a prior-versus-current change table, and differs from the initial artifact. Its decoded UTF-8 content is 5472 bytes and independently hashes to 80e6647aabdf96b06269f775d708ef4e3fc314216edbf1603acd876180300570, matching the recorded artifact metadata."
+        }
+      }
+    ]
+  }
+}
