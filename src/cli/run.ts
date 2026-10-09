@@ -1,3 +1,4 @@
+import { executeSemanticReview } from '../hosts/semantic-review.ts';
 /**
  * cli/run.ts — runs: list, show, cancel, resume.
  */
@@ -13,6 +14,14 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 const group = 'Runs';
 
 export const RUN_SPECS: readonly CommandSpec[] = [
+  { path: ['run', 'review'], gloss: 'review a prepared final artifact through an explicit native host inside the invoking sandbox', group, positionals: ['<id>'], flags: [
+    { name: 'step', gloss: 'the currently leased step run id', takesValue: true },
+    { name: 'token', gloss: 'the current step lease token', takesValue: true },
+    { name: 'prepared', gloss: 'review reference returned by final submission', takesValue: true },
+    { name: 'host', gloss: 'explicit native reviewer host (currently codex)', takesValue: true },
+    { name: 'model', gloss: 'explicit native subscription model', takesValue: true },
+    { name: 'timeout-ms', gloss: 'bounded review timeout (default 180000; maximum 300000)', takesValue: true },
+  ], readOnly: false },
   { path: ['run', 'verify'], gloss: 'observe a verification command inside the invoking host sandbox and bind its exit to a held step', group, positionals: ['<id>'], flags: [
     { name: 'step', gloss: 'the currently leased step run id', takesValue: true },
     { name: 'token', gloss: 'the current step lease token', takesValue: true },
@@ -30,6 +39,13 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
   const { project, broker } = openBroker(ctx, {});
   try {
     switch (sub) {
+      case 'review': {
+        const stepRunId = stringFlag(args, 'step'), token = stringFlag(args, 'token'), preparedRef = stringFlag(args, 'prepared'), host = stringFlag(args, 'host'), model = stringFlag(args, 'model');
+        if (!stepRunId || !token || !preparedRef || !host || !model) throw new UsageError('run review needs --step, --token, --prepared, --host and --model');
+        const result = await executeSemanticReview({ store: project.store, runId: args.positionals[0]!, stepRunId, token, preparedRef, host, model, root: project.root, env: ctx.env, now: ctx.now, resolve: ref => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
+        writeJson(result);
+        return result.passed ? 0 : 1;
+      }
       case 'verify': {
         const stepRunId = stringFlag(args, 'step'), token = stringFlag(args, 'token'), command = stringFlag(args, 'command');
         if (!stepRunId || !token || !command) throw new UsageError('run verify needs --step, --token and --command');

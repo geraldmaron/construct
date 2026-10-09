@@ -1,3 +1,4 @@
+import { syntheticSemanticAdapter } from './semantic-fixture.ts';
 /**
  * tests/kernel/workflow/support.ts — a workflow service over a fixture
  * registry and a fresh store, with a deterministic clock and ids.
@@ -125,7 +126,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     { kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'fresh' },
   ];
   const serviceOn = (store: StateStore, on: HostCapabilities): WorkflowService =>
-    createWorkflowService({ store, skills, workflows, lock, host: on, resolveEvidence: opts.resolveEvidence, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' });
+    syntheticSemanticAdapter(createWorkflowService({ store, skills, workflows, lock, host: on, resolveEvidence: opts.resolveEvidence, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' }), store, now);
   const peers: StateStore[] = [];
   const self: Fixture = {
     store: fx.store,

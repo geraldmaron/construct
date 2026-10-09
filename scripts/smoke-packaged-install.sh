@@ -201,7 +201,7 @@ expect_contains "inbox list" "$inbox_out" "proposal"
 cancel_out="$(npx --no-install construct run cancel "$run_id" 2>&1)" || fail "run cancel exited non-zero" "$cancel_out"
 expect_contains "run cancel" "$cancel_out" "cancelled"
 
-echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, acceptance held for the person =="
+echo "== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, exact draft held for native review =="
 loop_project="$scratch/loop"
 mkdir -p "$loop_project" && cd "$loop_project" && git init -q . && printf '# Loop\n\nA project for the packaged loop.\n' > README.md && printf '# Design\n\n- Keep the kernel host-agnostic\n' > design.md
 npm init -y --silent >/dev/null && npm install --silent "$tarball_path"
@@ -233,28 +233,24 @@ const cls2 = await call('classify_request', { words: 'Review this implementation
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
 const started = await call('start_outcome', { workflowId: 'design-conformance', intake: cls2.intake }); must(started.started === true && started.run.state === 'ready', 'run ready from the intake');
 const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: [] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
-for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: started.run.id, includeSkillBody: i === 0 }); must(c.work, `step ${i} claimable`); if (i === 0) must(typeof c.work.skill.body === 'string' && c.work.skill.body.startsWith('---'), 'skill body loaded only when asked'); if (c.work.step.id === 'deterministic') { const observed = JSON.parse(execFileSync(process.execPath, [process.argv[2], 'run', 'verify', started.run.id, '--step=' + c.work.stepRunId, '--token=' + c.work.token, '--subject=design.md', '--command=' + JSON.stringify([process.execPath, '-e', 'require("node:assert").match(require("node:fs").readFileSync("design.md","utf8"),/host-agnostic/)'])], { encoding: 'utf8' })); outputs.deterministic.verification = { executionRef: observed.executionRef }; } const r = await call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'design.md' }] }); must(r.step.state === 'succeeded', `step ${c.work.step.id} succeeded: ${r.step.reason}`); }
-const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
-const validated = status.deliverables.find((d) => d.trust === 'validated'); must(validated, 'final deliverable validated');
-const byHand = await rpc('tools/call', { name: 'promote_deliverable', arguments: { deliverableId: validated.id, to: 'validated' } }); must(byHand.result?.isError === true && /set when the step's checks pass/.test(byHand.result.content[0].text), 'validated is never promoted to by hand');
-await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop', objections: [] });
-const asked = await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'the session asks the person to accept' }); must(asked.personRequired === true && typeof asked.pendingDecision === 'string', 'acceptance waits for the person');
-const relayed = await call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }); must(relayed.personRequired === true && relayed.decision.state === 'open', 'a relayed approval of acceptance is refused');
-const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers'); must(Array.isArray(held.deliverables.find((d) => d.id === validated.id).verification?.challenge?.objections), 'the challenge is recorded with its objections');
+for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: started.run.id, includeSkillBody: i === 0 }); must(c.work, `step ${i} claimable`); if (i === 0) must(typeof c.work.skill.body === 'string' && c.work.skill.body.startsWith('---'), 'skill body loaded only when asked'); if (c.work.step.id === 'deterministic') { const observed = JSON.parse(execFileSync(process.execPath, [process.argv[2], 'run', 'verify', started.run.id, '--step=' + c.work.stepRunId, '--token=' + c.work.token, '--subject=design.md', '--command=' + JSON.stringify([process.execPath, '-e', 'require("node:assert").match(require("node:fs").readFileSync("design.md","utf8"),/host-agnostic/)'])], { encoding: 'utf8' })); outputs.deterministic.verification = { executionRef: observed.executionRef }; } const r = await call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'design.md' }] }); if (c.work.step.id === 'record') must(r.step.state === 'leased' && r.semanticReview?.preparedRef && r.deliverable?.trust === 'draft', 'final draft and lease wait for native review'); else must(r.step.state === 'succeeded', `step ${c.work.step.id} succeeded: ${r.step.reason}`); }
+const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'running', 'unreviewed run is not succeeded');
+const draft = status.deliverables.find((d) => d.trust === 'draft'); must(draft, 'exact final draft is preserved');
+for (const to of ['validated', 'challenged', 'accepted', 'final']) {
+ const denied = await rpc('tools/call', { name: 'promote_deliverable', arguments: { deliverableId: draft.id, to } });
+ must(denied.result?.isError === true, `unreviewed pending draft cannot be promoted to ${to}`);
+}
 await call('sources', { action: 'declare', id: 'wiki', kind: 'docs' });
 await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', text: 'Checkout retries each payment call up to 3 times.' }] });
 const byUrl = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'https://wiki.example.com/pages/98765#retries', excerpt: 'up to 3 times' }] }); must(byUrl.ok === true && byUrl.evidence.reported === 1, `a recorded page is citable by its url: ${JSON.stringify(byUrl.problems)}`);
 const invented = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:12345' }] }); must(invented.ok === false && invented.problems.some((p) => p.problem.includes('names nothing this project holds')), 'an invented item is refused');
-console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → draft held for native review (no model claimed) → a reported page cited by its url, an invented item refused: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
-echo "$loop_out" | grep -v '^pending=' || true
-pending_id="$(echo "$loop_out" | sed -n 's/^pending=//p')"
+echo "$loop_out"
 loop_inbox="$(cd "$loop_project" && npx --no-install construct inbox list 2>&1)" || fail "loop inbox list exited non-zero" "$loop_inbox"
-expect_contains "loop inbox list" "$loop_inbox" "$pending_id"
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "the loop created a per-user data directory"
 cd "$project"
 

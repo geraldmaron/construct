@@ -843,6 +843,7 @@ const submitWork = define<SubmitInput, unknown>({
     return {
       step: { id: r.step.id, state: r.step.state, reason: r.step.stateReason },
       validation: r.validation,
+      ...(r.semanticReview ? { semanticReview: r.semanticReview } : {}),
       // How much of this step rests on what Construct opened itself versus what the host reports it read.
       evidence: provenanceOf(input.evidence, resolve),
       run: { id: r.run.id, state: r.run.state },

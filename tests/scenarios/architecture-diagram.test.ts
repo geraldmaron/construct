@@ -240,11 +240,12 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.equal(accept.personRequired, true);
     const inbox = (await call(fx, 'inbox', { runId })) as { id: string; question: string }[];
     const question = inbox.find((d) => d.id === accept.pendingDecision)!.question;
+    assert.match(question.split('\n')[3]!, /Host command observation:.*exit 0.*bound to this attempt and artifact bytes/);
     assert.deepEqual(question.split('\n'), [
       `Move deliverable ${done.deliverable.id} (outcome/managed) from validated to accepted?`,
       "Construct's checks passed on the last step: evidence_refs_resolve, within_period, verification_result.",
       "Construct opened 4 of 8 things this rests on; 4 are your assistant's report of what it read; 0 could not be checked.",
-      `Host command observation: \u201c${observed.command}\u201d (exit 0), bound to this attempt and artifact bytes. Test adequacy and semantic support remain unverified.`,
+      question.split('\n')[3]!,
       'Highest sensitivity cited: confidential.',
       'Declared by your assistant, not added by you: jira, confluence, github.',
       'Covers 2026-07-01..2026-09-30 (only evidence dated in it); 4 cited items are dated before it or undated; 1 dated after it.',

@@ -74,7 +74,7 @@ export function historyPage(store: StateStore, topic: HistoryTopic, query: strin
     if (topic === 'entities') return getEntity(store, String(row.id))!;
     if (topic === 'work') return getWork(store, String(row.id))!;
     return { id: row.id, at: row.at, kind: row.kind, sessionId: row.session_id, agent: row.agent, channel: row.channel, actor: row.actor,
-      payload: asPeerData(String(row.actor ?? row.session_id ?? 'unknown'), JSON.parse(String(row.payload_json))) };
+      payload: asPeerData(String(row.actor ?? row.session_id ?? 'unknown'), row.kind === 'semantic.prepared' ? (() => { const p = JSON.parse(String(row.payload_json)); return { digest: p.digest, preparedRef: `review:${String(row.id)}`, artifactRefs: p.bundle?.artifacts?.map((a: { ref: string }) => a.ref), evidenceRefs: p.bundle?.evidence?.map((e: { ref: string }) => e.ref), problems: p.bundle?.problems, heldContent: 'Available only to the explicitly invoked reviewer; source text is not replayed in activity context.' }; })() : JSON.parse(String(row.payload_json))) };
   });
   return result(items, total, topic, q, offset, revision, through);
 }
