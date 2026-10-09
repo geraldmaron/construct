@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "revise-deliverable",
   "title": "Revise a deliverable",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Revise an earlier deliverable for a stated change (reviewer feedback, a stale-work finding, new material, a conversion to another form), keeping it linked to the version it revises, saying what changed and why, and holding the revision to the same grounding checks; challenged before it is handed back.",
   "activation": [
     "revise the PRD for this feedback",
@@ -65,7 +65,8 @@
         "excerpts_match",
         "superseded_acknowledged",
         "conflicts_declared",
-        "deliverable_complete"
+        "deliverable_complete",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

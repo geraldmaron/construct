@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "prd-authoring",
   "title": "Write a PRD",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "purpose": "Write a product requirements document grounded in the project's sources and work items, in the project's template when one is named; surface conflicts and unknowns instead of resolving them silently; challenge the draft before handing it back.",
   "activation": [
     "write a PRD",
@@ -68,7 +68,8 @@
         "superseded_acknowledged",
         "conflicts_declared",
         "settled_not_contradicted",
-        "deliverable_complete"
+        "deliverable_complete",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,
