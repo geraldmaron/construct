@@ -5,13 +5,12 @@ description: >-
   changes for them, how it will be measured, what is cut. Use when the
   person says things like: everyone loves this idea but nobody can say what
   it changes for the customer; sanity check this spec before engineering
-  starts; which of these twelve asks actually matter this quarter; did last
-  quarter's launch do anything; what should we build next; is this worth
-  building. Not for writing the buildable requirements (that is
+  starts; which of these twelve asks actually matter this quarter; what
+  should we build next; is this worth building. Not for writing the buildable requirements (that is
   requirements).
 license: Apache-2.0
 metadata:
-  version: 1.0.1
+  version: 1.0.2
   source: geraldmaron/construct
 ---
 # Product management

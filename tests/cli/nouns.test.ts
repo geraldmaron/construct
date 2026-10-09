@@ -9,12 +9,16 @@ import { mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, inProject } from './support.ts';
+import { openStateStore } from '../../src/kernel/state/open.ts';
+import { raiseDecision } from '../../src/kernel/state/decisions.ts';
+import { getProfile } from '../../src/kernel/state/profile.ts';
+import { projectDbPath } from '../../src/kernel/project/layout.ts';
 
 test('workflow list, show, resolve, validate, and run (dry and real) from the command line', async () => {
   await inProject(async (ctx, box) => {
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
-    assert.match(list.out, /^design-conformance\s+1\.0\.0\s+builtin\s+manage/m);
+    assert.match(list.out, /^design-conformance\s+2\.0\.0\s+builtin\s+manage/m);
     assert.match(list.out, /^remember\s+1\.0\.0\s+builtin\s+remember/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
@@ -48,7 +52,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.match(again.out, /already running: run /);
 
     const runs = await capture(() => run(['run', 'list'], ctx));
-    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@1\\.0\\.0\\s+ready\\s+manual`, 'm'));
+    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.0\\s+ready\\s+manual`, 'm'));
     const filtered = await capture(() => run(['run', 'list', '--state=succeeded', '--json'], ctx));
     assert.deepEqual(JSON.parse(filtered.out), []);
     const badState = await capture(() => run(['run', 'list', '--state=done'], ctx));
@@ -61,6 +65,29 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     const resumed = await capture(() => run(['run', 'resume', record.run.id, '--json'], ctx));
     assert.equal(JSON.parse(resumed.out).state, 'cancelled');
     void box;
+  });
+});
+
+test('workflow run says when a corrected start replaced a blocked run and when a reused run was started with other values', async () => {
+  await inProject(async (ctx) => {
+    const wrong = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    assert.equal(wrong.code, 1);
+    assert.match(wrong.out, /^started: run (\S+) \(blocked\)/m);
+    assert.match(wrong.out, /or run this again with the input corrected; it says when it replaces this run\./);
+    const blockedId = /^started: run (\S+) \(blocked\)/m.exec(wrong.out)![1]!;
+    const retried = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=dateRange=Q3'], ctx));
+    assert.equal(retried.code, 1);
+    assert.match(retried.out, new RegExp(`^checked again: run ${blockedId} \\(blocked\\)$`, 'm'), 'the same start checks the blocked run again; it is not called running');
+    const fixed = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=enterprise'], ctx));
+    assert.equal(fixed.code, 0, fixed.out + fixed.err);
+    assert.match(fixed.out, new RegExp(`^superseded blocked run ${blockedId}$`, 'm'));
+    const reused = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve', '--json'], ctx));
+    const record = JSON.parse(reused.out) as { created: boolean; differs: string[]; superseded: string | null };
+    assert.equal(record.created, false);
+    assert.deepEqual(record.differs, ['scope']);
+    assert.equal(record.superseded, null);
+    const prose = await capture(() => run(['workflow', 'run', 'research-brief', '--input=question=Why did churn rise?', '--input=scope=self-serve'], ctx));
+    assert.match(prose.out, /^note: run \S+ already covers this work but was started with a different scope; carry on with it, or cancel it and start again to use the new values$/m);
   });
 });
 
@@ -123,16 +150,67 @@ test('the inbox lists what waits on the person and records their answer', async 
     const scale = questions.find((d) => Array.isArray(d.options) && d.options.includes('solo'))!;
     const show = await capture(() => run(['inbox', 'show', scale.id], ctx));
     assert.match(show.out, /options: solo \| side_project/);
+    assert.match(show.out, /your primary product \(just you\)/);
+    const scaleNow = (): string | null => {
+      const store = openStateStore(projectDbPath(box.cwd));
+      try {
+        return getProfile(store)?.scale ?? null;
+      } finally {
+        store.close();
+      }
+    };
     const wrong = await capture(() => run(['inbox', 'resolve', scale.id, 'enormous'], ctx));
     assert.equal(wrong.code, 1);
     assert.match(wrong.err, /is not one of them/);
-    const resolved = await capture(() => run(['inbox', 'resolve', scale.id, 'team'], ctx));
+    // This command is not the person at a terminal of theirs, so it cannot make the project a side project.
+    const light = await capture(() => run(['inbox', 'resolve', scale.id, 'side project'], ctx));
+    assert.equal(light.code, 1);
+    assert.match(light.err, /needs your own answer, and this command is not running in a terminal of yours/);
+    assert.equal(scaleNow(), null);
+    const resolved = await capture(() => run(['inbox', 'resolve', scale.id, 'primary product'], ctx));
     assert.equal(resolved.code, 0, resolved.err);
     assert.match(resolved.out, /recorded: /);
+    assert.equal(scaleNow(), 'solo', 'the question\'s own words land in the profile');
     const after = await capture(() => run(['inbox', 'list', '--json'], ctx));
     assert.equal((JSON.parse(after.out) as { kind: string }[]).filter((d) => d.kind === 'inbox_item').length, 2);
     const missing = await capture(() => run(['inbox', 'show', 'nope'], ctx));
     assert.equal(missing.code, 1);
+  });
+});
+
+test('inbox show prints the whole question a person-only prompt had to cut, and inbox list and run show its first line', async () => {
+  await inProject(async (ctx, box) => {
+    const started = await capture(() => run(['workflow', 'run', 'design-conformance', '--input=target=src', '--json'], ctx));
+    assert.equal(started.code, 0, started.err);
+    const runId = (JSON.parse(started.out) as { run: { id: string } }).run.id;
+    const store = openStateStore(projectDbPath(box.cwd));
+    try {
+      raiseDecision(store, {
+        id: 'decision-cut',
+        kind: 'approval',
+        question: 'Move deliverable d-1 (outcome) from validated to accepted?\n(more: construct inbox show decision-cut)',
+        runId,
+        options: ['approve', 'decline'],
+        subject: { promote: { deliverableId: 'd-1', to: 'accepted', reason: null, requestedBy: 'relayed via claude-code' }, brief: 'Move deliverable d-1 (outcome) from validated to accepted?\nHighest sensitivity cited: confidential.' },
+        at: '2026-09-02T12:00:00.000Z',
+      });
+    } finally {
+      store.close();
+    }
+    const shown = await capture(() => run(['inbox', 'show', 'decision-cut'], ctx));
+    assert.equal(shown.code, 0, shown.err);
+    assert.match(shown.out, /^decision-cut \(approval, open\): Move deliverable d-1 \(outcome\) from validated to accepted\?\nHighest sensitivity cited: confidential\.\n/);
+    assert.doesNotMatch(shown.out, /\(more: construct inbox show/, 'the whole text is shown, not the pointer to it');
+    assert.match(shown.out, /about: \{"promote":\{"deliverableId":"d-1"/);
+    assert.doesNotMatch(shown.out, /"brief"/, 'the whole text is not printed twice');
+    const listed = await capture(() => run(['inbox', 'list'], ctx));
+    assert.equal(listed.code, 0, listed.err);
+    assert.match(listed.out, new RegExp(`^decision-cut {2}approval {2}Move deliverable d-1 \\(outcome\\) from validated to accepted\\? {2}\\[approve \\| decline\\] {2}run ${runId}\n`, 'm'), listed.out);
+    assert.doesNotMatch(listed.out, /\(more: construct inbox show/, 'the list shows each question\u2019s first line only');
+    const shownRun = await capture(() => run(['run', 'show', runId], ctx));
+    assert.equal(shownRun.code, 0, shownRun.err);
+    assert.match(shownRun.out, /^ {2}waiting on you: Move deliverable d-1 \(outcome\) from validated to accepted\? \[approve \| decline\] \(decision decision-cut\)$/m, shownRun.out);
+    assert.doesNotMatch(shownRun.out, /\(more: construct inbox show/, 'a run shows each question\u2019s first line only');
   });
 });
 

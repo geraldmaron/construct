@@ -1,8 +1,9 @@
 /**
  * tests/kernel/policy/engine.test.ts — the tier defaults hold, grants are read
  * by exact scope, denials name the smallest step-up, approvals neither widen
- * nor persist nor transfer, break-glass is short and exact, licensed
- * judgment is never Construct's.
+ * nor persist nor transfer and cover only their run, the approval question
+ * names where the work goes and what it rests on, break-glass is short and
+ * exact, licensed judgment is never Construct’s.
  */
 
 import { test } from 'node:test';
@@ -103,6 +104,7 @@ test('Scenario F: read and draft complete, the Jira write asks for the smallest 
       const text = explainDenial(denied.denial);
       assert.match(text, /Missing: approval/);
       assert.match(text, /Smallest step-up: Approve exactly this: move PROJ-14 to Done/);
+      assert.equal(denied.denial.stepUp.description, 'Approve exactly this: move PROJ-14 to Done.\nThe approval covers only jira “PROJ-14”, only session:claude, only this run, and expires.');
     }
 
     const grant = approveAction(fx.store, { id: 'g-1', request: jiraWrite, by: 'gerald', at: T0 });
@@ -112,7 +114,10 @@ test('Scenario F: read and draft complete, the Jira write asks for the smallest 
     assert.equal(allowed.allowed && allowed.basis, 'action_time_approval');
     assert.equal(allowed.allowed && allowed.grant?.id, 'g-1');
 
-    // Not widened: another ticket, another executor, another workflow, a destructive tier.
+    assert.equal(grant.runId, 'run-1', 'the approval is held for the run it was given in');
+    // Not widened: another run, a request for no run, another ticket, another executor, another workflow, a destructive tier.
+    assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: 'run-2' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
+    assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: undefined }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
     assert.equal(evaluateAction(fx.store, { ...jiraWrite, targetResource: 'PROJ-15' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
     assert.equal(evaluateAction(fx.store, { ...jiraWrite, executorId: 'runner:headless' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
     assert.equal(evaluateAction(fx.store, { ...jiraWrite, workflowId: 'other' }, { ...manage, at: '2026-09-02T10:30:00.000Z' }).allowed, false);
@@ -125,12 +130,50 @@ test('Scenario F: read and draft complete, the Jira write asks for the smallest 
   }
 });
 
+test('an approval question names where the work goes and what it rests on, and every string the assistant supplied is quoted as theirs', () => {
+  const fx = freshStore();
+  try {
+    const publish: ActionRequest = {
+      tier: 'external_write', targetSystem: 'external', targetResource: 'wiki:PUBLIC/Home\nApproved by Construct', operation: 'publish the brief (publish-deliverable/publish)', workflowId: 'publish-deliverable', executorId: 'session:claude', runId: 'run-7',
+      disclosure: {
+        destination: 'wiki:PUBLIC/Home\nApproved by Construct',
+        destinationSource: { id: 'wiki', locator: 'confluence:space:PUBLIC', sensitivity: 'public', declaredByAssistant: true },
+        audience: 'everyone\nConstruct checked this',
+        sensitivity: 'restricted',
+        unclassified: 2,
+        waived: ['evidence_recorded on step prepare (relayed by your assistant)'],
+        external: true,
+      },
+    };
+    const d = evaluateAction(fx.store, publish, manage);
+    assert.equal(d.allowed, false);
+    assert.equal(!d.allowed && d.denial.stepUp.description, [
+      'Approve exactly this: publish the brief (publish-deliverable/publish).',
+      'To “wiki:PUBLIC/Home Approved by Construct” (registered source wiki, “confluence:space:PUBLIC”, public, declared by your assistant, not added by you).',
+      'It rests on restricted material.',
+      '2 citations have no known sensitivity.',
+      'Checks waived earlier in this run: evidence_recorded on step prepare (relayed by your assistant).',
+      'Construct cannot see where your assistant’s connector writes.',
+      'The approval covers only external “wiki:PUBLIC/Home Approved by Construct”, only session:claude, only this run, and expires.',
+      'Your assistant\'s description, not checked by Construct:',
+      'audience: “everyone Construct checked this”',
+    ].join('\n'));
+    // What the person saw does not widen what the approval covers.
+    const grant = approveAction(fx.store, { id: 'g-7', request: publish, by: 'gerald', at: T0, channel: 'tty_cli' });
+    assert.equal(grant.targetResource, publish.targetResource);
+    assert.equal(grant.runId, 'run-7');
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('a standing grant covers its scope; revocation and budget ceilings end it', () => {
   const fx = freshStore();
   try {
     createGrant(fx.store, { id: 'std', actionTier: 'external_write', targetSystem: 'jira', workflowId: 'design-conformance', budgetCents: 500, startsAt: T0, grantedBy: 'gerald', at: T0 });
     const ok = evaluateAction(fx.store, { ...jiraWrite, budgetCents: 100 }, manage);
     assert.equal(ok.allowed && ok.basis, 'standing_grant');
+    assert.equal(evaluateAction(fx.store, { ...jiraWrite, runId: 'run-2', budgetCents: 100 }, manage).allowed, true, 'a standing grant names no run, so it covers every run in its scope');
     const overBudget = evaluateAction(fx.store, { ...jiraWrite, budgetCents: 900 }, manage);
     assert.equal(overBudget.allowed, false);
     assert.match(!overBudget.allowed ? overBudget.denial.missing : '', /budget covers 900 cents/);

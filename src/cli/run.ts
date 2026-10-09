@@ -41,7 +41,8 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
         say(`  started ${v.run.createdAt} by ${esc(v.run.executorId)} (${v.run.triggerKind})`);
         for (const s of v.steps) say(`  step ${esc(s.stepId)}: ${s.state}${s.attempts ? ` after ${String(s.attempts)} attempt(s)` : ''}${s.stateReason ? ` (${esc(s.stateReason)})` : ''}`);
         for (const d of v.deliverables) say(`  deliverable ${esc(d.id)}: ${d.kind}, ${d.trustState}`);
-        for (const d of v.openDecisions) say(`  waiting on you: ${esc(d.question)}${d.options ? ` [${d.options.join(' | ')}]` : ''} (decision ${esc(d.id)})`);
+        // One line per decision: its question's first line, with the rest in construct inbox show.
+        for (const d of v.openDecisions) say(`  waiting on you: ${esc(d.question.split('\n')[0] ?? '')}${d.options ? ` [${d.options.join(' | ')}]` : ''} (decision ${esc(d.id)})`);
         return 0;
       }
       case 'cancel': {

@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { COMMANDS } from '../src/cli/index.ts';
 import { GLOBAL_FLAGS } from '../src/cli/commands.ts';
 import { TOOLS, HEADLESS_FORBIDDEN } from '../src/kernel/broker/tools.ts';
+import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_CONTRACT, INTERACTIVE_INSTRUCTIONS, RUNNER_INSTRUCTIONS } from '../src/hosts/mcp/instructions.ts';
 import { CONFIG_KEYS } from '../src/kernel/project/config.ts';
 import { createSkillRegistry } from '../src/kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../src/kernel/registry/workflow-registry.ts';
@@ -47,14 +48,40 @@ function cliReference() {
   return parts.join('\n');
 }
 
+/** What a property holds, as the reference names it: its values when they are a closed set, else its type; a list says what it holds. */
+function typeOf(p) {
+  if (p.enum) return p.enum.map((e) => `\`${e}\``).join(', ');
+  if (p.type === 'array' && p.items?.enum) return `list of ${p.items.enum.map((e) => `\`${e}\``).join(', ')}`;
+  if (p.type === 'array' && p.items?.type) return `list of ${p.items.type}`;
+  return p.type;
+}
+
+/** One row per input, then one per field inside it: period.semantics, sources[].role. */
+function inputRows(properties, required, prefix) {
+  const rows = [];
+  for (const [k, p] of Object.entries(properties)) {
+    const name = `${prefix}${k}`;
+    rows.push([`\`${name}\``, typeOf(p), required.includes(k) ? 'yes' : 'no', p.description ?? '']);
+    if (p.type === 'object' && p.properties) rows.push(...inputRows(p.properties, p.required ?? [], `${name}.`));
+    if (p.type === 'array' && p.items?.properties) rows.push(...inputRows(p.items.properties, p.items.required ?? [], `${name}[].`));
+  }
+  return rows;
+}
+
 function brokerReference() {
-  const parts = [HEADER('src/kernel/broker/tools.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
+  const parts = [HEADER('src/kernel/broker/tools.ts and src/hosts/mcp/instructions.ts'), '# Broker reference (MCP)', '', 'The tools Construct offers an agent host over MCP. `construct serve` speaks newline-delimited JSON-RPC 2.0 over stdio through `@modelcontextprotocol/server` 2.0.0 and lists these under `tools/list`; input schemas are closed (undeclared keys are refused). Wrong input comes back as a tool error result: `error` says what is wrong, `field` names the input, and `allowed` and `example` give the values it accepts and one that would pass, or are null when Construct has none to give. Only a call to a tool the surface does not carry is a JSON-RPC error (-32602). The interactive surface serves the person\'s session; the headless surface serves an explicitly configured runner and never carries the tools marked interactive-only.', ''];
+  const quote = (text) => text.split('\n').map((line) => `> ${line}`).join('\n');
+  const count = (n) => n.toLocaleString('en-US');
+  parts.push('## Server instructions', '', 'Every host receives the same text at `initialize`, whatever `--client` it starts the server with.', '',
+    `Codex keeps the first ${count(CONTRACT_PREFIX)} characters as the self-contained part and Claude Code cuts at ${count(HOST_TEXT_LIMIT)}; the contract is the first ${count(INTERACTIVE_CONTRACT.length)} characters, the whole is ${count(INTERACTIVE_INSTRUCTIONS.length)}.`, '',
+    '### Interactive instructions', '', quote(INTERACTIVE_INSTRUCTIONS), '',
+    '### Headless instructions', '', `${count(RUNNER_INSTRUCTIONS.length)} characters.`, '', quote(RUNNER_INSTRUCTIONS), '');
   for (const surface of ['interactive', 'headless']) {
     parts.push(`## ${surface === 'interactive' ? 'Interactive surface' : 'Headless surface'}`, '');
     for (const t of TOOLS.filter((x) => x.surface === 'both' || x.surface === surface)) {
       parts.push(`### \`${t.name}\``, '', `${t.title}. ${t.description}`, '', `Surface: ${t.surface}. Reads only: ${t.readOnly ? 'yes' : 'no'}.`, '');
-      const props = Object.entries(t.inputSchema.properties);
-      if (props.length) parts.push(table(['Input', 'Type', 'Required', 'Meaning'], props.map(([k, p]) => [`\`${k}\``, p.enum ? p.enum.map((e) => `\`${e}\``).join(', ') : p.type, (t.inputSchema.required ?? []).includes(k) ? 'yes' : 'no', p.description])), '');
+      const rows = inputRows(t.inputSchema.properties, t.inputSchema.required ?? [], '');
+      if (rows.length) parts.push(table(['Input', 'Type', 'Required', 'Meaning'], rows), '');
     }
   }
   parts.push('## Never on the headless surface', '', HEADLESS_FORBIDDEN.map((n) => `- \`${n}\``).join('\n'), '');

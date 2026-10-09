@@ -4,13 +4,24 @@
  * returns what it checked and what failed, never a judgment about content.
  *
  * Grounding is checked, not trusted: when the caller supplies a resolver,
- * every cited reference must name something real, every artifact a step says
- * it wrote must exist, and every figure in the output or the artifact must
- * appear in something the step cited (or be derived by arithmetic over figures
- * that do). These are mechanical floors under quality, not a judge of it.
+ * every cited reference must name something this project holds, every
+ * artifact a step says it wrote must exist, and every figure in the output
+ * or in a document the step wrote (its artifact or a changed file; code and
+ * configuration are not read for figures) must appear in text Construct
+ * holds for something else the step cited (or be derived by arithmetic over
+ * figures that do); a document the step wrote never grounds itself. An
+ * excerpt is checked against that text; it never stands in for it. A cited
+ * item dated after the period the run covers is refused unless the output
+ * says why it belongs, and every source the run names must have something
+ * cited from it or be listed as unread. These are mechanical floors under
+ * quality, not a judge of it.
  */
 
-import { normalizeQuote, type RefResolver } from '../project/evidence.ts';
+import { realpathSync } from 'node:fs';
+import { holdsContent, normalizeQuote, type RefResolver, type ResolvedRef } from '../project/evidence.ts';
+import { normalizeUrl } from '../project/urls.ts';
+import { redact } from '../render/redact.ts';
+import { dayOf, type ResolvedPeriod } from '../registry/slots.ts';
 
 export interface ValidatorResult {
   readonly validator: string;
@@ -32,6 +43,43 @@ export interface ValidationSubject {
   readonly settled?: readonly { readonly term: string; readonly statementId: string }[];
   /** The highest sensitivity among the sources this run (or the deliverable it acts on) cited. */
   readonly sensitivity?: string | null;
+  /** The period the run covers, in dates, when it covers one. */
+  readonly period?: ResolvedPeriod | null;
+  /** The declared source ids the run names, when it names any. */
+  readonly sources?: readonly string[] | null;
+}
+
+/** A cited item an output says belongs although it is dated after the period. */
+export interface OutsidePeriod {
+  readonly ref: string;
+  readonly why: string;
+}
+
+/** A named source an output says could not be read. */
+export interface Unread {
+  readonly source: string;
+  readonly why: string;
+}
+
+/** Where the citations a deliverable rests on fall against the period it covers, each by its ref. */
+export interface PeriodCoverage {
+  /** Items whose recorded update falls inside the period. */
+  readonly inside: readonly string[];
+  /** Items last updated before the period starts. */
+  readonly before: readonly string[];
+  /** Items updated after the period ends. */
+  readonly after: readonly string[];
+  /** Items with no date Construct can read, and project files, which are read as they stand now. */
+  readonly undated: readonly string[];
+  /** The items after the period that an output said belong, and why. */
+  readonly acknowledged: readonly OutsidePeriod[];
+}
+
+/** Which of the sources a run names something was cited from, and which an output said could not be read. */
+export interface SourcesCoverage {
+  readonly named: readonly string[];
+  readonly read: readonly string[];
+  readonly unread: readonly Unread[];
 }
 
 const SENSITIVITY_ORDER = ['public', 'internal', 'confidential', 'restricted'] as const;
@@ -61,13 +109,50 @@ function strings(v: unknown, out: string[] = []): string[] {
 }
 
 const MONTH = '(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+const CLOCK = /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi;
 const DATES = [
   new RegExp(`\\b${MONTH}\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b(?![.,]?\\d|\\s?(?:%|[kmb]\\b))`, 'gi'),
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+${MONTH}\\b`, 'gi'),
-  /\b\d{4}-\d{2}-\d{2}\b/g,
+  /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/g,
   /\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/g,
-  /\b\d{1,2}:\d{2}(?::\d{2})?\s?(?:am|pm)?\b/gi,
+  CLOCK,
 ];
+
+/** Whether "h:mm" is a time a clock can show; "80:80" is a port mapping, not a time. */
+function onAClock(time: string): boolean {
+  const [hours, minutes] = time.split(':').map((part) => Number.parseInt(part, 10));
+  return hours !== undefined && minutes !== undefined && hours <= 23 && minutes <= 59;
+}
+
+/** A digit run cited text gives, with an optional unit: not inside a word, a key, a path, an anchor or a version. */
+const CITED_FIGURE = /(?<![\w\-#/.])[$€£]?\d[\d,]*(?:\.\d+)?(?:\s?(?:%|[kKmMbB]\b|ms\b|h\b|x\b))?(?![a-zA-Z_]*\d)/g;
+const CITED_RUN = /(?<![\w\-#/.])\d+(?:\.\d+)?(?![a-zA-Z_]*\d)/g;
+
+/**
+ * Every figure cited text could be giving. Configuration writes figures
+ * inside other tokens ("postgres:16", "80:80", "PORT=8443"), so the cited
+ * side is read more loosely than an output: a digit run after a colon, quote,
+ * equals sign or comma counts, and so does each number of a list. Dates,
+ * times, years, lone digits, one group of "1,600", and digits inside an
+ * identifier (a ticket key, an issue or page number, a hash, a version's
+ * tail) are never figures, on either side.
+ */
+export function citedFiguresIn(text: string): string[] {
+  let body = text;
+  for (const d of DATES) body = body.replace(d, (m) => (d === CLOCK && !onAClock(m) ? m : ' '));
+  const out: string[] = [];
+  const keep = (f: string) => {
+    const digits = f.replace(/[^\d.]/g, '');
+    if (/^\d$/.test(f) || (YEAR.test(digits) && f === digits)) return;
+    out.push(f);
+  };
+  for (const m of body.matchAll(CITED_FIGURE)) keep(normalizeFigure(m[0]));
+  for (const m of body.matchAll(CITED_RUN)) {
+    if (/^\d{3}(?:\.\d+)?$/.test(m[0]) && /\d,$/.test(body.slice(Math.max(0, m.index - 2), m.index))) continue;
+    keep(m[0]);
+  }
+  return out;
+}
 
 /** Figures worth checking: not a lone digit, a year, a date or time, or a list or section number. */
 export function figuresIn(text: string): string[] {
@@ -162,16 +247,55 @@ export function evaluateExpression(expr: string): number | null {
   return v !== null && i === tokens.length ? v : null;
 }
 
+/** A file an output names: a path, or {path}; a {path, removed: true} entry names a file that is gone. */
+function namedPath(x: unknown): string | null {
+  if (typeof x === 'string') return x.trim() !== '' ? x.trim() : null;
+  if (isRecord(x) && typeof x.path === 'string' && x.path.trim() !== '' && x.removed !== true) return x.path.trim();
+  return null;
+}
+
+/** The files an output lists under "changes". */
+function changedPaths(output: unknown): string[] {
+  if (!isRecord(output) || !Array.isArray(output.changes)) return [];
+  return output.changes.map(namedPath).filter((p): p is string => p !== null);
+}
+
+/** Every file an output says it wrote: its changes, then its artifact. */
 function artifactPaths(output: unknown): string[] {
-  if (!isRecord(output)) return [];
-  const out: string[] = [];
-  const push = (x: unknown) => {
-    if (typeof x === 'string' && x.trim() !== '') out.push(x.trim());
-    else if (isRecord(x) && typeof x.path === 'string') out.push(x.path);
-  };
-  if (Array.isArray(output.changes)) output.changes.forEach(push);
-  push(output.artifact);
-  return out;
+  const artifact = isRecord(output) ? namedPath(output.artifact) : null;
+  return [...changedPaths(output), ...(artifact ? [artifact] : [])];
+}
+
+/** Files whose text states figures to a reader; code and configuration are not read for them. */
+const DOCUMENT_EXTENSIONS = new Set(['.md', '.mdx', '.markdown', '.txt', '.rst', '.adoc', '.html', '.htm', '.csv', '.tsv', '.mmd']);
+
+function isDocument(path: string): boolean {
+  const name = path.replaceAll('\\', '/').split('/').pop()!.toLowerCase();
+  const dot = name.lastIndexOf('.');
+  return dot > 0 && DOCUMENT_EXTENSIONS.has(name.slice(dot));
+}
+
+/** Where a file really lives, so a symlink to it or the same name in another letter case is the same file. */
+function realPath(path: string): string {
+  try {
+    return realpathSync.native(path);
+  } catch {
+    return path;
+  }
+}
+
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'] as const;
+
+/** Whether text names the day asked for: a YYYY-MM-DD date as written, or as "October 16", "Oct 16" or "16 October"; anything else as written. */
+function namesDay(text: string, by: string): boolean {
+  if (text.toLowerCase().includes(by.toLowerCase())) return true;
+  const iso = /^\d{4}-(\d{2})-(\d{2})$/.exec(by);
+  const month = iso ? MONTH_NAMES[Number(iso[1]) - 1] : undefined;
+  const day = iso ? Number(iso[2]) : 0;
+  if (!month || day < 1 || day > 31) return false;
+  const name = `(?:${month}|${month.slice(0, 3)}${month === 'september' ? '|sept' : ''})`;
+  const date = `0?${String(day)}(?:st|nd|rd|th)?`;
+  return new RegExp(`\\b${name}\\.?\\s+${date}\\b|\\b${date}\\s+${name}\\b`, 'i').test(text);
 }
 
 function headings(text: string): string[] {
@@ -184,6 +308,11 @@ function headings(text: string): string[] {
 
 type Validator = (subject: ValidationSubject) => readonly string[];
 
+/** What a citation that names nothing held is told: what does resolve, and how to make a host read citable. */
+function unheld(ref: string): string {
+  return `evidence "${ref}" names nothing this project holds: cite a project file, a deliverable, or an item a recorded read holds (its ref or its url); record what you read through your own tools with the sources tool (action report) before citing it`;
+}
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
@@ -194,6 +323,101 @@ function findings(output: unknown): Array<Record<string, unknown>> {
   return Array.isArray(list) ? list.filter(isRecord) : [];
 }
 
+/**
+ * An ISO date, or an ISO date and time with or without a zone. Only these
+ * are read as a day, so the day never depends on the timezone of the machine
+ * that checks it; anything else is undated.
+ */
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/i;
+
+/** The day a cited item was last updated, in `timezone`; null for anything that is not a recorded item with an ISO date. */
+function itemDay(r: ResolvedRef | null, timezone: string): string | null {
+  if (!r || r.kind !== 'item' || typeof r.updatedAt !== 'string') return null;
+  const at = r.updatedAt.trim();
+  return ISO_TIME.test(at) ? dayOf(at, timezone) : null;
+}
+
+/** Whether two references name the same thing: written alike, or resolving to one recorded item or one file. */
+function sameRef(a: string, b: string, resolve: RefResolver): boolean {
+  if (a.trim() === b.trim()) return true;
+  const [x, y] = [resolve(a), resolve(b)];
+  if (!x || !y || x.kind !== y.kind) return false;
+  if (x.kind === 'item') return x.sourceId === y.sourceId && x.itemRef === y.itemRef;
+  return x.path !== undefined && x.path === y.path;
+}
+
+/** What an output lists under a key, as {first, why} pairs; an entry that is not an object comes back blank. */
+function entriesOf(output: unknown, key: 'outsidePeriod' | 'unread', first: 'ref' | 'source'): { name: string; why: string }[] {
+  if (!isRecord(output) || !Array.isArray(output[key])) return [];
+  const text = (x: unknown) => (typeof x === 'string' ? x.trim() : '');
+  return (output[key] as unknown[]).map((x) => (isRecord(x) ? { name: text(x[first]), why: text(x.why) } : { name: '', why: '' }));
+}
+
+/** The items an output says belong although they are dated after the period, each with why. */
+export function outsidePeriodOf(output: unknown): OutsidePeriod[] {
+  return entriesOf(output, 'outsidePeriod', 'ref').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ ref: x.name, why: x.why }));
+}
+
+/** The named sources an output says could not be read, each with why. */
+export function unreadOf(output: unknown): Unread[] {
+  return entriesOf(output, 'unread', 'source').filter((x) => x.name !== '' && x.why !== '').map((x) => ({ source: x.name, why: x.why }));
+}
+
+/** The distinct, non-empty refs cited, in the order first cited. */
+function citedRefs(evidence: readonly { readonly ref: string }[]): string[] {
+  return [...new Set(evidence.map((e) => e.ref).filter((ref): ref is string => typeof ref === 'string' && ref.trim() !== ''))];
+}
+
+/** The sources something was cited from: an item, a file, or a folder inside them; naming a whole source reads nothing from it. */
+function sourcesReadFrom(evidence: readonly { readonly ref: string }[], resolve: RefResolver): Set<string> {
+  const read = new Set<string>();
+  for (const ref of citedRefs(evidence)) {
+    const r = resolve(ref);
+    if (r?.sourceId && (r.kind === 'item' || r.kind === 'file' || r.kind === 'directory')) read.add(r.sourceId);
+  }
+  return read;
+}
+
+/**
+ * Where what a deliverable rests on falls against its period. Only things
+ * that hold or name content are counted: a recorded item by its recorded
+ * update; an item with no ISO date, an unrecorded page, and files and
+ * folders, which are read as they stand now, as undated. Acknowledgments are
+ * kept only for items after the period.
+ */
+export function periodCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, period: ResolvedPeriod, acknowledged: readonly OutsidePeriod[]): PeriodCoverage {
+  const inside: string[] = [];
+  const before: string[] = [];
+  const after: string[] = [];
+  const undated: string[] = [];
+  for (const ref of citedRefs(evidence)) {
+    const r = resolve(ref);
+    if (!r || !(r.kind === 'item' || r.kind === 'web' || r.kind === 'file' || r.kind === 'directory')) continue;
+    const day = itemDay(r, period.timezone);
+    if (day === null) undated.push(ref);
+    else if (day > period.to) after.push(ref);
+    else if (period.from !== null && day < period.from) before.push(ref);
+    else inside.push(ref);
+  }
+  const kept: OutsidePeriod[] = [];
+  for (const a of acknowledged) {
+    if (a.why.trim() === '' || kept.some((k) => sameRef(k.ref, a.ref, resolve))) continue;
+    if (after.some((ref) => sameRef(ref, a.ref, resolve))) kept.push({ ref: a.ref, why: a.why });
+  }
+  return { inside, before, after, undated, acknowledged: kept };
+}
+
+/** Which named sources something was cited from, and which an output said could not be read (and were not read). */
+export function sourcesCoverage(evidence: readonly { readonly ref: string }[], resolve: RefResolver, sources: readonly string[], unread: readonly Unread[]): SourcesCoverage {
+  const read = sourcesReadFrom(evidence, resolve);
+  const listed: Unread[] = [];
+  for (const u of unread) {
+    if (u.why.trim() === '' || !sources.includes(u.source) || read.has(u.source) || listed.some((x) => x.source === u.source)) continue;
+    listed.push({ source: u.source, why: u.why });
+  }
+  return { named: [...sources], read: sources.filter((id) => read.has(id)), unread: listed };
+}
+
 const VALIDATORS: Readonly<Record<string, Validator>> = {
   schema: ({ output, expectedKeys }) => {
     if (!isRecord(output)) return ['output is not an object'];
@@ -202,7 +426,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
   citations_present: ({ evidence, resolve }) => {
     if (evidence.length === 0) return ['no evidence was submitted; every step that reads cites what it read'];
     const problems = evidence.filter((e) => !e.ref || e.ref.trim() === '').map(() => 'an evidence entry has no reference');
-    if (resolve) for (const e of evidence) if (e.ref && e.ref.trim() !== '' && !resolve(e.ref)) problems.push(`evidence "${e.ref}" does not name a file, source, item, or deliverable this project has`);
+    if (resolve) for (const e of evidence) if (e.ref && e.ref.trim() !== '' && !resolve(e.ref)) problems.push(unheld(e.ref));
     return problems;
   },
   no_uncited_material_findings: ({ output }) => {
@@ -268,7 +492,7 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return problems;
   },
   evidence_refs_resolve: ({ evidence, resolvableRefs, resolve }) => {
-    if (resolve) return evidence.filter((e) => !resolve(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
+    if (resolve) return evidence.filter((e) => !resolve(e.ref)).map((e) => unheld(e.ref));
     // Fail closed: with nothing to resolve against, an unchecked pass would read as a checked one.
     if (resolvableRefs.size === 0) return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
     return evidence.filter((e) => !resolvableRefs.has(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);
@@ -345,9 +569,13 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  artifacts_exist: ({ output, resolve }) => {
+  artifacts_exist: ({ output, expectedKeys, resolve }) => {
     const paths = artifactPaths(output);
-    if (paths.length === 0) return ['the output names no artifact (give "artifact" or "changes" with the file written)'];
+    if (paths.length === 0) {
+      // A step that declares the files it changed may honestly change none: an analysis, or work that wrote nothing here.
+      if (expectedKeys.includes('changes') && isRecord(output) && Array.isArray(output.changes)) return [];
+      return ['the output names no artifact (give "artifact" or "changes" with the file written)'];
+    }
     if (!resolve) return ['nothing was supplied to check that the artifact exists'];
     const problems: string[] = [];
     for (const p of paths) {
@@ -359,15 +587,29 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     return problems;
   },
   numbers_grounded: ({ output, evidence, resolve, input }) => {
+    // Only text Construct holds grounds a figure: a file, or what a recorded read kept. An excerpt is a claim about
+    // that text, checked by excerpts_match, and supports nothing on its own.
+    // Documents the step wrote are read for figures; code and configuration are not, since their ports, limits and
+    // versions are the change itself, and citing a changed code file can ground what the output says about it. What
+    // is read is what is being checked, so citing it, by any name for the same file, grounds nothing.
+    const artifact = isRecord(output) ? namedPath(output.artifact) : null;
+    const read = [...new Set([...changedPaths(output), ...(artifact ? [artifact] : [])])].filter(isDocument);
+    const own = new Set(read.map((p) => resolve?.(p)?.path).filter((p): p is string => p !== undefined).map(realPath));
     const cited: string[] = [];
+    const cut: string[] = [];
+    const selfCited: string[] = [];
     for (const e of evidence) {
-      if (e.excerpt) cited.push(e.excerpt);
       const r = resolve?.(e.ref);
+      if (r?.path !== undefined && own.has(realPath(r.path))) {
+        if (!selfCited.includes(e.ref)) selfCited.push(e.ref);
+        continue;
+      }
       if (r?.text) cited.push(r.text);
+      if (r?.truncated && !cut.includes(e.ref)) cut.push(e.ref);
     }
     // What the person asked for counts as given: a figure in the request or inputs is theirs, not invented.
-    cited.push(...strings(input));
-    const haystack = new Set(figuresIn(cited.join('\n')));
+    const citedText = cited.join('\n');
+    const haystack = new Set([...citedFiguresIn(citedText), ...figuresIn(citedText), ...figuresIn(strings(input).join('\n'))]);
     const citedValues = [...haystack].map(figureValue).filter((x): x is number => x !== null);
     const supported = (f: string) => figureSupported(f, haystack, citedValues);
     const derived = new Set<string>();
@@ -394,14 +636,16 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
       });
     }
     const texts = strings(output);
-    for (const p of artifactPaths(output)) {
+    for (const p of read) {
       const t = resolve?.(p)?.text;
       if (t) texts.push(t);
     }
     const unsupported = new Set<string>();
     const derivedValues = [...derived].map(figureValue).filter((x): x is number => x !== null);
     for (const f of figuresIn(texts.join('\n'))) if (!supported(f) && !figureSupported(f, derived, derivedValues)) unsupported.add(f);
-    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it`)];
+    const cutNote = cut.length > 0 ? ` (the recorded text of ${cut.join(', ')} was cut at 16 KiB; report the part you rely on as its own item)` : '';
+    const selfNote = selfCited.length > 0 ? ` (citing ${selfCited.join(', ')}, which this step wrote, grounds nothing in it)` : '';
+    return [...problems, ...[...unsupported].map((f) => `the figure "${f}" appears in no cited source; cite where it comes from, or list it under derivations with the expression that computes it${cutNote}${selfNote}`)];
   },
   template_conformance: ({ output, input, resolve }) => {
     const template = (isRecord(output) && typeof output.template === 'string' ? output.template : null) ?? (isRecord(input) && typeof input.template === 'string' ? input.template : null);
@@ -424,18 +668,58 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     for (const e of evidence) {
       if (!e.excerpt || e.excerpt.trim() === '') continue;
       const r = resolve(e.ref);
-      // Without text there is nothing to compare, and the excerpt stands as the host's word. With text, even
-      // reported text (a fixture, a host's read), the quote has to agree with what was recorded.
+      // Without text there is nothing to compare: the excerpt is not checked, and it supports nothing (no figure,
+      // no content floor). With text, even reported text (a fixture, a host's read), the quote has to agree with
+      // what was recorded. Both sides are compared with credentials removed, since recorded text is kept that way.
       if (!r || r.text === undefined) continue;
-      if (!normalizeQuote(r.text).includes(normalizeQuote(e.excerpt))) problems.push(`the excerpt cited from "${e.ref}" does not appear in it`);
+      if (normalizeQuote(redact(r.text)).includes(normalizeQuote(redact(e.excerpt)))) continue;
+      // Text cut at the cap may hold the quote past the cut: unchecked, not a misquote.
+      if (r.truncated) continue;
+      problems.push(`the excerpt cited from "${e.ref}" does not appear in it`);
     }
     return problems;
   },
-  evidence_witnessed: ({ evidence, resolve }) => {
+  evidence_recorded: ({ evidence, resolve }) => {
     if (!resolve) return ['nothing was supplied to resolve evidence against'];
     if (evidence.length === 0) return ['no evidence was submitted'];
-    const witnessed = evidence.filter((e) => resolve(e.ref)?.provenance === 'witnessed').length;
-    return witnessed === 0 ? ['every citation rests on the host\'s word; cite at least one thing Construct can open (a project file or a source it reads)'] : [];
+    return evidence.some((e) => holdsContent(resolve(e.ref))) ? [] : ['nothing cited holds content Construct can check: cite a project file, or an item whose text a recorded read holds'];
+  },
+  within_period: ({ output, evidence, resolve, period }) => {
+    // Only an item dated after the period ends is refused. One last updated before it starts, one with no date, and a
+    // file are not: the deliverable counts them so the person sees what the work could not place in the period.
+    if (!period || !resolve) return [];
+    const problems: string[] = [];
+    if (isRecord(output) && output.outsidePeriod !== undefined && !Array.isArray(output.outsidePeriod)) problems.push('"outsidePeriod" must be a list of {ref, why}');
+    const entries = entriesOf(output, 'outsidePeriod', 'ref');
+    const cited = citedRefs(evidence);
+    for (const entry of entries) {
+      if (entry.name === '') problems.push('an "outsidePeriod" entry names no ref; give {ref, why}');
+      else if (!cited.some((ref) => sameRef(ref, entry.name, resolve))) problems.push(`"outsidePeriod" lists "${entry.name}", which this step does not cite; list only what you cite`);
+      else if (entry.why === '') problems.push(`"outsidePeriod" lists "${entry.name}" without saying why it belongs`);
+    }
+    for (const ref of cited) {
+      const day = itemDay(resolve(ref), period.timezone);
+      if (day === null || day <= period.to) continue;
+      if (entries.some((x) => x.name !== '' && sameRef(ref, x.name, resolve))) continue;
+      problems.push(`"${ref}" was updated ${day}, after the period ends (${period.to}); cite a version from inside the period, or list it under "outsidePeriod" with why it belongs`);
+    }
+    return problems;
+  },
+  named_sources_read: ({ output, evidence, resolve, sources }) => {
+    if (!sources || sources.length === 0) return [];
+    const problems: string[] = [];
+    if (isRecord(output) && output.unread !== undefined && !Array.isArray(output.unread)) problems.push('"unread" must be a list of {source, why}');
+    const entries = entriesOf(output, 'unread', 'source');
+    const read = resolve ? sourcesReadFrom(evidence, resolve) : null;
+    for (const id of sources) {
+      if (read?.has(id)) continue;
+      const entry = entries.find((x) => x.name === id);
+      if (entry?.why) continue;
+      if (entry) problems.push(`"unread" lists ${id} without saying why it could not be read`);
+      else if (!read) problems.push(`nothing was supplied to check what was read from ${id}`);
+      else problems.push(`this run names ${id}, and this step cites nothing read from it; cite what you read (as ${id}:<item>), or list it under "unread" with why`);
+    }
+    return problems;
   },
   superseded_acknowledged: ({ output, evidence, resolve }) => {
     if (!resolve) return [];
@@ -469,18 +753,19 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const audience = isRecord(input) && typeof input.audience === 'string' ? input.audience.trim() : '';
     const by = isRecord(input) && typeof input.decisionBy === 'string' ? input.decisionBy.trim() : '';
     if (audience && !section.toLowerCase().includes(audience.toLowerCase())) problems.push(`the decision section does not name who decides (${audience})`);
-    if (by ? !section.toLowerCase().includes(by.toLowerCase()) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
+    if (by ? !namesDay(section, by) : !/\b(?:by|before|no later than)\b/i.test(section)) problems.push('the decision section does not say by when');
     return problems;
   },
   sources_diverse: ({ evidence, resolve }) => {
-    // Triangulation: a finding resting on one document is a quotation, not research.
+    // Triangulation: a finding resting on one document is a quotation, not research. Only what holds content
+    // counts, and pages of one website are one place.
     const roots = new Set<string>();
     for (const e of evidence) {
       const r = resolve?.(e.ref);
-      if (!r) continue;
-      if (r.kind === 'web') {
-        try { roots.add(new URL(e.ref.trim()).hostname.replace(/^www\./, '')); } catch { /* unparseable stays uncounted */ }
-      } else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
+      if (!r || !holdsContent(r)) continue;
+      const page = r.itemRef ? normalizeUrl(r.itemRef) : null;
+      if (page !== null) roots.add(new URL(page).hostname.replace(/^www\./, ''));
+      else roots.add(r.sourceId ? `${r.sourceId}:${r.itemRef ?? ''}` : (r.path ?? e.ref));
     }
     return roots.size >= 2 ? [] : [`the findings rest on ${String(roots.size)} independent source(s); research needs at least two that do not come from the same place`];
   },

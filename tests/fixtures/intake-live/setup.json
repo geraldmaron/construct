@@ -1,0 +1,14 @@
+{
+  "name": "acme-platform",
+  "scale": "team",
+  "outcome": "Move the payment-to-ledger hop onto an event bus without breaking checkout",
+  "constraints": ["Never change the ledger's double-entry rule without a recorded decision"],
+  "sources": [
+    { "id": "jira", "kind": "jira", "locator": "PAY", "purpose": "Payments team tickets: work in flight, incidents, and the backlog" },
+    { "id": "confluence", "kind": "docs", "locator": "confluence:ENG:payments-architecture", "purpose": "Engineering design pages and runbooks" },
+    { "id": "datadog", "kind": "other", "locator": "datadog:dashboards/payments", "purpose": "Service health dashboards, monitors, and incidents" },
+    { "id": "slack", "kind": "other", "locator": "slack:payments-eng", "purpose": "Team discussion and announcements" },
+    { "id": "github", "kind": "github", "locator": "acme/platform", "purpose": "Code, pull requests, and issues" },
+    { "id": "notion", "kind": "docs", "locator": "notion:product:roadmap", "purpose": "Product specs and the roadmap" }
+  ]
+}

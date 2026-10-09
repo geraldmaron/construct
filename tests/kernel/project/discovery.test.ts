@@ -1,6 +1,8 @@
 /**
  * tests/kernel/project/discovery.test.ts — the project's own files become
- * proposals with provenance; three questions; nothing confirms itself.
+ * proposals with provenance; three questions; nothing confirms itself. The
+ * files' guess at the scale is shown in the question, not applied, and a
+ * scale answer is understood in the question's own words.
  */
 
 import { test } from 'node:test';
@@ -8,10 +10,12 @@ import assert from 'node:assert/strict';
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gatherProjectMaterial, MAX_MATERIAL_FILE_BYTES } from '../../../src/hosts/repo/material.ts';
-import { draftFromMaterial, ONBOARDING_QUESTIONS } from '../../../src/kernel/project/discovery.ts';
+import { draftFromMaterial, ONBOARDING_QUESTIONS, SCALE_CHOICES } from '../../../src/kernel/project/discovery.ts';
 import {
-  applyDiscoveryDraft, applyOnboardingAnswers, acceptProposal, onboardingStatus, composeConstitution,
+  applyDiscoveryDraft, applyOnboardingAnswers, acceptProposal, onboardingStatus, composeConstitution, scaleFromAnswer,
 } from '../../../src/kernel/project/onboarding.ts';
+import { PersonChannelRequiredError } from '../../../src/kernel/policy/channels.ts';
+import { getProfile } from '../../../src/kernel/state/profile.ts';
 import { emptyConstitution, validateConstitution, constitutionCompleteness } from '../../../src/kernel/project/constitution.ts';
 import { initializeProject } from '../../../src/kernel/project/initialize.ts';
 import { listStatements } from '../../../src/kernel/state/profile.ts';
@@ -265,6 +269,97 @@ test('applying a draft keeps locator and content digest on the statement', () =>
       assert.equal(decision!.locator, 'docs/adr/0001-append-only.md');
       assert.ok(decision!.contentDigest);
       assert.match(decision!.contentDigest!, /^sha256:/);
+    } finally {
+      init.store.close();
+    }
+  } finally {
+    cleanup();
+  }
+});
+
+test('the files\' guess at the scale is shown in the scale question, with what it rests on, and the profile keeps no scale until the person answers', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    mkdirSync(join(root, '.github'), { recursive: true });
+    writeFileSync(join(root, '.github', 'CODEOWNERS'), ['src/ @acme/platform', 'docs/ @acme/docs', 'infra/ @acme/sre', ''].join('\n'), 'utf8');
+    const init = initializeProject({ root, projectId: 'p', name: 'owned', at: AT });
+    try {
+      let n = 0;
+      const nextId = (p: string) => `${p}-${String(++n)}`;
+      const applied = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId });
+      const scale = applied.questions.find((q) => (q.subject as { onboarding?: string }).onboarding === 'scale')!;
+      assert.deepEqual(scale.subject, { onboarding: 'scale', suggested: 'multi_team', basis: '3 distinct owners in .github/CODEOWNERS' });
+      assert.ok(scale.question.startsWith(ONBOARDING_QUESTIONS[0]!.question), 'the question is asked as written');
+      assert.match(scale.question, /From \.github\/CODEOWNERS \(3 distinct owners\) this looks like several teams' work \(multi_team\); say whether that is right\.$/);
+      assert.deepEqual(scale.options, ['solo', 'side_project', 'team', 'multi_team', 'organization']);
+      assert.equal(applied.profile.scale, null, 'the guess is shown, not applied');
+      assert.equal(getProfile(init.store)!.scale, null);
+      assert.ok(onboardingStatus(init.store).missing.includes('scale'));
+
+      // Without a guess the question carries none.
+      const { root: bare, cleanup: cleanBare } = tmpProject();
+      try {
+        const plain = initializeProject({ root: bare, projectId: 'q', name: 'bare', at: AT });
+        try {
+          const q = applyDiscoveryDraft(plain.store, { draft: draftFromMaterial(gatherProjectMaterial(bare)), at: AT, nextId }).questions[0]!;
+          assert.equal(q.question, ONBOARDING_QUESTIONS[0]!.question);
+          assert.deepEqual(q.subject, { onboarding: 'scale' });
+        } finally {
+          plain.store.close();
+        }
+      } finally {
+        cleanBare();
+      }
+    } finally {
+      init.store.close();
+    }
+  } finally {
+    cleanup();
+  }
+});
+
+test('a scale answer is understood by its id or the question\'s own words for it, and anything else is refused with the choices', () => {
+  const said: ReadonlyArray<readonly [string, string]> = [
+    ['a side project', 'side_project'],
+    ['my primary product', 'solo'],
+    ['Your primary product (just you)', 'solo'],
+    ['primary product', 'solo'],
+    ['team project', 'team'],
+    ["several teams' work", 'multi_team'],
+    ['Several teams’ work', 'multi_team'],
+    ['organization-wide system', 'organization'],
+    ['It is a side project.', 'side_project'],
+    ['multi-team', 'multi_team'],
+  ];
+  for (const [text, id] of said) assert.equal(scaleFromAnswer(text), id, text);
+  for (const c of SCALE_CHOICES) {
+    assert.equal(scaleFromAnswer(c.id), c.id);
+    assert.equal(scaleFromAnswer(c.label), c.id);
+  }
+  const choices = "a side project (side_project) | your primary product, just you (solo) | a team project (team) | several teams' work (multi_team) | an organization-wide system (organization)";
+  for (const text of ['something broader', 'enormous', 'side', '']) {
+    assert.throws(() => scaleFromAnswer(text), (e: unknown) => e instanceof Error && e.message === `${JSON.stringify(text)} is not one of them: ${choices}`, text);
+  }
+});
+
+test('only the person\'s own channel makes a project a side project; any other scale lands on any channel', () => {
+  const { root, cleanup } = tmpProject();
+  try {
+    const init = initializeProject({ root, projectId: 'p', name: 'light', at: AT });
+    try {
+      let n = 0;
+      const nextId = (p: string) => `${p}-${String(++n)}`;
+      const asked = applyDiscoveryDraft(init.store, { draft: draftFromMaterial(gatherProjectMaterial(root)), at: AT, nextId }).questions[0]!;
+      for (const channel of ['relay', undefined] as const) {
+        assert.throws(
+          () => applyOnboardingAnswers(init.store, { answers: { scale: 'side_project' }, by: 'relayed', at: AT, nextId, ...(channel ? { channel } : {}) }),
+          (e: unknown) => e instanceof PersonChannelRequiredError && e.decisionId === asked.id && e.message.includes(`construct inbox resolve ${asked.id} side_project`),
+        );
+      }
+      assert.equal(getProfile(init.store)!.scale, null, 'nothing was applied');
+      assert.equal(onboardingStatus(init.store).openQuestions.length, 3, 'the question stays open for the person');
+      assert.equal(applyOnboardingAnswers(init.store, { answers: { scale: 'team' }, by: 'relayed', at: AT, nextId, channel: 'relay' }).profile.scale, 'team');
+      assert.equal(applyOnboardingAnswers(init.store, { answers: { scale: 'side_project' }, by: 'person via cli', at: AT, nextId, channel: 'tty_cli' }).profile.scale, 'side_project');
     } finally {
       init.store.close();
     }

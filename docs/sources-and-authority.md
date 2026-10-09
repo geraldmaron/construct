@@ -21,7 +21,14 @@ construct source retire design
 Declared sources go into `.construct/sources.json` without credentials; a
 locator that carries a password or any key that names a secret is refused.
 `--local` keeps a source out of the committed file so a sensitive locator
-stays in this checkout.
+stays in this checkout. A session can also declare a system the person
+named, through the `sources` tool: such a source is local, confidential,
+and informative, and never a directory or git source (see
+[Connectors and system semantics](connectors-and-semantics.md)).
+Committing a local source with `construct source add <id>` under the same
+kind makes it declared and keeps what was read from it. It keeps its
+sensitivity unless `--sensitivity` names another, and a local locator stays
+local when the committed declaration names none.
 
 A relative directory locator is taken relative to the project. `relate`
 records how two sources stand to each other; relations are typed (governs,
@@ -76,10 +83,25 @@ their last read, so a session refreshes before relying on them.
 
 ## What the person settles governs
 
-A remembered decision that says one thing replaces another ("INT-203
-supersedes ADR-004", "the 2025 platform strategy is outdated") marks the
-named document or item as superseded, with the same effect as a
-"Supersedes:" header: citing it without saying so is sent back. Confirmed
-decisions and constraints are also handed to every step that reads, with
-the instruction to list a source that disagrees with one under conflicts,
-citing the statement.
+Only the person, on a channel of their own (their terminal, or a prompt the
+host shows them), can mark a document or item no longer current, rule a
+term out, or replace a record they settled. When the session passes
+`outdates` (the names the person said are no longer current), `contradicts`
+(the terms a decision rules out), or `replaces` to `remember`, Construct
+asks the person to confirm it: in the host's own prompt when the host can
+show one, otherwise in the inbox, answered with `construct inbox resolve`.
+A decision that only adds is recorded at once; replacing a record waits for
+the answer. Once the person confirms that a document is no longer current,
+citing it without saying so is sent back, the same as a "Supersedes:"
+header. Nothing is read out of a decision's prose: "ADR-004 is outdated" in
+the wording of a decision is the decision's wording, not a supersession.
+
+Every statement says whose voice it is in: the person's own, relayed by an
+assistant, Construct's inference waiting for review, or no record of how it
+arrived. Decisions and constraints in the person's voice reach every step
+that reads as settled, with the instruction to list a source that
+disagrees with one under conflicts, citing the statement. Ones an assistant
+recorded for the person reach those steps on a separate line, as
+information to check with them rather than an instruction. A rule-out or
+supersession recorded before statements kept their channel has no record of
+how it arrived, and restricts nothing until the person confirms it again.

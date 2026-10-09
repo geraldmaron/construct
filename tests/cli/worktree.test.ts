@@ -133,6 +133,24 @@ test('doctor in a worktree reports the shared project, and init there is refused
   }
 });
 
+test('doctor in a worktree checks that worktree\'s own Claude Code hooks and never says init in the main checkout adds them there', () => {
+  const fx = sterile();
+  try {
+    const r = repo(fx, true);
+    const wired = cli(fx, r.main, ['init', '--client=claude-code']);
+    assert.equal(wired.status, 0, wired.out);
+    assert.match(cli(fx, r.main, ['doctor']).out, /ok\s+host-hooks: \.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart/);
+    const lane = cli(fx, r.external, ['doctor']).out;
+    const line = lane.split('\n').find((l) => /host-hooks:/.test(l)) ?? '';
+    assert.match(line, /^ok\s+host-hooks: no construct hooks in \.claude\/settings\.local\.json; `construct init` writes the hooks only in the main checkout, .*, not in this worktree's own \.claude\/settings\.local\.json$/);
+    assert.match(line, pathPattern(r.main));
+    assert.doesNotMatch(line, /adds them/);
+    assert.equal(existsSync(join(r.external, '.claude', 'settings.local.json')), false);
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('removing a worktree loses nothing, and a store copied into a worktree is never used', () => {
   const fx = sterile();
   try {

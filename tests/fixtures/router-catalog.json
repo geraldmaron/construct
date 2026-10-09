@@ -1,0 +1,583 @@
+{
+  "format": "construct-router-catalog",
+  "formatVersion": 1,
+  "frozenAt": "2026-10-08",
+  "note": "A frozen copy of each shipped skill as the router reads it: description, activation and stand-down phrases, and labeled activating examples. The router regression tests read this copy, so they test the router code and never veto an edit to a live description.",
+  "skills": [
+    {
+      "id": "adversarial-review",
+      "description": "Challenges a finished deliverable, plan, or decision before anyone commits: the strongest case against it, the failure it hides, the assumption doing the work. Use when the person says things like: poke holes in this; tell me why this will fail; argue the other side; be the skeptic; what's wrong with this plan; we're too excited about this; find the weak point before we commit. Not for building or fixing the thing itself, and not a substitute for the review a licensed professional must give.",
+      "activation": [
+        "poke holes in this before we commit",
+        "tell me why this will fail",
+        "argue the other side",
+        "be the skeptic about this proposal",
+        "what is wrong with this plan",
+        "we are too excited about this idea",
+        "find the weak point",
+        "a finished artifact is about to be committed to and being wrong is expensive",
+        "architecture, data model, security boundary, vendor, dependency, build-vs-buy, migration, hard-to-reverse change",
+        "a spec about to be built, a public factual claim, a decision record about to be executed, a strategy about to be funded",
+        "challenge this, try to break the case, find what is wrong with the thinking, strongest case against",
+        "challenge this decision or architecture before we commit to it",
+        "review the plan for the failure modes we have not considered"
+      ],
+      "standDown": [
+        "the artifact is still moving, a half-finished draft, tidy up",
+        "low-stakes reversible work, easy to change later, cheap pick",
+        "code review of a diff for style and naming",
+        "fix a typo"
+      ],
+      "examples": [
+        "Challenge this architecture decision before we commit to it",
+        "We're about to sign with this vendor; try to break the case for it",
+        "Review the migration plan for the failure modes we haven't considered",
+        "This spec is final and about to be built; find what's wrong with the thinking",
+        "Before we publish this claim publicly, what is the strongest case against it",
+        "poke holes in this design before we commit",
+        "tell me why this plan will fail",
+        "be the skeptic, what's wrong with this proposal",
+        "we're too excited about this, someone needs to argue the other side"
+      ]
+    },
+    {
+      "id": "construct",
+      "description": "Construct is bound to this project: it remembers what the person asks to keep, runs an outcome through a resolved workflow, and keeps a standing outcome reviewed on a clock the person owns. Use when the person says things like: remember that we decided; what did we decide about; kick off the review for; start the release readiness check; every Monday compare the roadmap to the board. Answer plain questions plainly and record nothing; stand down when nothing is asked of Construct.",
+      "activation": [
+        "remember that we decided",
+        "note this down for later",
+        "what did we decide about",
+        "kick off the review for",
+        "start the release readiness check",
+        "every Monday compare the roadmap to the board",
+        "keep this reviewed on a schedule",
+        "Construct is bound to this project and the person is talking in their agent session",
+        "remember that",
+        "record this, note this, keep in mind",
+        "review this against our principles, do this piece of work and hand it back",
+        "every month, every January, keep this reviewed on a schedule, start the review"
+      ],
+      "standDown": [
+        "a plain question about how something works, explain, what does this function do",
+        "thanks",
+        "that is all, nothing more, no work or memory was asked for"
+      ],
+      "examples": [
+        "Remember that we will not add schema migration until stable",
+        "Review this implementation against our design principles",
+        "Every January compare team strategies to active Jira work and capacity",
+        "Start the design conformance review for the payments feature",
+        "can you keep in mind that the API freeze is Friday",
+        "remember that we decided not to support IE11",
+        "every monday check whether the roadmap still matches the jira board",
+        "what did we decide about the pricing tiers last month",
+        "kick off the release readiness review for 3.1"
+      ]
+    },
+    {
+      "id": "context-mapping",
+      "description": "Maps an unfamiliar system before anyone acts in it: the parts, who owns what, what depends on what, the boundaries, and the unknowns, each with how it was observed. Use when the person says things like: I just inherited this; new job and they handed me the repo; where do I even start; before I touch this I want to know what breaks; who actually owns this; we took over a vendor's integration; what reads this output. Not when the person already knows the ground, or for a one-line change whose neighbours do not matter.",
+      "activation": [
+        "I just inherited this codebase",
+        "new job and they handed me the repo",
+        "where do I even start with this system",
+        "before I touch this I want to know what will break",
+        "who actually owns this and what depends on it",
+        "we took over a vendor integration and the docs are wrong",
+        "what reads the output of this job",
+        "acting inside a system you did not build or do not hold in your head",
+        "inheriting a codebase, service, program, or vendor relationship; onboarding; integrating; resuming shifted ground",
+        "map the dependencies, owners, boundaries, and unknowns before changing anything",
+        "how the parts relate, what depends on what, who owns it"
+      ],
+      "standDown": [
+        "you already hold the map, know the system, just implement",
+        "a one-line fix whose neighbors do not matter, rename a variable",
+        "a plain question with no system to map"
+      ],
+      "examples": [
+        "I just inherited this service and don't know how the parts relate",
+        "Map the dependencies and owners of this program before I change anything",
+        "We're onboarding to this codebase; what depends on what and who owns it",
+        "Integrate with the billing system; I need the boundaries and the unknowns first",
+        "The team lead says the queue feeds the report but nobody is sure; we're about to rewrite the report",
+        "new job, they handed me the payments repo and left for vacation, where do I even start",
+        "before I touch the scheduler I want to know what will break",
+        "who actually owns the invoicing cron and what reads its output",
+        "we took over a vendor's integration and half the docs are wrong"
+      ]
+    },
+    {
+      "id": "decision-framing",
+      "description": "Frames a decision that will be expensive to reverse: the options, the trade-offs, the strongest objection, a recommendation. Use when the person says things like: buy or build; should we go with X or Y; we've argued about this for weeks, settle it; lay out the options so leadership can pick; is it worth delaying to fix; help me decide; we keep going back and forth. Not for choices that are cheap to undo, and not for gathering the facts first (that is research).",
+      "activation": [
+        "buy or build, which one",
+        "should we go with this or that",
+        "we have argued about this for weeks, settle it",
+        "lay out the options so leadership can choose",
+        "is it worth delaying launch to fix this",
+        "help me decide between these",
+        "we keep going back and forth on this",
+        "a real choice that will carry weight: build, buy, commit, reorganize, or forgo, and reversing has a cost",
+        "build ourselves or buy a vendor, pick a database, choose between architectures, which sequencing of investments to commit to",
+        "frame the choice with trade-offs and recommend one with the strongest objection stated"
+      ],
+      "standDown": [
+        "the decision is already made, help execute the rollout",
+        "only one viable option, just do it",
+        "a cheap reversible pick, any of these, easy to change",
+        "a scheduling or factual question with nothing to decide"
+      ],
+      "examples": [
+        "Should we build this ourselves or buy a vendor product; it's expensive to reverse",
+        "Help me frame the choice between the two architectures with the trade-offs",
+        "We need to pick a database; recommend one with the strongest objection stated",
+        "Which sequencing of these investments should we commit to this year",
+        "We keep going back and forth on whether to migrate; nobody has written down why",
+        "buy the tool or keep building our own, the CFO wants an answer friday",
+        "we've argued about postgres vs dynamo for three weeks, settle it",
+        "help me lay out the options for the org restructure so leadership can pick",
+        "is it worth delaying launch two weeks to fix the onboarding flow",
+        "Write a proposal asking leadership to fund this, with the options and what they must decide",
+        "Put together the business case for investing in this next half"
+      ]
+    },
+    {
+      "id": "experience-design",
+      "description": "Reviews or reshapes an interface or flow for whether people succeed in it: task completion, findability, error states, accessibility, and fit with the design system. Use when the person says things like: customers abandon the signup at this step; support keeps asking where the button is; nobody can find anything on this page; the checkout takes too many screens; is this form usable; does this screen follow our design system. Not for backend behaviour or copy tone alone.",
+      "activation": [
+        "customers abandon the signup at this step",
+        "support keeps asking where the button is",
+        "nobody can find anything on this page",
+        "the checkout takes too many screens",
+        "is this flow usable and accessible",
+        "does this screen follow our design system",
+        "people get stuck in the onboarding",
+        "review this screen, this flow, this interface for usability and accessibility",
+        "can people complete the task, what happens when it fails, is it accessible",
+        "does this design follow our design system, is it consistent",
+        "what does the research say about how people use this"
+      ],
+      "standDown": [
+        "which color or font looks nicer with no task in view",
+        "implementation detail of a component",
+        "backend behavior with no interface",
+        "change the database, the backend, the index, the server"
+      ],
+      "examples": [
+        "Review the checkout flow for usability and accessibility",
+        "Can people complete the signup task and what happens when it fails",
+        "Does the new settings screen follow our design system",
+        "What does the research say about how people use the dashboard",
+        "support keeps getting tickets from people who cannot find the export button",
+        "customers keep abandoning the signup on the phone number step",
+        "our support inbox is full of 'where is the download button'",
+        "rework the settings page, nobody can find anything in it",
+        "the checkout takes seven screens, that can't be right"
+      ]
+    },
+    {
+      "id": "governance-risk",
+      "description": "Spots compliance, legal, contractual, and financial exposure in plain language: what rule or obligation applies, what the evidence is, what a licensed professional must settle. Use when the person says things like: we started selling in a new country or industry; a lawyer sent us a letter; we're about to sign this deal, what could bite us; the board wants a risk register; are we allowed to; do we need a policy for this. Research and issue-spotting only, never advice; security controls go to security- privacy.",
+      "activation": [
+        "we started selling to a new country or industry",
+        "a customer's lawyer sent us a letter",
+        "we are about to sign this deal, what could bite us",
+        "the board wants a risk register",
+        "are we allowed to do this",
+        "do we need a policy for this",
+        "what obligations come with this contract",
+        "what compliance, legal, or financial exposure does this create, spot the issues",
+        "which regulation, contract, or policy governs this and what does it say",
+        "prepare the packet for counsel, for the auditor, for finance review",
+        "what controls and evidence would an auditor expect here"
+      ],
+      "standDown": [
+        "give legal, tax, or financial advice, sign off, certify, decide whether it is lawful",
+        "a technical review with no regulatory, contractual, or financial dimension",
+        "a question a plain policy lookup answers",
+        "review the code for correctness or style",
+        "where is the policy document"
+      ],
+      "examples": [
+        "What compliance and legal exposure does the new data-sharing feature create",
+        "Which regulation governs storing EU customer data and what does it actually say",
+        "Prepare the packet for counsel on the vendor contract change",
+        "What controls and evidence would an auditor expect for this access process",
+        "we started charging in a new country last month",
+        "we started selling to hospitals last month, anything we need to worry about",
+        "a customer's lawyer sent us a letter about our data retention",
+        "we're about to sign a reseller deal in brazil, what could bite us",
+        "the board wants a risk register for the new business line"
+      ]
+    },
+    {
+      "id": "intake",
+      "description": "Turns a long, messy, nonlinear request into one structured brief: what is actually being asked, the constraints, what was already decided, the open questions. Use when the person says things like: so the thing from Tuesday plus what Raj said minus the pricing part; here are my notes, pull out what they asked for; five messages saying different things, what do they want; turn this rambling memo into something the team can act on; make this a ticket. Not for a single clear ask.",
+      "activation": [
+        "the thing from Tuesday plus what he said minus the pricing part",
+        "here are my notes, pull out what they actually asked for",
+        "five messages saying different things, what do they want",
+        "turn this rambling memo into something the team can act on",
+        "make all of this into a ticket",
+        "sort out what is being asked in this thread",
+        "a request carrying several concerns, corrections, or implied outcomes at once",
+        "a brain dump, a forwarded thread, meeting notes, asks outnumbering the sentences that state them",
+        "turn this into a plan without asking me to restate it",
+        "extract the plan, the corrections, the contradictions, what we actually do"
+      ],
+      "standDown": [
+        "a clear single-outcome request: add a button, rename the function, just do it",
+        "thinking out loud with no ask yet, roadmap musing"
+      ],
+      "examples": [
+        "Here's a brain dump from the meeting with several asks and corrections, turn it into a plan",
+        "Forwarded thread with three different requests and some contradictions; what do we actually do",
+        "These meeting notes carry corrections and implied outcomes; extract the plan without asking me to restate",
+        "so like the thing from tuesday, plus what raj said, but not the part about billing, and also the doc needs redoing",
+        "ok so the thing sarah mentioned plus the slack thread from monday minus the pricing stuff, make that a ticket",
+        "here are my notes from the customer call, pull out what they actually asked for",
+        "i have five messages from the client saying different things, what do they want",
+        "turn this rambling voice memo into something the team can act on"
+      ]
+    },
+    {
+      "id": "investigative-research",
+      "description": "Establishes what is actually true from primary sources and records: claims checked against evidence, timelines reconstructed, provenance kept. Use when the person says things like: is that real; someone claims X, check it; find out whether their numbers are true; what actually happened, the timeline doesn't add up; verify this before we publish; who said what and when. Not for deciding what to do with the facts, and not for compliance obligations.",
+      "activation": [
+        "is that claim real",
+        "someone claims this, check it against the facts",
+        "find out whether their numbers are actually true",
+        "what actually happened, the timeline does not add up",
+        "verify this before we publish it",
+        "who said what and when",
+        "a conclusion someone will decide, spend, accuse, publish, or rely on",
+        "due diligence on a vendor or company, background investigation, competitive or market claim, incident or timeline reconstruction, verify this claim",
+        "sources classed, independence checked, survive a hostile reader, primary sources"
+      ],
+      "standDown": [
+        "a single-fact question one authoritative source settles, what year was it released",
+        "brainstorm names, draft a tweet, an opinion, speed over certainty",
+        "quick opinion on popularity"
+      ],
+      "examples": [
+        "Do due diligence on this vendor before we sign; the conclusion must survive a hostile reader",
+        "Reconstruct the incident timeline from the records and verify every claim",
+        "Verify this competitive claim against primary sources before we publish it",
+        "Background investigation on this company with sources classed and independence checked",
+        "Someone claims our competitor lost a big customer; is that true",
+        "a journalist says our competitor is being acquired, is that real",
+        "find out whether the vendor's uptime numbers are actually true",
+        "someone on twitter claims our library leaks memory, check it against the facts",
+        "what's the actual history of this outage, the timeline in the ticket doesn't add up",
+        "Research what customers and analysts say about webhooks versus polling and cite every source",
+        "Look into whether our competitors offer push notifications and back it up with links",
+        "Dig into the evidence on this and tell me what actually holds up"
+      ]
+    },
+    {
+      "id": "operations-reliability",
+      "description": "Reviews how a service or change behaves at night: objectives, alerts, on- call, runbooks, capacity, failure and recovery. Use when the person says things like: we went live and nobody set up alerts; the service falls over whenever traffic spikes; we got paged four times for the same thing; what should the runbook say; is this safe to run unattended; what happens when the queue backs up. Not for whether the code is correct (that is engineering).",
+      "activation": [
+        "we went live and nobody set up alerts",
+        "the service falls over whenever traffic spikes",
+        "we got paged four times last night for the same thing",
+        "what should the on-call runbook say",
+        "is this safe to run unattended",
+        "what happens when the queue backs up",
+        "is this ready to operate, ready to launch, ready for on-call",
+        "review the runbook, the alerts, the SLOs, the error budget, the rollback",
+        "write the incident postmortem, what do we learn from the outage",
+        "who gets woken by this, how would we know it broke"
+      ],
+      "standDown": [
+        "feature scope or priority",
+        "code style",
+        "a design question with no operating concern",
+        "which feature should ship first",
+        "which database shape fits the domain"
+      ],
+      "examples": [
+        "Is the new billing service ready to operate and go on-call",
+        "Review the runbook and alerts for the payment gateway",
+        "Write the blameless postmortem for last night's outage",
+        "Who gets woken by this change and how would we know it broke",
+        "we shipped it friday and nobody knows what the dashboard should look like",
+        "we went live friday and nobody set up alerts",
+        "the service falls over every time marketing sends an email blast",
+        "what should the on-call runbook say for the new queue",
+        "we got paged four times last night for the same thing"
+      ]
+    },
+    {
+      "id": "product-management",
+      "description": "Reviews or shapes a product decision: the problem, who has it, what changes for them, how it will be measured, what is cut. Use when the person says things like: everyone loves this idea but nobody can say what it changes for the customer; sanity check this spec before engineering starts; which of these twelve asks actually matter this quarter; did last quarter's launch do anything; what should we build next; is this worth building. Not for writing the buildable requirements (that is requirements).",
+      "activation": [
+        "everyone loves this idea but nobody can say what it changes for the customer",
+        "sanity check this spec before engineering starts",
+        "which of these asks actually matter this quarter",
+        "did last quarter's launch do anything",
+        "what should we build next",
+        "is this feature worth building",
+        "review this PRD, this product requirements document, this opportunity assessment",
+        "what problem does this solve, for whom, and how would we know it worked",
+        "should we build this feature, prioritize this, cut this from scope",
+        "write the product brief, the working-backwards press release",
+        "should we prioritize this over that this quarter"
+      ],
+      "standDown": [
+        "how to build it, which library, which architecture",
+        "a plain question about what the product does",
+        "a finished decision that needs execution, not framing",
+        "what does the settings page do",
+        "the roadmap is decided, write the sprint tickets"
+      ],
+      "examples": [
+        "Review this PRD before the team commits to building it",
+        "What problem does the export feature solve and how would we know it worked",
+        "Should we prioritize the mobile app over the integrations this quarter",
+        "Write the working-backwards press release for the new plan",
+        "everyone wants this feature but nobody can say what changes if we ship it",
+        "everyone loves this feature idea but nobody can say what it changes for the customer",
+        "sanity check this spec before engineering starts on it",
+        "sales wants twelve things, which ones actually matter this quarter",
+        "we have no idea whether last quarter's launch did anything"
+      ]
+    },
+    {
+      "id": "program-delivery",
+      "description": "Reviews a plan, schedule, or status for claims that cannot all hold: dates against dependencies, owners against capacity, risk against who is holding it. Use when the person says things like: the plan says June but the vendor starts in July; what's on the critical path and who owns the risky bits; three teams say they're on track and I don't believe them; we keep slipping the same milestone; can we hit this date; what would have to be true to ship by then. Not for whether the strategy is right.",
+      "activation": [
+        "the plan says June but the vendor starts in July",
+        "what is on the critical path and who owns the risky bits",
+        "three teams say they are on track and I do not believe them",
+        "we keep slipping the same milestone",
+        "can we hit this date",
+        "what would have to be true to ship by then",
+        "review the delivery plan, the schedule, the program plan, the roadmap dates",
+        "can these dates and dependencies all hold, what is the critical path",
+        "write the status update honestly, what is at risk and who owns it",
+        "is this commitment feasible with the people and the dependencies we have"
+      ],
+      "standDown": [
+        "what to build or why (product owns that)",
+        "how to build it (engineering owns that)",
+        "a single task with no plan around it",
+        "how should we implement the queue",
+        "create one ticket for the bug"
+      ],
+      "examples": [
+        "Review the delivery plan for dates and dependencies that cannot all hold",
+        "What is the critical path for the Q4 program and who owns the risks",
+        "Write an honest status update on the migration program",
+        "Is this commitment feasible with the people and dependencies we have",
+        "the plan says June but the vendor contract starts in July",
+        "the plan says june but the vendor doesn't start until july",
+        "what's on the critical path for the migration and who is holding the risky bits",
+        "three teams say they're on track and I don't believe any of them",
+        "we keep slipping the same milestone, figure out why"
+      ]
+    },
+    {
+      "id": "requirements-structuring",
+      "description": "Turns a settled intent into requirements a team can build and test from: scope, behaviour, acceptance, what done looks like. Use when the person says things like: we agree what we want but never wrote what finished looks like; write this up so a new engineer could build it without asking me; make these acceptance criteria testable; the ticket just says make it faster; spec this out; what exactly are we building. Not for deciding whether to build it.",
+      "activation": [
+        "we agree what we want but never wrote down what finished looks like",
+        "write this up so a new engineer could build it without asking",
+        "make these acceptance criteria testable",
+        "the ticket just says make it faster, that is not enough",
+        "spec this out properly",
+        "what exactly are we building",
+        "work will be built, bought, or committed to on the artifact's strength and requirements live in conversation or someone's head",
+        "write the requirements, spec this out, turn this idea into a PRD, acceptance criteria a stranger could verify",
+        "structure the outcomes, constraints, assumptions, and non-goals for a build we are committing to"
+      ],
+      "standDown": [
+        "requirements already obvious and small: rename a flag, flip a config, a well-understood fix",
+        "the real question is whether to build at all, not what"
+      ],
+      "examples": [
+        "Write the requirements for the export feature so the team can build from it",
+        "Turn this idea into a PRD with acceptance criteria a stranger could verify",
+        "Spec this out; the requirements only exist in conversation right now",
+        "We're committing to build this; structure the outcomes, constraints, and non-goals",
+        "The intent is settled, we just never wrote what done looks like",
+        "we all agree what we want, we just never wrote down what finished looks like",
+        "write up the export feature so a new engineer could build it without asking me",
+        "turn these acceptance criteria into something testable",
+        "the ticket says 'make it faster', that's not enough to build from",
+        "Draft the PRD from the tickets and research so engineering can build from it"
+      ]
+    },
+    {
+      "id": "security-privacy",
+      "description": "Defensive review of threat model, access, secrets, data handling, and privacy, with fixes. Use when the person says things like: our logs have customer emails and go to a third party; a contractor still has prod access; someone pasted an API key in Slack; we want to add SSO, what can go wrong; is this endpoint safe; who can see this data. Defensive only: never attack tooling, never evasion; contractual and regulatory exposure goes to governance.",
+      "activation": [
+        "our logs contain customer emails and go to a third party",
+        "a contractor still has production access after leaving",
+        "someone pasted an API key in Slack",
+        "we want to add SSO, what can go wrong",
+        "is this endpoint safe",
+        "who can see this data and should they",
+        "review this for security, threat model it, who can reach what",
+        "are secrets handled safely, is this data classified, how long do we keep it",
+        "privacy review, personal data, consent, retention, data flow across a boundary",
+        "is this dependency vulnerable, what does this change expose"
+      ],
+      "standDown": [
+        "write an exploit, bypass a control, evade detection",
+        "a plain question about a protocol with no system in view",
+        "feature scope with no boundary or data change",
+        "explain how the protocol, the handshake, works",
+        "should we build the feature first"
+      ],
+      "examples": [
+        "Threat model the new file upload feature and who can reach what",
+        "Are the API secrets handled safely and is customer data classified",
+        "Privacy review for the analytics pipeline: consent, retention, cross-border flow",
+        "Is this dependency vulnerable and what does the upgrade expose",
+        "the logs have emails in them and go to a third party",
+        "our logs contain customer emails and we ship them to a third party",
+        "a contractor still has prod access six months after leaving",
+        "we want to add SSO, what can go wrong",
+        "someone pasted an API key in slack last week"
+      ]
+    },
+    {
+      "id": "software-engineering",
+      "description": "Reviews or shapes an implementation for correctness evidence, scope, reversibility, dependencies, and operability. Use when the person says things like: tests pass but I have a bad feeling about this; look at this PR before I merge; is this migration safe to roll back; it works on my machine, what am I missing; is this the right way to build it; review this code. Not for style alone.",
+      "activation": [
+        "tests pass but I have a bad feeling about this code",
+        "look at this pull request before I merge it",
+        "is this migration safe to roll back",
+        "it works on my machine, what am I missing",
+        "is this the right way to build it",
+        "review this code change",
+        "review this implementation, this change, this pull request for correctness and risk",
+        "is this migration safe, can we roll it back, what tests prove it",
+        "should we take this dependency, upgrade this library, adopt this framework",
+        "shape the implementation plan for this feature before we write it"
+      ],
+      "standDown": [
+        "style and naming on a diff, formatting, lint noise",
+        "a question about how a language feature or library works",
+        "a design or architecture question with no implementation in view",
+        "which architecture should the platform have",
+        "remember a decision or take a note with no change in view",
+        "thanks, ok, a plain acknowledgment with nothing to review"
+      ],
+      "examples": [
+        "Review this pull request for correctness and risk before we merge",
+        "Is this database migration safe and can we roll it back",
+        "Should we upgrade this library to the new major version",
+        "Shape the implementation plan for the export feature",
+        "the tests pass but I have a bad feeling about the retry loop",
+        "tests are green but I have a bad feeling about the retry logic",
+        "look at this PR before I merge it, it touches billing",
+        "is this migration safe to roll back if it goes wrong",
+        "the fix works on my machine, what am I missing"
+      ]
+    },
+    {
+      "id": "strategy-research",
+      "description": "Reviews a strategy against the work and capacity it actually directs: what was decided, what teams are doing, where they diverge, and what the gap costs. Use when the person says things like: three teams are building the same thing and leadership says we're aligned; does our roadmap match what the company said it would do; we say upmarket but every hire is SMB; compare what the offsite decided to what teams are doing; are we working on the right things. Velocity is never capacity.",
+      "activation": [
+        "three teams are building the same thing and leadership says we are aligned",
+        "does our roadmap match what the company said it would do",
+        "we say upmarket but every hire is for small business",
+        "compare what the offsite decided to what the teams are doing",
+        "are we working on the right things",
+        "strategy versus what is actually being built",
+        "compare the strategy to the active work, the initiatives to the roadmap, the plan to capacity",
+        "review the strategy document: diagnosis, guiding policy, coherent actions",
+        "which initiatives have no owner, no work, no measure; what conflicts with what",
+        "research this market, this competitor, this claim before we bet on it"
+      ],
+      "standDown": [
+        "a single project plan with no strategy in view (program-delivery owns that)",
+        "what to build for one feature (product owns that)",
+        "a decision already funded and executing that only needs status"
+      ],
+      "examples": [
+        "Compare the team strategies to the active Jira work and capacity",
+        "Review the strategy document for its diagnosis, guiding policy, and coherent actions",
+        "Which initiatives have no owner or no work linked and what conflicts with what",
+        "Research this competitor's pricing claim before we bet the roadmap on it",
+        "everyone says we are aligned but three teams are building the same thing",
+        "three teams are building the same thing and leadership says we're aligned",
+        "does our roadmap actually match what the company said it would do this year",
+        "we say we're going upmarket but every hire is for SMB",
+        "compare what the exec offsite decided to what the teams are actually doing"
+      ]
+    },
+    {
+      "id": "system-architecture",
+      "description": "Reviews or frames a system design for boundaries, coupling, data ownership, and failure paths. Use when the person says things like: two teams keep writing to the same table; should this service own its own database; we're splitting the monolith, where do the seams go; every request goes through four hops; how should these pieces talk to each other; is this design going to scale. Not for the line-by-line code, and not for who owns what organisationally.",
+      "activation": [
+        "two teams keep writing to the same table",
+        "should this service own its own database",
+        "we are splitting the monolith, where do the seams go",
+        "every request goes through four hops, is that necessary",
+        "how should these pieces talk to each other",
+        "is this design going to hold up",
+        "review the architecture, the system design, the service boundaries",
+        "write or review the architecture decision record for this choice",
+        "what does this design make hard to undo, where is the coupling, who owns the data",
+        "should we split this service, introduce this queue, adopt this platform"
+      ],
+      "standDown": [
+        "review a diff or an implementation detail",
+        "a question about how a tool works",
+        "product scope or priority with no design in view",
+        "how does this library, this ORM, handle transactions",
+        "which feature should we prioritize next quarter"
+      ],
+      "examples": [
+        "Review the architecture for the new billing service boundaries",
+        "Write the architecture decision record for adopting the message queue",
+        "What does this design make hard to undo and where is the coupling",
+        "Should we split the monolith into these three services",
+        "two teams keep stepping on the same table and nobody knows who owns it",
+        "two teams keep writing to the same table and it's a mess",
+        "should the notification service own its own database",
+        "we're splitting the monolith, where do the seams go",
+        "every request goes through four hops, is that necessary",
+        "Draft an RFC for the new event delivery design and its failure modes",
+        "Write the technical design doc for how these services should talk to each other"
+      ]
+    },
+    {
+      "id": "written-voice",
+      "description": "One plain, direct house voice for prose: what it says, for whom, and nothing decorative. Use when the person says things like: make this sound less like a robot wrote it; rewrite the outage email so customers don't panic; this reads like marketing, make it plain; tighten this up, it's three pages saying one thing; draft the announcement; is the tone right. Not for what the document decides, only how it says it.",
+      "activation": [
+        "make this sound less like a robot wrote it",
+        "rewrite the outage email so customers do not panic",
+        "this reads like marketing, make it plain",
+        "tighten this up, it is three pages saying one thing",
+        "draft the announcement in our voice",
+        "is the tone of this right",
+        "someone other than the author will read and act: a spec, proposal, status update, announcement, README, report, decision memo",
+        "write the announcement customers will read, draft the proposal with the decision at the top",
+        "unify documents written by different people into one voice",
+        "a draft reads buried, hedged, or salesy; surface the decision",
+        "this reads like AI wrote it, strip the tells before it goes out"
+      ],
+      "standDown": [
+        "not a deliverable: a chat reply, a code comment, a commit message, a quick answer",
+        "an external template dictates the format: a legal filing, a grant form, a journal structure"
+      ],
+      "examples": [
+        "Draft the announcement for the release that customers will read",
+        "Write the proposal in one plain direct voice with the decision at the top",
+        "Unify these three documents written by different people into one voice",
+        "This status update reads hedged and salesy; surface the decision and fix the voice",
+        "Make the README less buried, people miss the point",
+        "make this announcement sound less like a robot wrote it",
+        "rewrite the outage email so customers don't panic",
+        "this doc reads like marketing, make it plain",
+        "tighten this up, it's three pages and says one thing",
+        "this reads like AI wrote it, strip the tells before it goes out"
+      ]
+    }
+  ]
+}

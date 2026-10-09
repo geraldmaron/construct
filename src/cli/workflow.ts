@@ -11,6 +11,7 @@ import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './comma
 import { createContext, type CliContext } from './context.ts';
 import { openBroker } from './broker-context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { differsFlag } from '../kernel/workflow/service.ts';
 
 const group = 'Workflows';
 
@@ -102,11 +103,13 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
           return preflight.status === 'runnable' || preflight.status === 'outdated' ? 0 : 1;
         }
         const started = broker.workflow.start({ workflowId: id, input, trigger: 'manual' });
-        if (args.json) writeJson({ run: started.run, created: started.created, preflight: started.preflight });
+        if (args.json) writeJson({ run: started.run, created: started.created, preflight: started.preflight, differs: started.differs, superseded: started.superseded });
         else {
-          say(`${started.created ? 'started' : 'already running'}: run ${started.run.id} (${started.run.state})`);
+          say(`${started.created ? 'started' : started.run.state === 'blocked' ? 'checked again' : 'already running'}: run ${started.run.id} (${started.run.state})`);
+          if (started.superseded) say(`superseded blocked run ${started.superseded}`);
+          if (started.differs.length > 0) say(`note: ${esc(differsFlag(started.run.id, started.differs))}`);
           if (started.run.state === 'blocked') for (const r of started.preflight.reasons) say(`  ${r.code}: ${esc(r.message)}. ${esc(r.remedy)}`);
-          say(started.run.state === 'blocked' ? 'Next: clear the reasons above, then `construct run resume ' + started.run.id + '`.' : 'Next: the steps run in your agent session; `construct run show ' + started.run.id + '` follows along.');
+          say(started.run.state === 'blocked' ? 'Next: clear the reasons above, then `construct run resume ' + started.run.id + '`, or run this again with the input corrected; it says when it replaces this run.' : 'Next: the steps run in your agent session; `construct run show ' + started.run.id + '` follows along.');
         }
         return started.run.state === 'blocked' ? 1 : 0;
       }

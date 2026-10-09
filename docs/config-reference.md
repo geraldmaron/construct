@@ -12,6 +12,6 @@ Five tiers, lowest first: built-in default, per-user presentation defaults (`$XD
 | `headless.executor` | `null` | project config, environment, flag | `CONSTRUCT_HEADLESS_EXECUTOR` | `--executor` | The one runner scheduled and event-driven work may use. An id from the executor registry, never a path. |
 | `policy.projectWrite` | `"managed"` | project config | — | — | When Construct may write project files: only inside a managed outcome, or never. |
 | `policy.answerCheck` | `"nudge"` | project config, environment | `CONSTRUCT_ANSWER_CHECK` | — | What a host hook does when an answer states project facts without check_answer: nudge (send the host back once to check) or off. |
-| `policy.hostReads` | `"require"` | project config, environment | `CONSTRUCT_HOST_READS` | — | Citing a source only the host can read: require that the host reported what it read at least once, or accept the citation on the host's word. |
+| `policy.hostReads` | `"require"` | project config, environment | `CONSTRUCT_HOST_READS` | — | Citing what only the host can read (a tracker, a wiki, a web page): require that a read of that item was recorded (sources report) before it can be cited, or accept an unrecorded citation on the host's word, counted as unverified. |
 | `sources.defaultFreshnessHours` | `168` | project config, environment | `CONSTRUCT_SOURCE_FRESHNESS_HOURS` | — | How old a source read may be before it counts as stale, when the source declares no expectation. |
 | `review.cadence` | `"monthly"` | project config | — | — | How often the standing constitution review runs. |

@@ -45,8 +45,14 @@ export function emptySourcesFile(): SourcesFile {
   return { format: SOURCES_FORMAT, formatVersion: SOURCES_VERSION, sources: [] };
 }
 
-const SOURCE_ID = /^[a-z][a-z0-9-]{0,63}$/;
+/** A source id: lowercase letters, digits and dashes, starting with a letter, at most 64 characters. */
+export const SOURCE_ID = /^[a-z][a-z0-9-]{0,63}$/;
 const USERINFO = /^[a-z][a-z0-9+.-]*:\/\/[^/@\s]+@/i;
+
+/** Whether a locator carries credentials in its address (`scheme://user:secret@host`). */
+export function locatorCarriesCredentials(locator: string): boolean {
+  return USERINFO.test(locator.trim());
+}
 
 export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
   const record = expectRecord(raw, path);
@@ -64,7 +70,7 @@ export function validateSourcesFile(raw: unknown, path: string): SourcesFile {
     if (seen.has(id)) throw new ProjectFileError(where, `source id "${id}" appears twice`);
     seen.add(id);
     const locator = optionalString(item, 'locator', where);
-    if (locator !== null && USERINFO.test(locator)) {
+    if (locator !== null && locatorCarriesCredentials(locator)) {
       throw new ProjectFileError(where, '"locator" carries credentials; keep credentials with the host or connector, never in a committed file');
     }
     const authorityLevel = str(item, 'authorityLevel', where);

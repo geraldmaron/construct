@@ -88,8 +88,9 @@ depth and tuned-family matrices, the home database and repo-local state
 toggle, the 37-verb command line and its legacy aliases, the format-1 project
 state, host spawn adapters and per-host trial packets as the proof of
 host-independence, external-subject and stakeholder-packet phase gates as
-acceptance of a surface that no longer exists, workspace presets, and any
-online registry or marketplace.
+acceptance of a surface that no longer exists, workspace presets, any
+online registry or marketplace, and inferring the kind of request or the
+workflow from the person's words.
 
 ## Program shape
 
@@ -109,13 +110,29 @@ each exercised path recorded, each untested path named.
 
 ## Named risks
 
-1. **Skill triggering is only as good as the descriptions.** The host model
-   is the judge of which skill loads; Construct's router only orders the
-   list. Mitigation: descriptions and activation phrases are written in the
-   person's language, a held-out routing set with measured floors gates
-   every change to them, and `npm run evals:live` records what a real model
-   picks from the shipped descriptions; nothing lexical is reported as a
-   model result.
+1. **Construct is only as good as the host's reading of the request.** The
+   host model reads what the person asked and reports it to `classify_request`
+   as typed fields: the kind of request, the person's words, the deliverable
+   they want back, the period and systems they named, and what it could not
+   settle. Construct never reads intent from the words. It validates the
+   reading, resolves dates and source ids from the calendar and the registry,
+   matches workflows by the deliverable each declares, and asks only what is
+   missing. It checks the reading again before any run starts. If the host
+   never calls, nothing is recorded. If it calls on a plain question, work
+   starts that nobody asked for. Mitigation: `npm run evals:live` drives
+   Claude Code, Codex, and Cursor one request at a time against a fresh
+   project. The requests are held out, in ordinary language, and labeled by
+   two model families. Each runs with Construct alone, among competing
+   servers, on a project not yet set up, and with instructions planted in what
+   a connector returns. Any change to what a host model reads from Construct
+   is not merged to staging or released until a fresh record covers it and is
+   no worse than the accepted record beyond the noise between runs. That
+   covers server instructions, tool descriptions and schemas, the operational
+   skill, and the skill and workflow text Construct returns.
+   `npm run evals:live -- check` says whether the record covers the current
+   text. Word-overlap scores may only order options or raise rigor, are
+   labeled lexical, and never veto. A host that cannot be driven headlessly here is
+   listed as unmeasured, not passed.
 2. **Doctrine goes stale.** Pack sources carry review dates and were not
    re-opened in the build that cited them. Mitigation: each source names a
    review-due date; a finding leaning on a clause must open it first.

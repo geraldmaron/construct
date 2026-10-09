@@ -72,10 +72,23 @@ export interface DiscoveryDraft {
 
 export const SCALE_OPTIONS: readonly ProjectScale[] = ['solo', 'side_project', 'team', 'multi_team', 'organization'];
 
+/**
+ * The answers the scale question offers, in its own order: each scale's id,
+ * the phrase the question uses for it, and any shorter form of that phrase.
+ * An answer is understood only when it is one of these, as written.
+ */
+export const SCALE_CHOICES: readonly { readonly id: ProjectScale; readonly label: string; readonly also: readonly string[] }[] = Object.freeze([
+  { id: 'side_project', label: 'a side project', also: [] },
+  { id: 'solo', label: 'your primary product, just you', also: ['your primary product'] },
+  { id: 'team', label: 'a team project', also: [] },
+  { id: 'multi_team', label: "several teams' work", also: [] },
+  { id: 'organization', label: 'an organization-wide system', also: [] },
+]);
+
 export const ONBOARDING_QUESTIONS: readonly OnboardingQuestion[] = Object.freeze([
   {
     id: 'scale',
-    question: 'What is this to you: a side project, your primary product, a team project, or something broader?',
+    question: "What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?",
     options: SCALE_OPTIONS,
   },
   { id: 'primary_outcome', question: 'What result matters most right now?' },

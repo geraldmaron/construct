@@ -2,7 +2,8 @@
  * kernel/state/grants.ts — scoped permission grants and break-glass records.
  *
  * A standing grant names an action tier and a target system, and may narrow
- * further by resource, workflow, executor, impact, budget, and time. A
+ * further by resource, workflow, executor, impact, budget, and time. An
+ * approval given in a run is a grant scoped to that run alone. A
  * break-glass grant must name its exact resource and executor, carry a reason,
  * and expire soon. Nothing here decides; the policy engine reads these rows.
  */
@@ -211,13 +212,16 @@ export interface GrantQuery {
   readonly targetResource?: string;
   readonly workflowId?: string;
   readonly executorId?: string;
+  /** The run the request acts for; a grant given in one run covers no other. */
+  readonly runId?: string;
   readonly at: string;
 }
 
 /**
  * Grants that cover a request at `at`. A standing grant's NULL scope means
- * any; a break-glass grant matches only its exact resource and executor.
- * Licensed judgment is never covered.
+ * any; a grant given in a run covers only that run; a break-glass grant
+ * matches only its exact resource and executor. Licensed judgment is never
+ * covered.
  */
 export function coveringGrants(store: StateStore, query: GrantQuery): Grant[] {
   requireInstant(query.at, 'grant.at');
@@ -230,6 +234,7 @@ export function coveringGrants(store: StateStore, query: GrantQuery): Grant[] {
           AND (target_resource IS NULL OR target_resource = ?)
           AND (workflow_id IS NULL OR workflow_id = ?)
           AND (executor_id IS NULL OR executor_id = ?)
+          AND (run_id IS NULL OR run_id = ?)
         ORDER BY break_glass, created_at, id`,
     )
     .all(
@@ -240,6 +245,7 @@ export function coveringGrants(store: StateStore, query: GrantQuery): Grant[] {
       query.targetResource ?? null,
       query.workflowId ?? null,
       query.executorId ?? null,
+      query.runId ?? null,
     ) as unknown as Row[];
   return rows.map(toGrant);
 }
