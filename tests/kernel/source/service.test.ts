@@ -281,3 +281,20 @@ test('text recorded with a credential in it is kept without it whenever a later 
     fx.cleanup();
   }
 });
+
+test('unchanged provider versions cannot conceal corrected content, including beyond the retention cap', () => {
+  const { fx, at, nextId, svc, entry } = wikiService();
+  try {
+    const common = { ref: 'policy', updatedAt: '2026-09-01', fingerprint: 'provider-revision-1' };
+    const original = `${'x'.repeat(REPORTED_TEXT_CAP)}Access denied.`;
+    svc.reportRead('wiki', { items: [{ ...common, text: original }] }, at(), nextId);
+    const before = entry('policy')!.fingerprint;
+    const correction = svc.reportRead('wiki', { items: [{ ...common, text: original.replace('denied', 'opened') }] }, at(), nextId);
+    assert.deepEqual(correction.changes?.modified, ['policy']);
+    assert.notEqual(entry('policy')!.fingerprint, before);
+    const again = svc.reportRead('wiki', { items: [{ ...common, text: original.replace('denied', 'opened') }] }, at(), nextId);
+    assert.equal(again.outcome, 'unchanged');
+  } finally {
+    fx.cleanup();
+  }
+});

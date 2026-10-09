@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -191,19 +191,41 @@ test('new files in a busy source raise one question for the refresh, not one per
   }
 });
 
-test('a later read reuses fingerprints of files that did not move, so a new session does not re-hash everything', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'construct-reuse-'));
+test('same-size corrections with restored timestamps are detected in this process and a fresh reader', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-content-'));
   try {
-    writeFileSync(join(dir, 'old.md'), '# Old\nStatus: Superseded\n');
+    const file = join(dir, 'policy.md');
+    const stamp = new Date('2026-01-01T00:00:00Z');
+    writeFileSync(file, 'Access denied.');
+    utimesSync(file, stamp, stamp);
     const first = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
     if (first.outcome !== 'read') throw new Error('unread');
     const item = first.report.items![0]!;
-    const previous = [{ ref: item.externalRef, fingerprint: 'reused-fp', attributes: item.attributes }];
-    // A fresh process has an empty cache; simulate it by naming a fingerprint only the previous read could supply.
-    const { readDirectorySource: freshReader } = await import(`../../../src/hosts/sources/directory.ts?fresh=${String(Date.now())}`);
-    const second = await freshReader({ sourceId: 's', kind: 'directory', locator: dir, previous });
-    assert.equal(second.report.items[0].attributes.fingerprint, 'reused-fp');
-    assert.equal(second.report.items[0].attributes.supersededBy, '(the document says it is superseded)', 'what the file said about itself survives reuse');
+    const previous = [{ ref: item.externalRef, fingerprint: String(item.attributes!.fingerprint), attributes: item.attributes }];
+    assert.equal(Buffer.byteLength('Access denied.'), Buffer.byteLength('Access opened.'));
+    writeFileSync(file, 'Access opened.');
+    utimesSync(file, stamp, stamp);
+    for (const reader of [readDirectorySource, (await import(`../../../src/hosts/sources/directory.ts?fresh=${String(Date.now())}`)).readDirectorySource]) {
+      const second = await reader({ sourceId: 's', kind: 'directory', locator: dir, previous });
+      assert.equal(second.outcome, 'read');
+      if (second.outcome === 'read') assert.notEqual(second.report.digest, first.report.digest);
+    }
+    // Large files receive content hashes too; a cycle does not recurse forever.
+    const bytes = Buffer.alloc(3 * 1024 * 1024, 65);
+    writeFileSync(file, bytes);
+    utimesSync(file, stamp, stamp);
+    const large = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+    bytes[bytes.length - 1] = 66;
+    writeFileSync(file, bytes);
+    utimesSync(file, stamp, stamp);
+    symlinkSync(dir, join(dir, 'loop'));
+    const changed = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+    assert.equal(large.outcome, 'read');
+    assert.equal(changed.outcome, 'read');
+    if (large.outcome === 'read' && changed.outcome === 'read') {
+      assert.notEqual(changed.report.digest, large.report.digest);
+      assert.equal(changed.report.items!.length, 1);
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -254,7 +276,7 @@ test('a cited page that changes flags the work that cited it, whether by its url
     await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-09-01', text: 'The checkout service calls the ledger synchronously.' }] });
     const forms: Record<string, string> = { 'by-url': `${URL}#overview`, 'by-source': 'confluence:98765', 'by-id': '98765' };
     for (const [name, ref] of Object.entries(forms)) await finishedCiting(fx, [ref], name);
-    const changed = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-10-01', text: 'The checkout service queues ledger writes.' }] });
+    const changed = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-09-01', text: 'The checkout service queues ledger writes.' }] });
     assert.deepEqual(changed.changes.modified, ['98765']);
     assert.equal(changed.staleDeliverables.length, 3, 'each form of citation is matched to the page');
     const findings = listDriftFindings(s, { status: 'open' });
