@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "governance-risk",
   "title": "Governance and risk",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "category": "professional",
   "owner": "geraldmaron/construct",
   "activation": [

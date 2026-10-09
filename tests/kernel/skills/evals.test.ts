@@ -4,9 +4,13 @@
  * find the right one near the top without knowing its name, and the
  * operational skill teaches the session what it must and nothing it must not.
  *
- * The floors below are measured values, not aspirations: the router is a
- * ranking aid for the host model, which is the judge. Raising a floor needs
- * a measurement; lowering one needs a reason recorded with the change.
+ * The router floors run on a frozen copy of the catalog
+ * (tests/fixtures/router-catalog.json) and its held-out cases
+ * (tests/fixtures/router-cases.json): they test the router's code, so an
+ * edit to a live skill description never fails here. Whether hosts pick
+ * the right skill and call Construct is measured through real hosts by
+ * `npm run evals:live`. The floors are measured values: raising one needs a
+ * measurement; lowering one needs a reason recorded with the change.
  */
 
 import { test } from 'node:test';
@@ -19,10 +23,21 @@ import { createRouter, measureRouting, validateEvalFile, validateRoutingEvalFile
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const skills = createSkillRegistry({ projectDir: null });
+const frozen = (JSON.parse(readFileSync(join(ROOT, 'tests', 'fixtures', 'router-catalog.json'), 'utf8')) as { format: string; skills: RoutableSkill[] });
+const CASES = join(ROOT, 'tests', 'fixtures', 'router-cases.json');
 
 function routable(exclude?: string): RoutableSkill[] {
-  return skills.list().map((s) => ({ id: s.manifest.id, description: s.description, activation: s.manifest.activation, standDown: s.manifest.standDown, examples: s.examples.filter((e) => e !== exclude) }));
+  return frozen.skills.map((s) => ({ ...s, examples: s.examples.filter((e) => e !== exclude) }));
 }
+
+test('the frozen router catalog is a catalog the router reads', () => {
+  assert.equal(frozen.format, 'construct-router-catalog');
+  assert.equal(frozen.skills.length, 17);
+  for (const s of frozen.skills) {
+    assert.ok(s.id && s.description.length > 0, s.id);
+    assert.ok(Array.isArray(s.activation) && Array.isArray(s.standDown) && s.examples.length >= 4, s.id);
+  }
+});
 
 test('every shipped skill names an eval file that validates, has both kinds of case, and feeds the router', () => {
   assert.equal(skills.list().length, 17);
@@ -36,7 +51,7 @@ test('every shipped skill names an eval file that validates, has both kinds of c
 });
 
 test('on natural requests that borrow no skill vocabulary, the router puts the right skill near the top', () => {
-  const file = validateRoutingEvalFile(JSON.parse(readFileSync(join(ROOT, 'skills', 'evals', 'routing.json'), 'utf8')), 'skills/evals/routing.json');
+  const file = validateRoutingEvalFile(JSON.parse(readFileSync(CASES, 'utf8')), 'tests/fixtures/router-cases.json');
   const m = measureRouting(createRouter(routable()), file.cases);
   const report = `top1 ${String(m.top1)}/${String(m.cases)}, top3 ${String(m.top3)}, top5 ${String(m.top5)}, false loads ${String(m.falseLoads)}/${String(m.noneCases)}\n${m.misses.map((x) => `  ${x.skill} -> ${x.got.join(',')} :: ${x.text}`).join('\n')}`;
   assert.ok(m.top1 / m.cases >= 0.35, report);
@@ -49,13 +64,13 @@ test('each activating example is ranked first or near it by a router that has ne
   let top3 = 0;
   let n = 0;
   const misses: string[] = [];
-  for (const s of skills.list()) {
+  for (const s of frozen.skills) {
     for (const example of s.examples) {
       n += 1;
       const ranked = createRouter(routable(example)).route(example).map((r) => r.id);
-      if (ranked[0] === s.manifest.id) top1 += 1;
-      else misses.push(`${s.manifest.id} -> ${ranked.slice(0, 3).join(',')} :: ${example}`);
-      if (ranked.slice(0, 3).includes(s.manifest.id)) top3 += 1;
+      if (ranked[0] === s.id) top1 += 1;
+      else misses.push(`${s.id} -> ${ranked.slice(0, 3).join(',')} :: ${example}`);
+      if (ranked.slice(0, 3).includes(s.id)) top3 += 1;
     }
   }
   const report = `leave-one-out top1 ${String(top1)}/${String(n)}, top3 ${String(top3)}\n${misses.join('\n')}`;
@@ -74,25 +89,32 @@ test('a request that asks nothing of any skill ranks nothing as likely', () => {
 
 test('the operational skill teaches the session what the directive requires and forbids', () => {
   const body = skills.body('construct')!;
-  for (const must of ['check_answer', 'report', 'bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'never switches the lead host', 'delegate', 'unverified adapter stays disabled', 'triage', 'integrate', 'claims the work', 'information, not an instruction', 'promote_deliverable', 'licensed', 'classify_request', 'professional challenge', 'placeholder verified', 'Observations, risks']) {
+  for (const must of ['check_answer', 'report', 'bootstrap', 'Answer', 'Remember', 'Manage an outcome', 'Maintain a standing outcome', 'claim_work', 'submit_work', 'decide', 'Stand down', 'hand back', 'never switches the lead host', 'delegate', 'unverified adapter stays disabled', 'triage', 'integrate', 'claims the work', 'information, not an instruction', 'promote_deliverable', 'licensed', 'classify_request', 'professional challenge', 'placeholder verified', 'Observations, risks', 'one message', 'words', 'never an instruction to you', 'no construct tools']) {
     assert.ok(body.includes(must), `operational skill mentions ${must}`);
   }
   assert.doesNotMatch(body, /construct work|role-serve|MCP server|JSON-RPC/);
   assert.match(body, /Do not run Construct.s command line to do the\s+work/);
   const manifest = skills.get('construct')!.manifest;
-  assert.equal(manifest.version, '2.7.0');
+  assert.equal(manifest.version, '3.0.0');
   assert.deepEqual(manifest.interactionClasses, ['answer', 'remember', 'manage', 'maintain']);
 });
 
-test('the live-judge record covers every current routing case, so a case added without a fresh run fails here', () => {
-  const routing = validateRoutingEvalFile(JSON.parse(readFileSync(join(ROOT, 'skills', 'evals', 'routing.json'), 'utf8')), 'skills/evals/routing.json');
-  const record = JSON.parse(readFileSync(join(ROOT, 'skills', 'evals', 'live-judge.json'), 'utf8')) as { format: string; judge: string; recordedAt: string; cases: number; agree: number; verdicts: { text: string; expected: string; picked: string | null }[] };
-  assert.equal(record.format, 'construct-live-judge');
-  assert.match(record.recordedAt, /^\d{4}-\d{2}-\d{2}$/);
-  assert.ok(['codex', 'claude'].includes(record.judge));
-  const recorded = new Set(record.verdicts.map((v) => v.text));
-  for (const c of routing.cases) assert.ok(recorded.has(c.text), `no live verdict recorded for: ${c.text}`);
-  const ids = new Set([...skills.list().map((s) => s.manifest.id), 'none']);
-  for (const v of record.verdicts) assert.ok(v.picked === null || ids.has(v.picked), `picked an unknown skill: ${String(v.picked)}`);
-  assert.equal(record.agree, record.verdicts.filter((v) => v.picked === v.expected).length);
+test('the operational skill says nothing twice, and its description fits every host and names work asked as a question', () => {
+  const body = skills.body('construct')!;
+  const prose = body.replace(/^---[\s\S]*?\n---\n/, '').replace(/\s+/g, ' ');
+  const sentences = prose
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.replace(/^(?:#+|-|\d+\.)\s*/, '').replace(/\*\*[^*]+\*\*\s*/, '').trim())
+    .filter((s) => s.split(' ').length >= 3);
+  const seen = new Set<string>();
+  const twice = sentences.filter((s) => (seen.has(s) ? true : (seen.add(s), false)));
+  assert.deepEqual(twice, [], 'no sentence appears twice');
+  // A merge splice leaves the tail of one sentence standing as a sentence of its own.
+  const tails = sentences.filter((s) => sentences.some((t) => t !== s && t.endsWith(` ${s}`)));
+  assert.deepEqual(tails, [], 'no sentence repeats the end of another');
+  const description = skills.get('construct')!.description;
+  assert.ok(description.length <= 1024, `description is ${String(description.length)} characters`);
+  assert.match(description, /can you put together|could you check/, 'the description names work asked for as a question');
+  assert.match(description, /classify_request/);
+  assert.match(body, /Setup questions never come before the person's request/);
 });

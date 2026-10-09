@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { listFirings } from '../../../src/kernel/state/triggers.ts';
+import { askedOf } from '../../../src/kernel/workflow/asked.ts';
 import { fixture, T0 } from './support.ts';
 
 test('a schedule trigger is validated, computes its next due instant, and fires once per tick', () => {
@@ -92,3 +93,74 @@ test('recipes name the trigger, the project, and the firing key, for cron and CI
     fx.cleanup();
   }
 });
+
+test('a weekly trigger covers a fresh week on every firing, worked out at the due time in its own timezone', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    const lastWeek = { semantics: 'changed_during', relative: 'last_week' };
+    // Define it on Sunday 2026-10-11, so the first due firing is Monday 09:00 in Berlin.
+    moveTo(fx, '2026-10-11T12:00:00.000Z');
+    const t = fx.triggers.define({ id: 'weekly', workflowId: 'digest', kind: 'schedule', scheduleExpression: '0 9 * * 1', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'queue', maxTier: 'draft', delivery: {}, input: { target: 'payments', period: lastWeek, sources: ['jira'] } });
+    assert.equal(t.nextDueAt, '2026-10-12T07:00:00.000Z');
+    assert.deepEqual(t.input, { target: 'payments', period: lastWeek, sources: ['jira'] }, 'the relative period is stored as given');
+
+    moveTo(fx, '2026-10-12T07:00:00.000Z');
+    const first = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w42' });
+    assert.equal(first.outcome, 'started', first.reason);
+    const run1 = fx.service.status(first.runId!)!.run;
+    assert.deepEqual([askedOf(run1).period?.from, askedOf(run1).period?.to, askedOf(run1).period?.timezone], ['2026-10-05', '2026-10-11', 'Europe/Berlin']);
+    assert.deepEqual(askedOf(run1).firing, { triggerId: 'weekly', dueAt: '2026-10-12T07:00:00.000Z' });
+    assert.deepEqual(run1.input, { target: 'payments', period: lastWeek, sources: ['jira'] });
+    assert.equal(first.nextDueAt, '2026-10-19T07:00:00.000Z');
+
+    moveTo(fx, '2026-10-19T07:00:00.000Z');
+    const dry = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w43', dryRun: true });
+    assert.equal(dry.outcome, 'dry_run');
+    const second = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w43' });
+    assert.equal(second.outcome, 'started', second.reason);
+    assert.notEqual(second.runId, first.runId, 'another week is another run');
+    const run2 = fx.service.status(second.runId!)!.run;
+    assert.deepEqual([askedOf(run2).period?.from, askedOf(run2).period?.to], ['2026-10-12', '2026-10-18']);
+    assert.equal(fx.service.status(first.runId!)!.run.state, 'ready', 'the earlier week’s run is untouched');
+
+    // The clock arrives a day and a bit late, after the clocks went back: the firing still covers the week that was due.
+    moveTo(fx, '2026-10-27T10:30:00.000Z');
+    const late = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w44' });
+    const run3 = fx.service.status(late.runId!)!.run;
+    assert.deepEqual(askedOf(run3).firing, { triggerId: 'weekly', dueAt: '2026-10-26T08:00:00.000Z' });
+    assert.deepEqual([askedOf(run3).period?.from, askedOf(run3).period?.to], ['2026-10-19', '2026-10-25']);
+
+    // A tick that arrives more than a week late still covers the week that was due, not the week it arrived in.
+    moveTo(fx, '2026-11-10T10:30:00.000Z');
+    const later = fx.triggers.fire({ triggerId: 'weekly', firingKey: 'w45' });
+    const run4 = fx.service.status(later.runId!)!.run;
+    assert.deepEqual(askedOf(run4).firing, { triggerId: 'weekly', dueAt: '2026-11-02T08:00:00.000Z' });
+    assert.deepEqual([askedOf(run4).period?.from, askedOf(run4).period?.to], ['2026-10-26', '2026-11-01']);
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('defining a trigger checks its input: undeclared keys, malformed periods, unknown sources, and fixed windows on a standing trigger are refused', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    const define = (input: Record<string, unknown>, kind: 'schedule' | 'manual' = 'schedule') => fx.triggers.define({ workflowId: 'digest', kind, scheduleExpression: kind === 'schedule' ? '0 9 * * 1' : undefined, timezone: kind === 'schedule' ? 'Europe/Berlin' : undefined, adapter: 'cron', overlap: 'skip', maxTier: 'draft', delivery: {}, input });
+    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_week' }, owner: 'sam' }), /input "owner" is not declared by the workflow/);
+    assert.throws(() => define({ period: { semantics: 'during', relative: 'last_week' } }), /needs "semantics", one of as_of, changed_during, evidence_window/);
+    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_week' }, sources: ['datadog'] }), /datadog, which is not a declared active source/);
+    assert.throws(() => define({}), /input "period" is required and absent/);
+    assert.throws(() => define({ period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30' } }), /a standing trigger fires again and again; give the period as relative \(for example last_week\)/);
+    assert.throws(() => define({ period: { semantics: 'changed_during', quarter: 3, year: 2026 } }), /fixed window/);
+    assert.throws(() => define({ period: { semantics: 'changed_during', relative: 'last_quarter', from: '2026-04-01', to: '2026-06-30' } }), /give the relative period alone/);
+    const asOf = define({ period: { semantics: 'as_of', to: '2026-09-30' } });
+    assert.equal(asOf.workflowId, 'digest', 'a fixed reference date stays allowed');
+    const quarter = define({ period: { semantics: 'changed_during', quarter: 3 } });
+    assert.ok(quarter.id, 'a quarter without a year moves with the calendar');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+function moveTo(fx: ReturnType<typeof fixture>, iso: string): void {
+  fx.tick(Date.parse(iso) - Date.parse(fx.now()));
+}

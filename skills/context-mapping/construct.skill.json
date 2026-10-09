@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "context-mapping",
   "title": "Context mapping",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "category": "method",
   "owner": "geraldmaron/construct",
   "activation": [

@@ -5,6 +5,7 @@
  */
 
 import type { ActionTier } from '../state/steps.ts';
+import { SLOT_TYPES } from './slots.ts';
 
 export const SKILL_MANIFEST_FILE = 'construct.skill.json';
 export const SKILL_MANIFEST_FORMAT = 'construct-skill';
@@ -16,6 +17,10 @@ export const WORKFLOW_MANIFEST_VERSION = 1;
 
 export const INTERACTION_CLASSES = ['answer', 'remember', 'manage', 'maintain'] as const;
 export type InteractionClass = (typeof INTERACTION_CLASSES)[number];
+
+/** The types a workflow input may declare: plain JSON shapes, and the kernel-checked slots (slots.ts). */
+export const INPUT_TYPES = ['string', 'number', 'boolean', 'string[]', 'object', ...SLOT_TYPES] as const;
+export type InputType = (typeof INPUT_TYPES)[number];
 
 export const BUNDLE_ORIGINS = ['builtin', 'project'] as const;
 export type BundleOrigin = (typeof BUNDLE_ORIGINS)[number];
@@ -91,7 +96,7 @@ export interface WorkflowManifest {
   readonly activation: readonly string[];
   readonly standDown: readonly string[];
   readonly interactionClass: InteractionClass;
-  readonly inputSchema: Readonly<Record<string, 'string' | 'number' | 'boolean' | 'string[]' | 'object'>>;
+  readonly inputSchema: Readonly<Record<string, InputType>>;
   readonly requiredInputs: readonly string[];
   readonly steps: readonly WorkflowStep[];
   readonly triggers: readonly ('manual' | 'schedule' | 'event')[];

@@ -1,0 +1,14 @@
+{
+  "note": "What the connector stubs return in the e2e flagship run: items with an id, a link, when they last changed, and their text. Two fall outside 2026-07-01..2026-09-30 so the run has to keep to the period.",
+  "items": [
+    { "source": "jira", "id": "PAY-412", "url": "https://acme.atlassian.test/browse/PAY-412", "updatedAt": "2026-08-14T10:02:00Z", "text": "Publish captured payments to the ledger through the event bus instead of a direct HTTP call. Checkout is unaffected." },
+    { "source": "jira", "id": "PAY-398", "url": "https://acme.atlassian.test/browse/PAY-398", "updatedAt": "2026-07-22T16:40:00Z", "text": "Refunds post a reversing entry to the ledger; the ledger rejects a refund larger than its charge." },
+    { "source": "confluence", "id": "ENG/payments-architecture", "url": "https://acme.atlassian.test/wiki/spaces/ENG/pages/payments-architecture", "updatedAt": "2026-09-03T09:15:00Z", "text": "Checkout opens a session, payments authorizes and captures with the processor, and the ledger records every capture as a balanced posting." },
+    { "source": "datadog", "id": "dashboard/payments-health", "url": "https://acme.datadog.test/dashboard/payments-health", "updatedAt": "2026-09-28T07:00:00Z", "text": "Monitors: processor latency p95, ledger posting lag, checkout error rate. One Sev2 on 2026-09-12: ledger posting lag above 5 minutes." },
+    { "source": "slack", "id": "payments-eng/1757600000", "url": "https://acme.slack.test/archives/payments-eng/p1757600000", "updatedAt": "2026-09-11T14:20:00Z", "text": "We agreed the ledger consumer reads from the payments topic and acknowledges only after the posting commits." },
+    { "source": "github", "id": "acme/platform#311", "url": "https://github.test/acme/platform/pull/311", "updatedAt": "2026-09-19T18:05:00Z", "text": "Add the ledger consumer behind a flag; payments still posts over HTTP until the flag flips." },
+    { "source": "notion", "id": "product/roadmap-q3", "url": "https://notion.test/acme/roadmap-q3", "updatedAt": "2026-07-02T12:00:00Z", "text": "Q3: event bus for payments-to-ledger; Q4: multi-currency ledger accounts." },
+    { "source": "jira", "id": "PAY-120", "url": "https://acme.atlassian.test/browse/PAY-120", "updatedAt": "2026-03-04T11:00:00Z", "text": "Initial ledger service, posting over HTTP." },
+    { "source": "github", "id": "acme/platform#344", "url": "https://github.test/acme/platform/pull/344", "updatedAt": "2026-10-02T08:30:00Z", "text": "Flip the ledger consumer flag on in staging." }
+  ]
+}

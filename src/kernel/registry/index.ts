@@ -5,6 +5,7 @@
 
 export * from './semver.ts';
 export * from './digest.ts';
+export * from './slots.ts';
 export * from './models.ts';
 export * from './validation.ts';
 export * from './capability-registry.ts';

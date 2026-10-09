@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
@@ -16,7 +17,7 @@ import { addSource } from '../../../src/kernel/state/sources.ts';
 import { listDriftFindings } from '../../../src/kernel/state/drift.ts';
 import { listOpenDecisions } from '../../../src/kernel/state/decisions.ts';
 import { readDirectorySource } from '../../../src/hosts/sources/directory.ts';
-import { createJiraFixtureReader } from '../../../src/hosts/sources/jira-fixture.ts';
+import { createJiraFixtureReader, FIXTURE_TEXT_CAP } from '../../../src/hosts/sources/jira-fixture.ts';
 import { hostReaders } from '../../../src/hosts/sources/readers.ts';
 import { createSourceService } from '../../../src/kernel/source/service.ts';
 import { brokerFixture } from '../broker/support.ts';
@@ -54,6 +55,22 @@ test('a Jira fixture stands in for the tracker: issues become citable items, rep
     if (read.outcome === 'read') {
       assert.deepEqual(read.report.items!.map((i) => i.externalRef), ['PLAT-101', 'PLAT-102']);
       assert.equal(read.report.evidence, 'reported');
+    }
+    // The fixture keeps text the way the hook keeps a connector's: readable, without credentials, cut and marked at the cap.
+    const BODY = 'a1B2c3D4e5F6g7H8i9J0';
+    const issue = { key: 'PLAT-103', self: 'https://acme.atlassian.net/rest/api/3/issue/103', summary: 'Rotate keys', description: `Rotate ghp_${BODY}${BODY.slice(0, 4)} and say "done".` };
+    const long = { key: 'PLAT-104', summary: 'Long', description: 'x '.repeat(FIXTURE_TEXT_CAP) };
+    writeFileSync(join(dir, 'KEYS.json'), JSON.stringify([issue, long]));
+    const keys = await createJiraFixtureReader(dir)({ sourceId: 'jira-keys', kind: 'jira', locator: 'KEYS' });
+    assert.equal(keys.outcome, 'read');
+    if (keys.outcome === 'read') {
+      const [a, b] = keys.report.items!;
+      assert.equal(a!.attributes!.text, 'PLAT-103\nhttps://acme.atlassian.net/rest/api/3/issue/103\nRotate keys\nRotate [redacted] and say "done".');
+      assert.equal(a!.attributes!.fingerprint, createHash('sha256').update(JSON.stringify(issue)).digest('hex'), 'the version is the whole issue as exported');
+      assert.equal(a!.attributes!.url, 'https://acme.atlassian.net/browse/PLAT-103');
+      assert.equal(a!.attributes!.truncated, undefined);
+      assert.equal(b!.attributes!.truncated, true);
+      assert.equal((b!.attributes!.text as string).length, FIXTURE_TEXT_CAP);
     }
     assert.equal((await createJiraFixtureReader(dir)({ sourceId: 'x', kind: 'jira', locator: 'NOPE' })).outcome, 'unreachable');
     assert.ok(!hostReaders({}).has('jira'));
@@ -99,7 +116,7 @@ async function runManaged(fx: ReturnType<typeof brokerFixture>, evidence: { ref:
     return call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence: ev });
   };
   await submit({ plan: ['read notes'], assumptions: [], blockers: [] }, []);
-  const done = await submit({ summary: 'summary', findings, changes: [] }, evidence);
+  const done = await submit({ summary: 'summary', findings, changes: [], artifact: null }, evidence);
   return { runId, done };
 }
 
@@ -109,7 +126,7 @@ test('the fabricated run from the UAT is refused: a citation to a file that does
     const { done } = await runManaged(fx, [{ ref: 'docs/evidence/q4-forecast-NONEXISTENT.md', excerpt: 'Northwind ARR $2.4M' }], ['Northwind is worth $2.4M ARR']);
     assert.notEqual(done.step.state, 'succeeded');
     assert.ok(done.validation.some((v: { ok: boolean }) => !v.ok));
-    assert.deepEqual(done.evidence, { witnessed: 0, reported: 0, unresolved: 1 });
+    assert.deepEqual(done.evidence, { witnessed: 0, reported: 0, unverified: 0, unresolved: 1 });
   } finally {
     fx.cleanup();
   }
@@ -126,12 +143,10 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     addSource(s, { id: 'notes', kind: 'directory', locator: dir, purpose: 'notes', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     const { runId } = await runManaged(fx, [{ ref: 'notes/pricing.md', excerpt: 'Enterprise only' }], ['v1 is Enterprise only']);
-    let w = (await call(fx, 'claim_work', { runId })).work;
-    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
-    w = (await call(fx, 'claim_work', { runId })).work;
-    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { deliverableId: 'pricing-summary', summary: 'v1 is Enterprise only', findings: ['Enterprise only'] }, evidence: [{ ref: 'notes/pricing.md' }] });
+    const w = (await call(fx, 'claim_work', { runId })).work;
+    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
     assert.equal(rec.run.state, 'succeeded');
-    assert.deepEqual(rec.evidence, { witnessed: 1, reported: 0, unresolved: 0 });
+    assert.deepEqual(rec.evidence, { witnessed: 1, reported: 0, unverified: 0, unresolved: 0 });
 
     writeFileSync(join(dir, 'pricing.md'), 'Pro gets webhooks at launch.');
     const refreshed = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
@@ -162,10 +177,8 @@ test('new files in a busy source raise one question for the refresh, not one per
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     for (const n of [1, 2]) {
       const { runId } = await runManaged(fx, [{ ref: 'notes/a.md', excerpt: 'alpha' }], [`finding ${String(n)}`], `summarize the notes, pass ${String(n)}`);
-      for (const out of [{ verification: 'ok', passed: true }, { deliverableId: `d${String(n)}`, summary: 's', findings: ['f'] }]) {
-        const w = (await call(fx, 'claim_work', { runId })).work;
-        await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'notes/a.md' }] });
-      }
+      const w = (await call(fx, 'claim_work', { runId })).work;
+      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'notes/a.md' }] });
     }
     const before = listOpenDecisions(s).length;
     writeFileSync(join(dir, 'b.md'), 'new');
@@ -207,15 +220,64 @@ test('removing a file only flags work that cited that file in that source, not a
     writeFileSync(join(fx.broker.root, 'docs', 'plan.md'), 'docs plan');
     addSource(s, { id: 'notes', kind: 'directory', locator: dir, purpose: 'notes', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
+    // A web page is citable once its read is recorded.
+    addSource(s, { id: 'web', kind: 'other', purpose: 'pages read on the open web', authorityLevel: 'informative', sensitivity: 'public', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'report', id: 'web', partial: true, items: [{ ref: 'https://example.com/plan.md', text: 'other plan' }] });
     const { runId } = await runManaged(fx, [{ ref: 'docs/plan.md' }, { ref: 'https://example.com/plan.md' }], ['other plan'], 'summarize the other plan');
-    for (const out of [{ verification: 'ok', passed: true }, { deliverableId: 'x', summary: 's', findings: ['f'] }]) {
-      const w = (await call(fx, 'claim_work', { runId })).work;
-      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: out, evidence: [{ ref: 'docs/plan.md' }] });
-    }
+    const w = (await call(fx, 'claim_work', { runId })).work;
+    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
     rmSync(join(dir, 'plan.md'));
     const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     assert.deepEqual(r.changes.removed, ['plan.md']);
     assert.equal((r.staleDeliverables ?? []).length, 0, 'docs/plan.md and a web page named plan.md are not notes/plan.md');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+async function finishedCiting(fx: ReturnType<typeof brokerFixture>, refs: string[], name: string) {
+  const { runId, done } = await runManaged(fx, refs.map((ref) => ({ ref })), ['the ledger is called synchronously'], `summarize the architecture page, cited as ${name}`);
+  assert.equal(done.step.state, 'succeeded', JSON.stringify(done.validation));
+  const w = (await call(fx, 'claim_work', { runId })).work;
+  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: refs.map((ref) => ({ ref })) });
+  assert.equal(verified.run.state, 'succeeded', JSON.stringify(verified.validation));
+  return runId;
+}
+
+test('a cited page that changes flags the work that cited it, whether by its url, by <source>:<id>, or by its bare id', async () => {
+  const fx = brokerFixture();
+  try {
+    const s = fx.broker.store;
+    const at = fx.ctx.now();
+    const URL = 'https://wiki.example.com/spaces/ENG/pages/98765/Architecture';
+    addSource(s, { id: 'confluence', kind: 'docs', purpose: 'engineering wiki', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-09-01', text: 'The checkout service calls the ledger synchronously.' }] });
+    const forms: Record<string, string> = { 'by-url': `${URL}#overview`, 'by-source': 'confluence:98765', 'by-id': '98765' };
+    for (const [name, ref] of Object.entries(forms)) await finishedCiting(fx, [ref], name);
+    const changed = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-10-01', text: 'The checkout service queues ledger writes.' }] });
+    assert.deepEqual(changed.changes.modified, ['98765']);
+    assert.equal(changed.staleDeliverables.length, 3, 'each form of citation is matched to the page');
+    const findings = listDriftFindings(s, { status: 'open' });
+    assert.equal(new Set(findings.flatMap((f) => f.affected)).size, 3);
+    assert.ok(findings.every((f) => /cites 98765 in confluence/.test(f.summary)));
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('a complete re-read that drops a page cited by its url flags the work through the address the earlier read recorded', async () => {
+  const fx = brokerFixture();
+  try {
+    const s = fx.broker.store;
+    const at = fx.ctx.now();
+    const URL = 'https://wiki.example.com/pages/98765';
+    addSource(s, { id: 'confluence', kind: 'docs', purpose: 'engineering wiki', authorityLevel: 'informative', sensitivity: 'internal', canRead: true, canWrite: false, at });
+    await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, text: 'The ledger is called synchronously.' }, { ref: '11111', text: 'Another page.' }] });
+    await finishedCiting(fx, [URL], 'cited-by-url');
+    const reread = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '11111', text: 'Another page.' }] });
+    assert.deepEqual(reread.changes.removed, ['98765']);
+    assert.equal(reread.staleDeliverables.length, 1);
+    assert.match(listDriftFindings(s, { status: 'open' })[0]!.summary, /cites 98765 in confluence/);
   } finally {
     fx.cleanup();
   }

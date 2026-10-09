@@ -67,7 +67,7 @@ expect_contains "doctor" "$predoctor" "FAIL project"
 
 echo "== init from the packaged install =="
 skills_dir="$scratch/host-skills"
-init_out="$(npx --no-install construct init --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' --skills-dir="$skills_dir" 2>&1)" \
+init_out="$(npx --no-install construct init --client=claude-code --scale=solo --outcome='prove the packaged spine' --constraint='never write outside the scratch project' 2>&1)" \
   || fail "construct init exited non-zero" "$init_out"
 printf '%s\n' "$init_out"
 expect_contains "init" "$init_out" "Initialized Construct project"
@@ -76,12 +76,75 @@ expect_contains "init" "$init_out" "Initialized Construct project"
 [ -f "$project/.construct/sources.json" ] || fail "init wrote no sources.json"
 [ -f "$project/.construct/registry.lock.json" ] || fail "init wrote no registry.lock.json"
 [ -f "$project/.construct/state/construct.sqlite" ] || fail "the spine did not create its database"
-[ "$(ls "$project/.construct/state" | wc -l | tr -d ' ')" = "1" ] || fail "more than one file under .construct/state"
-[ -f "$skills_dir/construct/SKILL.md" ] || fail "init did not plant the operational skill" "$init_out"
-cmp -s "$skills_dir/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
+state_files="$(ls "$project/.construct/state" | sort | tr '\n' ' ')"
+[ "$state_files" = "construct.sqlite installed.json launcher " ] || fail "the state directory holds something other than the database, the hooks' launcher, and the record of what Construct installed" "$state_files"
+[ -f "$project/.claude/skills/construct/SKILL.md" ] || fail "init did not plant the operational skill in the project" "$init_out"
+cmp -s "$project/.claude/skills/construct/SKILL.md" "$repo_root/skills/construct/SKILL.md" \
   || fail "the planted operational skill is not byte-identical to the shipped one"
+[ ! -e "$HOME/.claude/skills/construct" ] || fail "init planted a personal copy that would load in every repository"
+expect_contains "init" "$init_out" "Next, in Claude Code:"
 grep -q '^\.construct/state/$' "$project/.gitignore" || fail "init did not ignore .construct/state/"
+
+echo "== the host file starts the project's construct with no machine path =="
+[ -f "$project/.mcp.json" ] || fail "init --client=claude-code wrote no .mcp.json" "$init_out"
+mcp_launch="$(node -e '
+const e = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")).mcpServers.construct;
+const parts = [e.command, ...e.args];
+if (parts.some((p) => require("node:path").isAbsolute(p) || p.startsWith("--project="))) { console.error(parts.join(" ")); process.exit(1); }
+process.stdout.write(JSON.stringify(parts));
+' "$project/.mcp.json")" || fail ".mcp.json carries a machine path" "$(cat "$project/.mcp.json")"
+[ "$mcp_launch" = '["npx","--no-install","construct","serve","--client=claude-code"]' ] \
+  || fail ".mcp.json does not start npx --no-install construct serve" "$mcp_launch"
+written_out="$(printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | node -e '
+const { spawn } = require("node:child_process");
+const [command, ...args] = JSON.parse(process.argv[1]);
+const child = spawn(command, args, { stdio: ["pipe", "inherit", "ignore"] });
+process.stdin.pipe(child.stdin);
+child.on("exit", (code) => process.exit(code ?? 1));
+' "$mcp_launch")" || fail "the server would not start the way .mcp.json says" "$written_out"
+expect_contains "the server started from .mcp.json" "$written_out" '"name":"construct"'
 [ ! -e "$XDG_DATA_HOME/construct" ] || fail "init created a per-user data directory; project truth must stay in the project"
+
+echo "== the hooks live in this machine's settings and find Node through the launcher =="
+launcher="$project/.construct/state/launcher"
+[ "$(wc -l < "$launcher" | tr -d ' ')" = "2" ] || fail "the launcher is not two lines (Node, then Construct)" "$(cat "$launcher")"
+{ IFS= read -r launcher_node; IFS= read -r launcher_construct; } < "$launcher"
+"$launcher_node" "$launcher_construct" version >/dev/null || fail "the launcher does not start this install" "$(cat "$launcher")"
+[ -f "$project/.claude/settings.local.json" ] || fail "init --client=claude-code put no hooks in .claude/settings.local.json" "$init_out"
+node -e '
+const fs = require("node:fs");
+const read = (p) => (fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, "utf8")) : {});
+const ours = (settings) => Object.entries(settings.hooks ?? {}).flatMap(([event, list]) => list.flatMap((e) => e.hooks.map((h) => [event, h.command]))).filter(([, c]) => / hook (?:post-tool|stop|session-start) --client=claude-code /.test(c));
+const local = ours(read(process.argv[1]));
+const events = local.map(([e]) => e).sort().join(",");
+if (events !== "PostToolUse,SessionStart,Stop") { console.error(`local: ${events}`); process.exit(1); }
+if (local.some(([, c]) => !c.includes(process.argv[3]))) { console.error("a hook does not run through the launcher"); process.exit(1); }
+if (ours(read(process.argv[2])).length > 0) { console.error("the shared .claude/settings.json holds construct hooks"); process.exit(1); }
+' "$project/.claude/settings.local.json" "$project/.claude/settings.json" "$launcher" \
+  || fail "the three grounding hooks are not in .claude/settings.local.json alone" "$(cat "$project/.claude/settings.local.json")"
+git -C "$project" check-ignore -q .claude/settings.local.json || fail ".claude/settings.local.json is not kept out of git"
+
+echo "== plain init with no agent host installed says no session can reach Construct =="
+bare="$scratch/bare"
+bare_bin="$scratch/bare-bin"
+mkdir -p "$bare/home" "$bare/project" "$bare_bin"
+for tool in node npm npx git; do
+  found="$(command -v "$tool")" || fail "$tool is not on PATH"
+  ln -s "$found" "$bare_bin/$tool"
+done
+git -C "$bare/project" init -q .
+printf '# Bare\n\nA project on a machine with no agent host.\n' > "$bare/project/README.md"
+bare_init="$(cd "$bare/project" && env -i HOME="$bare/home" PATH="$bare_bin" "$project/node_modules/.bin/construct" init 2>&1)" \
+  || fail "plain init exited non-zero" "$bare_init"
+expect_contains "plain init" "$bare_init" "host: not connected"
+expect_contains "plain init" "$bare_init" "no agent session can reach Construct"
+case "$bare_init" in *"answer the questions in your agent session"*) fail "plain init points at an agent session that cannot reach Construct" "$bare_init" ;; esac
+set +e
+bare_doctor="$(cd "$bare/project" && env -i HOME="$bare/home" PATH="$bare_bin" "$project/node_modules/.bin/construct" doctor 2>&1)"
+bare_doctor_status=$?
+set -e
+[ "$bare_doctor_status" -ne 0 ] || fail "doctor called a project no host is wired to healthy" "$bare_doctor"
+expect_contains "plain doctor" "$bare_doctor" "FAIL host-wiring"
 
 echo "== status and doctor =="
 status_out="$(npx --no-install construct status 2>&1)" || fail "status exited non-zero" "$status_out"
@@ -159,28 +222,33 @@ const boot = await call('bootstrap'); must(boot.profile.openQuestions.length ===
 const scale = boot.profile.openQuestions.find((q) => q.options); await call('decide', { decisionId: scale.id, resolution: 'solo' });
 for (const q of boot.profile.openQuestions.filter((q) => !q.options)) await call('decide', { decisionId: q.id, resolution: q.question.includes('result') ? 'prove the packaged loop' : 'never write outside this project' });
 const boot2 = await call('bootstrap'); must(boot2.profile.onboarding === 'confirmed', 'onboarding confirmed after decisions');
-const cls = await call('classify_request', { text: 'Remember that we will not add schema migration until stable' }); must(cls.class === 'remember', 'classified as remember');
+const cls = await call('classify_request', { words: 'Remember that we will not add schema migration until stable', kind: 'remember' }); must(/^Call remember/.test(cls.next) && cls.recorded === false, 'a remember reading is told to call remember');
 const mem = await call('remember', { kind: 'decision', text: 'we will not add schema migration until stable' }); must(mem.nothingElseCreated === true, 'remember created nothing else');
 const statements = await call('project_context', { topic: 'statements', query: 'migration' }); must(statements.items.length === 1, 'one statement remembered');
 const rooted = await call('work', { action: 'add', kind: 'outcome', title: 'Hold schema changes until stable', serves: mem.remembered.id }); must(rooted.status === 'open' && rooted.admittedBy === 'serves', 'work serving a remembered decision is admitted');
 const sub = await call('work', { action: 'add', title: 'Guard the migration path', parent: rooted.id, acceptance: ['no migration runs before 1.0'] }); must(sub.status === 'open', 'a child of admitted work is admitted');
 const loose = await call('work', { action: 'add', title: 'An idea with no reason' }); must(loose.status === 'proposed', 'unrooted work from a session is proposed');
 const ready = await call('work', { action: 'ready' }); must(ready.some((w) => w.id === sub.id) && !ready.some((w) => w.id === loose.id), 'ready holds admitted work only');
-const cls2 = await call('classify_request', { text: 'Review this implementation against our design principles' }); must(cls2.class === 'manage', 'classified as manage');
+const cls2 = await call('classify_request', { words: 'Review this implementation against our design principles', kind: 'manage', deliverable: { kind: 'review/design-conformance' }, target: 'README.md' }); must(cls2.matches[0]?.workflowId === 'design-conformance' && cls2.matches[0].missing.length === 0, `the typed reading matches design-conformance with nothing missing: ${JSON.stringify(cls2.matches[0])}`);
 const resolved = await call('workflows', { action: 'resolve', id: 'design-conformance', input: { target: 'README.md' } }); must(resolved.status === 'runnable', `resolvable: ${resolved.summary}`);
-const started = await call('start_outcome', { workflowId: 'design-conformance', input: { target: 'README.md' } }); must(started.run.state === 'ready', 'run ready');
+const started = await call('start_outcome', { workflowId: 'design-conformance', intake: cls2.intake }); must(started.started === true && started.run.state === 'ready', 'run ready from the intake');
 const outputs = { gather: { principles: ['Keep the kernel host-agnostic'], targetSummary: 'the README', unknownPrinciples: [] }, deterministic: { findings: [] }, review: { summary: 'conforms', findings: [], assumptions: [] }, record: { driftFindingIds: [], decisionIds: [] } };
 for (let i = 0; i < 4; i += 1) { const c = await call('claim_work', { runId: started.run.id, includeSkillBody: i === 0 }); must(c.work, `step ${i} claimable`); if (i === 0) must(typeof c.work.skill.body === 'string' && c.work.skill.body.startsWith('---'), 'skill body loaded only when asked'); const r = await call('submit_work', { stepRunId: c.work.stepRunId, owner: c.work.owner, token: c.work.token, output: outputs[c.work.step.id], evidence: [{ ref: 'design.md' }] }); must(r.step.state === 'succeeded', `step ${c.work.step.id} succeeded: ${r.step.reason}`); }
 const status = await call('run_status', { runId: started.run.id }); must(status.run.state === 'succeeded', 'run succeeded');
 const validated = status.deliverables.find((d) => d.trust === 'validated'); must(validated, 'final deliverable validated');
-await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop' });
+const byHand = await rpc('tools/call', { name: 'promote_deliverable', arguments: { deliverableId: validated.id, to: 'validated' } }); must(byHand.result?.isError === true && /set when the step's checks pass/.test(byHand.result.content[0].text), 'validated is never promoted to by hand');
+await call('promote_deliverable', { deliverableId: validated.id, to: 'challenged', reason: 'challenged in the loop', objections: [] });
 const asked = await call('promote_deliverable', { deliverableId: validated.id, to: 'accepted', reason: 'the session asks the person to accept' }); must(asked.personRequired === true && typeof asked.pendingDecision === 'string', 'acceptance waits for the person');
 const relayed = await call('decide', { decisionId: asked.pendingDecision, resolution: 'approve' }); must(relayed.personRequired === true && relayed.decision.state === 'open', 'a relayed approval of acceptance is refused');
-const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers');
+const held = await call('run_status', { runId: started.run.id }); must(held.deliverables.find((d) => d.id === validated.id).trust === 'challenged', 'trust unchanged until the person answers'); must(Array.isArray(held.deliverables.find((d) => d.id === validated.id).verification?.challenge?.objections), 'the challenge is recorded with its objections');
+await call('sources', { action: 'declare', id: 'wiki', kind: 'docs' });
+await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', text: 'Checkout retries each payment call up to 3 times.' }] });
+const byUrl = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'https://wiki.example.com/pages/98765#retries', excerpt: 'up to 3 times' }] }); must(byUrl.ok === true && byUrl.evidence.reported === 1, `a recorded page is citable by its url: ${JSON.stringify(byUrl.problems)}`);
+const invented = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:12345' }] }); must(invented.ok === false && invented.problems.some((p) => p.problem.includes('names nothing this project holds')), 'an invented item is refused');
 console.log(`pending=${asked.pendingDecision}`);
 const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → resolve → start → claim/submit ×4 → status → challenged → acceptance held for the person: ok');
+console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → challenged → acceptance held for the person → a reported page cited by its url, an invented item refused: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out" | grep -v '^pending=' || true

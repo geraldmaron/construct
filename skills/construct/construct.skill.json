@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "construct",
   "title": "Construct operating skill",
-  "version": "2.7.0",
+  "version": "3.0.0",
   "category": "operational",
   "owner": "geraldmaron/construct",
   "activation": [
@@ -18,7 +18,10 @@
     "remember that",
     "record this, note this, keep in mind",
     "review this against our principles, do this piece of work and hand it back",
-    "every month, every January, keep this reviewed on a schedule, start the review"
+    "every month, every January, keep this reviewed on a schedule, start the review",
+    "can you put together a diagram or a brief from our sources",
+    "could you check this against our principles",
+    "I need a write-up of what changed last quarter"
   ],
   "standDown": [
     "a plain question about how something works, explain, what does this function do",

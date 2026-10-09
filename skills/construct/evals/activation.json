@@ -50,6 +50,26 @@
     {
       "text": "kick off the release readiness review for 3.1",
       "expect": "activate"
+    },
+    {
+      "text": "can you put together an architecture diagram of the payments service for Q3",
+      "expect": "activate",
+      "why": "work asked for as a question"
+    },
+    {
+      "text": "any chance you could check this plan against our design principles",
+      "expect": "activate",
+      "why": "a review asked for as a question"
+    },
+    {
+      "text": "I need a one-page brief on what changed in the API last month",
+      "expect": "activate",
+      "why": "work asked for as a need, with a period"
+    },
+    {
+      "text": "can you explain what this regex does",
+      "expect": "stand_down",
+      "why": "a plain question, even with can you"
     }
   ]
 }

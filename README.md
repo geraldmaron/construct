@@ -39,14 +39,26 @@ construct init
 Init writes `.construct/` (project, constitution, sources, and registry lock
 files, committed) and one runtime database under `.construct/state/`
 (ignored). It reads the project's own files and proposes what it can, each
-proposal naming where it came from, then asks three questions: what this
-project is to you, what result matters most now, and what must not be
-violated. Answer them in your agent session, or pass `--scale`, `--outcome`,
-and `--constraint` to init. Proposed statements wait in `construct inbox`
-until you confirm or retire them. The operational `construct` skill is planted into
-the host you are in (`--client=<host>` or `--skills-dir=<dir>` chooses).
+proposal naming where it came from. Proposed statements wait in
+`construct inbox` until you confirm or retire them.
 
-After that, talk in your agent session. The command line is for setup,
+Init then connects the agent host you use. It wires the host you ran it
+from, or the only one installed on this machine; when it finds several and
+you are at your own terminal, it asks which you use. Otherwise it names the
+hosts it found, wires none, and says so: run `construct init --client=<host>`
+(claude-code, cursor, vscode, opencode, codex, or bob; comma-separate for
+more than one). For each host it writes the project MCP file and plants the
+operational `construct` skill in the project, where that host reads it.
+
+Do the one-time step init prints for your host (in Claude Code: start a new
+session and approve the `construct` server), then ask for what you want in
+your own words. Construct tells the session to handle your request first
+and to ask the three setup questions (what this project is to you, what
+result matters most now, and what must not be violated) only when an answer
+changes that work, or all in one message when you have asked for nothing
+yet; `--scale`, `--outcome`, and `--constraint` answer them at init instead.
+
+After that, work in your agent session. The command line is for setup,
 inspection, scripting, and recovery: `construct status`, `construct doctor`,
 `construct config explain <key>`, `construct source add`, `construct reset`,
 and `construct migrate` when an upgrade of Construct needs the state upgraded

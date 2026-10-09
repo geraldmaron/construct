@@ -85,19 +85,19 @@ export function appendActivity(
   return toEvent(row);
 }
 
-/** Events in insertion order, optionally for one run and after a cursor id. */
+/** Events in insertion order, optionally for one run or of one kind, and after a cursor id. */
 export function listActivity(
   store: StateStore,
-  filter: { readonly runId?: string; readonly afterId?: number; readonly limit?: number } = {},
+  filter: { readonly runId?: string; readonly kind?: string; readonly afterId?: number; readonly limit?: number } = {},
 ): ActivityEvent[] {
   const limit = Math.max(1, Math.min(filter.limit ?? 200, 1000));
   const rows = store.db
     .prepare(
       `SELECT * FROM activity_events
-        WHERE (? IS NULL OR run_id = ?) AND id > ?
+        WHERE (? IS NULL OR run_id = ?) AND (? IS NULL OR kind = ?) AND id > ?
         ORDER BY id LIMIT ?`,
     )
-    .all(filter.runId ?? null, filter.runId ?? null, filter.afterId ?? 0, limit) as unknown as Row[];
+    .all(filter.runId ?? null, filter.runId ?? null, filter.kind ?? null, filter.kind ?? null, filter.afterId ?? 0, limit) as unknown as Row[];
   return rows.map(toEvent);
 }
 

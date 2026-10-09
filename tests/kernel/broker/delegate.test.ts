@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { brokerFixture } from './support.ts';
 import { createMcpHandler } from '../../../src/hosts/mcp/server.ts';
 import { delegate } from '../../../src/kernel/broker/delegate.ts';
+import { ToolInputError } from '../../../src/kernel/broker/definition.ts';
 import { createBrokerContext, openBroker } from '../../../src/cli/broker-context.ts';
 
 test('actual MCP surface exposes opt-in status, rejects unconfigured dispatch, and isolates runners', async () => {
@@ -27,6 +28,23 @@ test('delegate has a closed, action-specific contract', () => {
   assert.throws(() => delegate.validate({ action: 'cancel' }), /required/);
   assert.throws(() => delegate.validate({ action: 'integrate', id: 'id', instructions: 'override' }), /does not apply/);
   assert.throws(() => delegate.validate({ action: 'triage', id: 'id', dispositions: [{ findingId: 'finding', decision: 'approve', rationale: 'bypass' }] }), /one of/);
+  const problem = (raw: Record<string, unknown>): ToolInputError => {
+    try {
+      delegate.validate(raw);
+    } catch (error) {
+      assert.ok(error instanceof ToolInputError);
+      return error;
+    }
+    assert.fail('expected a ToolInputError');
+  };
+  const misplaced = problem({ action: 'integrate', id: 'id', instructions: 'override' });
+  assert.equal(misplaced.field, 'instructions', 'the input that does not apply is named');
+  assert.deepEqual(misplaced.allowed, ['action', 'id']);
+  assert.equal(problem({ action: 'triage', id: 'id', dispositions: ['x'] }).field, 'dispositions');
+  const strayField = problem({ action: 'triage', id: 'id', dispositions: [{ findingId: 'f', decision: 'accepted', rationale: 'r', approve: true }] });
+  assert.equal(strayField.field, 'dispositions');
+  assert.deepEqual(strayField.allowed, ['findingId', 'decision', 'rationale']);
+  assert.equal(problem({ action: 'start', workId: 'w', requestKey: 'k', executor: 'codex', role: 'implement', instructions: 'i', paths: [1] }).field, 'paths');
 });
 
 test('project-write denial and malformed personal configuration do not widen permissions', async () => {

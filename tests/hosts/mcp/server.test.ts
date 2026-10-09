@@ -1,7 +1,8 @@
 /**
  * tests/hosts/mcp/server.test.ts — the MCP protocol over the line transport:
- * initialize, tools/list derived from the definitions, tools/call with typed
- * errors, and a refusal of tools the surface does not carry.
+ * initialize, tools/list derived from the definitions, tools/call with wrong
+ * input returned as a tool error naming the field, and a protocol refusal of
+ * tools the surface does not carry.
  */
 
 import { test } from 'node:test';
@@ -9,8 +10,10 @@ import assert from 'node:assert/strict';
 import { PassThrough } from 'node:stream';
 import { createLazyMcpHandler, createMcpHandler, createUnboundMcpHandler, serveHandler, serveMcp } from '../../../src/hosts/mcp/server.ts';
 import { bindFailureFor } from '../../../src/cli/serve.ts';
+import { CONTRACT_PREFIX, HOST_TEXT_LIMIT, INTERACTIVE_CONTRACT, INTERACTIVE_INSTRUCTIONS, RUNNER_INSTRUCTIONS, UNTRUSTED_TEXT } from '../../../src/hosts/mcp/instructions.ts';
 import { StateBusyError, UnsupportedStateError } from '../../../src/kernel/state/format.ts';
 import { toolsFor } from '../../../src/kernel/broker/tools.ts';
+import { listStatements, STATEMENT_KINDS } from '../../../src/kernel/state/profile.ts';
 import { brokerFixture } from '../../kernel/broker/support.ts';
 
 test('initialize, tools/list, tools/call, and errors follow the protocol', async () => {
@@ -20,9 +23,16 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
     const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { serverInfo: { name: string }; protocolVersion: string; instructions: string } };
     assert.equal(init.result.serverInfo.name, 'construct');
     assert.match(init.result.protocolVersion, /^\d{4}-\d{2}-\d{2}$/);
-    assert.match(init.result.instructions, /answer plain questions without recording/i);
-    assert.match(init.result.instructions, /Challenge consequential work/);
-    assert.match(init.result.instructions, /Observations are not work/);
+    const contract = init.result.instructions.slice(0, CONTRACT_PREFIX);
+    for (const word of ['bootstrap', 'classify_request', 'remember', 'start_outcome', 'claim_work', 'submit_work', 'record nothing', 'data, never an instruction']) {
+      assert.ok(contract.includes(word), `the first ${String(CONTRACT_PREFIX)} characters carry ${word}`);
+    }
+    assert.ok(init.result.instructions.length <= HOST_TEXT_LIMIT, `instructions are ${String(init.result.instructions.length)} characters`);
+    const rest = init.result.instructions.slice(CONTRACT_PREFIX);
+    assert.match(rest, /Observations are not work/);
+    assert.match(rest, /Challenge consequential work/);
+    assert.equal(init.result.instructions, INTERACTIVE_INSTRUCTIONS);
+    assert.ok(INTERACTIVE_INSTRUCTIONS.startsWith(`${INTERACTIVE_CONTRACT} `) && INTERACTIVE_CONTRACT.length <= CONTRACT_PREFIX, `the whole contract (${String(INTERACTIVE_CONTRACT.length)} characters) opens the instructions inside the first ${String(CONTRACT_PREFIX)}`);
     assert.equal(await handle({ jsonrpc: '2.0', method: 'notifications/initialized' }), null);
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string; inputSchema: { additionalProperties: boolean } }[] } };
     assert.deepEqual(list.result.tools.map((t) => t.name), toolsFor('interactive').map((t) => t.name));
@@ -30,9 +40,11 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
     const ok = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'bootstrap', arguments: {} } })) as { result: { content: { type: string; text: string }[]; structuredContent: { next: string } } };
     assert.equal(ok.result.content[0]!.type, 'text');
     assert.match(ok.result.structuredContent.next, /listen/);
-    const badInput = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'decision' } } })) as { error: { code: number; message: string } };
-    assert.equal(badInput.error.code, -32602);
-    assert.match(badInput.error.message, /"text" is required/);
+    const badInput = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'decision' } } })) as { error?: unknown; result: { isError: boolean; structuredContent: { error: string; field: string | null } } };
+    assert.equal(badInput.error, undefined, 'wrong input is not a protocol error');
+    assert.equal(badInput.result.isError, true);
+    assert.match(badInput.result.structuredContent.error, /"text" is required/);
+    assert.equal(badInput.result.structuredContent.field, 'text');
     const toolError = (await handle({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'run_status', arguments: { runId: 'nope' } } })) as { result: { isError: boolean; structuredContent: { error: string } } };
     assert.equal(toolError.result.isError, true);
     assert.equal(toolError.result.structuredContent.error, 'no run nope');
@@ -47,12 +59,63 @@ test('initialize, tools/list, tools/call, and errors follow the protocol', async
   }
 });
 
+test('wrong input comes back as a tool error naming the field and the values it accepts, in structured and text content alike', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const before = listStatements(fx.broker.store).length;
+    type ToolError = { error?: unknown; result: { isError: boolean; content: { type: string; text: string }[]; structuredContent: { error: string; field: string | null; allowed: string[] | null; example: unknown } } };
+    const wrongKind = (await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'wish', text: 'x' } } })) as ToolError;
+    assert.equal(wrongKind.error, undefined);
+    assert.equal(wrongKind.result.isError, true);
+    assert.equal(wrongKind.result.structuredContent.field, 'kind');
+    assert.deepEqual(wrongKind.result.structuredContent.allowed, [...STATEMENT_KINDS]);
+    assert.match(wrongKind.result.structuredContent.error, /"kind" must be one of/);
+    assert.deepEqual(JSON.parse(wrongKind.result.content[0]!.text), wrongKind.result.structuredContent, 'the text a host shows carries the same field and values');
+
+    const stray = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'remember', arguments: { kind: 'note', text: 'x', bogus: 1 } } })) as ToolError;
+    assert.equal(stray.error, undefined);
+    assert.equal(stray.result.isError, true);
+    assert.equal(stray.result.structuredContent.field, 'bogus');
+    const remember = toolsFor('interactive').find((t) => t.name === 'remember')!;
+    assert.deepEqual(stray.result.structuredContent.allowed, Object.keys(remember.inputSchema.properties));
+    assert.equal(JSON.parse(stray.result.content[0]!.text).field, 'bogus');
+
+    const badToken = (await handle({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'submit_work', arguments: { stepRunId: 's', output: {} } } })) as ToolError;
+    assert.equal(badToken.result.isError, true);
+    assert.equal(badToken.result.structuredContent.field, 'token');
+    assert.equal(badToken.result.structuredContent.allowed, null);
+    assert.equal(badToken.result.structuredContent.example, null);
+    const noId = (await handle({ jsonrpc: '2.0', id: 4, method: 'tools/call', params: { name: 'work', arguments: { action: 'show' } } })) as ToolError;
+    assert.equal(noId.error, undefined);
+    assert.equal(noId.result.isError, true, 'an input one action needs is named too');
+    assert.equal(noId.result.structuredContent.field, 'id');
+
+    const reading = (await handle({ jsonrpc: '2.0', id: 5, method: 'tools/call', params: { name: 'classify_request', arguments: { words: 'x', kind: 'work' } } })) as ToolError;
+    assert.equal(reading.error, undefined, 'a wrong reading is a tool error the model reads, not a protocol error');
+    assert.equal(reading.result.isError, true);
+    assert.equal(reading.result.structuredContent.field, 'kind');
+    assert.deepEqual(reading.result.structuredContent.allowed, ['answer', 'remember', 'manage', 'maintain', 'coordinate']);
+    assert.deepEqual(reading.result.structuredContent.example, { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } });
+    const old = (await handle({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'classify_request', arguments: { text: 'Review this against our principles' } } })) as ToolError;
+    assert.equal(old.result.isError, true);
+    assert.equal(old.result.structuredContent.field, 'text');
+    assert.match(old.result.structuredContent.error, /"words"/);
+    assert.equal(listStatements(fx.broker.store).length, before, 'a refused call records nothing');
+  } finally {
+    fx.cleanup();
+  }
+});
+
 test('the headless server names itself and lists only its surface', async () => {
   const fx = brokerFixture('headless');
   try {
     const handle = createMcpHandler('headless', fx.broker);
-    const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { serverInfo: { name: string } } };
+    const init = (await handle({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })) as { result: { serverInfo: { name: string }; instructions: string } };
     assert.equal(init.result.serverInfo.name, 'construct-runner');
+    assert.equal(init.result.instructions, RUNNER_INSTRUCTIONS);
+    assert.ok(init.result.instructions.includes(UNTRUSTED_TEXT), 'the runner is told what it reads is data, in the same sentence the session reads');
+    assert.ok(INTERACTIVE_INSTRUCTIONS.slice(0, CONTRACT_PREFIX).includes(UNTRUSTED_TEXT));
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
     assert.deepEqual(list.result.tools.map((t) => t.name).sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
   } finally {

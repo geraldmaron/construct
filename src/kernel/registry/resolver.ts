@@ -13,7 +13,8 @@ import { tierAtLeast } from '../policy/lattice.ts';
 import { isKnownCapability, isKnownValidator, provides, type HostCapabilities } from './capability-registry.ts';
 import { DependencyCycleError, stepOrder } from './dependency-graph.ts';
 import { lockStatus, type LockRow } from './lockfile.ts';
-import type { RegisteredSkill, RegisteredWorkflow, WorkflowStep } from './models.ts';
+import type { RegisteredSkill, RegisteredWorkflow, WorkflowManifest, WorkflowStep } from './models.ts';
+import { checkSlot, describeSlot, isSlotType, type SlotContext } from './slots.ts';
 import { satisfies } from './semver.ts';
 import type { SkillRegistry } from './skill-registry.ts';
 import type { WorkflowRegistry } from './workflow-registry.ts';
@@ -44,6 +45,8 @@ export interface ResolutionReason {
   readonly message: string;
   /** What would clear it, in a sentence. */
   readonly remedy: string;
+  /** For a missing input, the input it is. */
+  readonly slot?: string;
 }
 
 export interface BoundStep {
@@ -69,6 +72,8 @@ export interface SourceAvailability {
   readonly id: string;
   readonly reachability: 'unknown' | 'reachable' | 'unreachable';
   readonly freshness: 'fresh' | 'stale' | 'never_read' | 'no_expectation';
+  /** When Construct last read it, if ever. */
+  readonly lastReadAt?: string | null;
 }
 
 export interface ResolveInput {
@@ -85,6 +90,10 @@ export interface ResolveInput {
   readonly sources: readonly SourceAvailability[];
   readonly store: StateStore;
   readonly at: string;
+  /** The instant a period input is checked against; `at` when absent. A run's own checks pass the instant its period was worked out at. */
+  readonly periodAt?: string;
+  /** The caller's timezone for a period that names none. */
+  readonly timezone?: string;
   readonly targetSystemFor?: (step: WorkflowStep) => string;
 }
 
@@ -92,6 +101,37 @@ function typeOf(value: unknown): string {
   if (Array.isArray(value)) return value.every((v) => typeof v === 'string') ? 'string[]' : 'array';
   if (value === null) return 'null';
   return typeof value;
+}
+
+/**
+ * Everything wrong with a run input against the workflow's schema: a
+ * required input missing, an undeclared key, a value of the wrong type, and
+ * for the kernel's own types (a period, source ids) what their check finds.
+ */
+export function inputProblems(m: WorkflowManifest, input: Readonly<Record<string, unknown>>, ctx: SlotContext): ResolutionReason[] {
+  const reasons: ResolutionReason[] = [];
+  for (const key of m.requiredInputs) {
+    if (input[key] === undefined) {
+      const type = m.inputSchema[key];
+      reasons.push({ code: 'missing_step_input', stepId: null, slot: key, message: `input "${key}" is required and absent`, remedy: type && isSlotType(type) ? `Provide ${key} as ${describeSlot(type)}.` : `Provide ${key} (${type ?? 'value'}).` });
+    }
+  }
+  for (const [key, value] of Object.entries(input)) {
+    const expected = m.inputSchema[key];
+    if (!expected) {
+      reasons.push({ code: 'schema_mismatch', stepId: null, message: `input "${key}" is not declared by the workflow`, remedy: `Remove ${key} or add it to the workflow's inputSchema.` });
+      continue;
+    }
+    if (isSlotType(expected)) {
+      for (const p of checkSlot(expected, key, value, ctx)) reasons.push({ code: p.code, stepId: null, message: p.message, remedy: p.remedy });
+      continue;
+    }
+    const actual = typeOf(value);
+    if (actual !== expected) {
+      reasons.push({ code: 'schema_mismatch', stepId: null, message: `input "${key}" is ${actual}, not ${expected}`, remedy: `Pass ${key} as ${expected}.` });
+    }
+  }
+  return reasons;
 }
 
 export function resolveWorkflow(input: ResolveInput): Resolution {
@@ -114,21 +154,7 @@ export function resolveWorkflow(input: ResolveInput): Resolution {
     reasons.push({ code: 'incompatible_version', stepId: null, message: `workflow ${m.id} is ${m.version}; ${input.versionRange} was asked for`, remedy: 'Ask for a range this version satisfies, or update the workflow.' });
   }
 
-  // Inputs against the schema.
-  for (const key of m.requiredInputs) {
-    if (input.input[key] === undefined) reasons.push({ code: 'missing_step_input', stepId: null, message: `input "${key}" is required and absent`, remedy: `Provide ${key} (${m.inputSchema[key] ?? 'value'}).` });
-  }
-  for (const [key, value] of Object.entries(input.input)) {
-    const expected = m.inputSchema[key];
-    if (!expected) {
-      reasons.push({ code: 'schema_mismatch', stepId: null, message: `input "${key}" is not declared by the workflow`, remedy: `Remove ${key} or add it to the workflow's inputSchema.` });
-      continue;
-    }
-    const actual = typeOf(value);
-    if (!(actual === expected || (expected === 'object' && actual === 'object'))) {
-      reasons.push({ code: 'schema_mismatch', stepId: null, message: `input "${key}" is ${actual}, not ${expected}`, remedy: `Pass ${key} as ${expected}.` });
-    }
-  }
+  reasons.push(...inputProblems(m, input.input, { at: input.periodAt ?? input.at, sourceIds: input.sources.map((s) => s.id), timezone: input.timezone }));
 
   // Order (cycles) first; a cyclic workflow has no plan at all.
   let order: string[] = [];

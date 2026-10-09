@@ -40,6 +40,11 @@ export interface CliContext {
    * from the process itself; a subprocess cannot set this.
    */
   readonly terminal?: TerminalFacts;
+  /**
+   * Where the person's answer to a question a command asks at the terminal is
+   * read from, supplied only by tests. Production reads process.stdin.
+   */
+  readonly input?: NodeJS.ReadableStream;
   now(): string;
   nextId(prefix: string): string;
 }

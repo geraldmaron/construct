@@ -1,0 +1,12 @@
+{
+  "name": "acme-platform",
+  "private": true,
+  "version": "0.4.0",
+  "type": "module",
+  "workspaces": [
+    "services/*"
+  ],
+  "scripts": {
+    "test": "node --test"
+  }
+}

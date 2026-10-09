@@ -9,14 +9,14 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "2.7.0",
-      "digest": "sha256:2f21097b9af050996002fbca89a26f87ec57c28e5b43ba0b2a3c1cc03d7f86fc",
+      "version": "3.0.0",
+      "digest": "sha256:b26e418a6336480b63b10acc95eb904cc71f221393a2fd759368fc37b77fedf2",
       "category": "operational",
       "title": "Construct operating skill"
     },
     "context-mapping": {
-      "version": "0.4.0",
-      "digest": "sha256:decff7cea183cca27095a4a848882a7da7db1129a10e468df9f4129ab5535dba",
+      "version": "0.4.1",
+      "digest": "sha256:7efedf491f1328df2d9c14f75293dd755f5b7c58234e2f3d5be4b1c57d96759f",
       "category": "method",
       "title": "Context mapping"
     },
@@ -33,8 +33,8 @@
       "title": "Experience design"
     },
     "governance-risk": {
-      "version": "1.0.1",
-      "digest": "sha256:1811a102ba8e9401b9668bef440c30b34ecbd1f3fd2c8e84ba0fb648171ee11f",
+      "version": "1.0.2",
+      "digest": "sha256:8388bdc43386f9749f0d6599478db04cda9cdba0d5c3ec4211f8f974823e68ea",
       "category": "professional",
       "title": "Governance and risk"
     },
@@ -57,8 +57,8 @@
       "title": "Operations and reliability"
     },
     "product-management": {
-      "version": "1.0.1",
-      "digest": "sha256:29676a6a5a21db396f8ee2f7ad60087b50ba72a899517f77027925d226860c78",
+      "version": "1.0.2",
+      "digest": "sha256:5f82b17659285d7111e2b92d23d849b5208144785ac4784195ee7895b9dbce68",
       "category": "professional",
       "title": "Product management"
     },
@@ -125,8 +125,8 @@
       "interactionClass": "manage"
     },
     "design-conformance": {
-      "version": "1.0.0",
-      "digest": "sha256:8ba076e0162f895d63b7923c1afabe6341098a70aee7cffa2916023cca7e5be1",
+      "version": "2.0.0",
+      "digest": "sha256:ed72ae0d270757aedbee5db091448385b9aff7e43fc41bb4ec2dd28c5b8bf50d",
       "title": "Design-principle conformance review",
       "interactionClass": "manage"
     },
@@ -149,8 +149,8 @@
       "interactionClass": "manage"
     },
     "managed-outcome": {
-      "version": "1.3.0",
-      "digest": "sha256:fda3eae79344d15e6089aa3ba94de3c0cf6270f0bf6a53e3f9920d74b0379bd3",
+      "version": "2.0.0",
+      "digest": "sha256:69a1e499a3a2617a972cce21d446f5fbf91bf74ba6df5dbf27fd63d5770c68ee",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },
@@ -161,8 +161,8 @@
       "interactionClass": "manage"
     },
     "prd-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:9646c279922b586d487e2182997705a8eccda49343642957dd03277178546bd1",
+      "version": "1.1.0",
+      "digest": "sha256:d9ecaa15284f578da222dbef2335a49aa4394ce25a1060984905c2bab8d7be91",
       "title": "Write a PRD",
       "interactionClass": "manage"
     },
@@ -179,8 +179,8 @@
       "interactionClass": "manage"
     },
     "proposal-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:e44de7891112e1c9e1660a12ce89451dac12db3e039d1f60fc09a0ee724e2a5c",
+      "version": "1.1.0",
+      "digest": "sha256:487bb33dcc34aaca692b4d0b9b19781c3a06947b691d10f0fa2326a5151f2936",
       "title": "Write a proposal",
       "interactionClass": "manage"
     },
@@ -197,8 +197,8 @@
       "interactionClass": "remember"
     },
     "research-brief": {
-      "version": "1.0.0",
-      "digest": "sha256:74eae2e7cedb89cb55c359de280d1afdb5422b6c37c63400daadee8128038066",
+      "version": "1.1.0",
+      "digest": "sha256:49ce5a08f80af66951d79e6a67b18af9d270e875c300c0dab8b1bbf9d1fc0e48",
       "title": "Research a question",
       "interactionClass": "manage"
     },
@@ -209,8 +209,8 @@
       "interactionClass": "manage"
     },
     "rfc-authoring": {
-      "version": "1.0.0",
-      "digest": "sha256:6d06a8d258fa137f33dfc97d09981bf61d3c0346b44e61d8ed27208a91cef954",
+      "version": "1.1.0",
+      "digest": "sha256:300c89e682642ca7436d2b0457b71e63ecb2dd7eedb98e80eba02806135d64f4",
       "title": "Write an RFC",
       "interactionClass": "manage"
     },

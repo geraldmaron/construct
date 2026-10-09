@@ -1,6 +1,6 @@
 /**
  * tests/kernel/workflow/authoring.test.ts — writing a PRD, RFC, or proposal
- * is a routed, gated outcome: the request finds the workflow and its inputs,
+ * is a matched, gated outcome: the reading finds the workflow and its inputs,
  * a draft that skips a template section or invents a figure is sent back,
  * and only an artifact that exists and holds up is handed over.
  */
@@ -19,21 +19,22 @@ async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Re
   return (await t.run(fx.broker, t.validate(record(args)))) as Record<string, any>;
 }
 
-test('artifact requests route to the authoring workflows, with their inputs, without a failed start', async () => {
+test('a reading that asks for a PRD, an RFC or a proposal matches its authoring workflow, with its skill and its inputs, without a failed start', async () => {
   const fx = brokerFixture();
   try {
-    const cases: [string, string, string][] = [
-      ['Write a PRD for public webhooks using our PRD template.', 'requirements-structuring', 'prd-authoring'],
-      ['Draft an RFC for webhook event delivery, building on RFC-012.', 'system-architecture', 'rfc-authoring'],
-      ['Write a one-page proposal for Sam to fully fund webhooks this half.', 'decision-framing', 'proposal-authoring'],
+    const cases: [string, string, string, string][] = [
+      ['Write a PRD for public webhooks using our PRD template.', 'document/prd', 'requirements-structuring', 'prd-authoring'],
+      ['Draft an RFC for webhook event delivery, building on RFC-012.', 'document/rfc', 'system-architecture', 'rfc-authoring'],
+      ['Write a one-page proposal for Sam to fully fund webhooks this half.', 'document/proposal', 'decision-framing', 'proposal-authoring'],
     ];
-    for (const [text, skill, workflow] of cases) {
-      const c = await call(fx, 'classify_request', { text });
-      assert.equal(c.class, 'manage', text);
-      assert.ok(c.skills.slice(0, 3).some((s: { id: string }) => s.id === skill), `${text} -> ${c.skills.map((s: { id: string }) => s.id).join(',')}`);
-      const suggested = c.suggestedWorkflows.find((w: { id: string }) => w.id === workflow);
-      assert.ok(suggested, `${workflow} is suggested for: ${text}`);
-      assert.ok(suggested.required.includes('target'));
+    for (const [words, kind, skill, workflow] of cases) {
+      const c = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind } });
+      assert.equal(c.matches[0].workflowId, workflow, words);
+      assert.equal(c.matches[0].because, 'deliverable kind');
+      assert.ok(c.matches[0].missing.includes('target'), `${workflow} asks for its target: ${JSON.stringify(c.matches[0].missing)}`);
+      assert.ok(c.questions.some((q: { slot: string }) => q.slot === 'target'), 'the missing target is a question for the person');
+      assert.match(c.skills[skill]?.useWhen ?? '', /\S/, `${skill} comes with its use-when text`);
+      assert.ok(c.skills[skill].useWhen.length <= 200);
     }
   } finally {
     fx.cleanup();
@@ -86,7 +87,7 @@ test('a PRD run sends back a draft that skips a template section or invents a fi
     assert.equal(done.deliverable.trust, 'validated');
     const status = await call(fx, 'run_status', { runId });
     const final = status.deliverables.at(-1);
-    assert.deepEqual(final.verification.evidence, { witnessed: 3, reported: 0, unresolved: 0 }, 'the deliverable records what the whole run rested on');
+    assert.deepEqual(final.verification.evidence, { witnessed: 3, reported: 0, unverified: 0, unresolved: 0 }, 'the deliverable records what the whole run rested on');
   } finally {
     fx.cleanup();
   }
@@ -114,13 +115,27 @@ test('when checks keep failing the person decides: the work is kept, an accepted
     assert.deepEqual(q.options, ['accept with these problems', 'another attempt', 'stop']);
     await call(fx, 'decide', { decisionId: q.id, resolution: 'accept with these problems' });
     const w = await step();
-    assert.ok(w.instructions.some((i: string) => i.includes('accepted this step despite')));
+    const told = w.instructions.join(' ');
+    assert.match(told, /You relayed "accept with these problems"/, 'a relayed waiver is named as the relay it was');
+    assert.doesNotMatch(told, /The person accepted/);
     const accepted = await submit(w, draft, [{ ref: 'docs/notes.md' }]);
     assert.equal(accepted.step.state, 'succeeded');
     await submit(await step(), { verdict: 'figure unsupported, accepted by person', summary: 'c', findings: [] }, [{ ref: 'docs/prd.md' }]);
     const done = await submit(await step(), { artifact: 'docs/prd.md', verdict: 'waived' }, [{ ref: 'docs/prd.md' }]);
     assert.equal(done.run.state, 'succeeded');
     assert.notEqual(done.deliverable?.trust, 'validated', 'a waived check never reads as a passed one');
+    const status = await call(fx, 'run_status', { runId });
+    const final = status.deliverables.find((d: { id: string }) => d.id === done.deliverable.id);
+    const waived = final.body.waived as { stepId: string; validator: string; problems: string[]; acceptedBy: string; channel: string }[];
+    assert.ok(waived.length > 0, 'the deliverable lists what was waived');
+    const grounded = waived.find((x) => x.validator === 'numbers_grounded')!;
+    assert.equal(grounded.stepId, 'draft');
+    assert.match(grounded.problems.join(' '), /9\.9m/);
+    assert.ok(waived.every((x) => x.channel === 'relay' && x.acceptedBy === `relayed via ${fx.broker.host.hostId}`), 'each waiver says it was relayed, and through which host');
+    const byHand = await call(fx, 'promote_deliverable', { deliverableId: final.id, to: 'validated' }).catch((error: Error) => error);
+    assert.ok(byHand instanceof Error);
+    assert.match(byHand.message, /validated is set when the step's checks pass, not by promotion/);
+    assert.equal((await call(fx, 'run_status', { runId })).deliverables.find((d: { id: string }) => d.id === final.id).trust, final.trust, 'nothing moved');
   } finally {
     fx.cleanup();
   }

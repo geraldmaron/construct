@@ -8,6 +8,7 @@
  */
 
 import type { StateStore } from './open.ts';
+import { DECISION_CHANNELS, isPersonChannel, type DecisionChannel } from '../policy/channels.ts';
 import {
   assertTransition,
   requireInstant,
@@ -153,6 +154,23 @@ export type StatementStatus = (typeof STATEMENT_STATUSES)[number];
 export const STATEMENT_PROVENANCES = ['user', 'discovery', 'workflow'] as const;
 export type StatementProvenance = (typeof STATEMENT_PROVENANCES)[number];
 
+/**
+ * Whose voice a statement is in, worked out from its stored channel: the
+ * person on a channel of their own, an assistant relaying them, Construct's
+ * own inference still waiting on the person, or no record of how it arrived.
+ * Only a statement in the person's voice can rule a term out or mark a
+ * document outdated.
+ */
+export const STATEMENT_VOICES = ['person', 'relayed', 'inferred', 'unrecorded'] as const;
+export type StatementVoice = (typeof STATEMENT_VOICES)[number];
+
+export function voiceOf(channel: string | null, status: StatementStatus, provenance: StatementProvenance): StatementVoice {
+  if (channel !== null && (DECISION_CHANNELS as readonly string[]).includes(channel) && isPersonChannel(channel as DecisionChannel)) return 'person';
+  if (channel === 'relay') return 'relayed';
+  if (status === 'proposed' && provenance !== 'user') return 'inferred';
+  return 'unrecorded';
+}
+
 const STATEMENT_TRANSITIONS: Readonly<Record<StatementStatus, readonly StatementStatus[]>> = {
   proposed: ['confirmed', 'retired', 'superseded'],
   confirmed: ['superseded', 'retired'],
@@ -185,6 +203,8 @@ export interface Statement {
   readonly updatedAt: string;
   /** How the person's words reached Construct: relayed by a model, or on a channel of their own. Null for inferred statements. */
   readonly channel: string | null;
+  /** Whose voice it is in, from the channel: see voiceOf. */
+  readonly voice: StatementVoice;
 }
 
 interface StatementRow {
@@ -239,6 +259,7 @@ function toStatement(row: StatementRow): Statement {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     channel: row.channel ?? null,
+    voice: voiceOf(row.channel ?? null, row.status, row.provenance),
   };
 }
 
@@ -333,7 +354,11 @@ export function listStatements(
   return rows.map(toStatement);
 }
 
-/** Move a statement's status; only a person confirms a proposal. */
+/**
+ * Move a statement's status; only a person confirms a proposal. `channel`
+ * records how the answer that moved it arrived, and is kept as it was when
+ * not given.
+ */
 export function setStatementStatus(
   store: StateStore,
   input: {
@@ -341,6 +366,7 @@ export function setStatementStatus(
     readonly status: StatementStatus;
     readonly at: string;
     readonly supersededBy?: string;
+    readonly channel?: DecisionChannel;
   },
 ): Statement {
   requireOneOf(input.status, STATEMENT_STATUSES, 'statement.status');
@@ -357,9 +383,9 @@ export function setStatementStatus(
     }
     store.db
       .prepare(
-        `UPDATE statements SET status = ?, superseded_by = ?, updated_at = ? WHERE id = ?`,
+        `UPDATE statements SET status = ?, superseded_by = ?, updated_at = ?, channel = COALESCE(?, channel) WHERE id = ?`,
       )
-      .run(input.status, input.supersededBy ?? null, input.at, input.id);
+      .run(input.status, input.supersededBy ?? null, input.at, input.channel ?? null, input.id);
     return getStatement(store, input.id)!;
   });
 }

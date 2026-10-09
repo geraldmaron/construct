@@ -3005,3 +3005,168 @@ request, against the zero-dependency and local-first commitments);
 letting the router decide and auto-load (its honest top-1 is 40%, the
 model's is near 100%); keeping the `judge: model` marking (a case the
 suite skips is not a gate).
+
+## 35. The host reports the reading; real hosts are the gate (2026-10-08)
+
+**Question.** Construct read intent from the person's words. A regex
+classifier chose answer, remember, manage or maintain. An upgrade rule
+turned some answers into work. Lexical floors over the skill descriptions
+gated every change to them. On 2026-10-08 Gerald approved replacing this.
+The host model reports a typed reading through tool arguments. The kernel
+validates it, asks for what is missing, matches workflows by declared
+deliverable, resolves dates and identifiers, and gates the write. Lexical
+signals may only order options or raise rigor, labeled lexical, never veto.
+A live, cross-family eval through real hosts replaces the floors as the
+gate. §10 and §34 do not bind this decision. What is best for the
+application does.
+
+**Decision.**
+1. Delete classify.ts, the answer-to-manage upgrade, rememberKind, and the
+   router's role in both intake and consequence.
+2. classify_request takes a closed typed reading. kind and words are
+   required, and for work so is a deliverable (a declared kind, or other
+   with a description). It also takes a period, the named systems, a
+   destination, a schedule, stakes and open questions. Bad input returns a
+   tool error that names the field, the allowed values and a field-level
+   example.
+3. start_outcome re-validates the reading itself, so skipping
+   classify_request skips no check. It creates no run while a required
+   detail or a blocking question is open.
+4. The reading is frozen once, in the run's bindings: the person's period
+   form, the resolved window, the named and registered sources, the declared
+   stakes, the chosen method, and who judged it. Every step, the dedupe
+   identity and the acceptance prompt see it.
+5. Rigor has one judge. The structure sets the floor: the workflow's
+   challenge flag, step tiers, open contradictions. Host stakes and a
+   labeled lexical floor only raise it. Only the person's side-project
+   answer makes work light. An unanswered scale counts as a team project.
+6. A citation passes only when Construct holds what it names, counted as
+   witnessed, reported or unverified. Systems the person named can be
+   declared from the session, kept on this machine and treated as
+   confidential.
+7. A period is checked against what is cited. Only an item dated after the
+   window ends is refused. Items dated before it, or undated, are shown to
+   the person.
+8. Rule-outs, replacements and outdated documents take effect only on the
+   person's own channel.
+9. The operational skill is planted at project scope, beside a portable MCP
+   file that carries no machine paths, for all six hosts.
+
+**Measured before the decision.**
+- 48 scratch messages written to probe phrasing, with gold labels by Claude
+  and kinds cross-checked by Codex:
+  - alpha.25's regex got 20 kinds right, called 26 of 34 work items a
+    question, and engaged falsely on 0 of 12 non-work items.
+  - HEAD's classify_request, run in process, got 35 right, missed 7 of 34
+    and engaged falsely on 4 of 12.
+  - Sonnet and Opus, each reading the messages once against a typed schema,
+    got 47 right, missed 1, and engaged falsely on none.
+  - Haiku returned 1 of 48 items in one batch. One message per call it
+    returned all of them, 30 of 42 kind-correct over two runs of a 21-item
+    subset, against 8 to 12 of 21 for the regex paths, with no false
+    engagement. Five of its misses described the message as a test-harness
+    task.
+  These numbers measure reading a schema. They do not measure a host
+  deciding on its own to call a tool.
+- Nine host runs on 2026-10-08, one run each:
+  - Claude Code 2.1.227 on Haiku 4.5 explored the repository without calling
+    Construct.
+  - Claude Code 2.1.250 on Sonnet 5 called bootstrap and inbox and ran out
+    of turns before classify_request.
+  - With stub servers present and tool search off, Haiku saved a remember
+    request to a stub that claimed remember requests.
+  - Codex 0.145.0 on gpt-6-astra and Cursor on Composer 2.5 each recorded a
+    remember request through Construct.
+  One run per setting is orientation, not a rate.
+- The end-to-end trace of the multi-source Q3 architecture diagram found:
+  - plain init wired no host;
+  - classify_request never offered the general carrier;
+  - the window was lost, and an item updated 2026-10-05 was accepted as Q3
+    evidence;
+  - the named systems could not be declared from chat;
+  - an invented ticket passed under a partially read source;
+  - a relayed waiver was described to the model as the person's acceptance.
+
+**The gate.**
+- skills/evals/intake.json holds requests in ordinary language, with earlier
+  turns where needed, labeled independently by Claude and Codex. A hash of
+  each case puts it in a 60 percent tune split or a 40 percent test split.
+  The 48 scratch messages informed the design and sit in tune.
+- `npm run evals:live` drives claude -p, codex exec and cursor-agent one
+  request per call against a fresh sterile project wired to the Construct
+  under test. A stdio tap records every call and result.
+- It runs alone, among stub servers, on a project not yet set up, with
+  instructions planted in a connector page, and on Claude Code also with
+  tool search off.
+- The aggregation was fixed before any test-split run. Each case runs three
+  times. A non-work case counts as falsely engaged if any run writes. A work
+  case counts as missed if most runs do not engage. A refused start counts
+  as a question, not a write.
+- To adopt, three axes are gated per host and model, pooled across
+  conditions:
+  - missed work, against staging 79562bbc;
+  - false write engagement, against alpha.25;
+  - writes taken from injected text, against staging.
+  Each must be within a margin of one case, or the number of baseline cases
+  whose runs disagree, whichever is larger. Every other axis is reported
+  with Wilson intervals.
+- After adoption, a change to model-facing text is not merged to staging or
+  released until `npm run evals:live -- check` passes on a fresh record. npm
+  test validates the record and recomputes its verdicts, but does not
+  compare digests.
+- A failed look at the test split either reverts the text or folds that
+  split into tune and requires fresh cases.
+- The router's floors stay as regression tests for its code, on a frozen
+  copy of the catalog.
+
+**Challenge.** The strongest failure is that, with no text matching left,
+the only signal is the host model choosing to call a richer tool. A weak
+model, or a host that defers tool schemas, may skip the call, and a skipped
+call cannot be seen. The best alternative was to keep classify_request
+text-only and remove only the lexical veto. It was rejected as the end
+state: the kernel would still hold no typed reading to validate, no period,
+and two judges in every response. HEAD's regex gate was also mostly
+advisory, since remember and start_outcome never read its class. Conclusion:
+accepted with controls:
+- the live gate on missed work;
+- a small required core;
+- re-validation on write;
+- errors the model can act on;
+- raise-only stakes;
+- a project-scoped skill whose description uses the person's own phrasing;
+- a short contract inside the first 512 characters of the server
+  instructions.
+If a weak tier regresses, the first remedy is the envelope. A labeled
+lexical hint on kindless calls is a measured option, kept only if it raises
+weak-tier kind accuracy without raising false engagement.
+
+**Rejected.**
+- Keeping the floors as the gate. They reward descriptions for sharing words
+  with requests, and they cannot see whether a host calls anything.
+- The batched catalog pick in the old evals:live. Batching is where Haiku
+  failed.
+- Scoring from Construct's activity log. classify_request records nothing.
+- A scratch HOME for the hosts. Cursor reports "Not logged in" under one.
+- OpenCode on a free hosted model. Development calls come from
+  subscriptions.
+- Freezing the judgment as a floor. A retired contradiction could then never
+  lower it. The inputs to the judgment are frozen instead.
+- Refusing items dated before the window or undated. That would throw out
+  the canonical architecture page and every reported item without a date.
+
+**Not measured.**
+- VS Code, Bob and OpenCode triggering.
+- Whether Cursor, VS Code, Bob and OpenCode forward tool-error text to the
+  model.
+- Whether any host's auto-approve mode answers an elicitation for the
+  person.
+- Opus through the runner.
+- Whether --setting-sources project keeps the user's own CLAUDE.md out of a
+  run.
+- Cursor's user-level servers and skills, which cannot be removed without
+  logging out.
+- Cursor's API models until its usage resets on 2026-10-15.
+
+**Adoption run.** Appended here, dated, when the full record lands, with
+per-host results, margins, end-to-end checkpoints and resolved model ids.
+Until then the change is not merged to staging or released.
