@@ -16,7 +16,7 @@
 | claude-code | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
 | claude-code | headless surface is limited | passed | max tier project_write |
 | claude-code | live host call | untested | run with --live outside any host session, with the host’s credential present |
-| cursor | installed | passed | /Users/geralddagher/.local/bin/cursor-agent |
+| cursor | installed | passed | <USER_HOME>/.local/bin/cursor-agent |
 | cursor | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-YJstrg/project |
 | cursor | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-YJstrg/project/.cursor/mcp.json installed |
 | cursor | portable wiring | passed | .cursor/mcp.json starts construct serve --client=cursor --project=${workspaceFolder}; bootstrap bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-YJstrg/project |

@@ -1,6 +1,6 @@
 
 > @geraldmaron/construct@3.0.0-alpha.26 conformance
-> node scripts/conformance.mjs --out=/Users/geralddagher/Documents/Codex/2026-10-09/task-2/construct-implementation/conformance-final.json
+> node scripts/conformance.mjs --out=<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/conformance-final.json
 
 | Host | Check | Status | Detail |
 |---|---|---|---|
@@ -20,7 +20,7 @@
 | claude-code | decision relay | passed | question "What is this project to you: a side proj…" resolved and recorded as relayed, not as the person |
 | claude-code | headless surface is limited | passed | max tier project_write |
 | claude-code | live host call | untested | run with --live outside any host session, with the host’s credential present |
-| cursor | installed | passed | /Users/geralddagher/.local/bin/cursor-agent |
+| cursor | installed | passed | <USER_HOME>/.local/bin/cursor-agent |
 | cursor | installation and binding | passed | init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project |
 | cursor | host wiring | passed | /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project/.cursor/mcp.json installed |
 | cursor | portable wiring | passed | .cursor/mcp.json starts construct serve --client=cursor --project=${workspaceFolder}; bootstrap bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project |

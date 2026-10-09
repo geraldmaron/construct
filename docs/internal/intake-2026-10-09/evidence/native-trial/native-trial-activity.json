@@ -50,7 +50,7 @@
       "id": "exec-6fd8847d-2fb8-4ef1-ae3e-a14980a622b2",
       "status": "completed",
       "exitCode": 0,
-      "command": "/bin/zsh -lc 'for p in $FIXTURE/project $FIXTURE /Users/geralddagher/Documents/Codex/2026-10-09/task-2 /Users/geralddagher/Documents/Codex/2026-10-09 /Users/geralddagher/Documents/Codex /Users/geralddagher/Documents /Users/geralddagher /Users; do if [ -f \"$p/AGENTS.md\" ]; then cat \"$p/AGENTS.md\"; fi; done'",
+      "command": "/bin/zsh -lc 'for p in $FIXTURE/project $FIXTURE <USER_HOME>/Documents/Codex/2026-10-09/task-2 <USER_HOME>/Documents/Codex/2026-10-09 <USER_HOME>/Documents/Codex <USER_HOME>/Documents <USER_HOME> /Users; do if [ -f \"$p/AGENTS.md\" ]; then cat \"$p/AGENTS.md\"; fi; done'",
       "cwd": "$FIXTURE/project",
       "durationMs": 0
     },

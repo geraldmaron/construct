@@ -58,3 +58,6 @@ Local code checkpoint: `2b1720e0` (implementation and regression tests), followi
 
 
 Final [cleanup audit](evidence/review-cleanup-final.json): owned control sessions ended, no fixture or signing processes remain, and all owned work claims are released. The bounded native run succeeded; `work-f690a2b6` remains open solely for independent review clearance. The [handoff record](evidence/review-handoff.json) records exact signing scope and unchanged broader limits.
+
+
+Evidence portability: tracked JSON/transcript copies replace home-directory prefixes with `<USER_HOME>`. [The normalization manifest](evidence/path-normalization.json) records original and normalized file hashes; raw copies remain in the task workspace. Actual artifact Markdown bytes and hashes are unchanged. Their intentional Markdown hard breaks, and raw logs' terminal blank lines, are retained as evidence rather than reformatted.
