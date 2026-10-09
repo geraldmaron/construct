@@ -11,6 +11,7 @@ import { run } from '../../src/cli/index.ts';
 import { capture, inProject } from './support.ts';
 import { openStateStore } from '../../src/kernel/state/open.ts';
 import { raiseDecision } from '../../src/kernel/state/decisions.ts';
+import { getProfile } from '../../src/kernel/state/profile.ts';
 import { projectDbPath } from '../../src/kernel/project/layout.ts';
 
 test('workflow list, show, resolve, validate, and run (dry and real) from the command line', async () => {
@@ -149,12 +150,27 @@ test('the inbox lists what waits on the person and records their answer', async 
     const scale = questions.find((d) => Array.isArray(d.options) && d.options.includes('solo'))!;
     const show = await capture(() => run(['inbox', 'show', scale.id], ctx));
     assert.match(show.out, /options: solo \| side_project/);
+    assert.match(show.out, /your primary product \(just you\)/);
+    const scaleNow = (): string | null => {
+      const store = openStateStore(projectDbPath(box.cwd));
+      try {
+        return getProfile(store)?.scale ?? null;
+      } finally {
+        store.close();
+      }
+    };
     const wrong = await capture(() => run(['inbox', 'resolve', scale.id, 'enormous'], ctx));
     assert.equal(wrong.code, 1);
     assert.match(wrong.err, /is not one of them/);
-    const resolved = await capture(() => run(['inbox', 'resolve', scale.id, 'team'], ctx));
+    // This command is not the person at a terminal of theirs, so it cannot make the project a side project.
+    const light = await capture(() => run(['inbox', 'resolve', scale.id, 'side project'], ctx));
+    assert.equal(light.code, 1);
+    assert.match(light.err, /needs your own answer, and this command is not running in a terminal of yours/);
+    assert.equal(scaleNow(), null);
+    const resolved = await capture(() => run(['inbox', 'resolve', scale.id, 'primary product'], ctx));
     assert.equal(resolved.code, 0, resolved.err);
     assert.match(resolved.out, /recorded: /);
+    assert.equal(scaleNow(), 'solo', 'the question\'s own words land in the profile');
     const after = await capture(() => run(['inbox', 'list', '--json'], ctx));
     assert.equal((JSON.parse(after.out) as { kind: string }[]).filter((d) => d.kind === 'inbox_item').length, 2);
     const missing = await capture(() => run(['inbox', 'show', 'nope'], ctx));

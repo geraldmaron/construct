@@ -176,7 +176,7 @@ Surface: interactive. Reads only: yes.
 
 ### `decide`
 
-Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
+Relay the person’s decision. Record the answer the person gave to an open decision, in their words or as one of its options. An approval is scoped to exactly the action asked about and expires; it never widens. Approving an external or destructive action, accepting a deliverable, making the project a side project, or confirming a replacement, a ruled-out term, or an outdated document that remember asked about needs the person to answer Construct directly: when the host can, Construct puts the question to them itself; otherwise it stays open and says how.
 
 Surface: interactive. Reads only: no.
 
