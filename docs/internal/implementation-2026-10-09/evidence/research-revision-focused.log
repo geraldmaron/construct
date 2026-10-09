@@ -1,0 +1,24 @@
+✔ native adapter observes fresh per-case producer, artifact and independent reviewer invocations (1338.889ms)
+✔ native qualification rejects producer-failed despite an evaluator result (1210.89425ms)
+✔ native qualification rejects missing-artifact despite an evaluator result (1218.434833ms)
+✔ native qualification rejects no-session despite an evaluator result (1258.157583ms)
+✔ native qualification rejects unknown despite an evaluator result (1280.103708ms)
+✔ native qualification rejects wrong-application despite an evaluator result (1305.801459ms)
+✔ a native case cannot prepopulate its output through an input path alias (1041.21175ms)
+✔ redaction preserves JSON structure around escaped lines and nested command strings (0.931792ms)
+✔ installed method files cannot be claimed as freshly produced artifacts (1023.064959ms)
+✔ a producer cannot receive a held-out rubric through an input alias (270.791292ms)
+✔ external grading cannot substitute adapter-observed artifacts or invocation receipts (1335.817083ms)
+✔ hash-matching receipt files still need consistent case relationships and unique native invocations (1331.741125ms)
+✔ reviewers receive public lookup observations and actual read results, with private thought and producer chat excluded (1251.265125ms)
+✔ public execution projection makes truncated and missing results explicit without inventing lookup success (0.360083ms)
+✔ a locked digest and evaluation filenames do not prove execution; changed bytes lose prior identity (1.494459ms)
+✔ skill text that tries to raise authority is unsafe; ordinary shipped skills are not (0.791167ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 14125.473458

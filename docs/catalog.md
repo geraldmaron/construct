@@ -16,7 +16,7 @@ What this version ships, with versions. Digests are in `registry/index.json`; a 
 | `experience-design` | 1.0.1 | professional | customers abandon the signup at this step | which color or font looks nicer with no task in view |
 | `governance-risk` | 1.0.2 | professional | we started selling to a new country or industry | give legal, tax, or financial advice, sign off, certify, decide whether it is lawful |
 | `intake` | 0.3.0 | method | the thing from Tuesday plus what he said minus the pricing part | a clear single-outcome request: add a button, rename the function, just do it |
-| `investigative-research` | 0.3.1 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
+| `investigative-research` | 0.3.2 | method | is that claim real | a single-fact question one authoritative source settles, what year was it released |
 | `operations-reliability` | 1.0.1 | professional | we went live and nobody set up alerts | feature scope or priority |
 | `product-management` | 1.0.2 | professional | everyone loves this idea but nobody can say what it changes for the customer | how to build it, which library, which architecture |
 | `program-delivery` | 1.0.1 | professional | the plan says June but the vendor starts in July | what to build or why (product owns that) |

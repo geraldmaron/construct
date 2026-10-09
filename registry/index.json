@@ -45,8 +45,8 @@
       "title": "Intake"
     },
     "investigative-research": {
-      "version": "0.3.1",
-      "digest": "sha256:71b7cf346df66474ec5fd3a04518dd9ca6205c859b094c7eca1915b977529364",
+      "version": "0.3.2",
+      "digest": "sha256:630e242d3b87b74e2285142cfd56017c1b8df4adcf2a1e8f97c9d044838d264d",
       "category": "method",
       "title": "Investigative research"
     },

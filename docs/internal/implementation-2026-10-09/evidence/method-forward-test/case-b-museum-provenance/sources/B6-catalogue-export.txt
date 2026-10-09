@@ -1,0 +1,6 @@
+SYNTHETIC RECORD B6 — Official museum catalogue export, generated 1 October 2026
+Object NV-17 / P34.22. Display name: Vale survey chest. Description: cedar, crescent-shaped lid repair.
+Structured field “acquisition_year”: 1931.
+Field dictionary included with export: for migrated pre-1950 records, acquisition_year is the year first received or first entered in the old catalogue, whether on loan or owned; it is not a title-transfer date. Later title documents may be stored in the archive without replacement of this legacy year.
+Last object-condition check: 20 September 2026. Location at that check: Gallery 2, on public view.
+The condition-check date is not an acquisition or ownership date. This export makes no claim of uninterrupted historical display.
