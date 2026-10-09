@@ -1,6 +1,7 @@
 /** Explicit typed mappings preserve source identity and reject ambiguous computation. */
 import { createHash } from 'node:crypto';
 import type { StateStore } from '../state/open.ts';
+import { getSource } from '../state/sources.ts';
 import type { RefResolver } from '../project/evidence.ts';
 import { latestObservationWith, recordObservation } from '../state/drift.ts';
 import { currentManifestRecord, type ManifestEntry } from './manifest.ts';
@@ -53,11 +54,23 @@ export function profileItem(entry: ManifestEntry | undefined) {
   const describe = (v: unknown): unknown => Array.isArray(v) ? { type: 'array', count: v.length, sample: v.slice(0, 3).map((row) => object(row) ? Object.fromEntries(Object.entries(row).map(([k, n]) => [k, n === null ? 'null' : Array.isArray(n) ? 'array' : typeof n])) : typeof row) } : object(v) ? Object.fromEntries(Object.entries(v).slice(0, 50).map(([k, n]) => [k, Array.isArray(n) ? { type: 'array', count: n.length } : n === null ? 'null' : typeof n])) : typeof v;
   return { format: 'json', shape: describe(value), schema: entry.schema ?? null, fingerprint: entry.fingerprint };
 }
-export function evaluateMapping(store: StateStore, sourceId: string, mapping: DataMapping, resolve: RefResolver) {
+/** Use the same authorization and identity boundary as every other evidence consumer. */
+function authorizedItem(store: StateStore, sourceId: string, item: string, resolve: RefResolver) {
+  const source = getSource(store, sourceId);
+  if (!source || source.status !== 'active' || !source.canRead) return null;
+  const hit = resolve(`source:${sourceId}:${item}`);
+  if (!hit || hit.sourceId !== sourceId || hit.itemRef !== item || typeof hit.text !== 'string' || hit.truncated || hit.supersededBy) return null;
   const manifest = currentManifestRecord(store, sourceId);
-  const entry = manifest?.entries.find((e) => e.ref === mapping.item);
+  const entry = manifest?.entries.find((e) => e.ref === item);
+  // A file may have changed since its schema was observed. Refresh before mapping it.
+  if (!entry || entry.text !== hit.text || entry.truncated || entry.weak) return null;
+  return { manifest, entry, hit };
+}
+export function evaluateMapping(store: StateStore, sourceId: string, mapping: DataMapping, resolve: RefResolver) {
+  const admitted = authorizedItem(store, sourceId, mapping.item, resolve);
+  const manifest = admitted?.manifest, entry = admitted?.entry;
   const problems: string[] = [];
-  if (!entry || entry.truncated || entry.weak) problems.push('mapping requires a complete, strongly read item');
+  if (!entry || entry.truncated || entry.weak) problems.push('mapping requires an authorized, current, complete, strongly read item');
   const evidence = mapping.evidence.map((ref) => { const hit = resolve(ref); if (!hit || typeof hit.text !== 'string') problems.push(`mapping evidence cannot be read: ${ref}`); return { ref, digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null, provenance: hit?.provenance ?? 'unresolved' }; });
   let value: unknown;
   try { value = JSON.parse(entry?.text ?? ''); } catch { problems.push('mapped item is not complete JSON'); }
@@ -69,6 +82,11 @@ export function evaluateMapping(store: StateStore, sourceId: string, mapping: Da
   else if (object(schema)) schema = schema.items;
   for (const field of mapping.fields) {
     const metadata = schemaField(schema, field.path);
+    const types = typeof metadata?.type === 'string' ? [metadata.type] : Array.isArray(metadata?.type) ? metadata.type : [];
+    const scalarTypes = types.filter((t) => t !== 'null');
+    const compatible = scalarTypes.length === 1 && (scalarTypes[0] === field.type || (field.type === 'number' && scalarTypes[0] === 'integer'));
+    if (!compatible) problems.push(`${field.name}: schema type is unknown or incompatible with mapped ${field.type}`);
+    if ((types.includes('null') || metadata?.nullable === true) !== (field.nullable === true)) problems.push(`${field.name}: schema nullability differs from the mapping`);
     for (const key of ['unit', 'timezone'] as const) if (field[key] !== undefined && metadata?.[key] !== field[key]) problems.push(`${field.name}: ${key} is unknown or changed; expected ${field[key]}, observed ${String(metadata?.[key] ?? 'unknown')}`);
   }
   const ids = new Set<string>();
@@ -82,6 +100,7 @@ export function evaluateMapping(store: StateStore, sourceId: string, mapping: Da
     for (const field of mapping.fields) {
       const v = atPointer(row, field.path);
       if (!(v === null && field.nullable) && (typeof v !== field.type || (field.type === 'number' && !Number.isFinite(v)))) problems.push(`row ${String(index)}, ${field.name}: required ${field.type} value is missing, null or incompatible`);
+      if (schemaField(schema, field.path)?.type === 'integer' && v !== null && !Number.isInteger(v)) problems.push(`row ${String(index)}, ${field.name}: schema requires an integer`);
       values[field.name] = v ?? null;
     }
     return { identity: JSON.stringify([sourceId, mapping.item, typeof id, id]), values };
@@ -95,7 +114,7 @@ export function evaluateMapping(store: StateStore, sourceId: string, mapping: Da
 export function sourceMapping(store: StateStore, input: { sourceId: string; item: string; mapping?: DataMapping; resolve: RefResolver; at: string; nextId: () => string }) {
   const previous = store.db.prepare("SELECT evidence_json FROM observations WHERE source_id = ? AND kind = 'source.mapping' AND json_extract(evidence_json, '$.mapping.item') = ? ORDER BY rowid DESC LIMIT 1").get(input.sourceId, input.item) as { evidence_json: string } | undefined;
   const mapping = input.mapping ?? (previous ? (JSON.parse(previous.evidence_json) as { mapping: DataMapping }).mapping : undefined);
-  if (!mapping) return { status: 'unmapped', calculationReady: false, profile: profileItem(currentManifestRecord(store, input.sourceId)?.entries.find((e) => e.ref === input.item)), next: 'Provide an evidence-backed mapping of records, identity and typed fields; declare observed units/timezones when calculations depend on them.' };
+  if (!mapping) return { status: 'unmapped', calculationReady: false, aggregationReady: false, profile: profileItem(authorizedItem(store, input.sourceId, input.item, input.resolve)?.entry), next: 'Provide an evidence-backed mapping of records, identity and typed fields; declare observed units/timezones when calculations depend on them.' };
   const result = evaluateMapping(store, input.sourceId, mapping, input.resolve);
   if (!input.mapping && previous) {
     const recorded = JSON.parse(previous.evidence_json) as { evidence: { ref: string; digest: string | null }[] };

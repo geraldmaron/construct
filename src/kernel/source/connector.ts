@@ -54,7 +54,7 @@ export interface SnapshotItem {
 
 export type ReadOutcome =
   | { readonly outcome: 'read'; readonly report: SnapshotReport }
-  | { readonly outcome: 'unreachable'; readonly reason: string };
+  | { readonly outcome: 'unreachable'; readonly reason: string; readonly observation?: AccessDescriptor; readonly sessionId?: string };
 
 /** A reader for one source kind: given a locator, what is there. */
 /** What the last recorded read held, item by item; a reader may reuse it to avoid re-reading what has not moved. */
