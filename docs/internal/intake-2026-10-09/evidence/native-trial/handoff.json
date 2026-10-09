@@ -5,7 +5,7 @@
   "construct_generated_config_preserved": false,
   "operational_skill_byte_identical": true,
   "normal_path_construct": "/opt/homebrew/bin/construct",
-  "normal_path_package_root": "/Users/geralddagher/Developer/Projects/construct",
+  "normal_path_package_root": "<USER_HOME>/Developer/Projects/construct",
   "normal_path_parity": {
     "files": 456,
     "differences": [

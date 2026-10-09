@@ -23,11 +23,11 @@
   },
   "packageSha256": "a04e4aa8277c5e04e0ad396a5b7ce036d288a6fb2befedc5aae8941c6e1ea85d",
   "migration": {
-    "path": "/Users/geralddagher/Developer/Projects/construct/.construct/state/construct.sqlite",
+    "path": "<USER_HOME>/Developer/Projects/construct/.construct/state/construct.sqlite",
     "format": 5,
     "migrated": true,
     "from": 4,
-    "backup": "/Users/geralddagher/Developer/Projects/construct/.construct/state/construct.pre-v4-20261009183219055-7710af.sqlite"
+    "backup": "<USER_HOME>/Developer/Projects/construct/.construct/state/construct.pre-v4-20261009183219055-7710af.sqlite"
   },
   "signing": "no pending signer; preserve uncommitted changes; no bypass"
 }

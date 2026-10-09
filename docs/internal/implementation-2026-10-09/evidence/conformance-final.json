@@ -3,7 +3,7 @@
   "live": false,
   "model": null,
   "hostFilter": null,
-  "cwdHome": "/Users/geralddagher",
+  "cwdHome": "<USER_HOME>",
   "summary": {
     "passed": 91,
     "failed": 0,
@@ -110,7 +110,7 @@
       "host": "cursor",
       "check": "installed",
       "status": "passed",
-      "detail": "/Users/geralddagher/.local/bin/cursor-agent"
+      "detail": "<USER_HOME>/.local/bin/cursor-agent"
     },
     {
       "host": "cursor",
