@@ -12,7 +12,7 @@ description: >-
   is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.0.1
+  version: 3.0.2
   source: geraldmaron/construct
 ---
 
@@ -63,7 +63,7 @@ produced.
    until they give it, it restricts nothing.
 3. **Manage an outcome.** The person wants something produced or reviewed,
    however they put it. Call `classify_request` with your own reading: the
-   `kind`, their `words` verbatim, the `deliverable` they want back (a
+   `kind` set to `manage`, their `words` verbatim, the `deliverable` they want back (a
    listed kind, or `other` with `describe`), the `period` they named (its
    `semantics`, which is required: `as_of`, `changed_during`, or
    `evidence_window`; a `relative` period, a `quarter`, or a `year` where
@@ -96,6 +96,12 @@ if a different kind would change the work, its cost, what is kept, its
 permissions, or its effects outside the project.
 
 ## Do the work here
+
+A failed tool call is not progress. Use its recovery schema and named field
+to repair your input; satisfy a missing prerequisite before retrying. Do
+not skip to a downstream step, invent a source or run, or silently abandon
+the managed outcome after a tool error. If a real blocker remains, report
+that blocker and the work actually completed.
 
 After `start_outcome`, loop:
 

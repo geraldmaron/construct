@@ -97,6 +97,10 @@ test('wrong input comes back as a tool error naming the field and the values it 
     assert.equal(reading.result.structuredContent.field, 'kind');
     assert.deepEqual(reading.result.structuredContent.allowed, ['answer', 'remember', 'manage', 'maintain', 'coordinate']);
     assert.deepEqual(reading.result.structuredContent.example, { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } });
+    const recovery = (reading.result.structuredContent as unknown as { recovery: { tool: string; inputSchema: unknown; next: string } }).recovery;
+    assert.equal(recovery.tool, 'classify_request');
+    assert.deepEqual(recovery.inputSchema, toolsFor('interactive').find((t) => t.name === 'classify_request')!.inputSchema);
+    assert.match(recovery.next, /Do not advance/);
     const old = (await handle({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'classify_request', arguments: { text: 'Review this against our principles' } } })) as ToolError;
     assert.equal(old.result.isError, true);
     assert.equal(old.result.structuredContent.field, 'text');
