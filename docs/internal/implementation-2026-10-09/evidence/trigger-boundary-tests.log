@@ -1,0 +1,14 @@
+✔ a schedule trigger is validated, computes its next due instant, and fires once per tick (41.729541ms)
+✔ stale data blocks a firing whose workflow says so; no data succeeds empty when it says so; dry-run starts nothing (35.322ms)
+✔ recipes name the trigger, the project, and the firing key, for cron and CI (15.56975ms)
+✔ a weekly trigger covers a fresh week on every firing, worked out at the due time in its own timezone (32.214708ms)
+✔ defining a trigger checks its input: undeclared keys, malformed periods, unknown sources, and fixed windows on a standing trigger are refused (11.991458ms)
+✔ events cannot replace the standing input and workflow changes cannot exceed its stored tier (19.110708ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 287.630958

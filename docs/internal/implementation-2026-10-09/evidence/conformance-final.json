@@ -1,0 +1,602 @@
+{
+  "at": "2026-10-09T17:49:01.202Z",
+  "live": false,
+  "model": null,
+  "hostFilter": null,
+  "cwdHome": "/Users/geralddagher",
+  "summary": {
+    "passed": 91,
+    "failed": 0,
+    "untested": 7
+  },
+  "checks": [
+    {
+      "host": "claude-code",
+      "check": "installed",
+      "status": "passed",
+      "detail": "/opt/homebrew/bin/claude"
+    },
+    {
+      "host": "claude-code",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-HAF0Av/project"
+    },
+    {
+      "host": "claude-code",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-HAF0Av/project/.mcp.json installed"
+    },
+    {
+      "host": "claude-code",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": ".mcp.json starts construct serve --client=claude-code; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-HAF0Av/project"
+    },
+    {
+      "host": "claude-code",
+      "check": "machine-local hooks",
+      "status": "passed",
+      "detail": ".claude/settings.local.json runs the three hooks through the launcher; git ignores it; .claude/settings.json holds none"
+    },
+    {
+      "host": "claude-code",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-claude-code-HAF0Av/project/.claude/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "claude-code",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "claude-code",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host claude-code; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "claude-code",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "claude-code",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "claude-code",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "claude-code",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "claude-code",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "claude-code",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "claude-code",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "claude-code",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "cursor",
+      "check": "installed",
+      "status": "passed",
+      "detail": "/Users/geralddagher/.local/bin/cursor-agent"
+    },
+    {
+      "host": "cursor",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project"
+    },
+    {
+      "host": "cursor",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project/.cursor/mcp.json installed"
+    },
+    {
+      "host": "cursor",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": ".cursor/mcp.json starts construct serve --client=cursor --project=${workspaceFolder}; bootstrap bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project"
+    },
+    {
+      "host": "cursor",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-cursor-avQlk3/project/.agents/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "cursor",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "cursor",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host cursor; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "cursor",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "cursor",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "cursor",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "cursor",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "cursor",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "cursor",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "cursor",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "cursor",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "vscode",
+      "check": "installed",
+      "status": "passed",
+      "detail": "/opt/homebrew/bin/code"
+    },
+    {
+      "host": "vscode",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-WosteE/project"
+    },
+    {
+      "host": "vscode",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-WosteE/project/.vscode/mcp.json installed"
+    },
+    {
+      "host": "vscode",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": ".vscode/mcp.json starts construct serve --client=vscode; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-WosteE/project"
+    },
+    {
+      "host": "vscode",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-vscode-WosteE/project/.agents/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "vscode",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "vscode",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host vscode; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "vscode",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "vscode",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "vscode",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "vscode",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "vscode",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "vscode",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "vscode",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "vscode",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "opencode",
+      "check": "installed",
+      "status": "passed",
+      "detail": "/opt/homebrew/bin/opencode"
+    },
+    {
+      "host": "opencode",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-2wQnNm/project"
+    },
+    {
+      "host": "opencode",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-2wQnNm/project/opencode.json installed"
+    },
+    {
+      "host": "opencode",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": "opencode.json starts construct serve --client=opencode; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-2wQnNm/project"
+    },
+    {
+      "host": "opencode",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-opencode-2wQnNm/project/.agents/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "opencode",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "opencode",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host opencode; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "opencode",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "opencode",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "opencode",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "opencode",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "opencode",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "opencode",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "opencode",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "opencode",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "codex",
+      "check": "installed",
+      "status": "passed",
+      "detail": "/opt/homebrew/bin/codex"
+    },
+    {
+      "host": "codex",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-k2Vd3u/project"
+    },
+    {
+      "host": "codex",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-k2Vd3u/project/.codex/config.toml installed"
+    },
+    {
+      "host": "codex",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": ".codex/config.toml starts construct serve --client=codex; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-k2Vd3u/project"
+    },
+    {
+      "host": "codex",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-codex-k2Vd3u/project/.agents/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "codex",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "codex",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host codex; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "codex",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "codex",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "codex",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "codex",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "codex",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "codex",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "codex",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "codex",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "bob",
+      "check": "installed",
+      "status": "untested",
+      "detail": "bob is not installed here"
+    },
+    {
+      "host": "bob",
+      "check": "installation and binding",
+      "status": "passed",
+      "detail": "init bound /var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-m6OURl/project"
+    },
+    {
+      "host": "bob",
+      "check": "host wiring",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-m6OURl/project/.bob/mcp.json installed"
+    },
+    {
+      "host": "bob",
+      "check": "portable wiring",
+      "status": "passed",
+      "detail": ".bob/mcp.json starts construct serve --client=bob; bootstrap bound /private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-m6OURl/project"
+    },
+    {
+      "host": "bob",
+      "check": "operational skill discovery",
+      "status": "passed",
+      "detail": "/private/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/construct-conformance-bob-m6OURl/project/.bob/skills/construct/SKILL.md is the shipped bytes"
+    },
+    {
+      "host": "bob",
+      "check": "bootstrap invocation",
+      "status": "passed",
+      "detail": "initialize \u2192 construct"
+    },
+    {
+      "host": "bob",
+      "check": "bootstrap summary",
+      "status": "passed",
+      "detail": "host bob; next: when the person is free, offer the 6 proposed statement(s) from inbox for confirmation; never before their request"
+    },
+    {
+      "host": "bob",
+      "check": "typed intake",
+      "status": "passed",
+      "detail": "words without kind is refused on kind; kind work is refused with the five kinds; the design-conformance reading matches with nothing missing; schema 4467 bytes, description 1627 characters"
+    },
+    {
+      "host": "bob",
+      "check": "targeted skill loading",
+      "status": "passed",
+      "detail": "body absent by default, present on request"
+    },
+    {
+      "host": "bob",
+      "check": "managed workflow execution",
+      "status": "passed",
+      "detail": "4/4 steps; run succeeded"
+    },
+    {
+      "host": "bob",
+      "check": "final handback",
+      "status": "passed",
+      "detail": "acceptance waits in the inbox for the person; a relayed approval is refused"
+    },
+    {
+      "host": "bob",
+      "check": "no nested host spawn",
+      "status": "passed",
+      "detail": "no tool offers to start another host; the server and broker import no process spawning"
+    },
+    {
+      "host": "bob",
+      "check": "decision relay",
+      "status": "passed",
+      "detail": "question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person"
+    },
+    {
+      "host": "bob",
+      "check": "headless surface is limited",
+      "status": "passed",
+      "detail": "max tier project_write"
+    },
+    {
+      "host": "bob",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "claude-code",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "cursor",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "vscode",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "opencode",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "codex",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "bob",
+      "check": "host text parity",
+      "status": "passed",
+      "detail": "instructions 1653 characters, the contract inside the first 512; tools/list 32059 bytes for 19 tools; skill description 616 characters; identical on 6 host(s)"
+    },
+    {
+      "host": "all",
+      "check": "current host preserved (static)",
+      "status": "passed",
+      "detail": "no process spawning in the server, broker, or workflow service"
+    }
+  ]
+}

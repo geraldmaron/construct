@@ -1,0 +1,294 @@
+{
+  "run": {
+    "id": "run-7b6676b3",
+    "workflow": "managed-outcome",
+    "state": "succeeded",
+    "reason": null,
+    "preflight": {
+      "status": "runnable",
+      "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+      "approvalsAhead": [],
+      "reasons": [],
+      "flags": [],
+      "judgment": {
+        "depth": "standard",
+        "challenge": false,
+        "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+        "signals": [
+          {
+            "kind": "scale",
+            "detail": "not answered; treated as a team project",
+            "raises": false
+          }
+        ]
+      },
+      "period": null,
+      "assumptions": [],
+      "questions": []
+    },
+    "asked": {
+      "period": null,
+      "sources": null,
+      "judgedBy": {
+        "by": "host",
+        "host": "codex",
+        "client": "construct-implementation"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "step-92601e7a",
+      "step": "plan",
+      "state": "succeeded",
+      "attempts": 1,
+      "reason": null
+    },
+    {
+      "id": "step-43023a50",
+      "step": "do",
+      "state": "succeeded",
+      "attempts": 3,
+      "reason": null
+    },
+    {
+      "id": "step-7aad9b1d",
+      "step": "verify",
+      "state": "succeeded",
+      "attempts": 1,
+      "reason": null
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-b180f8d3",
+      "kind": "outcome/managed",
+      "trust": "validated",
+      "verification": {
+        "validators": [
+          {
+            "validator": "evidence_refs_resolve",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "within_period",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "verification_result",
+            "ok": true,
+            "problems": []
+          }
+        ],
+        "receipt": {
+          "formatVersion": 1,
+          "runId": "run-7b6676b3",
+          "stepRunId": "step-7aad9b1d",
+          "observedAt": "2026-10-09T18:02:01.870Z",
+          "actor": "session:codex:ses_fb25cbe6-390e-40c5-8bd7-47557bbdbe4e",
+          "assurance": "structural",
+          "executionVerified": false,
+          "semanticSupportVerified": false,
+          "subjects": [
+            {
+              "ref": "docs/internal/implementation-2026-10-09/RESULTS.md",
+              "digest": "5e182db6d651d2d2e86f3f43b9a891a10cc07eafa265eeff947504247b1a71e5",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/source/service.ts",
+              "digest": "04386c0309a4c83187762b075b2a1bf93f453aa4c94b2d4cee38adbbfd5681fd",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/source/research.ts",
+              "digest": "f50988edf07b66b34d420be43196e750567654064afe7267d1a22da19e43a4a8",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/methods.ts",
+              "digest": "b74f2c3b06b5dbf25b5cb4e4a36a2e4873f4fde63c47a31b434c9cb36f43237b",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/verification.ts",
+              "digest": "d3ee4092d453b7c762426f2f6ace30ef4ef0368d68fd0d03979b50373b8b2087",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/scheduling.ts",
+              "digest": "97049724e9d1b802b0d4c0c24016b59a69d875f3cca8eaee434bf0267ff15314",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/hosts/executors.ts",
+              "digest": "abfcef5ce0965091b0cc733636b9fc5f36dbbc9c88042fa3a2c1a183d2a9a649",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/hosts/verification.ts",
+              "digest": "da990abfd8aa45c0f2d70820bf55050a32fed1f5221d3d7d4e09e97a00f8ccd3",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "scripts/evals-live.mjs",
+              "digest": "ec0e9a5b77506f2785b36866741cce08dd82d987a4ebae259d297afc3f56e7ad",
+              "provenance": "witnessed"
+            }
+          ],
+          "evidence": [
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/native-verification.json",
+              "digest": "140e801b5421c250d5c6ba8a85cdec4929da83e1a0ad5c68e0bcf0e8b627cda6",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/conformance-final.json",
+              "digest": "ef1b0a2053c9d7f0fd22ae9dae71b8b94ab7ec1fea20f7ed1c6590aca8f9fd84",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/intake-2026-10-09/BACKLOG.md",
+              "digest": "a155b1b49fbd682f22548c68b0f75fcfd54bd4212a5470c3f5f88ce3a4235f86",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/source/service.ts",
+              "digest": "04386c0309a4c83187762b075b2a1bf93f453aa4c94b2d4cee38adbbfd5681fd",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/source/research.ts",
+              "digest": "f50988edf07b66b34d420be43196e750567654064afe7267d1a22da19e43a4a8",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/methods.ts",
+              "digest": "b74f2c3b06b5dbf25b5cb4e4a36a2e4873f4fde63c47a31b434c9cb36f43237b",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/verification.ts",
+              "digest": "d3ee4092d453b7c762426f2f6ace30ef4ef0368d68fd0d03979b50373b8b2087",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/kernel/workflow/scheduling.ts",
+              "digest": "97049724e9d1b802b0d4c0c24016b59a69d875f3cca8eaee434bf0267ff15314",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/hosts/executors.ts",
+              "digest": "abfcef5ce0965091b0cc733636b9fc5f36dbbc9c88042fa3a2c1a183d2a9a649",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "src/hosts/verification.ts",
+              "digest": "da990abfd8aa45c0f2d70820bf55050a32fed1f5221d3d7d4e09e97a00f8ccd3",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "scripts/evals-live.mjs",
+              "digest": "ec0e9a5b77506f2785b36866741cce08dd82d987a4ebae259d297afc3f56e7ad",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/intake-2026-10-09/SOURCES.md",
+              "digest": "5bfa1eaad56d207cd29dd887049ab39a58c88776d116178600774fc996a07739",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/final-tests.log",
+              "digest": "6e6a92980b3a266f265a904cf437725286920b86b64f37fc93e271a36ea34002",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/sso-final/assessment.json",
+              "digest": "acfcf05ab8a88215c816014688794a722365d9dc9ab706691663aae53426fece",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/schedule-artifact/assessment.json",
+              "digest": "e920e66238c104f91e84b6bc170b332342a65203225cb7497f4516e77fd1188a",
+              "provenance": "witnessed"
+            },
+            {
+              "ref": "docs/internal/implementation-2026-10-09/evidence/executor-replay/assessment.json",
+              "digest": "bbed1ec740784c1dcbb24438f72fd6c7505091b4bef6c0d030391b86a851effc",
+              "provenance": "witnessed"
+            }
+          ],
+          "checks": [
+            {
+              "validator": "evidence_refs_resolve",
+              "ok": true
+            },
+            {
+              "validator": "within_period",
+              "ok": true
+            },
+            {
+              "validator": "verification_result",
+              "ok": true
+            }
+          ]
+        },
+        "assurance": "structural",
+        "executionVerified": true,
+        "semanticSupportVerified": false,
+        "challengeRequired": false,
+        "evidence": {
+          "witnessed": 16,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        }
+      },
+      "body": {
+        "passed": true,
+        "verification": {
+          "executionRef": "execution:851",
+          "command": "[\"sh\",\"-c\",\"npm run lint && npm run typecheck && npm test && npm run smoke && git diff --check\"]",
+          "exitStatus": 0
+        },
+        "summary": "Completed the historical intake and bounded implementation fixes with fresh installed consumers, retained negative trials and explicit remaining limits. The broader native parent outcome remains open.",
+        "findings": [
+          "Ordinary questions can avoid a managed run; specialist outcomes can select bound methods and cite scoped source observations.",
+          "Content identity, read revocation, missing reference accounting, actual command receipts, native record references and requested-file destinations now have shared fail-closed checks.",
+          "An explicit Codex executor continued after session exit and resumed an interrupted occurrence. Other unattended hosts, a permanent clock, universal connector probes and semantic skill qualification remain unproven.",
+          "Release evidence is now enforced and invalidated by executable changes; absent full qualification blocks release. Signed local commits are blocked by the configured signing agent."
+        ],
+        "changes": [
+          "src/kernel/source/service.ts",
+          "src/kernel/source/research.ts",
+          "src/kernel/workflow/methods.ts",
+          "src/kernel/workflow/verification.ts",
+          "src/kernel/workflow/scheduling.ts",
+          "src/hosts/executors.ts",
+          "src/hosts/verification.ts",
+          "scripts/evals-live.mjs"
+        ],
+        "artifact": "docs/internal/implementation-2026-10-09/RESULTS.md",
+        "evidence": [
+          {
+            "ref": "docs/internal/implementation-2026-10-09/evidence/native-verification.json"
+          },
+          {
+            "ref": "docs/internal/implementation-2026-10-09/evidence/conformance-final.json"
+          }
+        ],
+        "sensitivity": null,
+        "sensitivityUnknown": 0,
+        "provenance": {
+          "witnessed": 16,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        }
+      }
+    }
+  ],
+  "openDecisions": []
+}

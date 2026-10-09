@@ -1,0 +1,87 @@
+{
+  "threadId": "01a12121-61ba-74aa-ae7c-d51d332ab027",
+  "turnId": "01a12121-81a9-740d-9354-2b26c0916641",
+  "artifact_sha256": "219176935acfef8a509fcf7ec552c9ceae78239acacc9a57bca7517b8411cfd9",
+  "content_checks": {
+    "artifact_exists": true,
+    "hold_recommendation": true,
+    "correct_rate": true,
+    "complete_window": true,
+    "open_P1_HBR17": true,
+    "closed_and_P2_distinguished": true,
+    "historical_note_not_authority": true,
+    "no_invented_error_cause": true,
+    "strict_gate": true
+  },
+  "manual_review": "Pass: correct decision and arithmetic, current-over-historical evidence, issue distinctions and supported next steps. No fabricated error cause or external action.",
+  "api_reads": [
+    {
+      "at": "2026-10-09T14:47:25.197Z",
+      "method": "GET",
+      "path": "/openapi.json"
+    },
+    {
+      "at": "2026-10-09T14:47:45.030Z",
+      "method": "GET",
+      "path": "/v1/metrics/rollout"
+    }
+  ],
+  "mcp_reads": [
+    {
+      "at": "2026-10-09T14:48:28.643Z",
+      "pid": 95638,
+      "event": "read",
+      "tool": "list_rollout_issues"
+    }
+  ],
+  "construct_table_counts": {
+    "meta": 3,
+    "project_profile": 1,
+    "statements": 6,
+    "sources": 3,
+    "source_authority": 3,
+    "source_snapshots": 0,
+    "entities": 3,
+    "relations": 0,
+    "claims": 0,
+    "staff_members": 0,
+    "staff_capabilities": 0,
+    "staff_skills": 0,
+    "resolved_skills": 0,
+    "resolved_workflows": 0,
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "step_attempts": 0,
+    "deliverables": 0,
+    "decisions": 3,
+    "grants": 0,
+    "observations": 0,
+    "drift_findings": 0,
+    "lessons": 0,
+    "triggers": 0,
+    "trigger_firings": 0,
+    "activity_events": 3,
+    "work_items": 0,
+    "work_dependencies": 0,
+    "work_events": 0,
+    "work_legacy_ids": 0,
+    "work_runs": 0,
+    "reviews": 0,
+    "run_bindings": 0,
+    "sessions": 0,
+    "session_agents": 0,
+    "path_leases": 0
+  },
+  "construct_observed_activation": false,
+  "specialist_skill_selection_observed": false,
+  "source_report_capture": false,
+  "native_task_model_version": "Not available from thread inspection",
+  "limitations": [
+    "One synthetic native Codex task, no cross-harness inference.",
+    "MCP read used a shell-launched protocol client, not a host-exposed MCP tool.",
+    "Construct skill file was read, but native Construct APIs were not invoked.",
+    "Tool inventory/startup diagnostics were not retained by the thread summary; root cause of absent Construct tool use is unresolved.",
+    "A separate task output directory was used then the file copied to the consumer cwd; execution cwd alone does not prove project config was loaded at host initialization.",
+    "Only public actions/messages/outputs inspected; no private reasoning."
+  ]
+}

@@ -1,0 +1,6 @@
+{"at": "2026-10-09T14:44:29.487Z", "pid": 93283, "event": "started"}
+{"at": "2026-10-09T14:44:29.491Z", "pid": 93283, "event": "exited"}
+{"at": "2026-10-09T14:48:28.639Z", "pid": 95638, "event": "started"}
+{"at": "2026-10-09T14:48:28.643Z", "pid": 95638, "event": "read", "tool": "list_rollout_issues"}
+{"at": "2026-10-09T15:00:12.982Z", "pid": 99863, "event": "started"}
+{"at": "2026-10-09T15:00:12.986Z", "pid": 99863, "event": "read", "tool": "list_rollout_issues"}

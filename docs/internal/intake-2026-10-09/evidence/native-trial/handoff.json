@@ -1,0 +1,41 @@
+{
+  "project": "$FIXTURE/project",
+  "version": "3.0.0-alpha.26",
+  "install": "offline install of previously fetched published npm package, no credentials copied",
+  "construct_generated_config_preserved": false,
+  "operational_skill_byte_identical": true,
+  "normal_path_construct": "/opt/homebrew/bin/construct",
+  "normal_path_package_root": "/Users/geralddagher/Developer/Projects/construct",
+  "normal_path_parity": {
+    "files": 456,
+    "differences": [
+      "dist/cli/hook.js",
+      "skills/AUTHORING.md",
+      "skills/README.md",
+      "skills/construct/SKILL.md",
+      "skills/construct/construct.skill.json",
+      "registry/index.json"
+    ]
+  },
+  "sources": {
+    "total": 3,
+    "reachable": 0,
+    "unreachable": 0,
+    "unknown": 3,
+    "fresh": 0,
+    "stale": 0,
+    "neverRead": 3
+  },
+  "runs": {
+    "active": 0,
+    "byState": {}
+  },
+  "sessions": [],
+  "api": "http://127.0.0.1:56764",
+  "mcp": "harbor_issues/list_rollout_issues",
+  "http_expires_at": "2026-10-09T15:43:03.028Z",
+  "fixture_only_launcher_adjustment": "Only Construct command changed to absolute public-install executable; generated args and skill unchanged. Global command is development symlink with six differing files.",
+  "construct_command": "$FIXTURE/support/install/bin/construct",
+  "http_tool_session_id": 10779,
+  "ownership_record": "$FIXTURE/support/http-owner.json"
+}

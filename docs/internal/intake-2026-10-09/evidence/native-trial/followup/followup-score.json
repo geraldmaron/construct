@@ -1,0 +1,55 @@
+{
+  "threadId": "01a12121-61ba-74aa-ae7c-d51d332ab027",
+  "turnId": "01a1212d-5a06-774e-bc17-3334ee3080f5",
+  "content_checks": {
+    "artifact_revised": true,
+    "rate_percent_and_counts": true,
+    "strict_threshold_keeps_hold": true,
+    "old_P1_removed": true,
+    "timestamp_correction_understood": true,
+    "old_window_not_new": true,
+    "no_fabricated_cause": true
+  },
+  "fresh_reads": {
+    "api": [
+      {
+        "at": "2026-10-09T15:00:11.640Z",
+        "method": "GET",
+        "path": "/v1/metrics/rollout"
+      }
+    ],
+    "mcp": [
+      {
+        "at": "2026-10-09T15:00:12.986Z",
+        "pid": 99863,
+        "event": "read",
+        "tool": "list_rollout_issues"
+      }
+    ]
+  },
+  "artifact_sha256": "b856aeeb97f32c1ebc2715a4f9bd1b1d74b6ea535347aeca33feb4aacfb8b545",
+  "construct_counts": {
+    "sessions": 0,
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "step_attempts": 0,
+    "deliverables": 0,
+    "source_snapshots": 0,
+    "resolved_skills": 0,
+    "resolved_workflows": 0,
+    "observations": 0,
+    "work_items": 0
+  },
+  "conclusion": "Native model refresh and revision passed; Construct orchestration, capture and resumption were not exercised.",
+  "cleanup": {
+    "checkedAt": "2026-10-09T15:02:41.184342+00:00",
+    "cleanup": "fixture-specific authenticated shutdown endpoint",
+    "ownedHttpPid": 93223,
+    "remainingFixtureProcesses": [],
+    "healthAfterStop": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 61] Connection refused>"
+    },
+    "noProductionScheduleInstalled": true
+  }
+}

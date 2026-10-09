@@ -1,0 +1,34 @@
+✔ Claude Code streams give the resolved model, the version, each tool used, and how the turn ended (2.001083ms)
+✔ Codex and Cursor streams give each Construct call, the skills read, and the final text (0.356459ms)
+✔ the tap pairs every call with its result, and the observation follows from the frames (1.53675ms)
+✔ a host gets the delegation allowlist and never a session marker or an API key (0.217708ms)
+✔ each host is invoked with its isolation flags and the server command the run names (0.401667ms)
+✔ only the five non-secret keys of the selected codex provider are carried over (0.392792ms)
+✔ a prepared run launches the server it names, through the tap, under its own Construct home (1823.565375ms)
+✔ the stop policy ends a run at the first engagement-write result and lets a question result continue (815.724292ms)
+✔ the e2e checkpoints pass only on what the run did (1.020333ms)
+✔ a record holds only test-split cells, strips paths, and keeps a baseline cell to its summary (12.651875ms)
+✔ pinning the hook environment rewrites only Construct's hook commands, once (1.2365ms)
+✔ a Cursor isolation probe is wired into the run and left out of its allow list (2675.995292ms)
+✔ a multi-turn run is stopped and observed only on its final turn (860.987041ms)
+✔ crowded with tool search off faces the same stubs as crowded, and each e2e connector serves only its own sources (538.56875ms)
+✔ a Cursor run puts the model selection back as it was, removing a key the run added, and moves what the run made (1.755041ms)
+✔ a stub reads a character split across chunks whole (104.228042ms)
+✔ the tap logs a character split across chunks whole and relays the bytes unchanged (106.277292ms)
+✔ check requires the Claude Code and Codex cells of its scope, accepts smoke or full, and needs full scope for a cut (8.573083ms)
+✔ record carries baseline cells while the corpus holds, candidate cells only while the text holds too, and refuses a cell two batches give (0.172958ms)
+✔ check finds a record stale when the competing servers its crowded runs faced have changed (0.701875ms)
+✔ check --cut fails a full record whose injected cells have no baseline, though the candidate took the page's instruction on every run (2.446042ms)
+✔ check needs three runs of every test case in every cell, and a run still invalid after its rerun keeps the verdict from passing (2.543667ms)
+✔ fixture traces carry through observation, measurement, and a verdict (1.123458ms)
+✔ with no record yet, check says so plainly and exits 1 (310.256916ms)
+✔ release requires the existing full live record before any publish command (0.151125ms)
+✔ live evidence identity changes with implementation bytes even when descriptions do not change (0.995583ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7446.058416

@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-10-09T18:11:44.896518+00:00",
+  "artifacts": [
+    {
+      "trial": "sso-final",
+      "artifact": "sso-prd.md",
+      "bytes": 17235,
+      "sha256": "479f5f90ebe4ee1ea98601309c4368cdc1492ee4525848a6e299d7066c4c2acf",
+      "hashPresentInAssessment": true
+    },
+    {
+      "trial": "executor-replay",
+      "artifact": "release-brief.md",
+      "bytes": 1369,
+      "sha256": "08bf920707a621807ebaefb0a2a63f89ab5bcb295affc77eb2ea09102289dbf9",
+      "hashPresentInAssessment": true
+    },
+    {
+      "trial": "schedule-artifact",
+      "artifact": "release-brief.md",
+      "bytes": 4545,
+      "sha256": "ec9d27c8c3450174e3660c025b2c7da34439a7f0e3b347ef83b9784ead3f0c1d",
+      "hashPresentInAssessment": true
+    }
+  ],
+  "staticSummary": {
+    "passed": 91,
+    "failed": 0,
+    "untested": 7
+  },
+  "untestedCells": [
+    {
+      "host": "claude-code",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "cursor",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "vscode",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "opencode",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "codex",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    },
+    {
+      "host": "bob",
+      "check": "installed",
+      "status": "untested",
+      "detail": "bob is not installed here"
+    },
+    {
+      "host": "bob",
+      "check": "live host call",
+      "status": "untested",
+      "detail": "run with --live outside any host session, with the host\u2019s credential present"
+    }
+  ],
+  "note": "Hashes verify saved artifact identity, not semantic correctness. Independent review is separately pending."
+}

@@ -1,0 +1,19 @@
+{
+  "metricId": "rollout-health",
+  "source": "harbor-metrics",
+  "schemaVersion": "2",
+  "observedAt": "2026-10-09T12:00:00Z",
+  "window": {
+    "from": "2026-10-08T12:00:00Z",
+    "to": "2026-10-09T12:00:00Z",
+    "complete": true
+  },
+  "requests": 20000,
+  "serverErrors": 200,
+  "serverErrorRate": {
+    "value": 1.0,
+    "unit": "percent"
+  },
+  "revision": "correction-2",
+  "correctionNote": "Error classification corrected for the same observation window; source observation time unchanged."
+}

@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-09T18:47:43.445301+00:00",
+  "codeCommit": "2b1720e0",
+  "researchCommit": "58146ab5",
+  "localCommitSigning": "false",
+  "globalCommitSigning": "true",
+  "scope": "Explicit user request; Construct repository only. No 1Password or global security configuration modified.",
+  "nativeRun": {
+    "id": "run-0a70f6ba",
+    "state": "succeeded",
+    "executionRef": "execution:871",
+    "deliverable": "deliverable-8c6497bf"
+  },
+  "reviewWork": {
+    "id": "work-f690a2b6",
+    "state": "open",
+    "reason": "Independent review clearance pending; claim released"
+  },
+  "parentWork": {
+    "id": "work-18402da5",
+    "state": "open",
+    "reason": "Original broader acceptance not all fulfilled"
+  },
+  "limits": [
+    "No push, merge, deploy or clock installation.",
+    "Other live hosts, general API/MCP credentials/capability probes, semantic evidence support and skill qualification are not established.",
+    "Model-host tests use synthetic sources and existing subscription authentication; no credentials copied."
+  ]
+}

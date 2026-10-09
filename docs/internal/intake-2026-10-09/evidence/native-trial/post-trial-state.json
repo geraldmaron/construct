@@ -1,0 +1,189 @@
+{
+  "inspection": [
+    {
+      "command": [
+        "status",
+        "--json"
+      ],
+      "result": {
+        "root": "$FIXTURE/project",
+        "project": {
+          "id": "proj-c7816b6a",
+          "name": "harbor-launch"
+        },
+        "onboarding": {
+          "state": "drafted",
+          "missing": [
+            "scale",
+            "primaryOutcome"
+          ],
+          "openQuestions": 3,
+          "proposalsAwaitingReview": 6
+        },
+        "runs": {
+          "active": 0,
+          "byState": {}
+        },
+        "decisions": {
+          "open": 3
+        },
+        "sources": {
+          "total": 3,
+          "reachable": 0,
+          "unreachable": 0,
+          "unknown": 3,
+          "fresh": 0,
+          "stale": 0,
+          "neverRead": 3
+        },
+        "registry": {
+          "skills": 17,
+          "workflows": 22,
+          "skew": []
+        },
+        "drift": {
+          "open": 0
+        },
+        "sessions": [],
+        "habits": {
+          "answersChecked": 0,
+          "answersClean": 0,
+          "uncheckedCaught": 0,
+          "readsRecorded": 0,
+          "checksWaived": 0
+        }
+      }
+    },
+    {
+      "command": [
+        "source",
+        "list",
+        "--json"
+      ],
+      "result": [
+        {
+          "source": {
+            "id": "release-docs",
+            "kind": "directory",
+            "origin": "declared",
+            "purpose": "Release policy and historical status notes",
+            "locator": "$FIXTURE/project/docs",
+            "authorityLevel": "authoritative",
+            "freshnessHours": null,
+            "sensitivity": "public",
+            "retention": null,
+            "canRead": true,
+            "canWrite": false,
+            "identityMapping": null,
+            "reachability": "unknown",
+            "lastSnapshotId": null,
+            "status": "active",
+            "createdAt": "2026-10-09T14:43:44.732Z",
+            "updatedAt": "2026-10-09T14:43:44.732Z",
+            "retiredAt": null
+          },
+          "freshness": "never_read",
+          "lastSnapshot": null,
+          "authoritativeFor": [
+            "rollout_policy"
+          ],
+          "notAuthoritativeFor": []
+        },
+        {
+          "source": {
+            "id": "harbor-metrics",
+            "kind": "other",
+            "origin": "declared",
+            "purpose": "Current measured rollout health",
+            "locator": "http://127.0.0.1:56764/v1/metrics/rollout",
+            "authorityLevel": "authoritative",
+            "freshnessHours": 24,
+            "sensitivity": "public",
+            "retention": null,
+            "canRead": true,
+            "canWrite": false,
+            "identityMapping": null,
+            "reachability": "unknown",
+            "lastSnapshotId": null,
+            "status": "active",
+            "createdAt": "2026-10-09T14:43:44.848Z",
+            "updatedAt": "2026-10-09T14:43:44.848Z",
+            "retiredAt": null
+          },
+          "freshness": "never_read",
+          "lastSnapshot": null,
+          "authoritativeFor": [
+            "service_health"
+          ],
+          "notAuthoritativeFor": []
+        },
+        {
+          "source": {
+            "id": "harbor-issues",
+            "kind": "other",
+            "origin": "declared",
+            "purpose": "Current rollout issue states priorities owners and next steps",
+            "locator": "mcp:harbor_issues:list_rollout_issues",
+            "authorityLevel": "authoritative",
+            "freshnessHours": 24,
+            "sensitivity": "public",
+            "retention": null,
+            "canRead": true,
+            "canWrite": false,
+            "identityMapping": null,
+            "reachability": "unknown",
+            "lastSnapshotId": null,
+            "status": "active",
+            "createdAt": "2026-10-09T14:43:44.964Z",
+            "updatedAt": "2026-10-09T14:43:44.964Z",
+            "retiredAt": null
+          },
+          "freshness": "never_read",
+          "lastSnapshot": null,
+          "authoritativeFor": [
+            "issue_status"
+          ],
+          "notAuthoritativeFor": []
+        }
+      ]
+    }
+  ],
+  "table_counts": {
+    "meta": 3,
+    "project_profile": 1,
+    "statements": 6,
+    "sources": 3,
+    "source_authority": 3,
+    "source_snapshots": 0,
+    "entities": 3,
+    "relations": 0,
+    "claims": 0,
+    "staff_members": 0,
+    "staff_capabilities": 0,
+    "staff_skills": 0,
+    "resolved_skills": 0,
+    "resolved_workflows": 0,
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "step_attempts": 0,
+    "deliverables": 0,
+    "decisions": 3,
+    "grants": 0,
+    "observations": 0,
+    "drift_findings": 0,
+    "lessons": 0,
+    "triggers": 0,
+    "trigger_firings": 0,
+    "activity_events": 3,
+    "work_items": 0,
+    "work_dependencies": 0,
+    "work_events": 0,
+    "work_legacy_ids": 0,
+    "work_runs": 0,
+    "reviews": 0,
+    "run_bindings": 0,
+    "sessions": 0,
+    "session_agents": 0,
+    "path_leases": 0
+  }
+}

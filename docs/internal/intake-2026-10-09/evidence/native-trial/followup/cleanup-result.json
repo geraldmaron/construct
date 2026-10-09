@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-09T15:02:41.184342+00:00",
+  "cleanup": "fixture-specific authenticated shutdown endpoint",
+  "ownedHttpPid": 93223,
+  "remainingFixtureProcesses": [],
+  "healthAfterStop": {
+    "reachable": false,
+    "error": "<urlopen error [Errno 61] Connection refused>"
+  },
+  "noProductionScheduleInstalled": true
+}

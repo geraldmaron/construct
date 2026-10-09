@@ -1,0 +1,90 @@
+{
+  "executionRef": "execution:871",
+  "command": "[\"node\",\"--test\",\"tests/hosts/verification.test.ts\",\"tests/kernel/workflow/triggers.test.ts\",\"tests/kernel/state/upgrade.test.ts\",\"tests/kernel/source/service.test.ts\",\"tests/kernel/workflow/service.test.ts\",\"tests/scenarios/architecture-diagram.test.ts\"]",
+  "exitStatus": 0,
+  "receipt": {
+    "formatVersion": 1,
+    "runId": "run-0a70f6ba",
+    "stepRunId": "step-41f910b0",
+    "attempt": 1,
+    "owner": "session:codex:ses_ec142b9e-4352-4d0f-8ccc-af1900588d8d",
+    "argv": [
+      "node",
+      "--test",
+      "tests/hosts/verification.test.ts",
+      "tests/kernel/workflow/triggers.test.ts",
+      "tests/kernel/state/upgrade.test.ts",
+      "tests/kernel/source/service.test.ts",
+      "tests/kernel/workflow/service.test.ts",
+      "tests/scenarios/architecture-diagram.test.ts"
+    ],
+    "cwd": "/Users/geralddagher/Developer/Projects/construct",
+    "startedAt": "2026-10-09T18:44:15.314Z",
+    "endedAt": "2026-10-09T18:44:16.323Z",
+    "exitStatus": 0,
+    "signal": null,
+    "timedOut": false,
+    "outputDigest": "a36071b0ce1eda6566d7f4cc252e9aae6973ab098f88d2451fd76e21bca5c9c4",
+    "outputExcerpt": "\u2714 host command receipts reject failing, missing, replayed, timed out and changed subjects (217.696417ms)\n\u2714 required execution gates public submission and CLI completion: missing (56.460583ms)\n\u2714 required execution gates public submission and CLI completion: failed (83.657959ms)\n\u2714 required execution gates public submission and CLI completion: stale (89.091042ms)\n\u2714 required execution gates public submission and CLI completion: wrong_attempt (80.677875ms)\n\u2714 required execution gates public submission and CLI completion: passed (83.064584ms)\n\u2714 locators are checked by kind with a sentence that says the expected shape (1.497416ms)\n\u2714 connector declarations say what a system supplies and what it is commonly mistaken for (0.122666ms)\n\u2714 declarations sync into state: add, update, retire, and leave local sources alone (9.997375ms)\n\u2714 committing a local source under its own id and kind makes it declared and keeps what was read from it (8.317833ms)\n\u2714 a declared locator wins; a sensitive local locator survives a sync that declares none (7.727959ms)\n\u2714 refresh records a snapshot once per digest, marks reachability, and observes changes (9.01825ms)\n\u2714 a reported item keeps its address, and a later report that omits it keeps the one recorded (13.746291ms)\n\u2714 an address gained on a re-read of the same text is recorded, and is not called a change to the item (12.685167ms)\n\u2714 text past the cap is cut, the item is marked, and the report names it (9.600958ms)\n\u2714 stored text and titles have credentials removed, while the version is still judged on what was read (6.966292ms)\n\u2714 text recorded with a credential in it is kept without it whenever a later report carries it forward (10.822125ms)\n\u2714 unchanged provider versions cannot conceal corrected content, including beyond the retention cap (9.882292ms)\n\u2714 read revocation refuses refresh, reports, peeks and cached evidence without deleting audit history (11.724292ms)\n\u2714 observed artifacts in different sources retain different identities for the same item ref (10.53175ms)\n\u2714 empty queries and distinct access failures preserve previous evidence and scoped provenance (12.891541ms)\n\u2714 schema and units are content identity, independent of metadata ordering and provider timestamp (9.81025ms)\n\u2714 complete and partial weak sightings preserve stronger explicitly observed items (22.429375ms)\n\u2714 one refreshed item cannot freshen an unread or weakly observed item (13.648459ms)\n\u2714 freshness follows successful item observations across unchanged and A-B-A content (9.865834ms)\n\u2714 witnessed unchanged local rereads renew observation freshness without inventing a content change (11.40575ms)\n\u2714 a fresh format-3 store upgrades to exactly what a fresh format-5 store holds (49.145667ms)\n\u2714 a format-2 store upgrades with every column, constraint, index, and trigger a fresh store has; only where appended columns sit differs (51.785917ms)\n\u2714 a format-3 store whose two flag columns carry no CHECK keeps exactly that difference, since SQLite cannot add one to an existing column (54.984958ms)\n\u2714 a claim held across the upgrade stays held, and the format-3 token anyone could rebuild from a read settles nothing (50.18575ms)\n\u2714 a format-3 store missing a format-3 table is refused unread, and nothing about the file changes (38.481708ms)\n\u2714 a store that turns newer while the upgrade waits for the lock is refused as newer, not reported upgraded (549.226041ms)\n\u2714 format 4 migration preserves firing history and permits the same key in independent triggers (35.934916ms)\n\u2714 answer creates nothing; remember creates one confirmed statement, no run, no tasks (27.223166ms)\n\u2714 a managed run: idempotent start, ordered leases, validated outputs, a drafted then validated deliverable, kernel-owned promotion (34.671042ms)\n\u2714 an external write pauses for the smallest approval; approval resumes exactly that step; a declined step cancels it (35.013917ms)\n\u2714 a lost lease is reclaimed without repeating finished work; cancel and no-data follow policy (27.495667ms)\n\u2714 a blocked start records why, resumes once the world changes, and arbitrary steps cannot be enqueued (22.598333ms)\n\u2714 project policy never: the project_write step asks instead of writing (22.998542ms)\n\u2714 architectural work is challenged without magic words; a helper rename is not (34.363667ms)\n\u2714 stakes the host declared at start survive a block and a resume, and still demand a challenge before acceptance (20.951625ms)\n\u2714 unknowns stay unknown: a verified placeholder cannot be accepted (21.499208ms)\n\u2714 an active contradiction blocks trusted finish (16.099834ms)\n\u2714 nothing but passing checks makes a deliverable validated: promotion to it is refused from draft and from challenged, on every channel (20.814084ms)\n\u2714 a challenge carries the objections it raised, merged over what the deliverable already held, and says whether the session that ran the work raised it (16.846792ms)\n\u2714 a waiver the person gives on their own channel is on the deliverable with who gave it and how, the person is told before accepting, and the run is never called validated (21.502958ms)\n\u2714 a check that fails anew after a waiver was put to no one, so the person is asked again, and a later call for another attempt ends the waiver (18.244625ms)\n\u2714 a step cannot write a waiver for itself: one that found no data keeps none of the waiver keys it sent (12.41875ms)\n\u2714 the acceptance question leads with what Construct checked, waived and could not check, and quotes the assistant as the assistant (18.169834ms)\n\u2714 a question about how a deliverable stood before is withdrawn and asked again, an unchanged one is reused, and a long one points at the whole (17.6595ms)\n\u2714 the person approving a question about how a deliverable stood before moves nothing, and is asked again as it stands (12.959625ms)\n\u2714 a source declared after the deliverable was made is not one it rests on, and does not ask the person again (12.097583ms)\n\u2714 a named source with nothing cited from it is named only where Construct placed the run\u2019s reads (13.942583ms)\n\u2714 a plan's blocking question waits for the person, and every later step receives it with its answer while the run's input stays as given (14.220584ms)\n\u2714 a plan's questions are read from strings or {question} and {ask} entries, and a plan with none, or a run being cancelled, asks nothing (17.18975ms)\n\u2714 a deliverable is not accepted while its run still has a question for the person, and the brief quotes an answer the assistant relayed (15.473709ms)\n\u2714 a setup answer lands in the profile on the channel it arrives on and in the question's words, and only the person can make the project a side project (11.769166ms)\n\u2714 acceptance and finalization recheck artifact bytes after structural verification (12.008791ms)\n\u2714 non-verification workflows recheck structured artifacts and source evidence before acceptance (12.05125ms)\n\u2714 an interrupted lease does not spend the validation retry budget (12.418166ms)\n\u2714 a schedule trigger is validated, computes its next due instant, and fires once per tick (53.420125ms)\n\u2714 stale data blocks a firing whose workflow says so; no data succeeds empty when it says so; dry-run starts nothing (54.556709ms)\n\u2714 recipes name the trigger, the project, and the firing key, for cron and CI (22.546917ms)\n\u2714 a weekly trigger covers a fresh week on every firing, worked out at the due time in its own timezone (48.339041ms)\n\u2714 defining a trigger checks its input: undeclared keys, malformed periods, unknown sources, and fixed windows on a standing trigger are refused (21.197083ms)\n\u2714 events cannot replace the standing input and workflow changes cannot exceed its stored tier (31.932458ms)\n\u2714 standing intents isolate identical keys, overlap, replacement and cancellation on the same workflow (114.446ms)\n\u2714 the architecture diagram request runs end to end through the tools: period and named sources reach every step, honest work is checked, and the deliverable carries what was made (159.065042ms)\n\u2139 tests 68\n\u2139 suites 0\n\u2139 pass 68\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 955.212167\n",
+    "subjects": [
+      {
+        "ref": "src/kernel/state/schema.ts",
+        "digest": "928a53f6e08caf6398c7c0bf3b61ad1a7e9b938a79c09fe65854786abaf7fd60",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/state/migrate.ts",
+        "digest": "c5c5df3210cf4e02115250057f4ffbc17582ea0bad4de3f6e0f1936c9aa1bebd",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/state/triggers.ts",
+        "digest": "4d12acb7c86b1235d47a7e2bd9f44007a569eb9e980a678457a76a8ebb395e94",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/state/sources.ts",
+        "digest": "c1aef3daa1a795bd69cc79ce1e8ffa97c4d9f4be945a0886b21b0ef0c0adf16d",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/state/steps.ts",
+        "digest": "0dde03469cacd20fd5cd6a5bcdf24c8340e2b8e474c1d801936c2b9ef1bd74a3",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/source/service.ts",
+        "digest": "9d73f8c093022beee8e11197b5fdb3b044538b623512e9d25d7edb46c4d0f4a3",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/workflow/service.ts",
+        "digest": "11fc1d9d8a188b6b6e14576ae31daab5be26bf9c089c441afb43fb2b6471e095",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/workflow/triggers.ts",
+        "digest": "26ad322cd9c0614492afe244a927d1fdcf65cb234450ef9a3cdce89168400664",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/kernel/workflow/verification.ts",
+        "digest": "1114ab0a14f139ce7128767d0112227f1d877b556bd18a7d415e3120e48f105c",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/cli/workflow.ts",
+        "digest": "a9ef127630aa1d9a48146f349098d505b837c618dcc0985c9151a3b3553d3872",
+        "provenance": "witnessed"
+      },
+      {
+        "ref": "src/hosts/executors.ts",
+        "digest": "8bc1ae8355f17b770d58c8a767f651a42b5c45df50f5e9f8d411807be7ecefaa",
+        "provenance": "witnessed"
+      }
+    ],
+    "subjectsStable": true,
+    "assurance": "command_observed",
+    "semanticSupportVerified": false
+  }
+}

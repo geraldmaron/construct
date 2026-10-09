@@ -1,0 +1,17 @@
+{
+  "metricId": "rollout-health",
+  "source": "harbor-metrics",
+  "schemaVersion": "1",
+  "observedAt": "2026-10-09T12:00:00Z",
+  "window": {
+    "from": "2026-10-08T12:00:00Z",
+    "to": "2026-10-09T12:00:00Z",
+    "complete": true
+  },
+  "requests": 20000,
+  "serverErrors": 360,
+  "serverErrorRate": {
+    "value": 180,
+    "unit": "basis_points"
+  }
+}
