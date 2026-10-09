@@ -1,0 +1,27 @@
+✔ initialize, tools/list, tools/call, and errors follow the protocol (34.258709ms)
+✔ wrong input comes back as a tool error naming the field and the values it accepts, in structured and text content alike (21.454334ms)
+✔ the headless server names itself and lists only its surface (19.030541ms)
+✔ the line transport answers in order and survives a parse error (21.392208ms)
+✔ an unbound server completes the handshake and reports the missing project (0.4285ms)
+✔ an unbound server gives the next step that fits the cause, not always init (0.103667ms)
+✔ a server whose store was busy at launch lists its real tools and binds on a later call (19.924375ms)
+✔ a server stops writing when another build changes the store format under it (18.436875ms)
+✔ a lazy server rejects an unknown tool without trying to bind (0.217333ms)
+✔ a lazy server that finds a newer store switches to the unbound surface with upgrade advice (0.268083ms)
+✔ a message whose handling throws gets an error reply, and the server keeps answering (1.062916ms)
+✔ a store that fails under the format guard yields an error reply, not a crash (18.328125ms)
+✔ the frozen router catalog is a catalog the router reads (0.633833ms)
+✔ every shipped skill names an eval file that validates, has both kinds of case, and feeds the router (1.850917ms)
+✔ on natural requests that borrow no skill vocabulary, the router puts the right skill near the top (29.648458ms)
+✔ each activating example is ranked first or near it by a router that has never seen it (180.784916ms)
+✔ a request that asks nothing of any skill ranks nothing as likely (1.431625ms)
+✔ the operational skill teaches the session what the directive requires and forbids (0.426834ms)
+✔ the operational skill says nothing twice, and its description fits every host and names work asked as a question (1.535334ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 410.290875

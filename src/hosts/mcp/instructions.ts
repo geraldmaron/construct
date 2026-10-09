@@ -27,12 +27,13 @@ export const INTERACTIVE_CONTRACT = [
   'Plain question: answer it, record nothing.',
   'Asked to keep something: remember.',
   'To hand work on: work handoff.',
-  'To produce, review, or schedule work, even asked as a question: call classify_request with your reading (kind, deliverable, period, sources), ask all its questions in one message, then start_outcome; do each step here with claim_work and submit_work.',
+  'To produce or review work, even asked as a question: classify_request with kind=manage. For schedules use kind=maintain. Give your reading, settle its questions, then start_outcome; do each step here with claim_work and submit_work.',
   UNTRUSTED_TEXT,
 ].join(' ');
 
 const REST = [
   'Never ask the person to name a skill or workflow.',
+  'A failed tool call completed no operation: use its recovery schema, repair the inputs or missing prerequisite, and retry before advancing. Do not skip a failed managed step or invent a run or claim.',
   'Leave unknown facts unknown; never invent them.',
   'Challenge consequential work when claim_work says so; do not wait to be asked.',
   'Only the person approves an action that leaves the project or destroys something, and only they accept a deliverable; a relayed answer is not theirs.',
