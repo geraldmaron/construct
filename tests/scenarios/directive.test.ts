@@ -40,8 +40,10 @@ test('Scenario A: a basic question creates no run, decision, staff member, or re
   const fx = brokerFixture();
   try {
     const before = listActivity(fx.broker.store).length;
-    const c = await call(fx, 'classify_request', { text: 'What does this function do?' });
-    assert.equal(c.class, 'answer');
+    const c = await call(fx, 'classify_request', { words: 'What does this function do?', kind: 'answer' });
+    assert.equal(c.kind, 'answer');
+    assert.deepEqual(c.matches, []);
+    assert.equal(c.next, 'Answer in chat. Nothing was recorded.');
     assert.equal(listActivity(fx.broker.store).length, before);
     assert.equal(listRuns(fx.broker.store).length, 0);
     assert.deepEqual(await call(fx, 'inbox'), []);
@@ -54,9 +56,9 @@ test('Scenario A: a basic question creates no run, decision, staff member, or re
 test('Scenario B: minimal memory records one decision with the person’s wording and provenance, and nothing else', async () => {
   const fx = brokerFixture();
   try {
-    const c = await call(fx, 'classify_request', { text: 'Record that we will not add schema migration until stable.' });
-    assert.equal(c.class, 'remember');
-    assert.equal(c.rememberKind, 'decision');
+    const c = await call(fx, 'classify_request', { words: 'Record that we will not add schema migration until stable.', kind: 'remember' });
+    assert.equal(c.kind, 'remember');
+    assert.match(c.next as string, /^Call remember with the person’s wording/);
     const r = (await call(fx, 'remember', { kind: 'decision', text: 'we will not add schema migration until stable' })) as { remembered: { id: string; text: string }; nothingElseCreated: boolean };
     assert.equal(r.nothingElseCreated, true);
     const s = listStatements(fx.broker.store).find((x) => x.id === r.remembered.id)!;
@@ -156,6 +158,11 @@ test('Scenario E: the strategy review needs confirmed source authority, states c
     addSource(s, { id: 'jira', kind: 'jira', purpose: 'work tracking', authorityLevel: 'authoritative', sensitivity: 'internal', canRead: true, canWrite: true, authoritativeFor: ['work_item'], notAuthoritativeFor: ['capacity', 'ownership'], at });
     addSource(s, { id: 'hris', kind: 'hris', purpose: 'people', authorityLevel: 'authoritative', sensitivity: 'confidential', canRead: true, canWrite: false, authoritativeFor: ['reporting_line', 'headcount'], notAuthoritativeFor: ['capacity'], at });
     for (const id of ['strategy', 'jira', 'hris']) recordSnapshot(s, { id: `snap-${id}`, sourceId: id, digest: 'v1', at });
+    // What the review cites from these systems is recorded as read, with the passage it relies on.
+    const next = () => fx.ctx.nextId('snap');
+    fx.broker.sources.reportRead('strategy', { items: [{ ref: 'plan.md', title: 'FY27 plan', text: 'Allocations: Platform 130% across SSO and billing.' }], partial: true }, at, next);
+    fx.broker.sources.reportRead('jira', { items: [{ ref: 'PROJ', title: 'PROJ board', text: 'Velocity: 40 points per sprint over the last six sprints.' }], partial: true }, at, next);
+    fx.broker.sources.reportRead('hris', { items: [{ ref: 'team-platform', title: 'Platform team', text: 'Platform: 5 people.' }], partial: true }, at, next);
     const started = (await call(fx, 'start_outcome', { workflowId: 'strategy-execution-review', input: { target: 'FY27 plan' } })) as { run: { id: string; state: string }; preflight: { status: string; summary: string } };
     assert.equal(started.preflight.status, 'runnable', started.preflight.summary);
     const gather = await claim(fx, started.run.id);
@@ -169,7 +176,7 @@ test('Scenario E: the strategy review needs confirmed source authority, states c
     assert.equal((velocity.step as { state: string }).state, 'ready');
     assert.ok((velocity.validation as { validator: string; ok: boolean }[]).some((v) => v.validator === 'no_velocity_as_capacity' && !v.ok), 'velocity as capacity is refused');
     const again = await claim(fx, started.run.id);
-    const ok = await submit(fx, again, { summary: 'two conflicts, one unlinked initiative', findings: [{ text: 'Platform allocated 130%', material: true, citations: ['hris:team-platform', 'strategy:plan.md#allocations'] }], assumptions: ['Platform has 5 people at 80% availability; history from Jira is evidence, not the estimate'], escalations: ['owner of SSO to be confirmed'], capacity: { range: [3.2, 4.0], unit: 'people' } }, [{ ref: 'hris:team-platform' }, { ref: 'strategy:plan.md#allocations' }]);
+    const ok = await submit(fx, again, { summary: 'two conflicts, one unlinked initiative', findings: [{ text: 'Platform allocated 130%', material: true, citations: ['hris:team-platform', 'strategy:plan.md'] }], assumptions: ['Platform has 5 people at 80% availability; history from Jira is evidence, not the estimate'], escalations: ['owner of SSO to be confirmed'], capacity: { range: [3.2, 4.0], unit: 'people' } }, [{ ref: 'hris:team-platform' }, { ref: 'strategy:plan.md' }]);
     assert.equal((ok.step as { state: string }).state, 'succeeded');
     // Authority stays per claim type: Jira cannot settle ownership, HRIS cannot settle capacity.
     addEntity(s, { id: 'team', kind: 'team', name: 'Platform', at });

@@ -1,18 +1,30 @@
 /**
  * tests/docs/examples.test.ts — every command a user could copy from the
  * documentation runs, in order, inside a scratch project, and exits with
- * the code the page says (0 unless a line ends with "# exits N").
+ * the code the page says (0 unless a line ends with "# exits N"). A fence
+ * whose info string names a file (```json file=<path>) is a file the page
+ * asks the person to save: it is written into the project first.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, normalize } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, sandbox } from '../cli/support.ts';
 
 const DOCS = join(import.meta.dirname, '..', '..', 'docs');
 const SHELL_FENCE = /```(?:bash|sh|shell|zsh|console)\n([\s\S]*?)```/g;
+const FILE_FENCE = /```[\w-]+ file=(\S+)\n([\s\S]*?)```/g;
+
+/** The files a page asks the person to save, by their path in the project. */
+function pageFiles(name: string): { readonly path: string; readonly body: string }[] {
+  return [...readFileSync(join(DOCS, name), 'utf8').matchAll(FILE_FENCE)].map((m) => {
+    const path = normalize(m[1]!);
+    assert.ok(!path.startsWith('..') && !path.startsWith('/'), `${name}: a file fence names a path inside the project, not ${m[1]!}`);
+    return { path, body: m[2]! };
+  });
+}
 
 interface Example { readonly file: string; readonly line: number; readonly argv: string[]; readonly expectCode: number }
 
@@ -54,6 +66,10 @@ test('every documented construct command runs in a scratch project and exits as 
       if (!list.some((e) => e.argv[0] === 'init')) {
         const init = await capture(() => run(['init', '--scale=solo', '--outcome=ship', '--constraint=keep the API', `--skills-dir=${join(box.home, 'skills')}`, '--no-wire'], box.ctx));
         assert.equal(init.code, 0, `${file}: setup init failed: ${init.err}`);
+      }
+      for (const f of pageFiles(file)) {
+        mkdirSync(dirname(join(box.cwd, f.path)), { recursive: true });
+        writeFileSync(join(box.cwd, f.path), f.body, 'utf8');
       }
       for (const e of list) {
         const argv = e.argv.map((a) => (a === '--client=cursor' ? `--client=cursor` : a));

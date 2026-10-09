@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "research-brief",
   "title": "Research a question",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "purpose": "Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back.",
   "activation": [
     "research this and tell me what holds up",
@@ -19,7 +19,9 @@
   "inputSchema": {
     "question": "string",
     "scope": "string",
-    "target": "string"
+    "target": "string",
+    "period": "period",
+    "sources": "source_ids"
   },
   "requiredInputs": [
     "question"
@@ -58,7 +60,10 @@
       "tier": "observe",
       "inputs": {
         "question": "input.question",
-        "scope": "input.scope"
+        "scope": "input.scope",
+        "target": "input.target",
+        "period": "input.period",
+        "sources": "input.sources"
       },
       "outputs": [
         "summary",
@@ -70,6 +75,8 @@
         "citations_present",
         "evidence_refs_resolve",
         "excerpts_match",
+        "within_period",
+        "named_sources_read",
         "conflicts_declared",
         "deliverable_complete"
       ],
@@ -100,6 +107,7 @@
       "tier": "draft",
       "inputs": {
         "question": "input.question",
+        "target": "input.target",
         "findings": "steps.gather.findings",
         "conflicts": "steps.gather.conflicts",
         "unknowns": "steps.gather.unknowns"
@@ -115,6 +123,7 @@
         "citations_present",
         "evidence_refs_resolve",
         "excerpts_match",
+        "within_period",
         "sources_diverse",
         "numbers_grounded",
         "superseded_acknowledged",
@@ -158,6 +167,7 @@
       "validators": [
         "citations_present",
         "evidence_refs_resolve",
+        "within_period",
         "no_uncited_material_findings",
         "deliverable_complete"
       ],
@@ -209,7 +219,9 @@
   "onStaleData": "proceed_flagged",
   "concurrency": "per_input",
   "dedupeKey": [
-    "question"
+    "question",
+    "period",
+    "sources"
   ],
   "cancellation": "after_step",
   "deliverable": {

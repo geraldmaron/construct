@@ -2,24 +2,23 @@
  * tests/kernel/skills/behavior.test.ts — operational, adversarial-review, and
  * professional packs pass their behavioral evals: stand-down, activate,
  * unknown-not-invented, and authority boundary.
+ *
+ * Stand-down and activate cases rank against the frozen router catalog, so
+ * they test the router and the cases, never veto a live description edit.
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createSkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
 import { evaluateBehaviorCase, validateBehaviorFile } from '../../../src/kernel/skills/behavior.ts';
 import type { RoutableSkill } from '../../../src/kernel/skills/routing.ts';
 
 const skills = createSkillRegistry({ projectDir: null });
+const frozen = JSON.parse(readFileSync(new URL('../../fixtures/router-catalog.json', import.meta.url), 'utf8')) as { skills: RoutableSkill[] };
 
 function catalog(): RoutableSkill[] {
-  return skills.list().map((s) => ({
-    id: s.manifest.id,
-    description: s.description,
-    activation: s.manifest.activation,
-    standDown: s.manifest.standDown,
-    examples: s.examples,
-  }));
+  return frozen.skills;
 }
 
 function assertBehavior(id: string): void {

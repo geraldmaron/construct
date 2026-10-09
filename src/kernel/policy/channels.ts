@@ -30,20 +30,27 @@ export function isPersonChannel(channel: DecisionChannel): boolean {
   return PERSON_CHANNELS.has(channel);
 }
 
-/** The instruction a relay gets back: who must answer, and exactly how. */
-export function personStepFor(decisionId: string | null): string {
-  return decisionId
-    ? `The person answers this directly: they run \`construct inbox resolve ${decisionId} approve\` (or decline) in their own terminal. A model relaying their words cannot give this answer.`
-    : 'The person gives this answer directly, in their own terminal with `construct inbox`. A model relaying their words cannot give it.';
+/**
+ * The instruction a relay gets back: who must answer, and exactly how. The
+ * answer is the one the relay asked for; without one, the person approves or
+ * declines.
+ */
+export function personStepFor(decisionId: string | null, answer: string | null = null): string {
+  if (!decisionId) return 'The person gives this answer directly, in their own terminal with `construct inbox`. A model relaying their words cannot give it.';
+  const command = answer === null ? `\`construct inbox resolve ${decisionId} approve\` (or decline)` : `\`construct inbox resolve ${decisionId} ${answer}\``;
+  return `The person answers this directly: they run ${command} in their own terminal. A model relaying their words cannot give this answer.`;
 }
 
 export class PersonChannelRequiredError extends Error {
   readonly decisionId: string | null;
+  /** The answer the relay gave, as the person would type it; null for an approval. */
+  readonly answer: string | null;
 
-  constructor(what: string, decisionId: string | null) {
-    super(`${what} needs the person. ${personStepFor(decisionId)}`);
+  constructor(what: string, decisionId: string | null, answer: string | null = null) {
+    super(`${what} needs the person. ${personStepFor(decisionId, answer)}`);
     this.name = 'PersonChannelRequiredError';
     this.decisionId = decisionId;
+    this.answer = answer;
   }
 }
 

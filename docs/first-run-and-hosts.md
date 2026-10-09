@@ -12,20 +12,63 @@ construct init --client=cursor --scale=solo --outcome="ship the first paying ver
 
 `init` finds the repository root, writes `.construct/` (project, constitution,
 sources, and registry lock files, all committed) and one runtime database
-under `.construct/state/` (ignored), reads what the project already says
+under `.construct/state/` (ignored), and reads what the project already says
 about itself (README, agent instructions, architecture documents, ownership
-files, the package manifest) and proposes a profile with provenance for each
-proposal, plants the operational `construct` skill into the host's skills
-directory, and writes the host's project MCP configuration so the host
-launches `construct serve` bound to this project.
+files, the package manifest) to propose a profile with provenance for each
+proposal. Re-running it says what is new and what an earlier run already
+proposed.
 
-Without the answer flags, `init` leaves three questions open and the host
-asks them in conversation: what this project is to you, what result matters
-most now, and what Construct must be careful not to violate. Nothing
-inferred becomes fact until you confirm it.
+Then it connects the agent hosts you use here. `--client=<host>` names them
+(repeat it, or comma-separate: `--client=claude-code,cursor`). Without it,
+`init` picks in this order: the host it is running inside; the hosts already
+wired in this project, so re-running `init` repairs them; the only agent host
+installed on this machine, found by its command on PATH or its configuration
+directory. When it finds several and you are at a terminal of your own, it
+asks once which you use; otherwise it names what it found, wires none, and
+says that no agent session can reach Construct until you run
+`construct init --client=<host>`. `construct doctor` fails until a host is
+wired.
+
+For each host, `init` writes the host's project MCP file so the host starts
+`construct serve` in this project, and plants the operational `construct`
+skill in the project skills directory that host reads. That file names no
+path on your machine: it starts `construct` from your PATH, or `npx
+--no-install construct` when Construct is installed as a dependency of the
+project. Re-running `init` leaves an unchanged file exactly as it is. One copy
+of the skill serves every host that reads its directory, so wiring Claude
+Code and Cursor together plants only `.claude/skills/construct`.
+
+Without the answer flags, `init` leaves three questions open: what this
+project is to you, what result matters most now, and what Construct must be
+careful not to violate. Construct tells the host never to ask them before
+your request: to ask one only when its answer changes the work you asked
+for, in the same message, or all three in one message when you have asked
+for nothing yet.
+Nothing inferred becomes fact until you confirm it.
 
 `--dry-run` says what would happen and writes nothing. `--no-wire` skips the
-host configuration. `--skills-dir` plants the skill somewhere explicit.
+hosts' MCP files and hooks, and sets up only a host you name or are running
+inside. `--skills-dir` also plants a personal copy of the
+skill in that directory; a personal copy loads in every repository the host
+opens, whichever Construct each one runs, and `construct doctor` says when an
+older one is still there.
+
+## First run in each host
+
+After `init`, each host has a one-time step before a session there reaches
+Construct. `init` prints it, and writes none of these settings for you.
+
+| Host | File written | Skill directory | One-time step |
+|---|---|---|---|
+| Claude Code | `.mcp.json` | `.claude/skills` | Start a new session in the folder and approve the project server `construct` (`claude mcp get construct` shows its state; `claude mcp reset-project-choices` asks again after a decline), then allow its tools or add `mcp__construct` to `permissions.allow` |
+| Cursor | `.cursor/mcp.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | Open the folder in Cursor or start `cursor-agent` there, and check that `construct` is on in Cursor's MCP settings |
+| VS Code | `.vscode/mcp.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | Trust the workspace (workspace MCP servers follow Workspace Trust), and start `construct` from the tools list in Copilot Chat agent mode if it has not started |
+| OpenCode | `opencode.json` | `.agents/skills`, or `.claude/skills` when Claude Code is wired too | None: start `opencode` in the folder |
+| Codex | `.codex/config.toml` | `.agents/skills` | Trust the project when Codex asks (it reads `.codex/config.toml` only in trusted projects), and approve `construct`'s tool calls |
+| IBM Bob | `.bob/mcp.json` | `.bob/skills` | Open the folder in Bob and approve `construct`'s tools |
+
+How each host prompts for these approvals is as its own documentation
+describes; Construct has not exercised every prompt.
 
 ## What the host does with it
 
@@ -106,9 +149,11 @@ Construct keeps them from stepping on each other:
   even if it never called Construct. Neither hook can block
   anything; each always succeeds within a second and a half, says at most one
   short line of facts, and says nothing when anything is missing or broken.
-  Hooks already in the file stay, and `construct hooks uninstall
-  --host=claude-code` puts the file back as it was. Other hosts get a pack
-  once one has been verified against them.
+  Hooks already in the file stay. `construct hooks uninstall
+  --host=claude-code` removes the pack's two hooks and leaves the hooks `init`
+  put in the same file, which stays out of git; with nothing of Construct's
+  left, the file goes back as it was. Other hosts get a pack once one has
+  been verified against them.
 - Claimed work is passed on with a handoff: the holder offers it, with its
   token, and a packet saying where the work stands, what comes next, what to
   watch out for, and what is still open. Whoever accepts gets the claim, a new
@@ -149,34 +194,90 @@ decisions waiting on you, source health, registry lock, drift. `doctor`
 never reports healthy for a missing or broken project, and it says what to
 run next.
 
+`doctor` also checks, for each wired host, that the command its file starts
+can be found from this shell (`host-launch:<host>`), and says whether that
+is the same install as the `construct` you ran. A file that still names an
+absolute path that no longer exists, such as another machine's Node or an
+upgraded one, is reported broken with the `construct init --client=<host>`
+that rewrites it.
+
 ## Supported hosts
 
-Claude Code, Cursor, VS Code, and OpenCode are wired by file (`.mcp.json`,
-`.cursor/mcp.json`, `.vscode/mcp.json`, `opencode.json`). Codex and IBM Bob
-can receive the operational skill but read no project MCP file Construct
-writes; point them at `construct serve --client=codex` or `--client=bob` by
-hand. What was exercised against a real host is recorded in
-[release-verification.md](release-verification.md); anything not listed
-there is untested, not assumed.
+All six hosts are wired by file, with `init --client=<host>`:
+
+| Host | File | How it finds the project |
+|---|---|---|
+| Claude Code | `.mcp.json` | starts the server in the project directory |
+| Cursor | `.cursor/mcp.json` | `--project=${workspaceFolder}` |
+| VS Code | `.vscode/mcp.json` | `cwd` is `${workspaceFolder}` |
+| OpenCode | `opencode.json` | the directory OpenCode starts the server in, which its docs do not state |
+| Codex | `.codex/config.toml` | the directory Codex starts the server in, which its docs do not state |
+| IBM Bob | `.bob/mcp.json` | the directory Bob starts the server in, which its docs do not state |
+
+Codex reads `.codex/config.toml` only in a project you have trusted, and
+Construct sets its tool timeout to 120 seconds so a question Construct shows
+you is not cut off by Codex's 60-second default. Construct edits only its
+own `[mcp_servers.construct]` table there, and refuses a file it cannot
+read safely (multi-line strings, or the server written as a dotted key or
+an inline table) rather than rewrite it. What was exercised against a real
+host is recorded in [release-verification.md](release-verification.md);
+anything not listed there is untested, not assumed.
+
+## What to commit
+
+`.construct/*.json`, the host MCP files above, and the project skill
+directories `init` plants carry no machine paths, so they are safe to commit.
+Each teammate needs Construct on their PATH (`npm
+install -g @geraldmaron/construct@alpha`) or as a project dependency.
+`.construct/state/`, which holds the hooks' launcher, stays on this machine
+and is ignored. So does `.claude/settings.local.json`, where `init` puts the
+Claude Code hooks: `init` adds it to the repository's `.git/info/exclude`
+when nothing ignores it yet, and leaves the file alone, saying so, when git
+already tracks it. A git worktree has its own `.claude/settings.local.json`,
+which `init` does not write, so Claude Code sessions in a worktree run
+without these hooks.
+
+To have a host start a particular build instead, give it a server named
+`construct` at a scope that outranks the project file. In Claude Code that
+is local scope: `claude mcp add --scope local --transport stdio construct --
+node /path/to/construct/bin/construct.mjs serve --client=claude-code`.
 
 ## Hooks: habits that do not depend on the model
 
-With `--client=claude-code`, init also adds three hooks to
-`.claude/settings.json` (additively; other hooks are kept, and a settings
-file that is not valid JSON is left alone). After each tool call,
-`construct hook post-tool` records Jira issues a tool returned from a
-declared project as a host read, so reporting reads is automatic. When the
-host is about to stop, `construct hook stop` sends it back once if its reply
-named project facts (a declared ticket key, a file, a source) without
+With Claude Code, `init` also adds three hooks to the checkout's
+`.claude/settings.local.json`, Claude Code's settings for this machine only
+(additively; other hooks are kept, and a settings file that is not valid
+JSON is left alone). After each tool call, `construct hook post-tool`
+records Jira issues that a Jira or Atlassian connector tool returned from a
+declared project as a host read, so reporting reads is automatic. Each issue
+is kept as readable text, with its browse address and the tool that carried
+it. Jira-shaped text in any other tool's response (a wiki page, a web fetch,
+a chat message) is that tool's content and is not recorded. When the host is
+about to stop, `construct hook stop` sends it back once if its reply named
+project facts (a declared ticket key, a file, a source) without
 `check_answer` or a gated step; `policy.answerCheck` set to off turns that
-off. At session start, `construct hook session-start` adds a short note of
-what waits. Every hook exits 0 and never blocks a session on its own
-failure. `construct doctor` reports whether the hooks are installed, and
+off. At session start, `construct hook session-start` adds one line telling
+the host to report its own reading of any work you ask for with
+`classify_request`, then a short note of the decisions about runs that wait
+on you, which sources it should report, and the setup questions to offer
+after your request.
+
+Each hook finds Node and Construct through the launcher file in
+`.construct/state/`, never through PATH, so the hooks keep working after a
+Node upgrade and name nothing a teammate's machine lacks. The server
+repoints the launcher at the install that serves the project. Every hook
+exits 0 and never blocks a session on its own failure, and
+`CONSTRUCT_HOOKS=off` silences them. Re-running `init` rewrites a hook that
+differs from what it writes now, and moves hooks an earlier release put in
+the shared `.claude/settings.json` out of it, leaving your own hooks there.
+`construct doctor` reports whether the hooks are installed, and fails when
+they are stale: old ones still in `.claude/settings.json`, an entry that
+differs, or a launcher that names a Node or Construct that is gone.
 `construct status` shows over the last week how many answers were checked,
 how many unchecked ones were caught, how many host reads were recorded, and
 how many checks were waived.
 
-Hosts without hooks still get the server-side floor: under
-`policy.hostReads` set to require (the default), a citation into a source
-only the host can read does not resolve until a read of that source has
-been recorded.
+Construct installs hooks only in Claude Code. In every host, the
+server-side floor still holds: under `policy.hostReads` set to require (the
+default), a citation into a source only the host can read does not resolve
+until a read of that item has been recorded.

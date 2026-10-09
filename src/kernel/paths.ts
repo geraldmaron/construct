@@ -22,6 +22,7 @@ export interface PathsEnv {
   XDG_CACHE_HOME?: string;
   HOME?: string;
   CLAUDE_CONFIG_DIR?: string;
+  CODEX_HOME?: string;
 }
 
 const APP = 'construct';
@@ -97,10 +98,12 @@ export function resolveScheduleDir(
  * `resolveSkillsDir` above, and `resolveHostSkillsDir` defers to it rather
  * than duplicating the path.
  *
- * codex reads `~/.agents/skills`, which is not a path of its own: cursor and
- * opencode document reading that same directory, so an install there reaches
- * three hosts at once. Reaching them by one name is a separate decision this
- * table does not make; what it records is where each host says it looks.
+ * codex reads `~/.agents/skills`, which is not a path of its own: cursor,
+ * opencode, and vscode document reading that same directory, so an install
+ * there reaches four hosts at once. vscode also reads `~/.claude/skills`
+ * beside its own `~/.copilot/skills`. Reaching them by one name is a separate
+ * decision this table does not make; what it records is where each host says
+ * it looks.
  */
 const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   // https://bob.ibm.com/docs/ide/features/skills — checked 2026-08-24
@@ -111,6 +114,8 @@ const OTHER_HOST_SKILLS_PATH: Record<string, readonly string[]> = {
   cursor: ['.cursor', 'skills'],
   // https://learn.chatgpt.com/docs/build-skills — checked 2026-08-24
   codex: ['.agents', 'skills'],
+  // https://code.visualstudio.com/docs/agent-customization/agent-skills — checked 2026-10-08
+  vscode: ['.copilot', 'skills'],
 };
 
 /** Every host name `--host` accepts, `claude` included, in a stable order. */
@@ -142,6 +147,32 @@ export function resolveClaudeConfigDir(
 ): string {
   const configured = env.CLAUDE_CONFIG_DIR;
   return configured && configured.trim() ? configured : join(home, '.claude');
+}
+
+/** The agent hosts whose per-user configuration directories `resolveHostConfigDirs` names. */
+export type ConfigHostName = 'claude-code' | 'cursor' | 'vscode' | 'opencode' | 'codex' | 'bob';
+
+/**
+ * Where each agent host keeps its per-user configuration. A directory that
+ * exists is evidence the host has run on this machine, which is how setup
+ * finds a host whose command is not on this shell's PATH (an editor started
+ * from the desktop). Read here for the same reason as every home-rooted path.
+ * Codex honors CODEX_HOME, Claude Code CLAUDE_CONFIG_DIR, and OpenCode
+ * XDG_CONFIG_HOME.
+ */
+export function resolveHostConfigDirs(
+  env: PathsEnv = process.env,
+  home: string = xdgBase(env.HOME, homedir()),
+): Readonly<Record<ConfigHostName, readonly string[]>> {
+  const codexHome = env.CODEX_HOME;
+  return {
+    'claude-code': [resolveClaudeConfigDir(env, home)],
+    cursor: [join(home, '.cursor')],
+    vscode: [join(home, '.vscode'), join(home, '.vscode-insiders')],
+    opencode: [join(xdgBase(env.XDG_CONFIG_HOME, join(home, '.config')), 'opencode')],
+    codex: [codexHome && codexHome.trim() ? codexHome : join(home, '.codex')],
+    bob: [join(home, '.bob')],
+  };
 }
 
 /** Where an administrator's managed Claude Code settings live on this platform, if anywhere. */

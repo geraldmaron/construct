@@ -3,6 +3,8 @@ import { closed, list, num, str, ToolInputError, type ToolDefinition } from './d
 import { asPeerData } from '../work/handoff.ts';
 import { EXECUTORS, type Assignment, type Disposition } from '../delegation/types.ts';
 
+const DISPOSITION_FIELDS: readonly string[] = ['findingId', 'decision', 'rationale'];
+
 type Input = { readonly action: string; readonly id?: string; readonly assignment?: Assignment; readonly dispositions?: readonly Disposition[] };
 
 export const delegate: ToolDefinition<BrokerContext, Input, unknown> = {
@@ -40,11 +42,12 @@ export const delegate: ToolDefinition<BrokerContext, Input, unknown> = {
     const permitted = action === 'start'
       ? ['action', 'workId', 'requestKey', 'executor', 'role', 'instructions', 'acceptance', 'paths', 'couplingKeys', 'timeoutMs', 'runId', 'subject', 'repairOf']
       : action === 'triage' ? ['action', 'id', 'dispositions'] : ['action', 'id'];
-    if (Object.keys(raw).some(key => !permitted.includes(key))) throw new ToolInputError('input does not apply to this delegate action');
+    const stray = Object.keys(raw).find(key => !permitted.includes(key));
+    if (stray !== undefined) throw new ToolInputError(`"${stray}" does not apply to the ${action} action`, { field: stray, allowed: permitted });
     if (action === 'start') {
       const strings = (key: string): string[] => {
         const values = list(raw, key);
-        if (values.some(value => typeof value !== 'string')) throw new ToolInputError(`${key} must contain strings`);
+        if (values.some(value => typeof value !== 'string')) throw new ToolInputError(`"${key}" must contain strings`, { field: key });
         return values as string[];
       };
       return { action, assignment: {
@@ -57,9 +60,10 @@ export const delegate: ToolDefinition<BrokerContext, Input, unknown> = {
     const id = str(raw, 'id', { optional: action === 'status' });
     if (action !== 'triage') return { action, id };
     const dispositions = list(raw, 'dispositions').map(value => {
-      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ToolInputError('invalid disposition');
+      if (!value || typeof value !== 'object' || Array.isArray(value)) throw new ToolInputError('"dispositions" holds one {findingId, decision, rationale} object per finding', { field: 'dispositions' });
       const entry = value as Record<string, unknown>;
-      if (Object.keys(entry).some(key => !['findingId', 'decision', 'rationale'].includes(key))) throw new ToolInputError('unknown disposition field');
+      const strayField = Object.keys(entry).find(key => !DISPOSITION_FIELDS.includes(key));
+      if (strayField !== undefined) throw new ToolInputError(`"${strayField}" is not a disposition field`, { field: 'dispositions', allowed: DISPOSITION_FIELDS });
       return { findingId: str(entry, 'findingId')!, decision: str(entry, 'decision', { oneOf: ['accepted', 'rejected', 'deferred'] })! as Disposition['decision'], rationale: str(entry, 'rationale')! };
     });
     return { action, id, dispositions };

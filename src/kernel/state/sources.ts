@@ -170,6 +170,8 @@ export function addSource(store: StateStore, input: AddSourceInput): Source {
 }
 
 export interface UpdateSourceInput {
+  /** A local source the committed file now declares becomes declared. */
+  readonly origin?: SourceOrigin;
   readonly purpose?: string;
   readonly locator?: string | null;
   readonly authorityLevel?: AuthorityLevel;
@@ -186,6 +188,7 @@ export function updateSource(store: StateStore, id: string, patch: UpdateSourceI
   requireInstant(at, 'source.at');
   if (patch.authorityLevel !== undefined) requireOneOf(patch.authorityLevel, AUTHORITY_LEVELS, 'source.authorityLevel');
   if (patch.sensitivity !== undefined) requireOneOf(patch.sensitivity, SENSITIVITIES, 'source.sensitivity');
+  if (patch.origin !== undefined) requireOneOf(patch.origin, SOURCE_ORIGINS, 'source.origin');
   if (patch.freshnessHours !== undefined && patch.freshnessHours !== null && !(patch.freshnessHours > 0)) {
     throw new Error('source.freshnessHours must be a positive number of hours');
   }
@@ -194,11 +197,12 @@ export function updateSource(store: StateStore, id: string, patch: UpdateSourceI
     if (!current) throw new Error(`no source ${id}`);
     store.db
       .prepare(
-        `UPDATE sources SET purpose = ?, locator = ?, authority_level = ?, freshness_hours = ?, sensitivity = ?,
+        `UPDATE sources SET origin = ?, purpose = ?, locator = ?, authority_level = ?, freshness_hours = ?, sensitivity = ?,
                 retention = ?, can_read = ?, can_write = ?, identity_mapping_json = ?, updated_at = ?
           WHERE id = ?`,
       )
       .run(
+        patch.origin ?? current.origin,
         patch.purpose ?? current.purpose,
         patch.locator === undefined ? current.locator : patch.locator,
         patch.authorityLevel ?? current.authorityLevel,

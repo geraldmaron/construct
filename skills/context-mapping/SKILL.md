@@ -4,14 +4,13 @@ description: >-
   Maps an unfamiliar system before anyone acts in it: the parts, who owns
   what, what depends on what, the boundaries, and the unknowns, each with
   how it was observed. Use when the person says things like: I just
-  inherited this; new job and they handed me the repo; where do I even
-  start; before I touch this I want to know what breaks; who actually owns
-  this; we took over a vendor's integration; what reads this output. Not
-  when the person already knows the ground, or for a one-line change whose
-  neighbours do not matter.
+  inherited this; where do I even start; before I touch this I want to know
+  what breaks; who actually owns this; we took over a vendor's integration;
+  what reads this output. Not when the person already knows the ground, or
+  for a one-line change whose neighbours do not matter.
 license: Apache-2.0
 metadata:
-  version: 0.4.0
+  version: 0.4.1
   source: geraldmaron/construct
 ---
 

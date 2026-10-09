@@ -55,6 +55,14 @@ reason with a remedy: a missing source, a stale one, a capability the host
 does not provide, a skill version out of range, a diverged lock. Clear the
 reason and `construct run resume <id>`.
 
+Starting the same work again settles a blocked run too. With the same input,
+the blocked run is checked again where it stands and goes ahead once nothing
+blocks it. With corrected input, including an input it left out, a new run
+starts and the blocked one is cancelled, its reason naming the run that
+replaced it. A blocked run of other work, such as one that names a different
+target, is left alone; `construct run cancel <id>` retires it. A claim on a
+blocked run returns its reasons and what would clear each one.
+
 ## Registry skew
 
 `status` and `doctor` report bundles that are outdated, diverged, missing, or
@@ -63,9 +71,14 @@ bundle that changed is locked only when you name it with `--confirm`.
 
 ## The host does not see Construct
 
-`construct doctor` reports host wiring. `construct init --client=<host>`
-writes the host's project MCP file; `construct serve --client=<host>
---describe` prints what the server would serve without starting it.
+`construct doctor` reports host wiring, and fails when no host is wired.
+`construct init --client=<host>` writes the host's project MCP file and plants
+the operational skill where that host reads it; `construct serve
+--client=<host> --describe` prints what the server would serve without
+starting it. A host needs its one-time step before it sees Construct: in
+Claude Code, a new session and approving the `construct` server
+(`claude mcp get construct` shows whether it is pending, approved, or
+rejected).
 
 ## Something ran that should not have
 

@@ -20,8 +20,8 @@ const work = TOOLS.find((t) => t.name === 'work')!;
 const call = (ctx: BrokerContext, args: Record<string, unknown>): unknown => work.run(ctx, work.validate(record(args)));
 const remember = TOOLS.find((t) => t.name === 'remember')!;
 /** A remembered outcome: the reason a session's work is admitted. */
-const reasonFor = (ctx: BrokerContext, text = 'The parser ships'): string =>
-  (remember.run(ctx, remember.validate(record({ kind: 'outcome', text }))) as { remembered: { id: string } }).remembered.id;
+const reasonFor = async (ctx: BrokerContext, text = 'The parser ships'): Promise<string> =>
+  ((await remember.run(ctx, remember.validate(record({ kind: 'outcome', text })))) as { remembered: { id: string } }).remembered.id;
 
 function peer(fx: BrokerFixture, sessionId: string): BrokerContext {
   const b = fx.broker;
@@ -30,12 +30,12 @@ function peer(fx: BrokerFixture, sessionId: string): BrokerContext {
 
 const count = (ctx: BrokerContext, sql: string): number => (ctx.store.db.prepare(sql).get() as { n: number }).n;
 
-test('a session hands work to another: the packet arrives as data, the acceptor holds the work, and nothing in it approves anything', () => {
+test('a session hands work to another: the packet arrives as data, the acceptor holds the work, and nothing in it approves anything', async () => {
   const fx = brokerFixture();
   try {
     const a = fx.broker;
     const b = peer(fx, 'ses_b');
-    const added = call(a, { action: 'add', serves: reasonFor(a), title: 'finish the parser' }) as { id: string };
+    const added = call(a, { action: 'add', serves: await reasonFor(a), title: 'finish the parser' }) as { id: string };
     const held = call(a, { action: 'claim', id: added.id, paths: ['src/parser/'] }) as { claimToken: string };
     const grants = count(a, 'SELECT COUNT(*) AS n FROM grants');
     const resolved = count(a, `SELECT COUNT(*) AS n FROM decisions WHERE state != 'open'`);
@@ -71,7 +71,7 @@ test('a session hands work to another: the packet arrives as data, the acceptor 
   }
 });
 
-test('a session files work with its structure: unrooted work is proposed, a parent admits it, and update and show carry the detail', () => {
+test('a session files work with its structure: unrooted work is proposed, a parent admits it, and update and show carry the detail', async () => {
   const fx = brokerFixture();
   try {
     const a = fx.broker;
@@ -83,7 +83,7 @@ test('a session files work with its structure: unrooted work is proposed, a pare
 
     const unrootedOutcome = call(a, { action: 'add', kind: 'outcome', title: 'a session’s own outcome' }) as { status: string };
     assert.equal(unrootedOutcome.status, 'proposed', 'a session’s outcome needs a reason too');
-    const outcome = call(a, { action: 'add', kind: 'outcome', title: 'a faster parser', serves: reasonFor(a, 'A faster parser') }) as { id: string };
+    const outcome = call(a, { action: 'add', kind: 'outcome', title: 'a faster parser', serves: await reasonFor(a, 'A faster parser') }) as { id: string };
     const task = call(a, {
       action: 'add',
       title: 'cache the grammar',

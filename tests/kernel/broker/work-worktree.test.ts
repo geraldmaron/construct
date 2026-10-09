@@ -26,11 +26,9 @@ import { createContext, openProject, projectWorktrees, type CliContext } from '.
 import { initializeProject } from '../../../src/kernel/project/initialize.ts';
 import { registerSession } from '../../../src/kernel/state/sessions.ts';
 import { whereHeld, type Overlap, type PathLease } from '../../../src/kernel/work/leases.ts';
-import { UnknownWorktreeError } from '../../../src/kernel/work/lanes.ts';
 import type { BrokerContext } from '../../../src/kernel/broker/context.ts';
 
 const work = TOOLS.find((t) => t.name === 'work')!;
-const remember = TOOLS.find((t) => t.name === 'remember')!;
 const call = (ctx: BrokerContext, args: Record<string, unknown>): unknown => work.run(ctx, work.validate(record(args)));
 
 interface Claimed {
@@ -112,7 +110,7 @@ function repo(): Repo {
   let reason: string | null = null;
   const item = (title: string): string => {
     lead ??= session(main, 'ses_lead');
-    reason ??= (remember.run(lead, remember.validate(record({ kind: 'outcome', text: 'The parser ships' }))) as { remembered: { id: string } }).remembered.id;
+    reason ??= lead.workflow.remember({ kind: 'outcome', text: 'The parser ships', by: lead.actor, channel: 'relay' }).id;
     return (call(lead, { action: 'add', serves: reason, title }) as { id: string }).id;
   };
   return {
@@ -256,8 +254,9 @@ test('a path that is not a worktree of this project is refused with the ones tha
       assert.throws(
         () => call(lead, { action: 'claim', id, worktree: named, paths: ['src/lexer.ts'] }),
         (e: unknown) => {
-          assert.ok(e instanceof UnknownWorktreeError, String(e));
-          assert.deepEqual(e.valid.map((w) => w.checkout), [r.main, r.two, r.one]);
+          assert.ok(e instanceof ToolInputError, String(e));
+          assert.equal(e.field, 'worktree');
+          assert.deepEqual(e.allowed, [r.main, r.two, r.one]);
           assert.match(e.message, /is not a git worktree of this project; name one of: /);
           assert.ok(e.message.includes(`${r.one} (a worktree, on feat/one)`), e.message);
           assert.ok(e.message.includes(`${r.main} (the main checkout, on main)`), e.message);
@@ -266,13 +265,13 @@ test('a path that is not a worktree of this project is refused with the ones tha
       );
     }
     assert.equal((call(lead, { action: 'show', id }) as { status: string; leases: unknown[] }).status, 'open', 'the refused claim left the item open');
-    assert.throws(() => call(lead, { action: 'check', worktree: outside, paths: ['src/lexer.ts'] }), UnknownWorktreeError, 'check is held to the same list');
+    assert.throws(() => call(lead, { action: 'check', worktree: outside, paths: ['src/lexer.ts'] }), ToolInputError, 'check is held to the same list');
     assert.throws(() => work.validate(record({ action: 'claim', id, worktree: '.claude/worktrees/one' })), ToolInputError, 'a relative path names nothing');
     assert.throws(() => work.validate(record({ action: 'claim', id, worktree: `${r.one}\u0007` })), ToolInputError);
 
     rmSync(r.two, { recursive: true, force: true });
     assert.deepEqual(projectWorktrees(r.main).map((w) => w.checkout), [r.main, r.one], 'a worktree whose directory is gone is no longer one to name');
-    assert.throws(() => call(lead, { action: 'claim', id, worktree: r.two, paths: ['src/lexer.ts'] }), UnknownWorktreeError);
+    assert.throws(() => call(lead, { action: 'claim', id, worktree: r.two, paths: ['src/lexer.ts'] }), ToolInputError);
   } finally {
     r.cleanup();
   }

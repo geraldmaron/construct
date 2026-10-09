@@ -35,6 +35,8 @@ import type { ReadOutcome, SnapshotReport, SourceReader } from './connector.ts';
 import { currentManifest, describeChanges, diffManifests, toManifest, type ItemChanges } from './manifest.ts';
 import { projectResolver } from './resolver.ts';
 import { flagStaleDeliverables } from '../drift/deliverables.ts';
+import { redact } from '../render/redact.ts';
+import { urlProblem } from '../project/urls.ts';
 
 export interface SourceStatus {
   readonly source: Source;
@@ -69,6 +71,8 @@ export interface RefreshResult {
   readonly changes?: ItemChanges;
   /** Drift findings opened because finished work drew on what changed. */
   readonly staleDeliverables?: readonly string[];
+  /** Reported items whose kept text was cut at the cap, so a quote or figure past the cut cannot be checked. */
+  readonly truncated?: readonly string[];
 }
 
 /** Text kept per reported item, enough to check quotes and figures against. */
@@ -80,8 +84,12 @@ export interface HostReportItem {
   readonly kind?: string;
   /** The system's own last-modified time, when it gives one. */
   readonly updatedAt?: string;
-  /** What the host read; kept (capped) so excerpts and figures can be checked against it. */
+  /** What the host read; kept (credentials removed, capped) so excerpts and figures can be checked against it. */
   readonly text?: string;
+  /** The http(s) address a person would open for this item; a citation of it means this item. */
+  readonly url?: string;
+  /** The host tool whose response carried this item, when a hook recorded it rather than the host reporting it. */
+  readonly via?: string;
   readonly fingerprint?: string;
   /**
    * Seen in passing (a search hit, a link) rather than read as a version: it adds the item when it is new and
@@ -96,7 +104,11 @@ export interface HostReport {
 }
 
 export interface SourceService {
-  /** Reconcile committed declarations into state. Local sources are untouched. */
+  /**
+   * Reconcile committed declarations into state. A local source is untouched unless the committed file declares
+   * the same id with the same kind: then it becomes declared, takes the committed declaration, and keeps what was
+   * read from it.
+   */
   syncDeclarations(file: SourcesFile, at: string): SyncResult;
   /** Add a source only this checkout knows about; its locator never reaches a committed file. */
   addLocal(input: Omit<DeclaredSource, 'read' | 'write'> & { readonly read?: boolean; readonly write?: boolean }, at: string): Source;
@@ -244,8 +256,10 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       });
       markPremisesStale(store, id, at);
       if (changes && !firstRead && deps.root) {
-        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence, partial });
-        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root }).map((f) => f.id);
+        // Which finished work drew on this source is a question of what it cited, not of the citation policy, so
+        // a citation admitted on the host's word still counts as drawing on it.
+        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence }, { hostReads: 'accept' });
+        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root, previous: before }).map((f) => f.id);
       }
     }
     return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
@@ -259,16 +273,22 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
         const retired: string[] = [];
         const declaredIds = new Set(file.sources.map((s) => s.id));
         for (const d of file.sources) {
-          const existing = getSource(store, d.id);
-          if (existing && existing.origin === 'local') {
-            throw new Error(`source ${d.id} exists locally; remove the local one before declaring it in the committed file`);
+          let existing = getSource(store, d.id);
+          let committedLocal = false;
+          if (existing && existing.origin === 'local' && existing.status === 'active') {
+            if (existing.kind !== d.kind) {
+              throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
+            }
+            existing = updateSource(store, d.id, { origin: 'declared' }, at);
+            committedLocal = true;
           }
           if (existing && existing.status === 'retired') {
             throw new Error(`source ${d.id} was retired; declare it under a new id`);
           }
           const result = declare(d, at, existing);
           if (result === 'added') added.push(d.id);
-          if (result === 'updated') updated.push(d.id);
+          // A local source the file now declares has changed origin, so it counts as updated even when nothing else differs.
+          if (result === 'updated' || committedLocal) updated.push(d.id);
         }
         for (const s of listSources(store, { status: 'active' })) {
           if (s.origin === 'declared' && !declaredIds.has(s.id)) {
@@ -338,27 +358,45 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
       // Items whose fingerprint moves only because the basis did (an unversioned or passing sighting now read with a
       // version), not because the item changed; the read records them without calling them modified.
       const rebased = new Set<string>();
+      const cut: string[] = [];
       const reported = report.items.flatMap((i) => {
+        // Versions are judged on what the host read, so a fingerprint means the same thing whatever is kept.
         const text = typeof i.text === 'string' ? i.text.slice(0, REPORTED_TEXT_CAP) : undefined;
         const was = prior.get(i.ref);
         if (i.weak && was) return [];
         // The system's own last-updated time is the version when it is given; otherwise what was read is.
         const fingerprint = i.fingerprint ?? (i.updatedAt ? createHash('sha256').update(`${i.ref}\t${i.updatedAt}`).digest('hex') : contentHash(i.ref, text, i.title));
         if (was && !was.updatedAt && i.updatedAt && (was.weak || was.fingerprint === contentHash(i.ref, text, i.title))) rebased.add(i.ref);
-        // The same version seen again through a thinner view keeps the fuller text recorded before.
-        const keepText = was && was.fingerprint === fingerprint && (was.text?.length ?? 0) > (text?.length ?? 0) ? was.text : text;
-        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title ?? i.ref, attributes: { fingerprint, ...(keepText !== undefined ? { text: keepText } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
+        // What is kept is what was read with credentials removed, then capped; truncated says the cut happened. The cut
+        // text is cleaned once more, so text kept from one report to the next reads the same when it is cleaned again.
+        const clean = typeof i.text === 'string' ? redact(i.text) : undefined;
+        const stored = clean === undefined ? undefined : redact(clean.slice(0, REPORTED_TEXT_CAP));
+        // The same version seen again through a thinner view keeps the fuller text recorded before, and where it came
+        // from. Text carried forward is kept without credentials too, whenever it was recorded.
+        const wasText = was?.text !== undefined ? redact(was.text) : undefined;
+        const keepWas = was !== undefined && was.fingerprint === fingerprint && (wasText?.length ?? 0) > (stored?.length ?? 0);
+        const keptText = keepWas ? wasText : stored;
+        const truncated = keepWas ? was.truncated === true : clean !== undefined && clean.length > REPORTED_TEXT_CAP;
+        const via = keepWas ? was.via : i.via;
+        if (i.url !== undefined) {
+          const problem = urlProblem(i.url);
+          if (problem) throw new Error(`item ${i.ref}: url ${problem}`);
+        }
+        const url = i.url?.trim() ?? was?.url;
+        if (truncated) cut.push(i.ref);
+        return [{ externalRef: i.ref, kind: i.kind ?? 'item', name: i.title !== undefined ? redact(i.title) : i.ref, attributes: { fingerprint, ...(keptText !== undefined ? { text: keptText } : {}), ...(url ? { url } : {}), ...(truncated ? { truncated: true } : {}), ...(via ? { via } : {}), ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}), ...(i.weak ? { weak: true } : {}) } }];
       });
       // A partial read updates what it saw and keeps the rest; a complete read replaces the manifest.
       const before = report.partial ? [...prior.values()] : [];
       const seen = new Set(reported.map((r) => r.externalRef));
-      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: e.text } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
+      const kept = before.filter((e) => !seen.has(e.ref)).map((e) => ({ externalRef: e.ref, kind: e.kind, name: e.ref, attributes: { fingerprint: e.fingerprint, ...(e.text !== undefined ? { text: redact(e.text) } : {}), ...(e.url ? { url: e.url } : {}), ...(e.truncated ? { truncated: true } : {}), ...(e.via ? { via: e.via } : {}), ...(e.updatedAt ? { updatedAt: e.updatedAt } : {}), ...(e.weak ? { weak: true } : {}) } }));
       const items = [...kept, ...reported].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-      // The digest covers what was kept, not only versions, so fuller text for the same version is recorded; item
-      // changes are still judged by fingerprint, so that recording opens no drift.
-      const digest = `sha256:${createHash('sha256').update(items.map((i) => `${i.externalRef}\t${String(i.attributes.fingerprint)}\t${createHash('sha256').update(String((i.attributes as { text?: string }).text ?? '')).digest('hex')}`).join('\n')).digest('hex')}`;
+      // The digest covers what was kept, not only versions, so fuller text or an address for the same version is
+      // recorded; item changes are still judged by fingerprint, so that recording opens no drift.
+      const digest = `sha256:${createHash('sha256').update(items.map((i) => { const a = i.attributes as { fingerprint: string; text?: string; url?: string }; return `${i.externalRef}\t${a.fingerprint}\t${createHash('sha256').update(a.text ?? '').digest('hex')}${a.url ? `\t${a.url}` : ''}`; }).join('\n')).digest('hex')}`;
       setReachability(store, id, 'reachable', at);
-      return recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
+      const result = recordRead(id, { digest, summary: `${String(reported.length)} item(s) reported by the host${report.partial ? ' (partial read)' : ''}`, evidenceRef: `host:${id}`, evidence: 'reported', items }, report.partial === true, at, nextId, rebased);
+      return cut.length > 0 ? { ...result, truncated: cut } : result;
     },
     canRead(id) {
       const source = getSource(store, id);

@@ -75,9 +75,10 @@ export class Session {
     return this.request('tools/call', { name, arguments: args });
   }
 
-  /** The tool's structured result, failing the test when the call errored. */
+  /** The tool's structured result, failing the test when the call errored as a tool error or a protocol error. */
   async ok(name: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
     const r = await this.call(name, args);
+    assert.equal(r.error, undefined, `${name} failed: ${JSON.stringify(r.error)}`);
     assert.notEqual(r.result?.isError, true, `${name} failed: ${JSON.stringify(r.result?.structuredContent ?? r.error)}`);
     return r.result?.structuredContent ?? {};
   }

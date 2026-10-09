@@ -7,12 +7,14 @@
  */
 
 import { after } from 'node:test';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Paths } from '../../src/kernel/paths.ts';
 import { AMBIENT_ENV_KEYS as HOST_MARKER_KEYS } from '../../src/hosts/ambient.ts';
 import { IDENTITY_ENV_KEYS } from '../../src/hosts/identity.ts';
+import { findOnPath } from '../../src/hosts/presence.ts';
 
 /** Every variable a host sets that Construct reads: presence markers and session ids. */
 const AMBIENT_ENV_KEYS = [...HOST_MARKER_KEYS, ...IDENTITY_ENV_KEYS] as const;
@@ -93,4 +95,32 @@ export function sterileAmbientEnv(): void {
       else process.env[key] = value;
     }
   });
+}
+
+/** The tools a sterile PATH carries from this machine, each found once on the PATH the suite started with. */
+const SYSTEM_TOOLS = ['git', 'ps', 'sh'] as const;
+let systemTools: ReadonlyMap<string, string> | null = null;
+
+/** This checkout's launcher, which the sterile PATH names `construct`. */
+export const CHECKOUT_LAUNCHER = fileURLToPath(new URL('../../bin/construct.mjs', import.meta.url));
+
+/**
+ * A PATH directory, `<root>/bin`, holding only what a test may run: git, ps,
+ * and sh from this machine, node as the runtime running the suite, and
+ * construct as this checkout's launcher. A test under it never starts a
+ * global install or a host CLI the developer happens to have, and a check
+ * that looks for `construct` on PATH finds this checkout. A test that needs
+ * another binary adds it here rather than inheriting the real PATH.
+ */
+export function sterileBin(root: string): string {
+  systemTools ??= new Map(SYSTEM_TOOLS.flatMap((name) => {
+    const found = findOnPath(name, process.env);
+    return found ? [[name, found] as const] : [];
+  }));
+  const bin = join(root, 'bin');
+  mkdirSync(bin, { recursive: true });
+  for (const [name, target] of systemTools) symlinkSync(target, join(bin, name));
+  symlinkSync(process.execPath, join(bin, 'node'));
+  symlinkSync(CHECKOUT_LAUNCHER, join(bin, 'construct'));
+  return bin;
 }

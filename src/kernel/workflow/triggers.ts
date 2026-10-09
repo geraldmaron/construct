@@ -2,6 +2,10 @@
  * kernel/workflow/triggers.ts — standing outcomes: define a trigger, let an
  * external clock fire it, keep the ledger, and write the recipe the clock
  * needs. Construct owns what happens on a firing; it never owns time.
+ *
+ * A trigger's input is checked when it is defined. A period in it is kept
+ * relative and worked out at each firing's due time in the trigger's own
+ * timezone, so every firing covers its own window.
  */
 
 import type { StateStore } from '../state/open.ts';
@@ -19,6 +23,8 @@ import {
 } from '../state/triggers.ts';
 import { tierAtLeast } from '../policy/lattice.ts';
 import type { WorkflowRegistry } from '../registry/workflow-registry.ts';
+import { inputProblems, type SourceAvailability } from '../registry/resolver.ts';
+import { listSources } from '../state/sources.ts';
 import { isValidTimezone, nextCronAfter, parseCron } from './cron.ts';
 import type { WorkflowService } from './service.ts';
 
@@ -26,6 +32,8 @@ export interface TriggerServiceDeps {
   readonly store: StateStore;
   readonly workflows: WorkflowRegistry;
   readonly workflowService: WorkflowService;
+  /** The declared sources a trigger's input may name; the store's active sources when absent. */
+  readonly sources?: () => readonly SourceAvailability[];
   readonly now: () => string;
   readonly nextId: (prefix: string) => string;
   /** The absolute project root a recipe should cd into. */
@@ -67,6 +75,8 @@ export interface TriggerService {
 export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
   const { store } = deps;
 
+  const sourceIds = (): string[] => (deps.sources ? deps.sources().map((x) => x.id) : listSources(store, { status: 'active' }).map((x) => x.id));
+
   function nextDue(trigger: Trigger, after: string): string | null {
     if (trigger.kind !== 'schedule' || !trigger.scheduleExpression || !trigger.timezone) return null;
     return nextCronAfter(trigger.scheduleExpression, trigger.timezone, after);
@@ -86,6 +96,20 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         throw new Error(`${input.workflowId} has a step at ${highest}; the trigger's permission boundary (${input.maxTier}) is below it`);
       }
       const at = deps.now();
+      const given = (input.input ?? {}) as Record<string, unknown>;
+      // An event carries inputs of its own, so only an event trigger may leave a required input to its payload.
+      const problems = inputProblems(workflow.manifest, given, { at, sourceIds: sourceIds(), timezone: input.timezone ?? 'UTC' })
+        .filter((p) => input.kind !== 'event' || p.code !== 'missing_step_input');
+      if (problems[0]) throw new Error(`${problems[0].message}. ${problems[0].remedy}`);
+      if (input.kind !== 'manual') {
+        for (const [key, type] of Object.entries(workflow.manifest.inputSchema)) {
+          if (type !== 'period' || given[key] === undefined) continue;
+          const p = given[key] as Record<string, unknown>;
+          const fixed = p.relative === undefined && (p.from !== undefined || p.to !== undefined || p.year !== undefined);
+          if (fixed && p.semantics !== 'as_of') throw new Error(`input "${key}" names a fixed window, and a standing trigger fires again and again; give the period as relative (for example last_week) so each firing covers its own window`);
+          if (p.relative !== undefined && (p.from !== undefined || p.to !== undefined)) throw new Error(`input "${key}" gives dates beside ${String(p.relative)}, and a standing trigger fires again and again; give the relative period alone so each firing works out its own dates`);
+        }
+      }
       const id = input.id ?? deps.nextId('trigger');
       const created = createTrigger(store, { ...input, id, at });
       const due = nextDue(created, at);
@@ -109,8 +133,11 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
       const key = firingKey ?? `${triggerId}:${at.slice(0, 16)}`;
       const due = nextDue(trigger, at);
       const input = { ...((trigger.input ?? {}) as Record<string, unknown>), ...(eventPayload ?? {}) };
+      // A firing covers the window of the tick that was due, even when the clock arrives late.
+      const dueAt = trigger.nextDueAt !== null && trigger.nextDueAt <= at ? trigger.nextDueAt : at;
+      const clock = { periodAt: dueAt, timezone: trigger.timezone ?? 'UTC' };
       if (dryRun) {
-        const { preflight } = deps.workflowService.preflight(trigger.workflowId, input);
+        const { preflight } = deps.workflowService.preflight(trigger.workflowId, input, clock);
         return { firing: null, outcome: 'dry_run', runId: null, reason: preflight.summary, nextDueAt: due };
       }
       return store.transaction(() => {
@@ -133,7 +160,7 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
         if (active && trigger.overlap === 'replace') {
           deps.workflowService.cancel({ runId: active.id, by: `trigger:${triggerId}`, reason: 'replaced by a newer firing' });
         }
-        const started = deps.workflowService.start({ workflowId: trigger.workflowId, input, trigger: trigger.kind === 'event' ? 'event' : 'schedule', idempotencyKey: `${trigger.workflowId}:firing:${key}`, executorKind: 'headless' });
+        const started = deps.workflowService.start({ workflowId: trigger.workflowId, input, trigger: trigger.kind === 'event' ? 'event' : 'schedule', idempotencyKey: `${trigger.workflowId}:firing:${key}`, executorKind: 'headless', ...clock, firing: { triggerId, dueAt } });
         if (started.run.state === 'blocked') return finish('blocked', started.run.id, started.preflight.summary);
         return finish(active && trigger.overlap === 'replace' ? 'replaced' : 'started', started.run.id, started.preflight.summary);
       });

@@ -123,7 +123,7 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
   },
   {
     key: 'policy.hostReads',
-    description: 'Citing a source only the host can read: require that the host reported what it read at least once, or accept the citation on the host\'s word.',
+    description: 'Citing what only the host can read (a tracker, a wiki, a web page): require that a read of that item was recorded (sources report) before it can be cited, or accept an unrecorded citation on the host\'s word, counted as unverified.',
     settableBy: ['project config', 'environment'],
     envVar: 'CONSTRUCT_HOST_READS',
     fallback: 'require',

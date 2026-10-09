@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import { accessSync, constants, existsSync, readFileSync } from 'node:fs';
-import { delimiter, isAbsolute, join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import type { Executor, ExecutorStatus, Role, WorkerResult, Finding } from '../../kernel/delegation/types.ts';
 import { safeEnvironment } from './workspace.ts';
+import { findOnPath } from '../presence.ts';
 
 export interface ExecutorConfig {
   readonly binary: string;
@@ -22,6 +23,11 @@ export interface DelegationConfig {
 
 const EMPTY: DelegationConfig = { executors: {}, maxWorkers: 2, maxRepairCycles: 2, maxTimeoutMs: 20 * 60_000, validation: [] };
 const API_ENV = /^(?:OPENAI_API_KEY|OPENAI_BASE_URL|CODEX_API_KEY|ANTHROPIC_API_KEY|ANTHROPIC_AUTH_TOKEN|ANTHROPIC_BASE_URL|CURSOR_API_KEY|CLAUDE_CODE_USE_BEDROCK|CLAUDE_CODE_USE_VERTEX|CLAUDE_CODE_USE_FOUNDRY)$/;
+
+/** True when the environment carries an API key or a provider override, so a host CLI would not run on the person's subscription. */
+export function apiEnvironmentPresent(env: NodeJS.ProcessEnv): boolean {
+  return Object.keys(env).some(key => API_ENV.test(key) && Boolean(env[key]));
+}
 
 export function loadDelegationConfig(configDir: string): DelegationConfig {
   const path = join(configDir, 'delegation.json');
@@ -52,9 +58,8 @@ export function commandFor(executor: Executor, model: string, _role: Role, direc
 }
 
 export function installedBinary(executor: Executor, configured: ExecutorConfig | undefined, env: NodeJS.ProcessEnv): string | null {
-  const name = executor === 'cursor' ? 'agent' : executor;
-  const candidates = configured ? [configured.binary] : (env.PATH ?? '').split(delimiter).filter(Boolean).map(directory => join(directory, name));
-  return candidates.find(path => { try { accessSync(path, constants.X_OK); return true; } catch { return false; } }) ?? null;
+  if (!configured) return findOnPath(executor === 'cursor' ? 'agent' : executor, env);
+  try { accessSync(configured.binary, constants.X_OK); return configured.binary; } catch { return null; }
 }
 
 function probe(binary: string, args: string[], env: NodeJS.ProcessEnv): Promise<string | null> {
@@ -81,7 +86,7 @@ export async function executorStatus(executor: Executor, role: Role, config: Del
   const binary = installedBinary(executor, configured, env);
   const base = { executor, installed: binary !== null, configured: configured?.enabled === true, authenticated: 'unknown' as const, liveVerified: false, model: configured?.model ?? null };
   if (!binary || !configured?.enabled) return { ...base, reason: binary ? 'not explicitly enabled by the person' : 'CLI not installed at the configured path' };
-  if (Object.keys(env).some(key => API_ENV.test(key) && env[key])) return { ...base, authenticated: 'api', reason: 'API authentication or provider environment present; no subscription fallback attempted' };
+  if (apiEnvironmentPresent(env)) return { ...base, authenticated: 'api', reason: 'API authentication or provider environment present; no subscription fallback attempted' };
   const auth = authentication(executor, await probe(binary, executor === 'claude' ? ['auth', 'status', '--json'] : executor === 'codex' ? ['login', 'status'] : ['status', '--format', 'json'], env));
   if (auth !== 'subscription') return { ...base, authenticated: auth, reason: 'subscription-only authentication could not be proved' };
   try {

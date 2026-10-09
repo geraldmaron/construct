@@ -6,14 +6,18 @@
  * kind jira with locator PROJ reads <dir>/PROJ.json, which holds either a
  * list of issues or an object with an "issues" list; each issue needs a
  * "key". Every issue becomes an item whose reference is its key, so a step
- * can cite PLAT-101 and have it resolve. Reports are marked "reported", not
- * "witnessed": a fixture says what a tracker would have said, it is not one.
+ * can cite PLAT-101 and have it resolve. Its text is kept the way the hook
+ * keeps a connector's: readable, credentials removed, capped, and marked
+ * when cut. Reports are marked "reported", not "witnessed": a fixture says
+ * what a tracker would have said, it is not one.
  */
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
+import { redact } from '../../kernel/render/redact.ts';
+import { issueUrl, readableText } from '../hooks/handlers.ts';
 
 export const JIRA_FIXTURES_ENV = 'CONSTRUCT_JIRA_FIXTURES';
 /** Text kept per issue so numbers and wording can be checked against it. */
@@ -48,12 +52,15 @@ export function createJiraFixtureReader(dir: string): SourceReader {
     }
     const items: SnapshotItem[] = issues
       .map((issue) => {
-        const text = JSON.stringify(issue);
+        const key = String(issue.key);
+        const text = redact(readableText(issue));
+        const url = issueUrl(issue, key);
         return {
-          externalRef: String(issue.key),
+          externalRef: key,
           kind: 'work_item',
-          name: titleOf(issue),
-          attributes: { fingerprint: createHash('sha256').update(text).digest('hex'), text: text.slice(0, FIXTURE_TEXT_CAP) },
+          name: redact(titleOf(issue)),
+          // The version is the whole issue as exported; what is kept is what a person would read in it.
+          attributes: { fingerprint: createHash('sha256').update(JSON.stringify(issue)).digest('hex'), text: text.slice(0, FIXTURE_TEXT_CAP), ...(text.length > FIXTURE_TEXT_CAP ? { truncated: true } : {}), ...(url ? { url } : {}) },
         };
       })
       .sort((a, b) => a.externalRef.localeCompare(b.externalRef));

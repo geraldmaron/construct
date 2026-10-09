@@ -10,6 +10,9 @@
  * output fits 400 bytes. Installing merges two hooks into the checkout's
  * machine-local settings, keeps the hooks already there, and keeps the file
  * out of git; uninstalling restores the file and the ignore list exactly.
+ * The same file holds the grounding hooks init installs, through one writer:
+ * whichever came first, uninstalling the pack leaves them, and the file stays
+ * out of git.
  */
 
 import { test } from 'node:test';
@@ -180,6 +183,80 @@ test('the pack merges into the checkout’s local settings, stays out of git, an
     assert.equal(refused.status, 1);
     assert.match(refused.err, /not valid JSON, so Construct will not edit it/);
     assert.equal(readFileSync(settings, 'utf8'), '{ not json');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+type Settings = { hooks?: Record<string, { matcher?: string; hooks: { command: string }[] }[]> };
+
+/** The commands in a settings file's hooks, by Claude Code event. */
+function commands(file: string): Record<string, string[]> {
+  const settings = JSON.parse(readFileSync(file, 'utf8')) as Settings;
+  return Object.fromEntries(Object.entries(settings.hooks ?? {}).map(([event, list]) => [event, list.flatMap((e) => e.hooks.map((h) => h.command))]));
+}
+
+const GROUNDING = / hook (?:post-tool|stop|session-start) --client=claude-code /;
+const PACK = / hook claude-code (?:session-start|post-tool-use) /;
+
+/** A git repository with a Construct project and nothing wired. */
+function project(fx: SterileFixture): string {
+  const repo = join(fx.root, 'repo');
+  mkdirSync(repo, { recursive: true });
+  mkdirSync(join(fx.root, 'home'), { recursive: true });
+  assert.equal(run(fx, repo, 'git', ['init', '-q', '-b', 'main']).status, 0);
+  const made = run(fx, repo, process.execPath, [LAUNCHER, 'init', '--no-wire', '--name=shared-file', '--scale=solo']);
+  assert.equal(made.status, 0, made.err);
+  return repo;
+}
+
+test('the pack installed before init: uninstalling it leaves init\'s grounding hooks, and the file stays out of git', { timeout: 60_000 }, () => {
+  const fx = sterile();
+  try {
+    const repo = project(fx);
+    const settings = join(repo, '.claude', 'settings.local.json');
+    assert.equal(run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'install', '--host=claude-code']).status, 0);
+    const wired = run(fx, repo, process.execPath, [LAUNCHER, 'init', '--client=claude-code']);
+    assert.equal(wired.status, 0, wired.err);
+    assert.match(wired.out, /hooks: installed \(\.claude\/settings\.local\.json runs construct hook on PostToolUse, Stop, SessionStart, through Construct's launcher, on this machine only\)/);
+    const both = commands(settings);
+    assert.equal(both.PostToolUse!.filter((c) => GROUNDING.test(c)).length, 1);
+    assert.equal(both.PostToolUse!.filter((c) => PACK.test(c)).length, 1);
+    assert.equal(existsSync(join(repo, '.claude', 'settings.json')), false, 'nothing goes into the shared file');
+    const listed = run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'list']).out;
+    assert.match(listed, /^claude-code grounding hooks {2}intact /m);
+    assert.match(listed, /^claude-code pack {2}intact /m);
+
+    const removed = run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'uninstall', '--host=claude-code']);
+    assert.equal(removed.status, 0, removed.err);
+    assert.match(removed.out, /removed the claude-code hook pack\n.*keeps the grounding hooks, and stays out of git/);
+    const left = commands(settings);
+    assert.deepEqual(Object.keys(left).sort(), ['PostToolUse', 'SessionStart', 'Stop']);
+    assert.ok(Object.values(left).flat().every((c) => GROUNDING.test(c)), 'only the grounding hooks remain');
+    assert.equal(run(fx, repo, 'git', ['check-ignore', '-q', '.claude/settings.local.json']).status, 0, 'still kept out of git');
+  } finally {
+    fx.cleanup();
+  }
+});
+
+test('init before the pack: uninstalling the pack removes only its entries, and the grounding hooks and ignore line remain', { timeout: 60_000 }, () => {
+  const fx = sterile();
+  try {
+    const repo = project(fx);
+    const settings = join(repo, '.claude', 'settings.local.json');
+    const wired = run(fx, repo, process.execPath, [LAUNCHER, 'init', '--client=claude-code']);
+    assert.equal(wired.status, 0, wired.err);
+    const grounding = readFileSync(settings, 'utf8');
+    const exclude = join(repo, '.git', 'info', 'exclude');
+    const ignored = readFileSync(exclude, 'utf8');
+    assert.match(ignored, /\n\/\.claude\/settings\.local\.json\n$/);
+    assert.equal(run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'install', '--host=claude-code']).status, 0);
+    assert.ok(Object.values(commands(settings)).flat().some((c) => PACK.test(c)));
+    assert.equal(run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'uninstall', '--host=claude-code']).status, 0);
+    assert.equal(readFileSync(settings, 'utf8'), grounding, 'the file is as init left it');
+    assert.equal(readFileSync(exclude, 'utf8'), ignored);
+    assert.equal(run(fx, repo, 'git', ['check-ignore', '-q', '.claude/settings.local.json']).status, 0);
+    assert.match(run(fx, repo, process.execPath, [LAUNCHER, 'hooks', 'uninstall', '--host=claude-code']).out, /no host hook pack is installed in this checkout/);
   } finally {
     fx.cleanup();
   }

@@ -14,6 +14,11 @@ import { StoreProjectError } from '../kernel/state/identity.ts';
 
 export const esc = escapeForTerminal;
 
+/** A path as one shell word: bare when it is plain, single-quoted otherwise. */
+export function shellWord(path: string): string {
+  return /^[\w./~+-]+$/.test(path) ? path : `'${path.replaceAll("'", "'\\''")}'`;
+}
+
 export function say(line = ''): void {
   process.stdout.write(`${line}\n`);
 }
