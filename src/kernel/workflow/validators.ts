@@ -137,15 +137,16 @@ const CITED_RUN = /(?<![\w\-#/.])\d+(?:\.\d+)?(?![a-zA-Z_]*\d)/g;
  * equals sign or comma counts, and so does each number of a list. Dates,
  * times, years, lone digits, one group of "1,600", and digits inside an
  * identifier (a ticket key, an issue or page number, a hash, a version's
- * tail) are never figures, on either side.
+ * tail) are never prose figures. Arithmetic mode retains small and year-shaped
+ * magnitudes for operands, while still stripping dates/times and identifier digits.
  */
-export function citedFiguresIn(text: string): string[] {
+export function citedFiguresIn(text: string, arithmetic = false): string[] {
   let body = text;
   for (const d of DATES) body = body.replace(d, (m) => (d === CLOCK && !onAClock(m) ? m : ' '));
   const out: string[] = [];
   const keep = (f: string) => {
     const digits = f.replace(/[^\d.]/g, '');
-    if (/^\d$/.test(f) || (YEAR.test(digits) && f === digits)) return;
+    if (!arithmetic && (/^\d$/.test(f) || (YEAR.test(digits) && f === digits))) return;
     out.push(f);
   };
   for (const m of body.matchAll(CITED_FIGURE)) keep(normalizeFigure(m[0]));
@@ -181,7 +182,8 @@ export function figureValue(raw: string): number | null {
   const n = Number(m[1]);
   // A percentage is a fraction, so 1.6M * 50% is 0.8M and "18%" compares as 0.18.
   const scale = m[2] === 'k' ? 1e3 : m[2] === 'm' ? 1e6 : m[2] === 'b' ? 1e9 : m[2] === '%' ? 0.01 : 1;
-  return n * scale;
+  const value = n * scale;
+  return Number.isFinite(value) ? value : null;
 }
 
 /** The half-unit of a figure's last written digit: "2M" covers 1.5M to 2.5M, "2.1M" covers 2.05M to 2.15M. */
@@ -203,13 +205,18 @@ export function figureSupported(fig: string, cited: ReadonlySet<string>, citedVa
   return citedValues.some((c) => Math.abs(c - v) <= tol + 1e-9 * Math.max(1, Math.abs(c)));
 }
 
-/** Unit constants an expression may use without citing them: per-cent, per-mille, calendar and clock. */
-const CONSTANTS = new Set(['2', '3', '4', '7', '10', '12', '24', '52', '60', '100', '365', '1000']);
+/** Arithmetic identities and unit constants: zero/one, per-cent, per-mille, calendar and clock. */
+const CONSTANTS = new Set(['0', '1', '2', '3', '4', '7', '10', '12', '24', '52', '60', '100', '365', '1000']);
 
 /** Evaluate + - * / and parentheses over figures; anything else is refused. */
-export function evaluateExpression(expr: string): number | null {
+function arithmeticTokens(expr: string): string[] | null {
   const tokens = expr.match(/\d[\d,]*(?:\.\d+)?\s?(?:%|[kKmMbB](?![a-z]))?|[()+\-*/]/g);
-  if (!tokens || tokens.join('').replace(/\s/g, '') !== expr.replace(/\s/g, '')) return null;
+  return tokens && tokens.join('').replace(/\s/g, '') === expr.replace(/\s/g, '') ? tokens : null;
+}
+
+export function evaluateExpression(expr: string): number | null {
+  const tokens = arithmeticTokens(expr);
+  if (!tokens) return null;
   let i = 0;
   const peek = () => tokens[i];
   const num = (): number | null => {
@@ -246,7 +253,7 @@ export function evaluateExpression(expr: string): number | null {
     return v;
   };
   const v = sum();
-  return v !== null && i === tokens.length ? v : null;
+  return v !== null && Number.isFinite(v) && i === tokens.length ? v : null;
 }
 
 /** A file an output names: a path, or {path}; a {path, removed: true} entry names a file that is gone. */
@@ -612,8 +619,18 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     const citedValues = [...haystack].map(figureValue).filter((x): x is number => x !== null);
     const supported = (f: string) => figureSupported(f, haystack, citedValues);
     const derived = new Set<string>();
+    const derivedMagnitudes = new Set<number>();
+    // Arithmetic operands include small numbers and year-shaped quantities;
+    // prose still excludes those, dates and identifiers. Numeric occurrence is
+    // structural grounding, not proof of units or semantic claim support.
+    const operandFigures = new Set([...citedFiguresIn(citedText, true), ...citedFiguresIn(strings(input).join('\n'), true)]);
+    const operandValues = [...operandFigures].map(figureValue).filter((v): v is number => v !== null);
     const problems: string[] = [];
     if (isRecord(output) && Array.isArray(output.derivations)) {
+      // Only checked arithmetic anchored in held evidence may ground another
+      // derivation. Resolve to a fixed point so declaration order does not
+      // matter; unsupported cycles and invalid intermediates never bootstrap.
+      const pending: { value: string; operands: string[] }[] = [];
       output.derivations.forEach((d, i) => {
         if (!isRecord(d) || (typeof d.value !== 'string' && typeof d.value !== 'number')) {
           problems.push(`derivation ${String(i + 1)} gives no value`);
@@ -621,18 +638,31 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
         }
         const value = String(d.value);
         if (typeof d.expression === 'string' && d.expression.trim() !== '') {
-          // The figures it is computed from must themselves be grounded, and the arithmetic must hold.
-          for (const f of figuresIn(d.expression)) if (!supported(f) && !CONSTANTS.has(f)) problems.push(`derivation of "${value}" uses "${f}", which no cited source contains`);
           const got = evaluateExpression(d.expression);
           const want = figureValue(value);
-          if (got === null) problems.push(`derivation of "${value}": "${d.expression}" is not arithmetic over figures`);
-          else if (want !== null && Math.abs(got - want) > Math.max(Math.abs(want) * 0.01, 1e-9)) problems.push(`derivation of "${value}": "${d.expression}" comes to ${String(Number(got.toPrecision(6)))}, not ${value}`);
-          derived.add(normalizeFigure(value));
+          if (want === null) problems.push(`derivation of "${value}" gives no numeric value`);
+          else if (got === null) problems.push(`derivation of "${value}": "${d.expression}" is not arithmetic over figures`);
+          else if (Math.abs(got - want) > Math.max(Math.abs(want) * 0.01, 1e-9)) problems.push(`derivation of "${value}": "${d.expression}" comes to ${String(Number(got.toPrecision(6)))}, not ${value}`);
+          else pending.push({ value, operands: arithmeticTokens(d.expression)!.filter(t => figureValue(t) !== null).map(normalizeFigure) });
         } else {
           // A description of where a figure came from is not a check of it; only arithmetic over cited figures is.
           problems.push(`derivation of "${value}" gives no expression; give the arithmetic over cited figures that produces it`);
         }
       });
+      const grounded = (f: string) => figureSupported(f, operandFigures, operandValues) || CONSTANTS.has(f) || derived.has(normalizeFigure(f)) || (figureValue(f) !== null && derivedMagnitudes.has(figureValue(f)!));
+      let progressed = true;
+      while (pending.length && progressed) {
+        progressed = false;
+        for (let i = pending.length - 1; i >= 0; i--) {
+          const d = pending[i]!;
+          if (!d.operands.every(grounded)) continue;
+          derived.add(normalizeFigure(d.value));
+          derivedMagnitudes.add(figureValue(d.value)!);
+          pending.splice(i, 1);
+          progressed = true;
+        }
+      }
+      for (const d of pending) for (const f of d.operands) if (!grounded(f)) problems.push(`derivation of "${d.value}" uses "${f}", which no cited source or valid grounded derivation contains`);
     }
     const texts = strings(output);
     for (const p of read) {
