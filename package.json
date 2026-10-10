@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "3.0.0-alpha.26",
+  "version": "3.0.0-alpha.27",
   "description": "A project-bound, capability-aware operating layer for agent hosts: it learns what a project is, remembers authoritative context and constraints, resolves the skills and workflows an outcome needs, detects drift, and does permitted work through the host you already use.",
   "type": "module",
   "license": "Apache-2.0",
@@ -52,7 +52,9 @@
     "registry:index": "node scripts/generate-registry-index.mjs",
     "docs:generate": "node scripts/generate-docs.mjs",
     "conformance": "node scripts/conformance.mjs",
-    "evals:live": "node scripts/evals-live.mjs"
+    "evals:live": "node scripts/evals-live.mjs",
+    "release:check": "node scripts/release-gate.mjs",
+    "release:live": "node scripts/experimental-live.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

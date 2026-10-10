@@ -1,17 +1,79 @@
 # Changelog
 
-## Unreleased
+## 3.0.0-alpha.27 — 2026-10-10 (experimental)
 
-### Changed
+This alpha strengthens evidence, recovery and completion checks. It remains
+experimental: the reliable fresh-user experience and the full live intake
+release matrix are not established. Publish only under `alpha`; `latest`
+remains on 2.1.1.
 
-- **The documentation describes 3.0.0-alpha.26 as it ships.** The guides,
+### Changes
+
+- Managed completion requires an observed semantic review of the exact final
+  artifact, held sources and governing clarification answers. A passing
+  command or a producer's `passed: true` cannot substitute for that review.
+  Changed evidence, expired leases, cancellation and a replaced candidate
+  invalidate completion. Drafts remain available for recovery.
+- Source changes use content and provenance, including same-timestamp
+  corrections. Scoped access, schema/unit mappings, reference traversal
+  budgets and incomplete coverage are explicit. API/MCP traversal requires
+  an adapter and authorization; installation alone provides neither.
+- Context history is searchable and paged. Skills have versioned method
+  bindings and executed qualification evidence; missing native evidence is
+  unqualified. Research can carry unknowns and checkpoint its requested
+  file before final review.
+- Managed artifact reservations avoid duplicate work claims. Abandoned
+  sessions can be recovered from observed process/session state, and lease
+  recovery is independent of validation retry budgets. Tool failures return
+  concrete repair guidance.
+- Startup guidance carries the request lifecycle, including a Cursor
+  always-on rule. A bounded Codex executor can run provisioned scheduled
+  work; a saved schedule by itself cannot keep working after session exit.
+
+### Upgrade
+
+- Stop Construct sessions and run `construct migrate` for state format 5;
+  migration backs up the state first. Do not reset a store to upgrade it.
+- Re-run `construct init --client=<host>` and follow `construct doctor` and
+  `construct skill update` instructions. The operational skill is 3.0.4.
+- Existing managed runs without a frozen semantic contract cannot inherit
+  retroactive verification; re-resolve their outcome. The supported native
+  semantic reviewer currently requires Codex CLI 0.145.0 and existing
+  subscription access. Other hosts/versions preserve unverified drafts.
+
+### Verification and limits
+
+The recorded deterministic gate, packaged install, static six-host
+conformance and finite Codex reviewer trials are documented in the
+[implementation assessment](docs/internal/implementation-2026-10-09/SEMANTIC-REVIEW.md).
+Native review accepted a correct case and rejected incorrect arithmetic and
+a source-injection control. These are finite observations, not universal
+truth, isolation or injection-resistance guarantees.
+
+Fresh Codex/Cursor outcomes remain inconsistent. Artifact existence,
+semantic quality and managed lifecycle completion are scored separately;
+the latest Cursor artifacts failed the frozen independent rubric, while
+Codex's initial phase timed out without an artifact. Broad reviewer/host
+qualification, actual conditional specialist composition, production
+API/MCP traversal and the complete scheduling fault matrix remain open.
+General delegation stays disabled until configured and live-verified.
+The canonical full live intake record is absent, so full qualification
+remains blocked. The explicitly approved experimental-alpha tier requires
+all deterministic gates plus current bounded native evidence and limitations
+disclosure; it does not claim the full qualification gate passed. No V1–V9 completion or general release qualification
+is claimed.
+
+
+### Earlier documentation work in this candidate
+
+- **The documentation was reconciled against 3.0.0-alpha.26.** The guides,
   README, glossary, and skill docs now cover typed intake, checked
   grounding, portable host wiring, the work ledger's full action set, and
   worktree claims, and no longer describe removed behavior. A new guide,
   `docs/work-ledger.md`, explains filing, admission, claims, and handoffs.
   The native-work cutover records moved to `docs/internal/construct-cutover/`
   beside the other development records.
-- **Operational skill 3.0.1.** The `construct` skill names every `work`
+- **Operational skill coverage, initially introduced in 3.0.1.** The `construct` skill names every `work`
   action, the required `period.semantics` and the `stakes` field in
   `classify_request`, the `outdates` and `replaces` fields of `remember`,
   path checks and worktree claims, and where an acceptance question goes.

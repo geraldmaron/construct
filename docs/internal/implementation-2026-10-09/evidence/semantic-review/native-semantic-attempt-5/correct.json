@@ -1,0 +1,98 @@
+{
+  "case": "correct",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "2cd57c21a6035859b97adfd3acd7a0b5d727448451b385b39e0b82daf6fa5464",
+      "attempt": 1,
+      "invocation": {
+        "id": "27859c8f-525b-43d9-9456-4f7378296662",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12301-0875-7cd1-b62d-02f8460297e0",
+        "completed": false,
+        "exitStatus": null,
+        "timedOut": false,
+        "transcriptDigest": "92cf3a28252c157f1d0e8a6f83db61fcfdf07aa4ac6e6ab82764b808160a2d93"
+      },
+      "judgment": null,
+      "problems": [
+        "native review attempted a tool outside the held-text profile",
+        "native review did not complete its ordered event stream",
+        "native review did not return one JSON judgment",
+        "reviewer did not return a checks array"
+      ]
+    },
+    "passed": false
+  },
+  "finalState": "running",
+  "stepState": "leased",
+  "at": "2026-10-09T23:30:32.890Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "events": [
+    {
+      "preparedRef": "review:6",
+      "bundleDigest": "2cd57c21a6035859b97adfd3acd7a0b5d727448451b385b39e0b82daf6fa5464",
+      "attempt": 1,
+      "invocation": {
+        "id": "27859c8f-525b-43d9-9456-4f7378296662",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12301-0875-7cd1-b62d-02f8460297e0",
+        "completed": false,
+        "exitStatus": null,
+        "timedOut": false,
+        "transcriptDigest": "92cf3a28252c157f1d0e8a6f83db61fcfdf07aa4ac6e6ab82764b808160a2d93"
+      },
+      "judgment": null,
+      "problems": [
+        "native review attempted a tool outside the held-text profile",
+        "native review did not complete its ordered event stream",
+        "native review did not return one JSON judgment",
+        "reviewer did not return a checks array"
+      ],
+      "startedAt": "2026-10-09T23:30:31.894Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a12301-0875-7cd1-b62d-02f8460297e0"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "error",
+          "refused": true
+        }
+      ],
+      "rawOutputBytes": 448,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "a320d7b0cb494585b655081bab90018e9c397c9f2c90cf1e8c753c6765c07c92",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "56176e9d2cb16027ae2dd147c602f1efa66ab1ccb20b3dfef4903dc518519f97",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth"
+    }
+  ],
+  "observedFilesUnchanged": true
+}

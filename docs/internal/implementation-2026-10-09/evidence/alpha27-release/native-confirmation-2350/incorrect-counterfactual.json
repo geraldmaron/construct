@@ -1,0 +1,196 @@
+{
+  "case": "incorrect-counterfactual",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "3162a57f282fcff37a73469b359e97877d07b941ca402151fecc324fcce9075f",
+      "attempt": 1,
+      "invocation": {
+        "id": "3f650c2a-1691-4b20-a2bc-475fb6bb21a7",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12312-dcf9-7e43-adc2-e912707dd7fb",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "02dd7090ab3e4e7ddf8d5632a8609670d8316ec77d395316e5b7f2ab5c375d53"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The artifact covers the annual net-benefit comparison, gives a tie-based conclusion that neither plan is financially preferable, and supplies a doubled-hours counterfactual. No requested outcome is omitted, although the counterfactual calculation is incorrect.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "fail",
+            "reason": "The approved source supports the equal $2,000 annual net benefits, but not the claimed $11,000 counterfactual. It explicitly requires A’s annual cost and hourly value to remain fixed when only its hours saved double.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "fail",
+            "reason": "The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling A’s hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The artifact appropriately limits its recommendation to the stated financial evidence and identifies qualitative differences as unknown. The source provides no qualitative comparison. The counterfactual defect is a calculation error, not an unresolved uncertainty in the supplied inputs.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The artifact remains an assessment. It does not initiate or authorize implementation, claim external action, or demand future-action prerequisites.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "support: fail review judgment",
+        "reasoning: fail review judgment"
+      ]
+    },
+    "passed": false
+  },
+  "finalState": "running",
+  "stepState": "leased",
+  "at": "2026-10-09T23:50:34.601Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "events": [
+    {
+      "preparedRef": "review:6",
+      "bundleDigest": "3162a57f282fcff37a73469b359e97877d07b941ca402151fecc324fcce9075f",
+      "attempt": 1,
+      "invocation": {
+        "id": "3f650c2a-1691-4b20-a2bc-475fb6bb21a7",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12312-dcf9-7e43-adc2-e912707dd7fb",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "02dd7090ab3e4e7ddf8d5632a8609670d8316ec77d395316e5b7f2ab5c375d53"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The artifact covers the annual net-benefit comparison, gives a tie-based conclusion that neither plan is financially preferable, and supplies a doubled-hours counterfactual. No requested outcome is omitted, although the counterfactual calculation is incorrect.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "fail",
+            "reason": "The approved source supports the equal $2,000 annual net benefits, but not the claimed $11,000 counterfactual. It explicitly requires A’s annual cost and hourly value to remain fixed when only its hours saved double.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "fail",
+            "reason": "The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling A’s hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The artifact appropriately limits its recommendation to the stated financial evidence and identifies qualitative differences as unknown. The source provides no qualitative comparison. The counterfactual defect is a calculation error, not an unresolved uncertainty in the supplied inputs.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The artifact remains an assessment. It does not initiate or authorize implementation, claim external action, or demand future-action prerequisites.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "support: fail review judgment",
+        "reasoning: fail review judgment"
+      ],
+      "startedAt": "2026-10-09T23:50:00.849Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a12312-dcf9-7e43-adc2-e912707dd7fb"
+        },
+        {
+          "type": "native.metadata_warning",
+          "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "agent_message",
+          "text": "{\n  \"checks\": [\n    {\n      \"id\": \"request\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The artifact covers the annual net-benefit comparison, gives a tie-based conclusion that neither plan is financially preferable, and supplies a doubled-hours counterfactual. No requested outcome is omitted, although the counterfactual calculation is incorrect.\",\n      \"refs\": [\"answer.md\"]\n    },\n    {\n      \"id\": \"support\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The approved source supports the equal $2,000 annual net benefits, but not the claimed $11,000 counterfactual. It explicitly requires A’s annual cost and hourly value to remain fixed when only its hours saved double.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"reasoning\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling A’s hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"uncertainty\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The artifact appropriately limits its recommendation to the stated financial evidence and identifies qualitative differences as unknown. The source provides no qualitative comparison. The counterfactual defect is a calculation error, not an unresolved uncertainty in the supplied inputs.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"scope\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The artifact remains an assessment. It does not initiate or authorize implementation, claim external action, or demand future-action prerequisites.\",\n      \"refs\": [\"answer.md\"]\n    }\n  ]\n}"
+        },
+        {
+          "type": "turn.completed"
+        }
+      ],
+      "rawOutputBytes": 2728,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "fd9a22fcc13ef711253289bd91ee70cedf16d3f1c37246c4e83edb36047955bf",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "56176e9d2cb16027ae2dd147c602f1efa66ab1ccb20b3dfef4903dc518519f97",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth"
+    }
+  ],
+  "observedFilesUnchanged": true
+}

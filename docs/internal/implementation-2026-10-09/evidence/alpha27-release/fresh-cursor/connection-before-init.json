@@ -1,0 +1,7 @@
+{
+  "host": "cursor",
+  "source": "workspace",
+  "transport": "stdio MCP with scoped loopback API fetch",
+  "fixtureBeforeInit": true,
+  "configuredAt": "2026-10-09T23:37:23.883Z"
+}

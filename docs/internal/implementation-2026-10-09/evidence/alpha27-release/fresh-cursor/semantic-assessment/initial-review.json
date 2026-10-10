@@ -1,0 +1,74 @@
+{
+  "phase": "initial",
+  "frozen": {
+    "packetDigest": "5a299d47a0e92a007e8ab5f28d48ff524d6fad12dbdfcda44e30baf0a695beeb",
+    "rubricDigest": "84e49d338b2d4457e82effe65689d21f30bfb9081be0b6b62ec6305c7c99bfa2",
+    "artifactDigest": "b5a43ea5a373123f2fb8bc30b954f892487ea541e002798202fc65684660e08c",
+    "frozenAt": "2026-10-09T23:42:12.930Z"
+  },
+  "stable": true,
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "5252414f6c298c8cf3ca98b1e0513706bfefb6da946627b3dec03914f4fb0370",
+      "attempt": 1,
+      "invocation": {
+        "id": "f5406fe8-3a09-4db2-8a1d-6564b2fad62a",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a1230b-b99d-7371-ab32-4c27eed590d7",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "f4c21c61c5188c129091003539caad406df865c84016f1b0118917850850be79"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "correctness",
+            "verdict": "fail",
+            "reason": "The initial-phase HOLD recommendation and exact-60 boundary are correct, but the 'Hypotheses considered' table reverses its counterfactual tests. Net below 60 would refute the no-replenishment conclusion; net at or above 60 would refute the replenishment conclusion. The table instead lists conditions supporting those respective decisions as refutations. This error does not invalidate the current HOLD recommendation.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The brief explicitly preserves the unknown lot-specific case conversion and reservation unit, acknowledges denied supplier access, and avoids guessed conversions or incompatible subtraction. It distinguishes confidence in the policy-required HOLD from uncertainty about actual net stock. It appropriately limits the assessment to PART-19 at West rather than borrowing AUX-22's reservation unit.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "evidence",
+            "verdict": "pass",
+            "reason": "The recorded source reads and API GET corroborate 12 cases available, 4 reserved with no current unit stated, a null case multiplier, and permission_denied for the supplier reference. The supplied policy supports HOLD and the exact-60 boundary. The brief respects connected-record supersession of the cached export, cites source-specific evidence, and does not claim supplier access or authority to place orders.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "requested_file",
+            "verdict": "pass",
+            "reason": "The bundle contains the witnessed warehouse-brief.md artifact, matching the artifact text recorded in case.json. It supplies the requested initial decision brief with evidence and unresolved questions. File fulfillment is supported by the supplied artifact, not inferred from lifecycle success; the changed-phase update is not required for this initial assessment.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "correctness: fail review judgment"
+      ]
+    },
+    "passed": false
+  }
+}

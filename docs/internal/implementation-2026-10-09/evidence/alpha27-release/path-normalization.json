@@ -1,0 +1,40 @@
+{
+  "reason": "Machine paths in diagnostic source/launch metadata normalized for repository portability. No native judgment, prepared bundle or transcript receipt was rewritten.",
+  "files": [
+    {
+      "path": "alpha27-smoke.log",
+      "originalSha256": "96ce72ab27d1d2df4b310a2e608541171be23ddc2bfc681d433f13b5b85706a7",
+      "portableSha256": "833037403c83f75abce32fb5ec84f11b0125aeccd6cc3dd246a9244cb8d6247d"
+    },
+    {
+      "path": "alpha27-conformance.log",
+      "originalSha256": "ec698ce9958f6a4040c7c123b9bd256cba18f64fcdefbbef85573ffc611a2a28",
+      "portableSha256": "6f1c8158dda5cf25f9e1513516ea77afe59196b34fabe1eba8d6ac5c245edd4f"
+    },
+    {
+      "path": "alpha27-conformance.json",
+      "originalSha256": "ac0a61f59c8ccb58fb5d29d44f0d570789174fb81c0269ea9c2869b2a0f59932",
+      "portableSha256": "a03cfcdcc66b417b71d8b8eb1ac3cca1b22db027dc0952a34ea5ffd4c74616c4"
+    },
+    {
+      "path": "alpha27-preflight-claude.log",
+      "originalSha256": "4cadda3369e00b4270a844ade754078bfe8954d416e2be675d616a571f45eade",
+      "portableSha256": "e252c908e994e31d44da5472e781b8809b09a973d4c2909ae60d75ca757a5a70"
+    },
+    {
+      "path": "release-fix-smoke.log",
+      "originalSha256": "35465c5ae20c885c870db077185f7743e4812769c5317e71ce90ff3696d82230",
+      "portableSha256": "d01543748bc3797038ffe034354f7437d9ac232a3d12f23c34caf419369dea51"
+    },
+    {
+      "path": "fresh-cursor/preregistration.json",
+      "originalSha256": "1f0d4c84d4f64ac10c52a767f5337786bd62c53b62ea09019d0f0dbc3260d870",
+      "portableSha256": "43a692bbf90b5198d3ab17576d5b8486a597ed3bf46ef219bd22444f0bc404dd"
+    },
+    {
+      "path": "fresh-codex/preregistration.json",
+      "originalSha256": "b77ff85a1db996f948ae4589e1156f036cc97a5406784c6cda2d23d3e9569892",
+      "portableSha256": "e627734a8495c23e3268077e8b630ba72a8ea5344bda9279b57f2762a2d15303"
+    }
+  ]
+}

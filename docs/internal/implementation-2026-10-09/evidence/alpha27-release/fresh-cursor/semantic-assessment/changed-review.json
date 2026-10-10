@@ -1,0 +1,76 @@
+{
+  "phase": "changed",
+  "frozen": {
+    "packetDigest": "ec46494e224348b5f172b535d31bd16b377951d8f05f8f477483f0e3ecbb9df0",
+    "rubricDigest": "84e49d338b2d4457e82effe65689d21f30bfb9081be0b6b62ec6305c7c99bfa2",
+    "artifactDigest": "839dd1f42cee75a7eff8147716396e7578af8dd7878d78e2d66447d5d7298ca7",
+    "frozenAt": "2026-10-09T23:42:49.659Z"
+  },
+  "stable": true,
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "9857d441c2863377f8c1ce2ed314973b3689becc2dee27aa89254ccce4db8cdf",
+      "attempt": 1,
+      "invocation": {
+        "id": "b56a23f8-1f88-499f-b71c-8221db6dd77e",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a1230c-4969-7600-b20c-6a3ae814946b",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "4d5ea90b8134a8fdaa20b9dd20140c244a0c40ccaec2aab5baea645449017ca1"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "correctness",
+            "verdict": "fail",
+            "reason": "The current calculation (6 × 6) − 4 = 32 each, replenishment recommendation, and exactly-60 hold rule are correct. However, the changed-phase rubric explicitly requires the 28-each shortfall, which the brief omits. Its description of the cache as a '72 each net story' also misstates the counterfactual: cached net stock is 72 − 12 = 60 each, yielding hold.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The brief preserves the prior unknown conversion and reservation units rather than claiming they were previously known. It uses the recorded current conversion and explicit reservation units without guessing, discloses the unavailable supplier record, and limits its recommendation to PART-19. Its additional catalog-alignment caveat does not make further confirmation a prerequisite for the supported recommendation.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "evidence",
+            "verdict": "fail",
+            "reason": "Recorded source/API reads and policy support the current quantities, conversion, unchanged provider timestamps, and supersession of cached records. However, no independent evidence in the bundle supports the claimed prior stock of 12 cases or the assertion that AUX-22 appears on reservations. Their repetition within the embedded candidate in case.json does not corroborate them.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json"
+            ]
+          },
+          {
+            "id": "requested_file",
+            "verdict": "pass",
+            "reason": "The bundle supplies the witnessed warehouse-brief.md itself, containing a comparison of corrections and an updated planning recommendation. This supports delivery of the requested file, with content defects assessed separately above. It does not establish managed-lifecycle compliance or prove that external actions did or did not occur.",
+            "refs": [
+              "warehouse-brief.md",
+              "case.json",
+              "body"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "correctness: fail review judgment",
+        "evidence: fail review judgment"
+      ]
+    },
+    "passed": false
+  }
+}

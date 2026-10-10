@@ -10,7 +10,14 @@ This is the `3.0.0` alpha line of `@geraldmaron/construct`, under
 architectural cutover. Alphas publish under the `alpha` tag; `latest` stays on
 the predecessor. Nothing here is promised stable.
 
-## Alpha.26
+## Alpha.27 — experimental
+
+This candidate adds exact-generation semantic review, source-change invalidation,
+bounded source traversal, durable recovery and early research checkpoints.
+Managed completion currently requires the supported Codex review adapter;
+other hosts preserve unverified drafts. The canonical full live intake release
+record is absent. See the [release notes](CHANGELOG.md) and
+[measured limitations](docs/internal/implementation-2026-10-09/SEMANTIC-REVIEW.md).
 
 - One native work ledger across project worktrees, with fenced claims, path
   reservations, handoffs, and peer awareness.
@@ -22,7 +29,7 @@ the predecessor. Nothing here is promised stable.
 - Typed intake: the host reports its own reading of each request to
   `classify_request`, and Construct checks that reading instead of
   classifying your words. Every host reads the same short contract first.
-  No live host run has measured it yet.
+  Finite native trials exercise it; reliable fresh-user outcomes remain unqualified.
 - Grounding that is checked: a citation must resolve to something the
   project holds (a project file, a declared source or an item a recorded
   read holds, a deliverable, or a Construct record), quotes and figures are
@@ -120,3 +127,10 @@ packaging.
 ## License
 
 Apache-2.0
+
+
+This candidate uses the explicitly approved experimental-alpha release tier:
+full deterministic code/security checks and bounded native review controls,
+with known fresh-user and unsupported-path limitations retained. It does not
+have full live-matrix qualification or a general readiness claim. See the
+[release policy](docs/release-verification.md#experimental-alpha-tier).

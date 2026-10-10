@@ -1,0 +1,17 @@
+✔ confirmed: promoting a reviewed pending final draft prevents completion on identical resubmit (22.843208ms)
+✔ fix verified: cancellation during metadata preflight prevents a new reviewer dispatch (546.207084ms)
+✔ fix verified: raw byte cap counts private and unterminated output; bad envelopes/order are rejected (0.368208ms)
+✔ fix verified: final waiver body stays identical through completion (12.40775ms)
+✔ fix verified: oversized candidate is preserved with an unavailable preparation (9.98475ms)
+✔ fix verified: final clarification can resume and its answer reaches the reviewer (10.306542ms)
+✔ fix verified: final noData continuation returns a reviewable lease and completes after review (9.79675ms)
+✔ fix verified: final review cannot promote an unreviewed earlier deliverable (11.341125ms)
+✔ fix verified: pre-upgrade missing-contract binding blocks completion (7.017125ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 784.559667

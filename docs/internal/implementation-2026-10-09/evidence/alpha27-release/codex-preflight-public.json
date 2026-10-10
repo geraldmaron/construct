@@ -1,0 +1,9 @@
+{
+  "trace": ".tmp-evals/preflight-codex-c2074a/canary-default-0-68811ed0",
+  "host": "codex",
+  "exitCode": 0,
+  "publicMessages": [
+    "> # AGENTS.md instructions\n\nmcp__construct\nmcp__codex_apps__chatgpt_space\nmcp__codex_apps__codex_document_control\nmcp__codex_apps__github\nmcp__codex_apps__hotline\nmcp__codex_apps__linkedin\nmcp__codex_apps__pets\nmcp__codex_apps__plugin_management\nmcp__codex_apps__safety_settings\nmcp__codex_apps__search_service\nmcp__codex_apps__sites\nmcp__codex_apps__supabase"
+  ],
+  "interpretation": "Process exit alone is not isolation success. The actual canonical preflight failed."
+}

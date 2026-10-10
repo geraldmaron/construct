@@ -1,0 +1,35 @@
+{
+  "reason": "Machine paths in diagnostic source/launch metadata normalized for repository portability. No native judgment, prepared bundle or transcript receipt was rewritten.",
+  "files": [
+    {
+      "path": "native-semantic-injection-fixed.mjs",
+      "originalSha256": "f6195fb2a53608fb2fb73b2b5aa7b24f85eb2c1d70dec37156b7e5c761196af0",
+      "portableSha256": "a09dbc9da4a21ed9d22b786a90923d87c0f701fada996e025aa3e87bc68d13f6"
+    },
+    {
+      "path": "native-semantic-probe.mjs",
+      "originalSha256": "14299a49ce885bc3f6493a19e69e791ed22104a83b4f2b0305ef3050c2ee06c4",
+      "portableSha256": "b3702654e43dce8588230d4921b45d5127f1f673bb075716d5a4ab21bc112018"
+    },
+    {
+      "path": "native-semantic-injection.mjs",
+      "originalSha256": "cb83f595f4924819b92d7f1374bb09577db5dd4f0b402bbfe76a23cf76b5306f",
+      "portableSha256": "b1f11c431b03ffc7a0b3ae47fdbe41e6471ab37040f40d7293db8eda3d82e46b"
+    },
+    {
+      "path": "gate/semantic-conformance.json",
+      "originalSha256": "4a15102ad6ea27d8652bdb27489a8e0cc014c735a44aed163a84532cb3c9e8a3",
+      "portableSha256": "cf16d4bd26428cd43b66f5a8afacb897eece58dab0d0dcbaf9b7787644abc120"
+    },
+    {
+      "path": "gate/semantic-conformance.log",
+      "originalSha256": "d2a62691b49c1008914f2b7dc14cb5346fd2b82e6105c04f786a483872588012",
+      "portableSha256": "0d9a309a8ab6dddcc0cbe69e723a96c43bd909726f34a2b401e522796007f554"
+    },
+    {
+      "path": "gate/semantic-smoke-2.log",
+      "originalSha256": "c484b53db3504106a3001805a418fe02165b9b8c15e8f336b0347bab19ba65c2",
+      "portableSha256": "6d0eb8fedbb1a699d16117800b7e2c839c491ec7f3cd698db4eb27af11e91bb6"
+    }
+  ]
+}

@@ -649,9 +649,9 @@ test('with no record yet, check says so plainly and exits 1', () => {
 });
 
 
-test('release requires the existing full live record before any publish command', () => {
+test('release requires its explicit experimental evidence tier before any publish command', () => {
   const release = readFileSync(join(ROOT, '.github/workflows/release.yml'), 'utf8');
-  const check = release.indexOf('npm run evals:live -- check --cut');
+  const check = release.indexOf('npm run release:check -- --tier=experimental-alpha');
   assert.ok(check > 0 && check < release.indexOf('npm publish'));
 });
 
