@@ -1,0 +1,487 @@
+[
+  {
+    "id": "U01-public-bootstrap",
+    "version": "3.0.0-alpha.26",
+    "sourceHealth": {
+      "total": 1,
+      "reachable": 1,
+      "unreachable": 0,
+      "unknown": 0,
+      "fresh": 1,
+      "stale": 0,
+      "neverRead": 0,
+      "changedSinceRead": [],
+      "reportWhenRead": []
+    },
+    "capabilities": {
+      "available": [
+        "ask_user",
+        "kernel",
+        "model_review",
+        "read_project_context",
+        "read_project_files",
+        "read_source",
+        "read_source:directory",
+        "run_tests",
+        "run_validator",
+        "write_project_context",
+        "write_project_files",
+        "write_source"
+      ],
+      "maxTier": "external_write",
+      "restrictions": [
+        "writes to the person's systems go through the host's own tools and are external writes the person approves per action"
+      ],
+      "budgetCents": null
+    },
+    "tools": [
+      "bootstrap",
+      "classify_request",
+      "project_context",
+      "remember",
+      "workflows",
+      "skills",
+      "start_outcome",
+      "claim_work",
+      "submit_work",
+      "run_status",
+      "inbox",
+      "decide",
+      "sources",
+      "check_answer",
+      "staff",
+      "promote_deliverable",
+      "work",
+      "delegate",
+      "heartbeat"
+    ]
+  },
+  {
+    "id": "U02-question",
+    "reading": {
+      "recorded": false,
+      "judgedBy": {
+        "by": "host",
+        "host": "codex",
+        "client": "isolated-public-usage-audit"
+      },
+      "kind": "answer",
+      "intake": {
+        "words": "What must this project avoid?",
+        "kind": "answer",
+        "deliverable": null,
+        "skill": null,
+        "workflowId": null,
+        "target": null,
+        "scope": null,
+        "period": null,
+        "sources": [],
+        "destination": null,
+        "schedule": null,
+        "coordination": null,
+        "stakes": null,
+        "open": [],
+        "inputs": {}
+      },
+      "resolved": {
+        "period": null,
+        "schedule": null,
+        "sources": []
+      },
+      "normalized": [],
+      "matches": [],
+      "skills": {},
+      "questions": [],
+      "hostQuestions": [],
+      "assumptions": [],
+      "flags": [],
+      "judgment": {
+        "depth": "standard",
+        "challenge": false,
+        "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+        "signals": [
+          {
+            "kind": "scale",
+            "detail": "not answered; treated as a team project",
+            "raises": false
+          }
+        ]
+      },
+      "next": "Answer in chat. Nothing was recorded."
+    },
+    "contradictoryAnswer": {
+      "ok": true,
+      "problems": [],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "next": "give the answer; say which parts rest on reported sources if any"
+    }
+  },
+  {
+    "id": "U03-real-controlled-source-reads",
+    "api": {
+      "url": "http://127.0.0.1:55090/metric",
+      "read": {
+        "id": "metric",
+        "value": 100,
+        "unit": "USD",
+        "status": "healthy",
+        "updatedAt": "2026-10-01T12:00:00Z"
+      }
+    },
+    "mcp": {
+      "tools": {
+        "tools": [
+          {
+            "name": "read_metric",
+            "description": "Read the controlled Harbor metric.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          }
+        ]
+      },
+      "read": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"id\": \"metric\", \"value\": 100, \"unit\": \"USD\", \"status\": \"degraded\", \"updatedAt\": \"2026-10-01T12:00:00Z\"}"
+          }
+        ]
+      }
+    },
+    "beforeDeclaration": {
+      "content": [
+        {
+          "type": "text",
+          "text": "[{\"source\": {\"id\": \"local-docs\", \"kind\": \"directory\", \"origin\": \"declared\", \"purpose\": \"local architecture decisions\", \"locator\": \"$AUDIT/consumer/project/docs\", \"authorityLevel\": \"informative\", \"freshnessHours\": null, \"sensitivity\": \"internal\", \"retention\": null, \"canRead\": true, \"canWrite\": false, \"identityMapping\": null, \"reachability\": \"reachable\", \"lastSnapshotId\": \"snap-8ff93779\", \"status\": \"active\", \"createdAt\": \"2026-10-09T14:06:29.476Z\", \"updatedAt\": \"2026-10-09T14:06:29.597Z\", \"retiredAt\": null}, \"freshness\": \"no_expectation\", \"lastSnapshot\": {\"id\": \"snap-8ff93779\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:98a2336c818894cfa820ce73d348d14b7d3952df4bf8360fcf40e5602e287121\", \"summary\": \"1 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:06:29.597Z\"}, \"authoritativeFor\": [], \"notAuthoritativeFor\": []}]"
+        }
+      ]
+    }
+  },
+  {
+    "id": "U04-public-outcome",
+    "started": {
+      "started": true,
+      "run": {
+        "id": "run-6d6f3923",
+        "state": "ready",
+        "workflow": "managed-outcome"
+      },
+      "created": true,
+      "preflight": {
+        "status": "runnable",
+        "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+        "approvalsAhead": [],
+        "reasons": [],
+        "flags": [],
+        "judgment": {
+          "depth": "standard",
+          "challenge": false,
+          "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+          "signals": [
+            {
+              "kind": "scale",
+              "detail": "not answered; treated as a team project",
+              "raises": false
+            }
+          ]
+        },
+        "period": null,
+        "assumptions": [],
+        "questions": []
+      },
+      "differs": [],
+      "superseded": null,
+      "normalized": [],
+      "assumptions": []
+    },
+    "done": {
+      "step": {
+        "id": "step-8b313d84",
+        "state": "ready",
+        "reason": "artifacts_exist: artifact \"Created digest.md\" was not found in the project"
+      },
+      "validation": [
+        {
+          "validator": "citations_present",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "evidence_refs_resolve",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "excerpts_match",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "within_period",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "named_sources_read",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "numbers_grounded",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "artifacts_exist",
+          "ok": false,
+          "problems": [
+            "artifact \"Created digest.md\" was not found in the project"
+          ]
+        },
+        {
+          "validator": "deliverable_complete",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "no_placeholder_facts",
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 1,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "run": {
+        "id": "run-6d6f3923",
+        "state": "running"
+      },
+      "deliverable": null
+    },
+    "actualTestExit": 0,
+    "verified": {
+      "step": {
+        "id": "step-8b313d84",
+        "state": "waiting_for_decision",
+        "reason": "checks still failing; waiting on the person"
+      },
+      "validation": [
+        {
+          "validator": "citations_present",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "evidence_refs_resolve",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "excerpts_match",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "within_period",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "named_sources_read",
+          "ok": false,
+          "problems": [
+            "this run names metrics-api, and this step cites nothing read from it; cite what you read (as metrics-api:<item>), or list it under \"unread\" with why",
+            "this run names local-docs, and this step cites nothing read from it; cite what you read (as local-docs:<item>), or list it under \"unread\" with why"
+          ]
+        },
+        {
+          "validator": "numbers_grounded",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "artifacts_exist",
+          "ok": false,
+          "problems": [
+            "the output names no artifact (give \"artifact\" or \"changes\" with the file written)"
+          ]
+        },
+        {
+          "validator": "deliverable_complete",
+          "ok": false,
+          "problems": [
+            "output lacks \"summary\"",
+            "output lacks \"findings\"",
+            "output lacks \"changes\"",
+            "output lacks \"artifact\""
+          ]
+        },
+        {
+          "validator": "no_placeholder_facts",
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "evidence": {
+        "witnessed": 1,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      },
+      "run": {
+        "id": "run-6d6f3923",
+        "state": "waiting_for_decision"
+      },
+      "deliverable": null
+    }
+  },
+  {
+    "id": "U05-api-schema-and-content-change",
+    "sameTimestamp": {
+      "sourceId": "metrics-api",
+      "outcome": "changed",
+      "snapshot": {
+        "id": "snap-652baec4",
+        "sourceId": "metrics-api",
+        "digest": "sha256:850b483b943ed32f37351a54e106641cf6e7ec7822b6ac14dcae14bfefbee0d8",
+        "summary": "1 item(s) reported by the host",
+        "evidenceRef": "host:metrics-api",
+        "takenAt": "2026-10-09T14:08:13.342Z"
+      },
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "staleDeliverables": []
+    },
+    "newTimestamp": {
+      "sourceId": "metrics-api",
+      "outcome": "changed",
+      "snapshot": {
+        "id": "snap-4da7fa5b",
+        "sourceId": "metrics-api",
+        "digest": "sha256:95acb0fba9c0f2d9fc2df7bd29243fe4b69962601a8f44a88fc91aaaa6828436",
+        "summary": "1 item(s) reported by the host",
+        "evidenceRef": "host:metrics-api",
+        "takenAt": "2026-10-09T14:08:13.345Z"
+      },
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": [
+          "metric"
+        ]
+      },
+      "staleDeliverables": []
+    },
+    "status": {
+      "run": {
+        "id": "run-6d6f3923",
+        "workflow": "managed-outcome",
+        "state": "waiting_for_decision",
+        "reason": "step do needs the person's call on failing checks",
+        "preflight": {
+          "status": "runnable",
+          "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+          "approvalsAhead": [],
+          "reasons": [],
+          "flags": [],
+          "judgment": {
+            "depth": "standard",
+            "challenge": false,
+            "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+            "signals": [
+              {
+                "kind": "scale",
+                "detail": "not answered; treated as a team project",
+                "raises": false
+              }
+            ]
+          },
+          "period": null,
+          "assumptions": [],
+          "questions": []
+        },
+        "asked": {
+          "period": null,
+          "sources": {
+            "registered": [
+              "metrics-api",
+              "local-docs"
+            ],
+            "named": [
+              {
+                "name": "metric API",
+                "id": "metrics-api",
+                "registered": true
+              },
+              {
+                "name": "local architecture decisions",
+                "id": "local-docs",
+                "registered": true
+              }
+            ]
+          },
+          "judgedBy": {
+            "by": "host",
+            "host": "codex",
+            "client": "isolated-public-usage-audit"
+          }
+        }
+      },
+      "steps": [
+        {
+          "id": "step-c620bcd4",
+          "step": "plan",
+          "state": "succeeded",
+          "attempts": 1,
+          "reason": null
+        },
+        {
+          "id": "step-8b313d84",
+          "step": "do",
+          "state": "waiting_for_decision",
+          "attempts": 2,
+          "reason": "checks still failing; waiting on the person"
+        },
+        {
+          "id": "step-1f088ae1",
+          "step": "verify",
+          "state": "pending",
+          "attempts": 0,
+          "reason": null
+        }
+      ],
+      "deliverables": [],
+      "openDecisions": [
+        {
+          "id": "decision-540d1137",
+          "kind": "decision",
+          "question": "Step do still fails 3 check(s) after 2 attempt(s): named_sources_read: this run names metrics-api, and this step cites nothing read from it; cite what you read (as metrics-api:<item>), or list it under \"unread\" with why; named_sources_read: this run names local-docs, and this step cites nothing read from it; cite what you read (as local-docs:<item>), or list it under \"unread\" with why; artifacts_exist: the output names no artifact (give \"artifact\" or \"changes\" with the file written); deliverable_complete: output lacks \"summary\"; deliverable_complete: output lacks \"findings\" (+2 more). Accept it with these problems, give it another attempt, or stop?",
+          "options": [
+            "accept with these problems",
+            "another attempt",
+            "stop"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "usage-error",
+    "error": "TypeError: Cannot read properties of null (reading 'id')",
+    "stack": "TypeError: Cannot read properties of null (reading 'id')\n    at file://$AUDIT/consumer-usage.mjs:53:88\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)"
+  }
+]

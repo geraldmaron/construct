@@ -1,0 +1,36 @@
+{
+  "source": "harbor-issues",
+  "observedAt": "2026-10-09T12:00:00Z",
+  "coverage": {
+    "complete": true,
+    "scope": "Harbor rollout issues"
+  },
+  "issues": [
+    {
+      "id": "HBR-17",
+      "title": "Duplicate payment retries",
+      "priority": "P1",
+      "state": "closed",
+      "owner": "Checkout team",
+      "nextStep": "None; duplicate payment retry fix is verified."
+    },
+    {
+      "id": "HBR-22",
+      "title": "Receipt spacing on small screens",
+      "priority": "P2",
+      "state": "open",
+      "owner": "Experience team",
+      "nextStep": "Correct the receipt layout and check narrow viewport rendering."
+    },
+    {
+      "id": "HBR-09",
+      "title": "Missing health checks",
+      "priority": "P1",
+      "state": "closed",
+      "owner": "Platform team",
+      "nextStep": "None; resolved."
+    }
+  ],
+  "revision": "correction-2",
+  "correctionNote": "Issue status corrected for the same observation snapshot."
+}

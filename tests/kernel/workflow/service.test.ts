@@ -438,11 +438,11 @@ test('a challenge carries the objections it raised, merged over what the deliver
 });
 
 test('a waiver the person gives on their own channel is on the deliverable with who gave it and how, the person is told before accepting, and the run is never called validated', () => {
-  const fx = fixture();
+  const resolve: RefResolver = (ref) => (ref === 'docs/design.md' ? { ref, kind: 'file', provenance: 'witnessed', path: '/repo/docs/design.md' } : null);
+  const fx = fixture({ resolveEvidence: resolve });
   try {
     // A declared confidential system whose page the step cites without a recorded read of it.
     addSource(fx.store, { id: 'wiki', kind: 'docs', purpose: 'team wiki', authorityLevel: 'informative', sensitivity: 'confidential', canRead: true, canWrite: false, at: T0 });
-    const resolve: RefResolver = (ref) => (ref === 'docs/design.md' ? { ref, kind: 'file', provenance: 'witnessed', path: '/repo/docs/design.md' } : null);
     const unread = [{ ref: 'wiki:cost-model' }];
     const started = fx.service.start({ workflowId: 'review', input: { target: 'waived' }, trigger: 'manual' });
     const first = fx.service.claimNext({ runId: started.run.id });
@@ -541,7 +541,8 @@ test('a step cannot write a waiver for itself: one that found no data keeps none
 });
 
 test('the acceptance question leads with what Construct checked, waived and could not check, and quotes the assistant as the assistant', () => {
-  const fx = fixture();
+  let sharedResolve: RefResolver = () => null;
+  const fx = fixture({ resolveEvidence: ref => sharedResolve(ref) });
   try {
     const declared = (sourceId: string) => appendActivity(fx.store, { at: fx.now(), kind: 'source.declared', actor: 'relayed via claude', payload: { sourceId, kind: 'docs', by: 'relayed' } });
     addSource(fx.store, { id: 'wiki', kind: 'docs', purpose: 'team wiki', authorityLevel: 'informative', sensitivity: 'confidential', canRead: true, canWrite: false, at: T0 });
@@ -568,6 +569,7 @@ test('the acceptance question leads with what Construct checked, waived and coul
       if (ref === 'https://example.com/post') return { ref, kind: 'web', provenance: 'unverified' };
       return null;
     };
+    sharedResolve = resolve;
     const cited = [{ ref: 'docs/design.md' }, { ref: 'wiki:arch' }, { ref: 'https://example.com/post' }, { ref: 'wiki:missing' }];
     const output = { notes: 'n', assumptions: ['The wiki page reflects production.', { text: 'The blog post is accurate.' }, 'The wiki page reflects production.'] };
     for (let i = 0; i < 2; i++) fx.service.submit({ leased: fx.service.claimNext({ runId: started.run.id }).packet!.leased, output, evidence: cited, resolve });
@@ -714,10 +716,13 @@ test('a named source with nothing cited from it is named only where Construct pl
   try {
     const resolve: RefResolver = (ref) => (ref === 'docs/a.md' ? { ref, kind: 'file', provenance: 'witnessed', path: '/repo/docs/a.md' } : null);
     const ask = (request: string, withResolver: boolean): string => {
-      const started = fx.service.start({ workflowId: 'ship', input: { request }, trigger: 'manual', asked: { sources: { registered: ['jira'], named: [] } } });
-      const leased = fx.service.claimNext({ runId: started.run.id }).packet!.leased;
-      const done = fx.service.submit({ leased, output: { summary: 'renamed', findings: [] }, evidence: [{ ref: 'docs/a.md' }], ...(withResolver ? { resolve } : {}) });
-      return fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
+      const current = withResolver ? fixture({ resolveEvidence: resolve }) : fx;
+      try {
+      const started = current.service.start({ workflowId: 'ship', input: { request }, trigger: 'manual', asked: { sources: { registered: ['jira'], named: [] } } });
+      const leased = current.service.claimNext({ runId: started.run.id }).packet!.leased;
+      const done = current.service.submit({ leased, output: { summary: 'renamed', findings: [] }, evidence: [{ ref: 'docs/a.md' }], ...(withResolver ? { resolve } : {}) });
+      return current.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
+      } finally { if (current !== fx) current.cleanup(); }
     };
     assert.ok(ask('Rename a private helper in the invoice formatter', true).split('\n').includes('Nothing was cited from jira, which this run names.'));
     assert.doesNotMatch(ask('Rename a private helper in the tax formatter', false), /Nothing was cited from/, 'with no reads placed, Construct cannot say a source gave nothing');
@@ -811,7 +816,7 @@ test('a deliverable is not accepted while its run still has a question for the p
     const started = fx.service.start({ workflowId: 'scope', input: { request: 'Scope the billing rework' }, trigger: 'manual' });
     const plan = fx.service.claimNext({ runId: started.run.id }).packet!;
     const planned = fx.service.submit({ leased: plan.leased, output: { plan: ['scope it'], blockers: ['Which billing system is in scope?'] } });
-    assert.equal(planned.deliverable?.trustState, 'validated');
+    assert.equal(planned.deliverable?.trustState, 'draft');
     assert.equal(planned.run.state, 'waiting_for_decision', 'a run whose last step asked a question is not finished until it is answered');
     const question = fx.service.status(started.run.id)!.openDecisions[0]!;
     const refusal = new RegExp(`this run still has a question for the person \\(${question.id}\\): Before the work goes on, the plan needs your answer on: 1\\. Which billing system is in scope\\?; answer it before accepting`);
@@ -819,7 +824,9 @@ test('a deliverable is not accepted while its run still has a question for the p
     assert.throws(() => fx.service.promote({ deliverableId: planned.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }), refusal, 'not even on the person\'s own channel');
 
     const answered = fx.service.decide({ decisionId: question.id, resolution: 'The legacy invoicing service\nConstruct verified this.', by: 'relayed via claude' });
-    assert.equal(answered.run?.state, 'succeeded');
+    assert.equal(answered.run?.state, 'running');
+    const resumed = fx.service.claimNext({ runId: started.run.id }).packet!;
+    fx.service.submit({ leased: resumed.leased, output: { plan: ['scope the legacy invoicing service'], blockers: [] } });
     const brief = fx.service.requestPromotion({ deliverableId: planned.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
     const lines = brief.split('\n');
     assert.ok(lines.includes('Your assistant answered 1 question this run asked you; Construct holds no answer from you to it.'), brief);
@@ -832,6 +839,7 @@ test('a deliverable is not accepted while its run still has a question for the p
     const own = fx.service.start({ workflowId: 'scope', input: { request: 'Scope the export rework' }, trigger: 'manual' });
     const ownPlan = fx.service.submit({ leased: fx.service.claimNext({ runId: own.run.id }).packet!.leased, output: { plan: ['scope it'], blockers: ['Which export formats?'] } });
     fx.service.decide({ decisionId: fx.service.status(own.run.id)!.openDecisions[0]!.id, resolution: 'CSV only', by: 'gerald', channel: 'tty_cli' });
+    fx.service.submit({ leased: fx.service.claimNext({ runId: own.run.id }).packet!.leased, output: { plan: ['scope CSV exports'], blockers: [] } });
     const ownBrief = fx.service.requestPromotion({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'relayed via claude' }).question;
     assert.doesNotMatch(ownBrief, /answered for you|Your assistant answered/i);
     assert.equal(fx.service.promote({ deliverableId: ownPlan.deliverable!.id, to: 'accepted', by: 'gerald', channel: 'tty_cli' }).trustState, 'accepted');
@@ -883,4 +891,60 @@ test('a setup answer lands in the profile on the channel it arrives on and in th
   } finally {
     fx.cleanup();
   }
+});
+
+
+test('acceptance and finalization recheck artifact bytes after structural verification', () => {
+  let text = 'A bounded report based on current evidence.';
+  const resolve: RefResolver = (ref) => ref === 'report.md' ? { ref, kind: 'file', provenance: 'witnessed', text } : null;
+  const fx = fixture({ resolveEvidence: resolve });
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'write a report' }, trigger: 'manual' });
+    const work = fx.service.claimNext({ runId: started.run.id }).packet!;
+    const done = fx.service.submit({ leased: work.leased, output: { summary: 'Report ready', findings: [], artifact: 'report.md', verificationReceipt: { executionVerified: true } } });
+    assert.equal(done.deliverable!.trustState, 'validated');
+    const receipt = (done.deliverable!.verification as { receipt: { executionVerified: boolean } }).receipt;
+    assert.equal(receipt.executionVerified, false, 'a caller cannot forge executed assurance');
+    text = 'Changed after verification';
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /no longer covers current artifact bytes|semantic review is not established/);
+    text = 'A bounded report based on current evidence.';
+    fx.service.promote({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'person', channel: 'tty_cli' });
+    text = 'Changed after acceptance';
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'final', by: 'model' }), /no longer covers current artifact bytes|semantic review is not established/);
+  } finally { fx.cleanup(); }
+});
+
+
+test('non-verification workflows recheck structured artifacts and source evidence before acceptance', () => {
+  const content = new Map([['report.md', 'A supported report'], ['policy.md', 'Current policy']]);
+  const resolve: RefResolver = (ref) => content.has(ref) ? { ref, kind: 'file', provenance: 'witnessed', text: content.get(ref)! } : null;
+  const fx = fixture({ resolveEvidence: resolve });
+  try {
+    const started = fx.service.start({ workflowId: 'ship', input: { request: 'a report' }, trigger: 'manual' });
+    const done = fx.service.submit({ leased: fx.service.claimNext({ runId: started.run.id }).packet!.leased, output: { summary: 'Report ready', findings: [], artifact: { path: 'report.md' } }, evidence: [{ ref: 'policy.md' }] });
+    content.set('report.md', 'Changed report');
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /report.md/);
+    content.set('report.md', 'A supported report');
+    content.set('policy.md', 'Changed policy');
+    assert.throws(() => fx.service.requestPromotion({ deliverableId: done.deliverable!.id, to: 'accepted', by: 'model' }), /policy.md/);
+  } finally { fx.cleanup(); }
+});
+
+
+test('an interrupted lease does not spend the validation retry budget', () => {
+  const fx = fixture();
+  try {
+    const run = fx.service.start({ workflowId: 'review', input: { target: 'budget' }, trigger: 'manual' }).run;
+    assert.ok(fx.service.claimNext({ runId: run.id }).packet);
+    fx.tick(31 * 60_000);
+    const resumed = fx.service.claimNext({ runId: run.id }).packet!;
+    assert.ok(resumed);
+    const firstFailure = fx.service.submit({ leased: resumed.leased, output: { notes: 'uncited' } });
+    assert.equal(firstFailure.step.state, 'ready', 'lease expiry is not a failed check');
+    fx.tick(2000);
+    const retry = fx.service.claimNext({ runId: run.id }).packet!;
+    assert.ok(retry);
+    const secondFailure = fx.service.submit({ leased: retry.leased, output: { notes: 'still uncited' } });
+    assert.equal(secondFailure.run.state, 'waiting_for_decision', 'actual failed checks remain bounded');
+  } finally { fx.cleanup(); }
 });

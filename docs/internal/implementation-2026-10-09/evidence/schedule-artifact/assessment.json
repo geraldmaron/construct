@@ -1,0 +1,75 @@
+{
+  "trial": "schedule-artifact",
+  "packageSha256": "691f73a7188c57ce1f6b16b60ddfa9ac626850d90b4acae87aaa9ce917662822",
+  "prompt": "Every day at 09:00 UTC, assess whether current telemetry satisfies our release policy and write release-brief.md. Keep the result local.",
+  "consumer": {
+    "code": 0,
+    "signal": null,
+    "timedOut": false,
+    "endedAt": "2026-10-09T17:47:57.014Z"
+  },
+  "originAndExecutor": {
+    "originEndedAt": "2026-10-09T17:47:57.014Z",
+    "executorStartedAt": "2026-10-09T17:47:57.114Z",
+    "trigger": "trigger-e6d348474275ba11aa80d953",
+    "sourceCorrection": "same observedAt; schema changes from basis points to counts; exact threshold"
+  },
+  "executor": {
+    "code": 0,
+    "signal": null,
+    "at": "2026-10-09T17:49:41.625Z"
+  },
+  "fire": {
+    "firing": {
+      "id": "firing-11fd0363",
+      "triggerId": "trigger-e6d348474275ba11aa80d953",
+      "idempotencyKey": "ordinary-after-exit",
+      "firedAt": "2026-10-09T17:47:57.376Z",
+      "runId": "run-c9e95fc3",
+      "outcome": "started",
+      "reason": "operational-readiness-review 1.0.1 can run: 4 step(s)"
+    },
+    "outcome": "started",
+    "runId": "run-c9e95fc3",
+    "reason": "operational-readiness-review 1.0.1 can run: 4 step(s)",
+    "nextDueAt": "2026-10-10T09:00:00.000Z",
+    "execution": {
+      "exitStatus": 0,
+      "signal": null,
+      "timedOut": false,
+      "transcriptDigest": "51313f523ef862191990d1d382d6fa3295463e4ac3ca2a74101456f496d4cede",
+      "events": 45
+    },
+    "runState": "succeeded",
+    "complete": true,
+    "next": "Review the local deliverable and its assurance."
+  },
+  "runs": [
+    {
+      "id": "run-c9e95fc3",
+      "workflow_id": "operational-readiness-review",
+      "state": "succeeded"
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-7f1191e1",
+      "trust_state": "draft",
+      "body_json": "{\"summary\": \"NOT READY as of 2026-10-09. For the 15:00Z\\u201316:00Z snapshot, the observed error rate is 1.00% (200/20,000), while the governing policy requires it to be strictly below 1%. Zero open P1 incidents satisfies the second explicit gate, but no objective configuration, alert, responder, runbook, rollback, or capacity record is held, so broader operational readiness cannot be established.\", \"findings\": [{\"severity\": \"blocking\", \"finding\": \"The explicit error-rate gate fails: 200 / 20,000 = 0.01 = 1.00%, not strictly below 1%.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"pass\", \"finding\": \"The explicit incident gate passes for the snapshot because openP1 is 0.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"blocking\", \"finding\": \"No held alert configuration or responder record establishes how anyone would notice or own a post-release failure.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"blocking\", \"finding\": \"No held runbook or rollback record establishes a tested response or way back.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"unknown\", \"finding\": \"Capacity limits and the first expected saturation point are not stated in the bounded evidence.\", \"evidence\": [\"README.md\", \"data/telemetry.json\"]}, {\"severity\": \"boundary\", \"finding\": \"This review cannot authorize or perform a release; the policy expressly defines criteria only.\", \"evidence\": [\"data/policy.md\"]}], \"assumptions\": [{\"assumption\": \"The arithmetic uses failedRequests as numerator and requests as denominator because those are the only scoped counters supplied.\", \"evidence\": [\"data/telemetry.json\"]}, {\"assumption\": \"The review is bounded to the recorded one-hour telemetry snapshot and local project evidence as of 2026-10-09.\", \"evidence\": [\"data/telemetry.json\", \"README.md\"]}, {\"assumption\": \"Absence of operational records means unverified, not proof that the operational controls do not exist.\", \"evidence\": [\"README.md\"]}], \"escalations\": [{\"needed\": \"Do not proceed under the stated policy until a same-window observation is strictly below 1% and no P1 is open.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"needed\": \"Before declaring operational readiness, provide held evidence for symptom alerts, responder/on-call ownership, a tested runbook, rollback, and capacity limits.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}], \"unread\": [], \"methods\": [{\"id\": \"operations-reliability\", \"disposition\": \"applied\", \"why\": \"Checked measured objective gate, failure notice, responder, runbook, rollback, and capacity obligations; missing records remain unknown or blocking.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\", \"README.md\"]}, {\"id\": \"adversarial-review\", \"disposition\": \"deferred\", \"why\": \"The mandatory challenge will run against the finished release brief after synthesis.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"id\": \"context-mapping\", \"disposition\": \"applied\", \"why\": \"Relied on the gathered typed dependency map and classified unknowns.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\", \"README.md\"]}, {\"id\": \"written-voice\", \"disposition\": \"skipped\", \"why\": \"This step produces structured review content; final file composition is a later step.\", \"evidence\": [\"README.md\"]}], \"evidence\": [{\"ref\": \"data/policy.md\", \"excerpt\": \"Requires observed error rate strictly below 1%, no open P1, same-window counters; missing definitions/window block; does not authorize release.\"}, {\"ref\": \"data/telemetry.json\", \"excerpt\": \"200 failedRequests and 20000 requests in 15:00Z\\u201316:00Z; openP1 0; observed at 16:00Z.\"}, {\"ref\": \"README.md\", \"excerpt\": \"Only local policy and telemetry are identified; no external service; review stays in project.\"}], \"sensitivity\": null, \"sensitivityUnknown\": 0, \"provenance\": {\"witnessed\": 3, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}, \"period\": {\"semantics\": \"as_of\", \"from\": null, \"to\": \"2026-10-09\", \"timezone\": \"UTC\", \"how\": \"relative\", \"relative\": \"today\", \"phrase\": \"current telemetry\", \"resolvedAt\": \"2026-10-09T17:47:57.376Z\", \"endsAfterToday\": false, \"assumptions\": [\"dates are in UTC\", \"as_of keeps only the end date\"], \"coverage\": {\"inside\": [], \"before\": [], \"after\": [], \"undated\": [\"data/policy.md\", \"data/telemetry.json\", \"README.md\"], \"acknowledged\": []}}, \"sources\": {\"named\": [\"release-policy\", \"current-telemetry\"], \"read\": [], \"unread\": []}}",
+      "verification_json": null
+    },
+    {
+      "id": "deliverable-8284216f",
+      "trust_state": "validated",
+      "body_json": "{\"recordedIds\": [], \"decisionIds\": [], \"artifact\": \"release-brief.md\", \"verification\": {\"command\": \"test -s release-brief.md and rg required outcome, arithmetic, source links, and adversarial verdict\", \"result\": \"passed\"}, \"methods\": [{\"id\": \"adversarial-review\", \"disposition\": \"applied\", \"why\": \"Ran all six challenges against the finished brief, disclosed self-review, and recorded an unhedged Rejected verdict because the explicit threshold fails and operating controls are unverified.\", \"evidence\": [\"release-brief.md\", \"data/policy.md\", \"data/telemetry.json\", \"README.md\"]}, {\"id\": \"written-voice\", \"disposition\": \"applied\", \"why\": \"Composed the requested project file with outcome first, concise gate results, operational limits, and evidence links.\", \"evidence\": [\"release-brief.md\"]}, {\"id\": \"operations-reliability\", \"disposition\": \"applied\", \"why\": \"Carried the measured gate and unverified alert, responder, runbook, rollback, and capacity obligations into the artifact.\", \"evidence\": [\"release-brief.md\", \"data/policy.md\", \"data/telemetry.json\"]}], \"review\": [{\"severity\": \"blocking\", \"finding\": \"The explicit error-rate gate fails: 200 / 20,000 = 0.01 = 1.00%, not strictly below 1%.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"pass\", \"finding\": \"The explicit incident gate passes for the snapshot because openP1 is 0.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"blocking\", \"finding\": \"No held alert configuration or responder record establishes how anyone would notice or own a post-release failure.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"blocking\", \"finding\": \"No held runbook or rollback record establishes a tested response or way back.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}, {\"severity\": \"unknown\", \"finding\": \"Capacity limits and the first expected saturation point are not stated in the bounded evidence.\", \"evidence\": [\"README.md\", \"data/telemetry.json\"]}, {\"severity\": \"boundary\", \"finding\": \"This review cannot authorize or perform a release; the policy expressly defines criteria only.\", \"evidence\": [\"data/policy.md\"]}], \"escalations\": [{\"needed\": \"Do not proceed under the stated policy until a same-window observation is strictly below 1% and no P1 is open.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"needed\": \"Before declaring operational readiness, provide held evidence for symptom alerts, responder/on-call ownership, a tested runbook, rollback, and capacity limits.\", \"evidence\": [\"README.md\", \"data/policy.md\", \"data/telemetry.json\"]}], \"unknowns\": [{\"classification\": \"looked-and-unclear\", \"item\": \"Owner and release decision-maker are not identified.\", \"examined\": [\"data/policy.md\", \"data/telemetry.json\", \"README.md\"]}, {\"classification\": \"looked-and-unclear\", \"item\": \"Counter inclusion/exclusion semantics are not defined beyond count.\", \"examined\": [\"data/telemetry.json\", \"data/policy.md\"]}, {\"classification\": \"unknowable-from-here\", \"item\": \"Whether a later snapshot supersedes the 16:00Z snapshot.\", \"needs\": \"A newer registered local source or a person.\"}], \"evidence\": [{\"ref\": \"release-brief.md\", \"excerpt\": \"Held local artifact with Not ready outcome, gate arithmetic, operational limits, and VERDICT: Rejected adversarial challenge.\"}, {\"ref\": \"data/policy.md\", \"excerpt\": \"Strictly-below-1% and no-open-P1 criteria; missing definitions/window block; no release authorization.\"}, {\"ref\": \"data/telemetry.json\", \"excerpt\": \"200/20000, openP1 0, one-hour window, observed at 16:00Z.\"}, {\"ref\": \"README.md\", \"excerpt\": \"Bounded local workspace with no external service.\"}], \"sensitivity\": null, \"sensitivityUnknown\": 0, \"provenance\": {\"witnessed\": 4, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}, \"period\": {\"semantics\": \"as_of\", \"from\": null, \"to\": \"2026-10-09\", \"timezone\": \"UTC\", \"how\": \"relative\", \"relative\": \"today\", \"phrase\": \"current telemetry\", \"resolvedAt\": \"2026-10-09T17:47:57.376Z\", \"endsAfterToday\": false, \"assumptions\": [\"dates are in UTC\", \"as_of keeps only the end date\"], \"coverage\": {\"inside\": [], \"before\": [], \"after\": [], \"undated\": [\"release-brief.md\", \"data/policy.md\", \"data/telemetry.json\", \"README.md\"], \"acknowledged\": []}}, \"sources\": {\"named\": [\"release-policy\", \"current-telemetry\"], \"read\": [], \"unread\": []}}",
+      "verification_json": "{\"validators\": [{\"validator\": \"schema\", \"ok\": true, \"problems\": []}], \"receipt\": {\"formatVersion\": 1, \"runId\": \"run-c9e95fc3\", \"stepRunId\": \"step-a46f1b8b\", \"observedAt\": \"2026-10-09T17:49:36.803Z\", \"actor\": \"runner:codex:ca3e7a4f-0054-4d59-8acf-36deb9e88fc1\", \"assurance\": \"structural\", \"executionVerified\": false, \"semanticSupportVerified\": false, \"subjects\": [{\"ref\": \"release-brief.md\", \"digest\": \"ec9d27c8c3450174e3660c025b2c7da34439a7f0e3b347ef83b9784ead3f0c1d\", \"provenance\": \"witnessed\"}], \"evidence\": [{\"ref\": \"release-brief.md\", \"digest\": \"ec9d27c8c3450174e3660c025b2c7da34439a7f0e3b347ef83b9784ead3f0c1d\", \"provenance\": \"witnessed\"}, {\"ref\": \"data/policy.md\", \"digest\": \"1e794a452c10023fb2c9fb95a2ffba1a94ed6f78067e41eba8fd8e2582267685\", \"provenance\": \"witnessed\"}, {\"ref\": \"data/telemetry.json\", \"digest\": \"d950f3e31f884504c619499b9d2d1ae8e6e05cb9c01ff9d0377b09dd7b8e30a3\", \"provenance\": \"witnessed\"}, {\"ref\": \"README.md\", \"digest\": \"c0df83c9acd2e9cde41baed97eea3930ac89f424e155fb5499cb364aaa61835d\", \"provenance\": \"witnessed\"}], \"checks\": [{\"validator\": \"schema\", \"ok\": true}]}, \"assurance\": \"structural\", \"executionVerified\": false, \"semanticSupportVerified\": false, \"challengeRequired\": true, \"evidence\": {\"witnessed\": 4, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}}"
+    }
+  ],
+  "artifactSha256": "ec9d27c8c3450174e3660c025b2c7da34439a7f0e3b347ef83b9784ead3f0c1d",
+  "assessment": "PASS for the bounded Codex/local contract: ordinary scheduled intent persisted, origin exited, explicit external test clock executed later, changed schema with unchanged timestamp read, correct strict-threshold HOLD, requested local brief exists and digest is bound in receipt. No native records invented. Structural assurance only; no claim of semantic proof or permanent clock provisioning.",
+  "limits": [
+    "Synthetic local source, one host, one final repetition.",
+    "The review requires no run_tests step; executionVerified remains false and semanticSupportVerified false.",
+    "The parent harness explicitly fired the clock once; no cron daemon was installed."
+  ]
+}

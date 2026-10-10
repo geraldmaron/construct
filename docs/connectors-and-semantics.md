@@ -69,10 +69,28 @@ credential replaced by `[redacted]`, and capped at 16 KiB per item; the
 report names any item whose text it cut, a quote past the cut is not
 checked, and a figure past it is not grounded, so report the passage you
 rely on as its own item. Whether an item changed is still judged on what
-the host read, so a rotated key is a change. A partial report updates only
-the items it names; nothing is treated as removed because it was not read.
-`bootstrap` lists the sources only the host can read that have never been
-reported or have gone stale.
+the host read, so a rotated key is a change. The redaction also replaces
+long hyphenated names that hold a digit
+(`release-2026-10-09-alpha-26-notes`), most full-length commit SHAs (one
+whose characters repeat enough to look like a word is kept), and `sk-`
+followed by twenty or more letters, digits, hyphens, or underscores, as in
+a slug such as `Risk-Assessment-for-Q3-Launch`; short names and
+abbreviated SHAs are left alone. A quote that starts or ends partway into
+such a run can read as a misquote. A partial report updates only the items
+it names; nothing is treated as removed because it was not read. `bootstrap` lists the
+sources only the host can read that have never been reported or have gone
+stale.
+
+In Claude Code, the hook that `init` installs to run after each tool call
+(`construct hook post-tool`) does this reporting for Jira. When a Jira or
+Atlassian connector tool returns issues whose keys carry a declared `jira`
+source's project key, it records them as a partial read of that source:
+each issue as readable text, with its browse address and the tool that
+carried it. Jira-shaped text in any other tool's response (a wiki page, a
+web fetch, a chat message) is that tool's content and records nothing. In
+other hosts, and for every other system, the host reports with `sources`
+action `report` (see
+[Hooks](first-run-and-hosts.md#hooks-habits-that-do-not-depend-on-the-model)).
 
 A citation into what only the host can read resolves to the item a
 recorded read holds, never to the whole source and never to an item the
@@ -82,7 +100,10 @@ page nobody reported, or a source never read does not resolve, and the
 check that refused it says to report the read first. Set to accept, such a
 citation resolves on the host's word and is counted as unverified. Items
 match exactly as recorded: `confluence:98765#heading` is not
-`confluence:98765`; cite the ref or the url as it was reported.
+`confluence:98765`; cite the ref as it was reported. A url matches the
+item a read recorded under it whatever its fragment, `http` or `https`,
+the letter case of its host, a default port, or a trailing slash; its path
+and query must match as recorded.
 
 What the host reports is kept as data for checking quotes and figures. It
 is never read back to the host as an instruction, and it cannot approve,

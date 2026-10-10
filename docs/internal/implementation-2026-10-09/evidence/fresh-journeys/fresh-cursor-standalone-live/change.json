@@ -1,0 +1,13 @@
+{
+  "phase": 2,
+  "at": "2026-10-09T22:39:12.075Z",
+  "providerTimestampsUnchanged": true,
+  "mtimePreserved": true,
+  "stock": 6,
+  "stockUnit": "case",
+  "unitsPerCase": 6,
+  "reserved": 4,
+  "reservedUnit": "each",
+  "expectedNet": 32,
+  "expectedDeficit": 28
+}

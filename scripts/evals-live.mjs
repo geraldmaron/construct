@@ -212,10 +212,28 @@ export function corpusDigest() {
   return bundleDigest([{ relativePath: 'intake.json', bytes: readFileSync(CORPUS) }]);
 }
 
-/** The model-facing digest of this tree's built-in surface. */
+/** Runtime and invocation bytes are part of the evaluated surface too. A validator
+ * or host adapter change cannot inherit an earlier routing pass merely because
+ * the tool descriptions stayed the same. Only repository code paths are read.
+ */
+export function executionSurfaceDigest(root = ROOT) {
+  const files = [];
+  const walk = (path) => {
+    for (const entry of readdirSync(join(root, path), { withFileTypes: true })) {
+      const name = join(path, entry.name);
+      if (entry.isDirectory()) walk(name);
+      else if (entry.isFile()) files.push({ relativePath: name.replaceAll('\\', '/'), bytes: readFileSync(join(root, name)) });
+    }
+  };
+  for (const path of ['src', 'bin', 'scripts']) if (existsSync(join(root, path))) walk(path);
+  for (const path of ['package.json', 'package-lock.json']) if (existsSync(join(root, path))) files.push({ relativePath: path, bytes: readFileSync(join(root, path)) });
+  return bundleDigest(files);
+}
+
+/** The model-facing and execution digest of this tree's built-in surface. */
 export function descriptionsDigest() {
   const { skills, workflows } = builtins();
-  return modelFacingDigest('interactive', skills, workflows);
+  return bundleDigest([{ relativePath: 'model-facing', bytes: Buffer.from(modelFacingDigest('interactive', skills, workflows)) }, { relativePath: 'execution', bytes: Buffer.from(executionSurfaceDigest()) }]);
 }
 
 /** The workflows a server ships, read from its own manifests, so a baseline run is observed against its own catalog. */
@@ -986,7 +1004,7 @@ export function checkRecord({ recordPath = RECORD, corpus = () => loadCorpus(), 
     return { ok: false, problems: [error instanceof Error ? error.message : String(error)] };
   }
   if (record.corpusDigest !== currentCorpusDigest()) problems.push('the corpus changed since the record was made (skills/evals/intake.json)');
-  if (record.descriptionsDigest !== currentDescriptionsDigest()) problems.push('the model-facing text changed since the record was made (server instructions, tool descriptions or schemas, the operational skill, or skill and workflow text)');
+  if (record.descriptionsDigest !== currentDescriptionsDigest()) problems.push('the model-facing text or runtime/invocation bytes changed since the record was made (instructions, schemas, skills, workflows, source, host adapters, scripts or dependency lock)');
   for (const [name, condition] of Object.entries(record.conditions)) {
     const now = CROWDED_CONDITIONS.has(name) ? stubsDigest() : name === 'injected' ? stubsDigest([INJECTED_CONNECTOR]) : undefined;
     if (condition.stubsDigest !== now) problems.push(`the competing servers of the ${name} condition changed since the record was made (CROWDED_STUBS in scripts/evals-live.mjs)`);

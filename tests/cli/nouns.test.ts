@@ -18,7 +18,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
   await inProject(async (ctx, box) => {
     const list = await capture(() => run(['workflow', 'list'], ctx));
     assert.equal(list.code, 0, list.err);
-    assert.match(list.out, /^design-conformance\s+2\.0\.0\s+builtin\s+manage/m);
+    assert.match(list.out, /^design-conformance\s+2\.0\.1\s+builtin\s+manage/m);
     assert.match(list.out, /^remember\s+1\.0\.0\s+builtin\s+remember/m);
     const show = await capture(() => run(['workflow', 'show', 'design-conformance'], ctx));
     assert.match(show.out, /steps:/);
@@ -52,7 +52,7 @@ test('workflow list, show, resolve, validate, and run (dry and real) from the co
     assert.match(again.out, /already running: run /);
 
     const runs = await capture(() => run(['run', 'list'], ctx));
-    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.0\\s+ready\\s+manual`, 'm'));
+    assert.match(runs.out, new RegExp(`^${record.run.id}\\s+design-conformance@2\\.0\\.1\\s+ready\\s+manual`, 'm'));
     const filtered = await capture(() => run(['run', 'list', '--state=succeeded', '--json'], ctx));
     assert.deepEqual(JSON.parse(filtered.out), []);
     const badState = await capture(() => run(['run', 'list', '--state=done'], ctx));
@@ -106,13 +106,13 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
     const triggers = await capture(() => run(['workflow', 'triggers'], ctx));
     assert.match(triggers.out, /^monthly\s+design-conformance\s+schedule\s+enabled\s+0 9 1 \* \* Europe\/Berlin/m);
     const fired = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-1', '--json'], ctx));
-    assert.equal(fired.code, 0, fired.err);
+    assert.equal(fired.code, 1, fired.err);
     const first = JSON.parse(fired.out) as { outcome: string; runId: string };
-    assert.equal(first.outcome, 'started');
+    assert.equal(first.outcome, 'blocked');
     const dup = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-1'], ctx));
     assert.match(dup.out, /^deduplicated run /);
     const overlap = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-2'], ctx));
-    assert.match(overlap.out, /^skipped_overlap/);
+    assert.match(overlap.out, /^blocked/);
     const dry = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-3', '--dry-run'], ctx));
     assert.match(dry.out, /^dry_run/);
     const disabled = await capture(() => run(['workflow', 'disable', 'monthly'], ctx));
@@ -120,8 +120,8 @@ test('a standing trigger is scheduled, listed, fired idempotently, disabled, and
     const off = await capture(() => run(['workflow', 'fire', 'monthly', '--key=tick-4'], ctx));
     assert.match(off.out, /^disabled/);
     const recipe = await capture(() => run(['workflow', 'recipe', 'monthly'], ctx));
-    assert.match(recipe.out, /construct workflow fire monthly --key/);
-    const ci = await capture(() => run(['workflow', 'recipe', 'monthly', '--clock=github-actions'], ctx));
+    assert.match(recipe.out, /Unprovisioned/);
+    const ci = await capture(() => run(['workflow', 'recipe', 'monthly', '--clock=github-actions', '--executor=codex'], ctx));
     assert.match(ci.out, /schedule:/);
     const enabled = await capture(() => run(['workflow', 'enable', 'monthly', '--json'], ctx));
     assert.equal(JSON.parse(enabled.out).enabled, true);

@@ -1,0 +1,21 @@
+{
+  "scenario": "Source bytes change between production and verification; no reread or analysis revision by the producer.",
+  "old": "The export contains personal email addresses.",
+  "current": "The export does not contain personal email addresses.",
+  "artifact": "The export contains personal email addresses.",
+  "productionState": "succeeded",
+  "runState": "failed",
+  "validation": [
+    {
+      "validator": "evidence_generation",
+      "ok": false,
+      "problems": [
+        "Previously consumed evidence changed or became unavailable: docs/design.md. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+      ]
+    }
+  ],
+  "currentSourceDigest": "cbe698992b153088ad756b73b30d4607c1cf471a4507d368b26135af0e77536c",
+  "finalReceipt": null,
+  "deliverable": [],
+  "scope": "Public broker fixture with actual harmless command observation; semanticSupportVerified is false and this does not assert general semantic proof."
+}

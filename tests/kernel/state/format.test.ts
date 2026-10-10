@@ -1,5 +1,5 @@
 /**
- * tests/kernel/state/format.test.ts — format 4 is created fresh; formats 2 and 3
+ * tests/kernel/state/format.test.ts — format 5 is created fresh; formats 2 and 3
  * upgrade one way when asked; anything else is refused unread.
  */
 
@@ -28,7 +28,7 @@ function tmp(): { root: string; cleanup(): void } {
   return { root, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
-test('a fresh open creates one database stamped format 4, plus only its WAL sidecars', () => {
+test('a fresh open creates one database stamped format 5, plus only its WAL sidecars', () => {
   const fx = freshStore();
   try {
     const meta = Object.fromEntries(
@@ -38,7 +38,7 @@ test('a fresh open creates one database stamped format 4, plus only its WAL side
     );
     assert.equal(meta.format, STATE_FORMAT_ID);
     assert.equal(meta.format_version, String(STATE_FORMAT_VERSION));
-    assert.equal(STATE_FORMAT_VERSION, 4);
+    assert.equal(STATE_FORMAT_VERSION, 5);
     const files = readdirSync(dirname(fx.dbPath)).sort();
     assert.deepEqual(files.filter((f) => !/^construct\.sqlite-(?:wal|shm)$/.test(f)), ['construct.sqlite']);
     const tables = new Set(
@@ -211,7 +211,7 @@ test('a complete format-2 store upgrades only when asked, in place, and keeps it
     assert.throws(() => openStateStore(fx.dbPath, { readOnly: true, migrate: true }), (err: unknown) => err instanceof UnsupportedStateError && err.kind === 'older');
     const again = openStateStore(fx.dbPath, { migrate: true });
     const meta = again.db.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string };
-    assert.equal(meta.value, '4');
+    assert.equal(meta.value, '5');
     const tables = new Set(
       (again.db.prepare(`SELECT name FROM sqlite_master WHERE type = 'table'`).all() as Array<{ name: string }>).map((r) => r.name),
     );
@@ -233,7 +233,7 @@ function shape(db: DatabaseSync): Record<string, unknown> {
   return out;
 }
 
-test('a format-3 store upgraded to format 4 has exactly the shape of a fresh one, and keeps its rows', () => {
+test('a format-3 store upgraded to format 5 has exactly the shape of a fresh one, and keeps its rows', () => {
   const fresh = freshStore();
   const old = freshStore();
   try {

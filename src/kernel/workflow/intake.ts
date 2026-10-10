@@ -76,7 +76,8 @@ const SOURCE_KEYS = ['name', 'id', 'role'] as const;
 const DESTINATION_KEYS = ['kind', 'ref', 'name'] as const;
 const SCHEDULE_KEYS = ['cron', 'timezone', 'event', 'phrase'] as const;
 const STAKES_KEYS = ['reversible', 'affects'] as const;
-const OPEN_KEYS = ['about', 'question', 'blocking', 'assumption'] as const;
+export const OPEN_HANDLING = ['investigate', 'carry_unknown'] as const;
+const OPEN_KEYS = ['about', 'question', 'blocking', 'assumption', 'handling'] as const;
 
 // ---------------------------------------------------------------- shapes
 
@@ -118,6 +119,8 @@ export interface OpenItem {
   readonly blocking: boolean;
   /** For a non-blocking item, what the host took as given instead. */
   readonly assumption: string | null;
+  /** Evidence may be investigated or explicitly left unknown without inventing an assumption. */
+  readonly handling?: (typeof OPEN_HANDLING)[number];
 }
 
 /** The host's reading of one request, as reported and then normalized; every field is present. */
@@ -346,7 +349,7 @@ function deliverableVocabulary(catalog: IntakeCatalog): { readonly kinds: readon
 /**
  * A model-supplied deliverable kind as a declared one: kept when it is
  * declared, a family, or other; otherwise the one declared kind (or family)
- * with exactly the same words; otherwise null.
+ * with exactly the same words; or an unambiguous leaf identifier such as prd; otherwise null.
  */
 function declaredKind(kind: string, catalog: IntakeCatalog): string | null {
   const { kinds, families } = deliverableVocabulary(catalog);
@@ -356,7 +359,11 @@ function declaredKind(kind: string, catalog: IntakeCatalog): string | null {
   const family = [...families].find((f) => tokenKey(f) === key);
   if (family !== undefined) return family;
   const hits = kinds.filter((k) => tokenKey(k) === key);
-  return hits.length === 1 ? hits[0]! : null;
+  if (hits.length === 1) return hits[0]!;
+  // Normalize the host's typed enum, never infer intent from the person's prose.
+  // A unique registered leaf must not silently lose its specialist workflow.
+  const leaves = kinds.filter((k) => k.includes('/') && tokenKey(k.slice(k.lastIndexOf('/') + 1)) === key);
+  return leaves.length === 1 ? leaves[0]! : null;
 }
 
 // ---------------------------------------------------------------- sources
@@ -449,7 +456,7 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
         describe = asked;
       }
     } else if (resolved !== asked) {
-      coerce('deliverable.kind', asked, resolved, resolved.includes('/') ? 'the same words as a declared deliverable kind' : 'the same words as a deliverable family');
+      coerce('deliverable.kind', asked, resolved, resolved.includes('/') ? (tokenKey(asked) === tokenKey(resolved) ? 'the same words as a declared deliverable kind' : 'the unique leaf of a declared deliverable kind') : 'the same words as a deliverable family');
     }
     if (resolved === OTHER_KIND && describe === null) fail('deliverable.describe', '"deliverable.describe" is required with other: say in a few words what the person wants back');
     deliverable = { kind: resolved, describe };
@@ -603,8 +610,8 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
     const named = catalog.workflows.find((w) => w.manifest.id === workflowId);
     const ids = catalog.workflows.filter(matchable).map((w) => w.manifest.id);
     if (!named || !matchable(named)) fail('workflowId', `no workflow "${workflowId}" carries work here`, ids);
-    if (work && !carries(named, kind, schedule)) {
-      const fits = catalog.workflows.filter((w) => matchable(w) && carries(w, kind, schedule)).map((w) => w.manifest.id);
+    if (work && !workflowCarries(named, kind, schedule)) {
+      const fits = catalog.workflows.filter((w) => matchable(w) && workflowCarries(w, kind, schedule)).map((w) => w.manifest.id);
       fail('workflowId', `${workflowId} cannot carry this ${kind} reading: it starts on ${named.manifest.triggers.join(', ')}`, fits);
     }
   }
@@ -630,13 +637,16 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
     const question = requiredText(o.question, `${field}.question`, 'the question, as it would be put to the person');
     if (typeof o.blocking !== 'boolean') fail(`${field}.blocking`, `"${field}.blocking" is required: true when the work cannot start until the person answers`);
     const assumption = text(o.assumption, `${field}.assumption`);
+    const handling = given(o.handling) ? oneOf(o.handling, `${field}.handling`, OPEN_HANDLING) : undefined;
+    if (handling && o.blocking) fail(`${field}.handling`, 'an evidence gap can be investigated or carried unknown only when blocking is false; keep required permission, scope and destination decisions blocking');
+    if (handling && assumption !== null) fail(`${field}.assumption`, 'an evidence gap remains unknown; do not pair handling with an assumed answer');
     let blocking = o.blocking;
-    if (!blocking && (assumption === null || !assumption.trim())) {
+    if (!blocking && !handling && (assumption === null || !assumption.trim())) {
       coerce(`${field}.blocking`, false, true, 'a non-blocking item says what was taken as given instead; this one says nothing, so it blocks');
       blocking = true;
     }
-    if (!blocking) assumptions.push({ about, text: assumption!, by: 'host' });
-    return { about, question, blocking, assumption };
+    if (!blocking && !handling) assumptions.push({ about, text: assumption!, by: 'host' });
+    return { about, question, blocking, assumption, ...(handling ? { handling } : {}) };
   });
 
   // inputs: workflow inputs by the workflow's own keys, checked against a workflow when mapped.
@@ -668,7 +678,7 @@ function projectPath(ref: string, root: string): string | null {
 // ---------------------------------------------------------------- matchWorkflows
 
 /** Whether a workflow can be started for this kind of reading, by its triggers. */
-function carries(w: RegisteredWorkflow, kind: IntakeKind, schedule: IntakeSchedule | null): boolean {
+export function workflowCarries(w: RegisteredWorkflow, kind: IntakeKind, schedule: IntakeSchedule | null): boolean {
   if (!matchable(w)) return false;
   const triggers = w.manifest.triggers;
   if (kind === 'manage') return triggers.includes('manual');
@@ -695,7 +705,7 @@ function boundSkills(w: RegisteredWorkflow): string[] {
  */
 export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): WorkflowMatch[] {
   if (!isWork(intake.kind)) return [];
-  const pool = catalog.workflows.filter((w) => carries(w, intake.kind, intake.schedule));
+  const pool = catalog.workflows.filter((w) => workflowCarries(w, intake.kind, intake.schedule));
   const out = new Map<string, WorkflowMatch>();
   const binds = (w: RegisteredWorkflow): boolean => intake.skill !== null && boundSkills(w).includes(intake.skill);
   const skillFirst = (ws: readonly RegisteredWorkflow[]): RegisteredWorkflow[] => [...ws.filter(binds), ...ws.filter((w) => !binds(w))];

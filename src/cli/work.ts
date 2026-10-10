@@ -40,6 +40,7 @@ import { createContext, type CliContext } from './context.ts';
 import { withProject } from './context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const group = 'Work';
@@ -469,13 +470,13 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'export': {
         const dump = exportWork(project.store, at, project.files.config?.id ?? null);
-        writeFileSync(args.positionals[0]!, `${JSON.stringify(dump, null, 2)}\n`);
+        writeFileSync(resolve(ctx.cwd, args.positionals[0]!), `${JSON.stringify(dump, null, 2)}\n`);
         if (args.json) writeJson({ file: args.positionals[0], count: dump.work.length });
         else say(`wrote ${String(dump.work.length)} work item(s) to ${esc(args.positionals[0]!)}`);
         return 0;
       }
       case 'restore': {
-        const dump = JSON.parse(readFileSync(args.positionals[0]!, 'utf8')) as ReturnType<typeof exportWork>;
+        const dump = JSON.parse(readFileSync(resolve(ctx.cwd, args.positionals[0]!), 'utf8')) as ReturnType<typeof exportWork>;
         const report = restoreWork(project.store, dump, at, project.files.config?.id ?? null);
         if (args.json) writeJson(report);
         else say(`restored ${String(report.imported)}, skipped ${String(report.skipped)}, conflicts ${String(report.conflicts.length)}`);
@@ -483,7 +484,7 @@ export async function workCommand(sub: string, args: ParsedArgs, ctx: CliContext
       }
       case 'import-legacy': {
         const report = importLegacySnapshot(project.store, {
-          jsonl: readFileSync(args.positionals[0]!, 'utf8'),
+          jsonl: readFileSync(resolve(ctx.cwd, args.positionals[0]!), 'utf8'),
           at,
           dryRun: boolFlag(args, 'dry-run'),
           nextId: ctx.nextId,

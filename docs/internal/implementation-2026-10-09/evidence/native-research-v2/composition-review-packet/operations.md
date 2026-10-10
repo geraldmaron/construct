@@ -1,0 +1,1 @@
+Checksum verification is for file integrity. It does not establish distribution rights, privacy clearance or accessibility.

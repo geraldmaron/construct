@@ -274,12 +274,12 @@ export function createMcpHandler(surface: BrokerSurface, ctx: BrokerContext, opt
           // Wrong input is a tool error the model reads and corrects; only a tool
           // this surface does not carry is a protocol error.
           if (error instanceof ToolInputError) {
-            return response(id, { ...text({ error: messageText, field: error.field, allowed: error.allowed, example: error.example }), isError: true });
+            return response(id, { ...text({ error: messageText, field: error.field, allowed: error.allowed, example: error.example, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Correct the indicated input or satisfy the missing prerequisite, then retry. Do not advance a managed outcome as though this operation succeeded; do not invent a run, source or claim.' } }), isError: true });
           }
           if (error instanceof UnsupportedStateError) {
             return response(id, { ...text({ error: `${messageText.split('\n')[0]!} Nothing was written. Restart the MCP server so the matching Construct build binds.` }), isError: true });
           }
-          return response(id, { ...text({ error: messageText }), isError: true });
+          return response(id, { ...text({ error: messageText, recovery: { tool: tool.name, inputSchema: tool.inputSchema, next: 'This call failed. Inspect the stated prerequisite and current state; correct the input or satisfy the prerequisite before retrying. Do not advance a managed outcome as though it succeeded, invent a source or claim, or bypass a permission refusal.' } }), isError: true });
         }
       }
       default:

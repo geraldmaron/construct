@@ -4,6 +4,10 @@
  * them from an external clock.
  */
 
+import { randomUUID } from 'node:crypto';
+import { prepareExecutor, executeRun, executorSupport } from '../hosts/executors.ts';
+import { appendActivity } from '../kernel/state/activity.ts';
+import { expireDeadLeases } from '../kernel/state/steps.ts';
 import { listTriggers } from '../kernel/state/triggers.ts';
 import { OVERLAP_POLICIES, TRIGGER_ADAPTERS } from '../kernel/state/triggers.ts';
 import { ACTION_TIERS, type ActionTier } from '../kernel/state/steps.ts';
@@ -11,11 +15,14 @@ import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './comma
 import { createContext, type CliContext } from './context.ts';
 import { openBroker } from './broker-context.ts';
 import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { runExecutionProblems } from '../kernel/workflow/verification.ts';
+import { projectResolver } from '../kernel/source/resolver.ts';
 import { differsFlag } from '../kernel/workflow/service.ts';
 
 const group = 'Workflows';
 
 export const WORKFLOW_SPECS: readonly CommandSpec[] = [
+  { path: ['workflow', 'executors'], gloss: 'which hosts have an unattended adapter and which require provisioning', group, positionals: [], flags: [], readOnly: true },
   { path: ['workflow', 'list'], gloss: 'the workflows this project can run, with versions and what starts them', group, positionals: [], flags: [], readOnly: true },
   { path: ['workflow', 'show'], gloss: 'one workflow: purpose, steps, tiers, inputs, policies', group, positionals: ['<id>'], flags: [], readOnly: true },
   { path: ['workflow', 'resolve'], gloss: 'can this workflow run here now, and what would stop it', group, positionals: ['<id>'], flags: [{ name: 'input', gloss: 'a key=value input (repeatable)', takesValue: true, repeatable: true }], readOnly: true },
@@ -41,8 +48,8 @@ export const WORKFLOW_SPECS: readonly CommandSpec[] = [
   { path: ['workflow', 'triggers'], gloss: 'the standing triggers defined here, with next due and last fired', group, positionals: [], flags: [], readOnly: true },
   { path: ['workflow', 'enable'], gloss: 'enable a standing trigger', group, positionals: ['<trigger-id>'], flags: [], readOnly: false },
   { path: ['workflow', 'disable'], gloss: 'disable a standing trigger; nothing fires until enabled', group, positionals: ['<trigger-id>'], flags: [], readOnly: false },
-  { path: ['workflow', 'fire'], gloss: 'fire a trigger now, as an external clock would', group, positionals: ['<trigger-id>'], flags: [{ name: 'key', gloss: 'the clock’s key for this tick (same key, same run)', takesValue: true }, { name: 'dry-run', gloss: 'preflight only', takesValue: false }], readOnly: false },
-  { path: ['workflow', 'recipe'], gloss: 'print the cron line or CI job that fires a trigger', group, positionals: ['<trigger-id>'], flags: [{ name: 'clock', gloss: 'cron or github-actions (default cron)', takesValue: true }], readOnly: true },
+  { path: ['workflow', 'fire'], gloss: 'fire a trigger now, as an external clock would', group, positionals: ['<trigger-id>'], flags: [{ name: 'key', gloss: 'the clock’s key for this tick (same key, same run)', takesValue: true }, { name: 'dry-run', gloss: 'preflight only', takesValue: false }, { name: 'execute', gloss: 'explicit unattended host adapter (codex); otherwise only record the tick', takesValue: true }, { name: 'timeout-ms', gloss: 'bounded executor timeout (default 900000)', takesValue: true }], readOnly: false },
+  { path: ['workflow', 'recipe'], gloss: 'print the cron line or CI job that fires a trigger', group, positionals: ['<trigger-id>'], flags: [{ name: 'clock', gloss: 'cron or github-actions (default cron)', takesValue: true }, { name: 'executor', gloss: 'explicit host adapter for the recipe; without one it remains unprovisioned', takesValue: true }], readOnly: true },
 ];
 
 function inputsFrom(args: ParsedArgs): Record<string, unknown> {
@@ -60,7 +67,12 @@ function inputsFrom(args: ParsedArgs): Record<string, unknown> {
 }
 
 export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
-  const { project, broker } = openBroker(ctx, {});
+  if (sub === 'executors') { writeJson(executorSupport()); return 0; }
+  const execute = sub === 'fire' ? stringFlag(args, 'execute') : undefined;
+  const prepared = execute && !boolFlag(args, 'dry-run') ? await prepareExecutor(execute, ctx.env) : null;
+  if (execute && execute !== 'codex') throw new UsageError('no unattended adapter for this executor; workflow executors shows support');
+  const executorId = execute ? `runner:${execute}:${randomUUID()}` : undefined;
+  const { project, broker } = openBroker(ctx, sub === 'fire' ? { headless: true, executor: executorId, client: execute } : {});
   try {
     switch (sub) {
       case 'list': {
@@ -159,14 +171,32 @@ export async function workflowCommand(sub: string, args: ParsedArgs, ctx: CliCon
       }
       case 'fire': {
         const result = broker.triggers.fire({ triggerId: args.positionals[0]!, firingKey: stringFlag(args, 'key'), dryRun: boolFlag(args, 'dry-run') });
-        if (args.json) writeJson(result);
-        else say(`${result.outcome}${result.runId ? ` run ${result.runId}` : ''}: ${esc(result.reason)}${result.nextDueAt ? `; next due ${result.nextDueAt}` : ''}`);
-        return result.outcome === 'blocked' ? 1 : 0;
+        let execution: unknown = null;
+        if (prepared && result.runId && ['started', 'replaced', 'deduplicated'].includes(result.outcome)) {
+          const prior = broker.workflow.status(result.runId)!;
+          if (!['succeeded', 'failed', 'cancelled', 'waiting_for_decision'].includes(prior.run.state)) {
+            if (prior.run.state === 'blocked') broker.workflow.resume(prior.run.id);
+            appendActivity(project.store, { at: ctx.now(), kind: 'executor.started', runId: result.runId, actor: executorId, payload: { adapter: prepared.id, version: prepared.version, timeoutMs: Number(stringFlag(args, 'timeout-ms') ?? 900000) } });
+            execution = await executeRun({ binary: prepared.binary, root: project.root, runId: result.runId, executorId: executorId!, env: ctx.env, timeoutMs: Number(stringFlag(args, 'timeout-ms') ?? 900000) });
+            // This adapter owns this process group and has stopped it. Fence only its
+            // abandoned leases, so an interrupted run can resume without a 30-minute wait.
+            project.store.db.prepare("UPDATE step_runs SET lease_until = ? WHERE lease_owner = ? AND state = 'leased'").run(ctx.now(), executorId!);
+            expireDeadLeases(project.store, ctx.now(), result.runId);
+            appendActivity(project.store, { at: ctx.now(), kind: 'executor.finished', runId: result.runId, actor: executorId, payload: execution });
+          }
+        }
+        const state = result.runId ? broker.workflow.status(result.runId)?.run.state : null;
+        const verificationProblems = state === 'succeeded' && result.runId ? runExecutionProblems(project.store, result.runId, projectResolver(project.store, project.root)) : [];
+        const complete = state === 'succeeded' && verificationProblems.length === 0;
+        const response = { ...result, execution, runState: state, complete, verificationProblems, next: complete ? 'Review the local deliverable and its assurance.' : execute ? 'Inspect run show; resolve its blocker or retry this same firing key. No executor fallback occurred.' : 'A tick alone performs no model work. Provision an explicit executor and a persistent project state, then use --execute or claim the run in a session.' };
+        if (args.json) writeJson(response);
+        else say(`${response.outcome}${response.runId ? ` run ${response.runId} (${state})` : ''}: ${esc(response.reason)}. ${response.next}`);
+        return result.outcome === 'blocked' || verificationProblems.length > 0 || (execute && !complete) ? 1 : 0;
       }
       case 'recipe': {
         const clock = stringFlag(args, 'clock') ?? 'cron';
         if (clock !== 'cron' && clock !== 'github-actions') throw new UsageError('--clock must be cron or github-actions');
-        process.stdout.write(broker.triggers.recipe(args.positionals[0]!, clock));
+        process.stdout.write(broker.triggers.recipe(args.positionals[0]!, clock, stringFlag(args, 'executor')));
         return 0;
       }
       default:

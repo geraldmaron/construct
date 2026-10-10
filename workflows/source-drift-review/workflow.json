@@ -4,7 +4,7 @@
   "evals": [],
   "id": "source-drift-review",
   "title": "Source freshness and drift review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Refresh the project's declared sources, run the deterministic drift checks the kernel performs itself, then review semantic drift with every finding cited to both texts; record findings with evidence and a repair path, and say nothing when nothing material changed.",
   "activation": [
     "has anything drifted",
@@ -124,7 +124,8 @@
       "validators": [
         "citations_present",
         "no_uncited_material_findings",
-        "deliverable_complete"
+        "deliverable_complete",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": true,

@@ -3,6 +3,10 @@
  * host's skills directory when a host needs files on disk.
  */
 
+import { resolve } from 'node:path';
+import { evaluateSkill } from '../hosts/skill-evaluation.ts';
+import { openBroker } from './broker-context.ts';
+import { projectResolver } from '../kernel/source/resolver.ts';
 import { listShippedSkills, readShippedSkill, plantSkill, removeSkill, skillState } from '../kernel/skills/bundle.ts';
 import { createSkillRegistry } from '../kernel/registry/skill-registry.ts';
 import { createWorkflowRegistry } from '../kernel/registry/workflow-registry.ts';
@@ -24,6 +28,11 @@ const dirFlag = { name: 'dir', gloss: 'the skills directory to use instead of th
 const clientFlag = { name: 'client', gloss: `the host whose skills directory to use: ${SKILLS_HOST_NAMES.join(' | ')}`, takesValue: true } as const;
 
 export const SKILL_SPECS: readonly CommandSpec[] = [
+  { path: ['skill', 'evaluate'], gloss: 'execute a predetermined skill evaluation and record scoped qualification evidence', group, positionals: ['<name>'], flags: [
+    { name: 'suite', gloss: 'project JSON suite with host/model, cases and evaluator argv; native.adapter=codex adds fresh producer/reviewer calls', takesValue: true },
+    { name: 'timeout-ms', gloss: 'bounded evaluation timeout, at most 1200000', takesValue: true },
+    { name: 'valid-hours', gloss: 'qualification expiry, at most 720 hours', takesValue: true },
+  ], readOnly: false },
   { path: ['skill', 'impact'], gloss: 'how each skill version\'s steps did against their checks: first-pass rate, attempts, waivers, which checks sent them back', group, positionals: [], flags: [{ name: 'skill', gloss: 'only this skill', takesValue: true }], readOnly: true },
   { path: ['skill', 'list'], gloss: 'the skills this install ships, with versions', group, positionals: [], flags: [], readOnly: true },
   { path: ['skill', 'show'], gloss: 'one skill’s description, version, and files', group, positionals: ['<name>'], flags: [], readOnly: true },
@@ -46,8 +55,23 @@ function installDir(args: ParsedArgs, ctx: CliContext): string {
   throw new UsageError(`no host detected; pass --client=<${SKILLS_HOST_NAMES.join('|')}> or --dir=<path>`);
 }
 
-export function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): number {
+export async function skillCommand(sub: string, args: ParsedArgs, ctx: CliContext = createContext()): Promise<number> {
   switch (sub) {
+    case 'evaluate': {
+      const suite = stringFlag(args, 'suite');
+      if (!suite) throw new UsageError('skill evaluate needs --suite with a predetermined evaluator and cases');
+      const { project, broker } = openBroker(ctx, {});
+      try {
+        const skill = broker.skills.get(args.positionals[0]!);
+        if (!skill) throw new UsageError('unknown skill');
+        const observed = await evaluateSkill({ store: project.store, skill, suitePath: resolve(project.root, suite), root: project.root, env: ctx.env, now: ctx.now,
+          resolve: (ref) => projectResolver(project.store, project.root)(ref),
+          timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined,
+          validForHours: stringFlag(args, 'valid-hours') ? Number(stringFlag(args, 'valid-hours')) : undefined });
+        writeJson(observed);
+        return observed.passed ? 0 : 1;
+      } finally { project.store.close(); }
+    }
     case 'impact': {
       const project = bindProject(ctx);
       const store = openStateStore(project.layout.dbPath);

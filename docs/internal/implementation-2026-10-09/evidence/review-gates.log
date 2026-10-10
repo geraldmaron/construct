@@ -1,0 +1,28 @@
+✔ host command receipts reject failing, missing, replayed, timed out and changed subjects (198.701625ms)
+✔ required execution gates public submission and CLI completion: missing (51.422459ms)
+✔ required execution gates public submission and CLI completion: failed (83.177208ms)
+✔ required execution gates public submission and CLI completion: stale (80.546042ms)
+✔ required execution gates public submission and CLI completion: wrong_attempt (75.622875ms)
+✔ required execution gates public submission and CLI completion: passed (82.110625ms)
+✔ a fresh format-3 store upgrades to exactly what a fresh format-5 store holds (38.079791ms)
+✔ a format-2 store upgrades with every column, constraint, index, and trigger a fresh store has; only where appended columns sit differs (33.046084ms)
+✔ a format-3 store whose two flag columns carry no CHECK keeps exactly that difference, since SQLite cannot add one to an existing column (36.151625ms)
+✔ a claim held across the upgrade stays held, and the format-3 token anyone could rebuild from a read settles nothing (33.120459ms)
+✔ a format-3 store missing a format-3 table is refused unread, and nothing about the file changes (23.870792ms)
+✔ a store that turns newer while the upgrade waits for the lock is refused as newer, not reported upgraded (472.661541ms)
+✔ format 4 migration preserves firing history and permits the same key in independent triggers (43.403125ms)
+✔ a schedule trigger is validated, computes its next due instant, and fires once per tick (44.431167ms)
+✔ stale data blocks a firing whose workflow says so; no data succeeds empty when it says so; dry-run starts nothing (37.268667ms)
+✔ recipes name the trigger, the project, and the firing key, for cron and CI (17.607042ms)
+✔ a weekly trigger covers a fresh week on every firing, worked out at the due time in its own timezone (33.183083ms)
+✔ defining a trigger checks its input: undeclared keys, malformed periods, unknown sources, and fixed windows on a standing trigger are refused (17.246125ms)
+✔ events cannot replace the standing input and workflow changes cannot exceed its stored tier (20.042958ms)
+✔ standing intents isolate identical keys, overlap, replacement and cancellation on the same workflow (98.678167ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 785.273209

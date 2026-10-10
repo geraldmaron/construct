@@ -349,7 +349,7 @@ test('host capabilities honor scope', () => {
   const h = host({ available: new Set(['read_source:jira', 'model_review']) });
   assert.ok(provides(h, 'read_source:jira'));
   assert.ok(!provides(h, 'read_source:github'));
-  assert.ok(provides(host({ available: new Set(['read_source']) }), 'read_source:github'));
+  assert.ok(!provides(host({ available: new Set(['read_source']) }), 'read_source:github'), 'a generic host declaration cannot invent connector access');
   assert.ok(provides(h, 'read_source'), 'an unscoped requirement is met by a scoped reader that exists');
   assert.ok(!provides(host({ available: new Set(['read_source:directory']) }), 'read_source:jira'), 'a directory reader does not invent Jira');
 });

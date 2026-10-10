@@ -24,7 +24,7 @@ import {
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
 import { codexProvider, codexProviderArgs, endedWithQuestion, hostArgs, hostEnv, parseHostStream, pinHookEnvironment, promptFor, serverCommand, stubCommand, tapCommand, toml } from '../../scripts/host-cli.mjs';
 // @ts-expect-error — the script is plain .mjs, deliberately outside src/
-import { ALL_HOSTS, CROWDED_STUBS, GATED_MATRIX, ISOLATION_PROBE, buildRecord, carriedCells, checkRecord, cursorSnapshot, duplicateCell, e2eCheckpoints, finalTurnFacts, itemsFor, prepareRun, readFrames, readIsolation, restoreCursor, stripPaths, stubsDigest, superviseHost, workflowCatalog } from '../../scripts/evals-live.mjs';
+import { executionSurfaceDigest, ALL_HOSTS, CROWDED_STUBS, GATED_MATRIX, ISOLATION_PROBE, buildRecord, carriedCells, checkRecord, cursorSnapshot, duplicateCell, e2eCheckpoints, finalTurnFacts, itemsFor, prepareRun, readFrames, readIsolation, restoreCursor, stripPaths, stubsDigest, superviseHost, workflowCatalog } from '../../scripts/evals-live.mjs';
 
 sterileHome();
 
@@ -646,4 +646,24 @@ test('with no record yet, check says so plainly and exits 1', () => {
   }
   const usage = spawnSync(process.execPath, [join(ROOT, 'scripts', 'evals-live.mjs')], { cwd: ROOT, encoding: 'utf8', env: { PATH: process.env.PATH, HOME: process.env.HOME } });
   assert.equal(usage.status, 2);
+});
+
+
+test('release requires its explicit experimental evidence tier before any publish command', () => {
+  const release = readFileSync(join(ROOT, '.github/workflows/release.yml'), 'utf8');
+  const check = release.indexOf('npm run release:check -- --tier=experimental-alpha');
+  assert.ok(check > 0 && check < release.indexOf('npm publish'));
+});
+
+
+test('live evidence identity changes with implementation bytes even when descriptions do not change', () => {
+  const root = mkdtempSync(join(tmpdir(), 'construct-evidence-'));
+  try {
+    mkdirSync(join(root, 'src')); writeFileSync(join(root, 'src', 'check.ts'), 'export const check = true;');
+    const before = executionSurfaceDigest(root);
+    writeFileSync(join(root, 'src', 'check.ts'), 'export const check = false;');
+    assert.notEqual(executionSurfaceDigest(root), before);
+    writeFileSync(join(root, 'src', 'check.ts'), 'export const check = true;');
+    assert.equal(executionSurfaceDigest(root), before);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

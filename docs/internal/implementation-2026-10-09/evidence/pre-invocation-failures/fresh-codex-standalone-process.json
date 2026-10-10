@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "pid": 12149,
+  "childPid": 12153,
+  "host": "codex",
+  "tag": "standalone",
+  "startedAt": "2026-10-09T22:36:39.104251+00:00",
+  "finishedAt": "2026-10-09T22:36:39.307320+00:00",
+  "exitStatus": 1,
+  "timedOut": false,
+  "interrupted": false
+}

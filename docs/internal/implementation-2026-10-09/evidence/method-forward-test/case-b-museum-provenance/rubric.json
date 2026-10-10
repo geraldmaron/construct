@@ -1,0 +1,41 @@
+{
+  "frozen_before_application": true,
+  "scoring": "20 points; 0=absent/wrong, partial credit if incomplete. Critical failure: endorse1931 purchase/ownership, claim uninterrupted public display, conflate missing records with non-display, invent family relations, or imply unauthorized external action.",
+  "criteria": [
+    {
+      "id": "B-R1",
+      "points": 4,
+      "expected": "First arrival6Feb1931 on temporary loan from Helena Vale; sale executed21Aug1934; contract makes transfer conditional on written trustee acceptance4Sep1934, not payment/signature; accession registration5Sep1934. Museum-owned since1931 claim conflicts with records. Captain not documented seller; 1934 seller is Helena."
+    },
+    {
+      "id": "B-R2",
+      "points": 3,
+      "expected": "Public display began14Mar1931, after arrival. Explicit withdrawal9Nov1942 through reopening18Jan1943 refutes uninterrupted display. Do not claim an exact hours duration or total historical display days from date-only entries."
+    },
+    {
+      "id": "B-R3",
+      "points": 3,
+      "expected": "Legacy1931 catalogue year records first receipt/entry, not title;20Sep2026 is condition/location check;1Oct2026 export time; distinguish document event/registration/publication/check dates."
+    },
+    {
+      "id": "B-R4",
+      "points": 3,
+      "expected": "Brochure and tourism feature dependent. Specific signed intake/agreement/acceptance/log records control relevant facts; catalogue field semantics do not override accepted transfer. Identity supported byNV17,repair,L31.6,P34.22. Avoid false independence from museum-internal records."
+    },
+    {
+      "id": "B-R5",
+      "points": 3,
+      "expected": "1937/38 missing logs are unknown, not did-not-happen. Captain earlier ownership/relationship not established. Claims limited to supplied records; no external search implied. Weak pre-museum provenance and full display coverage identified."
+    },
+    {
+      "id": "B-R6",
+      "points": 2,
+      "expected": "Same-line citation markers on load-bearing claims, source classes, realistic alternative/refutation/evidence table, single-source heading and strongest objection."
+    },
+    {
+      "id": "B-R7",
+      "points": 2,
+      "expected": "Clear claim-by-claim findings and concise timeline; no replacement brochure copy/outreach plan. Honest missing-template limitation; no unearned handback for answerable claims."
+    }
+  ]
+}

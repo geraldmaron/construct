@@ -1,0 +1,1 @@
+Attendance90%, according to the year-end memo. No independent survey was conducted.

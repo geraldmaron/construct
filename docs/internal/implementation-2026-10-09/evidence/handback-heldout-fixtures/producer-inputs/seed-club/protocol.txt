@@ -1,0 +1,5 @@
+Mallow Seed Club — trial protocol T-17, recorded 10 September 2026
+All four trays used lot M-17. Each tray contained 100 seeds. D1 and D2 were dry-sown; S1 and S2 received the overnight pre-soak. All trays were sown on 10 September and counted on day 10 using the same criterion: an emerged seedling. No trays or seeds were excluded from the recorded trial.
+D1 and D2 stayed on the west bench. S1 and S2 stayed on the east bench. Bench assignment was not randomized or rotated. Bench temperature and light measurements were not collected.
+The grow lead maintains count-events.jsonl. Each event's count is the whole-tray count, not an increment. A correction's supersedes field replaces the named earlier event. The log is complete for this trial as of 21 September.
+This packet contains no repeat trial or independent count audit.

@@ -1,0 +1,23 @@
+✔ installed command traverses real declared source files and preserves omitted older items (833.613292ms)
+✔ reference-style links resolve against canonical bases, including collapsed and shortcut forms (1.285417ms)
+✔ local: bounded reads find every labeled material record and exclude denied, irrelevant and injected destinations (6.7565ms)
+✔ api: bounded reads find every labeled material record and exclude denied, irrelevant and injected destinations (17.566709ms)
+✔ mcp: bounded reads find every labeled material record and exclude denied, irrelevant and injected destinations (11.05625ms)
+✔ budgets, missing authorization, stale observations and stalled reads cannot report complete traversal (10.273625ms)
+✔ a first-layer read cannot silently close research over unread material references (2.547792ms)
+✔ recorded hops retain digests and provenance, terminate cycles, and distinguish host dispositions (0.217583ms)
+✔ a changed recorded body changes its receipt even when its reference stays fixed (0.106333ms)
+✔ budgets and truncated evidence cannot imply complete coverage (0.572917ms)
+✔ relative Markdown references resolve against their document; source text grants no authority (0.1745ms)
+✔ a redacted URL does not invent a shortened source address (0.04675ms)
+✔ research accounting survives renaming, input order and splitting or merging linked documents (0.394292ms)
+✔ remote and local relative Markdown preserve the same reference graph (0.150625ms)
+✔ relative links use the recorded canonical URL when cited by a scoped item id (0.078333ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1051.695833

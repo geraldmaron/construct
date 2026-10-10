@@ -1,0 +1,56 @@
+{
+  "trial": "sso-clean-before-routing-fix",
+  "modelPrompt": "Write a PRD for adding single sign-on to LatticeDesk. Save it as sso-prd.md.",
+  "packageSha256": "def64894cddb0a16b54d994c64d552d956b331d3d38b9e63ebb0e5821cda6a23",
+  "state": {
+    "sessions": 3,
+    "workflow_runs": 1,
+    "step_runs": 3,
+    "resolved_skills": 0,
+    "deliverables": 1,
+    "sources": 0,
+    "source_snapshots": 0,
+    "observations": 0,
+    "work_items": 0
+  },
+  "runs": [
+    {
+      "id": "run-8bde01e6",
+      "workflow_id": "managed-outcome",
+      "state": "succeeded"
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-dc85ed4d",
+      "trust_state": "challenged"
+    }
+  ],
+  "constructCalls": 12,
+  "workspaceCalls": 0,
+  "skillsShowCalls": 0,
+  "failedCalls": [
+    {
+      "tool": "work",
+      "arguments": {
+        "action": "claim",
+        "id": "step-1fc614d0",
+        "agent": "root",
+        "paths": [
+          "sso-prd.md"
+        ]
+      }
+    }
+  ],
+  "artifactSha256": "8dbc930ca0dba71256a6714d2c3f5fb4e128c17189ec2a9a9f50b53212ab358b",
+  "verdict": "FAIL: lifecycle exercised but source discovery, specialist routing, and evidence coverage failed",
+  "findings": [
+    "Typed deliverable kind prd was normalized to other although document/prd exists; generic managed-outcome ran.",
+    "No source MCP calls or recorded source snapshots; connected Jira, wiki, Slack and link chains went unread.",
+    "PRD selected SAML and deferred OIDC despite an unread current security proposal and conflicting prospect needs.",
+    "Current session revocation gap, contract denial and accessibility source went unread.",
+    "Work claim used a workflow step id instead of a native work item id and failed; drafting continued.",
+    "Final artifact reached challenged trust and claimed an adversarial review despite incomplete discovery."
+  ],
+  "interpretation": "Actual ordinary-prompt failure. Structural validators passed; they did not establish semantic support or complete research. One trial, no claim of reproducibility yet."
+}

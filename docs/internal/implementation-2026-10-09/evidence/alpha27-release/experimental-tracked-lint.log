@@ -1,0 +1,16 @@
+
+> @geraldmaron/construct@3.0.0-alpha.27 lint
+> node scripts/lint-no-absolute-paths.mjs && node scripts/lint-glossary-parity.mjs && node scripts/lint-no-bead-refs.mjs && node scripts/lint-skill-spec.mjs && node scripts/lint-skill-policy.mjs && node scripts/lint-terminal-escape.mjs && node scripts/lint-docs-index.mjs && node scripts/lint-doc-commands.mjs && node scripts/lint-doc-bead-refs.mjs && node scripts/lint-lockfile-version.mjs && node scripts/generate-registry-index.mjs --check && node scripts/generate-docs.mjs --check
+
+lint-no-absolute-paths: clean
+lint-glossary-parity: clean
+lint-no-bead-refs: clean
+lint-skill-spec: clean - 17 skill(s) conform, descriptions 7977/8000 chars of the one published list budget. Format checks only; Construct record/enforcement ceremony is optional under references/.
+lint-skill-policy: clean — 16 method skill(s)
+lint-terminal-escape: clean
+lint-docs-index: clean — 20 documentation file(s), all listed
+lint-doc-commands: every documented command is one the CLI accepts
+lint-doc-bead-refs: clean, every cited bead id exists in the tracker export
+lint-lockfile-version: clean
+generate-registry-index: current — 17 skill(s), 22 workflow(s)
+generate-docs: current — 5 reference page(s)

@@ -1,0 +1,26 @@
+{
+  "firing": {
+    "id": "firing-29d66893",
+    "triggerId": "east",
+    "idempotencyKey": "2026-10-09T09:00",
+    "firedAt": "2026-10-09T18:36:10.417Z",
+    "runId": "run-5df672d6",
+    "outcome": "started",
+    "reason": "managed-outcome 2.0.0 can run: 3 step(s)"
+  },
+  "outcome": "started",
+  "runId": "run-5df672d6",
+  "reason": "managed-outcome 2.0.0 can run: 3 step(s)",
+  "nextDueAt": "2026-10-10T09:00:00.000Z",
+  "execution": {
+    "exitStatus": null,
+    "signal": "SIGKILL",
+    "timedOut": true,
+    "transcriptDigest": "9a51a66c1da91babd03ec297e241580286a71805a264f216148098b19ace89a7",
+    "events": 50
+  },
+  "runState": "running",
+  "complete": false,
+  "verificationProblems": [],
+  "next": "Inspect run show; resolve its blocker or retry this same firing key. No executor fallback occurred."
+}

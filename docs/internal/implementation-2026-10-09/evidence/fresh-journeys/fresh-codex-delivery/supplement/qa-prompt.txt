@@ -1,0 +1,1 @@
+Under the local replenishment policy, what should we do if net stock is exactly 60 individual units?

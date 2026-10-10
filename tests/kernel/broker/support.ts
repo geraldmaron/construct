@@ -1,8 +1,13 @@
+import { syntheticSemanticAdapter } from '../workflow/semantic-fixture.ts';
 /**
  * tests/kernel/broker/support.ts — a broker context over an initialized
  * project in a sandbox, with a deterministic clock and ids.
  */
 
+import { executeVerification } from '../../../src/hosts/verification.ts';
+import { projectResolver } from '../../../src/kernel/source/resolver.ts';
+import { getStep, listSteps } from '../../../src/kernel/state/steps.ts';
+import { artifactRefs } from '../../../src/kernel/workflow/verification.ts';
 import { join } from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { initializeProject } from '../../../src/kernel/project/initialize.ts';
@@ -24,7 +29,7 @@ export interface BrokerFixture {
   cleanup(): void;
 }
 
-export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive'): BrokerFixture {
+export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive', options: { now?: () => string; semanticReview?: 'synthetic' | 'none' } = {}): BrokerFixture {
   const box = sandbox();
   const at = '2026-09-02T12:00:00.000Z';
   const init = initializeProject({ root: box.cwd, projectId: 'proj-test', name: 'demo', at });
@@ -40,9 +45,22 @@ export function brokerFixture(surface: 'interactive' | 'headless' = 'interactive
   const binding: BrokerBinding = surface === 'interactive'
     ? { client: 'claude-code', surface: 'interactive', sessionId: 'ses_fixture', executorId: 'session:claude-code', actor: 'person via claude-code' }
     : { client: 'unknown', surface: 'headless', sessionId: 'ses_runner', executorId: 'runner:ci', actor: 'runner:ci' };
-  const ctx = box.ctx;
-  const broker = createBrokerContext(ctx, project, binding);
+  const ctx = options.now ? { ...box.ctx, now: options.now } : box.ctx;
+  const rawBroker = createBrokerContext(ctx, project, binding);
+  const broker = options.semanticReview === 'none' ? rawBroker : { ...rawBroker, workflow: syntheticSemanticAdapter(rawBroker.workflow, init.store, ctx.now) };
   return { box, ctx, broker, binding, cleanup: () => { init.store.close(); box.cleanup(); } };
 }
 
 export { createContext };
+
+
+/** Observe an actual local integrity check for positive tests whose workflow requires execution.
+ * This is not semantic qualification; negative execution tests submit without this helper.
+ */
+export async function observedVerification(fx: BrokerFixture, work: { stepRunId: string; token: string | number }): Promise<Record<string, unknown>> {
+  const row = getStep(fx.broker.store, work.stepRunId)!;
+  const subjects = listSteps(fx.broker.store, row.runId).flatMap((s) => artifactRefs(s.output));
+  const files = subjects.length ? subjects : ['docs/design.md'];
+  return executeVerification({ store: fx.broker.store, runId: row.runId, stepRunId: row.id, token: String(work.token), root: fx.box.cwd, env: fx.ctx.env, now: fx.ctx.now, resolve: projectResolver(fx.broker.store, fx.box.cwd), subjects,
+    argv: [process.execPath, '-e', 'const fs=require("node:fs"),assert=require("node:assert/strict");for(const p of process.argv.slice(1))assert.ok(fs.readFileSync(p).length>0, p+" must be nonempty");', ...files] });
+}

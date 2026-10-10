@@ -1,0 +1,16 @@
+import {prepareRun,superviseHost,ROOT} from '../../../../../../scripts/evals-live.mjs';
+import {hostArgs,hostEnv,parseHostStream,codexProviderFromConfig} from '../../../../../../scripts/host-cli.mjs';
+import {mkdirSync,writeFileSync,readFileSync,existsSync} from 'node:fs';
+import {join} from 'node:path';
+const base=join(import.meta.dirname,'codex-isolation-diagnostic');mkdirSync(base,{recursive:true});
+const fixture=prepareRun({host:'codex',condition:'default',server:ROOT,base});
+const prompt='Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Then list every MCP server you can call, one per line. Do not call any tool.';
+const args=hostArgs('codex',{model:'gpt-6-astra',prompt,mcpConfig:fixture.mcpConfig,server:fixture.server,stubs:fixture.stubs,provider:codexProviderFromConfig()});
+const disabled=['apps','plugins','remote_plugin','tool_suggest','skill_mcp_dependency_install'];
+args.splice(args.length-1,0,...disabled.flatMap(f=>['--disable',f]));
+writeFileSync(join(base,'preregistration.json'),JSON.stringify({purpose:'A bounded diagnosis, not a canonical cell or passing preflight',timeoutMs:60000,disabledFeatures:disabled,sandbox:'read-only',config:'ignore-user-config; no ignore-rules',model:'gpt-6-astra',prompt,globalSettingsChanged:false},null,2)+'\n');
+const r=await superviseHost({binary:'/opt/homebrew/bin/codex',args,env:hostEnv('codex',{runHome:fixture.runHome}),cwd:fixture.project,stopOnWrite:false,timeoutMs:60000});
+const facts=parseHostStream('codex',r.lines);
+const receipt={exitCode:r.exitCode,timedOut:r.timedOut,finalText:facts.finalText,toolUses:facts.toolUses,disabledFeatures:disabled,fixtureInstructionFirstLine:existsSync(join(fixture.project,'AGENTS.md'))?readFileSync(join(fixture.project,'AGENTS.md'),'utf8').split('\n')[0]:null,limitations:['Model self-reported tool list is not authoritative inventory or a denial test.','The original canary predicate remains unchanged and this is not a canonical preflight pass.']};
+writeFileSync(join(base,'result.json'),JSON.stringify(receipt,null,2)+'\n');
+console.log(JSON.stringify(receipt,null,2));

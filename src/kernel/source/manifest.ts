@@ -14,6 +14,7 @@ import { latestObservationWith } from '../state/drift.ts';
 import type { SnapshotItem } from './connector.ts';
 
 export interface ManifestEntry {
+  readonly schema?: Readonly<Record<string, unknown>>;
   readonly ref: string;
   readonly kind: string;
   readonly fingerprint: string;
@@ -48,6 +49,7 @@ export function toManifest(items: readonly SnapshotItem[]): ManifestEntry[] {
     return {
       ref: i.externalRef,
       kind: i.kind,
+      ...(i.attributes?.schema && typeof i.attributes.schema === 'object' ? { schema: i.attributes.schema as Record<string, unknown> } : {}),
       fingerprint: typeof fp === 'string' ? fp : '',
       ...(typeof text === 'string' ? { text } : {}),
       ...(typeof by === 'string' ? { supersededBy: by } : {}),

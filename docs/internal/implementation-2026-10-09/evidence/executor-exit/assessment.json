@@ -1,0 +1,84 @@
+{
+  "trial": "executor-exit",
+  "packageSha256": "57e1d435ea8e403585981a1aae3b70d612067ff1bfec217bc673643b400b9967",
+  "counts": {
+    "workflow_runs": 1,
+    "step_runs": 4,
+    "resolved_skills": 1,
+    "deliverables": 2,
+    "sources": 1,
+    "observations": 2,
+    "work_items": 0,
+    "drift_findings": 0,
+    "lessons": 0
+  },
+  "runs": [
+    {
+      "id": "run-e71b3ce2",
+      "workflow_id": "source-drift-review",
+      "state": "succeeded"
+    }
+  ],
+  "methodEvents": [
+    {
+      "kind": "skill.assigned",
+      "payload_json": "{\"id\": \"context-mapping\", \"version\": \"0.4.1\", \"digest\": \"sha256:7efedf491f1328df2d9c14f75293dd755f5b7c58234e2f3d5be4b1c57d96759f\", \"basis\": \"frozen workflow binding; application is not established\"}"
+    },
+    {
+      "kind": "skill.application_reported",
+      "payload_json": "{\"methods\": [{\"id\": \"context-mapping\", \"version\": \"0.4.1\", \"digest\": \"sha256:7efedf491f1328df2d9c14f75293dd755f5b7c58234e2f3d5be4b1c57d96759f\", \"status\": \"reported_applied\", \"why\": \"Mapped the two read entities, their typed relationship to release eligibility, governing obligations, boundaries, and classified unknowns.\", \"evidence\": [{\"ref\": \"data/policy.md\", \"digest\": \"49218d555a250d9c1b269d068be9f2eb3569ac7a37bd33796524b1e532027a66\", \"provenance\": \"witnessed\"}, {\"ref\": \"data/telemetry.json\", \"digest\": \"a71e38f12679168852e2270e4f4d81b3bbf43f861135bef0a4d461ffd2323a32\", \"provenance\": \"witnessed\"}]}, {\"id\": \"adversarial-review\", \"version\": \"0.3.1\", \"digest\": \"sha256:c85d790bfc0c341a1a47cd9303f9a7db22755c42dc4747775049bd581f0d63cc\", \"status\": \"reported_applied\", \"why\": \"Ran all six required challenges as a disclosed self-review; the strict threshold produced a fatal finding and Rejected verdict.\", \"evidence\": [{\"ref\": \"data/policy.md\", \"digest\": \"49218d555a250d9c1b269d068be9f2eb3569ac7a37bd33796524b1e532027a66\", \"provenance\": \"witnessed\"}, {\"ref\": \"data/telemetry.json\", \"digest\": \"a71e38f12679168852e2270e4f4d81b3bbf43f861135bef0a4d461ffd2323a32\", \"provenance\": \"witnessed\"}]}], \"assurance\": \"reported; not independently execution-verified\"}"
+    }
+  ],
+  "deliverables": [
+    {
+      "id": "deliverable-531f7558",
+      "kind": "review/drift",
+      "trust_state": "draft",
+      "body_json": "{\"summary\": \"Release is not permitted under the current observed inputs. The governing policy requires an error rate strictly below 1% and no open P1 incident; telemetry observed at 2026-10-09T16:00:00Z has 200 failures in 20,000 requests (exactly 1%) and zero open P1 incidents. The P1 condition passes, but the strict error-rate condition fails. No contradiction between the policy text and telemetry schema was found; the semantic mismatch is between the required threshold and the current value. This is a self-review and no notification or project change was made.\", \"findings\": [{\"id\": \"release-gate\", \"severity\": \"fatal\", \"finding\": \"Current conditions do not permit release because 1% is not strictly below 1%.\", \"failure\": \"If release proceeds on these inputs, the release violates the explicit error-rate gate even though the P1 gate is satisfied.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"], \"smallestFix\": \"Do not release unless a later valid telemetry observation shows an error rate below 1% while openP1 remains zero.\"}, {\"id\": \"drift-history\", \"severity\": \"serious\", \"finding\": \"The telemetry source is identified as changed, but the prior snapshot is unavailable in the step inputs, so the exact historical field-level drift cannot be established.\", \"failure\": \"A reader could incorrectly describe which telemetry values changed rather than only assessing the current snapshot.\", \"evidence\": [\"data/telemetry.json\"], \"smallestFix\": \"Keep the historical delta unknown unless the prior recorded snapshot is supplied.\"}], \"assumptions\": [{\"assumption\": \"failedRequests / requests is the intended error-rate calculation because the telemetry schema labels both as counts.\", \"status\": \"inferred from read source structure\", \"impactIfFalse\": \"The 1% calculation would require another defined denominator or metric, and the release verdict would need revalidation.\", \"evidence\": [\"data/telemetry.json\"]}, {\"assumption\": \"The telemetry snapshot is the current input for this run at its stated observedAt time.\", \"status\": \"was-told by the run scope and read from the file\", \"impactIfFalse\": \"A newer snapshot could change the verdict.\", \"evidence\": [\"data/telemetry.json\"]}], \"controls\": {\"contextMap\": {\"asOf\": \"2026-10-09T16:00:00Z\", \"entities\": [{\"name\": \"Release policy\", \"observation\": \"read\", \"ref\": \"data/policy.md\"}, {\"name\": \"Telemetry snapshot\", \"observation\": \"read\", \"ref\": \"data/telemetry.json\"}], \"relationships\": [{\"from\": \"Telemetry snapshot\", \"type\": \"feeds\", \"to\": \"Release eligibility assessment\", \"observation\": \"read\"}, {\"from\": \"Release policy\", \"type\": \"blocks\", \"to\": \"Release when error rate is 1% or higher or any P1 is open\", \"observation\": \"read\"}], \"obligations\": [{\"text\": \"Require error rate strictly below 1% and zero open P1 incidents.\", \"observation\": \"read\", \"ref\": \"data/policy.md\"}, {\"text\": \"Send no external notification.\", \"observation\": \"read\", \"ref\": \"data/policy.md\"}], \"boundaries\": [\"Read and draft only; no release action or notification.\"], \"unknowns\": [{\"classification\": \"looked-and-unclear\", \"text\": \"Exact field-level change from the prior telemetry read; prior snapshot was not included.\"}, {\"classification\": \"unknowable-from-here\", \"text\": \"Whether telemetry newer than 2026-10-09T16:00:00Z exists; no additional source or access was provided.\"}], \"handoffTest\": \"A reader can safely conclude only that the cited snapshot fails the strict error-rate gate; they cannot infer the prior drift or a later state.\"}, \"adversarialReview\": {\"verdict\": \"Rejected\", \"selfReview\": true, \"steelman\": \"The strongest case for release is that there are zero open P1 incidents and the measured error rate is only at the boundary, not above it. However, the written rule explicitly excludes the exact boundary.\", \"challenges\": [{\"name\": \"Strongest failure mode\", \"result\": \"Releasing treats <=1% as if it were <1%, violating the governing policy.\"}, {\"name\": \"Best alternative not chosen\", \"result\": \"Hold release and remeasure; this preserves the explicit gate without inventing an exception.\"}, {\"name\": \"Load-bearing-claims audit\", \"result\": \"The threshold, counts, timestamp, and open-P1 value were checked directly against both cited files; snapshot freshness beyond observedAt is unsupported.\"}, {\"name\": \"Assumption inversion\", \"result\": \"If failedRequests/requests is not the intended rate, the verdict needs metric-definition validation; no alternative metric is defined in the cited sources.\"}, {\"name\": \"Who bears the cost\", \"result\": \"The sources do not identify owners or affected parties, so cost allocation is unknown and cannot justify overriding the gate.\"}, {\"name\": \"Five-minute hostile expert\", \"result\": \"The first issue is the strict inequality: 200/20000 equals exactly 0.01, which fails '<1%'.\"}], \"reopenCondition\": \"A later valid telemetry snapshot must show an error rate below 1% and zero open P1 incidents, or the governing policy must be changed by an authorized person outside this run.\"}}, \"methods\": [{\"id\": \"context-mapping\", \"disposition\": \"applied\", \"why\": \"Mapped the two read entities, their typed relationship to release eligibility, governing obligations, boundaries, and classified unknowns.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}, {\"id\": \"adversarial-review\", \"disposition\": \"applied\", \"why\": \"Ran all six required challenges as a disclosed self-review; the strict threshold produced a fatal finding and Rejected verdict.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"]}], \"referenceDispositions\": [], \"evidence\": [{\"ref\": \"data/policy.md\", \"excerpt\": \"A release may proceed only with an error rate strictly below 1% and no open P1 incident. An exact boundary is not below. Write no external notification.\"}, {\"ref\": \"data/telemetry.json\", \"excerpt\": \"observedAt 2026-10-09T16:00:00Z; schema identifies failedRequests and requests as counts; failedRequests 200; requests 20000; openP1 0\"}], \"sensitivity\": \"internal\", \"sensitivityUnknown\": 0, \"provenance\": {\"witnessed\": 2, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}}",
+      "verification_json": null
+    },
+    {
+      "id": "deliverable-71aa9dd3",
+      "kind": "review/drift",
+      "trust_state": "validated",
+      "body_json": "{\"recordedIds\": [\"release-gate\", \"drift-history\"], \"lessonIds\": [\"strict-threshold-boundary\"], \"findings\": [{\"id\": \"release-gate\", \"severity\": \"fatal\", \"finding\": \"Current conditions do not permit release because 1% is not strictly below 1%.\", \"failure\": \"If release proceeds on these inputs, the release violates the explicit error-rate gate even though the P1 gate is satisfied.\", \"evidence\": [\"data/policy.md\", \"data/telemetry.json\"], \"smallestFix\": \"Do not release unless a later valid telemetry observation shows an error rate below 1% while openP1 remains zero.\"}, {\"id\": \"drift-history\", \"severity\": \"serious\", \"finding\": \"The telemetry source is identified as changed, but the prior snapshot is unavailable in the step inputs, so the exact historical field-level drift cannot be established.\", \"failure\": \"A reader could incorrectly describe which telemetry values changed rather than only assessing the current snapshot.\", \"evidence\": [\"data/telemetry.json\"], \"smallestFix\": \"Keep the historical delta unknown unless the prior recorded snapshot is supplied.\"}], \"evidence\": [{\"ref\": \"data/policy.md\", \"excerpt\": \"Release requires error rate strictly below 1%; an exact boundary is not below; no external notification.\"}, {\"ref\": \"data/telemetry.json\", \"excerpt\": \"At 2026-10-09T16:00:00Z: 200 failedRequests, 20000 requests, openP1 0.\"}], \"sensitivity\": \"internal\", \"sensitivityUnknown\": 0, \"provenance\": {\"witnessed\": 2, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}}",
+      "verification_json": "{\"validators\": [{\"validator\": \"schema\", \"ok\": true, \"problems\": []}], \"receipt\": {\"formatVersion\": 1, \"runId\": \"run-e71b3ce2\", \"stepRunId\": \"step-be40328a\", \"observedAt\": \"2026-10-09T17:26:38.483Z\", \"actor\": \"runner:codex:b4fc68f5-a503-4791-8a3d-b39929985384\", \"assurance\": \"structural\", \"executionVerified\": false, \"semanticSupportVerified\": false, \"subjects\": [], \"evidence\": [{\"ref\": \"data/policy.md\", \"digest\": \"49218d555a250d9c1b269d068be9f2eb3569ac7a37bd33796524b1e532027a66\", \"provenance\": \"witnessed\"}, {\"ref\": \"data/telemetry.json\", \"digest\": \"a71e38f12679168852e2270e4f4d81b3bbf43f861135bef0a4d461ffd2323a32\", \"provenance\": \"witnessed\"}], \"checks\": [{\"validator\": \"schema\", \"ok\": true}]}, \"assurance\": \"structural\", \"executionVerified\": false, \"semanticSupportVerified\": false, \"challengeRequired\": true, \"evidence\": {\"witnessed\": 2, \"reported\": 0, \"unverified\": 0, \"unresolved\": 0}}"
+    }
+  ],
+  "origin": {
+    "at": "2026-10-09T17:25:35.765Z",
+    "setupProcessesExited": true,
+    "bareTickExit": 1
+  },
+  "result": {
+    "code": 0,
+    "signal": null,
+    "at": "2026-10-09T17:26:44.337Z"
+  },
+  "execution": {
+    "firing": {
+      "id": "firing-0adfdfba",
+      "triggerId": "release-review",
+      "idempotencyKey": "after-origin-exit",
+      "firedAt": "2026-10-09T17:25:35.748Z",
+      "runId": "run-e71b3ce2",
+      "outcome": "blocked",
+      "reason": "source-drift-review 1.0.1 is blocked: capability model_review is not available in this host; capability ask_user is not available in this host"
+    },
+    "outcome": "deduplicated",
+    "runId": "run-e71b3ce2",
+    "reason": "firing after-origin-exit was already handled (blocked)",
+    "nextDueAt": "2026-10-09T18:00:00.000Z",
+    "execution": {
+      "exitStatus": 0,
+      "signal": null,
+      "timedOut": false,
+      "transcriptDigest": "fb91343bbb05e88511579245d4aa42137ce9548ad73c85ab27c7970448a52beb",
+      "events": 32
+    },
+    "runState": "succeeded",
+    "complete": true,
+    "next": "Review the local deliverable and its assurance."
+  },
+  "assessment": "Origin processes exited, bare tick blocked, explicit authenticated executor resumed identical occurrence and completed. Corrected schema under unchanged observedAt produced correct strict-boundary HOLD. Failure found: record step invented nonexistent finding/lesson IDs. This is not a complete pass. Shared persisted-record validation added afterward; fresh replay required. Prior content delta was not available to the model even though source correction was detected; retain as context-history limit."
+}

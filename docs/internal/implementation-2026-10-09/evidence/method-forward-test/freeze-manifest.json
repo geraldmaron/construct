@@ -1,0 +1,26 @@
+{
+  "freeze_time_utc": "2026-10-09T21:58:25.986149+00:00",
+  "status": "Fixtures, plain requests and rubrics frozen before producing method application artifacts.",
+  "method_path": "construct-implementation/investigative-research-candidate.md",
+  "method_sha256": "3c994c5ffac881b0a3af00bc575c3579d26e15fac1a9a8dd387d0924ef80b3fc",
+  "files": {
+    "case-a-market-waste/request.txt": "ffbf5683fd97ad9b9724893377d3cc6780e4295949dd299059552aae43d05a1e",
+    "case-a-market-waste/rubric.json": "20e801c8fd1468bdbc8079bec5e3e13b8df169e96c4a4fe929af7557f74bfc36",
+    "case-a-market-waste/sources/A1-measurement-protocol.txt": "97258bc9df6f8f66d3f0829b9384724ab9d7e251a7c09833518094f8b0aabeed",
+    "case-a-market-waste/sources/A2-baseline-weigh-record.txt": "8f46e1d17ac1325fe68b499bc9a7e4280dc76f9f0441132fee0ef6b43d43ef90",
+    "case-a-market-waste/sources/A3-current-weigh-record.txt": "3e6d788661c0eba11d3acbafc1557d4fe115be742f1f538bb262780fb45bf7a1",
+    "case-a-market-waste/sources/A4-vendor-register.txt": "59d3615bf673262c40f3060ba373f5e882d70647f8adca593ceb12153a44167e",
+    "case-a-market-waste/sources/A5-preliminary-summary.txt": "613652319f1fea53e9ff182111e552c23a2922be6622bea93bd2c31e5d2465b5",
+    "case-a-market-waste/sources/A6-claim-and-reprint.txt": "8572d819f2bf01c43dd2b4a7d785c737c50eede32613053a0d6614251838e727",
+    "case-b-museum-provenance/request.txt": "701bf77b5eb4d36023ccbe7d7262ff1f07583b434304c0489c76172d142ea0e4",
+    "case-b-museum-provenance/rubric.json": "81cd24950567a99a00f82f2cd0ea2555798b3911d96f442a80c4e93376f43888",
+    "case-b-museum-provenance/sources/B1-brochure-and-press.txt": "d97fb6826b0b413b0bd0051d8a133a5f416b5442a953dd3631b5fec4fdf8c457",
+    "case-b-museum-provenance/sources/B2-intake-receipt.txt": "bf30e62cba100f7f8523780b66b49642e805724114a05ad7c7d09e923e76fe66",
+    "case-b-museum-provenance/sources/B3-transfer-agreement.txt": "1fd1f6cf38df8feeb9b6c84aa2e0457e7616aaec1a516d3db524941cdecaf33f",
+    "case-b-museum-provenance/sources/B4-trustee-minute.txt": "6f5f20b4acb2e9a146b54b3751312ecf3e8b87be4f8ea404595210696c0e75ad",
+    "case-b-museum-provenance/sources/B5-location-register.txt": "b235f7029df110dbc5dcb1a6b0a63a03c759c60510c023c6612b4b945efbb4f2",
+    "case-b-museum-provenance/sources/B6-catalogue-export.txt": "0b15b4a90ab1cff3bc4966200908001109b08f8cc155ceb8ac8d17294c63c930",
+    "case-b-museum-provenance/sources/B7-archive-finding-aid.txt": "f867b0cd0f6f8414127f7ed78cd5f2f3739bfcee5e6057786eab19cf192c3d5d"
+  },
+  "limitation": "Single agent authors synthetic fixtures, rubrics, outputs and assessments in one context. Held out from repository and prior trials, but neither blinded nor independently produced/reviewed. Not native qualification."
+}

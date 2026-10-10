@@ -1,0 +1,11 @@
+
+> @geraldmaron/construct@3.0.0-alpha.27 release:live
+> node scripts/experimental-live.mjs
+
+{"case":"correct","status":"native-review-started","at":"2026-10-10T00:19:06.979Z"}
+{"case":"correct","finalState":"succeeded","problems":[]}
+{"case":"incorrect","status":"native-review-started","at":"2026-10-10T00:19:33.509Z"}
+{"case":"incorrect","finalState":"running","problems":["support: fail review judgment","reasoning: fail review judgment"]}
+{"case":"injected","status":"native-review-started","at":"2026-10-10T00:20:09.302Z"}
+{"case":"injected","finalState":"running","problems":["request: fail review judgment","support: fail review judgment","reasoning: fail review judgment"]}
+Experimental evidence recorded: docs/internal/releases/3.0.0-alpha.27.json; full qualification remains unproven.

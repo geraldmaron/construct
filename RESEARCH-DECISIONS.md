@@ -7,7 +7,10 @@ matrix, the home store, and the 37-verb command line. Those mechanisms no
 longer exist in the code. The sections stay because their measurements are
 dated evidence for the decisions that led here (in particular §§10, 14, 15,
 18, 22, 26, 29, 30), and a recorded run nobody can date is not a record.
-Nothing in §§1–32 describes the current product; section 33 does, and
+Nothing in §§1–32 describes the current product. Sections 33 to 35 are
+the dated decisions behind it, and a later section or release supersedes an
+earlier item where they differ (§33's state format item and §34's ranked
+skill list, for example); the pages in docs/ state what is true now, and
 STRATEGY.md states the settled direction.
 
 

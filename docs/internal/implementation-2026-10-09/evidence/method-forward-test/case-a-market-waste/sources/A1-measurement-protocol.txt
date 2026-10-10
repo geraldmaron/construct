@@ -1,0 +1,7 @@
+SYNTHETIC RECORD A1 — Approved pilot measurement protocol
+Document signed 3 February 2026 by Eastbridge Markets and the collection contractor.
+Evaluation covers Eastbank and Ridgeway markets, comparing their four September Saturday trading dates in 2025 and 2026. Harbour market opened in 2026 and is outside the matched pilot evaluation.
+Residual waste means the material weighed for landfill collection; separated compost is outside this measure. Net waste kilograms = gross loaded-container kilograms minus the recorded empty-container tare. Do not treat gross container weight as waste.
+Measure: combined net residual waste kg per 100 vendor-days across both matched markets. A vendor-day is one stall trading on one market date, irrespective of hours or sales. Combine totals before calculating the rate.
+Target is met when the measured rate is at least 20.0% below the matched 2025 rate. Exactly 20.0% meets the target.
+The comparison measures observed waste intensity. Without a comparison group or controls it does not establish which part of any change the programme caused.

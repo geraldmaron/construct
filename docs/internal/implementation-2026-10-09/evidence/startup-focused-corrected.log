@@ -1,0 +1,28 @@
+✔ host-launch fails without construct on PATH and passes with this checkout’s construct (81.425416ms)
+✔ host-launch says when the construct on PATH is a different install (29.955083ms)
+✔ host-launch checks a project dependency through npx, and an absolute command by its path (50.842792ms)
+✔ an alpha.25 .mcp.json is reported broken with its repair, and init --client repairs it (66.194083ms)
+✔ with no host wired, host-wiring fails, names the hosts found here, and gives the command that wires one (22.564458ms)
+✔ the operational skill is checked once in each project skills directory a wired host reads, with init as the fix (41.957833ms)
+✔ with no host named, detected, or installed, init writes nothing outside .construct, says nothing is connected, and doctor fails with the fix (41.058709ms)
+✔ the one host installed here is wired, its skill planted in the project, and its one-time steps printed (47.137875ms)
+✔ several hosts off a terminal: both are named as choices and neither is wired (24.651334ms)
+✔ several hosts at the person’s own terminal: init asks once, and wires only what they pick (81.31725ms)
+✔ a session relaying for the person is not asked: an agent ancestor means no prompt and no wiring (15.791834ms)
+✔ --client=codex writes .codex/config.toml, plants .agents/skills, and says Codex must trust the project (16.492333ms)
+✔ --client=bob writes .bob/mcp.json and plants .bob/skills; --client=vscode plants .agents/skills (25.150542ms)
+✔ --client=claude-code,cursor wires both and plants one copy, in .claude/skills, that both read (48.301958ms)
+✔ --client names a host that does not exist: exit 2 with every valid host (1.31225ms)
+✔ re-running init says the project’s statements are already proposed, and re-wires the hosts already wired here (28.2055ms)
+✔ re-init over an alpha.25 project repairs its .mcp.json and moves its hooks out of the shared settings, keeping the person's, and doctor is healthy (48.428083ms)
+✔ every host init and dry run reports its startup surface without changing user instructions (157.478125ms)
+✔ no-wire plants no startup rule and repeated init preserves project edits with a diagnostic (39.065584ms)
+✔ startup installation refuses symlinked directories and files without changing the target (3.352166ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 587.65675

@@ -312,7 +312,7 @@ test('review findings: a thinner view of the same ticket is not a change, and un
     // A later search returns the same ticket with fewer fields and no updated time.
     const thin = onPostTool(fx.broker, { tool_name: 'mcp__atlassian__searchJiraIssues', tool_response: { issues: [{ key: 'PLAT_A-7', fields: { summary: 'Events' } }] } });
     assert.deepEqual(thin.reported, { 'jira-pa': 1 });
-    const same = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-29T10:00:00Z', text: '{"key":"PLAT_A-7"}' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    const same = fx.broker.sources.reportRead('jira-pa', { items: [{ ref: 'PLAT_A-7', updatedAt: '2026-09-29T10:00:00Z', text: '{"key":"PLAT_A-7"}', weak: true }], partial: true }, at, () => fx.ctx.nextId('snap'));
     assert.equal(same.outcome, 'unchanged', 'same updated time, thinner text: unchanged');
     const ans = await call(fx, 'check_answer', { answer: 'Enterprise only.', citations: [{ ref: 'PLAT_A-7', excerpt: 'Decision: Enterprise only' }] });
     assert.equal(ans.ok, true, 'the fuller text recorded first is kept for checking quotes');
@@ -323,7 +323,7 @@ test('review findings: a thinner view of the same ticket is not a change, and un
   }
 });
 
-test('review findings: a search hit then a full read of the same ticket keeps the fuller text and is not an edit', async () => {
+test('a weak search hit preserves a full read, but additional strong content invalidates prior conclusions', async () => {
   const fx = brokerFixture();
   try {
     const at = fx.ctx.now();
@@ -334,9 +334,9 @@ test('review findings: a search hit then a full read of the same ticket keeps th
     const full = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
     assert.deepEqual(full.changes?.modified ?? [], [], 'a passing sighting gaining its version is not an edit');
     // Then the same version again through a search with less text, then a get-issue with more.
-    fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Events' }], partial: true }, at, () => fx.ctx.nextId('snap'));
+    fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Events', weak: true }], partial: true }, at, () => fx.ctx.nextId('snap'));
     const richer = fx.broker.sources.reportRead('jira-p', { items: [{ ref: 'PLAT-9', updatedAt: '2026-09-29T10:00:00Z', text: 'Decision: v1 is gated to the Enterprise plan. Revisit Pro in Q3.' }], partial: true }, at, () => fx.ctx.nextId('snap'));
-    assert.deepEqual(richer.changes?.modified ?? [], [], 'fuller text for the same version is recorded, not called a change');
+    assert.deepEqual(richer.changes?.modified ?? [], ['PLAT-9'], 'a provider timestamp cannot hide additional strong content');
     assert.equal((richer.staleDeliverables ?? []).length, 0);
     const ans = await call(fx, 'check_answer', { answer: 'Pro is revisited in Q3.', citations: [{ ref: 'PLAT-9', excerpt: 'Revisit Pro in Q3' }] });
     assert.equal(ans.ok, true, JSON.stringify(ans.problems));

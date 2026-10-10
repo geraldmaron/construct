@@ -1,0 +1,276 @@
+[
+  {
+    "phase": "qa",
+    "promptDigest": "e8afb28f64e1949f5917dce1817bc20405984c26558a3b3062c75a6d3889399a",
+    "configDigest": "e2af80e961531ede550bd4ded31a5fd41a9f738f55a6c4f659849c4368c4e5de",
+    "publicTranscriptDigest": "66713528e996f5c576ad88a0fd0c992ef786c1cb4e66cbf1a95496e49b46ad6d",
+    "invocation": {
+      "host": "codex",
+      "args": [
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--skip-git-repo-check",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--disable",
+        "plugins",
+        "--sandbox",
+        "workspace-write",
+        "--cd",
+        "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_provider=\"openai_http\"",
+        "-c",
+        "model_providers.openai_http.name=\"OpenAI HTTP only\"",
+        "-c",
+        "model_providers.openai_http.base_url=\"https://chatgpt.com/backend-api/codex\"",
+        "-c",
+        "model_providers.openai_http.wire_api=\"responses\"",
+        "-c",
+        "model_providers.openai_http.requires_openai_auth=true",
+        "-c",
+        "model_providers.openai_http.supports_websockets=false",
+        "-c",
+        "mcp_servers.construct.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.construct.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project/node_modules/@geraldmaron/construct/bin/construct.mjs\", \"serve\", \"--client=codex\", \"--project=<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project\"]",
+        "-c",
+        "mcp_servers.construct.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.construct.default_tools_approval_mode=\"approve\"",
+        "-c",
+        "mcp_servers.workspace.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.workspace.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/sources.mjs\"]",
+        "-c",
+        "mcp_servers.workspace.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.workspace.default_tools_approval_mode=\"approve\"",
+        "Under the local replenishment policy, what should we do if net stock is exactly 60 individual units?"
+      ],
+      "startedAt": "2026-10-09T22:37:25.867Z",
+      "countsBefore": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      }
+    },
+    "nativeProcessEvents": [
+      {
+        "type": "thread.started",
+        "thread_id": "01a122d0-685e-75a0-96e1-b172ddd3d121"
+      },
+      {
+        "type": "turn.started"
+      },
+      {
+        "type": "turn.completed",
+        "usage": {
+          "input_tokens": 312175,
+          "cached_input_tokens": 252032,
+          "cache_write_input_tokens": 0,
+          "output_tokens": 274,
+          "reasoning_output_tokens": 0
+        }
+      }
+    ],
+    "completion": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 29759,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    }
+  },
+  {
+    "phase": "initial",
+    "promptDigest": "ae58a83340aed56b637d8dc354c07f58da81dd9e82f1543de47b825f398a6536",
+    "configDigest": "9333f2fda298882608396707834fcc355ae7ddcee0bae401203494cad75b26a9",
+    "publicTranscriptDigest": "fba191dc4fd44200930bd535f28026f3751387ae07a1249f3d98249a4ae4ac3d",
+    "invocation": {
+      "host": "codex",
+      "args": [
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--skip-git-repo-check",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--disable",
+        "plugins",
+        "--sandbox",
+        "workspace-write",
+        "--cd",
+        "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_provider=\"openai_http\"",
+        "-c",
+        "model_providers.openai_http.name=\"OpenAI HTTP only\"",
+        "-c",
+        "model_providers.openai_http.base_url=\"https://chatgpt.com/backend-api/codex\"",
+        "-c",
+        "model_providers.openai_http.wire_api=\"responses\"",
+        "-c",
+        "model_providers.openai_http.requires_openai_auth=true",
+        "-c",
+        "model_providers.openai_http.supports_websockets=false",
+        "-c",
+        "mcp_servers.construct.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.construct.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project/node_modules/@geraldmaron/construct/bin/construct.mjs\", \"serve\", \"--client=codex\", \"--project=<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project\"]",
+        "-c",
+        "mcp_servers.construct.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.construct.default_tools_approval_mode=\"approve\"",
+        "-c",
+        "mcp_servers.workspace.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.workspace.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/sources.mjs\"]",
+        "-c",
+        "mcp_servers.workspace.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.workspace.default_tools_approval_mode=\"approve\"",
+        "Investigate whether West depot needs replenishment today. Save a decision brief with evidence and unresolved questions to warehouse-brief.md."
+      ],
+      "startedAt": "2026-10-09T22:37:55.635Z",
+      "countsBefore": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      }
+    },
+    "nativeProcessEvents": [
+      {
+        "type": "thread.started",
+        "thread_id": "01a122d0-dcb1-7462-8aa3-3ef287a0d1ff"
+      },
+      {
+        "type": "turn.started"
+      }
+    ],
+    "completion": {
+      "name": "initial",
+      "code": null,
+      "timedOut": true,
+      "elapsedMs": 360019,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 4,
+        "deliverables": 1,
+        "work_items": 1,
+        "sources": 5,
+        "source_snapshots": 4
+      },
+      "artifact": null
+    }
+  },
+  {
+    "phase": "changed",
+    "promptDigest": "ce2322d1765b6540c515940b3641d295a3b43e24fca4ec3f593902a8d85f7f57",
+    "configDigest": "6c29394e6fb1def8260a239ac2ef0769542e3dfda533aa305cb44c43ea075c28",
+    "publicTranscriptDigest": "eec67882a3f65a9cb91f09282dde23d6b3c307adea5a46f96c7385648b4621c4",
+    "invocation": {
+      "host": "codex",
+      "args": [
+        "exec",
+        "--json",
+        "--ephemeral",
+        "--skip-git-repo-check",
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--disable",
+        "plugins",
+        "--sandbox",
+        "workspace-write",
+        "--cd",
+        "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project",
+        "--model",
+        "gpt-6-astra",
+        "-c",
+        "model_provider=\"openai_http\"",
+        "-c",
+        "model_providers.openai_http.name=\"OpenAI HTTP only\"",
+        "-c",
+        "model_providers.openai_http.base_url=\"https://chatgpt.com/backend-api/codex\"",
+        "-c",
+        "model_providers.openai_http.wire_api=\"responses\"",
+        "-c",
+        "model_providers.openai_http.requires_openai_auth=true",
+        "-c",
+        "model_providers.openai_http.supports_websockets=false",
+        "-c",
+        "mcp_servers.construct.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.construct.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project/node_modules/@geraldmaron/construct/bin/construct.mjs\", \"serve\", \"--client=codex\", \"--project=<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/project\"]",
+        "-c",
+        "mcp_servers.construct.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.construct.default_tools_approval_mode=\"approve\"",
+        "-c",
+        "mcp_servers.workspace.command=\"/opt/homebrew/Cellar/node/25.9.0_3/bin/node\"",
+        "-c",
+        "mcp_servers.workspace.args=[\"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/sources.mjs\"]",
+        "-c",
+        "mcp_servers.workspace.env={ HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home\", XDG_CONFIG_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.config\", XDG_STATE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.state\", XDG_DATA_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.data\", XDG_CACHE_HOME = \"<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-standalone-live/support/construct-home/.cache\", PATH = \"<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin\", LANG = \"C.UTF-8\", TMPDIR = \"/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/\" }",
+        "-c",
+        "mcp_servers.workspace.default_tools_approval_mode=\"approve\"",
+        "The warehouse records have been corrected. Recheck the replenishment recommendation against the current sources and update warehouse-brief.md with what changed."
+      ],
+      "startedAt": "2026-10-09T22:43:55.659Z",
+      "countsBefore": {
+        "workflow_runs": 1,
+        "step_runs": 4,
+        "deliverables": 1,
+        "work_items": 1,
+        "sources": 5,
+        "source_snapshots": 4
+      }
+    },
+    "nativeProcessEvents": [
+      {
+        "type": "thread.started",
+        "thread_id": "01a122d6-5aef-7c30-91f0-7a0ab1e7bb49"
+      },
+      {
+        "type": "turn.started"
+      }
+    ],
+    "completion": {
+      "name": "changed",
+      "code": null,
+      "timedOut": true,
+      "elapsedMs": 360017,
+      "countsAfter": {
+        "workflow_runs": 2,
+        "step_runs": 8,
+        "deliverables": 3,
+        "work_items": 2,
+        "sources": 5,
+        "source_snapshots": 7
+      },
+      "artifact": {
+        "sha256": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+        "bytes": 7356
+      }
+    }
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "pid": 12455,
+  "childPid": 12458,
+  "host": "codex",
+  "tag": "standalone-live",
+  "startedAt": "2026-10-09T22:37:24.638391+00:00",
+  "finishedAt": "2026-10-09T22:49:55.713423+00:00",
+  "exitStatus": 0,
+  "timedOut": false,
+  "interrupted": false
+}

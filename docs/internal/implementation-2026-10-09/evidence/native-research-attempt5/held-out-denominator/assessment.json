@@ -1,0 +1,52 @@
+{
+  "caseId": "held-out-denominator",
+  "kind": "held_out",
+  "domain": "education",
+  "prompt": "Check the attendance claim before the committee relies on it. Save a finding supported by the supplied records in analysis.md.",
+  "judgment": {
+    "checks": {
+      "correctness": "pass",
+      "uncertainty": "pass",
+      "evidence": "pass",
+      "method_application": "pass"
+    },
+    "application": "applied",
+    "reasons": {
+      "correctness": "The supplied analysis.md correctly distinguishes 90/100 respondents (90%) from 90/200 enrolled learners (45%). Those counts match attendance.csv and memo.md. It treats 45% as the lower endpoint conditional on accurate reporting, not exact cohort attendance. It correctly rejects newspaper independence: news.md attributes its figure to the memo and states that no independent survey occurred. Its conclusion, 'unsupported, not conclusively disproved,' is bounded by the records.",
+      "uncertainty": "The analysis identifies 100 nonrespondents and explicitly distinguishes unrecorded attendance from absence. Its 45%\u201395% bounds are labeled conditional on accurate respondent attendance classifications, rather than independently verified attendance or a confidence interval. It explains that 90% cohort attendance remains possible but would require 90 nonrespondents to have attended. It also preserves the self-report qualification and does not assume that missing attendance registers exist.",
+      "evidence": "The candidate artifact is supplied in case.json as outputs[path=analysis.md]. Its substantive numerical and provenance claims cite the supplied records, with references matching their contents: attendance.csv supplies the counts, memo.md establishes self-report and missing nonrespondent data, and news.md establishes dependence on the memo. The replacement wording is useful and sourced. This judgment rests on the provided artifact and source comparison, not its closing assertions that checks were answered; independent filesystem persistence or execution history is not established.",
+      "method_application": "Substantive application is visible beyond the checklist: the analysis distinguishes assertion, aggregate record, survey summary, and aggregator; traces the newspaper's upstream dependency; and declines to count CSV/memo agreement as proven independent corroboration. It considers both unsupported generalization and a genuinely 90% cohort rate, identifies complete-cohort counts and nonrespondent measurements as discriminating evidence, and compares the supplied records in an evidence table. These hypotheses can coexist, but the analysis correctly uses that fact to avoid declaring the cohort rate false. It bounds coverage, classifies missingness, addresses representativeness as the strongest objection, supplies corrected wording, and identifies loss of denominator/self-report qualifiers as a concrete failure mode. Claimed search execution is not independently verified; the substantive reasoning and relevant absence of complete-cohort evidence are inspectable in the supplied materials."
+    }
+  },
+  "outputDigest": "537b39cda6b42f9726afd82136038524e8ee81182f6e883986cd92332b25fb9a",
+  "invocations": {
+    "producer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "producer",
+      "argvDigest": "35a29604087aecdf09955adedefe71a3f63dfa2851cdd185021061505878671f",
+      "transcriptDigest": "77f0156aa448368d9dace0b51e7a0b8e39778a6881ed84b25d72289e83aa2547",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 75978,
+      "completed": true,
+      "sessionDigest": "a2390d31412edd7f86dddd8062b6b2c59e6cd488124a0c798fca8938e7302520"
+    },
+    "reviewer": {
+      "host": "codex",
+      "hostVersion": "codex-cli 0.145.0",
+      "model": "gpt-6-astra",
+      "modelSource": "requested",
+      "role": "reviewer",
+      "argvDigest": "f37252c1000fd3a06110a176cc598266160cf81894a665afd79175e75e0c0dd6",
+      "transcriptDigest": "8d425956affa336e758d95bef74e602afdbaa9a5fd5bfc245a25f6b686bc429c",
+      "exitStatus": 0,
+      "timedOut": false,
+      "elapsedMs": 53311,
+      "completed": true,
+      "sessionDigest": "cb95b6c4fc3bb9ad97c80719dc7c1882469a9d513b840add96784fa129f55571"
+    }
+  }
+}

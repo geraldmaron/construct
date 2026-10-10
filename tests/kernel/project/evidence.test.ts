@@ -196,3 +196,26 @@ test('a whole host-read source resolves only after a recorded read; a directory 
     acc.cleanup();
   }
 });
+
+
+test('ambiguous bare item ids and URLs are refused; qualified refs keep source identity', () => {
+  const sources = ['a', 'b'].map((id) => ({ id, kind: 'docs', locator: null, manifest: [{ ref: '42', kind: 'item', fingerprint: id, text: `content ${id}`, url: 'https://wiki.example.com/shared' }] }));
+  for (const hostReads of ['require', 'accept'] as const) {
+    const resolve = createEvidenceResolver({ root: '/nonexistent', sources, hostReads });
+    assert.equal(resolve('42'), null);
+    assert.equal(resolve('https://wiki.example.com/shared'), null);
+    assert.equal(resolve('a:42')?.text, 'content a');
+    assert.equal(resolve('b:https://wiki.example.com/shared')?.text, 'content b');
+  }
+});
+
+test('revoked source content cannot resolve through aliases or unverified-read fallback', () => {
+  const p = project();
+  try {
+    const resolve = createEvidenceResolver({ root: p.root, hostReads: 'accept', sources: [
+      { id: 'wiki', kind: 'docs', canRead: false, locator: null, manifest: [{ ref: '42', kind: 'item', fingerprint: 'x', text: 'private', url: 'https://wiki.example.com/42' }] },
+      { id: 'docs', kind: 'directory', canRead: false, locator: join(p.root, 'docs'), manifest: null },
+    ] });
+    for (const ref of ['wiki', 'wiki:42', '42', 'https://wiki.example.com/42', 'wiki:unknown', 'docs/strategy/new.md', 'docs:strategy/new.md']) assert.equal(resolve(ref), null, ref);
+  } finally { p.cleanup(); }
+});

@@ -1,0 +1,35 @@
+{
+  "host": "codex",
+  "tag": "semantic-gate",
+  "project": "<user-home>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-semantic-gate/project",
+  "git": false,
+  "packageSha256": "f5356eb2357703d17c32e0578d55c2b8ba1f94120251df94b231a10505670e7a",
+  "fixtureBeforeInit": true,
+  "sourceConnectionBeforeInit": true,
+  "nativeConstructUsesInstalledPackageOnly": true,
+  "checkoutLoggingWrapper": false,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-30673b73",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T23:34:43.419Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "gpt-6-astra",
+  "timestamp": "2026-10-09T23:34:43.454Z",
+  "sourceOrigin": "http://127.0.0.1:62015"
+}

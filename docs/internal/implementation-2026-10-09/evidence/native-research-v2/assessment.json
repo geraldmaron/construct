@@ -1,0 +1,93 @@
+{
+  "evaluationRef": "evaluation:4",
+  "formatVersion": 1,
+  "skill": {
+    "id": "investigative-research",
+    "version": "0.3.2",
+    "digest": "sha256:630e242d3b87b74e2285142cfd56017c1b8df4adcf2a1e8f97c9d044838d264d"
+  },
+  "suiteDigest": "829cec77616784a8cd216f0e1902d9b11367d01cd00f76327b64b4bdd313db95",
+  "startedAt": "2026-10-09T22:02:49.907Z",
+  "endedAt": "2026-10-09T22:17:50.800Z",
+  "expiresAt": "2026-10-16T22:17:50.800Z",
+  "exitStatus": 0,
+  "passed": false,
+  "assurance": "native_execution_and_independent_review",
+  "problems": [
+    "implicit-archive: independent native review did not establish all required checks and application",
+    "implicit-archive: a required independent check did not pass",
+    "implicit-archive: native independent application or checks did not pass"
+  ],
+  "limitation": "Scoped executed evaluator result; reviewer judgments remain fallible and host/model labels describe this suite. No permission or universal qualification is inferred.",
+  "requestedModel": "gpt-6-astra",
+  "resolvedModel": "not independently exposed",
+  "sourceResultSha256": "502c328c8ce63acddc2d031fca86478d8a45ca4ebb8898b448eab129a4db8260",
+  "cases": [
+    {
+      "id": "explicit-vendor",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "eddbe42af3e557f8af62d42f2b8061690ae042ca6a9a0cdd72942f75928a60cd"
+    },
+    {
+      "id": "implicit-archive",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "fail"
+      },
+      "application": "applied",
+      "outputDigest": "ff6c97a74a19151bd46326958cb01b4f8e85141728eef327c7465a00bb3be1ab"
+    },
+    {
+      "id": "contextual-correction",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "b8c5f8b66e94394e24400b2f830cd5d9d672fae5e4f4bbb35e6d566d8c3030b4"
+    },
+    {
+      "id": "negative-single-fact",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "stood_down",
+      "outputDigest": "59a6dc2f258ab1a97dce97a92a2b9d46b9f591710699c297fac89e4740a17abb"
+    },
+    {
+      "id": "held-out-denominator",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "c3062c4d24e7d6c1c005e5fcf293d18583cc507dec5d3e2fa4e1158a3d2e3192"
+    },
+    {
+      "id": "composition-review-packet",
+      "checks": {
+        "correctness": "pass",
+        "uncertainty": "pass",
+        "evidence": "pass",
+        "method_application": "pass"
+      },
+      "application": "applied",
+      "outputDigest": "c0514915ae7ea03a14692970031a34d6fe203d18d3aa00b0ca6948cde8ada573"
+    }
+  ]
+}

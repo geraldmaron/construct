@@ -1,0 +1,384 @@
+[
+  {
+    "atMs": 1791581698734,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581698736,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791581711183,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581711185,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791581713562,
+    "call": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "describe",
+      "destination",
+      "kind",
+      "period",
+      "words"
+    ],
+    "reading": {
+      "kind": "manage",
+      "deliverable": "other"
+    }
+  },
+  {
+    "atMs": 1791581713564,
+    "resultFor": "classify_request",
+    "isError": true,
+    "error": "\"describe\" is not an input of this tool"
+  },
+  {
+    "atMs": 1791581729629,
+    "call": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "period",
+      "words"
+    ],
+    "reading": {
+      "kind": "manage",
+      "deliverable": {
+        "kind": "other",
+        "describe": "decision brief on West depot replenishment"
+      }
+    }
+  },
+  {
+    "atMs": 1791581729642,
+    "resultFor": "classify_request",
+    "isError": false,
+    "recorded": false,
+    "questions": [],
+    "hostQuestions": []
+  },
+  {
+    "atMs": 1791581731936,
+    "call": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "workflowId": "managed-outcome"
+  },
+  {
+    "atMs": 1791581731943,
+    "resultFor": "start_outcome",
+    "isError": false,
+    "started": true,
+    "run": {
+      "id": "run-12e863d1",
+      "state": "ready",
+      "workflow": "managed-outcome"
+    }
+  },
+  {
+    "atMs": 1791581732444,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "locator",
+      "purpose"
+    ]
+  },
+  {
+    "atMs": 1791581732446,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791581733982,
+    "call": "claim_work",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581733991,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "plan",
+    "managedDeliveryReservation": true
+  },
+  {
+    "atMs": 1791581734180,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791581734185,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791581736873,
+    "call": "submit_work",
+    "argumentKeys": [
+      "outputs",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791581736874,
+    "resultFor": "submit_work",
+    "isError": true,
+    "error": "\"outputs\" is not an input of this tool"
+  },
+  {
+    "atMs": 1791581739592,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791581739598,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "schema",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-12e863d1",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791581741205,
+    "call": "claim_work",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581741210,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "do",
+    "managedDeliveryReservation": true
+  },
+  {
+    "atMs": 1791581743278,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791581743280,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791581753747,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791581753754,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "citations_present",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "excerpts_match",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "named_sources_read",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "numbers_grounded",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "artifacts_exist",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "deliverable_complete",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "no_placeholder_facts",
+        "ok": true,
+        "problems": []
+      }
+    ],
+    "run": {
+      "id": "run-12e863d1",
+      "state": "running",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791581755188,
+    "call": "claim_work",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581755192,
+    "resultFor": "claim_work",
+    "isError": false,
+    "step": "verify",
+    "managedDeliveryReservation": true
+  },
+  {
+    "atMs": 1791581765724,
+    "call": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ]
+  },
+  {
+    "atMs": 1791581765731,
+    "resultFor": "submit_work",
+    "isError": false,
+    "validation": [
+      {
+        "validator": "evidence_refs_resolve",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "within_period",
+        "ok": true,
+        "problems": []
+      },
+      {
+        "validator": "verification_result",
+        "ok": false,
+        "problems": [
+          "verification needs a command with observed exit status, or a non-empty inspection result; passed:true alone is not evidence"
+        ]
+      },
+      {
+        "validator": "execution_required",
+        "ok": false,
+        "problems": [
+          "No observed execution receipt for this step. Run construct run verify inside the host sandbox; a reported result is not execution proof."
+        ]
+      }
+    ],
+    "run": {
+      "id": "run-12e863d1",
+      "state": "waiting_for_decision",
+      "workflow": null
+    }
+  },
+  {
+    "atMs": 1791581797402,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581797407,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791581799694,
+    "call": "sources",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791581799695,
+    "resultFor": "sources",
+    "isError": true,
+    "error": "\"action\" is required"
+  },
+  {
+    "atMs": 1791581801551,
+    "call": "sources",
+    "argumentKeys": [
+      "action"
+    ]
+  },
+  {
+    "atMs": 1791581815842,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "outcome",
+      "partial"
+    ]
+  },
+  {
+    "atMs": 1791581815859,
+    "resultFor": "sources",
+    "isError": false
+  },
+  {
+    "atMs": 1791581818136,
+    "call": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations",
+      "period"
+    ]
+  },
+  {
+    "atMs": 1791581818154,
+    "resultFor": "check_answer",
+    "isError": false
+  }
+]

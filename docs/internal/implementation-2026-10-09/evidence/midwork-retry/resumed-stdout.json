@@ -1,0 +1,26 @@
+{
+  "firing": {
+    "id": "firing-29d66893",
+    "triggerId": "east",
+    "idempotencyKey": "2026-10-09T09:00",
+    "firedAt": "2026-10-09T18:36:10.417Z",
+    "runId": "run-5df672d6",
+    "outcome": "started",
+    "reason": "managed-outcome 2.0.0 can run: 3 step(s)"
+  },
+  "outcome": "deduplicated",
+  "runId": "run-5df672d6",
+  "reason": "firing 2026-10-09T09:00 was already handled (started)",
+  "nextDueAt": "2026-10-10T09:00:00.000Z",
+  "execution": {
+    "exitStatus": 0,
+    "signal": null,
+    "timedOut": false,
+    "transcriptDigest": "283cfd15d8de40b463002cffe1324bca211b8b87a7ff5b0b48ae135456f6c61e",
+    "events": 35
+  },
+  "runState": "succeeded",
+  "complete": true,
+  "verificationProblems": [],
+  "next": "Review the local deliverable and its assurance."
+}

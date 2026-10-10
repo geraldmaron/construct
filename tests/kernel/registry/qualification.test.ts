@@ -15,7 +15,7 @@ import { createWorkflowRegistry } from '../../../src/kernel/registry/workflow-re
 const skills = createSkillRegistry({ projectDir: null });
 const workflows = createWorkflowRegistry({ projectDir: null });
 
-test('a locked digest with activation and behavior evals is qualified; a digest change at the same version is not', () => {
+test('a locked digest and evaluation filenames do not prove execution; changed bytes lose prior identity', () => {
   const construct = skills.get('construct')!;
   const body = skills.body('construct');
   const current = updateLock(emptyLock(), skills.list(), workflows.list()).lock;
@@ -23,7 +23,8 @@ test('a locked digest with activation and behavior evals is qualified; a digest 
   const row = rows.find((r) => r.kind === 'skill' && r.id === 'construct')!;
   assert.equal(row.state, 'current');
   const q = qualifySkill(construct, row, body);
-  assert.equal(q.state, 'qualified');
+  assert.equal(q.state, 'experimental');
+  assert.match(q.why, /no passing execution record/);
   assert.equal(q.digest, construct.digest);
 
   const diverged = qualifySkill(construct, { ...row, state: 'diverged', why: 'same version, different bytes' }, body);

@@ -1,0 +1,164 @@
+{
+  "trial": "fresh-codex-standalone-live",
+  "phases": {
+    "qa": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 29759,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    },
+    "initial": {
+      "name": "initial",
+      "code": null,
+      "timedOut": true,
+      "elapsedMs": 360019,
+      "countsAfter": {
+        "workflow_runs": 1,
+        "step_runs": 4,
+        "deliverables": 1,
+        "work_items": 1,
+        "sources": 5,
+        "source_snapshots": 4
+      },
+      "artifact": null
+    },
+    "changed": {
+      "name": "changed",
+      "code": null,
+      "timedOut": true,
+      "elapsedMs": 360017,
+      "countsAfter": {
+        "workflow_runs": 2,
+        "step_runs": 8,
+        "deliverables": 3,
+        "work_items": 2,
+        "sources": 5,
+        "source_snapshots": 7
+      },
+      "artifact": {
+        "sha256": "fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2",
+        "bytes": 7356
+      }
+    }
+  },
+  "qaAnswer": "**Hold steady; do not recommend replenishment.** The policy triggers replenishment only when net stock (available minus reserved) is **below 60 individual units**, not at exactly 60. Source: `docs/policy.md:2`.",
+  "finalState": {
+    "runs": [
+      {
+        "id": "run-5fb9fb1e",
+        "workflow_id": "research-brief",
+        "state": "running",
+        "state_reason": null
+      },
+      {
+        "id": "run-093372d5",
+        "workflow_id": "research-brief",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-5fb9fb1e",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-5fb9fb1e",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-5fb9fb1e",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-5fb9fb1e",
+        "step_id": "record",
+        "state": "leased",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-093372d5",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-093372d5",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-093372d5",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-093372d5",
+        "step_id": "record",
+        "state": "succeeded",
+        "state_reason": null
+      }
+    ],
+    "work": [
+      {
+        "id": "work-run-5fb9fb1e-delivery",
+        "status": "open"
+      },
+      {
+        "id": "work-run-093372d5-delivery",
+        "status": "completed"
+      }
+    ]
+  },
+  "independentChecks": {
+    "cases": [
+      {
+        "name": "initial",
+        "checks": {
+          "correctness": "unknown",
+          "uncertainty": "unknown",
+          "evidence": "unknown",
+          "requested_file": "fail"
+        },
+        "reasons": {
+          "correctness": "No initial artifact was captured: result.artifact, artifact.text, and artifact.digest are null. The recorded inputs require HOLD: 12 cases, null lot-specific conversion, and reservation quantity 4 without a unit. Reads alone cannot establish that the candidate issued that decision or avoided incompatible subtraction.",
+          "uncertainty": "The missing brief prevents verification that conversion and reservation units were explicitly left unresolved. The changed artifact's description of an earlier hold does not independently establish the initial output.",
+          "evidence": "Recorded reads establish substantive research: current stock and reservations were fetched, the catalog API returned units_per_case:null, and the supplier reference was followed at 2026-10-09T22:39:42.174Z and returned permission_denied. However, no initial artifact exists to verify the rubric's requirement for cited scoped authority and unknowns.",
+          "requested_file": "warehouse-brief.md is missing from the initial artifact capture. The run timed out. Nonzero deliverable and workflow counters are not substitutes for saved file bytes."
+        }
+      },
+      {
+        "name": "changed",
+        "checks": {
+          "correctness": "pass",
+          "uncertainty": "pass",
+          "evidence": "pass",
+          "requested_file": "pass"
+        },
+        "reasons": {
+          "correctness": "The captured brief correctly computes 6 cases \u00d7 6 each/case = 36 each, minus 4 each reserved = 32 each net, below 60 by 28 each. It recommends replenishment, correctly holds steady at exactly 60, rejects the superseded cache, and distinguishes the threshold gap from an approved order quantity. Recorded reads contain no order action, although they do not independently prove the artifact's broader claim that no external action occurred.",
+          "uncertainty": "The brief preserves the earlier unknown conversion and reservation units rather than claiming six each/case was previously established. It limits the conclusion to PART-19 at West at read time, identifies unverified supplier terms and inbound supply, and makes confidence conditional on upstream accuracy. The actual earlier recommendation remains unverified because its cited deliverable is not supplied.",
+          "evidence": "Fresh recorded reads under PID 17001, distinct from initial PID 13557, support the cited current inputs: stock at 22:45:45.836Z, reservations at 22:45:50.789Z, and the catalog API at 22:46:03.014Z, corroborated by the recorded loopback GET. Comparison with initial records establishes changed content despite identical provider timestamps: 12 cases became 6, null conversion became 6 each/case, and the missing reservation unit became each. The brief correctly scopes source authority and does not treat the catalog index or operator generalization as independent conversion evidence. Its claims about a challenged managed deliverable, completed checks, and passed citation checks are not independently verified and receive no credit.",
+          "requested_file": "The captured warehouse-brief.md text contains 7356 UTF-8 bytes. Independently computed SHA-256 is fa1ad6ff0c40b41beb0bf7500eeb622fb70bba549074c643b3132811d8da9ed2, matching both recorded digests. This establishes a supplied changed artifact despite the run timeout. It does not establish an in-place update of a prior saved brief: the initial file was missing, and the changed artifact explicitly acknowledges that limitation."
+        }
+      }
+    ]
+  }
+}

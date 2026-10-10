@@ -1,0 +1,194 @@
+{
+  "host": "cursor",
+  "tag": "semantic-gate",
+  "cases": [
+    {
+      "phase": "initial",
+      "frozen": {
+        "packetDigest": "5a299d47a0e92a007e8ab5f28d48ff524d6fad12dbdfcda44e30baf0a695beeb",
+        "rubricDigest": "84e49d338b2d4457e82effe65689d21f30bfb9081be0b6b62ec6305c7c99bfa2",
+        "artifactDigest": "b5a43ea5a373123f2fb8bc30b954f892487ea541e002798202fc65684660e08c",
+        "frozenAt": "2026-10-09T23:42:12.930Z"
+      },
+      "stable": true,
+      "review": {
+        "reviewRef": "semantic:8",
+        "preparedRef": "review:6",
+        "receipt": {
+          "preparedRef": "review:6",
+          "bundleDigest": "5252414f6c298c8cf3ca98b1e0513706bfefb6da946627b3dec03914f4fb0370",
+          "attempt": 1,
+          "invocation": {
+            "id": "f5406fe8-3a09-4db2-8a1d-6564b2fad62a",
+            "host": "codex",
+            "hostVersion": "codex-cli 0.145.0",
+            "model": "gpt-6-astra",
+            "sessionId": "01a1230b-b99d-7371-ab32-4c27eed590d7",
+            "completed": true,
+            "exitStatus": 0,
+            "timedOut": false,
+            "transcriptDigest": "f4c21c61c5188c129091003539caad406df865c84016f1b0118917850850be79"
+          },
+          "judgment": {
+            "checks": [
+              {
+                "id": "correctness",
+                "verdict": "fail",
+                "reason": "The initial-phase HOLD recommendation and exact-60 boundary are correct, but the 'Hypotheses considered' table reverses its counterfactual tests. Net below 60 would refute the no-replenishment conclusion; net at or above 60 would refute the replenishment conclusion. The table instead lists conditions supporting those respective decisions as refutations. This error does not invalidate the current HOLD recommendation.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "uncertainty",
+                "verdict": "pass",
+                "reason": "The brief explicitly preserves the unknown lot-specific case conversion and reservation unit, acknowledges denied supplier access, and avoids guessed conversions or incompatible subtraction. It distinguishes confidence in the policy-required HOLD from uncertainty about actual net stock. It appropriately limits the assessment to PART-19 at West rather than borrowing AUX-22's reservation unit.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "evidence",
+                "verdict": "pass",
+                "reason": "The recorded source reads and API GET corroborate 12 cases available, 4 reserved with no current unit stated, a null case multiplier, and permission_denied for the supplier reference. The supplied policy supports HOLD and the exact-60 boundary. The brief respects connected-record supersession of the cached export, cites source-specific evidence, and does not claim supplier access or authority to place orders.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "requested_file",
+                "verdict": "pass",
+                "reason": "The bundle contains the witnessed warehouse-brief.md artifact, matching the artifact text recorded in case.json. It supplies the requested initial decision brief with evidence and unresolved questions. File fulfillment is supported by the supplied artifact, not inferred from lifecycle success; the changed-phase update is not required for this initial assessment.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              }
+            ]
+          },
+          "problems": [
+            "correctness: fail review judgment"
+          ]
+        },
+        "passed": false
+      }
+    },
+    {
+      "phase": "changed",
+      "frozen": {
+        "packetDigest": "ec46494e224348b5f172b535d31bd16b377951d8f05f8f477483f0e3ecbb9df0",
+        "rubricDigest": "84e49d338b2d4457e82effe65689d21f30bfb9081be0b6b62ec6305c7c99bfa2",
+        "artifactDigest": "839dd1f42cee75a7eff8147716396e7578af8dd7878d78e2d66447d5d7298ca7",
+        "frozenAt": "2026-10-09T23:42:49.659Z"
+      },
+      "stable": true,
+      "review": {
+        "reviewRef": "semantic:8",
+        "preparedRef": "review:6",
+        "receipt": {
+          "preparedRef": "review:6",
+          "bundleDigest": "9857d441c2863377f8c1ce2ed314973b3689becc2dee27aa89254ccce4db8cdf",
+          "attempt": 1,
+          "invocation": {
+            "id": "b56a23f8-1f88-499f-b71c-8221db6dd77e",
+            "host": "codex",
+            "hostVersion": "codex-cli 0.145.0",
+            "model": "gpt-6-astra",
+            "sessionId": "01a1230c-4969-7600-b20c-6a3ae814946b",
+            "completed": true,
+            "exitStatus": 0,
+            "timedOut": false,
+            "transcriptDigest": "4d5ea90b8134a8fdaa20b9dd20140c244a0c40ccaec2aab5baea645449017ca1"
+          },
+          "judgment": {
+            "checks": [
+              {
+                "id": "correctness",
+                "verdict": "fail",
+                "reason": "The current calculation (6 × 6) − 4 = 32 each, replenishment recommendation, and exactly-60 hold rule are correct. However, the changed-phase rubric explicitly requires the 28-each shortfall, which the brief omits. Its description of the cache as a '72 each net story' also misstates the counterfactual: cached net stock is 72 − 12 = 60 each, yielding hold.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "uncertainty",
+                "verdict": "pass",
+                "reason": "The brief preserves the prior unknown conversion and reservation units rather than claiming they were previously known. It uses the recorded current conversion and explicit reservation units without guessing, discloses the unavailable supplier record, and limits its recommendation to PART-19. Its additional catalog-alignment caveat does not make further confirmation a prerequisite for the supported recommendation.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "evidence",
+                "verdict": "fail",
+                "reason": "Recorded source/API reads and policy support the current quantities, conversion, unchanged provider timestamps, and supersession of cached records. However, no independent evidence in the bundle supports the claimed prior stock of 12 cases or the assertion that AUX-22 appears on reservations. Their repetition within the embedded candidate in case.json does not corroborate them.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json"
+                ]
+              },
+              {
+                "id": "requested_file",
+                "verdict": "pass",
+                "reason": "The bundle supplies the witnessed warehouse-brief.md itself, containing a comparison of corrections and an updated planning recommendation. This supports delivery of the requested file, with content defects assessed separately above. It does not establish managed-lifecycle compliance or prove that external actions did or did not occur.",
+                "refs": [
+                  "warehouse-brief.md",
+                  "case.json",
+                  "body"
+                ]
+              }
+            ]
+          },
+          "problems": [
+            "correctness: fail review judgment",
+            "evidence: fail review judgment"
+          ]
+        },
+        "passed": false
+      }
+    }
+  ],
+  "state": {
+    "runs": [
+      {
+        "id": "run-eed962d2",
+        "workflow_id": "research-brief",
+        "state": "running",
+        "state_reason": null
+      }
+    ],
+    "steps": [
+      {
+        "run_id": "run-eed962d2",
+        "step_id": "gather",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-eed962d2",
+        "step_id": "synthesize",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-eed962d2",
+        "step_id": "challenge",
+        "state": "succeeded",
+        "state_reason": null
+      },
+      {
+        "run_id": "run-eed962d2",
+        "step_id": "record",
+        "state": "leased",
+        "state_reason": "lease expired"
+      }
+    ]
+  },
+  "managedCompletion": false,
+  "limitation": "Frozen historical rubric scored by independent fallible native review. Artifact quality, actual reads, and lifecycle are separate. Native backend model identity is not independently attested."
+}

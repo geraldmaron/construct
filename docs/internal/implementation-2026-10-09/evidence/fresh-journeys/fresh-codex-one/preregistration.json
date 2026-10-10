@@ -1,0 +1,32 @@
+{
+  "host": "codex",
+  "tag": "one",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-codex-one/project",
+  "git": false,
+  "packageSha256": "445618d521c88c6bac430339a5525ce0a3d3713a119bbfc4e9380ba2f50e19c6",
+  "fixtureBeforeInit": true,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-510c91b3",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T20:50:08.290Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "gpt-6-astra",
+  "timestamp": "2026-10-09T20:50:08.395Z",
+  "sourceOrigin": "http://127.0.0.1:63154"
+}

@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "workspace": {
+      "command": "/opt/homebrew/Cellar/node/25.9.0_3/bin/node",
+      "args": [
+        "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/sources.mjs"
+      ],
+      "env": {
+        "HOME": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/construct-home",
+        "XDG_CONFIG_HOME": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/construct-home/.config",
+        "XDG_STATE_HOME": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/construct-home/.state",
+        "XDG_DATA_HOME": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/construct-home/.data",
+        "XDG_CACHE_HOME": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/support/construct-home/.cache",
+        "PATH": "<USER_HOME>/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:<USER_HOME>/.codex/tmp/arg0/codex-arg0lwxPJH:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:<USER_HOME>/.unity/bin:<USER_HOME>/.local/state/fnm_multishells/71131_1791384506418/bin:<USER_HOME>/Library/pnpm:<USER_HOME>/.bun/bin:<USER_HOME>/.local/bin:<USER_HOME>/bin:/opt/homebrew/sbin:<USER_HOME>/.cargo/bin:<USER_HOME>/.orbstack/bin:<USER_HOME>/.local/bin:<USER_HOME>/.orbstack/bin",
+        "LANG": "C.UTF-8",
+        "TMPDIR": "/var/folders/b6/zzjn4lds7bj5d82qfl3lqb580000gn/T/"
+      }
+    },
+    "construct": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "construct",
+        "serve",
+        "--client=cursor",
+        "--project=${workspaceFolder}"
+      ]
+    }
+  }
+}

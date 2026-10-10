@@ -1,0 +1,2 @@
+# Depot planning
+Synthetic warehouse workspace. Current local policy is in docs/. The project-connected workspace MCP service offers a source catalog and reads current stock, reservations and item metadata. The read-only packaging API is http://127.0.0.1:58677; its schema is http://127.0.0.1:58677/openapi.json. The MCP fetch tool can read that connected API too. Keep requested work in this project. No order placement, external message or production action is authorized.

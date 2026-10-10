@@ -79,7 +79,24 @@ function looksLikeToken(run: string): boolean {
 export function redact(value: string): string {
   let out = value;
   for (const shape of KNOWN_SHAPES) out = out.replace(shape, REDACTION_PLACEHOLDER);
-  out = out.replace(TOKEN_CANDIDATE, (run) => (looksLikeToken(run) ? REDACTION_PLACEHOLDER : run));
+  // A public URL's separated path components are not one credential. Applying
+  // entropy to the domain suffix plus a versioned path used to destroy ordinary
+  // references. Still inspect each component and the full query/fragment, and
+  // never retain userinfo. This is heuristic redaction, not secret detection proof.
+  const candidate = (text: string) => text.replace(TOKEN_CANDIDATE, (run) => looksLikeToken(run) ? REDACTION_PLACEHOLDER : run);
+  const component = (text: string): string => {
+    let decoded = text;
+    try { decoded = decodeURIComponent(text); } catch { /* keep malformed text */ }
+    if (hasKnownSecret(decoded) || candidate(decoded) !== decoded) return REDACTION_PLACEHOLDER;
+    return text;
+  };
+  out = out.replace(new RegExp(`https?:\\/\\/[^\\s<>"'\\x60]+|${TOKEN_CANDIDATE.source}`, 'g'), (run) => {
+    if (!/^https?:\/\//.test(run)) return candidate(run);
+    const parts = /^(https?:\/\/)([^/?#]*)([^?#]*)(.*)$/.exec(run);
+    if (!parts) return candidate(run);
+    const authority = parts[2]!.replace(/^[^@]*@/, `${REDACTION_PLACEHOLDER}@`);
+    return parts[1]! + component(authority) + parts[3]!.split('/').map(component).join('/') + candidate(parts[4]!);
+  });
   return out;
 }
 

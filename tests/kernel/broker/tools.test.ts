@@ -39,7 +39,7 @@ test('every tool is declared once with a closed schema, a plain description, and
     assert.ok(interactive.includes(forbidden), `${forbidden} exists interactively`);
     assert.ok(!headless.includes(forbidden), `${forbidden} is not on the headless surface`);
   }
-  assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
+  assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
 });
 
 test('every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold', () => {
@@ -172,7 +172,7 @@ test('bootstrap never puts setup ahead of the person\'s request: setup questions
     raiseDecision(fx.broker.store, { id: 'q-outcome', kind: 'clarification', question: ONBOARDING_QUESTIONS[1]!.question, subject: { onboarding: 'primary_outcome' }, at });
     addStatement(fx.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
     const boot = (await call(fx, 'bootstrap')) as { next: string; decisions: { open: number }; profile: { openQuestions: { id: string; choices: { id: string; label: string }[] | null; suggested: string | null }[]; proposals: number } };
-    assert.match(boot.next, /^handle what the person asked first/, 'the person\'s request comes first');
+    assert.match(boot.next, /handle what the person asked first/, 'the person\'s request comes first');
     assert.match(boot.next, /ask a setup question only when its answer changes that work/);
     assert.match(boot.next, /put the 2 setup question\(s\) to them in one message/);
     assert.match(boot.next, /offer the 1 proposed statement\(s\) from inbox for confirmation; never before their request/);
@@ -191,7 +191,7 @@ test('bootstrap never puts setup ahead of the person\'s request: setup questions
     const fx2 = brokerFixture();
     try {
       addStatement(fx2.broker.store, { id: 'st-proposed', kind: 'principle', text: 'Keep the kernel host-agnostic', provenance: 'discovery', at });
-      assert.equal(((await call(fx2, 'bootstrap')) as { next: string }).next, 'when the person is free, offer the 1 proposed statement(s) from inbox for confirmation; never before their request');
+      assert.equal(((await call(fx2, 'bootstrap')) as { next: string }).next.split('Project state: ')[1], 'when the person is free, offer the 1 proposed statement(s) from inbox for confirmation; never before their request');
     } finally {
       fx2.cleanup();
     }
@@ -210,10 +210,10 @@ test('bootstrap leads with the decisions about runs, and names blocked runs inst
     const run = fx.broker.workflow.start({ workflowId: 'design-conformance', input: {}, trigger: 'manual' });
     assert.equal(run.run.state, 'blocked');
     const boot = (await call(fx, 'bootstrap')) as { next: string };
-    assert.match(boot.next, new RegExp(`^1 run\\(s\\) blocked \\(${run.run.id}\\); claim_work with a runId says what would unblock it$`));
+    assert.match(boot.next, new RegExp(`Project state: 1 run\\(s\\) blocked \\(${run.run.id}\\); claim_work with a runId says what would unblock it$`));
     assert.doesNotMatch(boot.next, /continue with claim_work/);
     raiseDecision(fx.broker.store, { id: 'q-run', kind: 'decision', question: 'Which target?', runId: run.run.id, at });
-    assert.equal(((await call(fx, 'bootstrap')) as { next: string }).next, '1 decision(s) about runs wait on the person; show them with inbox');
+    assert.equal(((await call(fx, 'bootstrap')) as { next: string }).next.split('Project state: ')[1], '1 decision(s) about runs wait on the person; show them with inbox');
     assert.match(await onSessionStart(fx.broker), /1 decision\(s\) about runs wait on the person \(inbox\)\./, 'the session-start note counts only the decisions about runs');
   } finally {
     fx.cleanup();
@@ -263,5 +263,27 @@ test('the headless surface claims and submits but cannot decide, remember, or st
     assert.equal((await call(fx, 'heartbeat', { stepRunId: 'x', token: 'not-the-lease' }).catch((e: Error) => e.message)), 'step x is not held by this session under that token');
   } finally {
     fx.cleanup();
+  }
+});
+
+
+test('bootstrap keeps the requested lifecycle ahead of setup, without giving a headless worker interactive authority', async () => {
+  for (const surface of ['interactive', 'headless'] as const) {
+    const fx = brokerFixture(surface);
+    try {
+      const before = listActivity(fx.broker.store).length;
+      const boot = await call(fx, 'bootstrap') as { next: string };
+      if (surface === 'interactive') {
+        assert.match(boot.next, /^Answer plain questions directly and record nothing/);
+        assert.match(boot.next, /classify_request kind=manage, start_outcome, then claim_work\/submit_work/);
+        assert.match(boot.next, /until the requested file and run complete/);
+        assert.match(boot.next, /Repair failed calls before proceeding/);
+        assert.ok(boot.next.indexOf('classify_request') < boot.next.indexOf('Project state:'));
+      } else {
+        assert.match(boot.next, /only the assigned run with claim_step/);
+        assert.doesNotMatch(boot.next, /classify_request|start_outcome|claim_work|remember/);
+      }
+      assert.equal(listActivity(fx.broker.store).length, before);
+    } finally { fx.cleanup(); }
   }
 });

@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "experience-review",
   "title": "Experience review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Review a screen or flow for task success, accessibility against WCAG 2.2, error states, consistency with the declared design system, and the evidence behind behavior claims; findings are recorded and unsupported claims are handed over as assumptions.",
   "activation": [
     "review this screen or flow",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

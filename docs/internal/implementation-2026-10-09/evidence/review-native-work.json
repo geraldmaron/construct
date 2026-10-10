@@ -1,0 +1,29 @@
+{
+  "id": "work-f690a2b6",
+  "kind": "task",
+  "title": "Close the independent implementation review and local handoff",
+  "description": "Review implementation checkpoint 2b1720e0 fixes trigger isolation, execution completion, unchanged-reread freshness, non-Git executor admission and expired-lease retry accounting. Full gate: 862 pass, 1 existing skip, lint/typecheck/smoke pass. Actual mid-work recovery and independent same-key output trials pass; held-out warehouse ambiguity is correctly held. Code and durable evidence are ready for independent recheck, whose clearance remains pending. User explicitly disabled repository-local commit signing; global signing and 1Password settings unchanged. Native bounded run run-0a70f6ba succeeded with execution:871. Broader work-18402da5 acceptance remains open. See docs/internal/implementation-2026-10-09/RESULTS.md and REVIEW-CLOSEOUT.md.",
+  "status": "open",
+  "scope": null,
+  "premises": null,
+  "acceptance": [
+    "Independent recheck findings are resolved or explicitly blocked with evidence; no claim of clearance before its report.",
+    "Owned fixture processes and work claims are cleaned up; evidence remains reproducible.",
+    "Adapter coverage and signing recovery are reported accurately without bypass."
+  ],
+  "risk": "Do not convert static conformance or bounded Codex trials into universal host or semantic qualification.",
+  "entityId": "ent-work-f690a2b6",
+  "parentId": "work-18402da5",
+  "supersededBy": null,
+  "revision": 12,
+  "claimOwner": null,
+  "claimToken": null,
+  "claimUntil": null,
+  "claimSession": null,
+  "claimAgent": null,
+  "claimLane": null,
+  "createdAt": "2026-10-09T18:08:34.577Z",
+  "updatedAt": "2026-10-09T18:46:48.654Z",
+  "completedAt": null,
+  "reason": null
+}

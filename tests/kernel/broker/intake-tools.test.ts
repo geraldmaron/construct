@@ -53,7 +53,7 @@ test('classify_request takes a typed reading, records nothing, and names who jud
     const unregistered = r.assumptions.filter((a: { about: string; by: string }) => a.about === 'sources' && a.by === 'kernel');
     assert.equal(unregistered.length, 5, 'each named system that is not registered is an assumption');
     assert.match(r.next, UNREGISTERED);
-    assert.match(r.next, /Call start_outcome with workflowId "managed-outcome" and this intake/);
+    assert.match(r.next, /First inspect carrierAlternatives/);
     assert.match(r.skills['system-architecture'].useWhen, /\S/);
     assert.ok(Object.values(r.skills).every((s: any) => s.useWhen.length <= 200));
     assert.deepEqual([r.matches[0].input.period, r.matches[0].input.request], [WINDOW, WORDS], 'the period goes into the carrier’s input as the person framed it');
@@ -188,7 +188,8 @@ test('start_outcome starts nothing while a required detail or a blocking questio
     assert.equal(missing.started, false);
     assert.equal(missing.recorded, false);
     assert.deepEqual(missing.questions.map((q: { slot: string }) => q.slot), ['target']);
-    assert.equal(missing.next, 'Nothing started. Put these to the person in one message, then call start_outcome again with their answers.');
+    assert.match(missing.next, /^Nothing started/);
+    assert.match(missing.next, /Do not downgrade required permission, essential scope or destination decisions/);
     assert.deepEqual(listRuns(fx.broker.store), [], 'no run is left for a missing input');
 
     const open = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { ...prd, target: 'docs/prd.md', open: [{ about: 'audience', question: 'Is this for the partner team or for customers?', blocking: true }] } });
@@ -289,4 +290,152 @@ test('the published reading carries the stake areas the judge reads, and the des
     const named = leaf === null ? new RegExp(`\\b${family}\\b`) : new RegExp(`\\b${family}/(?:${leaf}\\b| [^;]*\\b${leaf}\\b)`);
     assert.match(description, named, `the description names ${kind}`);
   }
+});
+
+
+test('standing intake records an idempotent definition, preserves input, and creates no immediate run or executor', async () => {
+  const fx = brokerFixture();
+  try {
+    for (const [workflowId, deliverable, kind] of [['managed-outcome', { kind: 'other', describe: 'a status brief' }, 'schedule'], ['source-drift-review', { kind: 'review/drift' }, 'event']] as const) {
+      const intake = { words: 'Keep the current policy and implementation reviewed; save a local status brief.', kind: 'maintain', workflowId, deliverable, scope: 'docs/design.md', schedule: kind === 'schedule' ? { cron: '0 9 * * 1', timezone: 'Pacific/Auckland' } : { event: 'source.corrected' } };
+      const first = await call(fx, 'start_outcome', { workflowId, intake });
+      assert.equal(first.started, false); assert.equal(first.scheduled, true);
+      assert.deepEqual(first.provisioning, { clock: 'unprovisioned', executor: 'unprovisioned' });
+      assert.equal(first.triggers[0].created, true);
+      assert.equal(first.triggers[0].trigger.kind, kind);
+      assert.equal(first.triggers[0].trigger.delivery.intake.words, intake.words);
+      const repeated = await call(fx, 'start_outcome', { intake: { ...intake }, workflowId });
+      assert.equal(repeated.triggers[0].created, false);
+      assert.equal(repeated.triggers[0].trigger.id, first.triggers[0].trigger.id);
+      assert.equal(listRuns(fx.broker.store).filter((run) => run.workflowId === workflowId).length, 0);
+      const fired = fx.broker.triggers.fire({ triggerId: first.triggers[0].trigger.id, firingKey: 'test-occurrence' });
+      const asked = askedOf(getRun(fx.broker.store, fired.runId!)!);
+      assert.equal(asked.intake?.words, intake.words);
+      assert.equal(asked.judgedBy?.by, 'trigger_definition');
+    }
+  } finally { fx.cleanup(); }
+});
+
+
+test('an outcome cannot finish in state alone when the person requested a local file', async () => {
+  const fx = brokerFixture();
+  try {
+    const started = await call(fx, 'start_outcome', { workflowId: 'managed-outcome', intake: { words: 'Write a local design brief.', kind: 'manage', deliverable: { kind: 'other', describe: 'design brief' }, destination: { kind: 'project_file', ref: 'brief.md' } } });
+    const runId = started.run.id;
+    const submitNext = async (output: Record<string, unknown>) => { const w = (await call(fx, 'claim_work', { runId })).work; return call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output, evidence: [{ ref: 'docs/design.md' }] }); };
+    await submitNext({ plan: ['Read design and write brief'], assumptions: [], blockers: [] });
+    const work = await submitNext({ summary: 'Kernel stays host-agnostic', findings: ['The design keeps the kernel host-agnostic.'], changes: [], artifact: null });
+    assert.equal(work.step.state, 'succeeded');
+    const end = await submitNext({ verification: { result: 'Inspected design context' }, passed: true });
+    assert.ok(end.validation.some((check: any) => check.validator === 'requested_destination' && check.ok === false));
+    assert.notEqual(end.run.state, 'succeeded');
+    assert.equal(end.deliverable, null);
+  } finally { fx.cleanup(); }
+});
+
+
+for (const handling of ['investigate', 'carry_unknown']) {
+  test(`an explicit ${handling} evidence gap starts research and survives in the packet without a fabricated assumption`, async () => {
+    const fx = brokerFixture();
+    try {
+      const gap = { about: 'sources', question: 'Which measurement definition is current?', blocking: false, handling };
+      const reading = await call(fx, 'classify_request', { words: 'Investigate the conflicting measurements and report what remains unknown.', kind: 'manage', deliverable: { kind: 'research/brief' }, open: [gap] });
+      assert.deepEqual(reading.hostQuestions, []);
+      assert.ok(!reading.assumptions.some((a: any) => a.by === 'host'));
+      assert.equal(reading.intake.open[0].assumption, null);
+      assert.equal(reading.matches[0].workflowId, 'research-brief');
+      const started = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: reading.intake });
+      assert.equal(started.started, true);
+      assert.equal(askedOf(getRun(fx.broker.store, started.run.id)!).intake!.open[0]!.handling, handling);
+      const next = (await call(fx, 'claim_work', { runId: started.run.id })).work;
+      assert.equal(next.step.tier, 'observe');
+      assert.deepEqual(next.intake.evidenceGaps, [{ about: 'sources', question: gap.question, handling }]);
+      assert.ok(next.instructions.some((instruction: string) => instruction.includes('not assumed facts')));
+    } finally { fx.cleanup(); }
+  });
+}
+
+test('explicit evidence handling cannot simultaneously claim an assumed answer or person blocker', async () => {
+  const fx = brokerFixture();
+  try {
+    const base = { words: 'Research current measurements.', kind: 'manage', deliverable: { kind: 'research/brief' } };
+    for (const extra of [{ blocking: true }, { blocking: false, assumption: 'The missing field means cases.' }, { blocking: false, handling: 'approved' }]) {
+      await refusal(fx, 'classify_request', { ...base, open: [{ question: 'What does this field mean?', handling: 'investigate', ...extra }] });
+    }
+    assert.equal(listActivity(fx.broker.store).length, 0);
+  } finally { fx.cleanup(); }
+});
+
+test('carrying an unknown cannot supply a required destination or waive an actual decision', async () => {
+  const fx = brokerFixture();
+  try {
+    const gap = { question: 'What do the unavailable records establish?', blocking: false, handling: 'carry_unknown' };
+    const missing = await call(fx, 'start_outcome', { workflowId: 'prd-authoring', intake: { words: 'Write a PRD.', kind: 'manage', deliverable: { kind: 'document/prd' }, open: [gap] } });
+    assert.equal(missing.started, false);
+    assert.ok(missing.questions.some((q: any) => q.slot === 'target'));
+    const blocked = await call(fx, 'start_outcome', { workflowId: 'research-brief', intake: { words: 'Research the confidential records after the owner permits access.', kind: 'manage', deliverable: { kind: 'research/brief' }, open: [gap, { about: 'scope', question: 'Has the owner permitted this access?', blocking: true }] } });
+    assert.equal(blocked.started, false);
+    assert.deepEqual(blocked.hostQuestions, [{ about: 'scope', question: 'Has the owner permitted this access?' }]);
+    assert.deepEqual(listRuns(fx.broker.store), []);
+  } finally { fx.cleanup(); }
+});
+
+
+test('generic research and renamed requests expose registry alternatives before acquiring command verification', async () => {
+  const fx = brokerFixture();
+  try {
+    const results = [];
+    for (const words of ['Investigate current evidence for a depot decision.', 'Compare archive accession records.', 'Review the renamed flarn data.']) {
+      const result = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'a decision brief' } });
+      assert.equal(result.matches[0].workflowId, GENERAL_CARRIER);
+      assert.equal(result.matches[0].verification.executionRequired, true);
+      const research = result.carrierAlternatives.find((w: any) => w.workflowId === 'research-brief');
+      assert.equal(research.deliverableKind, 'research/brief');
+      assert.equal(research.verification.kind, 'evidence_and_model_challenge');
+      assert.equal(research.verification.executionRequired, false);
+      assert.match(research.verification.assurance, /no independent semantic proof/);
+      assert.match(result.next, /never request broader shell permission/);
+      results.push(result.carrierAlternatives);
+    }
+    assert.deepEqual(results[0], results[1]); assert.deepEqual(results[1], results[2]);
+    assert.equal(listRuns(fx.broker.store).length, 0);
+    const reclassified = await call(fx, 'classify_request', { words: 'Review the renamed flarn data.', kind: 'manage', deliverable: { kind: 'research/brief' } });
+    assert.equal(reclassified.matches[0].workflowId, 'research-brief');
+    assert.equal(reclassified.matches[0].verification.executionRequired, false);
+    assert.equal(reclassified.carrierAlternatives, undefined);
+  } finally { fx.cleanup(); }
+});
+
+test('alternative verification metadata follows actual registry steps including project workflows', async () => {
+  const fx = brokerFixture();
+  try {
+    const research = fx.broker.workflows.get('research-brief')!;
+    const clone = { ...research, manifest: { ...research.manifest, id: 'local-measurement-review', title: 'Local measurement review', deliverable: { ...research.manifest.deliverable, kind: 'review/measurement' }, steps: research.manifest.steps.map((s, i) => i === 0 ? { ...s, capabilities: [...s.capabilities, 'run_tests'] } : s) } };
+    const original = fx.broker.workflows;
+    (fx.broker as any).workflows = { ...original, list: () => [...original.list(), clone], get: (id: string) => id === clone.manifest.id ? clone : original.get(id) };
+    const result = await call(fx, 'classify_request', { words: 'Review measurements.', kind: 'manage', deliverable: { kind: 'other', describe: 'measurement review' } });
+    const alternative = result.carrierAlternatives.find((w: any) => w.workflowId === clone.manifest.id);
+    assert.equal(alternative.deliverableKind, 'review/measurement');
+    assert.equal(alternative.verification.executionRequired, true);
+    assert.equal(alternative.verification.kind, 'observed_project_command');
+    const listed = await call(fx, 'workflows', { action: 'list' });
+    assert.deepEqual(listed.find((w: any) => w.id === clone.manifest.id).verification, alternative.verification);
+  } finally { fx.cleanup(); }
+});
+
+test('standing alternatives obey all requested trigger requirements and retain the real executor boundary', async () => {
+  const fx = brokerFixture();
+  try {
+    for (const schedule of [{ cron: '0 9 * * 1', timezone: 'UTC' }, { event: 'source.corrected' }, { cron: '0 9 * * 1', timezone: 'UTC', event: 'source.corrected' }]) {
+      const result = await call(fx, 'classify_request', { words: 'Maintain a current evidence summary.', kind: 'maintain', deliverable: { kind: 'other', describe: 'evidence summary' }, schedule });
+      if (result.matches.length) assert.match(result.next, /separately provisioned clock and executor/);
+      else assert.match(result.next, /No workflow here produces other on a schedule or an event/);
+      assert.ok(!result.carrierAlternatives.some((w: any) => w.workflowId === 'research-brief'), 'manual-only research is not offered as an executing schedule');
+      for (const alternative of result.carrierAlternatives) {
+        const manifest = fx.broker.workflows.get(alternative.workflowId)!.manifest;
+        if ('cron' in schedule) assert.ok(manifest.triggers.includes('schedule'));
+        if ('event' in schedule) assert.ok(manifest.triggers.includes('event'));
+      }
+    }
+  } finally { fx.cleanup(); }
 });

@@ -1,0 +1,13 @@
+✔ structural receipts bind observed content and never upgrade a host execution claim (1.23975ms)
+✔ unknown artifact bytes remain unverified and cannot pass later identity checks (0.083792ms)
+✔ structured artifact paths and changed evidence cannot escape byte identity checks (0.072792ms)
+✔ persistence claims cannot invent finding or lesson IDs (28.835709ms)
+✔ a requested file requires a real artifact, not only a successful database result (0.163667ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 219.141375

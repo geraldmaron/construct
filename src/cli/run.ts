@@ -1,7 +1,10 @@
+import { executeSemanticReview } from '../hosts/semantic-review.ts';
 /**
  * cli/run.ts — runs: list, show, cancel, resume.
  */
 
+import { executeVerification } from '../hosts/verification.ts';
+import { projectResolver } from '../kernel/source/resolver.ts';
 import { listRuns, RUN_STATES, type RunState } from '../kernel/state/runs.ts';
 import { stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, type CliContext } from './context.ts';
@@ -11,6 +14,21 @@ import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
 const group = 'Runs';
 
 export const RUN_SPECS: readonly CommandSpec[] = [
+  { path: ['run', 'review'], gloss: 'review a prepared final artifact through an explicit native host inside the invoking sandbox', group, positionals: ['<id>'], flags: [
+    { name: 'step', gloss: 'the currently leased step run id', takesValue: true },
+    { name: 'token', gloss: 'the current step lease token', takesValue: true },
+    { name: 'prepared', gloss: 'review reference returned by final submission', takesValue: true },
+    { name: 'host', gloss: 'explicit native reviewer host (currently codex)', takesValue: true },
+    { name: 'model', gloss: 'explicit native subscription model', takesValue: true },
+    { name: 'timeout-ms', gloss: 'bounded review timeout (default 180000; maximum 300000)', takesValue: true },
+  ], readOnly: false },
+  { path: ['run', 'verify'], gloss: 'observe a verification command inside the invoking host sandbox and bind its exit to a held step', group, positionals: ['<id>'], flags: [
+    { name: 'step', gloss: 'the currently leased step run id', takesValue: true },
+    { name: 'token', gloss: 'the current step lease token', takesValue: true },
+    { name: 'command', gloss: 'JSON array of program and arguments; no implicit shell', takesValue: true },
+    { name: 'subject', gloss: 'additional project artifact to bind by content', takesValue: true, repeatable: true },
+    { name: 'timeout-ms', gloss: 'bounded command timeout (default 120000)', takesValue: true },
+  ], readOnly: false },
   { path: ['run', 'list'], gloss: 'recent runs and their states', group, positionals: [], flags: [{ name: 'state', gloss: `only this state: ${RUN_STATES.join(' | ')}`, takesValue: true }], readOnly: true },
   { path: ['run', 'show'], gloss: 'one run: steps, deliverables and their trust, open decisions', group, positionals: ['<id>'], flags: [], readOnly: true },
   { path: ['run', 'cancel'], gloss: 'cancel a run; a leased step may finish first if the workflow says so', group, positionals: ['<id>'], flags: [{ name: 'reason', gloss: 'why', takesValue: true }], readOnly: false },
@@ -21,6 +39,24 @@ export async function runCommand(sub: string, args: ParsedArgs, ctx: CliContext 
   const { project, broker } = openBroker(ctx, {});
   try {
     switch (sub) {
+      case 'review': {
+        const stepRunId = stringFlag(args, 'step'), token = stringFlag(args, 'token'), preparedRef = stringFlag(args, 'prepared'), host = stringFlag(args, 'host'), model = stringFlag(args, 'model');
+        if (!stepRunId || !token || !preparedRef || !host || !model) throw new UsageError('run review needs --step, --token, --prepared, --host and --model');
+        const result = await executeSemanticReview({ store: project.store, runId: args.positionals[0]!, stepRunId, token, preparedRef, host, model, root: project.root, env: ctx.env, now: ctx.now, resolve: ref => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
+        writeJson(result);
+        return result.passed ? 0 : 1;
+      }
+      case 'verify': {
+        const stepRunId = stringFlag(args, 'step'), token = stringFlag(args, 'token'), command = stringFlag(args, 'command');
+        if (!stepRunId || !token || !command) throw new UsageError('run verify needs --step, --token and --command');
+        const argv: unknown = JSON.parse(command);
+        if (!Array.isArray(argv) || argv.some((a) => typeof a !== 'string')) throw new UsageError('--command must be a JSON array of strings');
+        const raw = args.flags.subject;
+        const subjects = Array.isArray(raw) ? raw : typeof raw === 'string' ? [raw] : [];
+        const result = await executeVerification({ store: project.store, runId: args.positionals[0]!, stepRunId, token, argv, subjects, root: project.root, env: ctx.env, now: ctx.now, resolve: (ref) => projectResolver(project.store, project.root)(ref), timeoutMs: stringFlag(args, 'timeout-ms') ? Number(stringFlag(args, 'timeout-ms')) : undefined });
+        writeJson(result);
+        return result.receipt.exitStatus === 0 && !result.receipt.timedOut && result.receipt.subjectsStable && result.receipt.intendedVerification?.satisfied !== false ? 0 : 1;
+      }
       case 'list': {
         const state = stringFlag(args, 'state');
         if (state !== undefined && !(RUN_STATES as readonly string[]).includes(state)) throw new UsageError(`--state must be one of ${RUN_STATES.join(' | ')}`);

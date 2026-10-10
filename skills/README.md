@@ -1,8 +1,12 @@
 # Skills
 
-Portable method skills for AI agents in the Agent Skills format: a
-`SKILL.md` per skill, optionally with `references/` (and other progressive-
-disclosure companions) for long templates and examples.
+Portable skills for AI agents in the Agent Skills format: a `SKILL.md` per
+skill, optionally with `references/`, `scripts/`, and `assets/` for long
+templates, helpers, and examples. Beside it, `construct.skill.json` is
+Construct's manifest (id, version, category, activation and stand-down
+phrases, deliverable types), and `evals/` holds the labeled cases for when
+the skill should load and how it should behave. A host that reads only
+`SKILL.md` ignores both.
 
 ## What's here
 
@@ -21,7 +25,8 @@ Seven method skills cover a working lifecycle - intake → context → evidence
 - **requirements-structuring** - an intent becomes a requirements artifact a
   stranger could build from and verify against.
 - **written-voice** - one plain house voice for prose deliverables, with
-  shapes for spec, proposal, status update, announcement, README, and more.
+  shapes for spec, proposal, status update, announcement, README, and more,
+  and a tell checker (`scripts/voice-check.py`, which needs `python3`).
   Opt-in: install it by name when a piece of prose needs it.
 - **adversarial-review** - a finished deliverable or decision is challenged
   before anyone commits to it, closing in one of four verdicts.
@@ -30,16 +35,54 @@ Method skills may ship a `references/` directory for record templates,
 document shapes, and genre examples; `SKILL.md` keeps the method rules and
 points at those files when needed.
 
-An operational **`construct`** skill (host posture for Construct MCP /
-coordination) is separate from this method set. When present in the package,
-`construct init` auto-installs it; method skills never auto-install that way.
+Nine professional packs ship beside the method set. Each carries one
+discipline's doctrine and obligations and reviews or writes that
+discipline's deliverables:
 
-More skills are planned. None are listed here until they ship.
+- **experience-design** - a screen or flow reviewed for task success,
+  accessibility, error states, consistency with the design system, and the
+  evidence behind it.
+- **governance-risk** - compliance, legal, and financial issues spotted
+  with the governing text quoted, and the packet a qualified reviewer
+  needs; never advice or sign-off.
+- **operations-reliability** - operational readiness reviews and blameless
+  postmortems: objectives, signals, on-call, runbooks, rollback, capacity.
+- **product-management** - product reviews, requirements, and opportunity
+  assessments: problem, users, outcome measure, scope, priority evidence,
+  assumptions.
+- **program-delivery** - delivery plans and status updates: conflicting
+  claims, the critical path, risks with owners, decisions needed.
+- **security-privacy** - defensive reviews naming exposures, the paths
+  that reach them, and the checks that would stop them.
+- **software-engineering** - implementation reviews and plans with
+  evidence of correctness and a rollback path.
+- **strategy-research** - strategy compared with the work and capacity
+  behind it, and research that must survive a hostile reader.
+- **system-architecture** - architecture reviews and decision records:
+  boundaries, coupling, failure modes, reversibility.
+
+[Skills and professional packs](../docs/skills-and-packs.md) explains how a
+pack differs from a method skill, and [the catalog](../docs/catalog.md)
+lists every shipped skill with its version.
+
+An operational **`construct`** skill (host posture for Construct MCP /
+coordination) is separate from these sets. `construct init` plants it in
+the project skills directory each wired host reads (`.claude/skills`,
+`.agents/skills`, or `.bob/skills`, one copy per directory), and
+`--skills-dir` plants a personal copy as well. No other skill is planted
+that way. Inside a Construct project, a workflow step names the skill it
+binds (`publish-deliverable` binds written-voice, for example), the
+`skills` tool lists and shows every skill to the host, and the project's
+registry lock pins the versions resolved.
 
 ## Operating as…
 
-The skills are shared and role-free - nobody owns a deliverable type. These
-views are only a reading guide for where to start:
+The method skills are shared and role-free. Each professional pack carries
+one discipline's doctrine and stands down on work another discipline owns
+(what to build belongs to product, how to build it to engineering). These
+views are only a reading guide for where to start; each role also has a pack
+of its own: program-delivery, product-management, strategy-research, and
+software-engineering or system-architecture for a builder:
 
 | If you operate as | Start with | Then |
 |---|---|---|
@@ -71,12 +114,17 @@ Three ways to get a skill into your agent:
    skills directory as an exact copy; `construct skill verify` reports
    what's there and whether it matches; `construct skill remove <name>`
    removes it once you confirm. Name the destination by host with
-   `--client=<claude|bob|opencode|cursor|codex>`, or give a path with
+   `--client=<claude|bob|opencode|cursor|codex|vscode>`, or give a path with
    `--dir`. The skills travel inside the npm package.
+   `construct skill show <name>` prints one skill's description, version,
+   and files; inside a project, `construct skill impact` reports how each
+   skill version's steps did against their checks, and
+   `construct skill update` brings the project's registry lock up to the
+   skills and workflows present.
 
 Each method skill is severable: no construct checkout is required for it to
-run. That claim is checked with the naked-folder / naked-file discipline  - 
-see `docs/` for the use ledger and recorded runs. `[unverified]` - the
+run. That claim is checked with the naked-folder / naked-file discipline -
+see `docs/internal/skill-runs/` for the recorded runs. `[unverified]` - the
 exact procedure and its output are not reproduced here.
 
 ## Limits
@@ -88,12 +136,15 @@ exact procedure and its output are not reproduced here.
   judgment is good on every task (see Status).
 - The audience these skills target has no formal training in the underlying
   disciplines. Guardrails are load-bearing where present.
-- Coverage is narrow by design: the lifecycle above, not a general-purpose
-  skill library.
+- Coverage is narrow by design: the method lifecycle and the nine
+  professional packs above, not a general-purpose skill library.
 
 ## Status
 
 Early and actively developed. Method skills ship after a recorded real-work
-run; the use ledger names the falsification test and records whether a gate
-changed the outcome: `docs/internal/skill-use-ledger.md`, with full records
-under `docs/internal/skill-runs/`.
+run; the records are under `docs/internal/skill-runs/`. Every shipped skill
+carries `evals/activation.json`, requests it should activate on and requests
+it should stand down for, which the test suite validates; skills with
+`evals/behavior.json` are checked against those cases too. In a project,
+`construct skill impact` reports how each skill version's steps did against
+their checks.

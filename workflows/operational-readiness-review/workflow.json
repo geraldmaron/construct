@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "operational-readiness-review",
   "title": "Operational readiness review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Review a service or change for objectives, signals, on-call, runbooks, rollback, and capacity against the project's risk posture, citing configs and records; anything without a way to notice failure and a way back is reported as not ready.",
   "activation": [
     "is this ready to operate",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

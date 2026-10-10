@@ -119,7 +119,7 @@ test('a malformed period is refused with what it takes', () => {
   refused({ semantics: 'during', relative: 'last_week' }, /one of as_of, changed_during, evidence_window/);
   refused({ relative: 'last_week' }, /needs "semantics"/);
   refused({ semantics: 'changed_during', relative: 'last_week', window: 'x' }, /"window", which a period does not take/);
-  refused({ semantics: 'changed_during', relative: 'last_fortnight' }, /relative is one of this_week/);
+  refused({ semantics: 'changed_during', relative: 'last_fortnight' }, /relative is one of today, this_week/);
   refused({ semantics: 'changed_during', quarter: 5 }, /quarter is 1, 2, 3 or 4/);
   refused({ semantics: 'changed_during', year: 26 }, /four-digit/);
   refused({ semantics: 'changed_during', relative: 'last_week', quarter: 3 }, /give one way/);
@@ -173,4 +173,11 @@ test('the calendar gives the date an instant falls on in a timezone, and cron st
   assert.equal(dayOf('2027-02-29', 'UTC'), null);
   assert.equal(isValidTimezone('Europe/Berlin'), true);
   assert.equal(isValidTimezone('Mars/Olympus'), false);
+});
+
+
+test('today is resolved from each firing in its own timezone, not the definition date', () => {
+  const spec = { semantics: 'as_of', relative: 'today' } as const;
+  assert.deepEqual(window(spec, '2026-10-09T23:30:00Z', 'Pacific/Auckland'), [null, '2026-10-10']);
+  assert.deepEqual(window(spec, '2026-10-12T23:30:00Z', 'Pacific/Auckland'), [null, '2026-10-13']);
 });

@@ -7,6 +7,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { run } from '../../src/cli/index.ts';
 import { capture, inProject } from './support.ts';
 
@@ -76,5 +78,17 @@ test('add, link, update, unlink, and admit shape the ledger; show prints the str
     const noEvidence = await cli(['work', 'complete', taskId]);
     assert.equal(noEvidence.code, 1);
     assert.match(noEvidence.err, /say how they were met/);
+  });
+});
+
+test('export and restore read and write a relative file in the command’s own directory', async () => {
+  await inProject(async (ctx, box) => {
+    const person = { ...ctx, terminal: { interactive: true, agentAncestor: null } };
+    const exported = await capture(() => run(['work', 'export', 'snapshot.json'], person));
+    assert.equal(exported.code, 0, exported.err);
+    assert.ok(existsSync(join(box.cwd, 'snapshot.json')), 'the snapshot lands in the project, not the process directory');
+    assert.ok(!existsSync(join(process.cwd(), 'snapshot.json')));
+    const restored = await capture(() => run(['work', 'restore', 'snapshot.json'], person));
+    assert.equal(restored.code, 0, restored.err);
   });
 });

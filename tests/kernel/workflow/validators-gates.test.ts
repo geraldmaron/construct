@@ -11,6 +11,8 @@ const empty = { expectedKeys: [] as string[], evidence: [] as { ref: string }[],
 
 test('verification_result refuses failed, empty, null, and old-revision evidence', () => {
   assert.equal(runValidators(['verification_result'], { ...empty, output: { passed: false } })[0]!.ok, false);
+  assert.equal(runValidators(['verification_result'], { ...empty, output: { passed: true } })[0]!.ok, false);
+  assert.equal(runValidators(['verification_result'], { ...empty, output: { command: 'check', exitStatus: 1, result: 'failed' } })[0]!.ok, false);
   assert.equal(runValidators(['verification_result'], { ...empty, output: { artifact: null, passed: true } })[0]!.ok, false);
   assert.equal(runValidators(['verification_result'], { ...empty, output: { result: '   ' } })[0]!.ok, false);
   assert.equal(runValidators(['verification_result'], { ...empty, output: { exitStatus: 1, passed: true } })[0]!.ok, false);

@@ -1,0 +1,4 @@
+
+> @geraldmaron/construct@3.0.0-alpha.26 typecheck
+> tsc --noEmit
+

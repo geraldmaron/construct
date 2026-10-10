@@ -1,0 +1,30 @@
+✔ changed consumed evidence stops the next claim and releases delivery without rebinding old analysis (76.399ms)
+✔ deleted consumed evidence stops the next claim and releases delivery without rebinding old analysis (41.942375ms)
+✔ drift during a leased verification cannot be waived by a passing command or noData=false (120.340291ms)
+✔ drift during a leased verification cannot be waived by a passing command or noData=true (107.350916ms)
+✔ an intentional source-file edit retains its old baseline and binds the produced artifact to new bytes (108.986958ms)
+✔ unchanged evidence still permits the complete managed delivery (104.188542ms)
+✔ a managed requested file reserves its native path once, without a new remembered commitment or wider action tier (69.024125ms)
+✔ a conflicting managed artifact rolls back the new work item and step lease (55.710708ms)
+✔ a ended holder only recovers on observed termination; finished steps and fencing survive (44.434792ms)
+✔ a dead holder only recovers on observed termination; finished steps and fencing survive (48.053375ms)
+✔ a alive holder only recovers on observed termination; finished steps and fencing survive (42.6045ms)
+✔ a unknown holder only recovers on observed termination; finished steps and fencing survive (35.578292ms)
+✔ a unregistered holder only recovers on observed termination; finished steps and fencing survive (38.102833ms)
+✔ delivery finishes atomically with verified run completion and frees the path without accepting the artifact (120.656292ms)
+✔ a failed required verification frees the path and never marks delivery complete (41.542959ms)
+✔ a replacement session receives held draft bytes at the writable step without treating them as accepted (41.994417ms)
+✔ the explicitly bound headless adapter receives the same file reservation without inventing an executor (42.302166ms)
+✔ structural receipts bind observed content and never upgrade a host execution claim (1.888625ms)
+✔ unknown artifact bytes remain unverified and cannot pass later identity checks (0.237417ms)
+✔ structured artifact paths and changed evidence cannot escape byte identity checks (0.242542ms)
+✔ persistence claims cannot invent finding or lesson IDs (44.001709ms)
+✔ a requested file requires a real artifact, not only a successful database result (0.227292ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1042.139209

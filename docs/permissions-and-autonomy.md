@@ -35,6 +35,21 @@ earlier in the run, and that Construct cannot see where your assistant's
 connector writes. Who the work is for appears last, quoted as your
 assistant's description, which Construct did not check.
 
+## Answers only you can give
+
+Approving a write outside the project or a destructive action, accepting a
+deliverable or making it final, making the project a side project, and
+confirming a replacement, a ruled-out term, or an outdated document that
+remembering asked about need you on a channel of your own: a prompt the
+host shows you, or `construct inbox resolve <id> <answer>` from a terminal
+of your own. An answer your assistant relays to one of these questions is
+refused, not recorded, and the question stays open for your own answer;
+when the host can show you a prompt, Construct puts the question to you
+there and quotes what your assistant relayed. A relay may still answer
+other questions, decline an action, or approve other work that stays
+inside the project, and those answers are recorded as relayed through the
+host they came from.
+
 ## Standing grants and break-glass
 
 A standing grant is scoped by project, action, target system and resource,
@@ -42,6 +57,32 @@ workflow, executor, maximum impact or budget, start and end, and revocation.
 A break-glass grant must add a reason, a short expiry, an exact target, and
 an audit event; it never disables evidence, source-integrity, or completion
 gates and never transfers to another executor.
+
+The policy engine honors both kinds of grant when it finds one, but no
+command or tool creates, lists, or revokes them. The only grants in use are
+the approvals you give in a run.
+
+## How a question reaches you
+
+When an answer only you can give is needed and the host can show you a
+question from Construct itself (MCP elicitation), Construct asks you there
+and waits a minute for your choice. Otherwise, or if you decline or close
+the prompt, the question waits in `construct inbox`
+(`construct inbox list`, `construct inbox show <id>`) for you to answer
+with `construct inbox resolve <id> <answer>` from a terminal of your own.
+A host hook that could answer the prompt for you turns it off. The inbox
+holds decisions, approvals, clarifications, and blocks, plus proposed
+statements waiting to be confirmed or retired.
+
+Your assistant relays your answers with `decide`, and Construct records
+them as relayed. `construct inbox resolve` run without a terminal, or in a
+terminal an editor or agent host controls, counts as relayed too.
+
+When a deliverable has changed since an open question about it was asked,
+asking again withdraws that question and asks a current one as the
+deliverable stands. Approving the older question moves nothing: a relayed approval puts the current
+question to you, and your own answer is refused with the id of the current
+question.
 
 ## Project policy
 
@@ -55,3 +96,29 @@ that key; it happens only when you explicitly ask.
 A configured runner may claim pre-resolved steps, keep leases alive, submit
 output, and read status. It cannot change project configuration, grant
 itself anything, resolve your decisions, or mark its own output final.
+
+A runner is served with `construct serve --headless --executor=<id>`, under
+an id of its own such as `runner:nightly`; an id that names an interactive
+session is refused. It reaches `project_write` at most, so a step above that
+tier is refused with the reason, and a step that needs a decision waits for
+your answer; the runner cannot give it. It cannot delegate, use the work
+ledger, or remember anything.
+
+### Observed command verification
+
+A host with a terminal can invoke `construct run verify <run> --step=<step>
+--token=<current-token> --command='<JSON argv>'` inside its existing sandbox.
+The adapter launches exactly that argument array without an implicit shell,
+records the actual exit, timeout, output digest and redacted excerpt, and
+binds the receipt to the current leased attempt and artifact bytes. Additional
+`--subject` paths extend the checked subject. The MCP server does not execute
+commands. An expired lease, failed command, changed subject, or another run's
+receipt cannot satisfy execution verification.
+
+Submit the returned `executionRef` under `verification`. Work may retain
+structural validation and an assistant's inspection report, but acceptance
+and finalization of a workflow that requires `run_tests` also require valid
+observed execution. Receipt fields in an output cannot forge this observation.
+A command exit does not prove the command was sufficient, that every claim
+follows from its sources, or that a model applied a professional method well.
+Those limits remain explicit in the receipt and answer-check results.

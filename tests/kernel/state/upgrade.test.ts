@@ -17,7 +17,7 @@ import { openStateStore } from '../../../src/kernel/state/open.ts';
 import { UnsupportedStateError } from '../../../src/kernel/state/format.ts';
 import { completeWork, getWork, releaseWork } from '../../../src/kernel/work/service.ts';
 
-type Fixture = 'format-2' | 'format-3' | 'format-3-upgraded-from-2';
+type Fixture = 'format-4' | 'format-2' | 'format-3' | 'format-3-upgraded-from-2';
 
 /** A store exactly as an older build left it: its frozen schema, stamped with its format. */
 function storeFrom(fx: SterileFixture, fixture: Fixture, version: number): string {
@@ -94,7 +94,7 @@ function compare(upgraded: Schema, fresh: Schema): { differ: Record<string, { fr
   return { differ, reordered };
 }
 
-test('a fresh format-3 store upgrades to exactly what a fresh format-4 store holds', () => {
+test('a fresh format-3 store upgrades to exactly what a fresh format-5 store holds', () => {
   const fx = sterile();
   try {
     const old = storeFrom(fx, 'format-3', 3);
@@ -237,4 +237,24 @@ test('a store that turns newer while the upgrade waits for the lock is refused a
   } finally {
     fx.cleanup();
   }
+});
+
+
+test('format 4 migration preserves firing history and permits the same key in independent triggers', () => {
+  const fx = sterile();
+  try {
+    const path = storeFrom(fx, 'format-4', 4);
+    const db = new DatabaseSync(path);
+    for (const id of ['east', 'west']) db.prepare(`INSERT INTO triggers (id, workflow_id, kind, event_name, adapter, enabled, overlap, max_tier, delivery_json, input_json, created_at, updated_at) VALUES (?, 'sweep', 'event', 'tick', 'cron', 1, 'skip', 'observe', '{}', '{}', '2026-10-09T00:00:00Z', '2026-10-09T00:00:00Z')`).run(id);
+    db.exec(`INSERT INTO trigger_firings VALUES ('old', 'east', '09:00', '2026-10-09T09:00:00Z', NULL, 'disabled', 'retained audit')`);
+    db.close();
+    assert.throws(() => openStateStore(path), UnsupportedStateError);
+    const store = openStateStore(path, { migrate: true });
+    assert.equal(store.migratedFrom, 4);
+    assert.equal((store.db.prepare("SELECT reason FROM trigger_firings WHERE id = 'old'").get() as {reason:string}).reason, 'retained audit');
+    store.db.exec(`INSERT INTO trigger_firings VALUES ('new', 'west', '09:00', '2026-10-09T09:00:00Z', NULL, 'disabled', 'separate intent')`);
+    assert.throws(() => store.db.exec(`INSERT INTO trigger_firings VALUES ('dup', 'east', '09:00', '2026-10-09T09:00:00Z', NULL, 'disabled', 'duplicate')`), /UNIQUE/);
+    store.close();
+    assert.deepEqual(compare(schemaOf(path), schemaOf(freshPath(fx))), { differ: {}, reordered: [] });
+  } finally { fx.cleanup(); }
 });

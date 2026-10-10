@@ -1,0 +1,82 @@
+[
+  {
+    "id": "held-out-handback-seed-club",
+    "kind": "held_out",
+    "domain": "horticulture",
+    "checks": [
+      "correctness",
+      "uncertainty",
+      "evidence",
+      "method_application"
+    ],
+    "native": {
+      "prompt": "Can the seed club use the germination statement in claim.txt in its report? Assess the supplied records, give the supported numbers and conclusion, and flag unresolved issues relevant to the report or a larger trial. Save the assessment with source references to analysis.md. Use only the supplied files; do not contact anyone or change any record.",
+      "files": [
+        {
+          "from": "producer-inputs/seed-club/claim.txt",
+          "to": "claim.txt"
+        },
+        {
+          "from": "producer-inputs/seed-club/count-events.jsonl",
+          "to": "count-events.jsonl"
+        },
+        {
+          "from": "producer-inputs/seed-club/newsletter.txt",
+          "to": "newsletter.txt"
+        },
+        {
+          "from": "producer-inputs/seed-club/planning-minute.txt",
+          "to": "planning-minute.txt"
+        },
+        {
+          "from": "producer-inputs/seed-club/protocol.txt",
+          "to": "protocol.txt"
+        }
+      ],
+      "outputs": [
+        "analysis.md"
+      ],
+      "rubric": "private-grading/seed-club/rubric.txt"
+    }
+  },
+  {
+    "id": "held-out-handback-planetarium",
+    "kind": "held_out",
+    "domain": "community-astronomy",
+    "checks": [
+      "correctness",
+      "uncertainty",
+      "evidence",
+      "method_application"
+    ],
+    "native": {
+      "prompt": "Does the held packet support the committee's claim that 120 people can attend three planetarium shows next Thursday? Give a sourced assessment with the capacity supported by the records and the unresolved issues relevant to the plan. Save it to analysis.md. Use only the supplied files; do not make bookings, release tickets, or contact anyone.",
+      "files": [
+        {
+          "from": "producer-inputs/planetarium/committee-note.txt",
+          "to": "committee-note.txt"
+        },
+        {
+          "from": "producer-inputs/planetarium/layout.tsv",
+          "to": "layout.tsv"
+        },
+        {
+          "from": "producer-inputs/planetarium/open-issues.txt",
+          "to": "open-issues.txt"
+        },
+        {
+          "from": "producer-inputs/planetarium/room-bookings.ics",
+          "to": "room-bookings.ics"
+        },
+        {
+          "from": "producer-inputs/planetarium/running-order.txt",
+          "to": "running-order.txt"
+        }
+      ],
+      "outputs": [
+        "analysis.md"
+      ],
+      "rubric": "private-grading/planetarium/rubric.txt"
+    }
+  }
+]

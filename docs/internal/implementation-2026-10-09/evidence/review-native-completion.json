@@ -1,0 +1,220 @@
+{
+  "step": {
+    "id": "step-41f910b0",
+    "state": "succeeded",
+    "reason": null
+  },
+  "validation": [
+    {
+      "validator": "evidence_refs_resolve",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "validator": "within_period",
+      "ok": true,
+      "problems": []
+    },
+    {
+      "validator": "verification_result",
+      "ok": true,
+      "problems": []
+    }
+  ],
+  "evidence": {
+    "witnessed": 2,
+    "reported": 0,
+    "unverified": 0,
+    "unresolved": 0
+  },
+  "run": {
+    "id": "run-0a70f6ba",
+    "state": "succeeded"
+  },
+  "deliverable": {
+    "id": "deliverable-8c6497bf",
+    "trust": "validated",
+    "verification": {
+      "validators": [
+        {
+          "validator": "evidence_refs_resolve",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "within_period",
+          "ok": true,
+          "problems": []
+        },
+        {
+          "validator": "verification_result",
+          "ok": true,
+          "problems": []
+        }
+      ],
+      "receipt": {
+        "formatVersion": 1,
+        "runId": "run-0a70f6ba",
+        "stepRunId": "step-41f910b0",
+        "observedAt": "2026-10-09T18:44:49.891Z",
+        "actor": "session:codex:ses_ec142b9e-4352-4d0f-8ccc-af1900588d8d",
+        "assurance": "structural",
+        "executionVerified": false,
+        "semanticSupportVerified": false,
+        "subjects": [
+          {
+            "ref": "src/kernel/state/schema.ts",
+            "digest": "928a53f6e08caf6398c7c0bf3b61ad1a7e9b938a79c09fe65854786abaf7fd60",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/migrate.ts",
+            "digest": "c5c5df3210cf4e02115250057f4ffbc17582ea0bad4de3f6e0f1936c9aa1bebd",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/triggers.ts",
+            "digest": "4d12acb7c86b1235d47a7e2bd9f44007a569eb9e980a678457a76a8ebb395e94",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/sources.ts",
+            "digest": "c1aef3daa1a795bd69cc79ce1e8ffa97c4d9f4be945a0886b21b0ef0c0adf16d",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/steps.ts",
+            "digest": "0dde03469cacd20fd5cd6a5bcdf24c8340e2b8e474c1d801936c2b9ef1bd74a3",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/source/service.ts",
+            "digest": "9d73f8c093022beee8e11197b5fdb3b044538b623512e9d25d7edb46c4d0f4a3",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/service.ts",
+            "digest": "11fc1d9d8a188b6b6e14576ae31daab5be26bf9c089c441afb43fb2b6471e095",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/triggers.ts",
+            "digest": "26ad322cd9c0614492afe244a927d1fdcf65cb234450ef9a3cdce89168400664",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/verification.ts",
+            "digest": "1114ab0a14f139ce7128767d0112227f1d877b556bd18a7d415e3120e48f105c",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/cli/workflow.ts",
+            "digest": "a9ef127630aa1d9a48146f349098d505b837c618dcc0985c9151a3b3553d3872",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/hosts/executors.ts",
+            "digest": "8bc1ae8355f17b770d58c8a767f651a42b5c45df50f5e9f8d411807be7ecefaa",
+            "provenance": "witnessed"
+          }
+        ],
+        "evidence": [
+          {
+            "ref": "docs/internal/implementation-2026-10-09/evidence/review-final-tests.log",
+            "digest": "ca70b0ae0d44b360950aded5636372cc235c62b0630cf4c3d435724aec2b6e21",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "docs/internal/implementation-2026-10-09/evidence/review-retry-budget.log",
+            "digest": "e86afa6dca2cf55eab0e21171bfd930c501b7f8c720e56cf119b58a1fe708358",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "docs/internal/implementation-2026-10-09/REVIEW-CLOSEOUT.md",
+            "digest": "d55332418b75b6e8951666d01faed18db453b56f82d7957414ade963210143e9",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/schema.ts",
+            "digest": "928a53f6e08caf6398c7c0bf3b61ad1a7e9b938a79c09fe65854786abaf7fd60",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/migrate.ts",
+            "digest": "c5c5df3210cf4e02115250057f4ffbc17582ea0bad4de3f6e0f1936c9aa1bebd",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/triggers.ts",
+            "digest": "4d12acb7c86b1235d47a7e2bd9f44007a569eb9e980a678457a76a8ebb395e94",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/sources.ts",
+            "digest": "c1aef3daa1a795bd69cc79ce1e8ffa97c4d9f4be945a0886b21b0ef0c0adf16d",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/state/steps.ts",
+            "digest": "0dde03469cacd20fd5cd6a5bcdf24c8340e2b8e474c1d801936c2b9ef1bd74a3",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/source/service.ts",
+            "digest": "9d73f8c093022beee8e11197b5fdb3b044538b623512e9d25d7edb46c4d0f4a3",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/service.ts",
+            "digest": "11fc1d9d8a188b6b6e14576ae31daab5be26bf9c089c441afb43fb2b6471e095",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/triggers.ts",
+            "digest": "26ad322cd9c0614492afe244a927d1fdcf65cb234450ef9a3cdce89168400664",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/kernel/workflow/verification.ts",
+            "digest": "1114ab0a14f139ce7128767d0112227f1d877b556bd18a7d415e3120e48f105c",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/cli/workflow.ts",
+            "digest": "a9ef127630aa1d9a48146f349098d505b837c618dcc0985c9151a3b3553d3872",
+            "provenance": "witnessed"
+          },
+          {
+            "ref": "src/hosts/executors.ts",
+            "digest": "8bc1ae8355f17b770d58c8a767f651a42b5c45df50f5e9f8d411807be7ecefaa",
+            "provenance": "witnessed"
+          }
+        ],
+        "checks": [
+          {
+            "validator": "evidence_refs_resolve",
+            "ok": true
+          },
+          {
+            "validator": "within_period",
+            "ok": true
+          },
+          {
+            "validator": "verification_result",
+            "ok": true
+          }
+        ]
+      },
+      "assurance": "structural",
+      "executionVerified": true,
+      "semanticSupportVerified": false,
+      "challengeRequired": false,
+      "evidence": {
+        "witnessed": 14,
+        "reported": 0,
+        "unverified": 0,
+        "unresolved": 0
+      }
+    }
+  }
+}
