@@ -1,0 +1,292 @@
+[
+  {
+    "host": "codex",
+    "cases": [
+      {
+        "phase": "initial",
+        "frozen": {
+          "packetDigest": "d4fd6f47163197d986a37aff532c74533cbd53c77cf127f183c3fa9c34cb2c4a",
+          "rubricDigest": "50407440b74761ab5f7efd8b104adfc0a0325a52f3c0643588bfed0f63df312b",
+          "artifactDigest": null,
+          "frozenAt": "2026-10-10T02:00:05.264Z"
+        },
+        "missingArtifact": true,
+        "stable": null,
+        "passed": false,
+        "judgment": null,
+        "problems": [],
+        "error": null
+      },
+      {
+        "phase": "changed",
+        "frozen": {
+          "packetDigest": "d487cb6881f8e1c359b5c2bb96471ad65bb1a38d541c54461672d5c5a17a94d1",
+          "rubricDigest": "50407440b74761ab5f7efd8b104adfc0a0325a52f3c0643588bfed0f63df312b",
+          "artifactDigest": null,
+          "frozenAt": "2026-10-10T02:00:05.267Z"
+        },
+        "missingArtifact": true,
+        "stable": null,
+        "passed": false,
+        "judgment": null,
+        "problems": [],
+        "error": null
+      }
+    ],
+    "state": {
+      "runs": [
+        {
+          "id": "run-ca2328a7",
+          "workflow_id": "research-brief",
+          "state": "running",
+          "state_reason": null
+        },
+        {
+          "id": "run-45685dfd",
+          "workflow_id": "research-brief",
+          "state": "ready",
+          "state_reason": null
+        }
+      ],
+      "steps": [
+        {
+          "run_id": "run-ca2328a7",
+          "step_id": "gather",
+          "state": "leased",
+          "state_reason": "lease expired"
+        },
+        {
+          "run_id": "run-ca2328a7",
+          "step_id": "synthesize",
+          "state": "pending",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-ca2328a7",
+          "step_id": "challenge",
+          "state": "pending",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-ca2328a7",
+          "step_id": "record",
+          "state": "pending",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-45685dfd",
+          "step_id": "gather",
+          "state": "ready",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-45685dfd",
+          "step_id": "synthesize",
+          "state": "pending",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-45685dfd",
+          "step_id": "challenge",
+          "state": "pending",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-45685dfd",
+          "step_id": "record",
+          "state": "pending",
+          "state_reason": null
+        }
+      ]
+    },
+    "managedCompletion": false,
+    "limitation": "Frozen historical rubric scored by independent fallible native review. Artifact quality, actual reads, and lifecycle are separate. Native backend model identity is not independently attested."
+  },
+  {
+    "host": "cursor",
+    "cases": [
+      {
+        "phase": "initial",
+        "frozen": {
+          "packetDigest": "4cf879992575725f31662608d85a0223971b810c560478b4f01f653866c5211c",
+          "rubricDigest": "14d7bf1705322ef0cd668ce92486bb33e0aea2081da63d4543fbadc7af2471fd",
+          "artifactDigest": "12c2e77dd9b531a5371c268fc55acc108ede76ecf696ca9f7b3c88eed28989a9",
+          "frozenAt": "2026-10-10T01:50:17.142Z"
+        },
+        "missingArtifact": false,
+        "stable": true,
+        "passed": false,
+        "judgment": {
+          "checks": [
+            {
+              "id": "correctness",
+              "verdict": "fail",
+              "reason": "The initial-phase HOLD decision, strict below-60 threshold, and cached arithmetic 72\u221212=60 are correct. However, both threshold hypotheses list confirming evidence under 'What would refute it': net <60 confirms the below-60 hypothesis, while net \u226560 confirms the at-or-above-60 hypothesis. Those conditions must be reversed for the claimed disconfirmation analysis to be valid.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "uncertainty",
+              "verdict": "pass",
+              "reason": "The brief explicitly preserves the unknown case conversion and reservation unit, reports the inaccessible supplier reference, and leaves net individual stock unknown. It neither assumes six units per case nor subtracts incompatible quantities. It distinguishes policy-mandated HOLD from demonstrated stock adequacy and bounds its assessment to PART-19 while acknowledging uncertainty about other SKUs. Changed-phase quantities are not imported into this initial assessment.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "evidence",
+              "verdict": "fail",
+              "reason": "Recorded current-phase reads support the stock quantity, unitless reservation, null catalog conversion, denied supplier access, and cache supersession. However, the brief claims an as-of time of 2026-10-10 end of day, whereas the supplied reads occurred around 01:47 UTC that day; end-of-day currency is unsupported. Its evidence table also presents the inventory and reservation updatedAt timestamp as an observation timestamp, although their recorded observedAt timestamps are on 2026-10-10.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "requested_file",
+              "verdict": "pass",
+              "reason": "The bundle supplies warehouse-brief.md as a witnessed file, corroborated by the matching artifact text and file metadata in case.json. It contains the requested initial decision brief, evidence, and unresolved questions. This establishes the saved deliverable, not successful ordering or compliance with managed-lifecycle registration constraints; those are not inferred from the brief or its existence.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            }
+          ]
+        },
+        "problems": [
+          "correctness: fail review judgment",
+          "evidence: fail review judgment"
+        ],
+        "error": null
+      },
+      {
+        "phase": "changed",
+        "frozen": {
+          "packetDigest": "d1b78ab0aa192edb27ded8816707617f8154081ff5d9d56b4aac0131cefef670",
+          "rubricDigest": "14d7bf1705322ef0cd668ce92486bb33e0aea2081da63d4543fbadc7af2471fd",
+          "artifactDigest": "9c93612522ac5bbbada8ed481548db9d36f1d21dc7e8c3f312a0cd0cd85bf050",
+          "frozenAt": "2026-10-10T01:51:03.507Z"
+        },
+        "missingArtifact": false,
+        "stable": true,
+        "passed": false,
+        "judgment": {
+          "checks": [
+            {
+              "id": "correctness",
+              "verdict": "fail",
+              "reason": "The main calculation and recommendation are correct: 6 cases \u00d7 6 each/case \u2212 4 each = 32 each, below 60. The cached counterfactual, 72 \u2212 12 = 60, and the stated hold-at-equality rule are also correct. However, the changed-phase rubric explicitly requires the 28-each shortfall, which the brief omits. The hypotheses table also lists missing units or null conversion as refuting a hold, although policy says those conditions require a hold.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "uncertainty",
+              "verdict": "pass",
+              "reason": "The comparison preserves the earlier unknown reservation unit and null conversion, correctly describing the prior net as not computable and the prior decision as hold. It uses the newly recorded conversion only for the corrected state. The recommendation is scoped to PART-19, with other-SKU coverage and reservation-release timing explicitly unresolved; neither requires inventing a conversion or blocking the supported recommendation.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "evidence",
+              "verdict": "fail",
+              "reason": "Recorded current fetches and the API GET support 6 cases, 4 each reserved and 6 each/case; the supplied policy supports the threshold and supersession despite unchanged provider timestamps. However, the brief falsely attributes all load-bearing numbers to connected fetches: 32 is calculated, and 60 comes from the local policy, not those fetch responses. Its end-of-day as-of claim is also unsupported by the current reads recorded around 01:48 UTC.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            },
+            {
+              "id": "requested_file",
+              "verdict": "pass",
+              "reason": "The bundle supplies the witnessed warehouse-brief.md artifact, also reproduced in case.json. It contains the requested prior/current comparison and updated replenishment recommendation, explicitly without order authorization. This satisfies the file-delivery and update requirement; the substantive rubric omissions are assessed under correctness. No lifecycle success or external action is inferred from the brief or process exit code.",
+              "refs": [
+                "warehouse-brief.md",
+                "case.json"
+              ]
+            }
+          ]
+        },
+        "problems": [
+          "correctness: fail review judgment",
+          "evidence: fail review judgment"
+        ],
+        "error": null
+      }
+    ],
+    "state": {
+      "runs": [
+        {
+          "id": "run-b975d31e",
+          "workflow_id": "research-brief",
+          "state": "failed",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west, http://127.0.0.1:62116/catalog/part-19. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        },
+        {
+          "id": "run-69f89fad",
+          "workflow_id": "research-brief",
+          "state": "failed",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        }
+      ],
+      "steps": [
+        {
+          "run_id": "run-b975d31e",
+          "step_id": "gather",
+          "state": "succeeded",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-b975d31e",
+          "step_id": "synthesize",
+          "state": "succeeded",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-b975d31e",
+          "step_id": "challenge",
+          "state": "succeeded",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-b975d31e",
+          "step_id": "record",
+          "state": "cancelled",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west, http://127.0.0.1:62116/catalog/part-19. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        },
+        {
+          "run_id": "run-69f89fad",
+          "step_id": "gather",
+          "state": "succeeded",
+          "state_reason": null
+        },
+        {
+          "run_id": "run-69f89fad",
+          "step_id": "synthesize",
+          "state": "cancelled",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        },
+        {
+          "run_id": "run-69f89fad",
+          "step_id": "challenge",
+          "state": "cancelled",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        },
+        {
+          "run_id": "run-69f89fad",
+          "step_id": "record",
+          "state": "cancelled",
+          "state_reason": "Previously consumed evidence changed or became unavailable: depot://stock/west, depot://reservations/west. Start the same ordinary request again to derive a new result from current evidence; preserve this failed generation. An explicit firing/idempotency key remains bound to this run and is never replayed automatically."
+        }
+      ]
+    },
+    "managedCompletion": false,
+    "limitation": "Frozen historical rubric scored by independent fallible native review. Artifact quality, actual reads, and lifecycle are separate. Native backend model identity is not independently attested."
+  }
+]
