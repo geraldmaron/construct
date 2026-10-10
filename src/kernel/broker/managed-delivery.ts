@@ -4,14 +4,17 @@ import { runExecutionProblems } from '../workflow/verification.ts';
  * outcome/statement and a second coordination sequence before delivery.
  */
 import { relative, resolve } from 'node:path';
+import { lstatSync } from 'node:fs';
+import type { WorkflowStep } from '../registry/models.ts';
+import { getRun } from '../state/runs.ts';
 import type { BrokerContext } from './context.ts';
 import type { WorkPacket } from '../workflow/service.ts';
 import { askedOf } from '../workflow/asked.ts';
 import { appendActivity } from '../state/activity.ts';
 import { listDeliverables } from '../state/deliverables.ts';
-import { expireDeadLeases } from '../state/steps.ts';
-import { createWork, getWork, claimWork, takeoverWork, associateRun, completeWork, releaseWork } from '../work/service.ts';
-import { normalizeLeasePath } from '../work/leases.ts';
+import { expireDeadLeases, listSteps } from '../state/steps.ts';
+import { createWork, getWork, claimWork, takeoverWork, associateRun, completeWork, releaseWork, cancelWork } from '../work/service.ts';
+import { findOverlaps, MAIN_LANE, normalizeLeasePath } from '../work/leases.ts';
 import { contentReceipt } from '../workflow/verification.ts';
 import { projectResolver } from '../source/resolver.ts';
 
@@ -47,6 +50,84 @@ export function recoverAbandonedSteps(ctx: BrokerContext, runId?: string): numbe
   });
 }
 
+interface Holder { id: string; ended_at: string | null; pid: number | null; machine: string }
+function holderState(ctx: BrokerContext, id: string | null): 'ended' | 'absent' | 'live' | 'unknown' {
+  if (!id || id === ctx.sessionId) return id ? 'live' : 'unknown';
+  const holder = ctx.store.db.prepare('SELECT id, ended_at, pid, machine FROM sessions WHERE id = ?').get(id) as Holder | undefined;
+  if (!holder) return 'unknown';
+  if (holder.ended_at) return 'ended';
+  const alive = holder.pid === null ? null : ctx.processAlive?.(holder.pid, holder.machine);
+  return alive === false ? 'absent' : alive === true ? 'live' : 'unknown';
+}
+function boundSession(ctx: BrokerContext, step: { id: string; leaseOwner: string | null; attempts: number }): string | null {
+  const row = ctx.store.db.prepare("SELECT payload_json FROM activity_events WHERE kind = 'step.session_bound' AND step_run_id = ? ORDER BY id DESC LIMIT 1").get(step.id) as { payload_json: string } | undefined;
+  const binding = row ? JSON.parse(row.payload_json) as { owner?: string; attempt?: number; sessionId?: string } : null;
+  if (binding?.owner === step.leaseOwner && binding.attempt === step.attempts && binding.sessionId) return binding.sessionId;
+  return (ctx.store.db.prepare("SELECT id FROM sessions WHERE 'session:' || host || ':' || id = ?").get(step.leaseOwner) as { id: string } | undefined)?.id ?? null;
+}
+
+interface DeliveryRecovery { kind: 'delivery_recovery'; requestedRunId: string; priorRunId: string; workId: string; path: string; holder: string; reasons: readonly string[]; checkpoint: ReturnType<typeof contentReceipt>; next: string }
+export class DeliveryRecoveryRequired extends Error {
+  readonly recovery: DeliveryRecovery;
+  constructor(recovery: DeliveryRecovery) {
+    super(recovery.next);
+    this.name = 'DeliveryRecoveryRequired';
+    this.recovery = recovery;
+  }
+}
+
+/** A newer manual request may replace abandoned preparation, never an attempt
+ * that entered a writing tier or has an existing artifact/action to reconcile.
+ * Called only inside the claim transaction: all state moves roll back together.
+ */
+function recoverPriorPreparation(ctx: BrokerContext, packet: WorkPacket, path: string): { runId: string; workId: string; evidence: string }[] {
+  const at = ctx.now(), recovered: { runId: string; workId: string; evidence: string }[] = [];
+  const collisions = findOverlaps(ctx.store, { paths: [path], laneRoot: ctx.lane?.root ?? MAIN_LANE, now: at, excludeWorkId: identity(packet.run.id) }).filter(o => o.kind === 'collision');
+  for (const collision of collisions) {
+    const item = getWork(ctx.store, collision.workId), scope = item?.scope as { kind?: string; runId?: string; path?: string } | null;
+    const prior = scope?.runId ? getRun(ctx.store, scope.runId) : null;
+    if (!item || !prior || scope?.kind !== 'managed_delivery' || identity(prior.id) !== item.id) continue; // ordinary reservations retain their existing conflict contract
+    const reasons: string[] = [], state = holderState(ctx, item.claimSession);
+    const checkpoint = contentReceipt(path, projectResolver(ctx.store, ctx.root));
+    const creation = (id: string) => (ctx.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'run.created' AND run_id = ? ORDER BY id LIMIT 1").get(id) as { id: number } | undefined)?.id;
+    const oldOrder = creation(prior.id), newOrder = creation(packet.run.id);
+    const admitted = ctx.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'work.admitted' AND actor = 'kernel' AND run_id = ? AND json_extract(payload_json, '$.basis') = 'existing_managed_run' AND json_extract(payload_json, '$.workId') = ? LIMIT 1").get(prior.id, item.id);
+    const associated = ctx.store.db.prepare("SELECT 1 FROM work_runs WHERE work_id = ? AND run_id = ? AND role = 'implements'").get(item.id, prior.id);
+    const held = ctx.store.db.prepare('SELECT path, lane_root FROM path_leases WHERE work_id = ? AND released_at IS NULL').all(item.id) as { path: string; lane_root: string }[];
+    const oldDestination = askedOf(prior).intake?.destination;
+    if (!admitted || !associated) reasons.push('the reservation has no matching kernel admission and run association');
+    if (scope.path !== path || collision.heldPath !== path || held.length !== 1 || held[0]?.path !== path || held[0]?.lane_root !== (ctx.lane?.root ?? MAIN_LANE) || oldDestination?.kind !== 'project_file' || !oldDestination.ref || normalizeLeasePath(relative(ctx.root, resolve(ctx.root, oldDestination.ref))) !== path) reasons.push('the reservation is not the same exact file in this checkout');
+    if (!oldOrder || !newOrder || oldOrder >= newOrder) reasons.push('this request is not a newer run than the reserved preparation');
+    if (prior.workflowId !== packet.run.workflowId || prior.workflowDigest !== packet.run.workflowDigest) reasons.push('the workflows or frozen definitions differ');
+    if (prior.triggerKind !== 'manual' || packet.run.triggerKind !== 'manual' || prior.executorKind !== 'interactive' || packet.run.executorKind !== 'interactive' || packet.run.executorId !== ctx.host.executorId) reasons.push('automatic replacement requires a new manual interactive request in this session');
+    if (!['ended', 'absent'].includes(state)) reasons.push('the reservation holder is live or its termination is unknown; quiet alone is insufficient');
+    if ((ctx.store.db.prepare('SELECT handoff_json FROM work_items WHERE id = ?').get(item.id) as { handoff_json: string | null }).handoff_json) reasons.push('an explicit handoff must be honored');
+    if (['succeeded', 'failed', 'cancelled'].includes(prior.state)) reasons.push('the prior terminal run needs explicit settlement');
+    const steps = listSteps(ctx.store, prior.id), bindings = (prior.bindings as { steps?: readonly WorkflowStep[] } | null)?.steps;
+    const readCapabilities = new Set(['read_project_context', 'read_project_files', 'read_source', 'model_review', 'ask_user']);
+    if (!bindings || steps.some(s => {
+      const definition = bindings.find(b => b.id === s.stepId);
+      return s.attempts > 0 && (!['observe', 'draft'].includes(s.permissionTier) || !definition || definition.capabilities.some(c => !readCapabilities.has(c)));
+    })) reasons.push('a prior attempted step had writing or action capability; recover that run without replaying effects');
+    if (steps.filter(s => s.state === 'leased').some(s => !['ended', 'absent'].includes(holderState(ctx, boundSession(ctx, s))))) reasons.push('an outstanding step has a live or unknown holder');
+    if (ctx.store.db.prepare("SELECT 1 FROM activity_events WHERE run_id = ? AND (kind LIKE 'verification.%' OR kind LIKE 'delegation.%' OR kind LIKE 'action.%') LIMIT 1").get(prior.id) || ctx.store.db.prepare('SELECT 1 FROM work_items WHERE parent_id = ? LIMIT 1').get(item.id)) reasons.push('recorded execution or child work needs explicit reconciliation');
+    let fileState: 'absent' | 'present' | 'unknown' = 'present';
+    try { lstatSync(resolve(ctx.root, path)); } catch (error) { fileState = (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'absent' : 'unknown'; }
+    if (fileState !== 'absent' || checkpoint.digest !== null) reasons.push('an existing or unreadable artifact must be reconciled through the prior run');
+    if (reasons.length) throw new DeliveryRecoveryRequired({ kind: 'delivery_recovery', requestedRunId: packet.run.id, priorRunId: prior.id, workId: item.id, path, holder: state, reasons, checkpoint, next: `No new step or reservation was granted. Preserve the artifact and prior run. Inspect run_status for ${prior.id}; resume it with claim_work only after its holder ended or its lease expires, or honor its explicit handoff. Reconcile any prior actions before cancelling/replanning. Do not repeat start_outcome or claim a second commitment for this path.` });
+    recoverAbandonedSteps(ctx, prior.id);
+    expireDeadLeases(ctx.store, at, prior.id);
+    const reason = `Newer manual run ${packet.run.id} replaces preparation after ${state} holder; no recorded writing/action attempt or artifact is present.`;
+    const taken = takeoverWork(ctx.store, { id: item.id, owner: owner(ctx), session: ctx.sessionId ?? undefined, agent: 'main', lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null, now: at, until: packet.leased.leaseUntil, reason, processAlive: ctx.processAlive, quietCapMs: Number.POSITIVE_INFINITY });
+    const cancelled = ctx.workflow.cancel({ runId: prior.id, by: 'kernel', reason });
+    if (cancelled.state !== 'cancelled') throw new Error('abandoned preparation did not fully cancel; preserve its reservation');
+    cancelWork(ctx.store, { id: taken.id, actor: owner(ctx), token: taken.claimToken, at, reason });
+    appendActivity(ctx.store, { at, kind: 'delivery.preparation_superseded', runId: packet.run.id, actor: 'kernel', channel: 'kernel', payload: { priorRunId: prior.id, workId: item.id, path, holderState: state, checkpoint, reason } });
+    recovered.push({ runId: prior.id, workId: item.id, evidence: state });
+  }
+  return recovered;
+}
+
 export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
   const at = ctx.now();
   if (ctx.sessionId) appendActivity(ctx.store, { at, kind: 'step.session_bound', runId: packet.run.id, stepRunId: packet.leased.id, actor: 'kernel', payload: { owner: packet.leased.leaseOwner, attempt: packet.leased.token, sessionId: ctx.sessionId } });
@@ -54,6 +135,7 @@ export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
   if (destination?.kind !== 'project_file' || !destination.ref) return null;
   const path = normalizeLeasePath(relative(ctx.root, resolve(ctx.root, destination.ref)));
   if (path === '/' || path.endsWith('/')) throw new Error('a managed artifact destination must name a project file');
+  const recoveredPreparation = recoverPriorPreparation(ctx, packet, path);
   const id = identity(packet.run.id), claimant = owner(ctx);
   let item = getWork(ctx.store, id);
   if (!item) {
@@ -65,12 +147,12 @@ export function reserveManagedDelivery(ctx: BrokerContext, packet: WorkPacket) {
   if (scope?.kind !== 'managed_delivery' || scope.runId !== packet.run.id || scope.path !== path) throw new Error('managed delivery coordination identity conflicts with existing work');
   const who = { owner: claimant, session: ctx.sessionId ?? undefined, agent: 'main', lane: ctx.lane?.root, branch: ctx.lane?.branch ?? null };
   if (item.status === 'claimed' && item.claimOwner !== claimant && item.claimUntil && item.claimUntil > at) {
-    item = takeoverWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, reason: 'Resume this same managed delivery after its previous session ended.', processAlive: ctx.processAlive });
+    item = takeoverWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, reason: 'Resume this same managed delivery after its previous session ended.', processAlive: ctx.processAlive, quietCapMs: Number.POSITIVE_INFINITY });
   }
   const held = claimWork(ctx.store, { id, ...who, now: at, until: packet.leased.leaseUntil, token: item.claimOwner === claimant ? reservationToken(ctx, id) : undefined, paths: [path] });
   const draft = packet.step.tier === 'project_write' ? listDeliverables(ctx.store, packet.run.id).at(-1) : undefined;
   const prepared = draft ? { ref: `deliverable:${draft.id}`, body: JSON.stringify(draft.body).length <= 64000 ? draft.body : undefined, omitted: JSON.stringify(draft.body).length > 64000, next: 'Use this held draft as input to the requested file; an omitted body is available through run_status.' } : null;
-  return { workId: id, path, prepared, owner: claimant, claimUntil: held.claimUntil, checkpoint: contentReceipt(path, projectResolver(ctx.store, ctx.root)), next: 'This run already reserves the requested file. Do not create a second outcome, remember a new commitment, or repeat work claim for this path. Write/checkpoint the artifact during the first allowed project-write step, then submit its reference. A reservation does not widen the step tier or accept the result.' };
+  return { workId: id, path, prepared, recoveredPreparation, owner: claimant, claimUntil: held.claimUntil, checkpoint: contentReceipt(path, projectResolver(ctx.store, ctx.root)), next: 'This run already reserves the requested file. Do not create a second outcome, remember a new commitment, or repeat work claim for this path. Write/checkpoint the artifact during the first allowed project-write step, then submit its reference. A reservation does not widen the step tier or accept the result.' };
 }
 
 export function settleManagedDelivery(ctx: BrokerContext, runId: string, state: string): void {

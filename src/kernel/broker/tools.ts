@@ -1,5 +1,5 @@
 import { semanticReviewStatus } from '../workflow/semantic-review.ts';
-import { recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
+import { DeliveryRecoveryRequired, recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
 import { claimChecks, assessClaims, type ClaimCheck } from '../workflow/claim-support.ts';
 import { accessDescriptor, accessRequest, assessAccess, type AccessDescriptor, type AccessRequest } from '../source/access.ts';
 import { dataMapping, sourceMapping, type DataMapping } from '../source/mapping.ts';
@@ -767,7 +767,7 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
   },
   run(ctx, { runId, includeSkillBody }) {
     recoverAbandonedSteps(ctx, runId);
-    const { c, delivery } = ctx.store.transaction(() => {
+    const result = (() => { try { return ctx.store.transaction(() => {
       const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
       const settledRunId = runId ?? (c.waitingOn?.kind === 're_resolve' ? c.waitingOn.runId : undefined);
       if (!c.packet && settledRunId) {
@@ -775,7 +775,12 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         if (run) settleManagedDelivery(ctx, run.id, run.state);
       }
       return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
-    });
+    }); } catch (error) {
+      if (error instanceof DeliveryRecoveryRequired) return { recovery: error.recovery };
+      throw error;
+    } })();
+    if ('recovery' in result) return { work: null, waitingOn: result.recovery };
+    const { c, delivery } = result;
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
     return {

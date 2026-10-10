@@ -1383,7 +1383,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
-    if (requiredSemanticContract(run)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
+    if (requiredSemanticContract(run) && isLastStep(run, step)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
     const destination = asked.intake?.destination;
     if (destination?.kind === 'project_file' && destination.ref) lines.push(`The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`);
     const p = asked.period;
@@ -1391,7 +1391,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const checksPeriod = !schema || Object.values(schema).includes('period');
     if (p && checksPeriod) {
       const covers = p.semantics === 'as_of'
-        ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. Describe them as they stood at the end of that day.`
+        ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. This is the requested cutoff, not proof of end-of-day freshness. State actual observation time and provider update time separately; do not claim knowledge beyond the evidence.`
         : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`;
       const refused = step.validators.includes('within_period')
         ? ` An item updated after ${p.to} is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`
@@ -1458,13 +1458,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       `Step ${step.id}: ${step.title}.`,
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      !isLastStep(run, step) ? 'Complete this step and submit_work with its declared outputs and evidence. Apply the bound method to these outputs and this tier; synthesis, file delivery, challenge and final-review obligations assigned to later steps stay with those steps. Do not repeat the whole method or its closing record before handing back preparation.' : '',
+      step.validators.includes('reference_coverage') ? 'Stop this evidence pass once the material claims have held support or explicit unknown/access boundaries and discovered material references have reads or justified dispositions. Submit those findings, conflicts and unknowns now; the bounded coverage report is not a claim of exhaustive research. Required permissions and essential user decisions still block.' : '',
       step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
       step.outputs.includes('plan') ? 'Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.' : '',
       Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
-      bound ? `Apply the bound method ${bound.id}. Its body is included by default when you claim work; inspect referenced resources as needed.` : '',
+      bound ? `Apply the bound method ${bound.id} for the current step. Its body is included by default; load a referenced resource only when this step needs it. Preserve already-held source text rather than rewriting it to satisfy a check.` : '',
       bound || method ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. Explain omissions and unavailable expertise; a report does not establish execution or qualification.' : '',
       method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
       ...readingInstructions(run, step),
@@ -1475,7 +1477,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       ...(askedOf(run).intake?.open.some((item) => item.handling) ? ['The intake evidenceGaps are not assumed facts. Investigate only through permitted sources; retain inaccessible or unresolved facts as unknown in the deliverable. This does not remove required inputs, permissions, verification or acceptance gates.'] : []),
       'Cite every source you read as evidence entries.',
       needsChallenge
-        ? `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`
+        ? !step.challenge && !isLastStep(run, step) && stepsOf(run).some(s => s.challenge)
+          ? 'A declared later challenge step reviews this run before completion. Submit this step’s evidence and uncertainty; do not claim its work is independently challenged.'
+          : `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`
         : judgment.depth === 'light'
           ? 'The person set this up as a side project and nothing in the work raised the stakes: keep the process small; no adversarial review is required.'
           : '',
