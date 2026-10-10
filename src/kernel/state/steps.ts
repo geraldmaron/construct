@@ -105,7 +105,7 @@ export interface LeasedStep extends StepRun {
 export class StaleLeaseError extends Error {
   constructor(stepRunId: string, token: number) {
     super(
-      `step ${stepRunId} is no longer held under token ${String(token)}: its lease expired and another worker took it over`,
+      `step ${stepRunId} is no longer held under token ${String(token)}: its lease expired, was released, or was replaced`,
     );
     this.name = 'StaleLeaseError';
   }
@@ -421,7 +421,7 @@ function settle(
         `UPDATE step_runs
             SET state = ?, output_json = COALESCE(?, output_json), state_reason = ?,
                 updated_at = ?, finished_at = ?, lease_owner = NULL, lease_until = NULL
-          WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ?`,
+          WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ? AND lease_until > ?`,
       )
       .run(
         to,
@@ -432,6 +432,7 @@ function settle(
         input.id,
         input.owner,
         input.token,
+        input.at,
       );
     if (result.changes === 0) throw new StaleLeaseError(input.id, input.token);
     closeAttempt(store, input.id, input.token, input.at, to === 'succeeded' ? 'succeeded' : 'failed', payload.error ?? null);
