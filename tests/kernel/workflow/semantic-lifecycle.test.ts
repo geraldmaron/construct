@@ -20,7 +20,7 @@ function fixture(steps: unknown[], extra = {}) {
   const skills = createSkillRegistry({ builtinDir: join(dir.root, 'skills'), projectDir: null });
   const workflows = createWorkflowRegistry({ builtinDir: join(dir.root, 'workflows'), projectDir: null });
   const host = { hostId: 'codex', sessionId: 'producer-session', executorId: 'producer', available: new Set(['read_project_context', 'model_review', 'ask_user']), maxTier: 'draft' as const, restrictions: [], budgetCents: null };
-  let n = 0; const now = () => '2026-10-09T12:00:00.000Z';
+  let n = 0, time = Date.parse('2026-10-09T12:00:00.000Z'); const now = () => new Date(time).toISOString();
   const service = createWorkflowService({ store: fx.store, skills, workflows, host, lock: updateLock(emptyLock(), skills.list(), workflows.list()).lock, now, nextId: p => `${p}-${++n}`, sources: () => [], projectWritePolicy: 'managed' });
   const run = service.start({ workflowId: 'probe', input: { request: 'Assess the design using the stated evidence' }, trigger: 'manual' }).run;
   const claim = () => service.claimNext({ runId: run.id });
@@ -29,7 +29,7 @@ function fixture(steps: unknown[], extra = {}) {
     appendActivity(fx.store, { at: now(), kind: 'semantic.executed', channel: 'host_semantic', actor: 'synthetic adapter fixture', runId: run.id, stepRunId: p.bundle.stepRunId, payload: { preparedRef: p.ref, bundleDigest: p.digest, attempt: p.bundle.attempt, invocation: { id: 'test', host: 'fixture', hostVersion: 'fixture', model: 'fixture', sessionId: 'independent', completed: true, exitStatus: 0, timedOut: false, transcriptDigest: 'synthetic' }, judgment: { checks: p.bundle.contract.obligations.map(o => ({ id: o.id, verdict: 'pass', reason: 'Synthetic transport boundary probe only.', refs: ['body'] })) }, problems: [] } });
     return p;
   };
-  return { ...fx, service, run, claim, observe, now, root: dir.root, cleanup() { fx.cleanup(); dir.cleanup(); } };
+  return { ...fx, service, run, claim, observe, now, tick(ms: number) { time += ms; }, root: dir.root, cleanup() { fx.cleanup(); dir.cleanup(); } };
 }
 
 test('a reviewed final body cannot promote an earlier unreviewed deliverable', () => {
@@ -150,4 +150,41 @@ test('negative control: replacing a pending candidate keeps the lease and requir
     f.observe(next.semanticReview!.preparedRef!);
     assert.equal(f.service.submit({ leased, output: { summary: 'Candidate two.' } }).run.state, 'succeeded');
   } finally { f.cleanup(); }
+});
+
+
+test('an expired lease cannot reuse a previously passing review, and reclaimed work requires a new attempt receipt', () => {
+  const f = fixture([step('final', { outputs: ['summary'] })]);
+  try {
+    const leased = f.claim().packet!.leased, output = { summary: 'Reviewed before the lease expired.' };
+    const first = f.service.submit({ leased, output });
+    f.observe(first.semanticReview!.preparedRef!);
+    f.tick(30 * 60_000);
+    assert.throws(() => f.service.submit({ leased, output }), /no longer held/);
+    assert.equal(f.service.status(f.run.id)!.run.state, 'running');
+    assert.equal(f.service.status(f.run.id)!.steps[0]!.state, 'leased');
+    const recovered = f.claim().packet!.leased;
+    assert.notEqual(recovered.token, leased.token);
+    const pending = f.service.submit({ leased: recovered, output });
+    assert.equal(pending.step.state, 'leased');
+    assert.notEqual(pending.semanticReview!.preparedRef, first.semanticReview!.preparedRef);
+    f.observe(pending.semanticReview!.preparedRef!);
+    assert.equal(f.service.submit({ leased: recovered, output }).run.state, 'succeeded');
+  } finally { f.cleanup(); }
+});
+
+
+test('a review submitted just before expiry can finish, but cancellation preserves the pending draft without completing it', () => {
+  for (const cancel of [false, true]) {
+    const f = fixture([step('final', { outputs: ['summary'] })]);
+    try {
+      const leased = f.claim().packet!.leased, output = { summary: 'A reviewed candidate.' };
+      const pending = f.service.submit({ leased, output }); f.observe(pending.semanticReview!.preparedRef!);
+      f.tick(30 * 60_000 - 1);
+      if (cancel) f.service.cancel({ runId: f.run.id, by: 'person', reason: 'Stop this work' });
+      const result = f.service.submit({ leased, output });
+      assert.equal(result.run.state, cancel ? 'cancelled' : 'succeeded');
+      if (cancel) assert.deepEqual(f.service.status(f.run.id)!.deliverables[0]!.body, pending.deliverable!.body);
+    } finally { f.cleanup(); }
+  }
 });

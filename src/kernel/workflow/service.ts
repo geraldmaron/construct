@@ -23,7 +23,7 @@ import { researchCoverage } from '../source/research.ts';
 import type { StateStore } from '../state/open.ts';
 import { appendActivity, listActivity } from '../state/activity.ts';
 import { createRun, findActiveByWorkIdentity, getRun, getRunByKey, listActiveRuns, setCancelRequested, transitionRun, type WorkflowRun } from '../state/runs.ts';
-import { addStep, claimStep, completeStep, expireDeadLeases, expiredAttempts, failStep, getStep, grantExtraAttempt, listSteps, transitionStep, StaleLeaseError, type LeasedStep, type StepRun } from '../state/steps.ts';
+import { addStep, claimStep, completeStep, expireDeadLeases, expiredAttempts, failStep, getStep, heldLease, grantExtraAttempt, listSteps, transitionStep, StaleLeaseError, type LeasedStep, type StepRun } from '../state/steps.ts';
 import { getDeliverable, listDeliverables, setTrustState, upsertDraft, type Deliverable, type TrustState } from '../state/deliverables.ts';
 import { getDecision, listOpenDecisions, listRunDecisions, listStepDecisions, raiseDecision, resolveDecision, withdrawDecision, type Decision } from '../state/decisions.ts';
 import { addStatement, getProfile, getStatement, listStatements, type Statement, type StatementKind } from '../state/profile.ts';
@@ -2106,9 +2106,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     },
 
     submit({ leased, output, evidence = [], noData = false, resolvableRefs = new Set(), resolve = deps.resolveEvidence }) {
+      return store.transaction(() => {
       const at = deps.now();
+      const held = heldLease(store, { id: leased.id, owner: leased.leaseOwner, nonce: leased.nonce });
+      if (!held || held.token !== leased.token || held.runId !== leased.runId || held.leaseUntil <= at) throw new StaleLeaseError(leased.id, leased.token);
       const run = getRun(store, leased.runId);
       if (!run) throw new Error(`no run ${leased.runId}`);
+      if (run.cancelRequested) {
+        const stopped = transitionStep(store, { id: leased.id, to: 'cancelled', at, reason: 'run cancelled before submission' });
+        return { step: stopped, validation: [], run: advance(run.id, at, resolve), deliverable: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id) ?? null, ignored: Object.keys(output) };
+      }
       const step = stepsOf(run).find((s) => s.id === leased.stepId);
       if (!step) throw new Error(`run ${run.id} has no frozen step ${leased.stepId}`);
       const currentWorkflow = deps.workflows.get(run.workflowId);
@@ -2275,6 +2282,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           }
         }
         return { step: done, validation, run: advance(run.id, at, resolve), deliverable, ignored };
+      });
       });
     },
 
