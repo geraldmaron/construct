@@ -2,7 +2,7 @@
 
 This local follow-through starts at the published alpha.27 main revision `24b126021cc61b346d8b873eb40fa31635d2db15` on `dev/fresh-delivery-reliability`. It does not change that release, its evidence, npm tags, or existing user projects. Package version remains alpha.27 for this unreleased development candidate; only the local candidate hash identifies tested bytes.
 
-Completed bounded work and retained failures: [RESULTS.md](RESULTS.md), [evidence manifest](evidence/manifest.json). The acceptance below was registered before the native cohort; the result record does not revise its denominator.
+Completed bounded work and retained failures: [RESULTS.md](RESULTS.md), [evidence manifest](evidence/manifest.json). Later abandoned-preparation recovery and its separate native cohort are recorded in [RESULTS-DELIVERY.md](RESULTS-DELIVERY.md), with [its own evidence manifest](evidence/delivery/manifest.json). The acceptance below was registered before the native cohort; the result record does not revise its denominator.
 
 ## Bounded slice
 
