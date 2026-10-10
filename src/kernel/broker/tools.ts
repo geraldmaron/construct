@@ -1,3 +1,4 @@
+import { semanticReviewStatus } from '../workflow/semantic-review.ts';
 import { recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
 import { claimChecks, assessClaims, type ClaimCheck } from '../workflow/claim-support.ts';
 import { accessDescriptor, accessRequest, assessAccess, type AccessDescriptor, type AccessRequest } from '../source/access.ts';
@@ -665,9 +666,10 @@ function startable(w: RegisteredWorkflow): boolean {
   return (w.manifest.interactionClass === 'manage' || w.manifest.interactionClass === 'maintain') && w.manifest.triggers.includes('manual');
 }
 
-function startedResult(r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
+function startedResult(ctx: BrokerContext, r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
   return {
     started: true,
+    semanticReview: semanticReviewStatus(ctx.store, r.run, resolverFor(ctx.store, ctx.root), ctx.now()),
     run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
     created: r.created,
     preflight: r.preflight,
@@ -736,7 +738,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
           assumptions: validated.assumptions,
         },
       });
-      return startedResult(r, validated.normalized, validated.assumptions);
+      return startedResult(ctx, r, validated.normalized, validated.assumptions);
     }
     const workflow = ctx.workflows.get(workflowId);
     if (!workflow || !startable(workflow)) throw new ToolInputError(`no workflow "${workflowId}" can be started here`, { field: 'workflowId', allowed: ctx.workflows.list().filter(startable).map((w) => w.manifest.id) });
@@ -744,7 +746,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
     const missing = workflow.manifest.requiredInputs.filter((k) => explicit[k] === undefined);
     if (missing.length > 0) return { started: false, recorded: false, questions: missing.map((slot) => slotQuestion(slot, workflow)), hostQuestions: [], normalized: [], next: NOTHING_STARTED };
     const r = ctx.workflow.start({ workflowId, input: explicit, trigger: 'manual' });
-    return startedResult(r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
+    return startedResult(ctx, r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
   },
 });
 
@@ -778,6 +780,8 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
     const p = c.packet;
     return {
       work: {
+        semanticReview: p.semanticReview,
+        delivery,
         stepRunId: p.leased.id,
         owner: p.leased.leaseOwner,
         token: p.leased.nonce,
@@ -790,7 +794,6 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         method: p.method,
         methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
         methodCatalogDetail: 'Compact index; skills list/show provides full activation, stand-down and method resources.',
-        delivery,
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -876,7 +879,7 @@ const runStatus = define<{ runId: string }, unknown>({
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
     const asked = askedOf(v.run);
-    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    return { semanticReview: v.semanticReview, run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
   },
 });
 
@@ -1675,7 +1678,7 @@ const claimStep = define<{ runId?: string }, unknown>({
     });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
+    return { work: { semanticReview: p.semanticReview, stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
   },
 });
 
