@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
 import { record } from '../../../src/kernel/broker/definition.ts';
 import type { BrokerContext } from '../../../src/kernel/broker/context.ts';
 import { createBrokerContext } from '../../../src/cli/broker-context.ts';
 import { endSession, registerSession } from '../../../src/kernel/state/sessions.ts';
+import { appendActivity } from '../../../src/kernel/state/activity.ts';
 import { upsertDraft } from '../../../src/kernel/state/deliverables.ts';
 import { getStep, listSteps } from '../../../src/kernel/state/steps.ts';
 import { getWork } from '../../../src/kernel/work/service.ts';
@@ -59,7 +60,10 @@ test('a conflicting managed artifact rolls back the new work item and step lease
     const a = await start(fx.broker);
     await claim(fx.broker, a.run.id);
     const b = await start(peer(fx), 'Write a different design brief.');
-    await assert.rejects(claim(peer(fx), b.run.id), /reserved by other work/);
+    const conflict = await call(peer(fx), 'claim_work', { runId: b.run.id });
+    assert.equal(conflict.work, null);
+    assert.equal(conflict.waitingOn.kind, 'delivery_recovery');
+    assert.equal(conflict.waitingOn.priorRunId, a.run.id);
     assert.equal((fx.broker.store.db.prepare('SELECT COUNT(*) AS n FROM work_items').get() as any).n, 1);
     const first = listSteps(fx.broker.store, b.run.id)[0]!;
     assert.equal(first.state, 'ready');
@@ -177,3 +181,168 @@ test('the explicitly bound headless adapter receives the same file reservation w
     assert.deepEqual(listLiveLeases(b.store, fx.ctx.now()).map((l) => l.path), ['brief.md']);
   } finally { fx.cleanup(); }
 });
+
+for (const observation of ['ended', 'dead'] as const) {
+  test(`a newer request replaces ${observation} preparation atomically without replaying it`, async () => {
+    const fx = brokerFixture();
+    try {
+      register(fx);
+      const oldRun = await start(fx.broker), old = await claim(fx.broker, oldRun.run.id);
+      if (observation === 'ended') endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+      const next = { ...peer(fx), processAlive: () => observation === 'dead' ? false : null };
+      const requested = await start(next, 'Recheck the current evidence and write the corrected brief.');
+      const work = await claim(next, requested.run.id);
+      assert.equal(work.run.id, requested.run.id);
+      assert.equal(work.step.id, 'plan');
+      assert.deepEqual(work.delivery.recoveredPreparation, [{ runId: oldRun.run.id, workId: old.delivery.workId, evidence: observation === 'dead' ? 'absent' : 'ended' }]);
+      assert.equal((await call(next, 'run_status', { runId: oldRun.run.id })).run.state, 'cancelled');
+      assert.equal(getWork(fx.broker.store, old.delivery.workId)!.status, 'cancelled');
+      assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 1);
+      assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now())[0]!.workId, work.delivery.workId);
+      await assert.rejects(submit(fx.broker, old, plan), /not held by this session/);
+      assert.equal((fx.broker.store.db.prepare("SELECT count(*) n FROM activity_events WHERE kind = 'delivery.preparation_superseded'").get() as any).n, 1);
+    } finally { fx.cleanup(); }
+  });
+}
+
+for (const state of ['live', 'unknown', 'quiet', 'unregistered'] as const) {
+  test(`a new request preserves a ${state} reservation holder and returns recovery without a new lease`, async () => {
+    const fx = brokerFixture();
+    try {
+      if (state !== 'unregistered') register(fx);
+      const oldRun = await start(fx.broker), old = await claim(fx.broker, oldRun.run.id);
+      if (state === 'quiet') fx.broker.store.db.prepare('UPDATE sessions SET last_seen_at = ? WHERE id = ?').run('2020-01-01T00:00:00Z', fx.broker.sessionId);
+      const next = { ...peer(fx), processAlive: () => state === 'live' ? true : null };
+      const run = await start(next, 'Recheck current evidence for the brief.');
+      const result = await call(next, 'claim_work', { runId: run.run.id });
+      assert.equal(result.work, null); assert.equal(result.waitingOn.kind, 'delivery_recovery');
+      assert.equal(result.waitingOn.priorRunId, oldRun.run.id);
+      assert.equal(result.waitingOn.holder, state === 'live' ? 'live' : 'unknown');
+      assert.equal(getWork(fx.broker.store, old.delivery.workId)!.claimOwner, 'ses_fixture/main');
+      assert.equal(listSteps(fx.broker.store, run.run.id)[0]!.attempts, 0);
+      assert.equal(getStep(fx.broker.store, old.stepRunId)!.state, 'leased');
+    } finally { fx.cleanup(); }
+  });
+}
+
+test('a dead reservation creator does not allow cancelling a step now held by a live peer', async () => {
+  const fx = brokerFixture();
+  try {
+    register(fx); const prior = await start(fx.broker), old = await claim(fx.broker, prior.run.id);
+    endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+    registerSession(fx.broker.store, { id: 'ses_other', host: 'claude-code', surface: 'interactive', machine: 'fixture-machine', pid: 5678, at: fx.ctx.now() });
+    fx.broker.store.db.prepare('UPDATE step_runs SET lease_owner = ? WHERE id = ?').run('session:claude-code:ses_other', old.stepRunId);
+    const next = { ...peer(fx), processAlive: () => true }, run = await start(next, 'Write the revised brief.');
+    const result = await call(next, 'claim_work', { runId: run.run.id });
+    assert.match(result.waitingOn.reasons.join(' '), /outstanding step/);
+    assert.equal(getStep(fx.broker.store, old.stepRunId)!.leaseOwner, 'session:claude-code:ses_other');
+    assert.equal((await call(next, 'run_status', { runId: prior.run.id })).run.state, 'running');
+  } finally { fx.cleanup(); }
+});
+
+for (const blocker of ['writable-history', 'handoff', 'artifact', 'execution', 'directory', 'changed-definition'] as const) {
+  test(`terminated preparation with ${blocker} remains protected for explicit reconciliation`, async () => {
+    const fx = brokerFixture();
+    try {
+      register(fx); const prior = await start(fx.broker), old = await claim(fx.broker, prior.run.id);
+      if (blocker === 'writable-history') {
+        await submit(fx.broker, old, plan);
+        const doing = await claim(fx.broker, prior.run.id);
+        fx.broker.store.db.prepare("UPDATE step_runs SET state = 'ready', lease_owner = NULL, lease_until = NULL WHERE id = ?").run(doing.stepRunId);
+      }
+      if (blocker === 'artifact') writeFileSync(join(fx.box.cwd, 'brief.md'), 'Unreported draft that must survive.');
+      if (blocker === 'handoff') fx.broker.store.db.prepare('UPDATE work_items SET handoff_json = ? WHERE id = ?').run(JSON.stringify({ to: 'ses_designated', takenAt: null }), old.delivery.workId);
+      if (blocker === 'execution') appendActivity(fx.broker.store, { at: fx.ctx.now(), kind: 'verification.executed', runId: prior.run.id, channel: 'host_command', payload: { synthetic: true } });
+      if (blocker === 'directory') fx.broker.store.db.prepare("UPDATE path_leases SET path = '/' WHERE work_id = ?").run(old.delivery.workId);
+      if (blocker === 'changed-definition') fx.broker.store.db.prepare("UPDATE workflow_runs SET workflow_digest = 'different' WHERE id = ?").run(prior.run.id);
+      endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+      const next = peer(fx), run = await start(next, 'Recheck and update the brief.');
+      const result = await call(next, 'claim_work', { runId: run.run.id });
+      assert.equal(result.work, null); assert.equal(result.waitingOn.kind, 'delivery_recovery');
+      assert.ok(result.waitingOn.reasons.length);
+      assert.equal(getWork(fx.broker.store, old.delivery.workId)!.claimOwner, 'ses_fixture/main');
+      assert.equal(listSteps(fx.broker.store, run.run.id)[0]!.attempts, 0);
+      if (blocker === 'artifact') assert.equal(readFileSync(join(fx.box.cwd, 'brief.md'), 'utf8'), 'Unreported draft that must survive.');
+    } finally { fx.cleanup(); }
+  });
+}
+
+test('claiming an older request never supersedes a newer dead holder', async () => {
+  const fx = brokerFixture();
+  try {
+    register(fx); const next = peer(fx), older = await start(next, 'The older brief request.');
+    const newer = await start(fx.broker, 'The newer brief request.'), held = await claim(fx.broker, newer.run.id);
+    endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+    const result = await call(next, 'claim_work', { runId: older.run.id });
+    assert.match(result.waitingOn.reasons.join(' '), /not a newer run/);
+    assert.equal(getStep(fx.broker.store, held.stepRunId)!.state, 'leased');
+  } finally { fx.cleanup(); }
+});
+
+test('a failed new reservation rolls back old cancellation, ownership, leases and supersession evidence', async () => {
+  const fx = brokerFixture();
+  try {
+    register(fx); const prior = await start(fx.broker), old = await claim(fx.broker, prior.run.id);
+    endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+    const next = peer(fx), requested = await start(next, 'Recheck the brief.');
+    fx.broker.store.db.exec(`CREATE TEMP TRIGGER refuse_new_reservation BEFORE INSERT ON path_leases WHEN NEW.work_id != '${old.delivery.workId}' BEGIN SELECT RAISE(ABORT, 'synthetic second reservation failure'); END;`);
+    await assert.rejects(claim(next, requested.run.id), /synthetic second reservation failure/);
+    assert.equal(getStep(fx.broker.store, old.stepRunId)!.state, 'leased');
+    assert.equal(getWork(fx.broker.store, old.delivery.workId)!.claimOwner, 'ses_fixture/main');
+    assert.equal(listSteps(fx.broker.store, requested.run.id)[0]!.attempts, 0);
+    assert.equal((fx.broker.store.db.prepare("SELECT count(*) n FROM activity_events WHERE kind = 'delivery.preparation_superseded'").get() as any).n, 0);
+    assert.equal((await call(next, 'run_status', { runId: prior.run.id })).run.state, 'running');
+  } finally { fx.cleanup(); }
+});
+
+test('competing newer requests leave only one new writer and preserve the winner', async () => {
+  const fx = brokerFixture();
+  try {
+    register(fx); const prior = await start(fx.broker); await claim(fx.broker, prior.run.id);
+    endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+    const next = peer(fx), a = await start(next, 'First correction.'), b = await start(next, 'Second correction.');
+    const [one,two] = await Promise.all([call(next, 'claim_work', { runId: a.run.id }), call(next, 'claim_work', { runId: b.run.id })]);
+    assert.ok(one.work); assert.equal(two.work, null); assert.equal(two.waitingOn.kind, 'delivery_recovery');
+    assert.equal(listLiveLeases(fx.broker.store, fx.ctx.now()).length, 1);
+    assert.equal(getStep(fx.broker.store, one.work.stepRunId)!.state, 'leased');
+  } finally { fx.cleanup(); }
+});
+
+test('preparation packets scope the method to current outputs and leave final review to its step', async () => {
+  const fx = brokerFixture('interactive', { semanticReview: 'none' });
+  try {
+    const run = await call(fx.broker, 'start_outcome', { workflowId: 'research-brief', input: { question: 'What does the supplied evidence establish?' } });
+    const work = await claim(fx.broker, run.run.id);
+    assert.equal(work.step.id, 'gather'); assert.equal(work.step.tier, 'observe');
+    assert.ok(work.instructions.some((s: string) => s.includes('submit_work with its declared outputs')));
+    assert.ok(work.instructions.some((s: string) => s.includes('explicit unknown/access boundaries')));
+    assert.ok(work.instructions.some((s: string) => s.includes('later challenge step')));
+    assert.ok(!work.instructions.some((s: string) => s.startsWith('Managed completion requires')));
+    assert.equal(work.semanticReview.state, 'unavailable');
+    assert.ok(work.step.validators.includes('reference_coverage'), 'phase guidance does not waive coverage');
+  } finally { fx.cleanup(); }
+});
+
+for (const holder of ['ended', 'live', 'unknown'] as const) {
+  test(`an already-expired preparation lease with a live reservation respects its ${holder} holder`, async () => {
+    const fx = brokerFixture();
+    try {
+      register(fx); const prior = await start(fx.broker), old = await claim(fx.broker, prior.run.id);
+      fx.broker.store.db.prepare('UPDATE step_runs SET lease_until = ? WHERE id = ?').run('2020-01-01T00:00:00Z', old.stepRunId);
+      if (holder === 'ended') endSession(fx.broker.store, { id: fx.broker.sessionId!, at: fx.ctx.now(), reason: 'observed exit' });
+      const next = { ...peer(fx), processAlive: () => holder === 'live' ? true : null };
+      const run = await start(next, 'Recheck the brief after an interrupted preparation.');
+      const result = await call(next, 'claim_work', { runId: run.run.id });
+      if (holder === 'ended') {
+        assert.equal(result.work.run.id, run.run.id);
+        assert.equal(getStep(fx.broker.store, old.stepRunId)!.state, 'cancelled');
+        assert.equal(getWork(fx.broker.store, old.delivery.workId)!.status, 'cancelled');
+      } else {
+        assert.equal(result.work, null);
+        assert.equal(result.waitingOn.kind, 'delivery_recovery');
+        assert.equal(getStep(fx.broker.store, old.stepRunId)!.state, 'leased');
+        assert.equal(getWork(fx.broker.store, old.delivery.workId)!.status, 'claimed');
+      }
+    } finally { fx.cleanup(); }
+  });
+}
