@@ -1,0 +1,98 @@
+{
+  "case": "correct",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "c0fae8f16f9c20b14b0bf7e1824ff96b9fee2c0f4e3fdca3c2facaafa92faad1",
+      "attempt": 1,
+      "invocation": {
+        "id": "40c31d16-5b88-48d2-a315-6bc4acc75483",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12301-c561-7353-9b7a-aff232b14c0e",
+        "completed": false,
+        "exitStatus": null,
+        "timedOut": false,
+        "transcriptDigest": "6fb1f6ea65a4f63fbc01386fdcb38a8b4b28d206672587f8dc8199d64fcd502f"
+      },
+      "judgment": null,
+      "problems": [
+        "native review host reported failure: Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.",
+        "native review did not complete its ordered event stream",
+        "native review did not return one JSON judgment",
+        "reviewer did not return a checks array"
+      ]
+    },
+    "passed": false
+  },
+  "finalState": "running",
+  "stepState": "leased",
+  "at": "2026-10-09T23:31:21.229Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "events": [
+    {
+      "preparedRef": "review:6",
+      "bundleDigest": "c0fae8f16f9c20b14b0bf7e1824ff96b9fee2c0f4e3fdca3c2facaafa92faad1",
+      "attempt": 1,
+      "invocation": {
+        "id": "40c31d16-5b88-48d2-a315-6bc4acc75483",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12301-c561-7353-9b7a-aff232b14c0e",
+        "completed": false,
+        "exitStatus": null,
+        "timedOut": false,
+        "transcriptDigest": "6fb1f6ea65a4f63fbc01386fdcb38a8b4b28d206672587f8dc8199d64fcd502f"
+      },
+      "judgment": null,
+      "problems": [
+        "native review host reported failure: Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues.",
+        "native review did not complete its ordered event stream",
+        "native review did not return one JSON judgment",
+        "reviewer did not return a checks array"
+      ],
+      "startedAt": "2026-10-09T23:31:20.703Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a12301-c561-7353-9b7a-aff232b14c0e"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "error",
+          "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+        }
+      ],
+      "rawOutputBytes": 301,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "b9e7ee30c3d5b9631b3e6bdeb7278caffec0a4560ea3b0f48c21f85222d40e65",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "56176e9d2cb16027ae2dd147c602f1efa66ab1ccb20b3dfef4903dc518519f97",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth"
+    }
+  ],
+  "observedFilesUnchanged": true
+}

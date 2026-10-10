@@ -1,0 +1,7 @@
+{
+  "host": "codex",
+  "source": "workspace",
+  "transport": "stdio MCP with scoped loopback API fetch",
+  "fixtureBeforeInit": true,
+  "configuredAt": "2026-10-09T23:34:43.287Z"
+}

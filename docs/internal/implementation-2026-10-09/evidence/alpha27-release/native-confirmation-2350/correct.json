@@ -1,0 +1,190 @@
+{
+  "case": "correct",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "ae31f30c6f1992dbfecc87840348862ffb9eb7cb314fbcacf6fa6cd10a789113",
+      "attempt": 1,
+      "invocation": {
+        "id": "18547a30-ce9e-4137-b6dc-3f494300918d",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12312-99fb-7091-95ef-55783e10a3ae",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "b1dc73cc6c5ea79dfdf2982461bdbb40e5bc66d860afc761ac47741db87bb4c3"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The candidate states both plans’ net annual benefits, concludes that neither merits preference on the stated financial evidence, and gives A’s net annual benefit when its hours saved double. No material requested outcome is omitted.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "pass",
+            "reason": "The numerical claims are supported by the supplied witnessed source, identified as current approved planning data. The bundle contains no contradictory evidence, and the candidate invents no qualitative advantages.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "pass",
+            "reason": "A’s annual net benefit is 120 × $50 − $4,000 = $2,000; B’s is 100 × $50 − $3,000 = $2,000. Doubling only A’s hours gives 240 × $50 − $4,000 = $8,000 annually. The calculations, annual units, and tie conclusion are correct.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The candidate limits its conclusion to the stated financial evidence and explicitly acknowledges that other qualitative differences are unknown. Its counterfactual preserves the annual cost and hourly value as specified by the source.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate remains an assessment: it compares the plans and calculates the counterfactual without claiming implementation, authorizing external action, or demanding future-action prerequisites.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": []
+    },
+    "passed": true
+  },
+  "finalState": "succeeded",
+  "stepState": "succeeded",
+  "at": "2026-10-09T23:50:00.715Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "events": [
+    {
+      "preparedRef": "review:6",
+      "bundleDigest": "ae31f30c6f1992dbfecc87840348862ffb9eb7cb314fbcacf6fa6cd10a789113",
+      "attempt": 1,
+      "invocation": {
+        "id": "18547a30-ce9e-4137-b6dc-3f494300918d",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12312-99fb-7091-95ef-55783e10a3ae",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "b1dc73cc6c5ea79dfdf2982461bdbb40e5bc66d860afc761ac47741db87bb4c3"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The candidate states both plans’ net annual benefits, concludes that neither merits preference on the stated financial evidence, and gives A’s net annual benefit when its hours saved double. No material requested outcome is omitted.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "pass",
+            "reason": "The numerical claims are supported by the supplied witnessed source, identified as current approved planning data. The bundle contains no contradictory evidence, and the candidate invents no qualitative advantages.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "pass",
+            "reason": "A’s annual net benefit is 120 × $50 − $4,000 = $2,000; B’s is 100 × $50 − $3,000 = $2,000. Doubling only A’s hours gives 240 × $50 − $4,000 = $8,000 annually. The calculations, annual units, and tie conclusion are correct.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The candidate limits its conclusion to the stated financial evidence and explicitly acknowledges that other qualitative differences are unknown. Its counterfactual preserves the annual cost and hourly value as specified by the source.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate remains an assessment: it compares the plans and calculates the counterfactual without claiming implementation, authorizing external action, or demanding future-action prerequisites.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": [],
+      "startedAt": "2026-10-09T23:49:43.106Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a12312-99fb-7091-95ef-55783e10a3ae"
+        },
+        {
+          "type": "native.metadata_warning",
+          "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "agent_message",
+          "text": "{\n  \"checks\": [\n    {\n      \"id\": \"request\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate states both plans’ net annual benefits, concludes that neither merits preference on the stated financial evidence, and gives A’s net annual benefit when its hours saved double. No material requested outcome is omitted.\",\n      \"refs\": [\"answer.md\"]\n    },\n    {\n      \"id\": \"support\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The numerical claims are supported by the supplied witnessed source, identified as current approved planning data. The bundle contains no contradictory evidence, and the candidate invents no qualitative advantages.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"reasoning\",\n      \"verdict\": \"pass\",\n      \"reason\": \"A’s annual net benefit is 120 × $50 − $4,000 = $2,000; B’s is 100 × $50 − $3,000 = $2,000. Doubling only A’s hours gives 240 × $50 − $4,000 = $8,000 annually. The calculations, annual units, and tie conclusion are correct.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"uncertainty\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate limits its conclusion to the stated financial evidence and explicitly acknowledges that other qualitative differences are unknown. Its counterfactual preserves the annual cost and hourly value as specified by the source.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"scope\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate remains an assessment: it compares the plans and calculates the counterfactual without claiming implementation, authorizing external action, or demanding future-action prerequisites.\",\n      \"refs\": [\"answer.md\"]\n    }\n  ]\n}"
+        },
+        {
+          "type": "turn.completed"
+        }
+      ],
+      "rawOutputBytes": 2646,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "1394b13529ff94f00b10a31c0fb048b7d6b0ee8d268961fdff864e28989af1a6",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "56176e9d2cb16027ae2dd147c602f1efa66ab1ccb20b3dfef4903dc518519f97",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth"
+    }
+  ],
+  "observedFilesUnchanged": true
+}

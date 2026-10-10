@@ -1,0 +1,5 @@
+ok   binary: <user-home>/.local/state/fnm_multishells/71131_1791384506418/bin/claude
+ok   version: 2.1.250 (Claude Code)
+ok   no API environment: API keys and provider overrides are absent
+FAIL subscription auth: missing
+FAIL contamination canary: Not logged in · Please run /login

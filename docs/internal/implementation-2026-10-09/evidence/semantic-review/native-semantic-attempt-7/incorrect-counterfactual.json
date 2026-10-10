@@ -1,0 +1,196 @@
+{
+  "case": "incorrect-counterfactual",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "8e879988b71f4591a2ad1293e005ec6cbce34cd029103b634ab8ed39c36f4dd9",
+      "attempt": 1,
+      "invocation": {
+        "id": "75e8964b-e1a6-46af-b325-8ba98b736ace",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12302-b238-7a20-b261-f458c18efe3f",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "7c09750bbe2011d703f51abaf2077aa0ed7b2f7da18bd0130cb45a77d556db3b"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The candidate covers the requested comparison, concludes that neither plan is financially preferable given the tie, and supplies a doubled-hours estimate. No material requested component is omitted; the estimate's accuracy fails separately under reasoning.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "fail",
+            "reason": "The witnessed source identifies its figures as current approved planning data and supports both baseline benefits of $2,000 annually. It does not support the claimed $11,000 counterfactual benefit: it explicitly holds A's $4,000 annual cost and $50 hourly value fixed.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "fail",
+            "reason": "The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling only A's hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The candidate appropriately limits its preference conclusion to the stated financial evidence and identifies qualitative differences as unknown. The source fully specifies the counterfactual inputs, so the incorrect result is an arithmetic error rather than an unresolved factual uncertainty.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate remains an assessment. It neither takes nor authorizes implementation or external action, and it does not impose future-action prerequisites on the requested comparison.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "support: fail review judgment",
+        "reasoning: fail review judgment"
+      ]
+    },
+    "passed": false
+  },
+  "finalState": "running",
+  "stepState": "leased",
+  "at": "2026-10-09T23:32:51.971Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "events": [
+    {
+      "preparedRef": "review:6",
+      "bundleDigest": "8e879988b71f4591a2ad1293e005ec6cbce34cd029103b634ab8ed39c36f4dd9",
+      "attempt": 1,
+      "invocation": {
+        "id": "75e8964b-e1a6-46af-b325-8ba98b736ace",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12302-b238-7a20-b261-f458c18efe3f",
+        "completed": true,
+        "exitStatus": 0,
+        "timedOut": false,
+        "transcriptDigest": "7c09750bbe2011d703f51abaf2077aa0ed7b2f7da18bd0130cb45a77d556db3b"
+      },
+      "judgment": {
+        "checks": [
+          {
+            "id": "request",
+            "verdict": "pass",
+            "reason": "The candidate covers the requested comparison, concludes that neither plan is financially preferable given the tie, and supplies a doubled-hours estimate. No material requested component is omitted; the estimate's accuracy fails separately under reasoning.",
+            "refs": [
+              "answer.md"
+            ]
+          },
+          {
+            "id": "support",
+            "verdict": "fail",
+            "reason": "The witnessed source identifies its figures as current approved planning data and supports both baseline benefits of $2,000 annually. It does not support the claimed $11,000 counterfactual benefit: it explicitly holds A's $4,000 annual cost and $50 hourly value fixed.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "reasoning",
+            "verdict": "fail",
+            "reason": "The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling only A's hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "uncertainty",
+            "verdict": "pass",
+            "reason": "The candidate appropriately limits its preference conclusion to the stated financial evidence and identifies qualitative differences as unknown. The source fully specifies the counterfactual inputs, so the incorrect result is an arithmetic error rather than an unresolved factual uncertainty.",
+            "refs": [
+              "answer.md",
+              "source.txt"
+            ]
+          },
+          {
+            "id": "scope",
+            "verdict": "pass",
+            "reason": "The candidate remains an assessment. It neither takes nor authorizes implementation or external action, and it does not impose future-action prerequisites on the requested comparison.",
+            "refs": [
+              "answer.md"
+            ]
+          }
+        ]
+      },
+      "problems": [
+        "support: fail review judgment",
+        "reasoning: fail review judgment"
+      ],
+      "startedAt": "2026-10-09T23:32:21.350Z",
+      "observations": [
+        {
+          "type": "thread.started",
+          "sessionId": "01a12302-b238-7a20-b261-f458c18efe3f"
+        },
+        {
+          "type": "native.metadata_warning",
+          "message": "Model metadata for `gpt-6-astra` not found. Defaulting to fallback metadata; this can degrade performance and cause issues."
+        },
+        {
+          "type": "turn.started"
+        },
+        {
+          "type": "item.completed",
+          "itemType": "agent_message",
+          "text": "{\n  \"checks\": [\n    {\n      \"id\": \"request\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate covers the requested comparison, concludes that neither plan is financially preferable given the tie, and supplies a doubled-hours estimate. No material requested component is omitted; the estimate's accuracy fails separately under reasoning.\",\n      \"refs\": [\"answer.md\"]\n    },\n    {\n      \"id\": \"support\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The witnessed source identifies its figures as current approved planning data and supports both baseline benefits of $2,000 annually. It does not support the claimed $11,000 counterfactual benefit: it explicitly holds A's $4,000 annual cost and $50 hourly value fixed.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"reasoning\",\n      \"verdict\": \"fail\",\n      \"reason\": \"The baseline calculations are correct: A yields 120 × $50 − $4,000 = $2,000 annually, and B yields 100 × $50 − $3,000 = $2,000 annually. Doubling only A's hours yields 240 × $50 − $4,000 = $8,000 annually, not $11,000.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"uncertainty\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate appropriately limits its preference conclusion to the stated financial evidence and identifies qualitative differences as unknown. The source fully specifies the counterfactual inputs, so the incorrect result is an arithmetic error rather than an unresolved factual uncertainty.\",\n      \"refs\": [\"answer.md\", \"source.txt\"]\n    },\n    {\n      \"id\": \"scope\",\n      \"verdict\": \"pass\",\n      \"reason\": \"The candidate remains an assessment. It neither takes nor authorizes implementation or external action, and it does not impose future-action prerequisites on the requested comparison.\",\n      \"refs\": [\"answer.md\"]\n    }\n  ]\n}"
+        },
+        {
+          "type": "turn.completed"
+        }
+      ],
+      "rawOutputBytes": 2677,
+      "binaryDigest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+      "argvDigest": "3e17166c7e58f19b325f0aefad4ed362b3741dd5e4b5f277f87214ae45bfbcbf",
+      "profile": "codex-held-text-v1",
+      "inventoryDigest": "56176e9d2cb16027ae2dd147c602f1efa66ab1ccb20b3dfef4903dc518519f97",
+      "disabledMcpNames": [
+        "atlassian",
+        "computer-use",
+        "construct",
+        "context7",
+        "linear",
+        "node_repl",
+        "notion",
+        "playwright",
+        "sequential-thinking",
+        "slack"
+      ],
+      "modelSource": "requested",
+      "assurance": "observed_review; not a proof of truth"
+    }
+  ],
+  "observedFilesUnchanged": true
+}

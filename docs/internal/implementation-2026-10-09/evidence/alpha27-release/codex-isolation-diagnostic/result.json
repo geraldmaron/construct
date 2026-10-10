@@ -1,0 +1,17 @@
+{
+  "exitCode": 0,
+  "finalText": "> # AGENTS.md instructions\n\nconstruct",
+  "toolUses": [],
+  "disabledFeatures": [
+    "apps",
+    "plugins",
+    "remote_plugin",
+    "tool_suggest",
+    "skill_mcp_dependency_install"
+  ],
+  "fixtureInstructionFirstLine": null,
+  "limitations": [
+    "Model self-reported tool list is not authoritative inventory or a denial test.",
+    "The original canary predicate remains unchanged and this is not a canonical preflight pass."
+  ]
+}

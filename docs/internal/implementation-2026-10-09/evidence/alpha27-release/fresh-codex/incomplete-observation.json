@@ -1,0 +1,72 @@
+{
+  "observedAt": "2026-10-10T00:02:02.798619+00:00",
+  "artifactExists": false,
+  "changedResultExists": false,
+  "controllerCompletionReceiptExists": false,
+  "taskProcessObservedAbsent": true,
+  "status": "incomplete; no completion or timeout result inferred for the unreceipted changed phase",
+  "runs": [
+    {
+      "id": "run-f820dc0c",
+      "workflow_id": "research-brief",
+      "state": "running",
+      "state_reason": null
+    },
+    {
+      "id": "run-50b5464e",
+      "workflow_id": "research-brief",
+      "state": "ready",
+      "state_reason": null
+    }
+  ],
+  "steps": [
+    {
+      "run_id": "run-f820dc0c",
+      "step_id": "gather",
+      "state": "succeeded",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-f820dc0c",
+      "step_id": "synthesize",
+      "state": "leased",
+      "state_reason": "lease expired"
+    },
+    {
+      "run_id": "run-f820dc0c",
+      "step_id": "challenge",
+      "state": "pending",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-f820dc0c",
+      "step_id": "record",
+      "state": "pending",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-50b5464e",
+      "step_id": "gather",
+      "state": "ready",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-50b5464e",
+      "step_id": "synthesize",
+      "state": "pending",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-50b5464e",
+      "step_id": "challenge",
+      "state": "pending",
+      "state_reason": null
+    },
+    {
+      "run_id": "run-50b5464e",
+      "step_id": "record",
+      "state": "pending",
+      "state_reason": null
+    }
+  ]
+}
