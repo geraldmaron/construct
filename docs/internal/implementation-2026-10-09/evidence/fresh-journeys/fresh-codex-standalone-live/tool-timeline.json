@@ -1,0 +1,1834 @@
+[
+  {
+    "phase": "qa",
+    "event": "item.started",
+    "callId": "item_2",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "qa",
+    "event": "item.completed",
+    "callId": "item_2",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "qa",
+    "event": "item.started",
+    "callId": "item_5",
+    "server": "construct",
+    "tool": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "qa",
+    "event": "item.completed",
+    "callId": "item_5",
+    "server": "construct",
+    "tool": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_3",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_3",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_4",
+    "server": "construct",
+    "tool": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "scope",
+      "words"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_4",
+    "server": "construct",
+    "tool": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "scope",
+      "words"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_5",
+    "server": "workspace",
+    "tool": "catalog",
+    "argumentKeys": [],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_5",
+    "server": "workspace",
+    "tool": "catalog",
+    "argumentKeys": [],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_6",
+    "server": "construct",
+    "tool": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_6",
+    "server": "construct",
+    "tool": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_7",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_7",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_8",
+    "server": "workspace",
+    "tool": "search",
+    "argumentKeys": [
+      "query"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_8",
+    "server": "workspace",
+    "tool": "search",
+    "argumentKeys": [
+      "query"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_9",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_9",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_10",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_10",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_11",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_11",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_13",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_13",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_14",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_14",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_15",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_15",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_17",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_17",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "failed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_19",
+    "server": "workspace",
+    "tool": "search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_19",
+    "server": "workspace",
+    "tool": "search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_20",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_20",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_21",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_21",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_22",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_22",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_23",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "coverage",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_23",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "coverage",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_24",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_24",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_25",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "coverage",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_25",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "coverage",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_26",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_26",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_27",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_27",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_28",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_28",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "purpose"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_29",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "outcome",
+      "reason",
+      "scope"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_29",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "outcome",
+      "reason",
+      "scope"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_30",
+    "server": "construct",
+    "tool": "skills",
+    "argumentKeys": [
+      "action",
+      "id",
+      "includeBody"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_30",
+    "server": "construct",
+    "tool": "skills",
+    "argumentKeys": [
+      "action",
+      "id",
+      "includeBody"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_32",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_32",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_33",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_33",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_34",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_34",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_35",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_35",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_36",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_36",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_37",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_37",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_38",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_38",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_39",
+    "server": "construct",
+    "tool": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_39",
+    "server": "construct",
+    "tool": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_40",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_40",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.started",
+    "callId": "item_41",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id",
+      "paths"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "initial",
+    "event": "item.completed",
+    "callId": "item_41",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id",
+      "paths"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_4",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_4",
+    "server": "construct",
+    "tool": "bootstrap",
+    "argumentKeys": [],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_5",
+    "server": "construct",
+    "tool": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "period",
+      "scope",
+      "words"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_5",
+    "server": "construct",
+    "tool": "classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "period",
+      "scope",
+      "words"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_6",
+    "server": "construct",
+    "tool": "run_status",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_6",
+    "server": "construct",
+    "tool": "run_status",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_8",
+    "server": "construct",
+    "tool": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_8",
+    "server": "construct",
+    "tool": "start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_9",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_9",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "failed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_11",
+    "server": "construct",
+    "tool": "project_context",
+    "argumentKeys": [
+      "topic"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_11",
+    "server": "construct",
+    "tool": "project_context",
+    "argumentKeys": [
+      "topic"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_12",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_12",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_13",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths",
+      "reason"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_13",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths",
+      "reason"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_14",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id",
+      "reason",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_14",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "id",
+      "reason",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_15",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_15",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_16",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_16",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_17",
+    "server": "workspace",
+    "tool": "catalog",
+    "argumentKeys": [],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_17",
+    "server": "workspace",
+    "tool": "catalog",
+    "argumentKeys": [],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_18",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_18",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_19",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_19",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_20",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_20",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_21",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_21",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_22",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_22",
+    "server": "workspace",
+    "tool": "fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_23",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_23",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_24",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_24",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_25",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_25",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_26",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_26",
+    "server": "construct",
+    "tool": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "partial"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_28",
+    "server": "construct",
+    "tool": "project_context",
+    "argumentKeys": [
+      "limit",
+      "query",
+      "topic"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_28",
+    "server": "construct",
+    "tool": "project_context",
+    "argumentKeys": [
+      "limit",
+      "query",
+      "topic"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_29",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_29",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_30",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_30",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_32",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_32",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_33",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_33",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_35",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_35",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_36",
+    "server": "construct",
+    "tool": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_36",
+    "server": "construct",
+    "tool": "promote_deliverable",
+    "argumentKeys": [
+      "deliverableId",
+      "objections",
+      "to"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_37",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_37",
+    "server": "construct",
+    "tool": "claim_work",
+    "argumentKeys": [
+      "includeSkillBody",
+      "runId"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_39",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_39",
+    "server": "construct",
+    "tool": "work",
+    "argumentKeys": [
+      "action",
+      "agent",
+      "id",
+      "paths"
+    ],
+    "status": "completed",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.started",
+    "callId": "item_42",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "in_progress",
+    "isError": null
+  },
+  {
+    "phase": "changed",
+    "event": "item.completed",
+    "callId": "item_42",
+    "server": "construct",
+    "tool": "submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "status": "completed",
+    "isError": null
+  }
+]

@@ -123,8 +123,8 @@ test('steps receive the period in dates, and every packet says what the run cove
     assert.equal(gather.inputs.target, 'payments');
     assert.ok(gather.instructions.includes(`This run covers 2026-04-01 to 2026-06-30 (UTC; what changed during it) in this run's reading. An item updated after 2026-06-30 is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`), gather.instructions.join('\n'));
     assert.ok(gather.instructions.some((l) => l.startsWith('Read the sources this run names: jira; cite items as <source>:<item>') && l.endsWith('A named source you could not read goes under "unread" as {source, why}.')));
-    fx.tick(10 * DAY);
     fx.service.submit({ leased: gather.leased, output: { notes: 'n' }, evidence: [{ ref: 'jira:PAY-1' }] });
+    fx.tick(10 * DAY); // Delay the next step, not submission on an expired lease.
     const write = fx.service.claimNext({ runId: started.run.id })!.packet!;
     assert.deepEqual(write.inputs.period, frozen, 'a later step gets the same dates, however late it runs');
     assert.ok(write.instructions.includes("This run covers 2026-04-01 to 2026-06-30 (UTC; what changed during it) in this run's reading."), 'every step sees the window');

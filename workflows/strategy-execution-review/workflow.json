@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "strategy-execution-review",
   "title": "Strategy-to-execution and capacity review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Compare strategy documents to active work and capacity: normalize initiatives, owners, dates, dependencies, allocations, constraints, skills, operational load, and throughput history with each claim's source authority; run deterministic conflict checks first, then a cited semantic review; state capacity as ranges with assumptions; deliver conflicts, unlinked work, infeasible commitments, capacity ranges, and recommended decisions with freshness and assumptions shown.",
   "activation": [
     "compare the strategy to the active work and capacity",
@@ -62,7 +62,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

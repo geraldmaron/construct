@@ -1,0 +1,5 @@
+{
+  "standaloneFailures": "Loopback bind denied before package installation or model invocation. Retried with approved local fixture access and unchanged native permissions.",
+  "nativeV3Failure": "1440000ms requested configuration rejected before model invocation; product 1200000ms maximum was preserved for v3b.",
+  "denominator": "These three setup/configuration failures are counted separately from completed consumer requests and native qualification cases."
+}

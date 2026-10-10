@@ -10,12 +10,9 @@
  * whose real path stays inside is followed, one that leaves is skipped and
  * reported, a locator that itself escapes is unreachable, and another
  * checkout nested inside (a linked worktree, a submodule) is not walked. Each file is reported as an item, which lets a refresh say
- * which files were added, removed, or modified. Files above the hashing cap
- * are identified by size and modification time instead.
- *
- * Hashes are reused by size and mtime, from this process's cache or from the
- * last recorded read, so a repeat read (bootstrap checks every directory
- * source at the start of each session) re-reads only what moved.
+ * which files were added, removed, or modified. Every read hashes the bytes,
+ * including large files, in bounded memory. Metadata is inventory evidence,
+ * never proof that the contents stayed the same.
  *
  * A document can say it replaces another: a header line "Supersedes:
  * other.md" in the newer one, or "Status: Superseded" / "Superseded by: X"
@@ -25,14 +22,14 @@
  */
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, openSync, readSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import type { PreviousItem, ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
+import type { ReadOutcome, SnapshotItem, SourceReader } from '../../kernel/source/connector.ts';
 import { inspectContained, isInside } from '../../kernel/safety/containment.ts';
 
 export const DIRECTORY_ENTRY_CAP = 5000;
-/** Files larger than this are fingerprinted by size and mtime, not content. */
-export const DIRECTORY_HASH_CAP_BYTES = 2 * 1024 * 1024;
+/** Maximum buffer retained while hashing a file, regardless of its size. */
+export const DIRECTORY_HASH_BUFFER_BYTES = 64 * 1024;
 /** How far into a document a supersession header is looked for. */
 const HEADER_LINES = 40;
 const SKIP = new Set(['.git', 'node_modules', '.construct', 'dist', '.cache', '.venv', '__pycache__']);
@@ -45,8 +42,6 @@ interface Fingerprint {
   readonly supersedes: readonly string[];
   readonly supersededBy: string | null;
 }
-
-const cache = new Map<string, Fingerprint>();
 
 function headerFacts(text: string): { supersedes: string[]; supersededBy: string | null } {
   const supersedes: string[] = [];
@@ -62,26 +57,32 @@ function headerFacts(text: string): { supersedes: string[]; supersededBy: string
   return { supersedes, supersededBy };
 }
 
-function fingerprintOf(path: string, previous?: PreviousItem): Fingerprint {
-  const st = statSync(path);
-  const hit = cache.get(path);
-  if (hit && hit.size === st.size && hit.mtimeMs === st.mtimeMs) return hit;
-  const a = previous?.attributes;
-  if (a && a.size === st.size && a.mtimeMs === st.mtimeMs && previous!.fingerprint) {
-    const reused: Fingerprint = { size: st.size, mtimeMs: st.mtimeMs, fingerprint: previous!.fingerprint, supersedes: Array.isArray(a.supersedes) ? (a.supersedes as string[]) : [], supersededBy: typeof a.declaredSupersededBy === 'string' ? a.declaredSupersededBy : null };
-    cache.set(path, reused);
-    return reused;
+function fingerprintOf(path: string): Fingerprint {
+  // The walk resolves links first. Refuse a replacement link at open time and
+  // inspect the descriptor, not a path that might have been replaced meanwhile.
+  const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const before = fstatSync(fd);
+    if (!before.isFile()) throw new Error('source entry is no longer a regular file');
+    const hash = createHash('sha256');
+    const buffer = Buffer.allocUnsafe(DIRECTORY_HASH_BUFFER_BYTES);
+    let header = '';
+    let total = 0;
+    while (total < before.size) {
+      const n = readSync(fd, buffer, 0, Math.min(buffer.length, before.size - total), null);
+      if (n === 0) break;
+      hash.update(buffer.subarray(0, n));
+      if (total === 0 && TEXTUAL.test(path)) header = buffer.subarray(0, n).toString('utf8');
+      total += n;
+    }
+    const after = fstatSync(fd);
+    if (total !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs) {
+      throw new Error('source entry changed during its read; retry the refresh');
+    }
+    return { size: after.size, mtimeMs: after.mtimeMs, fingerprint: hash.digest('hex'), ...headerFacts(header) };
+  } finally {
+    closeSync(fd);
   }
-  let fp: Fingerprint;
-  if (st.size <= DIRECTORY_HASH_CAP_BYTES) {
-    const bytes = readFileSync(path);
-    const facts = TEXTUAL.test(path) ? headerFacts(bytes.toString('utf8')) : { supersedes: [], supersededBy: null };
-    fp = { size: st.size, mtimeMs: st.mtimeMs, fingerprint: createHash('sha256').update(bytes).digest('hex'), ...facts };
-  } else {
-    fp = { size: st.size, mtimeMs: st.mtimeMs, fingerprint: `size:${String(st.size)}:mtime:${String(Math.floor(st.mtimeMs))}`, supersedes: [], supersededBy: null };
-  }
-  cache.set(path, fp);
-  return fp;
 }
 
 interface Walked {
@@ -89,14 +90,10 @@ interface Walked {
   readonly fp: Fingerprint;
 }
 
-function walk(root: string, dir: string, out: Walked[], previous: ReadonlyMap<string, PreviousItem>, skippedOutside: string[]): void {
-  if (out.length >= DIRECTORY_ENTRY_CAP) return;
-  let entries: import('node:fs').Dirent[];
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
+function walk(root: string, dir: string, out: Walked[], visited: Set<string>, skippedOutside: string[]): void {
+  if (out.length >= DIRECTORY_ENTRY_CAP || visited.has(dir)) return;
+  visited.add(dir);
+  const entries = readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
     if (out.length >= DIRECTORY_ENTRY_CAP) return;
     if (SKIP.has(entry.name)) continue;
@@ -110,19 +107,15 @@ function walk(root: string, dir: string, out: Walked[], previous: ReadonlyMap<st
       // Another checkout nested here (a linked worktree, a submodule, a vendored
       // repository) is its own tree, not this source's content.
       if (existsSync(join(inspect.realPath, '.git'))) continue;
-      walk(root, inspect.realPath, out, previous, skippedOutside);
+      walk(root, inspect.realPath, out, visited, skippedOutside);
     } else if (inspect.stat.isFile()) {
-      try {
-        const rel = relative(root, inspect.realPath).split(sep).join('/');
-        out.push({ rel, fp: fingerprintOf(inspect.realPath, previous.get(rel)) });
-      } catch {
-        // a file that vanished mid-walk is not part of this read
-      }
+      const rel = relative(root, inspect.realPath).split(sep).join('/');
+      if (!out.some((item) => item.rel === rel)) out.push({ rel, fp: fingerprintOf(inspect.realPath) });
     }
   }
 }
 
-export const readDirectorySource: SourceReader = async ({ locator, previous }): Promise<ReadOutcome> => {
+export const readDirectorySource: SourceReader = async ({ locator }): Promise<ReadOutcome> => {
   if (locator === null) return { outcome: 'unreachable', reason: 'the source names no directory' };
   let root: string;
   let st;
@@ -136,7 +129,14 @@ export const readDirectorySource: SourceReader = async ({ locator, previous }): 
   if (!st.isDirectory()) return { outcome: 'unreachable', reason: `${locator} is not a directory` };
   const files: Walked[] = [];
   const skippedOutside: string[] = [];
-  walk(root, root, files, new Map((previous ?? []).map((p) => [p.ref, p])), skippedOutside);
+  try {
+    walk(root, root, files, new Set(), skippedOutside);
+  } catch (error) {
+    return { outcome: 'unreachable', reason: `incomplete directory read: ${(error as Error).message}` };
+  }
+  // A bounded inventory cannot certify absence. Keep the prior snapshot
+  // intact rather than reporting unseen files as deleted.
+  if (files.length >= DIRECTORY_ENTRY_CAP) return { outcome: 'unreachable', reason: `directory read reached its ${String(DIRECTORY_ENTRY_CAP)}-file limit; narrow the declared source` };
   files.sort((a, b) => a.rel.localeCompare(b.rel));
   // Resolve "Supersedes: x" in a newer document onto the older item it names (by path or by file name).
   const supersededBy = new Map<string, string>();

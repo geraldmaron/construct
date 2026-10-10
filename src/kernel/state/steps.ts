@@ -85,7 +85,7 @@ function failedAttempts(store: StateStore, stepRunId: string): number {
   return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'failed'`).get(stepRunId) as { n: number }).n;
 }
 
-function expiredAttempts(store: StateStore, stepRunId: string): number {
+export function expiredAttempts(store: StateStore, stepRunId: string): number {
   return (store.db.prepare(`SELECT COUNT(*) AS n FROM step_attempts WHERE step_run_id = ? AND outcome = 'expired'`).get(stepRunId) as { n: number }).n;
 }
 
@@ -105,7 +105,7 @@ export interface LeasedStep extends StepRun {
 export class StaleLeaseError extends Error {
   constructor(stepRunId: string, token: number) {
     super(
-      `step ${stepRunId} is no longer held under token ${String(token)}: its lease expired and another worker took it over`,
+      `step ${stepRunId} is no longer held under token ${String(token)}: its lease expired, was released, or was replaced`,
     );
     this.name = 'StaleLeaseError';
   }
@@ -253,7 +253,9 @@ export function grantExtraAttempt(store: StateStore, input: { readonly id: strin
   return store.transaction(() => {
     const current = getStep(store, input.id);
     if (!current) throw new Error(`no step ${input.id}`);
-    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts + 1), updated_at = ? WHERE id = ?').run(input.at, input.id);
+    // Match validation enforcement: expired leases spend recovery allowance, not approved check attempts.
+    store.db.prepare('UPDATE step_runs SET max_attempts = MAX(max_attempts, attempts - ? + 1), updated_at = ? WHERE id = ?')
+      .run(expiredAttempts(store, input.id), input.at, input.id);
     appendActivity(store, { at: input.at, kind: 'step.attempt_granted', runId: current.runId, stepRunId: input.id, actor: input.by, payload: { stepId: current.stepId, attempts: current.attempts } });
     return getStep(store, input.id)!;
   });
@@ -419,7 +421,7 @@ function settle(
         `UPDATE step_runs
             SET state = ?, output_json = COALESCE(?, output_json), state_reason = ?,
                 updated_at = ?, finished_at = ?, lease_owner = NULL, lease_until = NULL
-          WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ?`,
+          WHERE id = ? AND state = 'leased' AND lease_owner = ? AND attempts = ? AND lease_until > ?`,
       )
       .run(
         to,
@@ -430,6 +432,7 @@ function settle(
         input.id,
         input.owner,
         input.token,
+        input.at,
       );
     if (result.changes === 0) throw new StaleLeaseError(input.id, input.token);
     closeAttempt(store, input.id, input.token, input.at, to === 'succeeded' ? 'succeeded' : 'failed', payload.error ?? null);

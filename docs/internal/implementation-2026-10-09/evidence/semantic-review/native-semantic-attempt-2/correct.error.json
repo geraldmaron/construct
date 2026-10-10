@@ -1,0 +1,4 @@
+{
+  "error": "native review host probe -c -c -c failed (1): Error: failed to load configuration\n\nCaused by:\n    invalid transport\n    in `mcp_servers.\"atlassian\"`\n    \n; no fallback",
+  "at": "2026-10-09T23:28:10.787Z"
+}

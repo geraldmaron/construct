@@ -1,0 +1,157 @@
+[
+  {
+    "command": [
+      "git",
+      "init",
+      "-q"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "version"
+    ],
+    "exit": 0,
+    "stdout": "3.0.0-alpha.26\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "doctor",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "{\"healthy\": false, \"checks\": [{\"name\": \"node\", \"ok\": true, \"detail\": \"v25.9.0\"}, {\"name\": \"project\", \"ok\": false, \"detail\": \"no Construct project from $AUDIT/consumer/project up to $AUDIT/consumer/project; run `construct init`\"}, {\"name\": \"host\", \"ok\": true, \"detail\": \"no agent host detected in this shell; that is fine for setup and inspection\"}, {\"name\": \"package\", \"ok\": true, \"detail\": \"17 skill(s) shipped\"}]}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "init"
+    ],
+    "exit": 0,
+    "stdout": "Initialized Construct project \"harbor-trial\" at $AUDIT/consumer/project\n  files: .construct/{project,constitution,sources,registry.lock}.json; .gitignore now ignores .construct/state/\n  state: created .construct/state/construct.sqlite\n  read from the project: 1 statement(s) extracted with source locators\n  unanswered fields recorded as unknowns: primary outcome; success measures; risk posture; review cadence; ownership and decision rights\n  still to answer (3):\n    - What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?\n    - What should Construct be especially careful not to change or violate?\n    - What result matters most right now?\n  registry: 17 skill(s), 22 workflow(s) locked\n  host: not connected. No agent host was named or detected here.\n    found on this machine: claude-code (claude on PATH (/opt/homebrew/bin/claude)), cursor (cursor on PATH (<USER_HOME>/.local/bin/cursor)), vscode (code on PATH (/opt/homebrew/bin/code)), opencode (opencode on PATH (/opt/homebrew/bin/opencode)), codex (codex on PATH (/opt/homebrew/bin/codex))\nNext: run `construct init --client=<host>` for the host you use here; until then no agent session can reach Construct.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "init",
+      "--client=codex"
+    ],
+    "exit": 0,
+    "stdout": "Reconciled Construct project \"harbor-trial\" at $AUDIT/consumer/project\n  files: .construct/{project,constitution,sources,registry.lock}.json\n  state: opened .construct/state/construct.sqlite\n  read from the project: nothing new; 1 statement(s) already proposed\n  still to answer (3):\n    - What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?\n    - What should Construct be especially careful not to change or violate?\n    - What result matters most right now?\n  registry: 17 skill(s), 22 workflow(s) locked\n  host: codex wired (.codex/config.toml starts `construct serve`; --client=codex)\n    skill: planted at $AUDIT/consumer/project/.agents/skills/construct (installed)\nNext, in Codex:\n  1. Start codex in this folder and trust the project when it asks; Codex reads .codex/config.toml only in trusted projects.\n  2. Approve construct's tool calls when Codex asks.\n  3. Ask for what you want in your own words. It will ask the 3 setup question(s) when they change the work.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "status",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"root\": \"$AUDIT/consumer/project\", \"project\": {\"id\": \"proj-ae144cdc\", \"name\": \"harbor-trial\"}, \"onboarding\": {\"state\": \"drafted\", \"missing\": [\"scale\", \"primaryOutcome\"], \"openQuestions\": 3, \"proposalsAwaitingReview\": 6}, \"runs\": {\"active\": 0, \"byState\": {}}, \"decisions\": {\"open\": 3}, \"sources\": {\"total\": 0, \"reachable\": 0, \"unreachable\": 0, \"unknown\": 0, \"fresh\": 0, \"stale\": 0, \"neverRead\": 0}, \"registry\": {\"skills\": 17, \"workflows\": 22, \"skew\": []}, \"drift\": {\"open\": 0}, \"sessions\": [], \"habits\": {\"answersChecked\": 0, \"answersClean\": 0, \"uncheckedCaught\": 0, \"readsRecorded\": 0, \"checksWaived\": 0}}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "doctor",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"healthy\": true, \"checks\": [{\"name\": \"node\", \"ok\": true, \"detail\": \"v25.9.0\"}, {\"name\": \"project\", \"ok\": true, \"detail\": \"$AUDIT/consumer/project\"}, {\"name\": \"files\", \"ok\": true, \"detail\": \"project, constitution, sources, and lock files validate\"}, {\"name\": \"constitution\", \"ok\": true, \"detail\": \"incomplete: scale, primaryOutcome not yet answered\"}, {\"name\": \"registry\", \"ok\": true, \"detail\": \"39/39 current\"}, {\"name\": \"state\", \"ok\": true, \"detail\": \"format 4 at $AUDIT/consumer/project/.construct/state/construct.sqlite; onboarding drafted\"}, {\"name\": \"state-project\", \"ok\": true, \"detail\": \"the store belongs to project proj-ae144cdc\"}, {\"name\": \"state-concurrency\", \"ok\": true, \"detail\": \"WAL journal: concurrent sessions read while one writes\"}, {\"name\": \"sources\", \"ok\": true, \"detail\": \"0 declared\"}, {\"name\": \"host-wiring\", \"ok\": true, \"detail\": \"codex installed\"}, {\"name\": \"host-launch:codex\", \"ok\": true, \"detail\": \"starts $AUDIT/consumer/install/bin/construct, the same install as this doctor\"}, {\"name\": \"operational-skill\", \"ok\": true, \"detail\": \"current in $AUDIT/consumer/project/.agents/skills (read by codex): every shipped file is present and byte-identical\"}, {\"name\": \"host\", \"ok\": true, \"detail\": \"no agent host detected in this shell; that is fine for setup and inspection\"}, {\"name\": \"package\", \"ok\": true, \"detail\": \"17 skill(s) shipped\"}]}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "init",
+      "--client=codex"
+    ],
+    "exit": 0,
+    "stdout": "Reconciled Construct project \"harbor-trial\" at $AUDIT/consumer/project\n  files: .construct/{project,constitution,sources,registry.lock}.json\n  state: opened .construct/state/construct.sqlite\n  read from the project: nothing new; 1 statement(s) already proposed\n  still to answer (3):\n    - What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?\n    - What should Construct be especially careful not to change or violate?\n    - What result matters most right now?\n  registry: 17 skill(s), 22 workflow(s) locked\n  host: codex wired (.codex/config.toml starts `construct serve`; --client=codex)\n    skill: kept at $AUDIT/consumer/project/.agents/skills/construct (already current)\nNext, in Codex:\n  1. Start codex in this folder and trust the project when it asks; Codex reads .codex/config.toml only in trusted projects.\n  2. Approve construct's tool calls when Codex asks.\n  3. Ask for what you want in your own words. It will ask the 3 setup question(s) when they change the work.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "add",
+      "local-docs",
+      "--kind=directory",
+      "--locator=$AUDIT/consumer/project/docs",
+      "--purpose=local architecture decisions"
+    ],
+    "exit": 0,
+    "stdout": "declared source local-docs (directory) in .construct/sources.json\nNext: `construct source refresh local-docs` reads it.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "refresh",
+      "local-docs",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"sourceId\": \"local-docs\", \"outcome\": \"changed\", \"snapshot\": {\"id\": \"snap-8ff93779\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:98a2336c818894cfa820ce73d348d14b7d3952df4bf8360fcf40e5602e287121\", \"summary\": \"1 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:06:29.597Z\"}, \"changes\": {\"added\": [\"decision.md\"], \"removed\": [], \"modified\": []}}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "[{\"source\": {\"id\": \"local-docs\", \"kind\": \"directory\", \"origin\": \"declared\", \"purpose\": \"local architecture decisions\", \"locator\": \"$AUDIT/consumer/project/docs\", \"authorityLevel\": \"informative\", \"freshnessHours\": null, \"sensitivity\": \"internal\", \"retention\": null, \"canRead\": true, \"canWrite\": false, \"identityMapping\": null, \"reachability\": \"reachable\", \"lastSnapshotId\": \"snap-8ff93779\", \"status\": \"active\", \"createdAt\": \"2026-10-09T14:06:29.476Z\", \"updatedAt\": \"2026-10-09T14:06:29.597Z\", \"retiredAt\": null}, \"freshness\": \"no_expectation\", \"lastSnapshot\": {\"id\": \"snap-8ff93779\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:98a2336c818894cfa820ce73d348d14b7d3952df4bf8360fcf40e5602e287121\", \"summary\": \"1 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:06:29.597Z\"}, \"authoritativeFor\": [], \"notAuthoritativeFor\": []}]",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "add",
+      "sample-api",
+      "--kind=api",
+      "--locator=http://127.0.0.1/sample",
+      "--purpose=sample API"
+    ],
+    "exit": 2,
+    "stdout": "",
+    "stderr": "construct source add: --kind must be one of directory | git | github | jira | docs | hris | other\n"
+  },
+  {
+    "command": [
+      "codex",
+      "mcp",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "[]",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "codex",
+      "exec",
+      "--ignore-user-config",
+      "--ephemeral",
+      "--sandbox",
+      "read-only",
+      "--json",
+      "What does this project do, and what must it avoid?"
+    ],
+    "exit": 1,
+    "stdout": "{\"type\":\"thread.started\",\"thread_id\":\"01a120fc-a2ed-7a91-a2c5-ee4379135167\"}\n{\"type\":\"turn.started\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 2/5 (stream disconnected before completion: failed to lookup address information: nodename nor servname provided, or not known)\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 3/5 (stream disconnected before completion: failed to lookup address information: nodename nor servname provided, or not known)\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 4/5 (stream disconnected before completion: failed to lookup address information: nodename nor servname provided, or not known)\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 5/5 (stream disconnected before completion: failed to lookup address information: nodename nor servname provided, or not known)\"}\n{\"type\":\"item.completed\",\"item\":{\"id\":\"item_0\",\"type\":\"error\",\"message\":\"Falling back from WebSockets to HTTPS transport. stream disconnected before completion: failed to lookup address information: nodename nor servname provided, or not known\"}}\n{\"type\":\"error\",\"message\":\"Reconnecting... 1/5 (stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses))\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 2/5 (stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses))\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 3/5 (stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses))\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 4/5 (stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses))\"}\n{\"type\":\"error\",\"message\":\"Reconnecting... 5/5 (stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses))\"}\n{\"type\":\"error\",\"message\":\"stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses)\"}\n{\"type\":\"turn.failed\",\"error\":{\"message\":\"stream disconnected before completion: error sending request for url (https://api.openai.com/v1/responses)\"}}\n",
+    "stderr": "Reading additional input from stdin...\n2026-10-09T14:06:30.176482Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:30.189482Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:30.390322Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:30.824274Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:31.677426Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:33.362432Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n2026-10-09T14:06:36.742074Z ERROR codex_api::endpoint::responses_websocket: failed to connect to websocket: IO error: failed to lookup address information: nodename nor servname provided, or not known, url: wss://api.openai.com/v1/responses\n"
+  }
+]

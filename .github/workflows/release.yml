@@ -42,6 +42,10 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run smoke
+      - name: require current experimental-alpha evidence
+        # Explicitly approved experimental tier; rejects stable and non-alpha tags.
+        # Broader readiness still requires release:check -- --tier=qualified.
+        run: npm run release:check -- --tier=experimental-alpha
       - name: verify tag matches package.json version
         run: |
           tag_version="${GITHUB_REF_NAME#v}"

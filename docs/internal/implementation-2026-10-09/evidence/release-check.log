@@ -1,0 +1,5 @@
+
+> @geraldmaron/construct@3.0.0-alpha.26 evals:live
+> node scripts/evals-live.mjs check --cut
+
+evals-live check: No live intake record exists yet: skills/evals/intake-live.json is absent. It is made at release by `npm run evals:live -- record` after the live runs in docs/release-verification.md.

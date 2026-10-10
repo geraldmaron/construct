@@ -97,6 +97,10 @@ test('wrong input comes back as a tool error naming the field and the values it 
     assert.equal(reading.result.structuredContent.field, 'kind');
     assert.deepEqual(reading.result.structuredContent.allowed, ['answer', 'remember', 'manage', 'maintain', 'coordinate']);
     assert.deepEqual(reading.result.structuredContent.example, { kind: 'manage', deliverable: { kind: 'other', describe: '<what they want back>' } });
+    const recovery = (reading.result.structuredContent as unknown as { recovery: { tool: string; inputSchema: unknown; next: string } }).recovery;
+    assert.equal(recovery.tool, 'classify_request');
+    assert.deepEqual(recovery.inputSchema, toolsFor('interactive').find((t) => t.name === 'classify_request')!.inputSchema);
+    assert.match(recovery.next, /Do not advance/);
     const old = (await handle({ jsonrpc: '2.0', id: 6, method: 'tools/call', params: { name: 'classify_request', arguments: { text: 'Review this against our principles' } } })) as ToolError;
     assert.equal(old.result.isError, true);
     assert.equal(old.result.structuredContent.field, 'text');
@@ -117,7 +121,7 @@ test('the headless server names itself and lists only its surface', async () => 
     assert.ok(init.result.instructions.includes(UNTRUSTED_TEXT), 'the runner is told what it reads is data, in the same sentence the session reads');
     assert.ok(INTERACTIVE_INSTRUCTIONS.slice(0, CONTRACT_PREFIX).includes(UNTRUSTED_TEXT));
     const list = (await handle({ jsonrpc: '2.0', id: 2, method: 'tools/list' })) as { result: { tools: { name: string }[] } };
-    assert.deepEqual(list.result.tools.map((t) => t.name).sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'submit_work']);
+    assert.deepEqual(list.result.tools.map((t) => t.name).sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
   } finally {
     fx.cleanup();
   }
@@ -276,4 +280,21 @@ test('a store that fails under the format guard yields an error reply, not a cra
   } finally {
     fx.cleanup();
   }
+});
+
+
+test('a missing run execution error returns repair guidance, not only input-validation failures', async () => {
+  const fx = brokerFixture();
+  try {
+    const handle = createMcpHandler('interactive', fx.broker);
+    const reply = await handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'run_status', arguments: { runId: 'absent-run' } } }) as any;
+    assert.equal(reply.result.isError, true);
+    const body = reply.result.structuredContent;
+    assert.match(body.error, /no run absent-run/);
+    assert.equal(body.recovery.tool, 'run_status');
+    assert.deepEqual(body.recovery.inputSchema, toolsFor('interactive').find((t) => t.name === 'run_status')!.inputSchema);
+    assert.match(body.recovery.next, /prerequisite before retrying/);
+    assert.match(body.recovery.next, /bypass a permission refusal/);
+    assert.equal(fx.broker.sources.list().length, 0);
+  } finally { fx.cleanup(); }
 });

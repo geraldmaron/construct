@@ -1,0 +1,229 @@
+{
+  "formatVersion": 1,
+  "id": "[redacted]",
+  "version": "2",
+  "scope": "Six predetermined local-document research cases on the explicitly requested model; includes source disagreement, arithmetic, context correction, stand-down and supplied specialist-packet consumption. Does not certify cross-host routing or a full specialist execution chain. Regression replay of unchanged version1 case prompts, fixtures and rubrics under method0.3.2 and observed tool-evidence transport; previous failures and baselines remain separate.",
+  "host": "codex",
+  "model": "gpt-6-astra",
+  "native": {
+    "adapter": "codex"
+  },
+  "verifier": {
+    "id": "artifact-and-independent-judgment",
+    "version": "1",
+    "argv": [
+      "[redacted].9.0_3/bin/node",
+      "grader.mjs",
+      "@native-results"
+    ],
+    "files": [
+      "grader.mjs"
+    ]
+  },
+  "cases": [
+    {
+      "id": "explicit-vendor",
+      "kind": "explicit",
+      "domain": "software",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "Use the investigative research method to check the vendor claim in request.md against the supplied records. Save a sourced finding with your strongest objection to analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/explicit-vendor/request.md",
+            "to": "request.md"
+          },
+          {
+            "from": "fixtures/explicit-vendor/record.json",
+            "to": "record.json"
+          },
+          {
+            "from": "fixtures/explicit-vendor/vendor.md",
+            "to": "vendor.md"
+          },
+          {
+            "from": "fixtures/explicit-vendor/press.md",
+            "to": "press.md"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/explicit-vendor/rubric.txt"
+      }
+    },
+    {
+      "id": "implicit-archive",
+      "kind": "implicit",
+      "domain": "archive",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "Is the proposed archive pilot actually feasible from the held records? Save an evidence-backed assessment and unresolved issues in analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/implicit-archive/proposal.md",
+            "to": "proposal.md"
+          },
+          {
+            "from": "fixtures/implicit-archive/operations.md",
+            "to": "operations.md"
+          },
+          {
+            "from": "fixtures/implicit-archive/rights.md",
+            "to": "rights.md"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/implicit-archive/rubric.txt"
+      }
+    },
+    {
+      "id": "contextual-correction",
+      "kind": "contextual",
+      "domain": "operations",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "We are about to rely on the release summary. Verify it against the current records and save the finding to analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/contextual-correction/summary.md",
+            "to": "summary.md"
+          },
+          {
+            "from": "fixtures/contextual-correction/policy.md",
+            "to": "policy.md"
+          },
+          {
+            "from": "fixtures/contextual-correction/current.json",
+            "to": "current.json"
+          },
+          {
+            "from": "fixtures/contextual-correction/cached.json",
+            "to": "cached.json"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/contextual-correction/rubric.txt"
+      }
+    },
+    {
+      "id": "negative-single-fact",
+      "kind": "negative",
+      "domain": "archive",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "Using registry.md, what year did the gallery open? Save a one-sentence answer with the source in analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/negative-single-fact/registry.md",
+            "to": "registry.md"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/negative-single-fact/rubric.txt"
+      }
+    },
+    {
+      "id": "held-out-denominator",
+      "kind": "held_out",
+      "domain": "education",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "Check the attendance claim before the committee relies on it. Save a finding supported by the supplied records in analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/held-out-denominator/claim.md",
+            "to": "claim.md"
+          },
+          {
+            "from": "fixtures/held-out-denominator/attendance.csv",
+            "to": "attendance.csv"
+          },
+          {
+            "from": "fixtures/held-out-denominator/memo.md",
+            "to": "memo.md"
+          },
+          {
+            "from": "fixtures/held-out-denominator/news.md",
+            "to": "news.md"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/held-out-denominator/rubric.txt"
+      }
+    },
+    {
+      "id": "composition-review-packet",
+      "kind": "composition",
+      "domain": "archive",
+      "checks": [
+        "correctness",
+        "uncertainty",
+        "evidence",
+        "method_application"
+      ],
+      "native": {
+        "prompt": "Research whether this pilot is ready, using the specialist review packet as an input and challenging the strongest contrary explanation. Save a sourced finding and specific next actions to analysis.md.",
+        "files": [
+          {
+            "from": "fixtures/composition-review-packet/pilot.md",
+            "to": "pilot.md"
+          },
+          {
+            "from": "fixtures/composition-review-packet/review.json",
+            "to": "review.json"
+          },
+          {
+            "from": "fixtures/composition-review-packet/sample.csv",
+            "to": "sample.csv"
+          },
+          {
+            "from": "fixtures/composition-review-packet/accessibility.md",
+            "to": "accessibility.md"
+          },
+          {
+            "from": "fixtures/composition-review-packet/operations.md",
+            "to": "operations.md"
+          }
+        ],
+        "outputs": [
+          "analysis.md"
+        ],
+        "rubric": "fixtures/composition-review-packet/rubric.txt"
+      }
+    }
+  ]
+}

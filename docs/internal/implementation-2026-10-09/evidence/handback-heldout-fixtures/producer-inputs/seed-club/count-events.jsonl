@@ -1,0 +1,5 @@
+{"event_id":"C1","tray":"D1","count":58,"recorded_at":"2026-09-20T10:00:00Z","recorded_by":"grow lead","kind":"count"}
+{"event_id":"C2","tray":"D2","count":62,"recorded_at":"2026-09-20T10:05:00Z","recorded_by":"grow lead","kind":"count"}
+{"event_id":"C3","tray":"S1","count":80,"recorded_at":"2026-09-20T10:10:00Z","recorded_by":"grow lead","kind":"count"}
+{"event_id":"C4","tray":"S2","count":76,"recorded_at":"2026-09-20T10:15:00Z","recorded_by":"grow lead","kind":"count"}
+{"event_id":"C5","tray":"S1","count":74,"recorded_at":"2026-09-21T08:00:00Z","recorded_by":"grow lead","kind":"correction","supersedes":"C3","reason":"Tally transcription corrected from the retained counting sheet; the day-10 observation is unchanged."}

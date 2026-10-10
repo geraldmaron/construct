@@ -1,0 +1,264 @@
+{
+  "runtime": "v25.9.0",
+  "results": [
+    {
+      "id": "P01-inferred-capabilities",
+      "noReadersOrToolInventory": {
+        "available": [
+          "read_project_context",
+          "write_project_context",
+          "run_validator",
+          "run_tests",
+          "kernel",
+          "read_project_files",
+          "ask_user",
+          "model_review",
+          "read_source",
+          "write_source",
+          "write_project_files"
+        ],
+        "jiraRead": true,
+        "hrisWrite": true,
+        "probed": [],
+        "exercised": []
+      },
+      "matches": [
+        {
+          "workflow": "research-brief",
+          "status": "runnable"
+        }
+      ]
+    },
+    {
+      "id": "P02-maintain-does-not-schedule",
+      "next": "Call start_outcome with workflowId \"managed-outcome\" and this intake, or another match whose skills fit better. The person sets the clock: construct workflow schedule managed-outcome --cron='0 9 * * 1' --timezone=UTC",
+      "started": {
+        "started": true,
+        "run": {
+          "id": "run-0002",
+          "state": "ready",
+          "workflow": "managed-outcome"
+        },
+        "created": true,
+        "preflight": {
+          "status": "runnable",
+          "summary": "managed-outcome 2.0.0 can run: 3 step(s)",
+          "approvalsAhead": [],
+          "reasons": [],
+          "flags": [],
+          "judgment": {
+            "depth": "standard",
+            "challenge": false,
+            "why": "ordinary managed work; the project scale is not answered, so it is treated as a team project; verify it, do not run a full architectural challenge",
+            "signals": [
+              {
+                "kind": "scale",
+                "detail": "not answered; treated as a team project",
+                "raises": false
+              }
+            ]
+          },
+          "period": null,
+          "assumptions": [],
+          "questions": []
+        },
+        "differs": [],
+        "superseded": null,
+        "normalized": [],
+        "assumptions": []
+      },
+      "triggerCount": 0,
+      "tools": [
+        "bootstrap",
+        "classify_request",
+        "project_context",
+        "remember",
+        "workflows",
+        "skills",
+        "start_outcome",
+        "claim_work",
+        "submit_work",
+        "run_status",
+        "inbox",
+        "decide",
+        "sources",
+        "check_answer",
+        "staff",
+        "promote_deliverable",
+        "work",
+        "delegate",
+        "heartbeat"
+      ]
+    },
+    {
+      "id": "P03-clock-without-executor",
+      "defined": "weekly",
+      "fire": {
+        "firing": {
+          "id": "firing-0001",
+          "triggerId": "weekly",
+          "idempotencyKey": "one",
+          "firedAt": "2026-09-02T12:00:02.000Z",
+          "runId": "run-0002",
+          "outcome": "blocked",
+          "reason": "managed-outcome 2.0.0 is blocked: capability model_review is not available in this host; capability write_project_files is not available in this host; capability model_review is not available in this host"
+        },
+        "outcome": "blocked",
+        "runId": "run-0002",
+        "reason": "managed-outcome 2.0.0 is blocked: capability model_review is not available in this host; capability write_project_files is not available in this host; capability model_review is not available in this host",
+        "nextDueAt": "2026-09-07T09:00:00.000Z"
+      },
+      "repeat": {
+        "firing": {
+          "id": "firing-0001",
+          "triggerId": "weekly",
+          "idempotencyKey": "one",
+          "firedAt": "2026-09-02T12:00:02.000Z",
+          "runId": "run-0002",
+          "outcome": "blocked",
+          "reason": "managed-outcome 2.0.0 is blocked: capability model_review is not available in this host; capability write_project_files is not available in this host; capability model_review is not available in this host"
+        },
+        "outcome": "deduplicated",
+        "runId": "run-0002",
+        "reason": "firing one was already handled (blocked)",
+        "nextDueAt": "2026-09-07T09:00:00.000Z"
+      },
+      "ciRecipe": "name: construct weekly\non:\n  schedule:\n    - cron: \"0 9 * * 1\"  # UTC; GitHub schedules run in UTC, so convert or accept the offset\njobs:\n  fire:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '22' }\n      - run: npm ci\n      - run: npx construct workflow fire weekly --key \"$GITHUB_RUN_ID\"\n"
+    },
+    {
+      "id": "P04-size-mtime-cache",
+      "sameMetadataChangedBytesDetected": false,
+      "changedMtimeDetected": true,
+      "coverage": {
+        "capped": false,
+        "skippedOutside": [],
+        "itemCount": 1
+      }
+    },
+    {
+      "id": "P05-same-source-time-new-text",
+      "first": "changed",
+      "second": "changed",
+      "changes": {
+        "added": [],
+        "removed": [],
+        "modified": []
+      },
+      "storedText": "Revenue is 999 dollars."
+    },
+    {
+      "id": "P06-reported-evidence-not-attestation",
+      "networkRequests": 0,
+      "withoutReport": {
+        "ok": false,
+        "problems": [
+          {
+            "check": "citations_present",
+            "problem": "evidence \"https://example.invalid/health\" names nothing this project holds: cite a project file, a deliverable, or an item a recorded read holds (its ref or its url); record what you read through your own tools with the sources tool (action report) before citing it"
+          },
+          {
+            "check": "evidence_refs_resolve",
+            "problem": "evidence \"https://example.invalid/health\" names nothing this project holds: cite a project file, a deliverable, or an item a recorded read holds (its ref or its url); record what you read through your own tools with the sources tool (action report) before citing it"
+          }
+        ],
+        "evidence": {
+          "witnessed": 0,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 1
+        },
+        "next": "fix what is listed, or give the answer with the unsupported parts named as unsupported"
+      },
+      "withSyntheticReport": {
+        "ok": true,
+        "problems": [],
+        "evidence": {
+          "witnessed": 0,
+          "reported": 1,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "next": "give the answer; say which parts rest on reported sources if any"
+      }
+    },
+    {
+      "id": "P07-substantive-contradiction",
+      "check": {
+        "ok": true,
+        "problems": [],
+        "evidence": {
+          "witnessed": 1,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "next": "give the answer; say which parts rest on reported sources if any"
+      }
+    },
+    {
+      "id": "P08-unwitnessed-verification",
+      "commandsExecuted": 0,
+      "doStep": {
+        "id": "step-0004",
+        "state": "succeeded",
+        "reason": null
+      },
+      "verify": {
+        "step": {
+          "id": "step-0005",
+          "state": "succeeded",
+          "reason": null
+        },
+        "validation": [
+          {
+            "validator": "evidence_refs_resolve",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "within_period",
+            "ok": true,
+            "problems": []
+          },
+          {
+            "validator": "verification_result",
+            "ok": true,
+            "problems": []
+          }
+        ],
+        "evidence": {
+          "witnessed": 0,
+          "reported": 0,
+          "unverified": 0,
+          "unresolved": 0
+        },
+        "run": {
+          "id": "run-0002",
+          "state": "succeeded"
+        },
+        "deliverable": {
+          "id": "deliverable-0006",
+          "trust": "validated"
+        }
+      }
+    },
+    {
+      "id": "P09-qualification-is-file-presence",
+      "actualEvalExecutions": 0,
+      "syntheticFilenames": {
+        "id": "construct",
+        "version": "3.0.0",
+        "digest": "sha256:b26e418a6336480b63b10acc95eb904cc71f221393a2fd759368fc37b77fedf2",
+        "state": "qualified",
+        "why": "lock matches the digest and evals exercise activation and behavior"
+      }
+    },
+    {
+      "id": "P10-plain-answer-no-run",
+      "recorded": false,
+      "before": 0,
+      "after": 0,
+      "next": "Answer in chat. Nothing was recorded."
+    }
+  ]
+}

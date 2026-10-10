@@ -8,6 +8,7 @@
  * configures, claim type by claim type.
  */
 
+import type { AccessDescriptor } from './access.ts';
 import type { ActionTier } from '../state/steps.ts';
 import type { SourceKind } from './locators.ts';
 
@@ -30,6 +31,9 @@ export interface ConnectorDeclaration {
 
 /** What one read of a source produced, as the connector or host reports it. */
 export interface SnapshotReport {
+  readonly observation?: AccessDescriptor;
+  /** Adapter binding, never connector response content. */
+  readonly sessionId?: string;
   readonly digest: string;
   readonly summary: string;
   readonly evidenceRef?: string;
@@ -50,7 +54,7 @@ export interface SnapshotItem {
 
 export type ReadOutcome =
   | { readonly outcome: 'read'; readonly report: SnapshotReport }
-  | { readonly outcome: 'unreachable'; readonly reason: string };
+  | { readonly outcome: 'unreachable'; readonly reason: string; readonly observation?: AccessDescriptor; readonly sessionId?: string };
 
 /** A reader for one source kind: given a locator, what is there. */
 /** What the last recorded read held, item by item; a reader may reuse it to avoid re-reading what has not moved. */

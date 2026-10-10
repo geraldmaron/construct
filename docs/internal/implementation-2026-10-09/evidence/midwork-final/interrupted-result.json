@@ -1,0 +1,61 @@
+{
+  "code": 1,
+  "signal": null,
+  "cut": true,
+  "endedAt": "2026-10-09T18:32:54.287Z",
+  "state": {
+    "at": "2026-10-09T18:32:54.287Z",
+    "runs": [
+      {
+        "id": "run-f95901cf",
+        "workflow_id": "managed-outcome",
+        "state": "running",
+        "input_json": "{\"request\": \"Prepare a replenishment recommendation for East depot from the current data files and policy. Save east-brief.md, cite the evidence, preserve unknowns, and keep every action local.\"}",
+        "bindings_json": "{\"steps\": [{\"id\": \"plan\", \"title\": \"Turn the request into an execution plan with labeled assumptions\", \"needs\": [], \"skill\": {\"id\": \"intake\", \"range\": \"^0.3.0\"}, \"capabilities\": [\"read_project_context\", \"model_review\"], \"sources\": [], \"tier\": \"draft\", \"inputs\": {\"request\": \"input.request\", \"target\": \"input.target\", \"period\": \"input.period\", \"sources\": \"input.sources\"}, \"outputs\": [\"plan\", \"assumptions\", \"blockers\"], \"validators\": [\"schema\"], \"loadBearing\": true, \"challenge\": false, \"retry\": {\"maxAttempts\": 2, \"backoffMs\": 1000}, \"timeoutMs\": 300000}, {\"id\": \"do\", \"title\": \"Do the work in this session, citing what was read\", \"needs\": [\"plan\"], \"skill\": null, \"capabilities\": [\"write_project_files\", \"read_project_files\", \"model_review\"], \"sources\": [{\"kind\": \"directory\", \"freshness\": \"any\", \"required\": false}], \"tier\": \"project_write\", \"inputs\": {\"request\": \"input.request\", \"target\": \"input.target\", \"period\": \"input.period\", \"sources\": \"input.sources\", \"plan\": \"steps.plan.plan\", \"assumptions\": \"steps.plan.assumptions\"}, \"outputs\": [\"summary\", \"findings\", \"changes\", \"artifact\"], \"validators\": [\"citations_present\", \"evidence_refs_resolve\", \"excerpts_match\", \"within_period\", \"named_sources_read\", \"numbers_grounded\", \"artifacts_exist\", \"deliverable_complete\", \"no_placeholder_facts\"], \"loadBearing\": true, \"challenge\": false, \"retry\": {\"maxAttempts\": 2, \"backoffMs\": 1000}, \"timeoutMs\": 1800000}, {\"id\": \"verify\", \"title\": \"Run the project's own checks, then hand back the outcome\", \"needs\": [\"do\"], \"skill\": null, \"capabilities\": [\"run_tests\", \"run_validator\"], \"sources\": [], \"tier\": \"observe\", \"inputs\": {\"summary\": \"steps.do.summary\", \"findings\": \"steps.do.findings\", \"changes\": \"steps.do.changes\", \"artifact\": \"steps.do.artifact\"}, \"outputs\": [\"verification\", \"passed\"], \"validators\": [\"evidence_refs_resolve\", \"within_period\", \"verification_result\"], \"loadBearing\": true, \"challenge\": false, \"retry\": {\"maxAttempts\": 1, \"backoffMs\": 0}, \"timeoutMs\": 1200000}], \"digest\": \"sha256:69a1e499a3a2617a972cce21d446f5fbf91bf74ba6df5dbf27fd63d5770c68ee\", \"version\": \"2.0.0\", \"asked\": {\"firing\": {\"triggerId\": \"east\", \"dueAt\": \"2026-10-09T18:31:58.645Z\"}}}"
+      }
+    ],
+    "steps": [
+      {
+        "id": "step-c078213b",
+        "run_id": "run-f95901cf",
+        "step_id": "plan",
+        "state": "succeeded",
+        "attempts": 2,
+        "lease_owner": null,
+        "lease_until": null,
+        "output_json": "{\"plan\": \"Intake\\n- Primary outcome:   Produce and locally save east-brief.md with a replenishment recommendation for East depot based on the current project policy and inventory data.\\n- Also wanted:       Cite the evidence used; preserve unknown values instead of inventing them.\\n- Constraints:       Use only the current data files and policy; keep every action local; (implied) do not place orders, send messages, or use external sources; (implied) verify the saved artifact against the cited local evidence.\\n- Decided:           Deliverable path/name is east-brief.md; scope is East depot; recommendations remain local.\\n- Superseded:        none\\n- Assumptions:       [assumed] \\u201ccurrent data files and policy\\u201d means the repository\\u2019s data/inventory.json and data/policy.md; [assumed] save east-brief.md at the project root; [assumed] recommend only actions supported by the policy thresholds and available inventory fields.\\n- Parking lot:       empty\\n- Blocked on you:    nothing - proceeding\\n- Plan:              1. Read the current policy and inventory files and isolate East depot records. 2. Apply the policy rules while retaining any missing or indeterminate values as unknown. 3. Draft east-brief.md with the recommendation and precise local-file citations. 4. Verify the artifact against the source data, policy, requested scope, unknown-preservation requirement, and local-only constraint.\\n\\nVerification record\\n- Whole message read: answered - supersessions: none found\\n- One primary outcome: answered - see Intake block, \\u201cProduce and locally save east-brief.md\\u201d\\n- Implied surfaced:   answered - 2 implied constraints written\\n- Nothing relitigated: answered - decided items: 3, built on\\n- Tangents kept:      answered - parking lot holds 0\\n- Blockers earned:    answered - 0 blockers, proceeding\\n- Mode stated:        answered - proceeding, because the work is local and reversible\", \"assumptions\": [\"[assumed] The repository\\u2019s data/inventory.json and data/policy.md are the current data files and policy.\", \"[assumed] east-brief.md belongs at the project root.\", \"[assumed] Recommendations must be limited to what the policy and available inventory fields support.\"], \"blockers\": [], \"methods\": [{\"id\": \"intake\", \"disposition\": \"applied\", \"why\": \"Applied the mandatory extraction, parking-lot, blocker, exact plan-shape, readback-mode, and closing verification method. No additional catalog method governs this planning-only step; reader-facing drafting remains for a later claimed step.\", \"evidence\": [\"node_modules/@geraldmaron/construct/skills/intake/references/plan-shape.md\", \"node_modules/@geraldmaron/construct/skills/intake/references/verification-record.md\"]}], \"evidence\": [{\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/plan-shape.md\", \"excerpt\": \"The output is exactly this shape.\"}, {\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/verification-record.md\", \"excerpt\": \"Closing template for an intake plan.\"}], \"citedSensitivity\": null, \"citedUnclassified\": [], \"verificationReceipt\": {\"formatVersion\": 1, \"runId\": \"run-f95901cf\", \"stepRunId\": \"step-c078213b\", \"observedAt\": \"2026-10-09T18:32:40.147Z\", \"actor\": \"runner:codex:6fe7c90e-ada6-4fe0-8cbd-c6b1bda56726\", \"assurance\": \"structural\", \"executionVerified\": false, \"semanticSupportVerified\": false, \"subjects\": [], \"evidence\": [{\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/plan-shape.md\", \"digest\": \"ca07ef7ecc16be975910acf08ecfab8f718b3a3ff4c6147cb9ef5c249834344c\", \"provenance\": \"witnessed\"}, {\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/verification-record.md\", \"digest\": \"83651eba592c50130a2aa0609a6b61d5a174e030a47a2ed0fd7d7f2f61487959\", \"provenance\": \"witnessed\"}], \"checks\": [{\"validator\": \"schema\", \"ok\": true}]}, \"methodReceipts\": {\"provenance\": \"host_report\", \"outputDigest\": \"cd2582f3a0d9b3820f04c1fd905ddca43de31974abb7a347a07907eb18deed9c\", \"methods\": [{\"id\": \"intake\", \"version\": \"0.3.0\", \"digest\": \"sha256:0c5763c6e98e8605bfa63d1dcbef645ed251329b8f38f01072f409259f6992e2\", \"status\": \"reported_applied\", \"why\": \"Applied the mandatory extraction, parking-lot, blocker, exact plan-shape, readback-mode, and closing verification method. No additional catalog method governs this planning-only step; reader-facing drafting remains for a later claimed step.\", \"evidence\": [{\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/plan-shape.md\", \"digest\": \"ca07ef7ecc16be975910acf08ecfab8f718b3a3ff4c6147cb9ef5c249834344c\", \"provenance\": \"witnessed\"}, {\"ref\": \"node_modules/@geraldmaron/construct/skills/intake/references/verification-record.md\", \"digest\": \"83651eba592c50130a2aa0609a6b61d5a174e030a47a2ed0fd7d7f2f61487959\", \"provenance\": \"witnessed\"}]}]}}"
+      },
+      {
+        "id": "step-06503cdb",
+        "run_id": "run-f95901cf",
+        "step_id": "do",
+        "state": "ready",
+        "attempts": 1,
+        "lease_owner": null,
+        "lease_until": null,
+        "output_json": null
+      },
+      {
+        "id": "step-edcf4d10",
+        "run_id": "run-f95901cf",
+        "step_id": "verify",
+        "state": "pending",
+        "attempts": 0,
+        "lease_owner": null,
+        "lease_until": null,
+        "output_json": null
+      }
+    ],
+    "firings": [
+      {
+        "id": "firing-24565798",
+        "trigger_id": "east",
+        "idempotency_key": "2026-10-09T09:00",
+        "fired_at": "2026-10-09T18:31:58.645Z",
+        "run_id": "run-f95901cf",
+        "outcome": "started",
+        "reason": "managed-outcome 2.0.0 can run: 3 step(s)"
+      }
+    ]
+  }
+}

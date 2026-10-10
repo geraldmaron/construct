@@ -1,0 +1,49 @@
+{
+  "disposition": "The held packet does not support 120 attendees at three shows. Under the confirmed room window and current layout, at most two full shows and 72 audience admissions fit.",
+  "arithmetic": {
+    "confirmed_window_minutes": 100,
+    "audience_places_per_show": 36,
+    "two_show_minutes": 80,
+    "three_show_minutes": 115,
+    "maximum_full_shows_current_plan": 2,
+    "maximum_audience_admissions_current_plan": 72,
+    "claimed_attendees": 120,
+    "requested_extended_window_minutes": 120,
+    "three_show_admissions_if_extension_confirmed": 108
+  },
+  "formula": "Duration for n >= 1 shows = 10 + 25*n + 10*(n-1) + 10 minutes. Audience places per show = 42 - 6 = 36; separate crew positions are not subtracted from 36.",
+  "claim_specific_authority": {
+    "confirmed_access": "room-bookings.ics CONFIRMED event ending 19:40",
+    "extension_request_only": "separate TENTATIVE event does not supersede confirmation",
+    "audience_places": "current revision 2 in layout.tsv; revision 1 is superseded",
+    "programme_duration": "running-order.txt",
+    "future_ticket_release_conditions_and_demand_unknowns": "open-issues.txt"
+  },
+  "evidential_limits": [
+    "72 is a capacity ceiling for admissions, not an observed or forecast attendance count.",
+    "Demand and repeat visitors are not known.",
+    "A room extension is plausible but unconfirmed; even if granted, unchanged seats give 108 admissions across three shows, not 120."
+  ],
+  "handbacks": {
+    "needed_to_answer_present_request": [],
+    "present_plan_issues": [
+      "Unconfirmed extension cannot be counted in current capacity.",
+      "The claim also uses obsolete audience capacity."
+    ],
+    "future_implementation_conditions": [
+      "Confirm named volunteer lead and helper rota before ticket release if proceeding.",
+      "Obtain venue confirmation if pursuing the extension; a different layout or venue needs its own assessment."
+    ],
+    "optional_evidence_improvements": [
+      "A demand survey could improve attendance forecasting."
+    ],
+    "not_a_present_prerequisite": [
+      "Named volunteer lead",
+      "Helper rota",
+      "Demand survey",
+      "Decision on a larger venue",
+      "Approval of the requested extension"
+    ]
+  },
+  "action_scope": "Assess held plan only; do not book, contact, release tickets, change reservations, assert approval, or claim operational readiness from a capacity calculation."
+}

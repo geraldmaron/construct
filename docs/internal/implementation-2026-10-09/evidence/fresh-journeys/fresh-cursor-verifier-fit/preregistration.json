@@ -1,0 +1,32 @@
+{
+  "host": "cursor",
+  "tag": "verifier-fit",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-verifier-fit/project",
+  "git": true,
+  "packageSha256": "e777441f904d3d986cd8eab120a15b8176ded290febcd5f1022f8ac8ddf06172",
+  "fixtureBeforeInit": true,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-fedc7071",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T22:15:13.286Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T22:15:13.317Z",
+  "sourceOrigin": "http://127.0.0.1:57337"
+}

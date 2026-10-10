@@ -1,0 +1,42 @@
+✔ another attempt grants one validation retry after 0 expired leases and can finish without a waiver (109.603084ms)
+✔ accept with these problems grants one validation retry after 0 expired leases and can finish without a waiver (78.903709ms)
+✔ another attempt grants one validation retry after 1 expired leases and can finish without a waiver (74.482542ms)
+✔ accept with these problems grants one validation retry after 1 expired leases and can finish without a waiver (73.483875ms)
+✔ another attempt grants one validation retry after 2 expired leases and can finish without a waiver (69.022209ms)
+✔ accept with these problems grants one validation retry after 2 expired leases and can finish without a waiver (71.486417ms)
+✔ answer creates nothing; remember creates one confirmed statement, no run, no tasks (19.554292ms)
+✔ a managed run: idempotent start, ordered leases, validated outputs, a drafted then validated deliverable, kernel-owned promotion (26.184542ms)
+✔ an external write pauses for the smallest approval; approval resumes exactly that step; a declined step cancels it (20.162ms)
+✔ a lost lease is reclaimed without repeating finished work; cancel and no-data follow policy (19.506875ms)
+✔ a blocked start records why, resumes once the world changes, and arbitrary steps cannot be enqueued (12.942625ms)
+✔ project policy never: the project_write step asks instead of writing (16.013334ms)
+✔ architectural work is challenged without magic words; a helper rename is not (15.411666ms)
+✔ stakes the host declared at start survive a block and a resume, and still demand a challenge before acceptance (11.730125ms)
+✔ unknowns stay unknown: a verified placeholder cannot be accepted (12.615709ms)
+✔ an active contradiction blocks trusted finish (14.519375ms)
+✔ nothing but passing checks makes a deliverable validated: promotion to it is refused from draft and from challenged, on every channel (13.032584ms)
+✔ a challenge carries the objections it raised, merged over what the deliverable already held, and says whether the session that ran the work raised it (17.503875ms)
+✔ a waiver the person gives on their own channel is on the deliverable with who gave it and how, the person is told before accepting, and the run is never called validated (20.197875ms)
+✔ a check that fails anew after a waiver was put to no one, so the person is asked again, and a later call for another attempt ends the waiver (17.776125ms)
+✔ a step cannot write a waiver for itself: one that found no data keeps none of the waiver keys it sent (10.284833ms)
+✔ the acceptance question leads with what Construct checked, waived and could not check, and quotes the assistant as the assistant (16.647791ms)
+✔ a question about how a deliverable stood before is withdrawn and asked again, an unchanged one is reused, and a long one points at the whole (18.518458ms)
+✔ the person approving a question about how a deliverable stood before moves nothing, and is asked again as it stands (13.18275ms)
+✔ a source declared after the deliverable was made is not one it rests on, and does not ask the person again (11.81775ms)
+✔ a named source with nothing cited from it is named only where Construct placed the run’s reads (13.357291ms)
+✔ a plan's blocking question waits for the person, and every later step receives it with its answer while the run's input stays as given (13.112167ms)
+✔ a plan's questions are read from strings or {question} and {ask} entries, and a plan with none, or a run being cancelled, asks nothing (17.511708ms)
+✔ a deliverable is not accepted while its run still has a question for the person, and the brief quotes an answer the assistant relayed (14.349208ms)
+✔ a setup answer lands in the profile on the channel it arrives on and in the question's words, and only the person can make the project a side project (10.490875ms)
+✔ acceptance and finalization recheck artifact bytes after structural verification (10.556542ms)
+✔ non-verification workflows recheck structured artifacts and source evidence before acceptance (11.117917ms)
+✔ an interrupted lease does not spend the validation retry budget (11.5635ms)
+✔ the architecture diagram request runs end to end through the tools: period and named sources reach every step, honest work is checked, and the deliverable carries what was made (144.908167ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 711.490167

@@ -1,0 +1,15 @@
+{
+  "name": "qa",
+  "code": 0,
+  "timedOut": false,
+  "elapsedMs": 14494,
+  "countsAfter": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "artifact": null
+}

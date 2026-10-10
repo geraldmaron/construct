@@ -1,0 +1,45 @@
+{
+  "format": "construct-experimental-alpha-v1",
+  "tier": "experimental-alpha",
+  "version": "3.0.0-alpha.27",
+  "surfaceDigest": "d9006d394326dcd6ac810d8f3d78e68d8b5c80e56292a22b4b9765831128c4d6",
+  "broadQualification": false,
+  "createdAt": "2026-10-10T00:19:06.572Z",
+  "limitations": {
+    "freshUser": "Fresh Codex and Cursor ordinary-prompt journeys are inconsistent: artifact correctness and managed completion remain unqualified; retained failures are not passes.",
+    "hostSupport": "The native semantic reviewer is a finite Codex CLI 0.145.0 profile using the requested gpt-6-astra model. Other host/version reviewer paths are unavailable; static six-host wiring is not live parity.",
+    "sourceAdapters": "Production API/MCP traversal, unknown schemas, complete access-scope coverage and changed-source outcomes are not generally qualified by these local synthetic cases.",
+    "composition": "Versioned method bindings and local qualification controls do not establish actual conditional specialist composition for arbitrary outcomes.",
+    "executor": "Persisted schedules require a real provisioned executor after session exit; the full timing, retry, idempotency and permission fault matrix remains open.",
+    "fullQualification": "The full live intake matrix remains absent. Claude subscription authentication and canonical Codex isolation are blocked. Experimental evidence cannot support broad readiness, stable or full qualification claims."
+  },
+  "cases": [
+    {
+      "id": "correct",
+      "path": "docs/internal/releases/3.0.0-alpha.27-2026-10-10T00-19-06-568Z/correct.json",
+      "sha256": "cf8bdabc2e76296bb27203ad0bed01b0016d5a3c4ce9c085b95f0c204105159a"
+    },
+    {
+      "id": "incorrect",
+      "path": "docs/internal/releases/3.0.0-alpha.27-2026-10-10T00-19-06-568Z/incorrect.json",
+      "sha256": "d62c82ffa1e892cfefec11dbd05d1a78fd3e3cd5255ef70af53140519419539e"
+    },
+    {
+      "id": "injected",
+      "path": "docs/internal/releases/3.0.0-alpha.27-2026-10-10T00-19-06-568Z/injected.json",
+      "sha256": "d5fdcf2ec7f16a59d23e78dbb3e8ede9d6370b8812ffc91247d16255c3fb9448"
+    }
+  ],
+  "freshUserObservations": [
+    {
+      "path": "docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-cursor/semantic-assessment/assessment.json",
+      "sha256": "66a11a5b0bc9edf3b0d2e800ec56354cc519275e76595b2374ad1357bd77473c",
+      "summary": "Latest bounded Cursor artifacts failed the frozen independent rubric and its managed lifecycle remained unfinished; phase-scoped support judgments have limited coverage."
+    },
+    {
+      "path": "docs/internal/implementation-2026-10-09/evidence/alpha27-release/fresh-codex/incomplete-observation.json",
+      "sha256": "a4d3533a96172cbd100c5b478c2535e8851d05bcf77f7a6c3dfb350fc1e0b47b",
+      "summary": "Latest Codex initial phase timed out without an artifact, and the changed phase had no result or completion receipt; no additional timeout or success is inferred."
+    }
+  ]
+}

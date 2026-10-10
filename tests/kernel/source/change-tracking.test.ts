@@ -7,7 +7,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, utimesSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
@@ -20,7 +20,7 @@ import { readDirectorySource } from '../../../src/hosts/sources/directory.ts';
 import { createJiraFixtureReader, FIXTURE_TEXT_CAP } from '../../../src/hosts/sources/jira-fixture.ts';
 import { hostReaders } from '../../../src/hosts/sources/readers.ts';
 import { createSourceService } from '../../../src/kernel/source/service.ts';
-import { brokerFixture } from '../broker/support.ts';
+import { brokerFixture, observedVerification } from '../broker/support.ts';
 
 const tool = (name: string) => TOOLS.find((t) => t.name === name)!;
 async function call(fx: ReturnType<typeof brokerFixture>, name: string, args: Record<string, unknown> = {}): Promise<Record<string, any>> {
@@ -144,7 +144,7 @@ test('a change to a file finished work cited opens a drift finding and puts the 
     await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     const { runId } = await runManaged(fx, [{ ref: 'notes/pricing.md', excerpt: 'Enterprise only' }], ['v1 is Enterprise only']);
     const w = (await call(fx, 'claim_work', { runId })).work;
-    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
+    const rec = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'notes/pricing.md' }] });
     assert.equal(rec.run.state, 'succeeded');
     assert.deepEqual(rec.evidence, { witnessed: 1, reported: 0, unverified: 0, unresolved: 0 });
 
@@ -178,7 +178,7 @@ test('new files in a busy source raise one question for the refresh, not one per
     for (const n of [1, 2]) {
       const { runId } = await runManaged(fx, [{ ref: 'notes/a.md', excerpt: 'alpha' }], [`finding ${String(n)}`], `summarize the notes, pass ${String(n)}`);
       const w = (await call(fx, 'claim_work', { runId })).work;
-      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'notes/a.md' }] });
+      await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'notes/a.md' }] });
     }
     const before = listOpenDecisions(s).length;
     writeFileSync(join(dir, 'b.md'), 'new');
@@ -191,19 +191,41 @@ test('new files in a busy source raise one question for the refresh, not one per
   }
 });
 
-test('a later read reuses fingerprints of files that did not move, so a new session does not re-hash everything', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'construct-reuse-'));
+test('same-size corrections with restored timestamps are detected in this process and a fresh reader', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'construct-content-'));
   try {
-    writeFileSync(join(dir, 'old.md'), '# Old\nStatus: Superseded\n');
+    const file = join(dir, 'policy.md');
+    const stamp = new Date('2026-01-01T00:00:00Z');
+    writeFileSync(file, 'Access denied.');
+    utimesSync(file, stamp, stamp);
     const first = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
     if (first.outcome !== 'read') throw new Error('unread');
     const item = first.report.items![0]!;
-    const previous = [{ ref: item.externalRef, fingerprint: 'reused-fp', attributes: item.attributes }];
-    // A fresh process has an empty cache; simulate it by naming a fingerprint only the previous read could supply.
-    const { readDirectorySource: freshReader } = await import(`../../../src/hosts/sources/directory.ts?fresh=${String(Date.now())}`);
-    const second = await freshReader({ sourceId: 's', kind: 'directory', locator: dir, previous });
-    assert.equal(second.report.items[0].attributes.fingerprint, 'reused-fp');
-    assert.equal(second.report.items[0].attributes.supersededBy, '(the document says it is superseded)', 'what the file said about itself survives reuse');
+    const previous = [{ ref: item.externalRef, fingerprint: String(item.attributes!.fingerprint), attributes: item.attributes }];
+    assert.equal(Buffer.byteLength('Access denied.'), Buffer.byteLength('Access opened.'));
+    writeFileSync(file, 'Access opened.');
+    utimesSync(file, stamp, stamp);
+    for (const reader of [readDirectorySource, (await import(`../../../src/hosts/sources/directory.ts?fresh=${String(Date.now())}`)).readDirectorySource]) {
+      const second = await reader({ sourceId: 's', kind: 'directory', locator: dir, previous });
+      assert.equal(second.outcome, 'read');
+      if (second.outcome === 'read') assert.notEqual(second.report.digest, first.report.digest);
+    }
+    // Large files receive content hashes too; a cycle does not recurse forever.
+    const bytes = Buffer.alloc(3 * 1024 * 1024, 65);
+    writeFileSync(file, bytes);
+    utimesSync(file, stamp, stamp);
+    const large = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+    bytes[bytes.length - 1] = 66;
+    writeFileSync(file, bytes);
+    utimesSync(file, stamp, stamp);
+    symlinkSync(dir, join(dir, 'loop'));
+    const changed = await readDirectorySource({ sourceId: 's', kind: 'directory', locator: dir });
+    assert.equal(large.outcome, 'read');
+    assert.equal(changed.outcome, 'read');
+    if (large.outcome === 'read' && changed.outcome === 'read') {
+      assert.notEqual(changed.report.digest, large.report.digest);
+      assert.equal(changed.report.items!.length, 1);
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -225,7 +247,7 @@ test('removing a file only flags work that cited that file in that source, not a
     await call(fx, 'sources', { action: 'report', id: 'web', partial: true, items: [{ ref: 'https://example.com/plan.md', text: 'other plan' }] });
     const { runId } = await runManaged(fx, [{ ref: 'docs/plan.md' }, { ref: 'https://example.com/plan.md' }], ['other plan'], 'summarize the other plan');
     const w = (await call(fx, 'claim_work', { runId })).work;
-    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'ok', passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
+    await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: [{ ref: 'docs/plan.md' }] });
     rmSync(join(dir, 'plan.md'));
     const r = await call(fx, 'sources', { action: 'refresh', id: 'notes' });
     assert.deepEqual(r.changes.removed, ['plan.md']);
@@ -239,7 +261,7 @@ async function finishedCiting(fx: ReturnType<typeof brokerFixture>, refs: string
   const { runId, done } = await runManaged(fx, refs.map((ref) => ({ ref })), ['the ledger is called synchronously'], `summarize the architecture page, cited as ${name}`);
   assert.equal(done.step.state, 'succeeded', JSON.stringify(done.validation));
   const w = (await call(fx, 'claim_work', { runId })).work;
-  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: 'read back', passed: true }, evidence: refs.map((ref) => ({ ref })) });
+  const verified = await call(fx, 'submit_work', { stepRunId: w.stepRunId, owner: w.owner, token: w.token, output: { verification: await observedVerification(fx, w), passed: true }, evidence: refs.map((ref) => ({ ref })) });
   assert.equal(verified.run.state, 'succeeded', JSON.stringify(verified.validation));
   return runId;
 }
@@ -254,7 +276,7 @@ test('a cited page that changes flags the work that cited it, whether by its url
     await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-09-01', text: 'The checkout service calls the ledger synchronously.' }] });
     const forms: Record<string, string> = { 'by-url': `${URL}#overview`, 'by-source': 'confluence:98765', 'by-id': '98765' };
     for (const [name, ref] of Object.entries(forms)) await finishedCiting(fx, [ref], name);
-    const changed = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-10-01', text: 'The checkout service queues ledger writes.' }] });
+    const changed = await call(fx, 'sources', { action: 'report', id: 'confluence', items: [{ ref: '98765', url: URL, title: 'Architecture', updatedAt: '2026-09-01', text: 'The checkout service queues ledger writes.' }] });
     assert.deepEqual(changed.changes.modified, ['98765']);
     assert.equal(changed.staleDeliverables.length, 3, 'each form of citation is matched to the page');
     const findings = listDriftFindings(s, { status: 'open' });

@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "research-brief",
   "title": "Research a question",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "purpose": "Answer a question from the project's sources and the web the host can read, with every finding cited, sources that disagree set side by side, figures traced to where they come from, and what could not be established said plainly; challenged before it is handed back.",
   "activation": [
     "research this and tell me what holds up",
@@ -78,7 +78,8 @@
         "within_period",
         "named_sources_read",
         "conflicts_declared",
-        "deliverable_complete"
+        "deliverable_complete",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,
@@ -90,7 +91,7 @@
     },
     {
       "id": "synthesize",
-      "title": "Answer the question: what holds, how sure, what it rests on, what is still unknown",
+      "title": "Save the requested draft, then answer what holds, how sure, what it rests on and what remains unknown",
       "needs": [
         "gather"
       ],
@@ -104,7 +105,7 @@
         "model_review"
       ],
       "sources": [],
-      "tier": "draft",
+      "tier": "project_write",
       "inputs": {
         "question": "input.question",
         "target": "input.target",
@@ -117,7 +118,8 @@
         "findings",
         "confidence",
         "unknowns",
-        "derivations"
+        "derivations",
+        "artifact"
       ],
       "validators": [
         "citations_present",
@@ -194,7 +196,8 @@
       "tier": "project_write",
       "inputs": {
         "summary": "steps.synthesize.summary",
-        "verdict": "steps.challenge.verdict"
+        "verdict": "steps.challenge.verdict",
+        "artifact": "steps.synthesize.artifact"
       },
       "outputs": [
         "summary",

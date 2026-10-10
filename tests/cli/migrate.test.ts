@@ -121,7 +121,7 @@ test('migrate backs up an older store, upgrades it, and then has nothing to do',
     assert.equal((backup.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '2');
     backup.close();
     const upgraded = new DatabaseSync(db, { readOnly: true });
-    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '4');
+    assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'format_version'`).get() as { value: string }).value, '5');
     const projectId = (JSON.parse(readFileSync(join(dir, '.construct', 'project.json'), 'utf8')) as { id: string }).id;
     assert.equal((upgraded.prepare(`SELECT value FROM meta WHERE key = 'project_id'`).get() as { value: string } | undefined)?.value, projectId, 'the upgrade stamps the store with its project');
     upgraded.close();
@@ -241,9 +241,9 @@ test('migrate refuses while another process has the store open, names it, and sa
       assert.deepEqual(backupsIn(dir), [], 'no backup taken');
       const forced = cli(fx, dir, ['migrate', '--force']);
       assert.equal(forced.status, 0, forced.out);
-      assert.match(forced.out, /Upgraded .* from format 3 to 4/);
+      assert.match(forced.out, /Upgraded .* from format 3 to 5/);
       assert.match(forced.out, /session still running an older Construct must be stopped/);
-      assert.equal(formatOf(db), '4');
+      assert.equal(formatOf(db), '5');
       assert.equal(backupsIn(dir).length, 1);
     } finally {
       holder.kill();

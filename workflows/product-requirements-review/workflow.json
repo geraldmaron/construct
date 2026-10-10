@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "product-requirements-review",
   "title": "Product requirements review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Review a product document or proposal for problem, users, outcome and measure, scope, priority evidence, and assumptions against the project's confirmed outcome and sources, recording findings and handing the build-or-not question to the person.",
   "activation": [
     "review this PRD",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

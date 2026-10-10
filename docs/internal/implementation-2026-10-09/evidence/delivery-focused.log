@@ -1,0 +1,19 @@
+✔ a managed requested file reserves its native path once, without a new remembered commitment or wider action tier (44.418667ms)
+✔ a conflicting managed artifact rolls back the new work item and step lease (35.935625ms)
+✔ a ended holder only recovers on observed termination; finished steps and fencing survive (32.714042ms)
+✔ a dead holder only recovers on observed termination; finished steps and fencing survive (30.495541ms)
+✔ a alive holder only recovers on observed termination; finished steps and fencing survive (26.347291ms)
+✔ a unknown holder only recovers on observed termination; finished steps and fencing survive (26.060833ms)
+✔ a unregistered holder only recovers on observed termination; finished steps and fencing survive (25.503166ms)
+✔ delivery finishes atomically with verified run completion and frees the path without accepting the artifact (87.499208ms)
+✔ a failed required verification frees the path and never marks delivery complete (26.164209ms)
+✔ a replacement session receives held draft bytes at the writable step without treating them as accepted (28.363666ms)
+✔ the explicitly bound headless adapter receives the same file reservation without inventing an executor (27.530458ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 745.657958

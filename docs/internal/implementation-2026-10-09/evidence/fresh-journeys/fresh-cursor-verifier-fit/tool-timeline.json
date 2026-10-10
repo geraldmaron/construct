@@ -1,0 +1,133 @@
+[
+  {
+    "atMs": 1791584120591,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791584120594,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791584139470,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791584139474,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791584177653,
+    "call": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "rests_on"
+    ]
+  },
+  {
+    "atMs": 1791584177654,
+    "resultFor": "check_answer",
+    "isError": true,
+    "error": "\"rests_on\" is not an input of this tool"
+  },
+  {
+    "atMs": 1791584179229,
+    "call": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations",
+      "period"
+    ]
+  },
+  {
+    "atMs": 1791584179244,
+    "resultFor": "check_answer",
+    "isError": false
+  },
+  {
+    "atMs": 1791584181847,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items"
+    ]
+  },
+  {
+    "atMs": 1791584181848,
+    "resultFor": "sources",
+    "isError": true,
+    "error": "no source \"inventory\" is declared; declare it with sources action declare (id, kind), then report again"
+  },
+  {
+    "atMs": 1791584191920,
+    "call": "bootstrap",
+    "argumentKeys": []
+  },
+  {
+    "atMs": 1791584191922,
+    "resultFor": "bootstrap",
+    "isError": false
+  },
+  {
+    "atMs": 1791584194006,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "uri"
+    ]
+  },
+  {
+    "atMs": 1791584194007,
+    "resultFor": "sources",
+    "isError": true,
+    "error": "\"uri\" is not an input of this tool"
+  },
+  {
+    "atMs": 1791584194229,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "uri"
+    ]
+  },
+  {
+    "atMs": 1791584194229,
+    "resultFor": "sources",
+    "isError": true,
+    "error": "\"uri\" is not an input of this tool"
+  },
+  {
+    "atMs": 1791584209772,
+    "call": "sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "scope"
+    ]
+  },
+  {
+    "atMs": 1791584209773,
+    "resultFor": "sources",
+    "isError": true,
+    "error": "no source \"depot-west-stock\" is declared; declare it with sources action declare (id, kind), then report again"
+  },
+  {
+    "atMs": 1791584212870,
+    "call": "check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations",
+      "period"
+    ]
+  },
+  {
+    "atMs": 1791584212888,
+    "resultFor": "check_answer",
+    "isError": false
+  }
+]

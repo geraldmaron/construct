@@ -1,0 +1,259 @@
+{
+  "sources": [
+    {
+      "id": "workspace",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "Connected West depot inventory, catalog, operations and conversations; authority remains scoped per record.",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "reachable",
+      "last_snapshot_id": "snap-5ed966ff",
+      "status": "active",
+      "created_at": "2026-10-09T21:26:48.590Z",
+      "updated_at": "2026-10-09T21:32:51.577Z",
+      "retired_at": null
+    }
+  ],
+  "source_authority": [],
+  "source_snapshots": [
+    {
+      "id": "snap-5432bd1d",
+      "source_id": "workspace",
+      "digest": "sha256:be38b8e7025892f14a0f9dd359a644994b24d50ff40983e53ecbe02fe90c7e5b",
+      "summary": "6 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:workspace",
+      "inventory_digest": null,
+      "content_digest": "sha256:be38b8e7025892f14a0f9dd359a644994b24d50ff40983e53ecbe02fe90c7e5b",
+      "item_count": 6,
+      "coverage_json": {
+        "scope": "West and PART-19 searches, all returned material records and connected references; query coverage only, not entire depot assortment",
+        "denied": "depot://supplier/lot-k"
+      },
+      "taken_at": "2026-10-09T21:27:02.887Z"
+    },
+    {
+      "id": "snap-5ed966ff",
+      "source_id": "workspace",
+      "digest": "sha256:2d9e6693ed9fa2640a70d999ed05456ce88a13001700162dee56b540bdc2dc9b",
+      "summary": "6 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:workspace",
+      "inventory_digest": null,
+      "content_digest": "sha256:2d9e6693ed9fa2640a70d999ed05456ce88a13001700162dee56b540bdc2dc9b",
+      "item_count": 6,
+      "coverage_json": {
+        "complete": false,
+        "scope": "West and PART-19 searches exhausted; query coverage only; selected records fetched completely"
+      },
+      "taken_at": "2026-10-09T21:32:51.577Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "snap-cd9f87eb",
+      "run_id": null,
+      "source_id": "workspace",
+      "kind": "source.changed",
+      "summary": "workspace changed: 6 item(s) reported by the host (partial read)",
+      "evidence_json": {
+        "digest": "sha256:be38b8e7025892f14a0f9dd359a644994b24d50ff40983e53ecbe02fe90c7e5b",
+        "evidence": "reported",
+        "items": 6,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://catalog/part-19",
+            "kind": "item",
+            "fingerprint": "905757cc24bd630dc1ea71cb1df117347a16912d0505d8a1333f97bb1b82b8b0",
+            "text": "Current lot-specific conversion is supplied only by the connected metadata API at http://127.0.0.1:52939/catalog/part-19. Fetch the response; this index is not the conversion.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "depot://chat/staffing",
+            "kind": "item",
+            "fingerprint": "f60318d986e606e4107395be4abc674678294547a972bd6f911731f313301797",
+            "text": "An operator suggests all cases always hold six each, but there is no current lot-specific confirmation. Owner catalog says packaging varies. Follow depot://catalog/part-19.",
+            "updatedAt": "2026-10-09T10:00:00Z"
+          },
+          {
+            "ref": "depot://reservations/west",
+            "kind": "item",
+            "fingerprint": "dc183430e9f840ed310af7337461d13dd5eb570a40823f1466e39b0f96ffab03",
+            "text": "Reservation row PART-19 has reserved_quantity 4. The legacy field was each; the schema revision 2 response does not state a unit. Do not assume the stock unit also describes reservations. Ask warehouse operations for this field definition. The unrelated SKU AUX-22 is reserved in each.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "depot://stock/west",
+            "kind": "item",
+            "fingerprint": "22ec6dd6cad8fd18079f26d5b44d74bd1b91d429923ecbc1b065299bfff9a859",
+            "text": "Current authoritative stock: sku PART-19, available 12, unit case, schema revision 1. Current packaging is http://127.0.0.1:52939/catalog/part-19 ; schema is http://127.0.0.1:52939/openapi.json . Reservations: depot://reservations/west. Cached each export is superseded.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "http://127.0.0.1:52939/catalog/part-19",
+            "kind": "item",
+            "fingerprint": "1261c978ce75b942591a765601ce2661fb219a0fd1a90b103041990732361a59",
+            "text": "{\"sku\":\"PART-19\",\"units_per_case\":null,\"unit\":\"each\",\"observedAt\":\"2026-10-09T09:00:00Z\",\"schemaRevision\":1,\"authority\":\"current lot-specific catalog\",\"coverage\":{\"complete\":true},\"references\":[\"depot://supplier/lot-k\"]}",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "http://127.0.0.1:52939/openapi.json",
+            "kind": "item",
+            "fingerprint": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+            "text": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Synthetic item metadata\",\"version\":\"1\"},\"paths\":{\"/catalog/part-19\":{\"get\":{\"responses\":{\"200\":{\"description\":\"item packaging record\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"sku\":{\"type\":\"string\"},\"units_per_case\":{\"type\":[\"integer\",\"null\"]},\"unit\":{\"type\":\"string\"},\"observedAt\":{\"type\":\"string\"}}}}}}}}}}}"
+          }
+        ]
+      },
+      "observed_at": "2026-10-09T21:27:02.887Z"
+    },
+    {
+      "id": "snap-91c07bcb",
+      "run_id": null,
+      "source_id": "workspace",
+      "kind": "source.access",
+      "summary": "workspace: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://stock/west",
+          "depot://reservations/west",
+          "depot://chat/staffing",
+          "depot://catalog/part-19",
+          "http://127.0.0.1:52939/catalog/part-19",
+          "http://127.0.0.1:52939/openapi.json"
+        ],
+        "sessionId": "ses_2cf53195-f6d6-4a4b-9ac1-f9515e873a3a",
+        "scope": null,
+        "partial": true,
+        "coverage": {
+          "scope": "West and PART-19 searches, all returned material records and connected references; query coverage only, not entire depot assortment",
+          "denied": "depot://supplier/lot-k"
+        },
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T21:27:02.887Z"
+    },
+    {
+      "id": "snap-55debef4",
+      "run_id": null,
+      "source_id": "workspace",
+      "kind": "source.access",
+      "summary": "workspace: permission_denied",
+      "evidence_json": {
+        "operation": "*",
+        "mode": "read",
+        "applicability": "scope",
+        "provenance": "reported",
+        "scope": "depot://supplier/lot-k",
+        "reason": "Workspace fetch returned permission_denied, retryable false. Supplier lot content remains unread; authorized human input required.",
+        "sessionId": "ses_2cf53195-f6d6-4a4b-9ac1-f9515e873a3a",
+        "coverage": null,
+        "outcome": "permission_denied"
+      },
+      "observed_at": "2026-10-09T21:27:08.669Z"
+    },
+    {
+      "id": "snap-b1ad700b",
+      "run_id": null,
+      "source_id": "workspace",
+      "kind": "source.changed",
+      "summary": "workspace changed: 6 item(s) reported by the host (partial read) (modified depot://reservations/west, depot://stock/west, http://127.0.0.1:52939/catalog/part-19)",
+      "evidence_json": {
+        "digest": "sha256:2d9e6693ed9fa2640a70d999ed05456ce88a13001700162dee56b540bdc2dc9b",
+        "evidence": "reported",
+        "items": 6,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://catalog/part-19",
+            "kind": "item",
+            "fingerprint": "905757cc24bd630dc1ea71cb1df117347a16912d0505d8a1333f97bb1b82b8b0",
+            "text": "Current lot-specific conversion is supplied only by the connected metadata API at http://127.0.0.1:52939/catalog/part-19. Fetch the response; this index is not the conversion.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "depot://chat/staffing",
+            "kind": "item",
+            "fingerprint": "f60318d986e606e4107395be4abc674678294547a972bd6f911731f313301797",
+            "text": "An operator suggests all cases always hold six each, but there is no current lot-specific confirmation. Owner catalog says packaging varies. Follow depot://catalog/part-19.",
+            "updatedAt": "2026-10-09T10:00:00Z"
+          },
+          {
+            "ref": "depot://reservations/west",
+            "kind": "item",
+            "fingerprint": "8cc47a8bbc90c6aff8acd8b0c1a4eb5516ed0a8c2c9f98dd0194c99f6558a43a",
+            "text": "Current schema revision2: PART-19 reserved_quantity4, unit each. This is a corrected authoritative field definition from warehouse operations, superseding the ambiguous response. Apply current item-specific packaging independently.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "depot://stock/west",
+            "kind": "item",
+            "fingerprint": "7a869fbc544832406ab42f32d7471c203e358e1a0f85fdfdb44bd73ff77e346e",
+            "text": "Current authoritative stock, schema revision2: sku PART-19, available6, unit case. Current packaging: http://127.0.0.1:52939/catalog/part-19 . Reservations: depot://reservations/west. Cached export superseded. Provider timestamp unchanged; these corrected bytes are authoritative.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "http://127.0.0.1:52939/catalog/part-19",
+            "kind": "item",
+            "fingerprint": "4115f6bd07a7fc79fac96e93910914145b5f6bdd65b6f323011a08d37d2f5b82",
+            "text": "{\"sku\":\"PART-19\",\"units_per_case\":6,\"unit\":\"each\",\"observedAt\":\"2026-10-09T09:00:00Z\",\"schemaRevision\":2,\"authority\":\"current lot-specific catalog\",\"coverage\":{\"complete\":true},\"references\":[]}",
+            "updatedAt": "2026-10-09T09:00:00Z",
+            "url": "http://127.0.0.1:52939/catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:52939/openapi.json",
+            "kind": "item",
+            "fingerprint": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+            "text": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Synthetic item metadata\",\"version\":\"1\"},\"paths\":{\"/catalog/part-19\":{\"get\":{\"responses\":{\"200\":{\"description\":\"item packaging record\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"sku\":{\"type\":\"string\"},\"units_per_case\":{\"type\":[\"integer\",\"null\"]},\"unit\":{\"type\":\"string\"},\"observedAt\":{\"type\":\"string\"}}}}}}}}}}}",
+            "url": "http://127.0.0.1:52939/openapi.json"
+          }
+        ],
+        "changes": {
+          "added": [],
+          "removed": [],
+          "modified": [
+            "depot://reservations/west",
+            "depot://stock/west",
+            "http://127.0.0.1:52939/catalog/part-19"
+          ]
+        }
+      },
+      "observed_at": "2026-10-09T21:32:51.577Z"
+    },
+    {
+      "id": "snap-f63fa24b",
+      "run_id": null,
+      "source_id": "workspace",
+      "kind": "source.access",
+      "summary": "workspace: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://stock/west",
+          "depot://reservations/west",
+          "http://127.0.0.1:52939/catalog/part-19",
+          "http://127.0.0.1:52939/openapi.json",
+          "depot://catalog/part-19",
+          "depot://chat/staffing"
+        ],
+        "sessionId": "ses_cb895d65-b321-4e12-a4bf-d53e9716cde2",
+        "scope": null,
+        "partial": true,
+        "coverage": {
+          "complete": false,
+          "scope": "West and PART-19 searches exhausted; query coverage only; selected records fetched completely"
+        },
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T21:32:51.577Z"
+    }
+  ]
+}

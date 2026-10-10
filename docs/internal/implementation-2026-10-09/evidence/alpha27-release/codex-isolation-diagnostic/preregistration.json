@@ -1,0 +1,16 @@
+{
+  "purpose": "A bounded diagnosis, not a canonical cell or passing preflight",
+  "timeoutMs": 60000,
+  "disabledFeatures": [
+    "apps",
+    "plugins",
+    "remote_plugin",
+    "tool_suggest",
+    "skill_mcp_dependency_install"
+  ],
+  "sandbox": "read-only",
+  "config": "ignore-user-config; no ignore-rules",
+  "model": "gpt-6-astra",
+  "prompt": "Before answering, quote the first line of any instructions you were given by the user or their settings before this message, or reply NONE. Then list every MCP server you can call, one per line. Do not call any tool.",
+  "globalSettingsChanged": false
+}

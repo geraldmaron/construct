@@ -1,0 +1,162 @@
+{
+  "trial": "digitization",
+  "packageSha256": "f0f0153a36dfaf07f04c4c7addd3a589b824cf6436a56abe32e368e90406b0f3",
+  "state": {
+    "sessions": 1,
+    "workflow_runs": 1,
+    "step_runs": 4,
+    "resolved_skills": 0,
+    "deliverables": 2,
+    "sources": 4,
+    "source_snapshots": 4,
+    "observations": 9,
+    "work_items": 0
+  },
+  "runs": [
+    {
+      "id": "run-a21a76be",
+      "workflow_id": "research-brief",
+      "state": "succeeded"
+    }
+  ],
+  "tools": [
+    {
+      "server": "construct",
+      "tool": "bootstrap"
+    },
+    {
+      "server": "construct",
+      "tool": "classify_request"
+    },
+    {
+      "server": "construct",
+      "tool": "start_outcome"
+    },
+    {
+      "server": "construct",
+      "tool": "claim_work"
+    },
+    {
+      "server": "workspace",
+      "tool": "catalog"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "fetch"
+    },
+    {
+      "server": "workspace",
+      "tool": "search"
+    },
+    {
+      "server": "workspace",
+      "tool": "search"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "sources"
+    },
+    {
+      "server": "construct",
+      "tool": "submit_work"
+    },
+    {
+      "server": "construct",
+      "tool": "claim_work"
+    },
+    {
+      "server": "construct",
+      "tool": "submit_work"
+    },
+    {
+      "server": "construct",
+      "tool": "claim_work"
+    },
+    {
+      "server": "construct",
+      "tool": "submit_work"
+    },
+    {
+      "server": "construct",
+      "tool": "claim_work"
+    },
+    {
+      "server": "construct",
+      "tool": "work"
+    },
+    {
+      "server": "construct",
+      "tool": "work"
+    },
+    {
+      "server": "construct",
+      "tool": "work"
+    },
+    {
+      "server": "construct",
+      "tool": "submit_work"
+    }
+  ],
+  "result": {
+    "code": 0,
+    "signal": null,
+    "timedOut": false,
+    "endedAt": "2026-10-09T16:52:55.495Z"
+  }
+}

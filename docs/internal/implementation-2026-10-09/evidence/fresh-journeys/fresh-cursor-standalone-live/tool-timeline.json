@@ -1,0 +1,1528 @@
+[
+  {
+    "phase": "qa",
+    "event": "started",
+    "callId": "tool_239f80b1-733f-4122-a667-00699da899f",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "qa",
+    "event": "completed",
+    "callId": "tool_239f80b1-733f-4122-a667-00699da899f",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "qa",
+    "event": "started",
+    "callId": "tool_4fd95d00-aaba-4e17-ae83-670a98ec42f",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "qa",
+    "event": "completed",
+    "callId": "tool_4fd95d00-aaba-4e17-ae83-670a98ec42f",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "citations"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_030225ad-7ce9-491e-a554-117c858ca95",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_030225ad-7ce9-491e-a554-117c858ca95",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_86d3f004-6825-4303-a7de-e734cf4f604",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "words"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_86d3f004-6825-4303-a7de-e734cf4f604",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "words"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_010758de-59ce-426d-830c-a6eaebf3407",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "words"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_010758de-59ce-426d-830c-a6eaebf3407",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "words"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_114dbe6b-c194-4ade-a2d9-8c6a57741a9",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_114dbe6b-c194-4ade-a2d9-8c6a57741a9",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_3e02c41b-3818-4200-962e-4b5862b7d52",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_3e02c41b-3818-4200-962e-4b5862b7d52",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_094c9ed9-262b-4684-833a-8bd37302df9",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_094c9ed9-262b-4684-833a-8bd37302df9",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_2a29ee32-37f3-4df4-a938-0525b4dc2f7",
+    "server": "construct",
+    "tool": "construct-start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_2a29ee32-37f3-4df4-a938-0525b4dc2f7",
+    "server": "construct",
+    "tool": "construct-start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_07b38460-0737-4750-bf60-a71a633dc96",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_07b38460-0737-4750-bf60-a71a633dc96",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_9da8274f-7c3f-4f18-993c-951bd057ba1",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_9da8274f-7c3f-4f18-993c-951bd057ba1",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query",
+      "source"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_41dbe7f7-d62a-49d2-afbf-f9c938d55df",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_c18981fe-685a-49d3-9b48-101956d09d1",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_41dbe7f7-d62a-49d2-afbf-f9c938d55df",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_c18981fe-685a-49d3-9b48-101956d09d1",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_3daa6f61-74ac-493d-b0b6-900edd9dfef",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "runId",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_3daa6f61-74ac-493d-b0b6-900edd9dfef",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "runId",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_b1a13a8a-a6f5-4933-99d0-7c91e69f69a",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_b1a13a8a-a6f5-4933-99d0-7c91e69f69a",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_39130f11-9047-4ade-8b11-8071125fc89",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "locator",
+      "purpose"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_39130f11-9047-4ade-8b11-8071125fc89",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "locator",
+      "purpose"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_60a84ca3-5025-42a3-9347-33f685c1b32",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_60a84ca3-5025-42a3-9347-33f685c1b32",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_c394acc5-5773-4ce2-b5f8-18c96f70e1f",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_c394acc5-5773-4ce2-b5f8-18c96f70e1f",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_e4eccdde-480d-428a-9eca-a53b1e6dba6",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "observation",
+      "outcome",
+      "reason",
+      "scope"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_e4eccdde-480d-428a-9eca-a53b1e6dba6",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "observation",
+      "outcome",
+      "reason",
+      "scope"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_3caee28b-df85-4de6-ae70-1bc2b2a35d1",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_3caee28b-df85-4de6-ae70-1bc2b2a35d1",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items",
+      "observation",
+      "outcome"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_68326e26-0f8f-4c0a-82cc-e77001d74a8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_68326e26-0f8f-4c0a-82cc-e77001d74a8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_f1df76f9-ca7d-4f43-a32c-46b4b1c4416",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_f1df76f9-ca7d-4f43-a32c-46b4b1c4416",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_d3d1aef9-d208-4983-811d-e3e448bc96a",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_d3d1aef9-d208-4983-811d-e3e448bc96a",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_8d76cff4-c175-4014-bfda-b968303c5b6",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_8d76cff4-c175-4014-bfda-b968303c5b6",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_beef1a93-ce41-443d-a171-b97cb400875",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_beef1a93-ce41-443d-a171-b97cb400875",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_4887095e-70a3-4b42-931d-0a30fd9841e",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_4887095e-70a3-4b42-931d-0a30fd9841e",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_cc93c822-54da-4e91-bf5b-c3e7ed8382b",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_cc93c822-54da-4e91-bf5b-c3e7ed8382b",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_15800c3f-2bcd-4c4e-ae79-cab8e35f5af",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_15800c3f-2bcd-4c4e-ae79-cab8e35f5af",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_01bcbe80-d66f-4d78-90ab-6d5d2e2ff82",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_01bcbe80-d66f-4d78-90ab-6d5d2e2ff82",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_31646e27-dd8d-4ab3-b99c-04b0bd7b4d0",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_31646e27-dd8d-4ab3-b99c-04b0bd7b4d0",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_4bfa26f2-9889-414a-a607-935b5c04cbe",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_4bfa26f2-9889-414a-a607-935b5c04cbe",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_8bc231d3-ba8a-4f60-990c-22c46149df8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_8bc231d3-ba8a-4f60-990c-22c46149df8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "initial",
+    "event": "started",
+    "callId": "tool_63a4a429-3b75-4806-af6d-0a22bdfeb1e",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "restsOn"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "initial",
+    "event": "completed",
+    "callId": "tool_63a4a429-3b75-4806-af6d-0a22bdfeb1e",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "restsOn"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_209f595c-e2f1-4372-a652-683d6867970",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_209f595c-e2f1-4372-a652-683d6867970",
+    "server": "construct",
+    "tool": "construct-bootstrap",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_43e18390-e556-4369-bf6a-3824f58288c",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "sources",
+      "words"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_43e18390-e556-4369-bf6a-3824f58288c",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "sources",
+      "words"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_7a166d1d-f6c5-4bf3-9731-c4d708b3a49",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "sources",
+      "words"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_7a166d1d-f6c5-4bf3-9731-c4d708b3a49",
+    "server": "construct",
+    "tool": "construct-classify_request",
+    "argumentKeys": [
+      "deliverable",
+      "destination",
+      "kind",
+      "open",
+      "period",
+      "sources",
+      "words"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_8d04df92-d117-424c-a46f-0f6563bbc1d",
+    "server": "construct",
+    "tool": "construct-start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_8d04df92-d117-424c-a46f-0f6563bbc1d",
+    "server": "construct",
+    "tool": "construct-start_outcome",
+    "argumentKeys": [
+      "intake",
+      "workflowId"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_0d5ad243-35f9-4f82-b70b-67cf01f0d73",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_0d5ad243-35f9-4f82-b70b-67cf01f0d73",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [
+      "runId"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_73b971e0-8991-45a9-89c8-60c24eb70ec",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_73b971e0-8991-45a9-89c8-60c24eb70ec",
+    "server": "workspace",
+    "tool": "workspace-search",
+    "argumentKeys": [
+      "query"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_8b936cb1-f937-43bb-9724-6f9c3dc61be",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_84b024a4-3dd8-4ad3-819c-f1dfc947e6e",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_39c86a6c-f532-431f-b11e-8fe5173ef62",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_8b936cb1-f937-43bb-9724-6f9c3dc61be",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_84b024a4-3dd8-4ad3-819c-f1dfc947e6e",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_39c86a6c-f532-431f-b11e-8fe5173ef62",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_f9ee08dc-c06e-4d29-ad36-5f1f5616b84",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_f9ee08dc-c06e-4d29-ad36-5f1f5616b84",
+    "server": "workspace",
+    "tool": "workspace-fetch",
+    "argumentKeys": [
+      "uri"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_c1c20383-9ac7-420a-96f4-3d0b7d792eb",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "locator",
+      "purpose"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_c1c20383-9ac7-420a-96f4-3d0b7d792eb",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "kind",
+      "locator",
+      "purpose"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_e81c9543-83d7-433b-8eae-c61a26f97ee",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_e81c9543-83d7-433b-8eae-c61a26f97ee",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id",
+      "items"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_c3317f0b-c4e9-45f3-973c-6bda3775976",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "runId",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_c3317f0b-c4e9-45f3-973c-6bda3775976",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "runId",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_55ca7e56-030f-4bd1-8315-9e46f0bbfc8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_55ca7e56-030f-4bd1-8315-9e46f0bbfc8",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_7d821dc2-91ef-4772-b3af-7c744c12ade",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_7d821dc2-91ef-4772-b3af-7c744c12ade",
+    "server": "construct",
+    "tool": "construct-sources",
+    "argumentKeys": [
+      "action",
+      "id"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_2969d211-a4e6-4e78-a670-f8e66e709a2",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_2969d211-a4e6-4e78-a670-f8e66e709a2",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_1ba835e6-c8a1-46ae-8126-38eb50c2007",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_1ba835e6-c8a1-46ae-8126-38eb50c2007",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_298d3e6d-2814-4678-a6f1-12d0eed7104",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_298d3e6d-2814-4678-a6f1-12d0eed7104",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_756b8856-f194-4c08-a6aa-88d239021d3",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_756b8856-f194-4c08-a6aa-88d239021d3",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_349248f9-2e0c-4eba-9fd4-49783c32996",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_349248f9-2e0c-4eba-9fd4-49783c32996",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_69e584f3-351c-4501-b72c-ae57b734218",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_69e584f3-351c-4501-b72c-ae57b734218",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_ea4e3169-44ef-41b9-aa9a-65fffbea26e",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_ea4e3169-44ef-41b9-aa9a-65fffbea26e",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_c5dce266-c754-4ba9-aa0c-a011fcbbb6c",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_c5dce266-c754-4ba9-aa0c-a011fcbbb6c",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_7e7058b7-d685-416e-abbb-e73f11460aa",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_7e7058b7-d685-416e-abbb-e73f11460aa",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_6fee7d16-2d88-4512-9f99-ca3ef33d93a",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_6fee7d16-2d88-4512-9f99-ca3ef33d93a",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_fac01c39-4168-4495-b5ab-e502d0feef4",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_fac01c39-4168-4495-b5ab-e502d0feef4",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "evidence",
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_4a8818fa-0048-4e24-a5c9-8a7dd6394a7",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_4a8818fa-0048-4e24-a5c9-8a7dd6394a7",
+    "server": "construct",
+    "tool": "construct-claim_work",
+    "argumentKeys": [],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_d5ba7b41-b4a0-408d-9314-da985011ad4",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_d5ba7b41-b4a0-408d-9314-da985011ad4",
+    "server": "construct",
+    "tool": "construct-submit_work",
+    "argumentKeys": [
+      "output",
+      "stepRunId",
+      "token"
+    ],
+    "resultExposed": true
+  },
+  {
+    "phase": "changed",
+    "event": "started",
+    "callId": "tool_6557cef2-1f30-4f6f-8491-9e56840d395",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "basedOn"
+    ],
+    "resultExposed": false
+  },
+  {
+    "phase": "changed",
+    "event": "completed",
+    "callId": "tool_6557cef2-1f30-4f6f-8491-9e56840d395",
+    "server": "construct",
+    "tool": "construct-check_answer",
+    "argumentKeys": [
+      "answer",
+      "basedOn"
+    ],
+    "resultExposed": true
+  }
+]

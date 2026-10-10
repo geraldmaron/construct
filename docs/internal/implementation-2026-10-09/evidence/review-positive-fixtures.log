@@ -1,0 +1,40 @@
+✔ a decision that rules terms out is enforced in answers and in work once the person confirms it, unless the text says it was decided against (41.288916ms)
+✔ work resting on confidential sources carries that label, and publishing it needs the person to clear it, then an approved write, then a location (108.596917ms)
+✔ skill impact is measured from runs: first-pass rate, attempts, and which checks sent steps back (29.548333ms)
+✔ questions route to the owner the constitution names for that area (0.088209ms)
+✔ a plain answer can be checked before it is given, and checking records nothing (36.687334ms)
+✔ what the host read from a tracker is tracked: citations resolve, quotes are checked, a changed ticket flags the work that cited it (98.581333ms)
+✔ an answer resting on citations admitted on the host's word is told to name them as unverified (27.716458ms)
+✔ an answer about a period is checked against it: a cited item updated after the period is flagged unless the answer says why it belongs (23.779042ms)
+✔ what the person settled governs: a document they confirm is outdated is enforced, and governing records reach every reading step, the relayed ones apart (24.180208ms)
+✔ answering "revise" on stale work offers a linked revision, and the revision must say what it revises and what changed (88.550334ms)
+✔ the general carrier takes an honest code edit and an analysis that writes nothing, and its deliverable carries what the work did (218.115666ms)
+✔ the directory reader fingerprints content, reports items, and records supersession (11.57475ms)
+✔ a Jira fixture stands in for the tracker: issues become citable items, reported not witnessed, and only when configured (2.172833ms)
+✔ a refresh names added, modified, and removed items, and content that changes back is still a change (40.045834ms)
+✔ the fabricated run from the UAT is refused: a citation to a file that does not exist does not validate (30.901709ms)
+✔ a change to a file finished work cited opens a drift finding and puts the choice in the inbox; dismissing closes it (84.723292ms)
+✔ new files in a busy source raise one question for the refresh, not one per deliverable (129.403042ms)
+✔ same-size corrections with restored timestamps are detected in this process and a fresh reader (7.988709ms)
+✔ removing a file only flags work that cited that file in that source, not a same-named item elsewhere (69.631625ms)
+✔ a cited page that changes flags the work that cited it, whether by its url, by <source>:<id>, or by its bare id (167.512916ms)
+✔ a complete re-read that drops a page cited by its url flags the work through the address the earlier read recorded (63.117208ms)
+✔ review finding: the current manifest is the newest read even after a long history (42.991ms)
+✔ Scenario A: a basic question creates no run, decision, staff member, or record (35.669291ms)
+✔ Scenario B: minimal memory records one decision with the person’s wording and provenance, and nothing else (23.813417ms)
+✔ Scenario C: design conformance resolves, reads only what it needs, records cited drift, and asks about an unknown principle (91.415666ms)
+✔ Scenario D: a standing review fires from an external clock; stale sources block, missing data follows policy, firings deduplicate (55.979125ms)
+✔ Scenario E: the strategy review needs confirmed source authority, states capacity as ranges with assumptions, and refuses velocity as capacity (30.614584ms)
+✔ Scenario F: the read and the draft complete; the external write asks for the smallest scoped approval (18.90525ms)
+✔ an approval given in one run covers no other run, whether it publishes somewhere else or to the same page (134.324292ms)
+✔ a publish handed a blank destination is never put to the person as an approval that names nowhere (94.029083ms)
+✔ the approval names the destination, what the work rests on and what was waived, and quotes the audience as the assistant’s (87.768167ms)
+✔ instruction-shaped text in a reported item never comes back on a surface, and grants nothing (108.770917ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 863.155917

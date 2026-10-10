@@ -126,7 +126,7 @@ test('a reading that would gate a write is refused with the field, the allowed v
     { name: 'other without describe', raw: { ...REVIEW, deliverable: { kind: 'other' } }, field: 'deliverable.describe', allowed: null, example: EXAMPLE.deliverable },
     { name: 'semantics snapshot', raw: { ...REVIEW, period: { semantics: 'snapshot', relative: 'last_quarter' } }, field: 'period.semantics', allowed: PERIOD_SEMANTICS, example: EXAMPLE.period },
     { name: 'period without semantics', raw: { ...REVIEW, period: { relative: 'last_quarter' } }, field: 'period.semantics', allowed: PERIOD_SEMANTICS, example: EXAMPLE.period },
-    { name: 'relative outside its set', raw: { ...REVIEW, period: { semantics: 'changed_during', relative: 'last_sprint' } }, field: 'period.relative', allowed: [...['this_week', 'last_week', 'this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'year_to_date', 'last_n_days']], example: EXAMPLE.period },
+    { name: 'relative outside its set', raw: { ...REVIEW, period: { semantics: 'changed_during', relative: 'last_sprint' } }, field: 'period.relative', allowed: [...['today', 'this_week', 'last_week', 'this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'year_to_date', 'last_n_days']], example: EXAMPLE.period },
     { name: '2026-02-30', raw: { ...REVIEW, period: { semantics: 'evidence_window', from: '2026-02-01', to: '2026-02-30' } }, field: 'period', allowed: null, example: EXAMPLE.period, message: /"2026-02-30", which is not a real date/ },
     { name: 'from after to', raw: { ...REVIEW, period: { semantics: 'evidence_window', from: '2026-09-30', to: '2026-07-01' } }, field: 'period', allowed: null, example: EXAMPLE.period, message: /from must not be after to/ },
     { name: 'relative with quarter', raw: { ...REVIEW, period: { semantics: 'changed_during', relative: 'last_quarter', quarter: 3 } }, field: 'period', allowed: null, example: EXAMPLE.period, message: /give one way of naming the period/ },
@@ -202,8 +202,12 @@ test('a deliverable kind resolves by the same words, a bare family stays a famil
   assert.deepEqual(review.normalized, [{ field: 'deliverable.kind', from: 'architecture review', to: 'review/architecture', why: 'the same words as a declared deliverable kind' }]);
 
   const prd = kindOf('prd');
-  assert.deepEqual(prd.intake.deliverable, { kind: 'other', describe: 'prd' });
-  assert.deepEqual(prd.normalized.map((n) => [n.field, n.from, n.to]), [['deliverable.kind', 'prd', 'other'], ['deliverable.describe', null, 'prd']]);
+  assert.deepEqual(prd.intake.deliverable, { kind: 'document/prd', describe: null });
+  assert.equal(matchWorkflows(prd.intake, CATALOG)[0]?.workflowId, 'prd-authoring');
+  assert.deepEqual(prd.normalized.map((n) => [n.field, n.from, n.to]), [['deliverable.kind', 'prd', 'document/prd']]);
+
+  const ambiguous = catalogOf({ workflows: replaced(withManifest('architecture-decision-review', { deliverable: { ...manifest('architecture-decision-review').deliverable, kind: 'review/prd' } })) });
+  assert.deepEqual(validateIntake({ ...REVIEW, deliverable: { kind: 'prd' } }, ambiguous, 'classify').intake.deliverable, { kind: 'other', describe: 'prd' }, 'an ambiguous leaf does not guess a specialist');
 
   const diagram = kindOf('architecture diagram');
   assert.deepEqual(diagram.intake.deliverable, { kind: 'other', describe: 'architecture diagram' });

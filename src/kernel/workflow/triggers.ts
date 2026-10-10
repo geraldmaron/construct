@@ -1,3 +1,4 @@
+import { askedOf } from './asked.ts';
 /**
  * kernel/workflow/triggers.ts — standing outcomes: define a trigger, let an
  * external clock fire it, keep the ledger, and write the recipe the clock
@@ -8,6 +9,8 @@
  * timezone, so every firing covers its own window.
  */
 
+import type { Intake } from './intake.ts';
+import type { AskedReading } from './asked.ts';
 import type { StateStore } from '../state/open.ts';
 import { listActiveRuns } from '../state/runs.ts';
 import {
@@ -68,7 +71,7 @@ export interface TriggerService {
   /** Triggers whose next due instant is at or before `at`. */
   due(at: string): Trigger[];
   fire(input: FireInput): FireResult;
-  recipe(id: string, clock: 'cron' | 'github-actions'): string;
+  recipe(id: string, clock: 'cron' | 'github-actions', executor?: string): string;
   nextDue(id: string, after: string): string | null;
 }
 
@@ -155,42 +158,51 @@ export function createTriggerService(deps: TriggerServiceDeps): TriggerService {
           markTriggerFired(store, triggerId, at, due);
           return { firing: { ...already.firing, outcome, runId, reason }, outcome, runId, reason, nextDueAt: due };
         };
-        const active = listActiveRuns(store).find((r) => r.workflowId === trigger.workflowId && r.state !== 'blocked');
+        const current = deps.workflows.get(trigger.workflowId);
+        const exceeds = current?.manifest.steps.find((step) => !tierAtLeast(trigger.maxTier, step.tier));
+        if (exceeds) return finish('blocked', null, `workflow step ${exceeds.id} now requires ${exceeds.tier}, above this trigger's frozen ${trigger.maxTier} boundary; review the definition before firing again`);
+        const fixed = (trigger.input ?? {}) as Record<string, unknown>;
+        const changedInputs = Object.keys(eventPayload ?? {}).filter((key) => key in fixed && JSON.stringify(eventPayload![key]) !== JSON.stringify(fixed[key]));
+        if (changedInputs.length) return finish('blocked', null, `event payload attempted to replace frozen trigger input: ${changedInputs.join(', ')}; event data cannot redefine the standing intent`);
+        const ownedActive = listActiveRuns(store).filter((r) => askedOf(r).firing?.triggerId === triggerId && r.state !== 'blocked');
+        const active = ownedActive[0];
         if (active && trigger.overlap === 'skip') return finish('skipped_overlap', active.id, `run ${active.id} is still active; overlap policy is skip`);
         if (active && trigger.overlap === 'replace') {
-          deps.workflowService.cancel({ runId: active.id, by: `trigger:${triggerId}`, reason: 'replaced by a newer firing' });
+          for (const old of ownedActive) deps.workflowService.cancel({ runId: old.id, by: `trigger:${triggerId}`, reason: 'replaced by a newer firing' });
         }
-        const started = deps.workflowService.start({ workflowId: trigger.workflowId, input, trigger: trigger.kind === 'event' ? 'event' : 'schedule', idempotencyKey: `${trigger.workflowId}:firing:${key}`, executorKind: 'headless', ...clock, firing: { triggerId, dueAt } });
+        const intake = (trigger.delivery as { intake?: Intake } | null)?.intake;
+        const asked: AskedReading | undefined = intake ? { intake, periodSpec: intake.period, declared: { words: intake.words, stakes: intake.stakes, chosenSkill: intake.skill }, judgedBy: { by: 'trigger_definition', host: null, client: null }, sources: { registered: intake.sources.filter((s) => s.role === 'read' && s.id).map((s) => s.id!), named: intake.sources.map((s) => ({ name: s.name, id: s.id, registered: !!s.id && sourceIds().includes(s.id) })) } } : undefined;
+        const started = deps.workflowService.start({ asked, workflowId: trigger.workflowId, input, trigger: trigger.kind === 'event' ? 'event' : 'schedule', idempotencyKey: JSON.stringify([trigger.workflowId, triggerId, key]), executorKind: 'headless', ...clock, firing: { triggerId, dueAt } });
         if (started.run.state === 'blocked') return finish('blocked', started.run.id, started.preflight.summary);
         return finish(active && trigger.overlap === 'replace' ? 'replaced' : 'started', started.run.id, started.preflight.summary);
       });
     },
-    recipe(id, clock) {
+    recipe(id, clock, executor) {
       const t = getTrigger(store, id);
       if (!t) throw new Error(`no trigger ${id}`);
+      if (!executor) return '# Unprovisioned: no unattended executor selected. A clock only creates a run.\n# Inspect construct workflow executors, then request this recipe with --executor=<id>.\n';
+      if (!/^[a-z][a-z0-9-]*$/.test(executor)) throw new Error('executor must be an adapter id, not a shell command');
+      const quote = (value: string) => "'" + value.replace(/'/g, "'\\''") + "'";
+      const command = `cd ${quote(deps.projectRoot)} && npx --no-install construct workflow fire ${quote(t.id)} --execute=${quote(executor)}`;
       if (clock === 'cron') {
-        const expr = t.kind === 'schedule' ? t.scheduleExpression! : '# fire on your event instead of a schedule';
+        if (t.kind !== 'schedule') return '# An event trigger needs an event sender, not a cron expression.\n';
         return [
-          `# Construct trigger ${t.id} for workflow ${t.workflowId} (${t.timezone ?? 'local time'})`,
-          `# Construct keeps the run ledger, lock, retries, evidence, and deliverable; cron only supplies the tick.`,
-          `${expr} cd ${JSON.stringify(deps.projectRoot)} && construct workflow fire ${t.id} --key "$(date -u +%Y-%m-%dT%H:%M)"`,
-          '',
+          `# Construct keeps the run ledger; provision Node, npm, authenticated ${executor}, and this persistent project first.`,
+          '# Requires a cron implementation supporting CRON_TZ. Construct installs no clock.',
+          `CRON_TZ=${t.timezone}`,
+          `${t.scheduleExpression} ${command} --key "$(date -u +\\%Y-\\%m-\\%dT\\%H:\\%M)"`, '',
         ].join('\n');
       }
+      // A fresh checkout has no ignored trigger database. CI must target the
+      // existing owned state, never pretend checkout + npm ci reconstructs it.
       return [
-        `name: construct ${t.id}`,
-        'on:',
-        ...(t.kind === 'schedule' ? ['  schedule:', `    - cron: ${JSON.stringify(t.scheduleExpression)}  # ${t.timezone}; GitHub schedules run in UTC, so convert or accept the offset`] : ['  workflow_dispatch: {}']),
-        'jobs:',
-        '  fire:',
-        '    runs-on: ubuntu-latest',
-        '    steps:',
-        '      - uses: actions/checkout@v4',
-        '      - uses: actions/setup-node@v4',
-        "        with: { node-version: '22' }",
-        '      - run: npm ci',
-        `      - run: npx construct workflow fire ${t.id} --key "$GITHUB_RUN_ID"`,
-        '',
+        `name: construct ${JSON.stringify(t.id)}`, 'on:',
+        ...(t.kind === 'schedule' ? ['  schedule:', `    - cron: ${JSON.stringify(t.scheduleExpression)}`, `      timezone: ${JSON.stringify(t.timezone)}`] : ['  workflow_dispatch: {}']),
+        '# Requires an explicitly provisioned self-hosted runner with this persistent project and authenticated host.',
+        '# Do not run untrusted pull-request code in this runner. No checkout or state restoration is implied.',
+        'jobs:', '  fire:', '    runs-on: [self-hosted, construct]', '    steps:',
+        '      - name: Execute the existing local trigger', '        shell: bash', '        run: |',
+        `          ${command} --key "$GITHUB_RUN_ID"`, '',
       ].join('\n');
     },
   };

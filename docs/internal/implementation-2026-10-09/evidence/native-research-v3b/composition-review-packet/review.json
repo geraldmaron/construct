@@ -1,0 +1,1 @@
+{"type":"security-privacy/review/v1","findings":[{"id":"P1","claim":"CSV includes donor email addresses","evidence":"sample.csv","disposition":"remove personal fields before release"}],"unknowns":["Public distribution rights have not been approved"],"authority":"specialist proposal, not approval"}

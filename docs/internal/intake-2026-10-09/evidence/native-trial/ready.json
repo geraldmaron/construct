@@ -1,0 +1,70 @@
+{
+  "ready": true,
+  "project": "$FIXTURE/project",
+  "version": "3.0.0-alpha.26",
+  "status": {
+    "root": "$FIXTURE/project",
+    "project": {
+      "id": "proj-c7816b6a",
+      "name": "harbor-launch"
+    },
+    "onboarding": {
+      "state": "drafted",
+      "missing": [
+        "scale",
+        "primaryOutcome"
+      ],
+      "openQuestions": 3,
+      "proposalsAwaitingReview": 6
+    },
+    "runs": {
+      "active": 0,
+      "byState": {}
+    },
+    "decisions": {
+      "open": 3
+    },
+    "sources": {
+      "total": 3,
+      "reachable": 0,
+      "unreachable": 0,
+      "unknown": 3,
+      "fresh": 0,
+      "stale": 0,
+      "neverRead": 3
+    },
+    "registry": {
+      "skills": 17,
+      "workflows": 22,
+      "skew": []
+    },
+    "drift": {
+      "open": 0
+    },
+    "sessions": [],
+    "habits": {
+      "answersChecked": 0,
+      "answersClean": 0,
+      "uncheckedCaught": 0,
+      "readsRecorded": 0,
+      "checksWaived": 0
+    }
+  },
+  "project_file_sha256": {
+    "README.md": "e36ff5c8752bc9ea11fa841438a6730bf0d7f39977222d2d666c1b9d4a40878e",
+    ".gitignore": "6d6203bb422ba44d4151368cbd7812c5cab0392db9baa063ca36c3b576a10888",
+    "package.json": "f74085c371314b71741090d1bc02536dcf0fc0f2e0cd9d2240391ad7dbbb387d",
+    "docs/status-note.md": "2ce2f666dcc56b73a9fb807959d5c614d00588ca00486630aaa60f4fa52684ae",
+    "docs/units.md": "61a1a33d4d0316f64a2dd837cfcd8bb77d73fadda191bfcc8f57af81efc5bf6b",
+    "docs/release-policy.md": "2d1d68d7815f85dbf48f6b2ade0191c23304aa7abbf65637a7bf61d0a08d33df",
+    ".codex/config.toml": "ebb1b9bf085ce26ecf6f3b533488819e0d504c49810a07603a29f0923f7832be",
+    ".construct/sources.json": "ef97113bb9a84499100fae06617396e5cfc18365b82a4df4e99ecb2911da3093",
+    ".construct/constitution.json": "ab3a28b40a8d8d7a54915660e9c760483f874a0ab3cde161ced76982a46e3988",
+    ".construct/registry.lock.json": "fe031ea6de4de7d7e7cbd571f7fb668d0df8a0071e257c817431b919158f43f2",
+    ".construct/project.json": "5abd12ea691f612ffa468285a231ba059d5b44fa9bd1c12af31ca7e0c87bf453",
+    ".agents/skills/construct/SKILL.md": "b8f63d00019010b7ce8e90861e289b76fecfcca40385e0bdf6a291f9c20fade3",
+    ".agents/skills/construct/evals/activation.json": "b72c3a4202364f3456ae259a91a595fdc0fe0d552b866dcf73f8d87b4dea8d7c",
+    ".agents/skills/construct/evals/behavior.json": "87025cf3d38642dfad7e94f89e18f4896ccf93291ab551908f794770554f3261"
+  },
+  "rubric_in_project": false
+}

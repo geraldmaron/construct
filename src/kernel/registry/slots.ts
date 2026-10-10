@@ -22,7 +22,7 @@ export type SlotType = (typeof SLOT_TYPES)[number];
 export const PERIOD_SEMANTICS = ['as_of', 'changed_during', 'evidence_window'] as const;
 export type PeriodSemantics = (typeof PERIOD_SEMANTICS)[number];
 
-export const PERIOD_RELATIVES = ['this_week', 'last_week', 'this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'year_to_date', 'last_n_days'] as const;
+export const PERIOD_RELATIVES = ['today', 'this_week', 'last_week', 'this_month', 'last_month', 'this_quarter', 'last_quarter', 'this_year', 'last_year', 'year_to_date', 'last_n_days'] as const;
 export type PeriodRelative = (typeof PERIOD_RELATIVES)[number];
 
 /** The longest last_n_days window, in days: about ten years. */
@@ -174,6 +174,8 @@ function windowOf(spec: Record<string, unknown>, today: Day): Window {
     const monday = addDays(today, -((new Date(Date.UTC(today.y, today.m - 1, today.d)).getUTCDay() + 6) % 7));
     const q = quarterOf(today);
     switch (relative) {
+      case 'today':
+        return { how: 'relative', from: today, to: today, assumptions };
       case 'this_week':
         assumptions.push('weeks run Monday to Sunday');
         return { how: 'relative', from: monday, to: addDays(monday, 6), assumptions };

@@ -93,7 +93,7 @@ export const CONFIG_KEYS: readonly ConfigKeySpec[] = Object.freeze([
   },
   {
     key: 'headless.executor',
-    description: 'The one runner scheduled and event-driven work may use. An id from the executor registry, never a path.',
+    description: 'Reserved preferred adapter id for unattended work; configuration alone does not launch or verify it. workflow fire --execute explicitly invokes a supported adapter.',
     settableBy: ['project config', 'environment', 'flag'],
     envVar: 'CONSTRUCT_HEADLESS_EXECUTOR',
     flag: '--executor',

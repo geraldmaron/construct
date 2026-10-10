@@ -44,6 +44,7 @@ export function projectResolver(store: StateStore, root: string, override?: { re
       return {
         id: s.id,
         kind: s.kind,
+        canRead: s.canRead,
         locator: s.locator,
         manifest: overridden ? override.manifest : rec?.entries ?? null,
         provenance: overridden ? override.provenance ?? rec?.provenance : rec?.provenance,

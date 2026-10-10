@@ -1,0 +1,127 @@
+{
+  "at": "2026-10-09T18:49:03.937026+00:00",
+  "transformation": "Home-directory path prefixes replaced with <USER_HOME> in archived metadata/transcript copies only; actual artifact Markdown files and their hashes unchanged. Lease credentials were already scrubbed.",
+  "rawLocation": "Task workspace construct-implementation/evidence-originals, retaining repository-relative paths",
+  "records": [
+    {
+      "file": "docs/internal/intake-2026-10-09/evidence/setup.json",
+      "rawSha256": "b8bcfab6914b5fec9034df6e6fc48b2eca3dbb66c85cafc467f43437911785e8",
+      "portableSha256": "0cb4600699a418280ca7d8cc153e0c924a1d076c90ee98de107db150bbad4654"
+    },
+    {
+      "file": "docs/internal/intake-2026-10-09/evidence/facts.json",
+      "rawSha256": "2c4ca60a686fc476489f935ef913a2c1c62b75632392cca3080b07ab3e79c359",
+      "portableSha256": "06611ec599012cc43b0aedeea52d7baa3363c5e39f8b454831ee6d68ccd2cd64"
+    },
+    {
+      "file": "docs/internal/intake-2026-10-09/evidence/conformance.log",
+      "rawSha256": "8a2e1d95b02d548c79d0f92f2c5eb66cd97e7cb2d67b0da7618d5b4cf4092b63",
+      "portableSha256": "6473895b70fd0122dccbe7e5d5beb3f06bb96edb90fe8c79fc3e10e77509087d"
+    },
+    {
+      "file": "docs/internal/intake-2026-10-09/evidence/native-trial/handoff.json",
+      "rawSha256": "b9d9fa95a4f7bd187da05cf6e99e99478f5ffeff51f090aa82f755d360121701",
+      "portableSha256": "33ed779a416b3ccbce79ba8587a845ebc23fa2dfb9e75aa9d982ba144facadcb"
+    },
+    {
+      "file": "docs/internal/intake-2026-10-09/evidence/native-trial/native-trial-activity.json",
+      "rawSha256": "8cf256975e575d141e37c99f8784d7ecce3b23abf9d76d6d474124baa65fdb3b",
+      "portableSha256": "69b4c7fd13637484690795a6e626ddb049d315d00559cfe8051ab0e88ae364c0"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/review-checkpoint.json",
+      "rawSha256": "57bfab25a91558a5517ab65b837fc55239582cf40c5e5f74a74906c77f114bfd",
+      "portableSha256": "c396dde820dd3c6b57ec0bc604a673b8a678098262484ea3903eae883c969e65"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/conformance-final.json",
+      "rawSha256": "ef1b0a2053c9d7f0fd22ae9dae71b8b94ab7ec1fea20f7ed1c6590aca8f9fd84",
+      "portableSha256": "c8f250680bdb5d0f3b4be37c0985cc90126c529ee680460312ca5e4d2f9fe074"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/native-verification.json",
+      "rawSha256": "140e801b5421c250d5c6ba8a85cdec4929da83e1a0ad5c68e0bcf0e8b627cda6",
+      "portableSha256": "431039c69e5c6d4e9bfef893bf94dd84646b8434caf51af20329860d44347c04"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/conformance-final.log",
+      "rawSha256": "c9c291ec9f728da6572e74f7335a2839646ee14d30efa39e762a69889acdd640",
+      "portableSha256": "7a0ae29c8a1f70d3235c202b7bc4cf3aa7da3770d1cb983f7acc5985d6141bc3"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/review-final-checkpoint.json",
+      "rawSha256": "2b163dd276cc158e74fa62ef8b7495baddb3bb0c19bdb768e3162709a83282d9",
+      "portableSha256": "8dd2b1aa44769353d5ba31c2dc727768b32298f57fe04a3fe07a59beeb5a214d"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/review-native-verification.json",
+      "rawSha256": "5b234f7dfa7d0ba9693fc3a37faa02e8f42106dcce65366053ab349393299a82",
+      "portableSha256": "352c62d2b3c8f33f277dd00fc39c0c7c12112dcc9d799470bef94dd97fd3eb04"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/review-conformance.log",
+      "rawSha256": "4e4815c8b99ac3851a8259cdf4d6990a04ec6730e708a9739d95395158e1b324",
+      "portableSha256": "ac93f0d68525a74e3a46701d7d832a34d9e1fec762007122d46c3951ab41bca7"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/review-migration.json",
+      "rawSha256": "66b636a102be0e1facbe20f5011b3828947568e56157dfd9fcddcf153e4df1dd",
+      "portableSha256": "2630ba81a1366dd0f6db05969ea60d1dc4295f6b386984ebc4545cad683e239e"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/digitization/consumer-public-redacted.jsonl",
+      "rawSha256": "0e765ba573ca6d1a3ebab86d7c5fe26c266a839a34fbf7e10ca5373c31f38935",
+      "portableSha256": "25c78382801dbeae1809d47f6aa94b00260277f47024fa06961818969441e107"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/gates/source-conformance.log",
+      "rawSha256": "bd45514f9ad91af3aaef0638683961fafb35ee846627ea5e5eb008827e8d97fd",
+      "portableSha256": "70bf20ce93ee504702d188617e6b1114d0c16be1da36a3d6fef6754e8f8d2bbb"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/midwork-retry/state.json",
+      "rawSha256": "1f7cc24498b2d54d8b935c900d17d516406e86de50efa31cdb2b51cd78681012",
+      "portableSha256": "34b156e39f5701a2f89e1a90c535a0d5d21c84244e09955ae89df20630f40e40"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/sso-final/consumer-public-redacted.jsonl",
+      "rawSha256": "868f433954eaf8e66e0208c3b5de995c8e412820ea3a4c0eb361fd2909db575f",
+      "portableSha256": "2fd3ce8b0b3d17544bc048364b3e6a2a0eb411a82de60a834deddedc6fe5d163"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/archive-qa/consumer-public-redacted.jsonl",
+      "rawSha256": "86089d2a181e226bfddbede1454375eef0b7735a134ae486fe35eb9f1d023699",
+      "portableSha256": "a3939f5aafb4aa59359a86b26e3c52372f48c12def1cb9cf373ec6770f11c083"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/executor-replay/assessment.json",
+      "rawSha256": "bbed1ec740784c1dcbb24438f72fd6c7505091b4bef6c0d030391b86a851effc",
+      "portableSha256": "3b978716573907d07b37b149eeabefdff0f0908e65ed4d63e0ff1d29a8f17091"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/sso-reference-coverage/consumer-public.jsonl",
+      "rawSha256": "94a20bc6e98961167fe188ed2849c8734658de77ea57cfc4e6e02e3fe6ee4892",
+      "portableSha256": "0e81f920f7d40f600d7232952b34f6f608fab40b63eac5af2e0e2b6b00513f78"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/sso-before-routing-fix/consumer-public.jsonl",
+      "rawSha256": "3b7091628592178e595628698a5ca7897c544358c36430d20b7639719876a778",
+      "portableSha256": "d2bf53a10ab321dc95b51d68a5c35d5d977566e885dc1053e543e0a12232ca38"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/midwork-final/state.json",
+      "rawSha256": "35b1c456baf7ad1da2bcbb588f7d4ee7d65efca3947d0cef25ca8cd73fc10bb4",
+      "portableSha256": "e1b56aba00059908fe4bab77d592e35367ff834a643110adf4e48ade37dfcc0f"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/warehouse/consumer-public.jsonl",
+      "rawSha256": "184c9b32aead3a7bd641ff859ef3457b5d0de3d7866fae8ba97e4d98b3451706",
+      "portableSha256": "40a272da88c57b645a2a280f34a346417f2bdbd6ff24cf30d1fd7ed3030c9721"
+    },
+    {
+      "file": "docs/internal/implementation-2026-10-09/evidence/warehouse/consumer-config.json",
+      "rawSha256": "d15d920a72d366b9ba6d84d6eb73c4a778b2bb8c86aa906fd3d8fd13cf51f53c",
+      "portableSha256": "cab021c6ce13e58009a98ff23149ac01362b07419767d639220b705edc3f88aa"
+    }
+  ]
+}

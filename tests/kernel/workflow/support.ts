@@ -1,3 +1,4 @@
+import { syntheticSemanticAdapter } from './semantic-fixture.ts';
 /**
  * tests/kernel/workflow/support.ts — a workflow service over a fixture
  * registry and a fresh store, with a deterministic clock and ids.
@@ -10,6 +11,7 @@ import { updateLock } from '../../../src/kernel/registry/lockfile.ts';
 import { emptyLock } from '../../../src/kernel/project/lock.ts';
 import type { HostCapabilities } from '../../../src/kernel/registry/capability-registry.ts';
 import type { SkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
+import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 import type { ActionTier } from '../../../src/kernel/state/steps.ts';
 import { openStateStore, type StateStore } from '../../../src/kernel/state/open.ts';
 import type { SourceAvailability } from '../../../src/kernel/registry/resolver.ts';
@@ -43,7 +45,7 @@ export interface Fixture {
 
 export const T0 = '2026-09-02T12:00:00.000Z';
 
-export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never'; readonly maxTier?: ActionTier } = {}): Fixture {
+export function fixture(opts: { readonly interactive?: boolean; readonly projectWritePolicy?: 'managed' | 'never'; readonly maxTier?: ActionTier; readonly resolveEvidence?: RefResolver } = {}): Fixture {
   const fx = freshStore();
   const dirs = tmp();
   writeSkill(join(dirs.root, 'skills'), 'reader', '1.0.0');
@@ -91,7 +93,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
   // Read, then run a check the host reports: the verification an acceptance question names.
   writeWorkflow(join(dirs.root, 'workflows'), 'check', workflowManifest('check', '1.0.0', [
     step('gather', { capabilities: ['read_project_context'], outputs: ['notes'], validators: ['citations_present'], loadBearing: true, retry: { maxAttempts: 2, backoffMs: 0 } }),
-    step('verify', { needs: ['gather'], capabilities: ['run_tests'], inputs: { notes: 'steps.gather.notes' }, outputs: ['verification'], validators: ['verification_result'] }),
+    step('verify', { needs: ['gather'], capabilities: ['run_validator'], inputs: { notes: 'steps.gather.notes' }, outputs: ['verification'], validators: ['verification_result'] }),
   ], { concurrency: 'per_input', dedupeKey: ['target'], deliverable: { kind: 'outcome', schema: 'outcome/v1', challenge: false } }));
   // Plan, then do: a plan's blocking questions wait for the person, and the step after it receives their answers.
   writeWorkflow(join(dirs.root, 'workflows'), 'carry', workflowManifest('carry', '1.0.0', [
@@ -124,7 +126,7 @@ export function fixture(opts: { readonly interactive?: boolean; readonly project
     { kind: 'directory', id: 'repo', reachability: 'reachable', freshness: 'fresh' },
   ];
   const serviceOn = (store: StateStore, on: HostCapabilities): WorkflowService =>
-    createWorkflowService({ store, skills, workflows, lock, host: on, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' });
+    syntheticSemanticAdapter(createWorkflowService({ store, skills, workflows, lock, host: on, resolveEvidence: opts.resolveEvidence, sources: () => self.sources, projectWritePolicy: opts.projectWritePolicy ?? 'managed', now, nextId, targetSystemFor: (s) => s.sources[0]?.kind ?? 'project' }), store, now);
   const peers: StateStore[] = [];
   const self: Fixture = {
     store: fx.store,

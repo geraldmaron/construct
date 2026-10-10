@@ -1,5 +1,5 @@
 /**
- * kernel/state/schema.ts — Construct state format 4.
+ * kernel/state/schema.ts — Construct state format 5.
  *
  * One database per project. Columns that take part in policy, selection,
  * uniqueness, or a state transition are normalized and CHECKed here; JSON
@@ -451,11 +451,12 @@ CREATE TABLE triggers (
 CREATE TABLE trigger_firings (
   id              TEXT PRIMARY KEY,
   trigger_id      TEXT NOT NULL REFERENCES triggers(id),
-  idempotency_key TEXT NOT NULL UNIQUE,
+  idempotency_key TEXT NOT NULL,
   fired_at        TEXT NOT NULL,
   run_id          TEXT REFERENCES workflow_runs(id),
   outcome         TEXT NOT NULL CHECK (outcome IN ('started', 'skipped_overlap', 'replaced', 'deduplicated', 'blocked', 'disabled')),
-  reason          TEXT
+  reason          TEXT,
+  UNIQUE (trigger_id, idempotency_key)
 );
 CREATE INDEX trigger_firings_trigger ON trigger_firings (trigger_id, fired_at);
 

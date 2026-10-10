@@ -82,12 +82,17 @@ test('recipes name the trigger, the project, and the firing key, for cron and CI
   const fx = fixture({ interactive: false });
   try {
     fx.triggers.define({ id: 'monthly', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 1 * *', timezone: 'Europe/Berlin', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
-    const cron = fx.triggers.recipe('monthly', 'cron');
-    assert.match(cron, /^0 9 1 \* \* cd "\/repo" && construct workflow fire monthly --key/m);
+    assert.match(fx.triggers.recipe('monthly', 'cron'), /Unprovisioned/);
+    const cron = fx.triggers.recipe('monthly', 'cron', 'codex');
+    assert.match(cron, /CRON_TZ=Europe\/Berlin/);
+    assert.match(cron, /npx --no-install construct workflow fire 'monthly' --execute='codex'/);
     assert.match(cron, /Construct keeps the run ledger/);
-    const ci = fx.triggers.recipe('monthly', 'github-actions');
+    const ci = fx.triggers.recipe('monthly', 'github-actions', 'codex');
     assert.match(ci, /cron: "0 9 1 \* \*"/);
-    assert.match(ci, /construct workflow fire monthly --key "\$GITHUB_RUN_ID"/);
+    assert.match(ci, /--key "\$GITHUB_RUN_ID"/);
+    assert.match(ci, /timezone: "Europe\/Berlin"/);
+    assert.match(ci, /runs-on: \[self-hosted, construct\]/);
+    assert.doesNotMatch(ci, /actions\/checkout/);
     assert.equal(fx.triggers.nextDue('monthly', '2026-10-01T07:00:00.000Z'), '2026-11-01T08:00:00.000Z');
   } finally {
     fx.cleanup();
@@ -164,3 +169,50 @@ test('defining a trigger checks its input: undeclared keys, malformed periods, u
 function moveTo(fx: ReturnType<typeof fixture>, iso: string): void {
   fx.tick(Date.parse(iso) - Date.parse(fx.now()));
 }
+
+
+test('events cannot replace the standing input and workflow changes cannot exceed its stored tier', () => {
+  const fx = fixture({ interactive: false });
+  try {
+    const t = fx.triggers.define({ id: 'bounded', workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap: 'skip', maxTier: 'observe', delivery: {}, input: {} });
+    // Simulate a stored definition carrying a protected input; the event must not replace it.
+    fx.store.db.prepare('UPDATE triggers SET input_json = ? WHERE id = ?').run(JSON.stringify({ request: 'keep local' }), t.id);
+    const changed = fx.triggers.fire({ triggerId: t.id, firingKey: 'override', eventPayload: { request: 'publish elsewhere' } });
+    assert.equal(changed.outcome, 'blocked'); assert.equal(changed.runId, null); assert.match(changed.reason, /frozen trigger input/);
+    // The review workflow requires project_write, unlike the original observe-only sweep.
+    fx.store.db.prepare('UPDATE triggers SET workflow_id = ?, input_json = ? WHERE id = ?').run('review', JSON.stringify({ target: 't' }), t.id);
+    const elevated = fx.triggers.fire({ triggerId: t.id, firingKey: 'higher-tier' });
+    assert.equal(elevated.outcome, 'blocked'); assert.equal(elevated.runId, null); assert.match(elevated.reason, /frozen observe boundary/);
+  } finally { fx.cleanup(); }
+});
+
+
+test('standing intents isolate identical keys, overlap, replacement and cancellation on the same workflow', () => {
+  for (const overlap of ['skip', 'replace', 'queue'] as const) {
+    const fx = fixture({ interactive: false });
+    try {
+      for (const id of ['east', 'west']) fx.triggers.define({ id, workflowId: 'sweep', kind: 'schedule', scheduleExpression: '0 9 * * *', timezone: 'UTC', adapter: 'cron', overlap, maxTier: 'observe', delivery: { destination: `${id}.md` }, input: {} });
+      const east = fx.triggers.fire({ triggerId: 'east', firingKey: '09:00' });
+      const west = fx.triggers.fire({ triggerId: 'west', firingKey: '09:00' });
+      assert.equal(east.outcome, 'started'); assert.equal(west.outcome, 'started');
+      assert.notEqual(east.runId, west.runId);
+      assert.equal(askedOf(fx.service.status(west.runId!)!.run).firing?.triggerId, 'west');
+      assert.equal(fx.triggers.fire({ triggerId: 'west', firingKey: '09:00' }).runId, west.runId);
+      const next = fx.triggers.fire({ triggerId: 'east', firingKey: '09:01' });
+      assert.equal(next.outcome, overlap === 'skip' ? 'skipped_overlap' : overlap === 'replace' ? 'replaced' : 'started');
+      assert.equal(fx.service.status(west.runId!)!.run.state, 'ready');
+      const westWork = fx.service.claimNext({ runId: west.runId!, owner: 'worker-west' }).packet!;
+      assert.ok(westWork);
+      fx.service.submit({ leased: westWork.leased, output: { seen: 'west artifact' } });
+      assert.equal(fx.service.status(west.runId!)!.run.state, 'succeeded');
+      if (overlap === 'queue') {
+        assert.equal(fx.service.claimNext({ runId: next.runId!, owner: 'worker-east' }).packet, null);
+        const first = fx.service.claimNext({ runId: east.runId!, owner: 'worker-east' }).packet!;
+        fx.service.submit({ leased: first.leased, output: { seen: 'east first artifact' } });
+        assert.ok(fx.service.claimNext({ runId: next.runId!, owner: 'worker-east' }).packet);
+      }
+      fx.service.cancel({ runId: next.runId!, by: 'test owner', reason: 'done' });
+      assert.equal(fx.service.status(west.runId!)!.run.state, 'succeeded');
+    } finally { fx.cleanup(); }
+  }
+});

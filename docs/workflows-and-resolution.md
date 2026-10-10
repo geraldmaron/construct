@@ -25,27 +25,45 @@ Construct checks the reading, works the period out from the calendar,
 resolves the named systems to declared source ids, and names every
 workflow whose declared deliverable fits, in a fixed order: a workflow the
 reading names, then the exact kind, then the rest of its family, with
-workflows that bind the chosen skill first in each group. `other`, and work
-nothing else fits, goes to the general carrier, `managed-outcome`. Each
-match comes with whether it can run here, what it still needs, and the
-use-when text of the skills it binds. Construct asks only what it can see
-is missing: a required input of the first match, a schedule for maintain,
-which declared source an ambiguous name means, or where the result goes
-when two destinations disagree. The host's own blocking items go back to it
-to ask. Nothing is recorded.
+workflows that bind the chosen skill first in each group. `other` goes to the
+general carrier, `managed-outcome`, then the workflows that bind the chosen
+skill; for maintain those come first and the carrier last, when it can be
+scheduled. Manage work nothing else fits also goes to the carrier. Maintain
+work nothing fits gets no match, and the host is told to offer to run it
+once now instead. Each match comes with whether it can run here, what it
+still needs, and the use-when text of the skills it binds. Construct asks
+only what it can see is missing: a required input of the first match, a
+schedule for maintain, which declared source an ambiguous name means, or
+where the result goes when two destinations disagree. The host's own
+blocking items go back to it to ask. Nothing is recorded.
+
+The result also says how much rigor the work gets: light, standard, or
+challenged. The workflow's structure sets the floor: a workflow that
+declares its deliverable must be challenged, a step whose action tier is
+`external_write` or higher, or an open contradiction against a governing
+decision or requirement. The stakes the host declares (hard to undo, or
+what the work touches), the chosen method, and the request's words only
+raise it, and a raise from the words is labeled "(lexical)". A private
+helper rename raises none of these. Any raise means challenged: `claim_work`
+says so and why, and acceptance is refused until a challenge is recorded.
+With nothing raised, a side project gets light rigor and every other
+project, including one whose scale is not answered, gets standard. The
+same judgment is read at preflight, in the claim packet, on resume, at
+submit, and at acceptance.
 
 `start_outcome` takes the same intake and checks it again, so skipping
 `classify_request` skips no check. While a question is open or an input is
-wrong, nothing starts and no run is left behind. Otherwise the run freezes
-the reading in its bindings, once: the intake, the period in dates, the
-named and declared sources, the stakes and the chosen method as declared,
-who judged the reading, and what was assumed. Every step is handed the
-reading in structured fields, without the person's words; Construct's own
-instructions count the systems that are not registered and never name
-them. A review step that binds no skill of its own is given the chosen
-method. The same target over a different window is different work. The
-command line and standing triggers start through the same service and still
-keep a blocked run to correct.
+wrong, nothing starts and no run is left behind. A workflow the reading did
+not match is refused, and the refusal lists the ones it did match. Otherwise
+the run freezes the reading in its bindings, once: the intake, the period
+in dates, the named and declared sources, the stakes and the chosen method
+as declared, who judged the reading, and what was assumed. Every step is
+handed the reading in structured fields, without the person's words;
+Construct's own instructions count the systems that are not registered and
+never name them. A review step that binds no skill of its own is given the
+chosen method. The same target over a different window is different work.
+The command line and standing triggers start through the same service and
+still keep a blocked run to correct.
 
 ## Resolving before running
 
@@ -81,8 +99,25 @@ lost lease is reclaimed after expiry without repeating finished work. Every
 step is gated through the policy engine; a step that needs an approval
 raises one question scoped to exactly that action and the run waits. Every
 submission runs the step's validators; a failure comes back with what to
-fix and the step is retried by its policy. Steps that declare the kernel's
-own drift capability are run by Construct itself.
+fix and the step is retried by its policy. A load-bearing step that still
+fails after its last attempt waits on the person instead of failing the
+run: accept it with the named problems, give it another attempt, or stop. A
+waiver covers only the checks its question named, records who answered and
+on which channel, and the run's deliverable is never marked validated.
+Steps that declare the kernel's own drift capability are run by Construct
+itself. A run keeps the workflow version, digest, and steps it started
+with. When the workflow, or a skill bound to one of its steps, changes while
+the run is in flight, claiming its next step says to re-resolve instead of
+going on under the new definition.
+
+Checks fail closed. A step's declared outputs are the contract its
+validators check: `schema` and `deliverable_complete` need every declared
+key present, and `deliverable_complete` refuses an empty one.
+`verification_result` refuses `passed: false`, a failing exit status
+recorded as passed, a null artifact, an empty result, no command, result,
+or passed flag at all, evidence from an old revision of the subject, and
+unresolved references. `review_complete` needs the subject, the revision
+reviewed, and a method or reviewer.
 
 A step that returns `blockers`, such as a plan's questions that only the
 person can answer, raises them as one question for the person, answered in
@@ -148,9 +183,9 @@ dates, and timezone. `last_quarter` asked on two days of one quarter, or
 `quarter` 3 with `year` 2026, is the same run; another window or another
 semantics is different work. Source ids count as a set. A start that finds
 the work under way says which inputs it gave differently, and a start whose
-period was refused is replaced by the corrected one. A named source last
-read on a day before a finished period ends is flagged at start so it can be
-read again; the flag never blocks.
+period was refused is replaced by the corrected one. For a finished period,
+a named source never read here, or last read on a day before the period
+ends, is flagged at start so it can be read; the flag never blocks.
 
 Evidence is checked against the period. A step that names `within_period`
 refuses a cited item whose recorded update falls after the period ends,
@@ -177,10 +212,19 @@ shows a trigger whose period moves with each firing.
 
 ## Deliverables and trust
 
-A finished step leaves a draft. The final step's validators move it to
-validated; a challenge, acceptance, and finality are recorded transitions
-the person's judgment drives through the host. A task being done never
-implies its deliverable is trusted.
+The last step, and any step that declares `challenge`, leaves a draft. The
+deliverable becomes validated only when the last step has checks, every one
+passes, and nothing in the run went through on a waiver; `promote_deliverable`
+cannot set it. Acceptance and finality are recorded transitions the
+person's judgment drives through the host. A task being done never implies
+its deliverable is trusted.
+
+A challenge is recorded with `promote_deliverable` (to `challenged`) and
+takes `objections`: each objection it raised and what was done about it
+(fixed, accepted, rejected, or open). An empty list says it found nothing.
+It is recorded by the host, not asked of the person. Work whose rigor is
+challenged, as described under how a session picks a workflow, cannot be
+accepted until its challenge is recorded.
 
 The last step hands the deliverable back. Its body is what that step
 returned plus every input the step was handed (from the run's input or
@@ -202,10 +246,11 @@ the checks waived and whether the person or their assistant answered, the
 checks that passed, how many of the things it rests on Construct opened,
 how many are the assistant's report and how many could not be checked, any
 verification the assistant reports running (Construct runs none), the
-highest sensitivity cited, the sources the assistant declared, the systems
-the request named that are not registered, where the citations fall
-against the period and the named sources, and the challenge record. The
-assistant's own words come last, under "Your assistant's description, not
+highest sensitivity cited and how many citations have no known
+sensitivity, the sources the assistant declared, the systems the request
+named that are not registered, where the citations fall against the
+period and the named sources, and the challenge record. The assistant's
+own words come last, under "Your assistant's description, not
 checked by Construct:", each quoted on one line and cut at 160 characters:
 its assumptions, why it kept an item dated after the period or could not
 read a source, open objections, the destination it named, and the request
@@ -230,5 +275,32 @@ the outcome back.
 Project bootstrap and constitution review, minimal remember, managed
 outcome with verification, design-principle conformance review, source
 freshness and drift review, adversarial deliverable review,
-strategy-to-execution and capacity review, the standing review wrapper, and
-one review per professional pack. See [catalog.md](catalog.md).
+strategy-to-execution and capacity review, the standing review wrapper, one
+review per professional pack, PRD, RFC, and proposal authoring, a research
+brief, revising a deliverable, and publishing one. See [catalog.md](catalog.md).
+
+### Clock and executor are separate
+
+`workflow fire` uses a headless capability profile. Without an executor it
+records the tick and blocks model work with the missing capabilities. A ready
+run is not completed work. `workflow executors` reports unattended support
+for every interactive host; only the explicit local Codex CLI adapter is
+currently implemented. Other hosts retain interactive MCP support and report
+an unprovisioned unattended adapter rather than falling back to another host.
+
+`workflow fire <trigger> --execute=codex --key=<tick>` probes the installed
+host and authentication, launches one bounded host invocation with the runner
+MCP surface, and inspects durable run state afterward. The model and sandbox
+belong to the host. This adapter exposes local project files and Construct;
+external MCP/API connectors are not automatically provisioned into it.
+It does not choose a model, install a clock, publish, or answer a decision.
+After the owned process group stops, its abandoned leases are fenced so the
+same firing key can resume unfinished work. A successful host exit alone
+never counts as a completed run.
+
+Recipes require `--executor=codex` and the same persistent project state.
+Cron needs Node/npm, an authenticated host and a CRON_TZ-compatible clock.
+GitHub Actions recipes target an explicitly provisioned self-hosted runner,
+use the trigger's IANA timezone, and do not imply that a fresh checkout contains
+the ignored trigger database. Inspect and provision the recipe before
+installing it. No clock continues merely because an agent session once ran.

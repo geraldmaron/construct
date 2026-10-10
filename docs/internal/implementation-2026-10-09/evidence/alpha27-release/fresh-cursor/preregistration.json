@@ -1,0 +1,35 @@
+{
+  "host": "cursor",
+  "tag": "semantic-gate",
+  "project": "<user-home>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-semantic-gate/project",
+  "git": true,
+  "packageSha256": "f5356eb2357703d17c32e0578d55c2b8ba1f94120251df94b231a10505670e7a",
+  "fixtureBeforeInit": true,
+  "sourceConnectionBeforeInit": true,
+  "nativeConstructUsesInstalledPackageOnly": true,
+  "checkoutLoggingWrapper": false,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-7cd1bd22",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T23:37:23.981Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T23:37:24.003Z",
+  "sourceOrigin": "http://127.0.0.1:62262"
+}

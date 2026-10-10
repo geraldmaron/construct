@@ -60,6 +60,8 @@ export interface ResolvedRef {
   readonly sourceId?: string;
   /** The item reference inside that source (a relative path or a key), exactly as recorded. */
   readonly itemRef?: string;
+  /** Recorded canonical base address for resolving relative references. */
+  readonly url?: string;
   /** What it says, when that is cheap to know: file text under the cap, the text a recorded read holds. */
   readonly text?: string;
   /** The recorded text stops short of what was read, so a quote or figure past the cut cannot be checked. */
@@ -75,6 +77,8 @@ export interface ResolvedRef {
 export type RefResolver = (ref: string) => ResolvedRef | null;
 
 export interface EvidenceSource {
+  /** A revoked source stays identifiable for refusal, but supplies no current evidence. */
+  readonly canRead?: boolean;
   readonly id: string;
   readonly kind: string;
   readonly locator: string | null;
@@ -138,21 +142,28 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   const dirSources = input.sources
     .filter((s) => s.kind === 'directory' && s.locator)
     .map((s) => ({ ...s, abs: resolve(root, s.locator!), entries: new Map((s.manifest ?? []).map((e) => [e.ref, e])) }));
-  // Recorded items by their exact ref, and by their address (the url a read recorded, or a ref that is itself a
-  // url), across sources and within each source. The first source to record a key keeps it.
-  const itemIndex = new Map<string, { source: EvidenceSource; entry: ManifestEntry }>();
-  const urlIndex = new Map<string, { source: EvidenceSource; entry: ManifestEntry }>();
-  const urlsBySource = new Map<string, Map<string, ManifestEntry>>();
+  // Bare references must have one meaning. A collision is retained as ambiguous,
+  // not resolved by source iteration order, even when hostReads accepts unverified reads.
+  type ItemHit = { source: EvidenceSource; entry: ManifestEntry };
+  const itemIndex = new Map<string, ItemHit | null>();
+  const urlIndex = new Map<string, ItemHit | null>();
+  const urlsBySource = new Map<string, Map<string, ItemHit | null>>();
+  const index = (map: Map<string, ItemHit | null>, key: string, hit: ItemHit) => {
+    const was = map.get(key);
+    if (!map.has(key)) map.set(key, hit);
+    else if (!was || was.source.id !== hit.source.id || was.entry.ref !== hit.entry.ref) map.set(key, null);
+  };
   for (const s of input.sources) {
     if (s.kind === 'directory') continue;
-    const own = new Map<string, ManifestEntry>();
+    const own = new Map<string, ItemHit | null>();
     for (const e of s.manifest ?? []) {
-      if (!itemIndex.has(e.ref)) itemIndex.set(e.ref, { source: s, entry: e });
+      const hit = { source: s, entry: e };
+      index(itemIndex, e.ref, hit);
       for (const address of [e.url, e.ref]) {
         const key = typeof address === 'string' ? normalizeUrl(address) : null;
         if (key === null) continue;
-        if (!urlIndex.has(key)) urlIndex.set(key, { source: s, entry: e });
-        if (!own.has(key)) own.set(key, e);
+        index(urlIndex, key, hit);
+        index(own, key, hit);
       }
     }
     urlsBySource.set(s.id, own);
@@ -177,6 +188,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     if (raw.trim() === '') return null;
     const abs = resolve(base, raw.replace(/^file:/, ''));
     const ds = sourceFor(abs);
+    if (dirSources.some((d) => d.canRead === false && inside(d.abs, abs))) return null;
     if ((!inside(root, abs) && !ds) || !existsSync(abs)) return null;
     let real: string;
     try {
@@ -184,6 +196,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     } catch {
       return null;
     }
+    if (dirSources.some((d, i) => d.canRead === false && inside(realDirs[i]!, real))) return null;
     if (!inside(realRoot, real) && !realDirs.some((d) => inside(d, real))) return null;
     const st = statSync(abs);
     const itemRef = ds ? relative(ds.abs, abs).split(sep).join('/') : undefined;
@@ -195,12 +208,13 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   };
   // An item a recorded read holds, with what the read kept. A manifest that does not say how it was obtained is
   // the host's report, never Construct's own reading.
-  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef => ({
+  const itemHit = (original: string, source: EvidenceSource, entry: ManifestEntry): ResolvedRef | null => source.canRead === false ? null : ({
     ref: original,
     kind: 'item',
     provenance: source.provenance ?? 'reported',
     sourceId: source.id,
     itemRef: entry.ref,
+    ...(entry.url ? { url: entry.url } : {}),
     ...(entry.text !== undefined ? { text: entry.text } : {}),
     ...(entry.truncated ? { truncated: true } : {}),
     ...(entry.updatedAt ? { updatedAt: entry.updatedAt } : {}),
@@ -209,6 +223,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
   // Something only the host can read that no recorded read holds: the host's word alone, admitted only under accept.
   const unrecorded = (r: Omit<ResolvedRef, 'provenance'>): ResolvedRef | null => (input.hostReads === 'accept' ? { ...r, provenance: 'unverified' } : null);
   const sourceLevel = (original: string, s: EvidenceSource): ResolvedRef | null => {
+    if (s.canRead === false) return null;
     if (s.kind === 'directory') return { ref: original, kind: 'source', sourceId: s.id, provenance: 'witnessed', ...(s.locator ? { path: resolve(root, s.locator) } : {}) };
     if (s.manifest !== null || !s.neverRead) return { ref: original, kind: 'source', sourceId: s.id, provenance: s.provenance ?? 'reported' };
     return unrecorded({ ref: original, kind: 'source', sourceId: s.id });
@@ -229,7 +244,7 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     const address = normalizeUrl(raw);
     if (address !== null) {
       const hit = urlIndex.get(address);
-      return hit ? itemHit(original, hit.source, hit.entry) : unrecorded({ ref: original, kind: 'web' });
+      return hit ? itemHit(original, hit.source, hit.entry) : urlIndex.has(address) ? null : unrecorded({ ref: original, kind: 'web' });
     }
     if (SURFACES.has(raw)) return { ref: original, kind: 'surface', provenance: 'witnessed' };
     if (raw.startsWith('source:')) {
@@ -248,16 +263,19 @@ export function createEvidenceResolver(input: ResolverInput): RefResolver {
     if (whole) return sourceLevel(original, whole);
     const s = head ? byId.get(head) : undefined;
     if (s && rest) {
+      if (s.canRead === false) return null;
       if (s.kind === 'directory') return s.locator ? asPath(stripLocator(rest), original, resolve(root, s.locator)) : null;
       const hit = s.manifest?.find((e) => e.ref === rest);
       if (hit) return itemHit(original, s, hit);
       const at = normalizeUrl(rest);
       const byUrl = at === null ? undefined : urlsBySource.get(s.id)?.get(at);
-      if (byUrl) return itemHit(original, s, byUrl);
+      if (byUrl) return itemHit(original, s, byUrl.entry);
+      if (at !== null && urlsBySource.get(s.id)?.has(at)) return null;
       return unrecorded({ ref: original, kind: 'item', sourceId: s.id, itemRef: rest });
     }
     const item = itemIndex.get(raw);
     if (item) return itemHit(original, item.source, item.entry);
+    if (itemIndex.has(raw)) return null;
     return asPath(stripLocator(raw), original);
   }
 }

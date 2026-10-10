@@ -1,0 +1,33 @@
+[
+  {
+    "command": [
+      "npm",
+      "view",
+      "@geraldmaron/construct",
+      "dist-tags",
+      "--json",
+      "--fetch-retries=0",
+      "--fetch-timeout=15000"
+    ],
+    "code": 0,
+    "stdout": "{\"next\": \"1.0.1\", \"latest\": \"2.1.1\", \"alpha\": \"3.0.0-alpha.26\"}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "npm",
+      "install",
+      "--prefix",
+      "$AUDIT/consumer/install",
+      "-g",
+      "@geraldmaron/construct@alpha",
+      "--no-audit",
+      "--no-fund",
+      "--fetch-retries=0",
+      "--fetch-timeout=15000"
+    ],
+    "code": 0,
+    "stdout": "\nadded 4 packages in 1s\n",
+    "stderr": ""
+  }
+]

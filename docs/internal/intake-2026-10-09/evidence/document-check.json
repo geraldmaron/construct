@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "errors": [],
+  "checks": {
+    "local_links": 50,
+    "pinned_links": 14,
+    "json_files": 31,
+    "scripts": 5
+  },
+  "baseline": "9a0c835bec7c27655ab65e5255f0655a9fa9c30d",
+  "document_sha256": {
+    "NATIVE-TRIAL.md": "1a94fb572535f98252b5b4903ecc4eb66dc522e2649b1ee9068ad3d56dbcb71b",
+    "SOURCES.md": "5bfa1eaad56d207cd29dd887049ab39a58c88776d116178600774fc996a07739",
+    "VALIDATION.md": "afacc923d1e89261a1450d6e332784b802cf272521e1d8f90d6f916ce1de7faf",
+    "README.md": "cc06636407da0bafc064fc883d7371aa26af2fdd9afac8f17137def17cf95dc5",
+    "BACKLOG.md": "a155b1b49fbd682f22548c68b0f75fcfd54bd4212a5470c3f5f88ce3a4235f86"
+  }
+}

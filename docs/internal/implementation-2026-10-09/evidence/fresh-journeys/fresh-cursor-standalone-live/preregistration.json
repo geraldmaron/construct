@@ -1,0 +1,35 @@
+{
+  "host": "cursor",
+  "tag": "standalone-live",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-standalone-live/project",
+  "git": true,
+  "packageSha256": "73097c9247d4c023f380a650e84bd870455f74ff738ff68c9d1829d707cd6600",
+  "fixtureBeforeInit": true,
+  "sourceConnectionBeforeInit": true,
+  "nativeConstructUsesInstalledPackageOnly": true,
+  "checkoutLoggingWrapper": false,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-947fff32",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T22:37:25.830Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T22:37:25.863Z",
+  "sourceOrigin": "http://127.0.0.1:58677"
+}

@@ -1,3 +1,5 @@
+import { executeVerification } from '../../src/hosts/verification.ts';
+import { projectResolver } from '../../src/kernel/source/resolver.ts';
 /**
  * tests/scenarios/architecture-diagram.test.ts — the flagship request, end to
  * end through the broker tools with no command line: "Create an architecture
@@ -198,10 +200,11 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.equal(verify.step.id, 'verify');
     assert.deepEqual(verify.inputs, { summary: output.summary, findings, changes: ['docs/architecture.md'], artifact: 'docs/architecture.md' });
     assert.ok(verify.instructions.includes('Construct carries summary, findings, changes, artifact into the deliverable as this step received them; return only what this step adds.'), verify.instructions.join('\n'));
+    const observed = await executeVerification({ store: fx.broker.store, runId, stepRunId: verify.stepRunId, token: verify.token, root: fx.broker.root, env: fx.ctx.env, now: fx.ctx.now, resolve: (ref) => projectResolver(fx.broker.store, fx.broker.root)(ref), argv: [process.execPath, '-e', 'require("node:assert").ok(require("node:fs").readFileSync("docs/architecture.md", "utf8").length > 0)'] });
     const done = await submit(fx, verify, {
-      verification: { command: 'npx -y @mermaid-js/mermaid-cli -i docs/architecture.md -o /tmp/architecture.svg', exitStatus: 0, result: 'rendered one C4 container diagram' },
+      verification: { executionRef: observed.executionRef, command: observed.command, exitStatus: observed.exitStatus, result: 'The artifact is nonempty; renderer and semantic correctness are not tested.' },
       passed: true,
-      summary: 'Diagram rendered',
+      summary: 'Artifact presence checked',
     }, [{ ref: 'docs/architecture.md' }]);
     assert.equal(done.run.state, 'succeeded', JSON.stringify(done.validation));
     assert.equal(done.deliverable.trust, 'validated');
@@ -237,11 +240,12 @@ test('the architecture diagram request runs end to end through the tools: period
     assert.equal(accept.personRequired, true);
     const inbox = (await call(fx, 'inbox', { runId })) as { id: string; question: string }[];
     const question = inbox.find((d) => d.id === accept.pendingDecision)!.question;
+    assert.match(question.split('\n')[3]!, /Host command observation:.*exit 0.*bound to this attempt and artifact bytes/);
     assert.deepEqual(question.split('\n'), [
       `Move deliverable ${done.deliverable.id} (outcome/managed) from validated to accepted?`,
       "Construct's checks passed on the last step: evidence_refs_resolve, within_period, verification_result.",
       "Construct opened 4 of 8 things this rests on; 4 are your assistant's report of what it read; 0 could not be checked.",
-      'Verification: \u201cnpx -y @mermaid-js/mermaid-cli -i docs/architecture.md -o /tmp/architecture.svg\u201d was run and reported by your assistant (exit 0); Construct did not run it.',
+      question.split('\n')[3]!,
       'Highest sensitivity cited: confidential.',
       'Declared by your assistant, not added by you: jira, confluence, github.',
       'Covers 2026-07-01..2026-09-30 (only evidence dated in it); 4 cited items are dated before it or undated; 1 dated after it.',

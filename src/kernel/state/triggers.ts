@@ -180,7 +180,7 @@ export function recordFiring(
   requireOneOf(input.outcome, FIRING_OUTCOMES, 'firing.outcome');
   requireInstant(input.at, 'firing.at');
   return store.transaction(() => {
-    const existing = store.db.prepare('SELECT * FROM trigger_firings WHERE idempotency_key = ?').get(input.idempotencyKey) as FiringRow | undefined;
+    const existing = store.db.prepare('SELECT * FROM trigger_firings WHERE trigger_id = ? AND idempotency_key = ?').get(input.triggerId, input.idempotencyKey) as FiringRow | undefined;
     if (existing) return { firing: toFiring(existing), created: false };
     const row = store.db
       .prepare(`INSERT INTO trigger_firings (id, trigger_id, idempotency_key, fired_at, run_id, outcome, reason) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`)

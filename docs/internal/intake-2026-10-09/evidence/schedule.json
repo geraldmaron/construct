@@ -1,0 +1,98 @@
+[
+  {
+    "command": [
+      "git",
+      "init",
+      "-q"
+    ],
+    "exit": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "init",
+      "--client=codex"
+    ],
+    "exit": 0,
+    "stdout": "Initialized Construct project \"schedule-trial\" at $AUDIT/consumer/schedule-project\n  files: .construct/{project,constitution,sources,registry.lock}.json; .gitignore now ignores .construct/state/\n  state: created .construct/state/construct.sqlite\n  read from the project: 1 statement(s) extracted with source locators\n  unanswered fields recorded as unknowns: purpose; primary outcome; success measures; risk posture; review cadence; ownership and decision rights\n  still to answer (3):\n    - What is this project to you: a side project, your primary product (just you), a team project, several teams' work, or an organization-wide system?\n    - What result matters most right now?\n    - What should Construct be especially careful not to change or violate?\n  registry: 17 skill(s), 22 workflow(s) locked\n  host: codex wired (.codex/config.toml starts `construct serve`; --client=codex)\n    skill: planted at $AUDIT/consumer/schedule-project/.agents/skills/construct (installed)\nNext, in Codex:\n  1. Start codex in this folder and trust the project when it asks; Codex reads .codex/config.toml only in trusted projects.\n  2. Approve construct's tool calls when Codex asks.\n  3. Ask for what you want in your own words. It will ask the 3 setup question(s) when they change the work.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "workflow",
+      "fire",
+      "weekly",
+      "--key=fresh-ci",
+      "--json"
+    ],
+    "exit": 1,
+    "stdout": "",
+    "stderr": "construct workflow fire: no trigger weekly\n"
+  },
+  {
+    "command": [
+      "construct",
+      "workflow",
+      "schedule",
+      "managed-outcome",
+      "--cron=0 9 * * 1",
+      "--timezone=UTC",
+      "--trigger-id=weekly",
+      "--max-tier=project_write",
+      "--input=request=Summarize project changes"
+    ],
+    "exit": 0,
+    "stdout": "defined trigger weekly for managed-outcome; next due 2026-10-12T09:00:00.000Z\nNext: `construct workflow recipe weekly` prints the cron line or CI job that fires it. Construct keeps the ledger; the clock only ticks.\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "workflow",
+      "fire",
+      "weekly",
+      "--key=tick-one",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"firing\": {\"id\": \"firing-b7625756\", \"triggerId\": \"weekly\", \"idempotencyKey\": \"tick-one\", \"firedAt\": \"2026-10-09T14:10:14.202Z\", \"runId\": \"run-ed6126ef\", \"outcome\": \"started\", \"reason\": \"managed-outcome 2.0.0 can run: 3 step(s)\"}, \"outcome\": \"started\", \"runId\": \"run-ed6126ef\", \"reason\": \"managed-outcome 2.0.0 can run: 3 step(s)\", \"nextDueAt\": \"2026-10-12T09:00:00.000Z\"}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "workflow",
+      "fire",
+      "weekly",
+      "--key=tick-one",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"firing\": {\"id\": \"firing-b7625756\", \"triggerId\": \"weekly\", \"idempotencyKey\": \"tick-one\", \"firedAt\": \"2026-10-09T14:10:14.202Z\", \"runId\": \"run-ed6126ef\", \"outcome\": \"started\", \"reason\": \"managed-outcome 2.0.0 can run: 3 step(s)\"}, \"outcome\": \"deduplicated\", \"runId\": \"run-ed6126ef\", \"reason\": \"firing tick-one was already handled (started)\", \"nextDueAt\": \"2026-10-12T09:00:00.000Z\"}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "status",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"root\": \"$AUDIT/consumer/schedule-project\", \"project\": {\"id\": \"proj-54961d51\", \"name\": \"schedule-trial\"}, \"onboarding\": {\"state\": \"drafted\", \"missing\": [\"purpose\", \"scale\", \"primaryOutcome\"], \"openQuestions\": 3, \"proposalsAwaitingReview\": 7}, \"runs\": {\"active\": 1, \"byState\": {\"run-ed6126ef\": \"ready\"}}, \"decisions\": {\"open\": 3}, \"sources\": {\"total\": 0, \"reachable\": 0, \"unreachable\": 0, \"unknown\": 0, \"fresh\": 0, \"stale\": 0, \"neverRead\": 0}, \"registry\": {\"skills\": 17, \"workflows\": 22, \"skew\": []}, \"drift\": {\"open\": 0}, \"sessions\": [], \"habits\": {\"answersChecked\": 0, \"answersClean\": 0, \"uncheckedCaught\": 0, \"readsRecorded\": 0, \"checksWaived\": 0}}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "workflow",
+      "disable",
+      "weekly"
+    ],
+    "exit": 0,
+    "stdout": "weekly is disabled\n",
+    "stderr": ""
+  }
+]

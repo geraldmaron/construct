@@ -1,0 +1,1 @@
+Scan and publicly publish all 600 photographs next month. Two operators each have 12 hours. At 15 photographs/hour we can scan 360. This is a final proposal for approval.

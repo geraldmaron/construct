@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "implementation-review",
   "title": "Implementation review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Review a change, migration, or dependency proposal for correctness evidence, scope, reversibility, dependencies, and operability, cited against the project's confirmed principles; findings are recorded and anything that belongs to another pack or to the person is handed over.",
   "activation": [
     "review this implementation, change, or pull request",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

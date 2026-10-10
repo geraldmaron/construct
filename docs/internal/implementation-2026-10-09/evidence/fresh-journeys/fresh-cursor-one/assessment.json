@@ -1,0 +1,62 @@
+{
+  "trial": "fresh-cursor-one",
+  "phases": {
+    "qa": {
+      "name": "qa",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 44070,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": null
+    },
+    "initial": {
+      "name": "initial",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 76018,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": {
+        "sha256": "f29a8444e583736d7a20a7d248a61e64d85eca4d7577159e699279b7fb06c064",
+        "bytes": 4506
+      }
+    },
+    "changed": {
+      "name": "changed",
+      "code": 0,
+      "timedOut": false,
+      "elapsedMs": 51243,
+      "countsAfter": {
+        "workflow_runs": 0,
+        "step_runs": 0,
+        "deliverables": 0,
+        "work_items": 0,
+        "sources": 0,
+        "source_snapshots": 0
+      },
+      "artifact": {
+        "sha256": "3672d98799a858c9c5686cbcedc874b6a49b6da71794eb3c3d5a8958a5c59487",
+        "bytes": 5121
+      }
+    }
+  },
+  "qaAnswer": "Searching the project for the local replenishment policy and how net stock of 60 units is handled.\n\n\n**Hold steady** \u2014 do not recommend replenishment.\n\nUnder the local replenishment policy in `docs/policy.md`, replenishment is recommended only when net stock (available minus reserved) is **below** 60 individual units. At **exactly** 60, the rule is explicitly to hold steady, so you stay at the threshold and do not trigger a replenishment recommendation.",
+  "finalState": {
+    "runs": [],
+    "steps": [],
+    "work": []
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "sourceSha256": "82c045ddd3b13ca118233ebc8ae33d5b0f0823369c0a5f8e83ab207266e30b92",
+  "events": [
+    {
+      "type": "tool_call",
+      "subtype": "started",
+      "callId": "tool_861be22b-775f-4318-b6d0-ae404fbfe31",
+      "tool": [
+        "editToolCall",
+        "hookAdditionalContexts",
+        "toolCallId",
+        "startedAtMs"
+      ]
+    },
+    {
+      "type": "tool_call",
+      "subtype": "completed",
+      "callId": "tool_861be22b-775f-4318-b6d0-ae404fbfe31",
+      "tool": [
+        "editToolCall",
+        "hookAdditionalContexts",
+        "toolCallId",
+        "startedAtMs",
+        "completedAtMs"
+      ]
+    },
+    {
+      "type": "tool_call",
+      "subtype": "started",
+      "callId": "tool_26bfdbb6-5203-40d4-91bc-43796ec2b8e",
+      "tool": [
+        "readToolCall",
+        "hookAdditionalContexts",
+        "toolCallId",
+        "startedAtMs"
+      ]
+    },
+    {
+      "type": "tool_call",
+      "subtype": "completed",
+      "callId": "tool_26bfdbb6-5203-40d4-91bc-43796ec2b8e",
+      "tool": [
+        "readToolCall",
+        "hookAdditionalContexts",
+        "toolCallId",
+        "startedAtMs",
+        "completedAtMs"
+      ]
+    },
+    {
+      "type": "result",
+      "subtype": "success",
+      "is_error": false,
+      "duration_ms": 5477,
+      "session_id": "de260e28-b18b-48a2-a4af-ed899dd4a114"
+    }
+  ]
+}

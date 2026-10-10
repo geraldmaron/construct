@@ -19,7 +19,7 @@ set this project up: files, one database, a drafted profile, and the agent host 
 | `--outcome` | yes | the result that matters most right now |
 | `--constraint` | yes, repeatable | something Construct must be careful not to change or violate |
 | `--client` | yes, repeatable | the agent host you use here: claude-code \| cursor \| vscode \| opencode \| codex \| bob (comma-separate for more than one). Without it, init uses the host it runs inside, the hosts already wired here, or the only host found on this machine |
-| `--no-wire` | no | do not write the hosts’ MCP configuration or hooks |
+| `--no-wire` | no | do not write the hosts’ MCP configuration, hooks or startup rules |
 | `--skills-dir` | yes | also plant a personal copy of the operational skill in this directory |
 | `--dry-run` | no | say what would happen and write nothing |
 
@@ -148,6 +148,17 @@ retire a source; its history stays
 
 Reads only: no.
 
+### `construct source traverse <id>`
+
+follow bounded references inside one declared readable directory source and record omissions
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--from` | yes | starting document relative to the declared directory |
+| `--max-documents` | yes | document budget, 1–48 (default 48) |
+
+Reads only: no.
+
 ### `construct source refresh <id>`
 
 read a source now and record what changed
@@ -161,6 +172,18 @@ record how two sources stand to each other: governs | depends_on | feeds | super
 Reads only: no.
 
 ## Skills
+
+### `construct skill evaluate <name>`
+
+execute a predetermined skill evaluation and record scoped qualification evidence
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--suite` | yes | project JSON suite with host/model, cases and evaluator argv; native.adapter=codex adds fresh producer/reviewer calls |
+| `--timeout-ms` | yes | bounded evaluation timeout, at most 1200000 |
+| `--valid-hours` | yes | qualification expiry, at most 720 hours |
+
+Reads only: no.
 
 ### `construct skill impact`
 
@@ -231,6 +254,12 @@ remove an installed skill (needs --confirm)
 Reads only: no.
 
 ## Workflows
+
+### `construct workflow executors`
+
+which hosts have an unattended adapter and which require provisioning
+
+Reads only: yes.
 
 ### `construct workflow list`
 
@@ -314,6 +343,8 @@ fire a trigger now, as an external clock would
 |---|---|---|
 | `--key` | yes | the clock’s key for this tick (same key, same run) |
 | `--dry-run` | no | preflight only |
+| `--execute` | yes | explicit unattended host adapter (codex); otherwise only record the tick |
+| `--timeout-ms` | yes | bounded executor timeout (default 900000) |
 
 Reads only: no.
 
@@ -324,6 +355,7 @@ print the cron line or CI job that fires a trigger
 | Flag | Takes a value | Meaning |
 |---|---|---|
 | `--clock` | yes | cron or github-actions (default cron) |
+| `--executor` | yes | explicit host adapter for the recipe; without one it remains unprovisioned |
 
 Reads only: yes.
 
@@ -557,6 +589,35 @@ Reads only: no.
 
 ## Runs
 
+### `construct run review <id>`
+
+review a prepared final artifact through an explicit native host inside the invoking sandbox
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--step` | yes | the currently leased step run id |
+| `--token` | yes | the current step lease token |
+| `--prepared` | yes | review reference returned by final submission |
+| `--host` | yes | explicit native reviewer host (currently codex) |
+| `--model` | yes | explicit native subscription model |
+| `--timeout-ms` | yes | bounded review timeout (default 180000; maximum 300000) |
+
+Reads only: no.
+
+### `construct run verify <id>`
+
+observe a verification command inside the invoking host sandbox and bind its exit to a held step
+
+| Flag | Takes a value | Meaning |
+|---|---|---|
+| `--step` | yes | the currently leased step run id |
+| `--token` | yes | the current step lease token |
+| `--command` | yes | JSON array of program and arguments; no implicit shell |
+| `--subject` | yes, repeatable | additional project artifact to bind by content |
+| `--timeout-ms` | yes | bounded command timeout (default 120000) |
+
+Reads only: no.
+
 ### `construct run list`
 
 recent runs and their states
@@ -708,7 +769,7 @@ Reads only: yes.
 
 ### `construct hook <host-or-event> [event]`
 
-run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, always exits 0
+run by a host hook Construct installed (coordination: <host> <event>; grounding: <event> --client); reads the event on stdin, exits 0 once its command line parses
 
 | Flag | Takes a value | Meaning |
 |---|---|---|

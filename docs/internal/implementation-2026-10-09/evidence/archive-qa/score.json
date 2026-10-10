@@ -1,0 +1,40 @@
+{
+  "trial": "archive-qa",
+  "packageSha256": "f0f0153a36dfaf07f04c4c7addd3a589b824cf6436a56abe32e368e90406b0f3",
+  "state": {
+    "sessions": 1,
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "resolved_skills": 0,
+    "deliverables": 0,
+    "sources": 0,
+    "source_snapshots": 0,
+    "observations": 0,
+    "work_items": 0
+  },
+  "runs": [],
+  "tools": [
+    {
+      "server": "construct",
+      "tool": "bootstrap"
+    },
+    {
+      "server": "construct",
+      "tool": "project_context"
+    },
+    {
+      "server": "construct",
+      "tool": "check_answer"
+    },
+    {
+      "server": "construct",
+      "tool": "check_answer"
+    }
+  ],
+  "result": {
+    "code": 0,
+    "signal": null,
+    "timedOut": false,
+    "endedAt": "2026-10-09T16:53:35.501Z"
+  }
+}

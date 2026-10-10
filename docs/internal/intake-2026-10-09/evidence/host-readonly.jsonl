@@ -1,0 +1,2 @@
+{"command": ["codex", "login", "status"], "exit": 1, "stdout": "", "stderr": "Not logged in\n"}
+{"command": ["codex", "mcp", "list", "--json", "-c", "projects.\"$AUDIT/consumer/project\".trust_level=\"trusted\""], "exit": 0, "stdout": "[]", "stderr": ""}

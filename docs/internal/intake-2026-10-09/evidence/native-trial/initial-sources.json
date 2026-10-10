@@ -1,0 +1,86 @@
+[
+  {
+    "source": {
+      "id": "release-docs",
+      "kind": "directory",
+      "origin": "declared",
+      "purpose": "Release policy and historical status notes",
+      "locator": "$FIXTURE/project/docs",
+      "authorityLevel": "authoritative",
+      "freshnessHours": null,
+      "sensitivity": "public",
+      "retention": null,
+      "canRead": true,
+      "canWrite": false,
+      "identityMapping": null,
+      "reachability": "unknown",
+      "lastSnapshotId": null,
+      "status": "active",
+      "createdAt": "2026-10-09T14:43:44.732Z",
+      "updatedAt": "2026-10-09T14:43:44.732Z",
+      "retiredAt": null
+    },
+    "freshness": "never_read",
+    "lastSnapshot": null,
+    "authoritativeFor": [
+      "rollout_policy"
+    ],
+    "notAuthoritativeFor": []
+  },
+  {
+    "source": {
+      "id": "harbor-metrics",
+      "kind": "other",
+      "origin": "declared",
+      "purpose": "Current measured rollout health",
+      "locator": "http://127.0.0.1:56764/v1/metrics/rollout",
+      "authorityLevel": "authoritative",
+      "freshnessHours": 24,
+      "sensitivity": "public",
+      "retention": null,
+      "canRead": true,
+      "canWrite": false,
+      "identityMapping": null,
+      "reachability": "unknown",
+      "lastSnapshotId": null,
+      "status": "active",
+      "createdAt": "2026-10-09T14:43:44.848Z",
+      "updatedAt": "2026-10-09T14:43:44.848Z",
+      "retiredAt": null
+    },
+    "freshness": "never_read",
+    "lastSnapshot": null,
+    "authoritativeFor": [
+      "service_health"
+    ],
+    "notAuthoritativeFor": []
+  },
+  {
+    "source": {
+      "id": "harbor-issues",
+      "kind": "other",
+      "origin": "declared",
+      "purpose": "Current rollout issue states priorities owners and next steps",
+      "locator": "mcp:harbor_issues:list_rollout_issues",
+      "authorityLevel": "authoritative",
+      "freshnessHours": 24,
+      "sensitivity": "public",
+      "retention": null,
+      "canRead": true,
+      "canWrite": false,
+      "identityMapping": null,
+      "reachability": "unknown",
+      "lastSnapshotId": null,
+      "status": "active",
+      "createdAt": "2026-10-09T14:43:44.964Z",
+      "updatedAt": "2026-10-09T14:43:44.964Z",
+      "retiredAt": null
+    },
+    "freshness": "never_read",
+    "lastSnapshot": null,
+    "authoritativeFor": [
+      "issue_status"
+    ],
+    "notAuthoritativeFor": []
+  }
+]

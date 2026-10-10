@@ -10,6 +10,9 @@
  * structure.ts.
  */
 
+import { getRun } from '../state/runs.ts';
+import { runExecutionProblems } from '../workflow/verification.ts';
+import type { RefResolver } from '../project/evidence.ts';
 import { randomUUID } from 'node:crypto';
 import { normalizePacket, offeredTo, parseHandoff, type Handoff } from './handoff.ts';
 import { MAIN_LANE, findOverlaps, releasePaths, reservePaths, transferPaths, type CrossLanePolicy, type LeaseMode, type Overlap, type PathLease } from './leases.ts';
@@ -893,8 +896,12 @@ export function releaseWork(
 
 export function completeWork(
   store: StateStore,
-  input: { readonly id: string; readonly owner: string; readonly token?: string; readonly at: string; readonly reason?: string; readonly expectedRevision?: number },
+  input: { readonly id: string; readonly owner: string; readonly token?: string; readonly at: string; readonly reason?: string; readonly expectedRevision?: number; readonly resolveEvidence?: RefResolver },
 ): WorkItem {
+  const scope = getWork(store, input.id)?.scope as { kind?: string; runId?: string } | null;
+  if (scope?.kind === 'managed_delivery') {
+    if (!scope.runId || !input.resolveEvidence || getRun(store, scope.runId)?.state !== 'succeeded' || runExecutionProblems(store, scope.runId, input.resolveEvidence).length) throw new Error('managed delivery completes only with its succeeded run and current artifact review; use submit_work');
+  }
   return setTerminal(store, { ...input, status: 'completed' });
 }
 

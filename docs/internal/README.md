@@ -3,12 +3,16 @@
 Nothing in this directory describes the current product. These are dated
 records kept as evidence: the directive that set the architectural cutover
 in motion, the host trial transcripts and stakeholder-acceptance packets of
-the program that preceded it, and recorded skill runs. They are cited from
-RESEARCH-DECISIONS.md, whose sections 1 through 32 are the decision record
-of that earlier program and whose section 33 records the cutover. Current
-documentation is one level up, in docs/.
+the program that preceded it, the records of the later native-work cutover
+that replaced the external tracker, and recorded skill runs.
+RESEARCH-DECISIONS.md cites the directive: its sections 1 through 32 are the
+decision record of that earlier program and its section 33 records the
+architectural cutover. Current documentation is one level up, in docs/.
 
 - `cutover-directive.md` — the execution directive, verbatim.
+- `construct-cutover/` — the 2026-09-20 records of the native-work cutover:
+  the frozen mandate, baseline, findings, architecture, plan, source register,
+  deletion inventory, and verification report.
 - `host-trial-*.md` — dated transcripts of the earlier projection inside
   Codex, Cursor, goose, nanobot, and pi.
 - `stakeholder-acceptance-phase-4.md`, `stakeholder-acceptance-phase-5.md`

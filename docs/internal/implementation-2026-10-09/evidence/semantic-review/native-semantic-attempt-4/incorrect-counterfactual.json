@@ -1,0 +1,43 @@
+{
+  "case": "incorrect-counterfactual",
+  "review": {
+    "reviewRef": "semantic:8",
+    "preparedRef": "review:6",
+    "receipt": {
+      "preparedRef": "review:6",
+      "bundleDigest": "4f8c4cd489144c4b46bc0f1f2305832aff57fb0b539c220a1b1964e3e0bd433e",
+      "attempt": 1,
+      "invocation": {
+        "id": "0d22309b-c51f-4a5c-a7dd-6cd566e7fd18",
+        "host": "codex",
+        "hostVersion": "codex-cli 0.145.0",
+        "model": "gpt-6-astra",
+        "sessionId": "01a12300-1a34-7ef1-84ee-358fbc3be66e",
+        "completed": false,
+        "exitStatus": null,
+        "timedOut": false,
+        "transcriptDigest": "d25fff2f27a015278195a0e790326af8459c254c56b1236131a73a969397b5ac"
+      },
+      "judgment": null,
+      "problems": [
+        "native review attempted a tool outside the held-text profile",
+        "native review did not complete its ordered event stream",
+        "native review did not return one JSON judgment",
+        "native host MCP configuration changed during review",
+        "reviewer did not return a checks array"
+      ]
+    },
+    "passed": false
+  },
+  "finalState": "running",
+  "stepState": "leased",
+  "at": "2026-10-09T23:29:31.882Z",
+  "pin": {
+    "host": "codex",
+    "binary": "native-installed-binary",
+    "digest": "1da3f4e0e96028b8a771814293c3033dafd1971f943f6c7e79b0897fe705f590",
+    "version": "codex-cli 0.145.0",
+    "profile": "codex-held-text-v1"
+  },
+  "observedFilesUnchanged": true
+}

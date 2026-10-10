@@ -1,0 +1,71 @@
+[
+  {
+    "command": [
+      "construct",
+      "source",
+      "refresh",
+      "local-docs",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"sourceId\": \"local-docs\", \"outcome\": \"changed\", \"snapshot\": {\"id\": \"snap-efebe775\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:ef5a29a3ba9b78d3d847751f51aeffda8fbb4edf48a9a7966413071e80c5c7e7\", \"summary\": \"2 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:17:16.917Z\"}, \"changes\": {\"added\": [\"cache-probe.txt\"], \"removed\": [], \"modified\": []}, \"staleDeliverables\": [\"drift-snap-e72925c7\"]}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "refresh",
+      "local-docs",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"sourceId\": \"local-docs\", \"outcome\": \"unchanged\", \"snapshot\": {\"id\": \"snap-efebe775\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:ef5a29a3ba9b78d3d847751f51aeffda8fbb4edf48a9a7966413071e80c5c7e7\", \"summary\": \"2 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:17:16.917Z\"}}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "refresh",
+      "local-docs",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"sourceId\": \"local-docs\", \"outcome\": \"changed\", \"snapshot\": {\"id\": \"snap-1805cf92\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:95e952a273918c84e86c48f62bb17a3836c58d9c5c504362e2c8bfbd4b840721\", \"summary\": \"2 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:17:17.173Z\"}, \"changes\": {\"added\": [], \"removed\": [], \"modified\": [\"cache-probe.txt\"]}, \"staleDeliverables\": []}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "source",
+      "refresh",
+      "local-docs",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"sourceId\": \"local-docs\", \"outcome\": \"changed\", \"snapshot\": {\"id\": \"snap-8ff93779\", \"sourceId\": \"local-docs\", \"digest\": \"sha256:98a2336c818894cfa820ce73d348d14b7d3952df4bf8360fcf40e5602e287121\", \"summary\": \"1 file(s) under $AUDIT/consumer/project/docs\", \"evidenceRef\": \"$AUDIT/consumer/project/docs\", \"takenAt\": \"2026-10-09T14:06:29.597Z\"}, \"changes\": {\"added\": [], \"removed\": [\"cache-probe.txt\"], \"modified\": []}, \"staleDeliverables\": []}",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "run",
+      "cancel",
+      "run-ed6126ef"
+    ],
+    "exit": 0,
+    "stdout": "run run-ed6126ef cancelled\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "construct",
+      "status",
+      "--json"
+    ],
+    "exit": 0,
+    "stdout": "{\"root\": \"$AUDIT/consumer/schedule-project\", \"project\": {\"id\": \"proj-54961d51\", \"name\": \"schedule-trial\"}, \"onboarding\": {\"state\": \"drafted\", \"missing\": [\"purpose\", \"scale\", \"primaryOutcome\"], \"openQuestions\": 3, \"proposalsAwaitingReview\": 7}, \"runs\": {\"active\": 0, \"byState\": {}}, \"decisions\": {\"open\": 3}, \"sources\": {\"total\": 0, \"reachable\": 0, \"unreachable\": 0, \"unknown\": 0, \"fresh\": 0, \"stale\": 0, \"neverRead\": 0}, \"registry\": {\"skills\": 17, \"workflows\": 22, \"skew\": []}, \"drift\": {\"open\": 0}, \"sessions\": [], \"habits\": {\"answersChecked\": 0, \"answersClean\": 0, \"uncheckedCaught\": 0, \"readsRecorded\": 0, \"checksWaived\": 0}}",
+    "stderr": ""
+  }
+]

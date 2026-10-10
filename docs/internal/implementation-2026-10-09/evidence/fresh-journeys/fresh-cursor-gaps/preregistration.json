@@ -1,0 +1,32 @@
+{
+  "host": "cursor",
+  "tag": "gaps",
+  "project": "<USER_HOME>/Documents/Codex/2026-10-09/task-2/construct-implementation/fresh-cursor-gaps/project",
+  "git": true,
+  "packageSha256": "e9df4e9b9ee5caf5e70c5886f163f2940264e7117736fd5572eb52e9aac0aeb2",
+  "fixtureBeforeInit": true,
+  "initialProject": {
+    "format": "construct-project",
+    "formatVersion": 2,
+    "id": "proj-b3a3d0e4",
+    "name": "Depot planning",
+    "createdAt": "2026-10-09T21:34:50.651Z",
+    "behavior": {}
+  },
+  "qaCountsBefore": {
+    "workflow_runs": 0,
+    "step_runs": 0,
+    "deliverables": 0,
+    "work_items": 0,
+    "sources": 0,
+    "source_snapshots": 0
+  },
+  "promptNames": [
+    "qa",
+    "initial",
+    "changed"
+  ],
+  "model": "configured host default",
+  "timestamp": "2026-10-09T21:34:50.679Z",
+  "sourceOrigin": "http://127.0.0.1:53988"
+}

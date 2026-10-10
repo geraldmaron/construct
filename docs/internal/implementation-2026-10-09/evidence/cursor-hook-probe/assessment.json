@@ -1,0 +1,16 @@
+{
+  "verdict": "Hook activation/enforcement not observed in this installed Cursor CLI probe.",
+  "observed": {
+    "exit": 0,
+    "artifactWritten": true,
+    "hookObservationCount": 0
+  },
+  "scope": "One disposable trusted project, project hooks.json with five command events including deny-all preToolUse, current authenticated CLI in sandbox mode, shell denied. No global configuration edited.",
+  "inference": "Cannot rely on this hook configuration as an enforced managed-work handoff in the observed CLI. This does not establish that all Cursor surfaces or versions lack hooks.",
+  "sources": [
+    "https://cursor.com/docs/hooks",
+    "https://cursor.com/docs/cli/using",
+    "https://cursor.com/docs/rules"
+  ],
+  "next": "Use documented alwaysApply project context and preserve the distinction between guidance and enforcement; validate with ordinary fresh consumer prompts."
+}

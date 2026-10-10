@@ -1,0 +1,597 @@
+{
+  "sources": [
+    {
+      "id": "inventory",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "Current West depot stock records",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "reachable",
+      "last_snapshot_id": "snap-0d945c5b",
+      "status": "active",
+      "created_at": "2026-10-09T22:39:58.632Z",
+      "updated_at": "2026-10-09T22:46:31.389Z",
+      "retired_at": null
+    },
+    {
+      "id": "operations",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "West depot reservation quantities and their definitions",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "reachable",
+      "last_snapshot_id": "snap-fb9c37ba",
+      "status": "active",
+      "created_at": "2026-10-09T22:40:16.376Z",
+      "updated_at": "2026-10-09T22:46:37.729Z",
+      "retired_at": null
+    },
+    {
+      "id": "catalog",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "Current lot-specific packaging index and connected metadata API",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "reachable",
+      "last_snapshot_id": "snap-af335196",
+      "status": "active",
+      "created_at": "2026-10-09T22:40:30.773Z",
+      "updated_at": "2026-10-09T22:46:47.904Z",
+      "retired_at": null
+    },
+    {
+      "id": "conversations",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "Operator discussion, treated as unconfirmed claims rather than inventory authority",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "reachable",
+      "last_snapshot_id": "snap-71d51dac",
+      "status": "active",
+      "created_at": "2026-10-09T22:40:55.830Z",
+      "updated_at": "2026-10-09T22:46:55.364Z",
+      "retired_at": null
+    },
+    {
+      "id": "supplier",
+      "kind": "other",
+      "origin": "local",
+      "purpose": "Referenced lot-specific supplier evidence; access denied",
+      "locator": null,
+      "authority_level": "informative",
+      "freshness_hours": null,
+      "sensitivity": "confidential",
+      "retention": null,
+      "can_read": 1,
+      "can_write": 0,
+      "identity_mapping_json": null,
+      "reachability": "unknown",
+      "last_snapshot_id": null,
+      "status": "active",
+      "created_at": "2026-10-09T22:41:09.928Z",
+      "updated_at": "2026-10-09T22:41:09.928Z",
+      "retired_at": null
+    }
+  ],
+  "source_authority": [],
+  "source_snapshots": [
+    {
+      "id": "snap-75af38f0",
+      "source_id": "inventory",
+      "digest": "sha256:c1a41d90d873bc537826baeea409dce27b69dfd668a0ed2930a46be4981ebdd6",
+      "summary": "1 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:inventory",
+      "inventory_digest": null,
+      "content_digest": "sha256:c1a41d90d873bc537826baeea409dce27b69dfd668a0ed2930a46be4981ebdd6",
+      "item_count": 1,
+      "coverage_json": null,
+      "taken_at": "2026-10-09T22:40:09.947Z"
+    },
+    {
+      "id": "snap-7e85f0f7",
+      "source_id": "operations",
+      "digest": "sha256:150491adcfb585946def2e8c53f38055138ca60b1414eae63718de0e0c53015e",
+      "summary": "1 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:operations",
+      "inventory_digest": null,
+      "content_digest": "sha256:150491adcfb585946def2e8c53f38055138ca60b1414eae63718de0e0c53015e",
+      "item_count": 1,
+      "coverage_json": {
+        "query": "West replenishment inbound demand",
+        "results": "Only West reservations returned; query results only, not proof of absent inbound supply or demand."
+      },
+      "taken_at": "2026-10-09T22:40:24.421Z"
+    },
+    {
+      "id": "snap-93d42e2b",
+      "source_id": "catalog",
+      "digest": "sha256:db1057322ef50a985b71605d9a5652d8ec5a9242df601e18aa66a8e957979ff1",
+      "summary": "3 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:catalog",
+      "inventory_digest": null,
+      "content_digest": "sha256:db1057322ef50a985b71605d9a5652d8ec5a9242df601e18aa66a8e957979ff1",
+      "item_count": 3,
+      "coverage_json": {
+        "transport": "workspace MCP fetch returned HTTP 200 for both API resources after shell curl connection failed",
+        "observedAt": "2026-10-09T22:39:28.661Z"
+      },
+      "taken_at": "2026-10-09T22:40:47.953Z"
+    },
+    {
+      "id": "snap-71d51dac",
+      "source_id": "conversations",
+      "digest": "sha256:929dcbdd3d31e3779455f0956f87b85444985d1cc8f2cd4ec5a80b3fa25089a9",
+      "summary": "1 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:conversations",
+      "inventory_digest": null,
+      "content_digest": "sha256:929dcbdd3d31e3779455f0956f87b85444985d1cc8f2cd4ec5a80b3fa25089a9",
+      "item_count": 1,
+      "coverage_json": null,
+      "taken_at": "2026-10-09T22:41:03.055Z"
+    },
+    {
+      "id": "snap-0d945c5b",
+      "source_id": "inventory",
+      "digest": "sha256:1c54890f682825176e827c45baef842011b197e704d2bf4e4f6808e8b93625f1",
+      "summary": "1 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:inventory",
+      "inventory_digest": null,
+      "content_digest": "sha256:1c54890f682825176e827c45baef842011b197e704d2bf4e4f6808e8b93625f1",
+      "item_count": 1,
+      "coverage_json": null,
+      "taken_at": "2026-10-09T22:46:31.389Z"
+    },
+    {
+      "id": "snap-fb9c37ba",
+      "source_id": "operations",
+      "digest": "sha256:52f8f46ece7044701dafb6934fff0c01d9b3aa07dd11ccdcfa56795efca67149",
+      "summary": "1 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:operations",
+      "inventory_digest": null,
+      "content_digest": "sha256:52f8f46ece7044701dafb6934fff0c01d9b3aa07dd11ccdcfa56795efca67149",
+      "item_count": 1,
+      "coverage_json": null,
+      "taken_at": "2026-10-09T22:46:37.729Z"
+    },
+    {
+      "id": "snap-af335196",
+      "source_id": "catalog",
+      "digest": "sha256:7da5bea2761b866c1fbfea941e2fe2e4b3c40cd7e3333d0cbe109aa19a056364",
+      "summary": "2 item(s) reported by the host (partial read)",
+      "evidence_ref": "host:catalog",
+      "inventory_digest": null,
+      "content_digest": "sha256:7da5bea2761b866c1fbfea941e2fe2e4b3c40cd7e3333d0cbe109aa19a056364",
+      "item_count": 3,
+      "coverage_json": null,
+      "taken_at": "2026-10-09T22:46:47.904Z"
+    }
+  ],
+  "observations": [
+    {
+      "id": "snap-2c62e241",
+      "run_id": null,
+      "source_id": "inventory",
+      "kind": "source.changed",
+      "summary": "inventory changed: 1 item(s) reported by the host (partial read)",
+      "evidence_json": {
+        "digest": "sha256:c1a41d90d873bc537826baeea409dce27b69dfd668a0ed2930a46be4981ebdd6",
+        "evidence": "reported",
+        "items": 1,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://stock/west",
+            "kind": "item",
+            "fingerprint": "edb56e09d9fc375734a9509d3653f275541e7a9a24d839f5a9cf8d2e1233b6e1",
+            "text": "Current authoritative stock: sku PART-19, available 12, unit case, schema revision 1. Current packaging is http://127.0.0.1:58676/catalog/part-19 ; schema is http://127.0.0.1:58676/openapi.json . Reservations: depot://reservations/west. Cached each export is superseded.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          }
+        ]
+      },
+      "observed_at": "2026-10-09T22:40:09.947Z"
+    },
+    {
+      "id": "snap-ad757790",
+      "run_id": null,
+      "source_id": "inventory",
+      "kind": "source.access",
+      "summary": "inventory: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://stock/west"
+        ],
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:40:09.947Z"
+    },
+    {
+      "id": "snap-efe0a6ac",
+      "run_id": null,
+      "source_id": "operations",
+      "kind": "source.changed",
+      "summary": "operations changed: 1 item(s) reported by the host (partial read)",
+      "evidence_json": {
+        "digest": "sha256:150491adcfb585946def2e8c53f38055138ca60b1414eae63718de0e0c53015e",
+        "evidence": "reported",
+        "items": 1,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://reservations/west",
+            "kind": "item",
+            "fingerprint": "dc183430e9f840ed310af7337461d13dd5eb570a40823f1466e39b0f96ffab03",
+            "text": "Reservation row PART-19 has reserved_quantity 4. The legacy field was each; the schema revision 2 response does not state a unit. Do not assume the stock unit also describes reservations. Ask warehouse operations for this field definition. The unrelated SKU AUX-22 is reserved in each.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          }
+        ]
+      },
+      "observed_at": "2026-10-09T22:40:24.421Z"
+    },
+    {
+      "id": "snap-20702231",
+      "run_id": null,
+      "source_id": "operations",
+      "kind": "source.access",
+      "summary": "operations: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://reservations/west"
+        ],
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "scope": null,
+        "partial": true,
+        "coverage": {
+          "query": "West replenishment inbound demand",
+          "results": "Only West reservations returned; query results only, not proof of absent inbound supply or demand."
+        },
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:40:24.421Z"
+    },
+    {
+      "id": "snap-073c08dd",
+      "run_id": null,
+      "source_id": "catalog",
+      "kind": "source.changed",
+      "summary": "catalog changed: 3 item(s) reported by the host (partial read)",
+      "evidence_json": {
+        "digest": "sha256:db1057322ef50a985b71605d9a5652d8ec5a9242df601e18aa66a8e957979ff1",
+        "evidence": "reported",
+        "items": 3,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://catalog/part-19",
+            "kind": "item",
+            "fingerprint": "28eb9e3dee2ab63f8ecac4cc5bc510aef2f1663761c3d4ee7795fc39ed6f4f00",
+            "text": "Current lot-specific conversion is supplied only by the connected metadata API at http://127.0.0.1:58676/catalog/part-19. Fetch the response; this index is not the conversion.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19",
+            "kind": "item",
+            "fingerprint": "0fba9490a74f3e0ac254736e448290e3dde6d8548e88339e1f6fba7e491b36b3",
+            "text": "{\"sku\":\"PART-19\",\"units_per_case\":null,\"unit\":\"each\",\"observedAt\":\"2026-10-09T09:00:00Z\",\"schemaRevision\":1,\"authority\":\"current lot-specific catalog\",\"coverage\":{\"complete\":true},\"references\":[\"depot://supplier/lot-k\"]}",
+            "url": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/openapi.json",
+            "kind": "item",
+            "fingerprint": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+            "text": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Synthetic item metadata\",\"version\":\"1\"},\"paths\":{\"/catalog/part-19\":{\"get\":{\"responses\":{\"200\":{\"description\":\"item packaging record\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"sku\":{\"type\":\"string\"},\"units_per_case\":{\"type\":[\"integer\",\"null\"]},\"unit\":{\"type\":\"string\"},\"observedAt\":{\"type\":\"string\"}}}}}}}}}}}",
+            "url": "http://127.0.0.1:58676/openapi.json"
+          }
+        ]
+      },
+      "observed_at": "2026-10-09T22:40:47.953Z"
+    },
+    {
+      "id": "snap-ff81dc1d",
+      "run_id": null,
+      "source_id": "catalog",
+      "kind": "source.access",
+      "summary": "catalog: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://catalog/part-19",
+          "http://127.0.0.1:58676/catalog/part-19",
+          "http://127.0.0.1:58676/openapi.json"
+        ],
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "scope": null,
+        "partial": true,
+        "coverage": {
+          "transport": "workspace MCP fetch returned HTTP 200 for both API resources after shell curl connection failed",
+          "observedAt": "2026-10-09T22:39:28.661Z"
+        },
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:40:47.953Z"
+    },
+    {
+      "id": "snap-affb2ce7",
+      "run_id": null,
+      "source_id": "conversations",
+      "kind": "source.changed",
+      "summary": "conversations changed: 1 item(s) reported by the host (partial read)",
+      "evidence_json": {
+        "digest": "sha256:929dcbdd3d31e3779455f0956f87b85444985d1cc8f2cd4ec5a80b3fa25089a9",
+        "evidence": "reported",
+        "items": 1,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://chat/staffing",
+            "kind": "item",
+            "fingerprint": "f60318d986e606e4107395be4abc674678294547a972bd6f911731f313301797",
+            "text": "An operator suggests all cases always hold six each, but there is no current lot-specific confirmation. Owner catalog says packaging varies. Follow depot://catalog/part-19.",
+            "updatedAt": "2026-10-09T10:00:00Z"
+          }
+        ]
+      },
+      "observed_at": "2026-10-09T22:41:03.055Z"
+    },
+    {
+      "id": "snap-c2f138ff",
+      "run_id": null,
+      "source_id": "conversations",
+      "kind": "source.access",
+      "summary": "conversations: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://chat/staffing"
+        ],
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:41:03.055Z"
+    },
+    {
+      "id": "snap-8c069ebd",
+      "run_id": null,
+      "source_id": "supplier",
+      "kind": "source.access",
+      "summary": "supplier: permission_denied",
+      "evidence_json": {
+        "operation": "*",
+        "mode": "read",
+        "applicability": "scope",
+        "provenance": "reported",
+        "scope": "depot://supplier/lot-k",
+        "reason": "Workspace fetch returned permission_denied, retryable false: This source principal cannot access the requested resource. Supplier content and current lot conversion remain unknown.",
+        "sessionId": "ses_15057578-07d7-432f-8670-4fa58348940b",
+        "coverage": null,
+        "outcome": "permission_denied"
+      },
+      "observed_at": "2026-10-09T22:41:16.142Z"
+    },
+    {
+      "id": "snap-fff3d6f8",
+      "run_id": null,
+      "source_id": "inventory",
+      "kind": "source.changed",
+      "summary": "inventory changed: 1 item(s) reported by the host (partial read) (modified depot://stock/west)",
+      "evidence_json": {
+        "digest": "sha256:1c54890f682825176e827c45baef842011b197e704d2bf4e4f6808e8b93625f1",
+        "evidence": "reported",
+        "items": 1,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://stock/west",
+            "kind": "item",
+            "fingerprint": "0b3f5a36d8e1c95f5b5314bd5506c3ebee25977fd730d036696a780eb4e03db9",
+            "text": "Current authoritative stock, schema revision2: sku PART-19, available6, unit case. Current packaging: http://127.0.0.1:58676/catalog/part-19 . Reservations: depot://reservations/west. Cached export superseded. Provider timestamp unchanged; these corrected bytes are authoritative.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          }
+        ],
+        "changes": {
+          "added": [],
+          "removed": [],
+          "modified": [
+            "depot://stock/west"
+          ]
+        }
+      },
+      "observed_at": "2026-10-09T22:46:31.389Z"
+    },
+    {
+      "id": "snap-fcfc67a9",
+      "run_id": null,
+      "source_id": "inventory",
+      "kind": "source.access",
+      "summary": "inventory: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://stock/west"
+        ],
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:46:31.389Z"
+    },
+    {
+      "id": "snap-037018b9",
+      "run_id": null,
+      "source_id": "operations",
+      "kind": "source.changed",
+      "summary": "operations changed: 1 item(s) reported by the host (partial read) (modified depot://reservations/west)",
+      "evidence_json": {
+        "digest": "sha256:52f8f46ece7044701dafb6934fff0c01d9b3aa07dd11ccdcfa56795efca67149",
+        "evidence": "reported",
+        "items": 1,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://reservations/west",
+            "kind": "item",
+            "fingerprint": "f4a5e57cdb571c36667eda70fdc7d8dec93497fc624653a905893ece2803b7c1",
+            "text": "Current schema revision2: PART-19 reserved_quantity4, unit each. This is a corrected authoritative field definition from warehouse operations, superseding the ambiguous response. Apply current item-specific packaging independently.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          }
+        ],
+        "changes": {
+          "added": [],
+          "removed": [],
+          "modified": [
+            "depot://reservations/west"
+          ]
+        }
+      },
+      "observed_at": "2026-10-09T22:46:37.729Z"
+    },
+    {
+      "id": "snap-6a07e951",
+      "run_id": null,
+      "source_id": "operations",
+      "kind": "source.access",
+      "summary": "operations: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://reservations/west"
+        ],
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:46:37.729Z"
+    },
+    {
+      "id": "snap-daec1ee1",
+      "run_id": null,
+      "source_id": "catalog",
+      "kind": "source.changed",
+      "summary": "catalog changed: 2 item(s) reported by the host (partial read) (modified http://127.0.0.1:58676/catalog/part-19)",
+      "evidence_json": {
+        "digest": "sha256:7da5bea2761b866c1fbfea941e2fe2e4b3c40cd7e3333d0cbe109aa19a056364",
+        "evidence": "reported",
+        "items": 3,
+        "partial": true,
+        "manifest": [
+          {
+            "ref": "depot://catalog/part-19",
+            "kind": "item",
+            "fingerprint": "28eb9e3dee2ab63f8ecac4cc5bc510aef2f1663761c3d4ee7795fc39ed6f4f00",
+            "text": "Current lot-specific conversion is supplied only by the connected metadata API at http://127.0.0.1:58676/catalog/part-19. Fetch the response; this index is not the conversion.",
+            "updatedAt": "2026-10-09T09:00:00Z"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/catalog/part-19",
+            "kind": "item",
+            "fingerprint": "0a68c1c7978bdc37341527d2c5c397bd4fd136536d988746a73be56ff95bfbad",
+            "text": "{\"sku\":\"PART-19\",\"units_per_case\":6,\"unit\":\"each\",\"observedAt\":\"2026-10-09T09:00:00Z\",\"schemaRevision\":2,\"authority\":\"current lot-specific catalog\",\"coverage\":{\"complete\":true},\"references\":[]}",
+            "url": "http://127.0.0.1:58676/catalog/part-19"
+          },
+          {
+            "ref": "http://127.0.0.1:58676/openapi.json",
+            "kind": "item",
+            "fingerprint": "49ca388f1a3e87c2e0445bf4b4bfb02b94665b431413a732bd7a199b649e21f5",
+            "text": "{\"openapi\":\"3.1.0\",\"info\":{\"title\":\"Synthetic item metadata\",\"version\":\"1\"},\"paths\":{\"/catalog/part-19\":{\"get\":{\"responses\":{\"200\":{\"description\":\"item packaging record\",\"content\":{\"application/json\":{\"schema\":{\"type\":\"object\",\"properties\":{\"sku\":{\"type\":\"string\"},\"units_per_case\":{\"type\":[\"integer\",\"null\"]},\"unit\":{\"type\":\"string\"},\"observedAt\":{\"type\":\"string\"}}}}}}}}}}}",
+            "url": "http://127.0.0.1:58676/openapi.json"
+          }
+        ],
+        "changes": {
+          "added": [],
+          "removed": [],
+          "modified": [
+            "http://127.0.0.1:58676/catalog/part-19"
+          ]
+        }
+      },
+      "observed_at": "2026-10-09T22:46:47.904Z"
+    },
+    {
+      "id": "snap-8c2a5a97",
+      "run_id": null,
+      "source_id": "catalog",
+      "kind": "source.access",
+      "summary": "catalog: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://catalog/part-19",
+          "http://127.0.0.1:58676/catalog/part-19"
+        ],
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:46:47.904Z"
+    },
+    {
+      "id": "snap-1c295891",
+      "run_id": null,
+      "source_id": "conversations",
+      "kind": "source.access",
+      "summary": "conversations: read",
+      "evidence_json": {
+        "provenance": "reported",
+        "operation": "read",
+        "refreshedRefs": [
+          "depot://chat/staffing"
+        ],
+        "sessionId": "ses_825e052f-9a84-4c41-ba0a-b47e0d5a69fb",
+        "scope": null,
+        "partial": true,
+        "coverage": null,
+        "outcome": "read"
+      },
+      "observed_at": "2026-10-09T22:46:55.364Z"
+    }
+  ]
+}

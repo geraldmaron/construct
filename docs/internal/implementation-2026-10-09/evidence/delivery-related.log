@@ -1,0 +1,40 @@
+✔ initialize, tools/list, tools/call, and errors follow the protocol (28.120916ms)
+✔ wrong input comes back as a tool error naming the field and the values it accepts, in structured and text content alike (19.134333ms)
+✔ the headless server names itself and lists only its surface (17.684667ms)
+✔ the line transport answers in order and survives a parse error (22.25425ms)
+✔ an unbound server completes the handshake and reports the missing project (0.221042ms)
+✔ an unbound server gives the next step that fits the cause, not always init (0.061958ms)
+✔ a server whose store was busy at launch lists its real tools and binds on a later call (18.6045ms)
+✔ a server stops writing when another build changes the store format under it (17.08075ms)
+✔ a lazy server rejects an unknown tool without trying to bind (0.166041ms)
+✔ a lazy server that finds a newer store switches to the unbound surface with upgrade advice (0.187292ms)
+✔ a message whose handling throws gets an error reply, and the server keeps answering (0.619209ms)
+✔ a store that fails under the format guard yields an error reply, not a crash (13.894875ms)
+✔ classify_request takes a typed reading, records nothing, and names who judged it (38.515083ms)
+✔ the same typed reading in a polite question form gets the same matches and asks the same questions (18.402041ms)
+✔ a reading the model can fix comes back as wrong input naming the field, its values and an example of that field (18.89225ms)
+✔ an answer, a record and coordination match no workflow and say what to do instead (17.652667ms)
+✔ the flagship starts from its intake with its window frozen; every step works from the reading in structured fields, never the names it could not register (23.730125ms)
+✔ once the named systems are declared, the reading resolves them and the run reads them (26.609417ms)
+✔ start_outcome starts nothing while a required detail or a blocking question is open, and refuses a reading or a workflow it cannot start (14.516542ms)
+✔ without an intake a missing input starts nothing and an undeclared one is refused, while the command line still keeps a blocked run (14.32625ms)
+✔ a different window is different work, the same window is the same run, and a different reading of it is flagged (15.597292ms)
+✔ stakes the host reports only raise rigor, and the run keeps them (16.216167ms)
+✔ the published reading carries the stake areas the judge reads, and the description names every kind a workflow declares (1.197041ms)
+✔ standing intake records an idempotent definition, preserves input, and creates no immediate run or executor (38.357583ms)
+✔ an outcome cannot finish in state alone when the person requested a local file (22.108333ms)
+✔ the frozen router catalog is a catalog the router reads (0.55125ms)
+✔ every shipped skill names an eval file that validates, has both kinds of case, and feeds the router (1.054ms)
+✔ on natural requests that borrow no skill vocabulary, the router puts the right skill near the top (25.978709ms)
+✔ each activating example is ranked first or near it by a router that has never seen it (156.714584ms)
+✔ a request that asks nothing of any skill ranks nothing as likely (1.234542ms)
+✔ the operational skill teaches the session what the directive requires and forbids (0.351833ms)
+✔ the operational skill says nothing twice, and its description fits every host and names work asked as a question (0.788917ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 474.515042

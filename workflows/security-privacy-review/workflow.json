@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "security-privacy-review",
   "title": "Security and privacy review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "purpose": "Defensive review of a system or change: threat model per boundary, access paths, secrets, data classification and retention, dependency advisories, and detection, each finding citing its path and control; fatal exposures are raised immediately and regulatory questions handed to governance-risk.",
   "activation": [
     "review this for security",
@@ -52,7 +52,8 @@
         "unknowns"
       ],
       "validators": [
-        "citations_present"
+        "citations_present",
+        "reference_coverage"
       ],
       "loadBearing": true,
       "challenge": false,

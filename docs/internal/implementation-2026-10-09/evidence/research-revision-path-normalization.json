@@ -1,0 +1,32 @@
+[
+  {
+    "path": "research-revision-tests.log",
+    "originalDigest": "2b01ea581317167239a3cf60fd0cff404efa6e9d86253b64a2f219722c11e30e",
+    "normalizedDigest": "2b01ea581317167239a3cf60fd0cff404efa6e9d86253b64a2f219722c11e30e"
+  },
+  {
+    "path": "research-revision-conformance.log",
+    "originalDigest": "b8d7bf1112a8805239bb141246ec12ec328e7ddbbb7a95c74d3a2638d4a22875",
+    "normalizedDigest": "7157f852c428d627638429ba5d808a321d9964f01c0d3563cb83cffca8512af2"
+  },
+  {
+    "path": "research-revision-smoke.log",
+    "originalDigest": "7597f81ad3568516a4949585de37296b26177d4fbeb45ffdc4632f0de6c960bc",
+    "normalizedDigest": "7597f81ad3568516a4949585de37296b26177d4fbeb45ffdc4632f0de6c960bc"
+  },
+  {
+    "path": "research-revision-types.log",
+    "originalDigest": "ca28f6f51e8c4ea0f862fe9656c82dff444655e5edbbe7c4c4a82b7c51e4c9dd",
+    "normalizedDigest": "ca28f6f51e8c4ea0f862fe9656c82dff444655e5edbbe7c4c4a82b7c51e4c9dd"
+  },
+  {
+    "path": "research-revision-lint.log",
+    "originalDigest": "17f809e4a0f82c3b965ad41a0bd90bcb4c3c41d7bdb0ae18f84d0bfeb2e440ab",
+    "normalizedDigest": "17f809e4a0f82c3b965ad41a0bd90bcb4c3c41d7bdb0ae18f84d0bfeb2e440ab"
+  },
+  {
+    "path": "research-revision-focused.log",
+    "originalDigest": "dcae145c4af6ea75ff7cc38f6eab37c6b30b6a3f26b2a342ebd1959e8d1d6a57",
+    "normalizedDigest": "dcae145c4af6ea75ff7cc38f6eab37c6b30b6a3f26b2a342ebd1959e8d1d6a57"
+  }
+]
