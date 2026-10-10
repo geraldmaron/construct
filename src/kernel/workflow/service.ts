@@ -1,4 +1,4 @@
-import { semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type NativeReviewerIdentity } from './semantic-review.ts';
+import { semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type NativeReviewerIdentity } from './semantic-review.ts';
 import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
@@ -137,6 +137,7 @@ export interface WorkIntake {
 }
 
 export interface WorkPacket {
+  readonly semanticReview: SemanticReviewStatus;
   readonly leased: LeasedStep;
   readonly run: WorkflowRun;
   readonly step: WorkflowStep;
@@ -277,7 +278,7 @@ export interface SubmitInput {
 }
 
 export interface SubmitResult {
-  readonly semanticReview?: { readonly preparedRef: string | null; readonly digest: string | null; readonly problems: readonly string[]; readonly next: string };
+  readonly semanticReview?: SemanticReviewStatus;
   readonly step: StepRun;
   readonly validation: readonly ValidatorResult[];
   readonly run: WorkflowRun;
@@ -291,6 +292,7 @@ export interface SubmitResult {
 }
 
 export interface RunView {
+  readonly semanticReview: SemanticReviewStatus;
   readonly run: WorkflowRun;
   readonly steps: readonly StepRun[];
   readonly deliverables: readonly Deliverable[];
@@ -904,10 +906,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       problems = [error.message];
     }
     if (problems.length) {
-      const next = prepared
-        ? `Keep this draft and lease. From the invoking host's permitted command tool, run construct run review ${run.id} --step ${leased.id} --token <current-lease-token> --prepared ${prepared.ref} --host <native-host> --model <explicit-model>, then resubmit the identical final output. The reviewer is bounded to held text; unavailable permission or adapter leaves an unverified draft. No MCP background launch or host fallback is authorized.`
-        : 'The exact draft is preserved, but no review packet was prepared. Reduce the candidate or provide a supported bounded evidence representation and resubmit on this lease. Do not truncate material evidence or claim verification.';
-      return { step: getStep(store, leased.id)!, validation: [...validation, { validator: 'semantic_review', ok: false, problems }], run: getRun(store, run.id)!, deliverable: draft, ignored: [], semanticReview: { preparedRef: prepared?.ref ?? null, digest: prepared?.digest ?? null, problems, next } };
+      const progress = semanticReviewStatus(store, run, resolve, at);
+      const semanticReview: SemanticReviewStatus = prepared ? progress : { ...progress, state: progress.state === 'unavailable' ? 'unavailable' : 'not_prepared', preparedRef: null, digest: null, reviewRef: null, checks: [], canInvoke: false, problems: [...new Set([...progress.problems, ...problems])], next: progress.state === 'unavailable' ? `${progress.next} The exact draft is preserved, but its review packet also exceeds the supported bound.` : 'The exact draft is preserved, but its review packet exceeds the supported bound. A supported bounded representation is required; correct only current-step outputs within its tier. Inherited inputs cannot be overwritten by resubmission; if those need changing, preserve the draft as unverified and use cancellation/replanning recovery. Do not truncate material evidence or claim verification.' };
+      return { step: getStep(store, leased.id)!, validation: [...validation, { validator: 'semantic_review', ok: false, problems }], run: getRun(store, run.id)!, deliverable: draft, ignored: [], semanticReview };
     }
     return null;
   }
@@ -1382,7 +1383,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
-    if (requiredSemanticContract(run)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Final submission prepares a review packet and preserves an unverified draft while keeping this lease. Follow semanticReview.next in its response, then resubmit the same final output. A reported review or passing shell command is insufficient. If the invoking host cannot run the review adapter, report that exact limitation and preserve the draft; do not widen permissions.');
+    if (requiredSemanticContract(run)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
     const destination = asked.intake?.destination;
     if (destination?.kind === 'project_file' && destination.ref) lines.push(`The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`);
     const p = asked.period;
@@ -1480,6 +1481,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           : '',
     ].filter(Boolean);
     return {
+      semanticReview: semanticReviewStatus(store, run, deps.resolveEvidence, deps.now()),
       leased,
       run,
       step,
@@ -2425,7 +2427,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     status(runId) {
       const run = getRun(store, runId);
       if (!run) return null;
-      return { run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
+      return { semanticReview: semanticReviewStatus(store, run, deps.resolveEvidence, deps.now()), run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
     },
 
     promote({ deliverableId, to, by, channel = 'relay', verification, reason }) {
