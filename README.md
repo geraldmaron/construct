@@ -10,14 +10,16 @@ This is the `3.0.0` alpha line of `@geraldmaron/construct`, under
 architectural cutover. Alphas publish under the `alpha` tag; `latest` stays on
 the predecessor. Nothing here is promised stable.
 
-## Alpha.27 — experimental
+## Alpha.28 — experimental
 
-This candidate adds exact-generation semantic review, source-change invalidation,
-bounded source traversal, durable recovery and early research checkpoints.
-Managed completion currently requires the supported Codex review adapter;
-other hosts preserve unverified drafts. The canonical full live intake release
-record is absent. See the [release notes](CHANGELOG.md) and
-[measured limitations](docs/internal/implementation-2026-10-09/SEMANTIC-REVIEW.md).
+This candidate adds portable outcome paths, ranked local context, optional supplied
+vectors, immutable source citations and durable checkpoints. Research, decisions
+and chat artifacts can be delivered with explicit structural assurance without
+code-test requirements or an independent reviewer. Paths requiring independent
+review retain their held drafts until that review is observed. One ordinary native
+decision trial completed; native isolation, broad host effectiveness and measured
+skill benefit remain unqualified. See the [release notes](CHANGELOG.md) and
+[validation record](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md).
 
 - One native work ledger across project worktrees, with fenced claims, path
   reservations, handoffs, and peer awareness.
