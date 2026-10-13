@@ -69,6 +69,22 @@ export interface CurrentManifest {
   readonly provenance: 'witnessed' | 'reported';
 }
 
+/** Immutable generation locator. Item ids are encoded so delimiters remain unambiguous. */
+export function snapshotItemRef(snapshotId: string, itemRef: string): string {
+  return `snapshot:${encodeURIComponent(snapshotId)}:${encodeURIComponent(itemRef)}`;
+}
+
+export function snapshotManifestRecord(store: StateStore, snapshotId: string): (CurrentManifest & { sourceId: string; digest: string; takenAt: string }) | null {
+  const row = store.db.prepare(`SELECT s.source_id, s.digest, s.taken_at, o.evidence_json
+    FROM source_snapshots s JOIN observations o ON o.source_id = s.source_id
+    AND o.kind = 'source.changed' AND json_extract(o.evidence_json, '$.digest') = s.digest
+    WHERE s.id = ? AND json_type(o.evidence_json, '$.manifest') = 'array'
+    ORDER BY o.rowid ASC LIMIT 1`).get(snapshotId) as { source_id: string; digest: string; taken_at: string; evidence_json: string } | undefined;
+  if (!row) return null;
+  const ev = JSON.parse(row.evidence_json) as { manifest: ManifestEntry[]; evidence?: string };
+  return { entries: ev.manifest, provenance: ev.evidence === 'reported' ? 'reported' : 'witnessed', sourceId: row.source_id, digest: row.digest, takenAt: row.taken_at };
+}
+
 /** The manifest recorded at the source's most recent change, with how it was obtained, or null when none was recorded. */
 export function currentManifestRecord(store: StateStore, sourceId: string): CurrentManifest | null {
   // Newest first, straight from the store: a source with a long history must still resolve to its latest read.

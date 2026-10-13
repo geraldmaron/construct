@@ -241,12 +241,49 @@ for (const to of ['validated', 'challenged', 'accepted', 'final']) {
  must(denied.result?.isError === true, `unreviewed pending draft cannot be promoted to ${to}`);
 }
 await call('sources', { action: 'declare', id: 'wiki', kind: 'docs' });
-await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', text: 'Checkout retries each payment call up to 3 times.' }] });
+const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
+const sourceSchema = list.result.tools.find((t) => t.name === 'sources').inputSchema;
+must(['principal', 'scope', 'operation', 'mode', 'transport', 'expiresAt'].every((key) => sourceSchema.properties.observation.required.includes(key)), 'access requirements discoverable before first report');
+must(sourceSchema.properties.items.items.required.includes('ref'), 'item identity discoverable before first report');
+const observation = { principal: 'synthetic-reader', scope: '98765', operation: 'read_page', mode: 'read', transport: 'mcp', expiresAt: new Date(Date.now() + 60000).toISOString() };
+const updatedAt = '2026-09-02T12:00:00Z';
+await call('sources', { action: 'report', id: 'wiki', observation, partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', updatedAt, text: 'Checkout retries each payment call up to 3 times.' }] });
+const access = await call('sources', { action: 'check', id: 'wiki', request: { principal: observation.principal, scope: observation.scope, operation: observation.operation, mode: observation.mode } });
+must(access.ready === false && access.grantsPermission === false && access.problems.some((p) => p.includes('host-reported')), 'reported principal is never witnessed access');
+const invalidReport = await rpc('tools/call', { name: 'sources', arguments: { action: 'report', id: 'wiki', observation: { ...observation, expiresAt: undefined }, items: [{ ref: 'bad', text: 'Should never be stored.' }] } });
+must(invalidReport.result?.isError && invalidReport.result.structuredContent.field === 'observation.expiresAt', 'missing expiry names its nested field');
+const initialContext = await call('context_search', { query: 'How does checkout handle payment failures?', expansions: ['checkout retry payment call'], sourceId: 'wiki', limit: 3 });
+must(initialContext.items.length > 0 && initialContext.coverage.usedChars <= initialContext.coverage.budgetChars, 'ranked bounded admitted context from installed bytes');
+const capturedRef = initialContext.items[0].ref;
 const byUrl = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'https://wiki.example.com/pages/98765#retries', excerpt: 'up to 3 times' }] }); must(byUrl.ok === true && byUrl.evidence.reported === 1, `a recorded page is citable by its url: ${JSON.stringify(byUrl.problems)}`);
 const invented = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:12345' }] }); must(invented.ok === false && invented.problems.some((p) => p.problem.includes('names nothing this project holds')), 'an invented item is refused');
-const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
+await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', updatedAt, text: 'Checkout retries each payment call up to 4 times.' }] });
+const stale = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:98765', excerpt: 'up to 3 times' }] });
+must(stale.ok === false, 'changed bytes invalidate the old passage even with unchanged provider time');
+const history = await call('project_context', { topic: 'source_history', query: 'wiki' });
+must(history.items.filter((item) => item.kind === 'source.changed').length === 2, 'both source generations retained');
+const historical = await call('check_answer', { answer: 'The earlier captured policy retried up to 3 times.', historicalEvidence: [{ref:capturedRef,why:'Historical policy before its correction.'}], citations:[{ref:capturedRef,excerpt:'up to 3 times'}] });
+must(historical.ok, 'immutable historical citation resolves to captured bytes');
+const wronglyCurrent = await call('check_answer', { answer: 'Checkout retries up to 3 times.', citations:[{ref:capturedRef}] });
+must(!wronglyCurrent.ok, 'historical capture cannot silently support a current claim');
+const portableReading = await call('classify_request', { words:'Explain the host-neutral boundary in this design.', kind:'manage', deliverable:{kind:'other',describe:'design brief'}, intent:{outcome:'A source-backed design brief',path:'artifact',acceptance:['Identify the kernel boundary'],priorWork:['design.md']},destination:{kind:'chat'} });
+must(portableReading.matches[0].workflowId === 'guided-outcome' && !portableReading.matches[0].verification.executionRequired, 'portable path requires no code test');
+const portable = await call('start_outcome', {workflowId:'guided-outcome',intake:portableReading.intake});
+let pw = (await call('claim_work',{runId:portable.run.id})).work;
+const submitPortable = async(output) => call('submit_work',{stepRunId:pw.stepRunId,token:pw.token,output,evidence:[{ref:'design.md'}]});
+await submitPortable({plan:['Read the design and explain its boundary'],assumptions:[],blockers:[]});
+pw=(await call('claim_work',{runId:portable.run.id})).work;
+await call('checkpoint_work',{stepRunId:pw.stepRunId,token:pw.token,summary:'The kernel stays host-agnostic.',remaining:['Check the brief'],unknowns:[],gatherCalls:1});
+await submitPortable({summary:'The kernel stays host-agnostic.',findings:['Keep the kernel host-agnostic.'],changes:[],artifact:null});
+pw=(await call('claim_work',{runId:portable.run.id})).work;
+const delivered=await submitPortable({verification:{kind:'self_review',checks:['Inspected the actual brief against its requested boundary']},limits:['Independent semantic review was not performed']});
+must(delivered.run.state==='succeeded' && !delivered.deliverable.verification.semanticSupportVerified,'portable delivery is complete with explicit structural assurance');
+const portableStatus=await call('run_status',{runId:portable.run.id});
+must(portableStatus.delivery.state==='available' && portableStatus.delivery.acceptance==='not_accepted' && portableStatus.checkpoints.length===1,'checkpoint and assurance survive the public ledger');
+const held = await call('work', { action: 'claim', id: sub.id, agent: 'smoke', paths: ['design.md'] });
+await call('work', { action: 'complete', id: sub.id, agent: 'smoke', token: held.claimToken, reason: 'The fixture applied no schema migration and verified the ledger round trip.' });
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → draft held for native review (no model claimed) → a reported page cited by its url, an invented item refused: ok');
+console.log('loop: bootstrap → remember → rooted work claimed/completed → managed steps → draft held for native review → schema-led source report → reported access refused → changed bytes invalidate old citation → immutable history → ranked retrieval → portable chat delivery with checkpoints and explicit assurance: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out"

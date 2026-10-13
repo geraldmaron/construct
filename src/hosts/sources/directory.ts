@@ -1,3 +1,4 @@
+import { redact } from '../../kernel/render/redact.ts';
 /**
  * hosts/sources/directory.ts — reading a directory source: what files are
  * there, digested so a refresh can tell whether anything changed.
@@ -32,10 +33,14 @@ export const DIRECTORY_ENTRY_CAP = 5000;
 export const DIRECTORY_HASH_BUFFER_BYTES = 64 * 1024;
 /** How far into a document a supersession header is looked for. */
 const HEADER_LINES = 40;
-const SKIP = new Set(['.git', 'node_modules', '.construct', 'dist', '.cache', '.venv', '__pycache__']);
-const TEXTUAL = /\.(?:md|markdown|txt|rst|adoc)$/i;
+const SKIP = new Set(['.git', '.codex', '.claude', '.cursor', '.bob', '.opencode', '.ssh', '.aws', 'node_modules', '.construct', 'dist', '.cache', '.venv', '__pycache__']);
+const TEXTUAL = /\.(?:md|markdown|txt|rst|adoc|csv|ts|tsx|js|jsx|mjs|cjs|py|rs|go|java|html|css|sql|yaml|yml|json|toml)$/i;
+const DIRECTORY_TEXT_CAP = 16 * 1024;
+const PRIVATE_TEXT = /(?:^|[\\/])(?:auth\.json|credentials(?:\.[^/]*)?|secrets?(?:\.[^/]*)?|\.env(?:\.[^/]*)?)$/i;
 
 interface Fingerprint {
+  readonly text?: string;
+  readonly truncated?: boolean;
   readonly size: number;
   readonly mtimeMs: number;
   readonly fingerprint: string;
@@ -72,14 +77,16 @@ function fingerprintOf(path: string): Fingerprint {
       const n = readSync(fd, buffer, 0, Math.min(buffer.length, before.size - total), null);
       if (n === 0) break;
       hash.update(buffer.subarray(0, n));
-      if (total === 0 && TEXTUAL.test(path)) header = buffer.subarray(0, n).toString('utf8');
+      if (total === 0 && TEXTUAL.test(path) && !PRIVATE_TEXT.test(path)) header = buffer.subarray(0, n).toString('utf8');
       total += n;
     }
     const after = fstatSync(fd);
     if (total !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs) {
       throw new Error('source entry changed during its read; retry the refresh');
     }
-    return { size: after.size, mtimeMs: after.mtimeMs, fingerprint: hash.digest('hex'), ...headerFacts(header) };
+    const readable = TEXTUAL.test(path) && !PRIVATE_TEXT.test(path) && !header.includes('\0');
+    const text = readable ? redact(header).slice(0,DIRECTORY_TEXT_CAP) : undefined;
+    return { ...(text !== undefined ? { text, truncated: after.size > DIRECTORY_HASH_BUFFER_BYTES || redact(header).length > DIRECTORY_TEXT_CAP } : {}), size: after.size, mtimeMs: after.mtimeMs, fingerprint: hash.digest('hex'), ...headerFacts(header) };
   } finally {
     closeSync(fd);
   }
@@ -147,14 +154,15 @@ export const readDirectorySource: SourceReader = async ({ locator }): Promise<Re
       if (match && match.rel !== f.rel) supersededBy.set(match.rel, f.rel);
     }
   }
-  const digest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${f.fp.fingerprint}`).join('\n')).digest('hex')}`;
+  const contentDigest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${f.fp.fingerprint}`).join('\n')).digest('hex')}`;
+  const digest = `sha256:${createHash('sha256').update(`directory-text-v1:${contentDigest}`).digest('hex')}`;
   const inventoryDigest = `sha256:${createHash('sha256').update(files.map((f) => `${f.rel}\t${String(f.fp.size)}\t${String(Math.floor(f.fp.mtimeMs))}`).join('\n')).digest('hex')}`;
   const capped = files.length >= DIRECTORY_ENTRY_CAP ? ` (capped at ${String(DIRECTORY_ENTRY_CAP)})` : '';
   const items: SnapshotItem[] = files.map((f) => ({
     externalRef: f.rel,
     kind: 'file',
     name: f.rel.slice(f.rel.lastIndexOf('/') + 1),
-    attributes: { fingerprint: f.fp.fingerprint, size: f.fp.size, mtimeMs: f.fp.mtimeMs, ...(f.fp.supersedes.length ? { supersedes: f.fp.supersedes } : {}), ...(f.fp.supersededBy ? { declaredSupersededBy: f.fp.supersededBy } : {}), ...(supersededBy.has(f.rel) ? { supersededBy: supersededBy.get(f.rel) } : {}) },
+    attributes: { ...(f.fp.text !== undefined ? {text:f.fp.text,truncated:f.fp.truncated} : {}), fingerprint: f.fp.fingerprint, size: f.fp.size, mtimeMs: f.fp.mtimeMs, ...(f.fp.supersedes.length ? { supersedes: f.fp.supersedes } : {}), ...(f.fp.supersededBy ? { declaredSupersededBy: f.fp.supersededBy } : {}), ...(supersededBy.has(f.rel) ? { supersededBy: supersededBy.get(f.rel) } : {}) },
   }));
   return {
     outcome: 'read',
@@ -165,8 +173,8 @@ export const readDirectorySource: SourceReader = async ({ locator }): Promise<Re
       evidence: 'witnessed',
       items,
       inventoryDigest,
-      contentDigest: digest,
-      coverage: { capped: files.length >= DIRECTORY_ENTRY_CAP, skippedOutside, itemCount: files.length },
+      contentDigest,
+      coverage: { capped: files.length >= DIRECTORY_ENTRY_CAP, skippedOutside, itemCount: files.length, unsupportedText: files.filter(f=>f.fp.text===undefined).map(f=>f.rel), truncatedText: files.filter(f=>f.fp.truncated).map(f=>f.rel) },
     },
   };
 };

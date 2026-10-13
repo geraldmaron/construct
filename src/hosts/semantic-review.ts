@@ -1,3 +1,4 @@
+import { observeSemanticReview } from './semantic-observation.ts';
 /** Explicit host-invoked review of held text. No MCP handler invokes this adapter,
  * no arbitrary command can establish semantic review, and no fallback is made. */
 import { spawn, execFile, execFileSync } from 'node:child_process';
@@ -61,7 +62,7 @@ export function pinSemanticReviewer(host: string, env: NodeJS.ProcessEnv, root: 
     const version = execFileSync(binary, ['--version'], { env: safeEnvironment(env), cwd: root, timeout: 10_000, maxBuffer: 128_000, encoding: 'utf8' }).trim();
     // This finite profile is version-specific; upgrades need fresh qualification.
     if (version !== 'codex-cli 0.145.0') return null;
-    return { host: 'codex', binary, digest: createHash('sha256').update(bytes).digest('hex'), version, profile: 'codex-held-text-v1' };
+    return { host: 'codex', isolation: 'held_text', binary, digest: createHash('sha256').update(bytes).digest('hex'), version, profile: 'codex-held-text-v1' };
   } catch { return null; }
 }
 export function reviewerIdentityProblems(pin: NativeReviewerIdentity): string[] {
@@ -140,7 +141,9 @@ export async function executeSemanticReview(input: { store: StateStore; runId: s
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000) throw new Error('semantic review timeout must be between 1 and 300000 milliseconds');
   const pin = prepared.bundle.contract.reviewer;
   if (!pin || pin.host !== input.host || pin.profile !== 'codex-held-text-v1') throw new Error('no native reviewer identity was frozen at session startup; the draft remains unverified');
-  const identityProblems = reviewerIdentityProblems(pin);
+  if (typeof pin.binary !== 'string') throw new Error('This native adapter requires an executable identity; use the qualified host-tool adapter for that profile');
+  const nativePin = pin as NativeReviewerIdentity;
+  const identityProblems = reviewerIdentityProblems(nativePin);
   if (identityProblems.length) throw new Error(identityProblems.join('; '));
   const binary = pin.binary;
   const env = safeEnvironment(input.env), hostVersion = await probe(binary, ['--version'], env, input.root);
@@ -170,7 +173,7 @@ export async function executeSemanticReview(input: { store: StateStore; runId: s
     const currentLease = heldLease(input.store, { id: lease.id, owner: lease.leaseOwner, nonce: input.token });
     const currentRun = getRun(input.store, run.id);
     if (!currentLease || currentLease.token !== lease.token || currentLease.leaseUntil <= input.now() || currentRun?.cancelRequested || !currentRun || ['succeeded', 'failed', 'cancelled'].includes(currentRun.state)) throw new Error('review dispatch lost its active lease or run while probing the host');
-    const dispatchProblems = [...reviewFreshnessProblems(input.store, prepared, input.resolve), ...reviewerIdentityProblems(pin)];
+    const dispatchProblems = [...reviewFreshnessProblems(input.store, prepared, input.resolve), ...reviewerIdentityProblems(nativePin)];
     if (dispatchProblems.length) throw new Error(dispatchProblems.join('; '));
     const latest = input.store.db.prepare("SELECT id FROM activity_events WHERE kind = 'semantic.prepared' AND run_id = ? AND step_run_id = ? ORDER BY id DESC LIMIT 1").get(run.id, lease.id) as { id: number } | undefined;
     if (!latest || `review:${latest.id}` !== prepared.ref) throw new Error('review candidate was replaced during host probing');
@@ -197,7 +200,7 @@ export async function executeSemanticReview(input: { store: StateStore; runId: s
     });
     const observed = stream!.finish();
     const { text, sessionId, completed, transcriptDigest, observations } = observed;
-    problems.push(...observed.problems, ...reviewerIdentityProblems(pin));
+    problems.push(...observed.problems, ...reviewerIdentityProblems(nativePin));
     let judgment: unknown = null;
     try { judgment = JSON.parse(text); } catch { problems.push('native review did not return one JSON judgment'); }
     const afterInventory = await probe(binary, [...featureArgs, 'mcp', 'list', '--json'], env, root);
@@ -205,8 +208,8 @@ export async function executeSemanticReview(input: { store: StateStore; runId: s
     problems.push(...semanticJudgmentProblems(prepared.bundle, judgment), ...reviewFreshnessProblems(input.store, prepared, input.resolve));
     const held = heldLease(input.store, { id: lease.id, owner: lease.leaseOwner, nonce: input.token });
     if (!held || held.token !== lease.token || held.leaseUntil <= input.now() || getRun(input.store, run.id)?.cancelRequested) problems.push('review completed after cancellation or loss of its lease');
-    const receipt: SemanticWitness = { preparedRef: prepared.ref, bundleDigest: prepared.digest, attempt: lease.token, invocation: { id, host: 'codex', hostVersion, model: input.model, sessionId, completed, exitStatus, timedOut, transcriptDigest }, judgment, problems };
-    const event = appendActivity(input.store, { at: input.now(), kind: 'semantic.executed', runId: run.id, stepRunId: lease.id, actor: 'native semantic review adapter', channel: 'host_semantic', payload: { ...receipt, startedAt, observations, rawOutputBytes: observed.bytes, binaryDigest: pin.digest, argvDigest: createHash('sha256').update(JSON.stringify(argv)).digest('hex'), profile: 'codex-held-text-v1', inventoryDigest, disabledMcpNames: mcpNames, modelSource: 'requested', assurance: 'observed_review; not a proof of truth' } });
-    return { reviewRef: `semantic:${event.id}`, preparedRef: prepared.ref, receipt, passed: problems.length === 0 && completed && !!sessionId && exitStatus === 0 && !timedOut };
+    const receipt: SemanticWitness = { preparedRef: prepared.ref, bundleDigest: prepared.digest, attempt: lease.token, isolation: 'held_text', invocation: { id, host: 'codex', hostVersion, model: input.model, sessionId, completed, exitStatus, timedOut, transcriptDigest }, judgment, problems };
+    const observedReview = observeSemanticReview({ store: input.store, witness: receipt, token: input.token, resolve: input.resolve, at: input.now(), actor: 'native semantic review adapter', metadata: { startedAt, observations, rawOutputBytes: observed.bytes, binaryDigest: pin.digest, argvDigest: createHash('sha256').update(JSON.stringify(argv)).digest('hex'), profile: pin.profile, inventoryDigest, disabledMcpNames: mcpNames, modelSource: 'requested', assurance: 'observed_review; not a proof of truth' } });
+    return { ...observedReview, preparedRef: prepared.ref };
   }
 }

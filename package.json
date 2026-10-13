@@ -1,6 +1,6 @@
 {
   "name": "@geraldmaron/construct",
-  "version": "3.0.0-alpha.27",
+  "version": "3.0.0-alpha.28",
   "description": "A project-bound, capability-aware operating layer for agent hosts: it learns what a project is, remembers authoritative context and constraints, resolves the skills and workflows an outcome needs, detects drift, and does permitted work through the host you already use.",
   "type": "module",
   "license": "Apache-2.0",
@@ -40,7 +40,8 @@
     "registry"
   ],
   "exports": {
-    ".": "./dist/kernel/index.js"
+    ".": "./dist/kernel/index.js",
+    "./reviewer": "./dist/hosts/semantic-observation.js"
   },
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",

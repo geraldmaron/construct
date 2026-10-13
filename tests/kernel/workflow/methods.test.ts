@@ -1,3 +1,4 @@
+import type { RefResolver } from '../../../src/kernel/project/evidence.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSkillRegistry } from '../../../src/kernel/registry/skill-registry.ts';
@@ -27,4 +28,15 @@ test('unknown methods, duplicate claims and unresolved method evidence are rejec
     [{ id: 'context-mapping', disposition: 'applied', why: 'x', evidence: ['missing'] }],
     [{ id: 'context-mapping', disposition: 'applied', why: 'x' }, { id: 'context-mapping', disposition: 'skipped', why: 'y' }],
   ]) assert.ok(methodReceipts({ methods }, null, skills, () => null).problems.length > 0);
+});
+
+test('method obligations bind existing output sections and keep doctrine separate from project facts', () => {
+  const resolve: RefResolver = ref => ref === 'project:policy' ? {ref,kind:'item',provenance:'reported',text:'Actual policy'} : null;
+  const applied = {id:'decision-framing',disposition:'applied',why:'Compared the alternatives',evidence:['project:policy'],doctrine:['method:decision-framework'],obligations:[{obligation:'State tradeoffs',section:'/findings/0',evidence:['project:policy']}]};
+  const result=methodReceipts({findings:['The constraint affects both alternatives.'],methods:[applied]},'decision-framing',skills,resolve);
+  assert.deepEqual(result.problems,[]);
+  assert.equal(result.receipts[0].doctrine?.[0].purpose,'procedure_only');
+  assert.match(result.receipts[0].obligations?.[0].sectionDigest ?? '',/^[a-f0-9]{64}$/);
+  assert.ok(methodReceipts({findings:[],methods:[applied]},null,skills,resolve).problems.some(p=>p.includes('absent')));
+  assert.ok(methodReceipts({findings:['claim'],methods:[{...applied,obligations:[{...applied.obligations[0],evidence:['method:decision-framework']}]}]},null,skills,resolve).problems.some(p=>p.includes('project evidence')));
 });

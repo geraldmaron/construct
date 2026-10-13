@@ -1,0 +1,36 @@
+{
+  "candidate": "C: abandoned-preparation recovery and step guidance",
+  "frozenAt": "2026-10-10T02:21:59.026132+00:00",
+  "baseCommit": "154a78868ef928de4a6c92ef38a287d62d0d9a8f",
+  "branch": "dev/fresh-delivery-reliability",
+  "unreleased": true,
+  "packageSha256": "db4a67bded812638a476f3196c38a4e63587e9267978be7b17cedee955b0a14b",
+  "codeHashes": {
+    "src/kernel/broker/managed-delivery.ts": "1e54b9572656ee6c5f0789f27a5af195c5f5e7f92a9ce5e8587963ae1846f104",
+    "src/kernel/broker/tools.ts": "3ad208112729d73646e4be818f442117f29feee04cdb166752c7203e8f081c10",
+    "src/kernel/workflow/service.ts": "85913c5c78c40da50ad6bb4f48ee05a2b28504c8ac117d247a5ba275752b9771",
+    "src/kernel/workflow/semantic-review.ts": "c2d89fc9168711caaf16176cba7491e63f5c06bf3960d307023f0006e5471dca",
+    "src/kernel/workflow/validators.ts": "e5da6559d983fc902830f574268e669ff740befb8378b7adf5ffdb1f82b51c60",
+    "tests/kernel/broker/managed-delivery.test.ts": "f64c1b1d02a181ef337b72283fe5f8316dd0d257053bccfbccd64c4f6a87a35c",
+    "tests/kernel/workflow/typed-inputs.test.ts": "e8566ff59f469a05bd6779dd568b846c06b47cedc427c3bae2ecc555b91e5e6b",
+    "tests/kernel/workflow/semantic-progress.test.ts": "5851086cc1f98d8e8ef382cb28ce38399014c168ec7919546c144d4bfff24da8",
+    "tests/kernel/workflow/derivations.test.ts": "648988e621ddf4dac11d03751d89f257e21e62d1d7c1bf22fb49e6da9fbaeda9"
+  },
+  "harnessHashes": {
+    "fresh-consumer-delivery.mjs": "533a1531b1c76a4ddee3324ea83f2be33c17c3dda5711bd03341a76f0c9e38ec",
+    "grade-fresh-delivery.mjs": "14e1e7eddbfc3f54ea1fb0b2a3fee3f5c7d1734234eb47cf4309c6d86a9b4e80",
+    "replay-delivery-processes.mjs": "b390efb083244b2eae9f1100b7af8d2538a9aba4739a1d595db5f577fdcaffba"
+  },
+  "preregistrationSha256": "ded99de06563e9d90f5bc9855570725670e801a847a2d995407375d60287954d",
+  "gates": {
+    "lint": "pass",
+    "types": "pass",
+    "tests": {
+      "pass": 1063,
+      "fail": 0,
+      "skip": 1
+    },
+    "smoke": "pass"
+  },
+  "nativePlan": "One Codex cohort, original QA/initial/changed prompts and360000ms phasebound, originalrubric; no rerun. Independent grading after freezing artifacts."
+}

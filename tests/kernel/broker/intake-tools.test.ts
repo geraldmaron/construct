@@ -388,7 +388,7 @@ test('generic research and renamed requests expose registry alternatives before 
     for (const words of ['Investigate current evidence for a depot decision.', 'Compare archive accession records.', 'Review the renamed flarn data.']) {
       const result = await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'a decision brief' } });
       assert.equal(result.matches[0].workflowId, GENERAL_CARRIER);
-      assert.equal(result.matches[0].verification.executionRequired, true);
+      assert.equal(result.matches[0].verification.executionRequired, false);
       const research = result.carrierAlternatives.find((w: any) => w.workflowId === 'research-brief');
       assert.equal(research.deliverableKind, 'research/brief');
       assert.equal(research.verification.kind, 'evidence_and_model_challenge');

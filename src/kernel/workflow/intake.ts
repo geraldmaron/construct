@@ -48,13 +48,13 @@ export const OPEN_ABOUT = ['deliverable', 'period', 'sources', 'destination', 'a
 export type OpenAbout = (typeof OPEN_ABOUT)[number];
 
 /** The longest the person's words may be, in characters. */
-export const WORDS_CAP = 2000;
+export const WORDS_CAP = 20_000;
 
 /** The deliverable kind for anything no workflow names; the general carrier takes it. */
 export const OTHER_KIND = 'other';
 
 /** The workflow that carries an outcome no other workflow names. */
-export const GENERAL_CARRIER = 'managed-outcome';
+export const GENERAL_CARRIER = 'guided-outcome';
 
 /** What to do for each way of working alongside other agents; the work ledger serves them all. */
 export const COORDINATION_NEXT: Readonly<Record<CoordinationAction, string>> = {
@@ -65,11 +65,11 @@ export const COORDINATION_NEXT: Readonly<Record<CoordinationAction, string>> = {
   claim: 'claim the work with work (action claim), naming the paths you will change; a collision in this checkout is refused',
 };
 
-export const MATCH_REASONS = ['named', 'deliverable kind', 'deliverable family', 'other: general carrier', 'binds chosen skill'] as const;
+export const MATCH_REASONS = ['execution path', 'named', 'deliverable kind', 'deliverable family', 'other: general carrier', 'binds chosen skill'] as const;
 export type MatchReason = (typeof MATCH_REASONS)[number];
 
 /** Every field a reading takes; a reading is closed at every level. */
-export const INTAKE_FIELDS = ['words', 'kind', 'deliverable', 'skill', 'workflowId', 'target', 'scope', 'period', 'sources', 'destination', 'schedule', 'coordination', 'stakes', 'open', 'inputs'] as const;
+export const INTAKE_FIELDS = ['words', 'kind', 'deliverable', 'skill', 'workflowId', 'target', 'scope', 'period', 'sources', 'destination', 'schedule', 'coordination', 'stakes', 'open', 'inputs', 'intent'] as const;
 
 const DELIVERABLE_KEYS = ['kind', 'describe'] as const;
 const SOURCE_KEYS = ['name', 'id', 'role'] as const;
@@ -124,7 +124,19 @@ export interface OpenItem {
 }
 
 /** The host's reading of one request, as reported and then normalized; every field is present. */
+export const EXECUTION_PATHS = ['research', 'decision', 'artifact', 'implementation', 'review'] as const;
+export interface OutcomeIntent {
+  readonly outcome: string;
+  readonly audience: string | null;
+  readonly acceptance: readonly string[];
+  readonly constraints: readonly string[];
+  readonly assumptions: readonly string[];
+  readonly priorWork: readonly string[];
+  readonly path: (typeof EXECUTION_PATHS)[number];
+}
+
 export interface Intake {
+  readonly intent?: OutcomeIntent;
   /** The person's words, verbatim. */
   readonly words: string;
   readonly kind: IntakeKind;
@@ -653,8 +665,22 @@ export function validateIntake(raw: unknown, catalog: IntakeCatalog, mode: 'clas
   if (given(r.inputs) && !isRecord(r.inputs)) fail('inputs', `"inputs" is ${typeName(r.inputs)}; it is an object of workflow inputs by their keys`);
   const inputs = isRecord(r.inputs) ? { ...r.inputs } : {};
 
+  let intent: OutcomeIntent | undefined;
+  if (r.intent !== undefined && r.intent !== null) {
+    const i = closed(r.intent, 'intent', ['outcome', 'audience', 'acceptance', 'constraints', 'assumptions', 'priorWork', 'path']);
+    const strings = (key: string): string[] => {
+      const values = i[key] ?? [];
+      if (!Array.isArray(values) || values.length > 50 || values.some(v => typeof v !== 'string' || !v.trim() || v.length > 2000)) fail(`intent.${key}`, 'must contain at most 50 bounded nonempty strings');
+      return values as string[];
+    };
+    if (typeof i.outcome !== 'string' || !i.outcome.trim() || i.outcome.length > 2000) fail('intent.outcome', 'needs a bounded outcome statement');
+    if (typeof i.path !== 'string' || !EXECUTION_PATHS.includes(i.path as OutcomeIntent['path'])) fail('intent.path', `must be one of ${EXECUTION_PATHS.join(', ')}`);
+    if (i.audience != null && (typeof i.audience !== 'string' || i.audience.length > 1000)) fail('intent.audience', 'must be a bounded audience description');
+    intent = { outcome: i.outcome as string, path: i.path as OutcomeIntent['path'], audience: typeof i.audience === 'string' ? i.audience : null,
+      acceptance: strings('acceptance'), constraints: strings('constraints'), assumptions: strings('assumptions'), priorWork: strings('priorWork') };
+  }
   return {
-    intake: { words, kind, deliverable, skill, workflowId, target, scope, period, sources, destination, schedule, coordination, stakes, open, inputs },
+    intake: { ...(intent ? { intent } : {}), words, kind, deliverable, skill, workflowId, target, scope, period, sources, destination, schedule, coordination, stakes, open, inputs },
     resolved: { period: resolvedPeriod, schedule: firings, sources: resolvedSources },
     normalized,
     assumptions,
@@ -718,8 +744,10 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
   const carrier = pool.filter((w) => w.manifest.id === GENERAL_CARRIER);
 
   if (intake.workflowId !== null) add(pool.filter((w) => w.manifest.id === intake.workflowId), () => 'named');
+  const byPath = () => { if (intake.intent) add(skillFirst(pool.filter(w => w.manifest.execution?.path === intake.intent!.path)), () => 'execution path'); };
   const kind = intake.deliverable?.kind ?? null;
   if (kind === OTHER_KIND) {
+    byPath();
     const bound = pool.filter(binds);
     if (intake.kind === 'maintain') {
       add(bound, () => 'binds chosen skill');
@@ -728,6 +756,7 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
       add(carrier, () => 'other: general carrier');
       add(bound, () => 'binds chosen skill');
     }
+    if (intake.kind === 'manage') add(pool.filter(w => w.manifest.execution?.path === 'implementation'), () => 'execution path');
   } else if (kind !== null) {
     const { families } = deliverableVocabulary(catalog);
     const family = families.has(kind) ? kind : kind.includes('/') ? kind.slice(0, kind.indexOf('/')) : null;
@@ -739,6 +768,7 @@ export function matchWorkflows(intake: Intake, catalog: IntakeCatalog): Workflow
       add(skillFirst(pool.filter((w) => w.manifest.deliverable.kind === family)), reason);
     }
   }
+  if (out.size === 0) byPath();
   if (out.size === 0 && intake.kind === 'manage') add(carrier, () => 'other: general carrier');
   return [...out.values()];
 }

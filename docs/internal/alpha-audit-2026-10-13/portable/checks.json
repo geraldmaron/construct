@@ -1,0 +1,59 @@
+{
+  "baselineCommit": "904e29aa",
+  "qualification": "local mechanisms verified; native effectiveness unqualified",
+  "checks": [
+    {
+      "command": "npm run lint",
+      "result": "pass",
+      "observed": "lint-no-absolute-paths: clean\nlint-glossary-parity: clean\nlint-no-bead-refs: clean\nlint-skill-spec: clean - 17 skill(s) conform, descriptions 7977/8000 chars of the one published list budget. Format checks only; Construct record/enforcement ceremony is optional under references/.\nlint-skill-policy: clean \u2014 16 method skill(s)\nlint-terminal-escape: clean\nlint-docs-index: clean \u2014 20 documentation file(s), all listed\nlint-doc-commands: every documented command is one the CLI accepts\nlint-doc-bead-refs: clean, every cited bead id exists in the tracker export\nlint-lockfile-version: clean\ngenerate-registry-index: current \u2014 17 skill(s), 24 workflow(s)\ngenerate-docs: current \u2014 5 reference page(s)",
+      "logSha256": "127a6403eba954df0593f3d9818b8831577ce4158788ab27ff5ca6410674c094"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "observed": "\n> @geraldmaron/construct@3.0.0-alpha.27 typecheck\n> tsc --noEmit\n",
+      "logSha256": "688d1b0d38fe8c6d8d8ffc167fd2b85f105a6e73cf6571028ebba856678079f6"
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "observed": "\u2714 when the host can ask the person, their answer settles it at once, in their voice (36.122292ms)\n\u2714 a relayed decision saying a document is outdated declares no supersession; only an outdated document the person confirms does (42.579958ms)\n\u2714 a statement says whose voice it is in: the person, an assistant, Construct's inference, or no record (38.075792ms)\n\u2714 instruction-shaped text in a reported item never comes back on a surface, and grants nothing (147.44625ms)\n\u2139 tests 1078\n\u2139 suites 0\n\u2139 pass 1077\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 1\n\u2139 todo 0\n\u2139 duration_ms 29170.236625",
+      "logSha256": "06b65d42b720dbf86b55cbb55a095b53d740a0dfdf8703e4f50d13fde807df02",
+      "tests": 1078,
+      "pass": 1077,
+      "fail": 0,
+      "skipped": 1
+    },
+    {
+      "command": "npm run smoke",
+      "result": "pass",
+      "observed": "== configuration is explained ==\n== native work from packaged bytes: a session's unrooted work waits as proposed, with its structure ==\n== a directory source is declared, read, and re-read unchanged ==\n== a workflow resolves, starts, and is read back from packaged bytes ==\n== the whole loop over the packaged server: bootstrap, decide, remember, managed workflow, exact draft held for native review ==\nloop: bootstrap \u2192 remember \u2192 rooted work claimed/completed \u2192 managed steps \u2192 draft held for native review \u2192 schema-led source report \u2192 reported access refused \u2192 changed bytes invalidate old citation \u2192 immutable history \u2192 ranked retrieval \u2192 portable chat delivery with checkpoints and explicit assurance: ok\n== the packaged install can describe the surface it would serve ==\n== the packaged install carries the skills ==\n== a database the CLI cannot open ==\n== reset previews, then removes exactly what it named ==\n== unknown and retired commands are refused ==\nsmoke-packaged-install: pass",
+      "logSha256": "6c9b671edb2f558a70d4c249c42409b6b0777a365f187d4481d6163fe85215f9"
+    },
+    {
+      "command": "npm run conformance",
+      "result": "pass",
+      "observed": "| bob | decision relay | passed | question \"What is this project to you: a side proj\u2026\" resolved and recorded as relayed, not as the person |\n| bob | headless surface is limited | passed | max tier project_write |\n| bob | live host call | untested | run with --live outside any host session, with the host\u2019s credential present |\n| claude-code | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| cursor | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| vscode | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| opencode | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| codex | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| bob | host text parity | passed | instructions 1848 characters, the contract inside the first 512; tools/list 39788 bytes for 22 tools; skill description 616 characters; identical on 6 host(s) |\n| all | current host preserved (static) | passed | no process spawning in the server, broker, or workflow service |\n\nconformance: 97 passed, 0 failed, 19 untested (static; pass --live for host calls)",
+      "logSha256": "fc7e37666bfd2f878655fcbd8555c3479440c1a728a86bd7f552683f493007bc"
+    }
+  ],
+  "retrieval": {
+    "retrievalFixture": {
+      "expectedEvidenceFound": 5,
+      "expectedQuestions": 5,
+      "extraReturnedPassages": 0,
+      "elapsedMs": 3,
+      "hostCalls": 0,
+      "expansionSource": "fixed reports; native inference unqualified"
+    }
+  },
+  "nativeIsolation": {
+    "command": "npm run evals:live -- preflight --host=codex --model=gpt-6-astra",
+    "result": "failed_canary",
+    "auth": "existing subscription; no API credentials",
+    "observation": "The canary reported connector tools outside the configured fixture. A separate scratch configuration-home probe using only a login reference still reported those tools. No outcome or skill-benefit cohort was qualified.",
+    "hypothesis": "Real configuration home is not the sole source of foreign context. The remaining transport/context source was not isolated.",
+    "valuesCopied": false,
+    "machineCredentialConfigurationChanged": false
+  }
+}

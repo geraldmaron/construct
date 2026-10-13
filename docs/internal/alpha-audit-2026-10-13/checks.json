@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-13",
+  "baseCommit": "f369a934",
+  "checks": [
+    {
+      "command": "npm run lint",
+      "result": "pass",
+      "observed": "All lint commands completed; generate-docs: current \u2014 5 reference page(s)",
+      "logSha256": "16df87fed30b7b116ff6fa553f81ca012e256292910b5ee39a5d53ebed19361c"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "pass",
+      "observed": "tsc --noEmit exited successfully in the completed gate",
+      "logSha256": "688d1b0d38fe8c6d8d8ffc167fd2b85f105a6e73cf6571028ebba856678079f6"
+    },
+    {
+      "command": "npm test",
+      "result": "pass",
+      "observed": "\u2139 tests 1066; \u2139 pass 1065; \u2139 fail 0; \u2139 skipped 1",
+      "logSha256": "3359245456b0d7c15540266250cd941007c5e6e998ea905ea833c88bee327955"
+    },
+    {
+      "command": "npm run smoke",
+      "result": "pass",
+      "observed": "smoke-packaged-install: pass",
+      "logSha256": "69774964742e56129d7d1c78ef53c4eb5062e30d06d5e490bea831ffabd49522"
+    },
+    {
+      "command": "npm run conformance",
+      "result": "pass",
+      "observed": "conformance: 85 passed, 0 failed, 19 untested (static; pass --live for host calls)",
+      "logSha256": "6af03bca737cc1a2db69a4f74bdf34dade000c2df6e509817cf743f2c991a936"
+    }
+  ],
+  "negativeControl": {
+    "command": "node --test tests/kernel/broker/sources-report.test.ts",
+    "implementation": "HEAD broker restored temporarily; corrected source restored in finally",
+    "result": "expected_failure",
+    "logSha256": "52ec75e737d65f5effe5a4230b1abb4b73817a5b1b86e9e6b85b2b748a16a62b"
+  },
+  "files": {
+    "src/kernel/broker/tools.ts": "64b70202fba62d5cb93d9ca4d599d9b92b0192c2f40e7b8a3442647181f24a91",
+    "tests/kernel/broker/sources-report.test.ts": "c3724cc70f1d036901aec58ebeddad9b831b84c58d1fb74a10d8c5072be504c7",
+    "scripts/smoke-packaged-install.sh": "24cbea2afafcaf4f524d8cc563b1b234356da79e5a8eda143112ab89a13f3e7f",
+    "docs/broker-reference.md": "5bd3261fdc67d82ea7846a6d7759c2b52bd6d80390034ae412915708f6cae389"
+  },
+  "limits": [
+    "No new native model cohort or independent semantic review was executed.",
+    "Static host conformance has untested cells.",
+    "The first sandbox gate and cache-limited pack attempt failed; required-access reruns passed.",
+    "No paid API calls, new services or new dependencies."
+  ]
+}

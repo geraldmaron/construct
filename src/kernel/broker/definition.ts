@@ -43,6 +43,7 @@ export type JsonSchemaProperty =
 
 /** What an array input holds. */
 export type JsonSchemaItem =
+  | { readonly type: 'number'; readonly description?: string }
   | {
       readonly type: 'string';
       readonly enum?: readonly string[];

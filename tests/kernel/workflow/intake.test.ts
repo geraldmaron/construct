@@ -153,7 +153,7 @@ test('a reading that would gate a write is refused with the field, the allowed v
     { name: 'a destination kind outside its set', raw: { ...REVIEW, destination: { kind: 'email', ref: 'team@example.com' } }, field: 'destination.kind', allowed: ['chat', 'project_file', 'registered_source', 'external'], example: EXAMPLE.destination },
     { name: 'a URL as a source name', raw: { ...REVIEW, sources: [{ name: 'https://acme.atlassian.net/wiki' }] }, field: 'sources[0].name', allowed: null, example: EXAMPLE.sources, message: /^name the system, not an address; put any address the person gave in the words$/ },
     { name: 'a source role outside its set', raw: { ...REVIEW, sources: [{ name: 'Jira', role: 'write' }] }, field: 'sources[0].role', allowed: ['read', 'subject'], example: EXAMPLE.sources },
-    { name: 'words of 2,001 characters', raw: { ...REVIEW, words: 'a'.repeat(WORDS_CAP + 1) }, field: 'words', allowed: null, example: EXAMPLE.words, message: /2001 characters; it takes at most 2000/ },
+    { name: 'words of 2,001 characters', raw: { ...REVIEW, words: 'a'.repeat(WORDS_CAP + 1) }, field: 'words', allowed: null, example: EXAMPLE.words, message: /20001 characters; it takes at most 20000/ },
     { name: 'words empty', raw: { ...REVIEW, words: '   ' }, field: 'words', allowed: null, example: EXAMPLE.words },
     { name: 'words missing', raw: { kind: 'answer' }, field: 'words', allowed: null, example: EXAMPLE.words },
     { name: 'words of the wrong type', raw: { ...REVIEW, words: ['Review it'] }, field: 'words', allowed: null, example: EXAMPLE.words },
@@ -189,7 +189,7 @@ test('a reading that would gate a write is refused with the field, the allowed v
   assert.doesNotThrow(() => v(REVIEW, 'start'), 'the same reading starts once it is right');
   assert.doesNotThrow(() => v({ ...REVIEW, words: 'a'.repeat(WORDS_CAP) }), 'exactly the cap is accepted');
   assert.doesNotThrow(() => v({ ...REVIEW, words: '😀'.repeat(WORDS_CAP) }), 'the cap counts characters, not UTF-16 code units');
-  refused(() => v({ ...REVIEW, words: '😀'.repeat(WORDS_CAP + 1) }), { field: 'words', allowed: null, example: EXAMPLE.words, message: /is 2001 characters/ });
+  refused(() => v({ ...REVIEW, words: '😀'.repeat(WORDS_CAP + 1) }), { field: 'words', allowed: null, example: EXAMPLE.words, message: /is 20001 characters/ });
 });
 
 // ---------------------------------------------------------------- lenient
@@ -410,10 +410,10 @@ test('a family lists every kind under it in registry order, then the bare family
 test('other gives the general carrier first, then the workflows binding the chosen skill', () => {
   const bound = (skill: string, ws: readonly RegisteredWorkflow[]) => ws.filter((w) => w.manifest.id !== GENERAL_CARRIER && w.manifest.triggers.includes('manual') && w.manifest.steps.some((s) => s.skill?.id === skill)).map((w) => w.manifest.id);
   const flagship = matchWorkflows(v(FLAGSHIP).intake, CATALOG);
-  assert.deepEqual(flagship.map((m) => [m.workflowId, m.because]), [[GENERAL_CARRIER, 'other: general carrier'], ...bound('system-architecture', MATCHABLE).map((id) => [id, 'binds chosen skill'])]);
+  assert.deepEqual(flagship.map((m) => [m.workflowId, m.because]), [[GENERAL_CARRIER, 'other: general carrier'], ...bound('system-architecture', MATCHABLE).map((id) => [id, 'binds chosen skill']), ['managed-outcome', 'execution path']]);
   assert.ok(flagship.length > 1);
   const plain = matchWorkflows(reading({ kind: 'manage', deliverable: { kind: 'other', describe: 'a diagram' } }), CATALOG);
-  assert.deepEqual(plain.map((m) => m.workflowId), [GENERAL_CARRIER]);
+  assert.deepEqual(plain.map((m) => m.workflowId), [GENERAL_CARRIER, 'managed-outcome']);
 });
 
 test('maintain matches only workflows a schedule or an event can start, and other ends with the carrier once it can be scheduled', () => {
