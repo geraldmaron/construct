@@ -45,7 +45,7 @@ function evidence(): { resolve: RefResolver; cleanup(): void } {
 
 async function runStatus(fx: Fixture, runId: string): Promise<Record<string, any>> {
   const tool = TOOLS.find((t) => t.name === 'run_status')!;
-  return (await tool.run({ workflow: fx.service } as unknown as BrokerContext, tool.validate({ runId }))) as Record<string, any>;
+  return (await tool.run({ workflow: fx.service, store: fx.store } as unknown as BrokerContext, tool.validate({ runId }))) as Record<string, any>;
 }
 
 test('the run keeps the period as given, freezes it in dates, and run_status shows what it covers', async () => {

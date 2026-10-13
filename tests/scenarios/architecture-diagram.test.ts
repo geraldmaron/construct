@@ -110,7 +110,7 @@ test('the architecture diagram request runs end to end through the tools: period
       { ref: 'acme/payments#311', url: 'https://github.com/acme/payments/pull/311', title: 'Add the payments-db healthcheck', updatedAt: '2026-09-20T16:00:00Z', text: 'Adds a healthcheck for payments-db in docker-compose.yml.' },
     ] });
 
-    // 3. The host reports its reading; the general carrier starts from the intake it gets back.
+    // 3. The portable path leads; this scenario explicitly exercises the command-verified alternative.
     const request = 'Create an architecture diagram of our system from Jira/Confluence and GitHub, only covering 2026-07-01 to 2026-09-30';
     const read = await call(fx, 'classify_request', {
       words: request,
@@ -120,7 +120,7 @@ test('the architecture diagram request runs end to end through the tools: period
       period: { semantics: 'evidence_window', from: '2026-07-01', to: '2026-09-30', phrase: 'only covering 2026-07-01 to 2026-09-30' },
       sources: [{ name: 'Jira' }, { name: 'Confluence' }, { name: 'GitHub' }],
     });
-    assert.equal(read.matches[0].workflowId, 'managed-outcome');
+    assert.equal(read.matches[0].workflowId, 'guided-outcome');
     assert.deepEqual(read.questions, []);
     assert.deepEqual(read.intake.sources.map((s: { id: string }) => s.id), ['jira', 'confluence', 'github'], 'the named systems resolve to the sources the session declared');
     assert.deepEqual(read.matches[0].input.sources, ['jira', 'confluence', 'github']);

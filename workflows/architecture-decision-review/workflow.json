@@ -3,7 +3,7 @@
   "formatVersion": 1,
   "id": "architecture-decision-review",
   "title": "Architecture decision review",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "purpose": "Review a system design or decision for boundaries, coupling, data ownership, failure modes, reversibility, and measured properties against the project's confirmed invariants, then record the findings and raise decisions that belong to the person.",
   "activation": [
     "review the architecture",
@@ -187,5 +187,23 @@
   "proposes": [
     "lessons"
   ],
-  "evals": []
+  "evals": [],
+  "execution": {
+    "path": "review",
+    "checkpoints": [
+      "Save the first useful artifact during the first authorized write step.",
+      "Preserve partial work and unknowns before gathering or repairs exhaust their budget."
+    ],
+    "evidenceObligations": [
+      "Support factual conclusions with admitted project evidence.",
+      "Inspect the actual result against the frozen acceptance criteria.",
+      "Render and inspect visual artifacts when the requested result has a visual surface."
+    ],
+    "maxGatherCalls": 12,
+    "stopWhen": [
+      "Budget exhausted: preserve partial work and remaining actions.",
+      "Required permission or essential intent is unresolved."
+    ],
+    "assurance": "structural"
+  }
 }

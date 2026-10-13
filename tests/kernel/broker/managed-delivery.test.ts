@@ -318,7 +318,7 @@ test('preparation packets scope the method to current outputs and leave final re
     assert.ok(work.instructions.some((s: string) => s.includes('explicit unknown/access boundaries')));
     assert.ok(work.instructions.some((s: string) => s.includes('later challenge step')));
     assert.ok(!work.instructions.some((s: string) => s.startsWith('Managed completion requires')));
-    assert.equal(work.semanticReview.state, 'unavailable');
+    assert.equal(work.semanticReview.state, 'not_required');
     assert.ok(work.step.validators.includes('reference_coverage'), 'phase guidance does not waive coverage');
   } finally { fx.cleanup(); }
 });

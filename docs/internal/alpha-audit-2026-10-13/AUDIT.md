@@ -2,6 +2,8 @@
 
 This is a working engineering record, not release qualification. The recommendation is to finish reliable source-to-artifact delivery before adding a retrieval service or expanding the host/model evaluation matrix. The local foundation works; the alpha is not fully baked.
 
+The subsequent [portable implementation record](portable/IMPLEMENTATION.md) describes changes after this baseline audit and their qualification limits.
+
 ## Scope and continuity
 
 The request is interpreted as: validate that a fresh installation can acquire relevant evidence, apply a suitable method, persist useful context and work, and deliver a correct result through the current host, without buying services or requiring an external tracker, vector database or second runtime. Fix reproduced local defects and distinguish tested mechanisms from model effectiveness.

@@ -75,7 +75,8 @@ export function flagStaleDeliverables(
     // address the read before this one recorded for it. Items match exactly as recorded; only paths are narrowed.
     for (const ref of refsOf(store, d)) {
       const bare = stripLocator(ref);
-      const item = sourceItemOf(ref, sourceId);
+      const resolvedItem = resolve(ref);
+      const item = sourceItemOf(ref, sourceId) ?? (resolvedItem?.sourceId === sourceId ? resolvedItem.itemRef ?? null : null);
       const address = normalizeUrl(ref);
       for (const gone of changes.removed) {
         const viaSource = item !== null && (source?.kind === 'directory' ? stripLocator(item) : item) === gone;

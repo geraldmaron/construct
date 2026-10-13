@@ -1,3 +1,4 @@
+import { contextIndexStatus } from '../kernel/context/retrieval.ts';
 /**
  * cli/doctor.ts — is this project actually healthy? Each check names what it
  * looked at and what it found. A missing or broken project is never healthy.
@@ -189,6 +190,10 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
         accessSync(layout.dbPath, constants.R_OK | constants.W_OK);
         const store = openStateStore(layout.dbPath, { readOnly: true });
         try {
+          const index = contextIndexStatus(store);
+          checks.push({ name: 'context-index', ok: true, detail: `${index.state}; ${index.documents} indexed chunks; optional vectors ${index.vectors}. Index presence is not retrieval qualification.` });
+          const delivered = store.db.prepare('SELECT count(*) n FROM deliverables').get() as { n: number };
+          checks.push({ name: 'outcome-readiness', ok: true, detail: `${delivered.n} recorded deliverables; host/session capability and actual outcome checks determine readiness, not installed wiring.` });
           const profile = getProfile(store);
           checks.push({ name: 'state', ok: true, detail: `format ${STATE_FORMAT_VERSION} at ${layout.dbPath}; onboarding ${profile?.onboardingState ?? 'incomplete'}` });
           const stamped = storeProjectId(store);

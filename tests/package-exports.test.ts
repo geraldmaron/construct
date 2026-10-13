@@ -13,13 +13,14 @@ import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-test('package exports expose only the root entry, never deep kernel or hosts paths', () => {
+test('package exports expose the root and bound reviewer contract, never deep paths', () => {
   const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
     exports?: Record<string, unknown>;
     files?: string[];
   };
-  assert.deepEqual(Object.keys(pkg.exports ?? {}).sort(), ['.']);
+  assert.deepEqual(Object.keys(pkg.exports ?? {}).sort(), ['.', './reviewer']);
   assert.equal(pkg.exports?.['.'], './dist/kernel/index.js');
+  assert.equal(pkg.exports?.['./reviewer'], './dist/hosts/semantic-observation.js');
   for (const key of Object.keys(pkg.exports ?? {})) {
     assert.equal(key.includes('kernel/'), false);
     assert.equal(key.includes('hosts/'), false);

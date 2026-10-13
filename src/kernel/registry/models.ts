@@ -87,6 +87,14 @@ export interface WorkflowStep {
 }
 
 export interface WorkflowManifest {
+  readonly execution?: {
+    readonly path: 'research' | 'decision' | 'artifact' | 'implementation' | 'review';
+    readonly checkpoints: readonly string[];
+    readonly evidenceObligations: readonly string[];
+    readonly maxGatherCalls: number;
+    readonly stopWhen: readonly string[];
+    readonly assurance: 'structural' | 'independent_review';
+  };
   readonly format: typeof WORKFLOW_MANIFEST_FORMAT;
   readonly formatVersion: typeof WORKFLOW_MANIFEST_VERSION;
   readonly id: string;

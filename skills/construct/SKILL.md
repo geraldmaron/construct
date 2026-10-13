@@ -12,7 +12,7 @@ description: >-
   is asked of Construct.
 license: Apache-2.0
 metadata:
-  version: 3.0.4
+  version: 3.1.0
   source: geraldmaron/construct
 ---
 
@@ -84,6 +84,53 @@ produced.
    clock is the person's to set, the ledger is Construct's.
 
 Never promote a question into work, or a note into a run.
+
+## Portable interpretation and execution
+
+Before classifying managed work, read the whole conversation and recover relevant
+prior decisions, work and artifacts. Use `context_search` with a bounded query;
+when the wording differs, infer up to eight related concepts as `expansions`.
+Inspect returned citations, proposed/superseded status, freshness and gaps.
+Rank is relevance, never authority, entailment or permission. Use exact
+`project_context` queries for identifiers and continuation. Do not load everything.
+
+Report `intent` in `classify_request`: `outcome`, `audience`, `acceptance`,
+`constraints`, `assumptions`, `priorWork`, and `path`. Choose the actual work:
+research establishes facts; decision compares options; artifact creates a result;
+implementation changes code with the project's checks; review challenges existing
+work. Infer the approach from the requested outcome, uncertainty and consequence,
+not the host's brand. Use declared deliverable kinds when they fit. For an
+unlisted artifact or advice, `other` with `intent.path` selects a portable path;
+never acquire shell/test requirements to deliver ordinary research or advice.
+The host reasons; Construct checks and freezes this interpretation and the path.
+Ask only for intent, permission or expensive choices that permitted evidence cannot
+settle. Carry evidence gaps as unknowns. Plain questions still create no work.
+
+Skills are methods within the path. Apply their actual obligations to concrete
+output sections; report `methods` with `obligations` entries containing obligation,
+JSON pointer `section`, and project `evidence` references. Put professional-method
+references in `doctrine`; they inform procedure and do not prove project facts.
+Application reports remain reports; inspect whether the method improved the result.
+
+Observe the frozen gathering limit and checkpoints in `claim_work`. Reuse already
+read material. Call `checkpoint_work` with useful partial progress, an existing
+permitted artifact when available, unknowns, remaining actions and the gathering
+call count before exhausting that limit. The count is reported, not witnessed.
+A checkpoint changes neither completion nor trust. Resume from `run_status` and
+its checkpoints without replaying completed effects. Changed assumptions require
+explicit cancellation/replanning with the previous draft and evidence retained.
+
+Hand back available work with separate delivery, deterministic checks, semantic
+review and person acceptance. Label a review by this same session `self_review`.
+An unavailable independent reviewer never authorizes host switching or invented
+assurance. A structurally checked deliverable may still be semantically unverified.
+Visual results require rendering and inspection; code requires the real project
+validation path; research requires relevant sources and reasoning checks.
+
+Optional embeddings are explicitly configured through `context_index`. Supply only
+vectors of the exact returned passage content and digests, using embeddingRef from the configured model/dimensions.
+Construct invokes no embedding model, downloads nothing and buys no service.
+Text and relationship retrieval must work when embeddings are disabled.
 
 ## Asking
 

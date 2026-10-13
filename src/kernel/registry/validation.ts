@@ -285,7 +285,17 @@ export function validateWorkflowManifest(raw: unknown, path: string): WorkflowMa
     }
   }
   const deliverableRaw = rec(r.deliverable, path, '"deliverable"');
+  const execution = r.execution === undefined ? undefined : (() => {
+    const e = rec(r.execution, path, 'execution');
+    const calls = num(e, 'maxGatherCalls', path, 12, 1);
+    if (!Number.isSafeInteger(calls) || calls > 100) throw new ManifestError(path, 'execution.maxGatherCalls must be an integer between 1 and 100');
+    return { path: oneOf(str(e, 'path', path), ['research', 'decision', 'artifact', 'implementation', 'review'] as const, path, 'execution.path'),
+      checkpoints: strList(e, 'checkpoints', path, { nonEmpty: true }), evidenceObligations: strList(e, 'evidenceObligations', path, { nonEmpty: true }),
+      maxGatherCalls: calls, stopWhen: strList(e, 'stopWhen', path, { nonEmpty: true }),
+      assurance: oneOf(str(e, 'assurance', path), ['structural', 'independent_review'] as const, path, 'execution.assurance') };
+  })();
   return {
+    ...(execution ? { execution } : {}),
     format: WORKFLOW_MANIFEST_FORMAT,
     formatVersion: WORKFLOW_MANIFEST_VERSION,
     id,

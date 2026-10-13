@@ -41,7 +41,7 @@ test('1–2, 11–12: consequence, fresh session recovery, and scale via classif
   const fx = brokerFixture();
   try {
     const arch = (await call(fx, 'classify_request', work('Introduce a shared database for billing and identity'))) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
-    assert.equal(arch.matches[0]!.workflowId, 'managed-outcome');
+    assert.equal(arch.matches[0]!.workflowId, 'guided-outcome');
     assert.equal(arch.judgment.challenge, true, 'architecture is challenged without magic words');
 
     const unusual = (await call(fx, 'classify_request', work('Put identity and billing on the same postgres'))) as { judgment: { challenge: boolean } };
