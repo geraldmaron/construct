@@ -45,7 +45,7 @@ function evidence(): { resolve: RefResolver; cleanup(): void } {
 
 async function runStatus(fx: Fixture, runId: string): Promise<Record<string, any>> {
   const tool = TOOLS.find((t) => t.name === 'run_status')!;
-  return (await tool.run({ workflow: fx.service } as unknown as BrokerContext, tool.validate({ runId }))) as Record<string, any>;
+  return (await tool.run({ workflow: fx.service, store: fx.store } as unknown as BrokerContext, tool.validate({ runId }))) as Record<string, any>;
 }
 
 test('the run keeps the period as given, freezes it in dates, and run_status shows what it covers', async () => {
@@ -132,7 +132,7 @@ test('steps receive the period in dates, and every packet says what the run cove
 
     const asOf = fx.service.start({ workflowId: 'digest', input: { target: 'ledger', period: { semantics: 'as_of', to: '2026-06-30' } }, trigger: 'manual' });
     const packet = fx.service.claimNext({ runId: asOf.run.id })!.packet!;
-    assert.ok(packet.instructions.includes(`This run covers things as of 2026-06-30 (UTC) in this run's reading. Describe them as they stood at the end of that day. An item updated after 2026-06-30 is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`), packet.instructions.join('\n'));
+    assert.ok(packet.instructions.includes(`This run covers things as of 2026-06-30 (UTC) in this run's reading. This is the requested cutoff, not proof of end-of-day freshness. State actual observation time and provider update time separately; do not claim knowledge beyond the evidence. An item updated after 2026-06-30 is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`), packet.instructions.join('\n'));
     assert.ok(!packet.instructions.some((l) => l.startsWith('Read the sources')), 'no sources named, no sources line');
   } finally {
     fx.cleanup();

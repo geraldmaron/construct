@@ -39,7 +39,7 @@ test('every tool is declared once with a closed schema, a plain description, and
     assert.ok(interactive.includes(forbidden), `${forbidden} exists interactively`);
     assert.ok(!headless.includes(forbidden), `${forbidden} is not on the headless surface`);
   }
-  assert.deepEqual(headless.sort(), ['bootstrap', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
+  assert.deepEqual(headless.sort(), ['bootstrap', 'checkpoint_work', 'claim_step', 'heartbeat', 'run_status', 'skills', 'submit_work']);
 });
 
 test('every tool on both surfaces fits a host budget: a small schema, a bounded description, and arrays that say what they hold', () => {
@@ -136,7 +136,7 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
   try {
     const boot = (await call(fx, 'bootstrap')) as Record<string, unknown>;
     assert.ok(JSON.stringify(boot).length < 4000, 'bootstrap stays bounded');
-    assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'coordination', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
+    assert.deepEqual(Object.keys(boot).sort(), ['capabilities', 'construct', 'contextIndex', 'coordination', 'decisions', 'drift', 'next', 'profile', 'registry', 'runs', 'session', 'sources', 'tiers']);
     assert.equal((boot.registry as { skills: number }).skills, 17);
     assert.match(boot.next as string, /listen/);
     assert.equal(listActivity(fx.broker.store).length, 0, 'bootstrap records nothing');
@@ -146,7 +146,7 @@ test('bootstrap is small and says what to do next; answers create nothing; remem
     assert.equal(cls.recorded, false);
     const words = 'I want you to rewrite the X document, naming it Y.';
     const rewrite = (await call(fx, 'classify_request', { words, kind: 'manage', deliverable: { kind: 'other', describe: 'rewritten document' } })) as { matches: { workflowId: string }[]; judgment: { challenge: boolean } };
-    assert.equal(rewrite.matches[0]!.workflowId, 'managed-outcome');
+    assert.equal(rewrite.matches[0]!.workflowId, 'guided-outcome');
     assert.equal(listActivity(fx.broker.store).length, 0, 'reading a request records nothing');
     const remembered = (await call(fx, 'remember', { kind: 'decision', text: 'We will not add schema migration until stable.' })) as { remembered: { id: string }; nothingElseCreated: boolean };
     assert.equal(remembered.nothingElseCreated, true);

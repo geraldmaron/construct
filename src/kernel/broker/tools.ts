@@ -1,4 +1,8 @@
-import { recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
+import { isInside } from '../safety/containment.ts';
+import { contentReceipt } from '../workflow/verification.ts';
+import { searchContext, rebuildContextIndex, contextIndexStatus, configureEmbeddings, putEmbeddings, type SearchInput, type EmbeddingIdentity } from '../context/retrieval.ts';
+import { semanticReviewStatus } from '../workflow/semantic-review.ts';
+import { DeliveryRecoveryRequired, recoverAbandonedSteps, reserveManagedDelivery, settleManagedDelivery } from './managed-delivery.ts';
 import { claimChecks, assessClaims, type ClaimCheck } from '../workflow/claim-support.ts';
 import { accessDescriptor, accessRequest, assessAccess, type AccessDescriptor, type AccessRequest } from '../source/access.ts';
 import { dataMapping, sourceMapping, type DataMapping } from '../source/mapping.ts';
@@ -51,7 +55,7 @@ import { differsNext, OBJECTION_DISPOSITIONS, OBJECTIONS_EXAMPLE, readObjections
 import { askedOf, type Assumption, type Declared, type JudgedBy } from '../workflow/asked.ts';
 import { STAKE_AREAS } from '../workflow/consequence.ts';
 import {
-  CORE_EXAMPLE, COORDINATION_ACTIONS, COORDINATION_NEXT, DESTINATION_KINDS, GENERAL_CARRIER, INTAKE_KINDS, IntakeError, OPEN_ABOUT, SOURCE_ROLES,
+  EXECUTION_PATHS, CORE_EXAMPLE, COORDINATION_ACTIONS, COORDINATION_NEXT, DESTINATION_KINDS, GENERAL_CARRIER, INTAKE_KINDS, IntakeError, OPEN_ABOUT, SOURCE_ROLES,
   destinationConflict, matchWorkflows, workflowCarries, questionsFor, slotQuestion, validateIntake, workflowInputFor,
   type Intake, type IntakeCatalog, type ValidatedIntake, type WorkflowMatch,
 } from '../workflow/intake.ts';
@@ -168,6 +172,7 @@ const bootstrap = define<Record<string, never>, unknown>({
       // Sources only the host can read: when it reads them, it reports what it read so changes are tracked.
       sources: { ...sources, changedSinceRead: moved, reportWhenRead: hostRead },
       registry: { skills: ctx.skills.list().length, workflows: ctx.workflows.list().length, locked: lock.filter((r) => r.state === 'current').length, skew: skew.map((r) => `${r.kind} ${r.id} ${r.state}`) },
+      contextIndex: contextIndexStatus(ctx.store),
       capabilities: { available: [...ctx.host.available].sort(), declared: [...(ctx.host.declared ?? [])].sort(), reported: ctx.host.reported ?? [], probed: ctx.host.probed ?? [], exercised: [...(ctx.host.exercised ?? [])].sort(), readiness: 'host-mediated capabilities remain unverified until observed for this session and scope; available is not a successful execution receipt', maxTier: ctx.host.maxTier, restrictions: ctx.host.restrictions, budgetCents: ctx.host.budgetCents },
       tiers: Object.values(TIER_POLICIES).map((p) => ({ tier: p.tier, requirement: p.requirement })),
       decisions: { open: open.length },
@@ -234,6 +239,43 @@ const projectContext = define<{ topic: (typeof TOPICS)[number]; query?: string; 
       default:
         return null;
     }
+  },
+});
+
+const contextSearch = define<SearchInput, unknown>({
+  name: 'context_search', title: 'Find relevant context', surface: 'interactive', readOnly: true,
+  description: 'Rank admitted project context and source passages. Expand related concepts with the current host and pass expansions. Results carry citations, revisions, provenance and coverage; similarity grants no authority. Exact project_context lookups remain available.',
+  inputSchema: { type: 'object', properties: {
+    query: { type: 'string', description: 'Question, concept, exact phrase or record reference.' },
+    expansions: { type: 'array', items: { type: 'string', description: 'Text value.' }, description: 'Up to eight related queries inferred by this host.' },
+    topic: { type: 'string', description: 'sources, statements, decisions, claims, entities, work, runs or outcomes.' },
+    sourceId: { type: 'string', description: 'Restrict to one admitted source.' },
+    limit: { type: 'number', description: 'At most 50 documents; default 12.' },
+    budgetChars: { type: 'number', description: 'Returned item budget; default 12000, maximum 48000 characters. Diagnostics are separately bounded.' },
+    embedding: { type: 'object', description: 'Optional vector from the explicitly configured embedding implementation.', properties: {
+      model: { type: 'string', description: 'Text value.' }, dimensions: { type: 'number', description: 'Finite numeric value.' }, vector: { type: 'array', description: 'Embedding dimensions.', items: { type: 'number', description: 'Finite numeric value.' } },
+    }, required: ['model', 'dimensions', 'vector'], additionalProperties: false },
+  }, required: ['query'], additionalProperties: false },
+  validate(raw) { closed(raw, this.inputSchema); return { ...raw, query: str(raw, 'query')! } as unknown as SearchInput; },
+  run(ctx, input) { return searchContext(ctx.store, input, ctx.now()); },
+});
+
+const contextIndex = define<Record<string, unknown>, unknown>({
+  name: 'context_index', title: 'Context index', surface: 'interactive', readOnly: false,
+  description: 'Inspect or rebuild the derived local index. Explicitly enable or disable supplied embeddings; configure resets prior vectors. Record vectors for returned embeddingRef and exact passage fingerprints. This tool invokes no model, download or service.',
+  inputSchema: { type: 'object', properties: {
+    action: { type: 'string', description: 'Index operation.', enum: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] },
+    model: { type: 'string', description: 'Text value.' }, dimensions: { type: 'number', description: 'Finite numeric value.' },
+    items: { type: 'array', description: 'Vectors of admitted documents.', items: { type: 'object', properties: { ref: { type: 'string', description: 'Text value.' }, digest: { type: 'string', description: 'Text value.' }, vector: { type: 'array', description: 'Embedding dimensions.', items: { type: 'number', description: 'Finite numeric value.' } } }, required: ['ref', 'digest', 'vector'], additionalProperties: false } },
+  }, required: ['action'], additionalProperties: false },
+  validate(raw) { closed(raw, this.inputSchema); str(raw, 'action', { oneOf: ['status', 'rebuild', 'configure', 'put_vectors', 'disable'] }); return raw; },
+  run(ctx, input) {
+    if (input.action === 'status') return contextIndexStatus(ctx.store);
+    if (input.action === 'rebuild') return rebuildContextIndex(ctx.store, ctx.now());
+    if (input.action === 'disable') return configureEmbeddings(ctx.store, null);
+    const identity = { model: input.model, dimensions: input.dimensions } as EmbeddingIdentity;
+    if (input.action === 'configure') return configureEmbeddings(ctx.store, identity);
+    return putEmbeddings(ctx.store, { ...identity, items: input.items } as Parameters<typeof putEmbeddings>[1], ctx.now());
   },
 });
 
@@ -311,8 +353,8 @@ const CLASSIFY_DESCRIPTION = [
   'Report your own reading: Construct does not read intent from the words.',
   'It checks the reading, works out periods and source ids, names the workflows whose declared deliverable fits, returns only the questions that block, and records nothing.',
   'kind: answer, remember, manage (produce or review something), maintain (keep it up on a schedule or an event), or coordinate (work alongside other agents).',
-  'Use a declared deliverable kind; other selects the general carrier and requires actual project commands. Inspect its alternatives before starting.',
-  'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
+  'Report intent with outcome, path and acceptance. Use a declared kind; other plus intent.path selects a portable path. Only implementation needs project test commands.',
+  'Listed kinds: review/ challenge, architecture, delivery-plan, design-conformance, experience, implementation, operational-readiness, product, security-privacy, strategy-execution, drift, standing; document/ prd, rfc, proposal, revision; research/brief; decision/brief; outcome/ portable, managed; memo/issue-spotting; constitution/review; publication; anything else: other with describe.',
   'Prefer period.relative or quarter over computing dates.',
   'Example: {"kind":"manage","words":"<their words>","deliverable":{"kind":"research/brief"},"sources":[{"name":"<their connected source>","role":"read"}]}.',
   'Evidence gaps do not block an investigation: open items use blocking=false with handling=investigate or carry_unknown; never invent an assumption. Only required scope, permission or destination decisions block. Start with the returned intake.',
@@ -323,48 +365,57 @@ const CLASSIFY_DESCRIPTION = [
 const INTAKE_SCHEMA: JsonSchema = {
   type: 'object',
   properties: {
-    words: { type: 'string', description: 'The person’s request, verbatim.' },
-    kind: { type: 'string', description: 'What they ask for.', enum: INTAKE_KINDS },
+    words: { type: 'string', description: 'Verbatim request.' },
+    kind: { type: 'string', description: 'Interaction.', enum: INTAKE_KINDS },
     deliverable: {
       type: 'object',
-      description: 'For manage or maintain: what they want back.',
+      description: 'Requested result.',
       properties: {
-        kind: { type: 'string', description: 'A listed kind, a family, or other.' },
-        describe: { type: 'string', description: 'In a few words; required with other.' },
+        kind: { type: 'string', description: 'Result kind.' },
+        describe: { type: 'string', description: 'Required for other.' },
       },
       required: ['kind'],
       additionalProperties: false,
     },
-    skill: { type: 'string', description: 'The skill whose method fits, by id.' },
-    workflowId: { type: 'string', description: 'A workflow to start, if you know it.' },
-    target: { type: 'string', description: 'The document, file or system.' },
-    scope: { type: 'string', description: 'What it covers, if narrower.' },
+    intent: { type: 'object', description: 'Host interpretation.', properties: {
+      outcome: { type: 'string', description: 'Desired result.' },
+      audience: { type: 'string', description: 'Audience.' },
+      path: { type: 'string', description: 'Work path.', enum: EXECUTION_PATHS },
+      acceptance: { type: 'array', description: 'Success checks.', items: { type: 'string' } },
+      constraints: { type: 'array', description: 'Labeled constraints.', items: { type: 'string' } },
+      assumptions: { type: 'array', description: 'Assumptions.', items: { type: 'string' } },
+      priorWork: { type: 'array', description: 'Prior records.', items: { type: 'string' } },
+    }, required: ['outcome', 'path'], additionalProperties: false },
+    skill: { type: 'string', description: 'Method id.' },
+    workflowId: { type: 'string', description: 'Workflow id.' },
+    target: { type: 'string', description: 'Target.' },
+    scope: { type: 'string', description: 'Scope.' },
     period: {
       type: 'object',
-      description: 'The period they named.',
+      description: 'Requested period.',
       properties: {
-        semantics: { type: 'string', description: 'as_of: state at end; changed_during: changes; evidence_window: dated evidence only.', enum: PERIOD_SEMANTICS },
-        relative: { type: 'string', description: 'Relative to today.', enum: PERIOD_RELATIVES },
-        n: { type: 'number', description: 'Days, for last_n_days.' },
+        semantics: { type: 'string', description: 'Period semantics.', enum: PERIOD_SEMANTICS },
+        relative: { type: 'string', description: 'Relative period.', enum: PERIOD_RELATIVES },
+        n: { type: 'number', description: 'Day count.' },
         quarter: { type: 'number', description: '1 to 4.' },
         year: { type: 'number', description: 'Four digits.' },
         from: { type: 'string', description: 'YYYY-MM-DD.' },
         to: { type: 'string', description: 'YYYY-MM-DD.' },
-        timezone: { type: 'string', description: 'IANA, such as Europe/Berlin.' },
-        phrase: { type: 'string', description: 'Their words for it.' },
+        timezone: { type: 'string', description: 'IANA zone.' },
+        phrase: { type: 'string', description: 'Their phrase.' },
       },
       required: ['semantics'],
       additionalProperties: false,
     },
     sources: {
       type: 'array',
-      description: 'The systems they named.',
+      description: 'Named sources.',
       items: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'As named, such as Jira.' },
-          id: { type: 'string', description: 'Its declared id, if any.' },
-          role: { type: 'string', description: 'read (the default) or subject.', enum: SOURCE_ROLES },
+          name: { type: 'string', description: 'Source name.' },
+          id: { type: 'string', description: 'Source id.' },
+          role: { type: 'string', description: 'Source role.', enum: SOURCE_ROLES },
         },
         required: ['name'],
         additionalProperties: false,
@@ -372,53 +423,53 @@ const INTAKE_SCHEMA: JsonSchema = {
     },
     destination: {
       type: 'object',
-      description: 'Where the result goes.',
+      description: 'Destination.',
       properties: {
-        kind: { type: 'string', description: 'What kind of place.', enum: DESTINATION_KINDS },
-        ref: { type: 'string', description: 'A file path, source location or address.' },
-        name: { type: 'string', description: 'For registered_source: its id.' },
+        kind: { type: 'string', description: 'Place kind.', enum: DESTINATION_KINDS },
+        ref: { type: 'string', description: 'Destination reference.' },
+        name: { type: 'string', description: 'Source id.' },
       },
       required: ['kind'],
       additionalProperties: false,
     },
     schedule: {
       type: 'object',
-      description: 'Saved timing. Use period.relative=today for current-state firings.',
+      description: 'Standing timing.',
       properties: {
         cron: { type: 'string', description: 'Five fields.' },
         timezone: { type: 'string', description: 'IANA; required with cron.' },
         event: { type: 'string', description: 'An event name.' },
-        phrase: { type: 'string', description: 'Their words for it.' },
+        phrase: { type: 'string', description: 'Their phrase.' },
       },
       additionalProperties: false,
     },
-    coordination: { type: 'string', description: 'For coordinate: which action.', enum: COORDINATION_ACTIONS },
+    coordination: { type: 'string', description: 'Coordination.', enum: COORDINATION_ACTIONS },
     stakes: {
       type: 'object',
-      description: 'What it touches; only raises rigor.',
+      description: 'Consequence.',
       properties: {
-        reversible: { type: 'boolean', description: 'False when it is hard to undo.' },
+        reversible: { type: 'boolean', description: 'Reversible.' },
         affects: { type: 'array', description: 'What it touches.', items: { type: 'string', enum: STAKE_AREAS } },
       },
       additionalProperties: false,
     },
     open: {
       type: 'array',
-      description: 'Blocking decisions or evidence gaps; keep these distinct.',
+      description: 'Unresolved items.',
       items: {
         type: 'object',
         properties: {
           about: { type: 'string', description: 'What it is about.', enum: OPEN_ABOUT },
-          question: { type: 'string', description: 'The unresolved question.' },
-          blocking: { type: 'boolean', description: 'True for a required decision, permission or essential intent detail.' },
-          handling: { type: 'string', enum: ['investigate', 'carry_unknown'], description: 'With blocking=false: investigate or retain unknown, never assume.' },
-          assumption: { type: 'string', description: 'A deliberate assumption; omit for evidence gaps.' },
+          question: { type: 'string', description: 'Question.' },
+          blocking: { type: 'boolean', description: 'Required decision.' },
+          handling: { type: 'string', enum: ['investigate', 'carry_unknown'], description: 'Evidence-gap handling.' },
+          assumption: { type: 'string', description: 'Labeled assumption.' },
         },
         required: ['question', 'blocking'],
         additionalProperties: false,
       },
     },
-    inputs: { type: 'object', description: 'Workflow inputs by their own keys.' },
+    inputs: { type: 'object', description: 'Workflow inputs.' },
   },
   required: ['words', 'kind'],
   additionalProperties: false,
@@ -510,7 +561,8 @@ function classifyNext(validated: ValidatedIntake, first: string | null, open: nu
   if (first === null) {
     return `${prefix}No workflow here produces ${intake.deliverable?.kind ?? 'this'} ${intake.kind === 'maintain' ? 'on a schedule or an event; tell the person, and offer to run it once now instead (kind manage)' : 'for this reading; tell the person what the listed workflows can do instead'}.`;
   }
-  if (first === GENERAL_CARRIER && open === 0) return `${prefix}The general carrier requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this carrier only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
+  if (first === GENERAL_CARRIER && open === 0) return `${prefix}First inspect carrierAlternatives and the reported execution path; the portable carrier needs no project command. never request broader shell permission to deliver research or advice. Call start_outcome with workflowId "${first}" and this intake when its obligations fit.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
+  if (first === 'managed-outcome' && open === 0) return `${prefix}The general carrier requires an actual project verification command. First inspect carrierAlternatives and choose a declared deliverable kind whose method and verification fit this request; then reclassify with that kind. Research, advice and document review must not acquire command requirements merely because you chose other. Start this carrier only when its command-based verification is appropriate; never request broader shell permission or substitute an arbitrary command to make it pass.${intake.kind === 'maintain' ? ' A standing intent still needs a separately provisioned clock and executor; recording it does not execute it.' : ''}${challenge ? ' This work must be challenged before it is accepted.' : ''}`;
   if (open > 0) return `${prefix}Put these ${String(open)} question(s) to the person in one message, then call start_outcome with workflowId "${first}" and this intake with their answers applied.`;
   return `${prefix}Call start_outcome with workflowId "${first}" and this intake, or another match whose skills fit better.${challenge ? ' This work must be challenged before it is accepted.' : ''}${intake.kind === 'maintain' ? ` start_outcome saves the standing intent without starting work now. The clock and executor still require provisioning; ${scheduleCommand(first, intake.schedule)} is only an alternate definition command, not an executing schedule.` : ''}`;
 }
@@ -665,9 +717,10 @@ function startable(w: RegisteredWorkflow): boolean {
   return (w.manifest.interactionClass === 'manage' || w.manifest.interactionClass === 'maintain') && w.manifest.triggers.includes('manual');
 }
 
-function startedResult(r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
+function startedResult(ctx: BrokerContext, r: StartResult, normalized: readonly unknown[], assumptions: readonly Assumption[]): Record<string, unknown> {
   return {
     started: true,
+    semanticReview: semanticReviewStatus(ctx.store, r.run, resolverFor(ctx.store, ctx.root), ctx.now()),
     run: { id: r.run.id, state: r.run.state, workflow: r.run.workflowId },
     created: r.created,
     preflight: r.preflight,
@@ -736,7 +789,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
           assumptions: validated.assumptions,
         },
       });
-      return startedResult(r, validated.normalized, validated.assumptions);
+      return startedResult(ctx, r, validated.normalized, validated.assumptions);
     }
     const workflow = ctx.workflows.get(workflowId);
     if (!workflow || !startable(workflow)) throw new ToolInputError(`no workflow "${workflowId}" can be started here`, { field: 'workflowId', allowed: ctx.workflows.list().filter(startable).map((w) => w.manifest.id) });
@@ -744,7 +797,7 @@ const startOutcome = define<{ workflowId: string; input?: Record<string, unknown
     const missing = workflow.manifest.requiredInputs.filter((k) => explicit[k] === undefined);
     if (missing.length > 0) return { started: false, recorded: false, questions: missing.map((slot) => slotQuestion(slot, workflow)), hostQuestions: [], normalized: [], next: NOTHING_STARTED };
     const r = ctx.workflow.start({ workflowId, input: explicit, trigger: 'manual' });
-    return startedResult(r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
+    return startedResult(ctx, r, [], r.preflight.assumptions.map((text) => ({ about: 'period', text, by: 'kernel' as const })));
   },
 });
 
@@ -765,7 +818,7 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
   },
   run(ctx, { runId, includeSkillBody }) {
     recoverAbandonedSteps(ctx, runId);
-    const { c, delivery } = ctx.store.transaction(() => {
+    const result = (() => { try { return ctx.store.transaction(() => {
       const c = ctx.workflow.claimNext({ runId, owner: ctx.host.executorId });
       const settledRunId = runId ?? (c.waitingOn?.kind === 're_resolve' ? c.waitingOn.runId : undefined);
       if (!c.packet && settledRunId) {
@@ -773,11 +826,18 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         if (run) settleManagedDelivery(ctx, run.id, run.state);
       }
       return { c, delivery: c.packet ? reserveManagedDelivery(ctx, c.packet) : null };
-    });
+    }); } catch (error) {
+      if (error instanceof DeliveryRecoveryRequired) return { recovery: error.recovery };
+      throw error;
+    } })();
+    if ('recovery' in result) return { work: null, waitingOn: result.recovery };
+    const { c, delivery } = result;
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
     return {
       work: {
+        semanticReview: p.semanticReview,
+        delivery,
         stepRunId: p.leased.id,
         owner: p.leased.leaseOwner,
         token: p.leased.nonce,
@@ -790,7 +850,6 @@ const claimWork = define<{ runId?: string; includeSkillBody: boolean }, unknown>
         method: p.method,
         methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })),
         methodCatalogDetail: 'Compact index; skills list/show provides full activation, stand-down and method resources.',
-        delivery,
         instructions: p.instructions,
         judgment: p.judgment,
       },
@@ -861,6 +920,35 @@ function leaseToken(raw: Record<string, unknown>): string {
   return token.trim();
 }
 
+const checkpointWork = define<{ stepRunId: string; token: string; summary: string; artifact?: string; unknowns: string[]; remaining: string[]; gatherCalls: number }, unknown>({
+  name: 'checkpoint_work', title: 'Preserve work in progress', surface: 'both', readOnly: false,
+  description: 'Save a durable partial result on your current step lease before gathering or repairs exhaust their budget. This neither completes the step nor establishes verification. Files must already exist and be permitted by this step.',
+  inputSchema: { type: 'object', properties: {
+    stepRunId: { type: 'string', description: 'Current claimed step.' }, token: { type: 'string', description: 'Current lease token.' },
+    summary: { type: 'string', description: 'Useful progress so far.' }, artifact: { type: 'string', description: 'Existing authorized project artifact, when any.' },
+    unknowns: { type: 'array', description: 'Missing evidence and unresolved facts.', items: { type: 'string' } },
+    remaining: { type: 'array', description: 'Next actions without repeating completed effects.', items: { type: 'string' } },
+    gatherCalls: { type: 'number', description: 'Host-reported gathering calls so far; no execution proof.' },
+  }, required: ['stepRunId', 'token', 'summary'], additionalProperties: false },
+  validate(raw) { closed(raw,this.inputSchema); return { stepRunId: str(raw,'stepRunId')!, token: leaseToken(raw), summary: str(raw,'summary')!, artifact: str(raw,'artifact',{optional:true}), unknowns: list(raw,'unknowns') as string[], remaining: list(raw,'remaining') as string[], gatherCalls: num(raw,'gatherCalls') ?? 0 }; },
+  run(ctx,input) {
+    const step = getStep(ctx.store,input.stepRunId); const at = ctx.now();
+    const lease = step?.leaseOwner ? heldLease(ctx.store,{id:step.id,owner:ctx.host.executorId,nonce:input.token}) : null;
+    if (!step || !lease || lease.leaseUntil <= at) throw new Error('Checkpoint requires this session’s current unexpired step lease');
+    if (JSON.stringify(input).length > 20_000 || !Number.isSafeInteger(input.gatherCalls) || input.gatherCalls < 0 || [...input.unknowns,...input.remaining].some(s => typeof s !== 'string')) throw new ToolInputError('Checkpoint must contain bounded text and a nonnegative gather-call count');
+    const run = getRun(ctx.store,step.runId)!; if (run.cancelRequested || ['failed','cancelled','succeeded'].includes(run.state)) throw new Error('Stopped outcomes cannot receive a new checkpoint');
+    const artifact = input.artifact ? projectResolver(ctx)(input.artifact) : null;
+    const receipt = input.artifact ? contentReceipt(input.artifact,projectResolver(ctx)) : null;
+    const binding = (run.bindings as { steps?: readonly import('../registry/models.ts').WorkflowStep[]; execution?: import('../registry/models.ts').WorkflowManifest['execution'] } | null);
+    const bound = binding?.steps?.find(s => s.id === step.stepId);
+    if (input.artifact && (artifact?.kind !== 'file' || !artifact.path || !isInside(ctx.root,artifact.path) || !receipt?.digest || bound?.tier !== 'project_write')) throw new Error('Artifact checkpoint needs an existing readable artifact on a project-write step');
+    const payload = { summary: redact(input.summary), artifact: receipt, unknowns: input.unknowns.map(redact), remaining: input.remaining.map(redact),
+      gathering: { calls: input.gatherCalls, provenance: 'host_reported', limit: binding?.execution?.maxGatherCalls ?? null, exhausted: binding?.execution ? input.gatherCalls >= binding.execution.maxGatherCalls : false }, assurance: 'partial_unverified' };
+    const event = appendActivity(ctx.store,{at,kind:'step.checkpoint',runId:run.id,stepRunId:step.id,actor:ctx.host.executorId,payload});
+    return { ref: `checkpoint:${event.id}`, ...payload, next: 'Resume from this checkpoint; submit only when current-step obligations are satisfied. Preserve unknowns and do not repeat completed effects.' };
+  },
+});
+
 const runStatus = define<{ runId: string }, unknown>({
   name: 'run_status',
   title: 'Run status',
@@ -876,7 +964,8 @@ const runStatus = define<{ runId: string }, unknown>({
     const v = ctx.workflow.status(runId);
     if (!v) throw new Error(`no run ${runId}`);
     const asked = askedOf(v.run);
-    return { run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
+    const checkpoints = ctx.store.db.prepare("SELECT id, step_run_id, at, payload_json FROM activity_events WHERE kind='step.checkpoint' AND run_id=? ORDER BY id DESC LIMIT 20").all(runId);
+    return { checkpoints, delivery: { state: v.deliverables.length ? 'available' : checkpoints.length ? 'partial' : 'not_produced', deterministic: v.deliverables.some(d => d.verification !== null) ? 'recorded' : 'not_recorded', semantic: v.semanticReview.state, acceptance: v.deliverables.some(d => ['accepted','final'].includes(d.trustState)) ? 'accepted' : 'not_accepted' }, semanticReview: v.semanticReview, run: { id: v.run.id, workflow: v.run.workflowId, state: v.run.state, reason: v.run.stateReason, preflight: v.run.preflight, asked: { period: asked.period ?? null, sources: asked.sources ?? null, judgedBy: asked.judgedBy ?? null } }, steps: v.steps.map((s) => ({ id: s.id, step: s.stepId, state: s.state, attempts: s.attempts, reason: s.stateReason })), deliverables: v.deliverables.map((d) => ({ id: d.id, kind: d.kind, trust: d.trustState, verification: d.verification, body: d.body })), openDecisions: v.openDecisions.map((d) => ({ id: d.id, kind: d.kind, question: d.question, options: d.options })) };
   },
 });
 
@@ -1046,6 +1135,39 @@ function declareInput(raw: Record<string, unknown>, id: string | undefined): Pic
   return { id, kind: k, purpose: purpose || undefined, locator };
 }
 
+const ACCESS_REQUEST_PROPERTIES = {
+  principal: { type: 'string', description: 'Observed principal, never credentials; 1–512 characters.' },
+  scope: { type: 'string', description: 'Exact observed scope; 1–512 characters.' },
+  operation: { type: 'string', description: 'Attempted operation; 1–512 characters.' },
+  mode: { type: 'string', description: 'Access being checked.', enum: ['read', 'write'] },
+} as const;
+const ACCESS_REQUEST_REQUIRED = ['principal', 'scope', 'operation', 'mode'] as const;
+
+/** Give the host a repairable nested field without changing access provenance. */
+function sourceAccessInput(raw: Record<string, unknown>, key: 'observation' | 'request'): Record<string, unknown> | undefined {
+  if (raw[key] === undefined) return undefined;
+  try {
+    const value = obj(raw, key)!;
+    for (const field of ['principal', 'scope', 'operation', ...(key === 'observation' ? ['expiresAt'] : [])]) {
+      const text = str(value, field)!;
+      if (!text.trim() || text.length > 512) throw new ToolInputError(`${field} must be nonempty and at most 512 characters`, { field });
+    }
+    str(value, 'mode', { oneOf: ['read', 'write'] });
+    if (key === 'observation') {
+      if (value.mode === 'write') throw new ToolInputError('a source read cannot report a write operation', { field: 'mode', allowed: ['read'] });
+      str(value, 'transport', { oneOf: ['api', 'mcp', 'local'] });
+      const expiry = value.expiresAt as string;
+      if (!/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(expiry) || !Number.isFinite(Date.parse(expiry))) throw new ToolInputError('expiresAt must be an explicit expiry instant with a timezone', { field: 'expiresAt' });
+      for (const field of ['inputSchema', 'outputSchema']) if (value[field] !== undefined) obj(value, field);
+    }
+    return value;
+  } catch (error) {
+    if (!(error instanceof ToolInputError)) throw error;
+    const field = error.field === key ? key : `${key}.${error.field}`;
+    throw new ToolInputError(`${field}: ${error.message}`, { field, ...(error.allowed ? { allowed: error.allowed } : {}) });
+  }
+}
+
 const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
@@ -1056,18 +1178,35 @@ const sources = define<SourcesInput, unknown>({
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Inspect, read, check scoped access, or map typed data.', enum: SOURCE_ACTIONS },
-      observation: { type: 'object', description: 'Report: observed transport (api/mcp/local), operation, mode (read), principal, exact scope, expiresAt, inputSchema?, outputSchema?. This stays reported; session and provenance are adapter-owned.' },
-      request: { type: 'object', description: 'Check: principal, exact scope, operation and mode (read/write). Checks permission and current scoped access evidence without making a grant.' },
+      observation: { type: 'object', description: 'Optional access report; omit if identity/expiry is unknown. Never grants access; session/provenance/grants are ignored.', properties: {
+        ...ACCESS_REQUEST_PROPERTIES,
+        mode: { type: 'string', description: 'A source read cannot report a write operation.', enum: ['read'] },
+        transport: { type: 'string', description: 'Transport actually used for the read.', enum: ['api', 'mcp', 'local'] },
+        expiresAt: { type: 'string', description: 'Observed expiry with timezone; expired access is not current.' },
+        inputSchema: { type: 'object', description: 'Observed input schema.' },
+        outputSchema: { type: 'object', description: 'Observed output schema.' },
+      }, required: [...ACCESS_REQUEST_REQUIRED, 'transport', 'expiresAt'] },
+      request: { type: 'object', description: 'Check permission and current scoped access evidence without making a grant.', properties: ACCESS_REQUEST_PROPERTIES, required: ACCESS_REQUEST_REQUIRED },
       item: { type: 'string', description: 'Map: item ref; without mapping returns its recorded mapping or unknown shape.' },
       mapping: { type: 'object', description: 'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.' },
-      id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
-      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness.' },
+      id: { type: 'string', description: 'Source id: lowercase letters, digits and dashes; starts with a letter.' },
+      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'Report outcome; defaults to read. Empty/failed reads preserve prior evidence, never establish source-wide freshness.' },
       reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
       scope: { type: 'string', description: 'For report: attempted query, item URI or scope; required for non-read outcomes.' },
       coverage: { type: 'object', description: 'For report: observed completeness, pagination and coverage limitations; these remain host reports.' },
-      items: { type: 'array', description: 'For report: {ref, url?, title?, updatedAt?, text?, kind?, fingerprint?, weak?, schema?} for each item you read; url is the http(s) address a person would open for it.', items: { type: 'object' } },
-      partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
-      kind: { type: 'string', description: 'For declare: what kind of system it is; other covers chat, monitoring tools, and the open web.', enum: DECLARABLE_KINDS },
+      items: { type: 'array', description: 'Read items; preserve passages, not summaries.', items: { type: 'object', properties: {
+        ref: { type: 'string', description: 'Stable nonempty key, unique within source.' },
+        url: { type: 'string', description: 'HTTP(S) address a person would open; never credentials.' },
+        title: { type: 'string', description: 'Observed item title.' },
+        updatedAt: { type: 'string', description: 'Provider last-updated time, when known; not the time you read it.' },
+        text: { type: 'string', description: 'Exact passage read; text cap applies.' },
+        kind: { type: 'string', description: 'Observed item kind.' },
+        fingerprint: { type: 'string', description: 'Provider content fingerprint, when available.' },
+        weak: { type: 'boolean', description: 'True for a discovered reference that was not read as a version.' },
+        schema: { type: 'object', description: 'Observed schema/units; never infer missing shape.' },
+      }, required: ['ref'] } },
+      partial: { type: 'boolean', description: 'Partial read: preserve unreported items.' },
+      kind: { type: 'string', description: 'Declare system kind; other includes the web.', enum: DECLARABLE_KINDS },
       purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
       locator: { type: 'string', description: 'For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials.' },
     },
@@ -1084,8 +1223,10 @@ const sources = define<SourcesInput, unknown>({
     for (const key of DECLARE_ONLY) {
       if (raw[key] !== undefined && raw[key] !== null) throw new ToolInputError(`"${key}" is for declare only`, { field: key });
     }
-    const observation = raw.observation === undefined ? undefined : accessDescriptor(raw.observation);
-    const request = raw.request === undefined ? undefined : accessRequest(raw.request);
+    const observationInput = sourceAccessInput(raw, 'observation');
+    const requestInput = sourceAccessInput(raw, 'request');
+    const observation = observationInput === undefined ? undefined : accessDescriptor(observationInput);
+    const request = requestInput === undefined ? undefined : accessRequest(requestInput);
     const mapping = raw.mapping === undefined ? undefined : dataMapping(raw.mapping);
     return { action, id, items, partial, observation, request, mapping, item: str(raw, 'item', { optional: true }), outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
   },
@@ -1126,7 +1267,7 @@ const sources = define<SourcesInput, unknown>({
     if (action === 'report') {
       if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
-        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: 'items' });
+        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: `items[${String(n)}].ref` });
         const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
         const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
         const problem = url === undefined ? null : urlProblem(url);
@@ -1181,6 +1322,7 @@ interface CheckAnswerInput {
   citations: { ref: string; excerpt?: string }[];
   period?: Record<string, unknown>;
   outsidePeriod?: { ref: string; why: string }[];
+  historicalEvidence?: { ref: string; why: string }[];
 }
 
 /** The checks a plain answer gets: nothing that needs an artifact, a template, or a workflow's shape. */
@@ -1196,6 +1338,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
     type: 'object',
     properties: {
       answer: { type: 'string', description: 'The answer you are about to give, as you would give it.' },
+      historicalEvidence: { type: 'array', description: 'Historical citations used as history, never as current support: {ref,why}.', items: { type: 'object' } },
       claims: { type: 'array', items: { type: 'object' }, description: 'Optional bounded claim checks: {claim: exact answer text, refs:[citations], calculation?:{sourceId,item,field,operation:sum,expected,unit}}. Sums require a recorded complete typed mapping and claim text Total <field> is <expected> <unit>. Unrecognized semantic claims remain unknown.' },
       citations: { type: 'array', description: 'What it rests on: {ref, excerpt?} entries.', items: { type: 'object' } },
       period: { type: 'object', description: 'The period the answer covers, when it covers one: {semantics: as_of | changed_during | evidence_window, and one of relative (such as last_quarter), quarter with or without year, year, or from and to as YYYY-MM-DD}.' },
@@ -1215,9 +1358,10 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
       const r = record(e);
       return { ref: typeof r.ref === 'string' ? r.ref : '', why: typeof r.why === 'string' ? r.why : '' };
     });
-    return { answer: str(raw, 'answer')!, claims: claimChecks(raw.claims), citations, ...(period ? { period } : {}), ...(outsidePeriod.length ? { outsidePeriod } : {}) };
+    const historicalEvidence = list(raw,'historicalEvidence').map(e => { const r=record(e); return {ref:str(r,'ref')!,why:str(r,'why')!}; });
+    return { historicalEvidence, answer: str(raw, 'answer')!, claims: claimChecks(raw.claims), citations, ...(period ? { period } : {}), ...(outsidePeriod.length ? { outsidePeriod } : {}) };
   },
-  run(ctx, { answer, claims, citations, period: spec, outsidePeriod }) {
+  run(ctx, { answer, claims, citations, period: spec, outsidePeriod, historicalEvidence }) {
     // A period is checked and worked out at the moment of asking, before anything is recorded.
     let period: ResolvedPeriod | null = null;
     if (spec) {
@@ -1230,7 +1374,7 @@ const checkAnswer = define<CheckAnswerInput, unknown>({
     const settled = settledTerms(listStatements(ctx.store, { kind: 'constraint', status: 'confirmed' }));
     const checks: string[] = [...ANSWER_CHECKS, ...(period ? ['within_period'] : [])];
     const claimSupport = assessClaims({ answer, claims, citations, resolve, store: ctx.store, at: ctx.now() });
-    const output = { summary: answer, derivations: claimSupport.results.flatMap((r) => r.derivation ? [r.derivation] : []), ...(outsidePeriod ? { outsidePeriod } : {}) };
+    const output = { historicalEvidence, summary: answer, derivations: claimSupport.results.flatMap((r) => r.derivation ? [r.derivation] : []), ...(outsidePeriod ? { outsidePeriod } : {}) };
     const results = runValidators(checks, { output, expectedKeys: [], evidence: citations, resolvableRefs: new Set(), resolve, settled, period });
     const problems = results.flatMap((r) => r.problems.map((p) => ({ check: r.validator, problem: p })));
     for (const result of claimSupport.results) if (result.status === 'contradicted' || (result.status === 'unknown' && claims.some((c) => c.claim === result.claim))) problems.push({ check: 'claim_support', problem: `${result.claim}: ${result.status}. ${result.problems.join('; ') || result.basis}` });
@@ -1675,13 +1819,13 @@ const claimStep = define<{ runId?: string }, unknown>({
     });
     if (!c.packet) return { work: null, waitingOn: c.waitingOn };
     const p = c.packet;
-    return { work: { stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
+    return { work: { semanticReview: p.semanticReview, stepRunId: p.leased.id, owner: p.leased.leaseOwner, token: p.leased.nonce, leaseUntil: p.leased.leaseUntil, run: { id: p.run.id, workflow: p.run.workflowId }, step: { id: p.step.id, title: p.step.title, tier: p.step.tier, outputs: p.step.outputs, validators: p.step.validators }, skill: p.skill ? { id: p.skill.id, version: p.skill.version, body: p.skill.body() } : null, inputs: p.inputs, intake: p.intake, method: p.method, methodCatalog: p.methodCatalog.map(({ id, title }) => ({ id, title })), delivery, instructions: p.instructions }, waitingOn: null };
   },
 });
 
 /** Every tool, in the order a host sees them. */
 export const TOOLS: readonly Tool<unknown, unknown>[] = [
-  bootstrap, classify, projectContext, remember, workflows, skills, startOutcome, claimWork, submitWork, runStatus, inbox, decide, sources, checkAnswer, staff, promote, work, delegate, claimStep, heartbeat,
+  bootstrap, classify, projectContext, contextSearch, contextIndex, remember, workflows, skills, startOutcome, claimWork, submitWork, checkpointWork, runStatus, inbox, decide, sources, checkAnswer, staff, promote, work, delegate, claimStep, heartbeat,
 ] as unknown as readonly Tool<unknown, unknown>[];
 
 export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unknown, unknown>[] {
@@ -1689,4 +1833,4 @@ export function toolsFor(surface: 'interactive' | 'headless'): readonly Tool<unk
 }
 
 /** What the headless surface must never be able to do, by tool name. */
-export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'workflows', 'project_context', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];
+export const HEADLESS_FORBIDDEN: readonly string[] = ['remember', 'start_outcome', 'decide', 'promote_deliverable', 'sources', 'workflows', 'project_context', 'context_search', 'context_index', 'staff', 'claim_work', 'classify_request', 'work', 'delegate'];

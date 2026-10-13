@@ -9,6 +9,8 @@ export interface MethodReceipt {
   readonly digest: string;
   readonly status: 'reported_applied' | 'reported_skipped' | 'reported_deferred' | 'unreported';
   readonly why: string;
+  readonly doctrine?: readonly { readonly ref: string; readonly purpose: 'procedure_only' }[];
+  readonly obligations?: readonly { readonly obligation: string; readonly section: string; readonly evidence: readonly string[]; readonly sectionDigest: string }[];
   readonly evidence: readonly { readonly ref: string; readonly digest: string | null; readonly provenance: string }[];
 }
 
@@ -32,7 +34,25 @@ export function methodReceipts(output: Record<string, unknown>, primary: string 
       if (!hit) problems.push(`method ${entry.id} evidence ${ref} does not resolve`);
       evidence.push({ ref, digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null, provenance: hit?.provenance ?? 'unresolved' });
     }
-    receipts.push({ id: skill.manifest.id, version: skill.manifest.version, digest: skill.digest, status: `reported_${entry.disposition}` as MethodReceipt['status'], why: entry.why.trim(), evidence });
+    const doctrine: { ref: string; purpose: 'procedure_only' }[] = [];
+    if (entry.doctrine !== undefined && !Array.isArray(entry.doctrine)) problems.push(`method ${entry.id} doctrine must be a list of references`);
+    for (const ref of Array.isArray(entry.doctrine) ? entry.doctrine : []) {
+      if (typeof ref !== 'string' || !ref.trim()) problems.push(`method ${entry.id} doctrine needs references`);
+      else doctrine.push({ ref, purpose: 'procedure_only' });
+    }
+    const obligations: { obligation: string; section: string; evidence: string[]; sectionDigest: string }[] = [];
+    if (entry.obligations !== undefined && !Array.isArray(entry.obligations)) problems.push(`method ${entry.id} obligations must be a list`);
+    for (const item of Array.isArray(entry.obligations) ? entry.obligations : []) {
+      if (!item || typeof item.obligation !== 'string' || !item.obligation.trim() || typeof item.section !== 'string' || !item.section.startsWith('/') || !Array.isArray(item.evidence)) {
+        problems.push(`method ${entry.id} obligation needs text, a JSON pointer section and evidence references`); continue;
+      }
+      let section: unknown = output;
+      for (const key of item.section.slice(1).split('/').map((k: string) => k.replaceAll('~1', '/').replaceAll('~0', '~'))) section = section && typeof section === 'object' && Object.hasOwn(section, key) ? (section as Record<string, unknown>)[key] : undefined;
+      if (section === undefined || section === null || JSON.stringify(section) === '""') { problems.push(`method ${entry.id} section ${item.section} is absent or empty`); continue; }
+      if (item.evidence.some((r: unknown) => typeof r !== 'string' || !evidence.some(e => e.ref === r))) { problems.push(`method ${entry.id} obligation evidence must occur in its project evidence list`); continue; }
+      obligations.push({ obligation: item.obligation, section: item.section, evidence: item.evidence, sectionDigest: createHash('sha256').update(JSON.stringify(section)).digest('hex') });
+    }
+    receipts.push({ id: skill.manifest.id, version: skill.manifest.version, digest: skill.digest, status: `reported_${entry.disposition}` as MethodReceipt['status'], why: entry.why.trim(), evidence, ...(doctrine.length ? { doctrine } : {}), ...(obligations.length ? { obligations } : {}) });
   }
   if (primary && !seen.has(primary)) {
     const skill = registry.get(primary);

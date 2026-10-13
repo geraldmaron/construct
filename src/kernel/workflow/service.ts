@@ -1,4 +1,4 @@
-import { semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type NativeReviewerIdentity } from './semantic-review.ts';
+import { semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type ReviewerIdentity } from './semantic-review.ts';
 import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
@@ -75,7 +75,7 @@ export interface WorkflowServiceDeps {
   readonly resolveEvidence?: RefResolver;
   readonly targetSystemFor?: (step: WorkflowStep) => string;
   readonly defaultLeaseMs?: number;
-  readonly semanticReviewer?: NativeReviewerIdentity | null;
+  readonly semanticReviewer?: ReviewerIdentity | null;
 }
 
 export interface StartInput {
@@ -137,6 +137,7 @@ export interface WorkIntake {
 }
 
 export interface WorkPacket {
+  readonly semanticReview: SemanticReviewStatus;
   readonly leased: LeasedStep;
   readonly run: WorkflowRun;
   readonly step: WorkflowStep;
@@ -277,7 +278,7 @@ export interface SubmitInput {
 }
 
 export interface SubmitResult {
-  readonly semanticReview?: { readonly preparedRef: string | null; readonly digest: string | null; readonly problems: readonly string[]; readonly next: string };
+  readonly semanticReview?: SemanticReviewStatus;
   readonly step: StepRun;
   readonly validation: readonly ValidatorResult[];
   readonly run: WorkflowRun;
@@ -291,6 +292,7 @@ export interface SubmitResult {
 }
 
 export interface RunView {
+  readonly semanticReview: SemanticReviewStatus;
   readonly run: WorkflowRun;
   readonly steps: readonly StepRun[];
   readonly deliverables: readonly Deliverable[];
@@ -890,7 +892,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
   /** Preserve the candidate without consuming its lease or asking for a waiver. */
   function pendingSemanticReview(run: WorkflowRun, leased: LeasedStep, step: WorkflowStep, output: Readonly<Record<string, unknown>>, evidence: readonly { ref: string; excerpt?: string }[], resolve: RefResolver | undefined, at: string, validation: readonly ValidatorResult[], sensitivity: string | null, candidateBody?: Record<string, unknown>): SubmitResult | null {
-    if (!isLastStep(run, step) || !requiredSemanticContract(run)) return null;
+    if (!isLastStep(run, step) || !requiredSemanticContract(run) || requiredSemanticContract(run)?.required === false) return null;
     const body = candidateBody ?? deliverableBody(run, output, handedTo(run, step), evidence, sensitivity, resolve);
     // Preserve the exact candidate even when a bounded review cannot be prepared.
     const draft = upsertDraft(store, { id: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: deps.workflows.get(run.workflowId)?.manifest.deliverable.kind ?? 'artifact', body, at });
@@ -904,10 +906,9 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       problems = [error.message];
     }
     if (problems.length) {
-      const next = prepared
-        ? `Keep this draft and lease. From the invoking host's permitted command tool, run construct run review ${run.id} --step ${leased.id} --token <current-lease-token> --prepared ${prepared.ref} --host <native-host> --model <explicit-model>, then resubmit the identical final output. The reviewer is bounded to held text; unavailable permission or adapter leaves an unverified draft. No MCP background launch or host fallback is authorized.`
-        : 'The exact draft is preserved, but no review packet was prepared. Reduce the candidate or provide a supported bounded evidence representation and resubmit on this lease. Do not truncate material evidence or claim verification.';
-      return { step: getStep(store, leased.id)!, validation: [...validation, { validator: 'semantic_review', ok: false, problems }], run: getRun(store, run.id)!, deliverable: draft, ignored: [], semanticReview: { preparedRef: prepared?.ref ?? null, digest: prepared?.digest ?? null, problems, next } };
+      const progress = semanticReviewStatus(store, run, resolve, at);
+      const semanticReview: SemanticReviewStatus = prepared ? progress : { ...progress, state: progress.state === 'unavailable' ? 'unavailable' : 'not_prepared', preparedRef: null, digest: null, reviewRef: null, checks: [], canInvoke: false, problems: [...new Set([...progress.problems, ...problems])], next: progress.state === 'unavailable' ? `${progress.next} The exact draft is preserved, but its review packet also exceeds the supported bound.` : 'The exact draft is preserved, but its review packet exceeds the supported bound. A supported bounded representation is required; correct only current-step outputs within its tier. Inherited inputs cannot be overwritten by resubmission; if those need changing, preserve the draft as unverified and use cancellation/replanning recovery. Do not truncate material evidence or claim verification.' };
+      return { step: getStep(store, leased.id)!, validation: [...validation, { validator: 'semantic_review', ok: false, problems }], run: getRun(store, run.id)!, deliverable: draft, ignored: [], semanticReview };
     }
     return null;
   }
@@ -1382,7 +1383,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
-    if (requiredSemanticContract(run)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Final submission prepares a review packet and preserves an unverified draft while keeping this lease. Follow semanticReview.next in its response, then resubmit the same final output. A reported review or passing shell command is insufficient. If the invoking host cannot run the review adapter, report that exact limitation and preserve the draft; do not widen permissions.');
+    const executionPath = (run.bindings as { execution?: import('../registry/models.ts').WorkflowManifest['execution'] } | null)?.execution;
+    if (executionPath) {
+      lines.push(`Execution path: ${executionPath.path}. Gather at most ${executionPath.maxGatherCalls} source/tool calls before a checkpoint; reuse held evidence. ${executionPath.checkpoints.join(' ')} Stop: ${executionPath.stopWhen.join(' ')}`);
+      lines.push(`Evidence obligations: ${executionPath.evidenceObligations.join(' ')} Report the actual acceptance checks and outstanding limits; path binding is not proof of efficacy.`);
+    }
+    const intent = askedOf(run).intake?.intent;
+    if (intent) lines.push(`Frozen outcome: ${intent.outcome}. Audience: ${intent.audience ?? 'not specified'}. Acceptance: ${intent.acceptance.join('; ')}. Constraints: ${intent.constraints.join('; ')}. Prior work: ${intent.priorWork.join('; ')}. Assumptions: ${intent.assumptions.join('; ')}.`);
+    if (requiredSemanticContract(run)?.required !== false && requiredSemanticContract(run) && isLastStep(run, step)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
     const destination = asked.intake?.destination;
     if (destination?.kind === 'project_file' && destination.ref) lines.push(`The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`);
     const p = asked.period;
@@ -1390,7 +1398,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     const checksPeriod = !schema || Object.values(schema).includes('period');
     if (p && checksPeriod) {
       const covers = p.semantics === 'as_of'
-        ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. Describe them as they stood at the end of that day.`
+        ? `This run covers things as of ${p.to} (${p.timezone}) in this run's reading. This is the requested cutoff, not proof of end-of-day freshness. State actual observation time and provider update time separately; do not claim knowledge beyond the evidence.`
         : `This run covers ${p.from ?? 'the start'} to ${p.to} (${p.timezone}; ${p.semantics === 'changed_during' ? 'what changed during it' : 'evidence window'}) in this run's reading.`;
       const refused = step.validators.includes('within_period')
         ? ` An item updated after ${p.to} is refused unless you list it under "outsidePeriod" as {ref, why}, saying why it belongs.`
@@ -1457,14 +1465,16 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       `Step ${step.id}: ${step.title}.`,
       step.tier === 'observe' || step.tier === 'draft' ? 'Read and draft only; apply nothing.' : `This step may act at ${step.tier}; the gate has already been passed for exactly this step.`,
       step.outputs.length ? `Return an object with: ${step.outputs.join(', ')}.` : 'Return an object with what you found.',
+      !isLastStep(run, step) ? 'Complete this step and submit_work with its declared outputs and evidence. Apply the bound method to these outputs and this tier; synthesis, file delivery, challenge and final-review obligations assigned to later steps stay with those steps. Do not repeat the whole method or its closing record before handing back preparation.' : '',
+      step.validators.includes('reference_coverage') ? 'Stop this evidence pass once the material claims have held support or explicit unknown/access boundaries and discovered material references have reads or justified dispositions. Submit those findings, conflicts and unknowns now; the bounded coverage report is not a claim of exhaustive research. Required permissions and essential user decisions still block.' : '',
       step.outputs.includes('blockers') ? BLOCKERS_INSTRUCTION : '',
       step.outputs.includes('plan') ? 'Before producing artifacts, include verificationContract when the outcome needs a specific check: {id,version,argv:[program,args],files:[project verifier/rubric paths],checks:[named criteria]}. The kernel freezes its bytes and intended command. Its command must later emit JSON {formatVersion:1,checks:{each_named_criterion:pass|fail|unknown}}. Without a contract, observed execution establishes only that a command ran, not that intended criteria were satisfied.' : '',
       Array.isArray(inputs.answers) ? ANSWERS_INSTRUCTION : '',
       carriedParts.length ? `Construct carries ${carriedParts.join(', and ')}; return only what this step adds.` : '',
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
-      bound ? `Apply the bound method ${bound.id}. Its body is included by default when you claim work; inspect referenced resources as needed.` : '',
-      bound || method ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. Explain omissions and unavailable expertise; a report does not establish execution or qualification.' : '',
+      bound ? `Apply the bound method ${bound.id} for the current step. Its body is included by default; load a referenced resource only when this step needs it. Preserve already-held source text rather than rewriting it to satisfy a check.` : '',
+      bound || method ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. For applied methods add obligations: [{obligation, section:"/outputKey", evidence:[ref]}], linking concrete output sections to their project evidence. Put professional-method references in doctrine:[ref]; doctrine informs procedure and is not project-fact support. Explain omissions and unavailable expertise; a report does not establish execution or qualification.' : '',
       method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
       ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
@@ -1474,12 +1484,15 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       ...(askedOf(run).intake?.open.some((item) => item.handling) ? ['The intake evidenceGaps are not assumed facts. Investigate only through permitted sources; retain inaccessible or unresolved facts as unknown in the deliverable. This does not remove required inputs, permissions, verification or acceptance gates.'] : []),
       'Cite every source you read as evidence entries.',
       needsChallenge
-        ? `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`
+        ? !step.challenge && !isLastStep(run, step) && stepsOf(run).some(s => s.challenge)
+          ? 'A declared later challenge step reviews this run before completion. Submit this step’s evidence and uncertainty; do not claim its work is independently challenged.'
+          : `This run must be challenged before it is accepted: ${raisedBy(judgment)}. Apply adversarial review before calling the result strongly validated; do not wait to be asked.`
         : judgment.depth === 'light'
           ? 'The person set this up as a side project and nothing in the work raised the stakes: keep the process small; no adversarial review is required.'
           : '',
     ].filter(Boolean);
     return {
+      semanticReview: semanticReviewStatus(store, run, deps.resolveEvidence, deps.now()),
       leased,
       run,
       step,
@@ -1511,7 +1524,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (run && (to === 'accepted' || to === 'final')) {
       const asking = listOpenDecisions(store, run.id).find((d) => d.kind === 'clarification');
       if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
-      const reviewProblems = runSemanticProblems(store, run.id, deps.resolveEvidence);
+      const reviewProblems = requiredSemanticContract(run)?.required === false ? [] : runSemanticProblems(store, run.id, deps.resolveEvidence);
       if (reviewProblems.length) throw new Error(`semantic review is not established: ${reviewProblems.join('; ')}`);
       const finalStep = listSteps(store, run.id).at(-1);
       if (requiredSemanticContract(run) && current.stepRunId !== finalStep?.id) throw new Error('only the exact final deliverable covered by semantic review may be accepted or finalized');
@@ -2034,7 +2047,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           invocationId: key,
           workIdentity,
           workflowDigest: workflow.digest,
-          bindings: { steps: m.steps, digest: workflow.digest, version: m.version, asked, semanticContract: semanticContract({ input: given, asked }, deps.semanticReviewer ?? null) },
+          bindings: { ...(m.execution ? { execution: m.execution } : {}), steps: m.steps, digest: workflow.digest, version: m.version, asked, semanticContract: semanticContract({ input: given, asked }, deps.semanticReviewer ?? null, m.execution?.assurance !== 'structural') },
           at,
         });
         const superseding = `superseded by run ${run.id}`;
@@ -2425,7 +2438,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     status(runId) {
       const run = getRun(store, runId);
       if (!run) return null;
-      return { run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
+      return { semanticReview: semanticReviewStatus(store, run, deps.resolveEvidence, deps.now()), run, steps: listSteps(store, runId), deliverables: listDeliverables(store, runId), openDecisions: listOpenDecisions(store, runId), activity: listActivity(store, { runId, limit: 1000 }).length };
     },
 
     promote({ deliverableId, to, by, channel = 'relay', verification, reason }) {

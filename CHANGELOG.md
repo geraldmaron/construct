@@ -1,5 +1,56 @@
 # Changelog
 
+## 3.0.0-alpha.28 — 2026-10-13 (experimental)
+
+Construct now resolves portable research, decision, artifact, implementation and
+review paths through the current host. The kernel retains context admission,
+frozen execution contracts, evidence and the work ledger. No embedding model,
+external vector service or inference runtime is installed or invoked by default.
+
+### Changes
+
+- Portable intent captures outcome, audience, acceptance, constraints, assumptions
+  and prior work. General chat delivery no longer requires file writing or code
+  tests; verification follows the selected outcome.
+- A rebuildable SQLite FTS5 index ranks admitted passages and project history.
+  Bounded host query expansions and explicit relationships supplement exact lookup.
+  Optional supplied vectors require configured model/dimensions and exact content
+  digests. Missing vectors leave text retrieval operational.
+- Source reads expose required schemas before reporting evidence. Directory sources
+  retain bounded redacted supported text. Immutable snapshot citations preserve
+  historical evidence; revoked access and changed current support remain enforced.
+- Skill reports can bind material obligations to output sections and project
+  evidence, with procedure references separate. Reports alone establish no benefit.
+- Durable checkpoints preserve useful partial work. Delivery, deterministic checks,
+  semantic review and person acceptance are reported separately. The shared reviewer
+  contract is host-neutral; native adapter qualification remains explicit.
+
+### Upgrade
+
+Run `construct init --client=<host>` and `construct skill update`, then restart
+Construct sessions and inspect `construct doctor`. The operating skill is 3.1.0.
+State remains format 5; the derived index requires no canonical-state migration.
+Existing runs retain their frozen workflow and method bindings. Re-resolve an
+outcome to use the new paths, preserving previous drafts and completed work.
+
+### Verification and limits
+
+Lint, typecheck, the full suite (1,077 passed, one skipped), packaged isolated
+smoke and six-host static conformance (97 passed, 19 untested) passed. A bounded
+ordinary Codex decision trial selected the new path, retrieved prior context,
+read local code, repaired a citation report and completed all three steps with a
+grounded brief. It took 218 seconds and 13 Construct calls; efficiency needs work.
+
+The canonical native isolation canary still fails. That single delivery diagnostic
+does not qualify other outcomes or hosts, independent review, or causal skill
+benefit. Earlier failed cohorts remain failures. Production source adapters,
+executor qualification and the full live intake matrix remain open. Release uses
+the existing finite experimental-alpha controls, not the qualified tier. Publish
+only under `alpha`; `latest` remains on 2.1.1.
+
+See the [implementation record](docs/internal/alpha-audit-2026-10-13/portable/IMPLEMENTATION.md)
+and [follow-up validation](docs/internal/alpha-audit-2026-10-13/portable/FOLLOWUP.md).
+
 ## 3.0.0-alpha.27 — 2026-10-10 (experimental)
 
 This alpha strengthens evidence, recovery and completion checks. It remains

@@ -1,3 +1,4 @@
+import { observeSemanticReview } from '../../../src/hosts/semantic-observation.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { writeFileSync } from 'node:fs';
@@ -84,4 +85,21 @@ test('missing, partial and oversized held representations cannot silently pass r
     assert.throws(() => prepare(ref => ({ ref, kind: 'file', provenance: 'witnessed', text: 'x'.repeat(600_000) })), /512 KiB/);
     assert.equal(readPreparedReview(f.store, 'review:999999'), null);
   } finally { f.cleanup(); }
+});
+
+test('the shared held-text review contract accepts a qualified host-tool identity and refuses self-review', () => {
+  const f = fixture();try {
+    const identity = {host:'fixture-host-tool',version:'1.0.0',profile:'held-text-v1',digest:'fixture-profile',isolation:'held_text' as const};
+    const bindings={...(getRun(f.store,f.run.id)!.bindings as object),semanticContract:semanticContract({request:'Assess the design'},identity)};
+    f.store.db.prepare('UPDATE workflow_runs SET bindings_json=? WHERE id=?').run(JSON.stringify(bindings),f.run.id);
+    const p=f.prepare();
+    const witness={preparedRef:p.ref,bundleDigest:p.digest,attempt:f.leased.token,isolation:'held_text' as const,invocation:{id:'fixture-invocation',host:identity.host,hostVersion:identity.version,model:'fixture',sessionId:'fixture-independent-review',completed:true,exitStatus:0,timedOut:false,transcriptDigest:'fixture-transcript'},judgment:f.judgment(p),problems:[]};
+    const unbound=observeSemanticReview({store:f.store,witness,token:f.leased.nonce,resolve:f.resolve,at:f.ctx.now(),actor:'fixture trusted adapter'});
+    assert.equal(unbound.passed,false);assert.match(unbound.receipt.problems.join(),/bound adapter dispatch/);
+    appendActivity(f.store,{at:f.ctx.now(),kind:'semantic.dispatched',runId:f.run.id,stepRunId:f.leased.id,channel:'host_semantic',actor:'fixture trusted adapter',payload:{id:witness.invocation.id,preparedRef:p.ref,profile:identity.profile,profileDigest:identity.digest}});
+    const positive=observeSemanticReview({store:f.store,witness,token:f.leased.nonce,resolve:f.resolve,at:f.ctx.now(),actor:'fixture trusted adapter'});
+    assert.equal(positive.passed,true);assert.deepEqual(semanticReviewProblems(f.store,p,f.resolve),[]);
+    const rejected=observeSemanticReview({store:f.store,witness:{...witness,isolation:'self_review'},token:f.leased.nonce,resolve:f.resolve,at:f.ctx.now(),actor:'fixture trusted adapter'});
+    assert.equal(rejected.passed,false);assert.match(semanticReviewProblems(f.store,p,f.resolve).join(),/same-session|Same-session|isolation/);
+  }finally{f.cleanup();}
 });

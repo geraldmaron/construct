@@ -9,8 +9,8 @@
       "title": "Adversarial review"
     },
     "construct": {
-      "version": "3.0.4",
-      "digest": "sha256:5490ff48b840b8dfad1172b0d17ae16a506cab8928fb82685973741dfbbc2c2a",
+      "version": "3.1.0",
+      "digest": "sha256:29f69056715d8ead737bfbb7ee03837e3933d1d2b3c4010ea577bb82292e2e7c",
       "category": "operational",
       "title": "Construct operating skill"
     },
@@ -113,9 +113,15 @@
       "interactionClass": "manage"
     },
     "architecture-decision-review": {
-      "version": "1.0.1",
-      "digest": "sha256:b6275121f3ed16ba21cbe3ee0c7035d08135316e6cd74ee77124f4ee8e5fdd65",
+      "version": "1.1.0",
+      "digest": "sha256:0b9131d7968a93f5526394eb0017babf984a624abe3ae8b5f94e4f9b0a173998",
       "title": "Architecture decision review",
+      "interactionClass": "manage"
+    },
+    "decision-support": {
+      "version": "1.0.0",
+      "digest": "sha256:d6c35672a6cea3c81ae1d8e1cf18ac958b59d31d9d72dbca9531c1de7f4459cf",
+      "title": "Frame an evidence-backed decision",
       "interactionClass": "manage"
     },
     "delivery-plan-review": {
@@ -142,6 +148,12 @@
       "title": "Governance issue spotting",
       "interactionClass": "manage"
     },
+    "guided-outcome": {
+      "version": "1.0.0",
+      "digest": "sha256:262736a922bb234b4155c89d40ad4a0475279c3119eb89e454fc34b62917fece",
+      "title": "Produce a grounded outcome",
+      "interactionClass": "manage"
+    },
     "implementation-review": {
       "version": "1.0.1",
       "digest": "sha256:eee33efae696827b642864b0f2cd4c9e42233d6c8624138264c76de23b8f96ef",
@@ -149,8 +161,8 @@
       "interactionClass": "manage"
     },
     "managed-outcome": {
-      "version": "2.0.0",
-      "digest": "sha256:69a1e499a3a2617a972cce21d446f5fbf91bf74ba6df5dbf27fd63d5770c68ee",
+      "version": "2.1.0",
+      "digest": "sha256:061fc7a1d7a300254f9b2d59830b94ec613129f0d0e83d9dd4f58758cc81351e",
       "title": "Managed outcome with verification",
       "interactionClass": "manage"
     },
@@ -197,8 +209,8 @@
       "interactionClass": "remember"
     },
     "research-brief": {
-      "version": "1.2.0",
-      "digest": "sha256:fa70f033af0c08863b962ee82dc652f7ddcaa89f62fbb753879971e1181bd2fb",
+      "version": "1.3.0",
+      "digest": "sha256:8b05832f5faab645841113e3dcc3cbfc71980a53e1626deba2e3c91bd944c5ad",
       "title": "Research a question",
       "interactionClass": "manage"
     },

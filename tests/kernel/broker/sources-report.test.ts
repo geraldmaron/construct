@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TOOLS } from '../../../src/kernel/broker/tools.ts';
-import { record, ToolInputError } from '../../../src/kernel/broker/definition.ts';
+import { mcpTool, record, ToolInputError } from '../../../src/kernel/broker/definition.ts';
 import { currentManifest } from '../../../src/kernel/source/manifest.ts';
 import { REPORTED_TEXT_CAP } from '../../../src/kernel/source/service.ts';
 import { brokerFixture, type BrokerFixture } from './support.ts';
@@ -79,4 +79,43 @@ test('an excerpt a step hands back is kept without credentials', () => {
   const input = t.validate(record({ stepRunId: 'step-1', token: 'tok', output: {}, evidence: [{ ref: 'docs/design.md', excerpt: `deploy with ${SECRET} today` }, { ref: 'docs/design.md' }] })) as { evidence: { ref: string; excerpt?: string }[] };
   assert.equal(input.evidence[0]!.excerpt, 'deploy with [redacted] today');
   assert.equal(input.evidence[1]!.excerpt, undefined);
+});
+
+test('the public report schema describes a first read without an error-driven discovery round trip', async () => {
+  const fx = brokerFixture();
+  try {
+    const schema = mcpTool(tool('sources')).inputSchema as any;
+    const observationSchema = schema.properties.observation;
+    assert.deepEqual(new Set(observationSchema.required), new Set(['principal', 'scope', 'operation', 'mode', 'transport', 'expiresAt']));
+    assert.deepEqual(observationSchema.properties.transport.enum, ['api', 'mcp', 'local']);
+    assert.deepEqual(schema.properties.items.items.required, ['ref']);
+    assert.ok(schema.properties.items.items.properties.text);
+    await call(fx, 'sources', { action: 'declare', id: 'stock', kind: 'other' });
+    const observation = { principal: 'fixture-reader', scope: 'stock', operation: 'read_stock', mode: 'read', transport: 'mcp', expiresAt: '2026-09-02T13:00:00Z' };
+    const report = await call(fx, 'sources', { action: 'report', id: 'stock', observation, items: [{ ref: 'counts', text: 'Stock is 40 each.' }] });
+    assert.equal(report.outcome, 'changed');
+    const check = await call(fx, 'sources', { action: 'check', id: 'stock', request: { principal: observation.principal, scope: observation.scope, operation: observation.operation, mode: observation.mode } });
+    assert.equal(check.ready, false, 'a producer report does not establish witnessed access');
+    assert.equal(check.grantsPermission, false);
+    assert.ok(check.problems.some((p: string) => p.includes('host-reported')));
+  } finally { fx.cleanup(); }
+});
+
+test('invalid access reports identify nested fields and leave source state unchanged', async () => {
+  const fx = brokerFixture();
+  try {
+    await call(fx, 'sources', { action: 'declare', id: 'stock', kind: 'other' });
+    const observation: Record<string, unknown> = { principal: 'fixture-reader', scope: 'stock', operation: 'read_stock', mode: 'read', transport: 'mcp', expiresAt: '2026-09-02T13:00:00Z' };
+    const before = fx.broker.store.db.prepare('SELECT count(*) AS n FROM observations').get()!.n;
+    for (const [field, value] of [['expiresAt', undefined], ['expiresAt', 'tomorrow'], ['principal', ''], ['scope', 42], ['operation', null], ['mode', 'write'], ['transport', 'magic'], ['inputSchema', []], ['outputSchema', null]] as const) {
+      const error = await refusal(() => call(fx, 'sources', { action: 'report', id: 'stock', observation: { ...observation, [field]: value }, items: [{ ref: 'counts', text: 'Stock is 40 each.' }] }));
+      assert.equal(error.field, `observation.${field}`);
+    }
+    const error = await refusal(() => call(fx, 'sources', { action: 'check', id: 'stock', request: { scope: 'stock', operation: 'read_stock', mode: 'read' } }));
+    assert.equal(error.field, 'request.principal');
+    const missingRef = await refusal(() => call(fx, 'sources', { action: 'report', id: 'stock', items: [{ text: 'Stock is 40 each.' }] }));
+    assert.equal(missingRef.field, 'items[0].ref');
+    assert.equal(fx.broker.store.db.prepare('SELECT count(*) AS n FROM observations').get()!.n, before);
+    assert.equal(currentManifest(fx.broker.store, 'stock'), null);
+  } finally { fx.cleanup(); }
 });
