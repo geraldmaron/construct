@@ -1054,6 +1054,39 @@ function declareInput(raw: Record<string, unknown>, id: string | undefined): Pic
   return { id, kind: k, purpose: purpose || undefined, locator };
 }
 
+const ACCESS_REQUEST_PROPERTIES = {
+  principal: { type: 'string', description: 'Observed principal, never credentials; 1–512 characters.' },
+  scope: { type: 'string', description: 'Exact observed scope; 1–512 characters.' },
+  operation: { type: 'string', description: 'Attempted operation; 1–512 characters.' },
+  mode: { type: 'string', description: 'Access being checked.', enum: ['read', 'write'] },
+} as const;
+const ACCESS_REQUEST_REQUIRED = ['principal', 'scope', 'operation', 'mode'] as const;
+
+/** Give the host a repairable nested field without changing access provenance. */
+function sourceAccessInput(raw: Record<string, unknown>, key: 'observation' | 'request'): Record<string, unknown> | undefined {
+  if (raw[key] === undefined) return undefined;
+  try {
+    const value = obj(raw, key)!;
+    for (const field of ['principal', 'scope', 'operation', ...(key === 'observation' ? ['expiresAt'] : [])]) {
+      const text = str(value, field)!;
+      if (!text.trim() || text.length > 512) throw new ToolInputError(`${field} must be nonempty and at most 512 characters`, { field });
+    }
+    str(value, 'mode', { oneOf: ['read', 'write'] });
+    if (key === 'observation') {
+      if (value.mode === 'write') throw new ToolInputError('a source read cannot report a write operation', { field: 'mode', allowed: ['read'] });
+      str(value, 'transport', { oneOf: ['api', 'mcp', 'local'] });
+      const expiry = value.expiresAt as string;
+      if (!/^\d{4}-\d\d-\d\dT.*(?:Z|[+-]\d\d:\d\d)$/.test(expiry) || !Number.isFinite(Date.parse(expiry))) throw new ToolInputError('expiresAt must be an explicit expiry instant with a timezone', { field: 'expiresAt' });
+      for (const field of ['inputSchema', 'outputSchema']) if (value[field] !== undefined) obj(value, field);
+    }
+    return value;
+  } catch (error) {
+    if (!(error instanceof ToolInputError)) throw error;
+    const field = error.field === key ? key : `${key}.${error.field}`;
+    throw new ToolInputError(`${field}: ${error.message}`, { field, ...(error.allowed ? { allowed: error.allowed } : {}) });
+  }
+}
+
 const sources = define<SourcesInput, unknown>({
   name: 'sources',
   title: 'Sources',
@@ -1064,18 +1097,35 @@ const sources = define<SourcesInput, unknown>({
     type: 'object',
     properties: {
       action: { type: 'string', description: 'Inspect, read, check scoped access, or map typed data.', enum: SOURCE_ACTIONS },
-      observation: { type: 'object', description: 'Report: observed transport (api/mcp/local), operation, mode (read), principal, exact scope, expiresAt, inputSchema?, outputSchema?. This stays reported; session and provenance are adapter-owned.' },
-      request: { type: 'object', description: 'Check: principal, exact scope, operation and mode (read/write). Checks permission and current scoped access evidence without making a grant.' },
+      observation: { type: 'object', description: 'Optional access report; omit if identity/expiry is unknown. Never grants access; session/provenance/grants are ignored.', properties: {
+        ...ACCESS_REQUEST_PROPERTIES,
+        mode: { type: 'string', description: 'A source read cannot report a write operation.', enum: ['read'] },
+        transport: { type: 'string', description: 'Transport actually used for the read.', enum: ['api', 'mcp', 'local'] },
+        expiresAt: { type: 'string', description: 'Observed expiry with timezone; expired access is not current.' },
+        inputSchema: { type: 'object', description: 'Observed input schema.' },
+        outputSchema: { type: 'object', description: 'Observed output schema.' },
+      }, required: [...ACCESS_REQUEST_REQUIRED, 'transport', 'expiresAt'] },
+      request: { type: 'object', description: 'Check permission and current scoped access evidence without making a grant.', properties: ACCESS_REQUEST_PROPERTIES, required: ACCESS_REQUEST_REQUIRED },
       item: { type: 'string', description: 'Map: item ref; without mapping returns its recorded mapping or unknown shape.' },
       mapping: { type: 'object', description: 'Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations.' },
-      id: { type: 'string', description: 'The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter.' },
-      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness.' },
+      id: { type: 'string', description: 'Source id: lowercase letters, digits and dashes; starts with a letter.' },
+      outcome: { type: 'string', enum: SOURCE_READ_OUTCOMES, description: 'Report outcome; defaults to read. Empty/failed reads preserve prior evidence, never establish source-wide freshness.' },
       reason: { type: 'string', description: 'For non-read report outcomes: the actual result and what remains unknown.' },
       scope: { type: 'string', description: 'For report: attempted query, item URI or scope; required for non-read outcomes.' },
       coverage: { type: 'object', description: 'For report: observed completeness, pagination and coverage limitations; these remain host reports.' },
-      items: { type: 'array', description: 'For report: {ref, url?, title?, updatedAt?, text?, kind?, fingerprint?, weak?, schema?} for each item you read; url is the http(s) address a person would open for it.', items: { type: 'object' } },
-      partial: { type: 'boolean', description: 'For report: you read only some of the source; items you did not report are kept, not treated as removed.' },
-      kind: { type: 'string', description: 'For declare: what kind of system it is; other covers chat, monitoring tools, and the open web.', enum: DECLARABLE_KINDS },
+      items: { type: 'array', description: 'Read items; preserve passages, not summaries.', items: { type: 'object', properties: {
+        ref: { type: 'string', description: 'Stable nonempty key, unique within source.' },
+        url: { type: 'string', description: 'HTTP(S) address a person would open; never credentials.' },
+        title: { type: 'string', description: 'Observed item title.' },
+        updatedAt: { type: 'string', description: 'Provider last-updated time, when known; not the time you read it.' },
+        text: { type: 'string', description: 'Exact passage read; text cap applies.' },
+        kind: { type: 'string', description: 'Observed item kind.' },
+        fingerprint: { type: 'string', description: 'Provider content fingerprint, when available.' },
+        weak: { type: 'boolean', description: 'True for a discovered reference that was not read as a version.' },
+        schema: { type: 'object', description: 'Observed schema/units; never infer missing shape.' },
+      }, required: ['ref'] } },
+      partial: { type: 'boolean', description: 'Partial read: preserve unreported items.' },
+      kind: { type: 'string', description: 'Declare system kind; other includes the web.', enum: DECLARABLE_KINDS },
       purpose: { type: 'string', description: 'For declare: what the person uses it for, in one sentence.' },
       locator: { type: 'string', description: 'For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials.' },
     },
@@ -1092,8 +1142,10 @@ const sources = define<SourcesInput, unknown>({
     for (const key of DECLARE_ONLY) {
       if (raw[key] !== undefined && raw[key] !== null) throw new ToolInputError(`"${key}" is for declare only`, { field: key });
     }
-    const observation = raw.observation === undefined ? undefined : accessDescriptor(raw.observation);
-    const request = raw.request === undefined ? undefined : accessRequest(raw.request);
+    const observationInput = sourceAccessInput(raw, 'observation');
+    const requestInput = sourceAccessInput(raw, 'request');
+    const observation = observationInput === undefined ? undefined : accessDescriptor(observationInput);
+    const request = requestInput === undefined ? undefined : accessRequest(requestInput);
     const mapping = raw.mapping === undefined ? undefined : dataMapping(raw.mapping);
     return { action, id, items, partial, observation, request, mapping, item: str(raw, 'item', { optional: true }), outcome: str(raw, 'outcome', { optional: true, oneOf: SOURCE_READ_OUTCOMES }) as SourceReadOutcome | undefined, reason: str(raw, 'reason', { optional: true }), scope: str(raw, 'scope', { optional: true }), coverage: obj(raw, 'coverage', { optional: true }) };
   },
@@ -1134,7 +1186,7 @@ const sources = define<SourcesInput, unknown>({
     if (action === 'report') {
       if (items.length === 0 && (!outcome || outcome === 'read')) throw new ToolInputError('"items" is required for report: what you read, one entry per item', { field: 'items' });
       const parsed = items.map((i, n) => {
-        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: 'items' });
+        if (typeof i.ref !== 'string' || i.ref.trim() === '') throw new ToolInputError(`items[${String(n)}] needs a ref`, { field: `items[${String(n)}].ref` });
         const opt = (k: string) => (typeof i[k] === 'string' ? (i[k] as string) : undefined);
         const url = i.url === undefined || i.url === null ? undefined : typeof i.url === 'string' ? i.url.trim() : '';
         const problem = url === undefined ? null : urlProblem(url);

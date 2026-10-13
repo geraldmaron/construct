@@ -213,18 +213,39 @@ Surface: interactive. Reads only: no.
 | Input | Type | Required | Meaning |
 |---|---|---|---|
 | `action` | `list`, `show`, `refresh`, `report`, `declare`, `check`, `map` | yes | Inspect, read, check scoped access, or map typed data. |
-| `observation` | object | no | Report: observed transport (api/mcp/local), operation, mode (read), principal, exact scope, expiresAt, inputSchema?, outputSchema?. This stays reported; session and provenance are adapter-owned. |
-| `request` | object | no | Check: principal, exact scope, operation and mode (read/write). Checks permission and current scoped access evidence without making a grant. |
+| `observation` | object | no | Optional access report; omit if identity/expiry is unknown. Never grants access; session/provenance/grants are ignored. |
+| `observation.principal` | string | yes | Observed principal, never credentials; 1–512 characters. |
+| `observation.scope` | string | yes | Exact observed scope; 1–512 characters. |
+| `observation.operation` | string | yes | Attempted operation; 1–512 characters. |
+| `observation.mode` | `read` | yes | A source read cannot report a write operation. |
+| `observation.transport` | `api`, `mcp`, `local` | yes | Transport actually used for the read. |
+| `observation.expiresAt` | string | yes | Observed expiry with timezone; expired access is not current. |
+| `observation.inputSchema` | object | no | Observed input schema. |
+| `observation.outputSchema` | object | no | Observed output schema. |
+| `request` | object | no | Check permission and current scoped access evidence without making a grant. |
+| `request.principal` | string | yes | Observed principal, never credentials; 1–512 characters. |
+| `request.scope` | string | yes | Exact observed scope; 1–512 characters. |
+| `request.operation` | string | yes | Attempted operation; 1–512 characters. |
+| `request.mode` | `read`, `write` | yes | Access being checked. |
 | `item` | string | no | Map: item ref; without mapping returns its recorded mapping or unknown shape. |
 | `mapping` | object | no | Map: {item, records: JSON pointer to rows, identity: pointer within row, fields:[{name,path,type:string/number/boolean,nullable?,unit?,timezone?}], evidence:[refs]}. Unknown identity, units or types block affected calculations. |
-| `id` | string | no | The source id, for show, refresh, report, and declare: lowercase letters, digits and dashes, starting with a letter. |
-| `outcome` | `read`, `no_results`, `permission_denied`, `auth_required`, `unsupported`, `unreachable` | no | For report: read (default), no_results, permission_denied, auth_required, unsupported, or unreachable. Failed access and empty queries preserve earlier evidence and do not prove source-wide freshness. |
+| `id` | string | no | Source id: lowercase letters, digits and dashes; starts with a letter. |
+| `outcome` | `read`, `no_results`, `permission_denied`, `auth_required`, `unsupported`, `unreachable` | no | Report outcome; defaults to read. Empty/failed reads preserve prior evidence, never establish source-wide freshness. |
 | `reason` | string | no | For non-read report outcomes: the actual result and what remains unknown. |
 | `scope` | string | no | For report: attempted query, item URI or scope; required for non-read outcomes. |
 | `coverage` | object | no | For report: observed completeness, pagination and coverage limitations; these remain host reports. |
-| `items` | list of object | no | For report: {ref, url?, title?, updatedAt?, text?, kind?, fingerprint?, weak?, schema?} for each item you read; url is the http(s) address a person would open for it. |
-| `partial` | boolean | no | For report: you read only some of the source; items you did not report are kept, not treated as removed. |
-| `kind` | `github`, `jira`, `docs`, `hris`, `other` | no | For declare: what kind of system it is; other covers chat, monitoring tools, and the open web. |
+| `items` | list of object | no | Read items; preserve passages, not summaries. |
+| `items[].ref` | string | yes | Stable nonempty key, unique within source. |
+| `items[].url` | string | no | HTTP(S) address a person would open; never credentials. |
+| `items[].title` | string | no | Observed item title. |
+| `items[].updatedAt` | string | no | Provider last-updated time, when known; not the time you read it. |
+| `items[].text` | string | no | Exact passage read; text cap applies. |
+| `items[].kind` | string | no | Observed item kind. |
+| `items[].fingerprint` | string | no | Provider content fingerprint, when available. |
+| `items[].weak` | boolean | no | True for a discovered reference that was not read as a version. |
+| `items[].schema` | object | no | Observed schema/units; never infer missing shape. |
+| `partial` | boolean | no | Partial read: preserve unreported items. |
+| `kind` | `github`, `jira`, `docs`, `hris`, `other` | no | Declare system kind; other includes the web. |
 | `purpose` | string | no | For declare: what the person uses it for, in one sentence. |
 | `locator` | string | no | For declare, when the system has one: where it is (PROJ for jira, owner/repo for github, provider:container:id for docs). Never credentials. |
 

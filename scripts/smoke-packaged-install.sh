@@ -241,12 +241,28 @@ for (const to of ['validated', 'challenged', 'accepted', 'final']) {
  must(denied.result?.isError === true, `unreviewed pending draft cannot be promoted to ${to}`);
 }
 await call('sources', { action: 'declare', id: 'wiki', kind: 'docs' });
-await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', text: 'Checkout retries each payment call up to 3 times.' }] });
+const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
+const sourceSchema = list.result.tools.find((t) => t.name === 'sources').inputSchema;
+must(['principal', 'scope', 'operation', 'mode', 'transport', 'expiresAt'].every((key) => sourceSchema.properties.observation.required.includes(key)), 'access requirements discoverable before first report');
+must(sourceSchema.properties.items.items.required.includes('ref'), 'item identity discoverable before first report');
+const observation = { principal: 'synthetic-reader', scope: '98765', operation: 'read_page', mode: 'read', transport: 'mcp', expiresAt: new Date(Date.now() + 60000).toISOString() };
+const updatedAt = '2026-09-02T12:00:00Z';
+await call('sources', { action: 'report', id: 'wiki', observation, partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', title: 'Retries', updatedAt, text: 'Checkout retries each payment call up to 3 times.' }] });
+const access = await call('sources', { action: 'check', id: 'wiki', request: { principal: observation.principal, scope: observation.scope, operation: observation.operation, mode: observation.mode } });
+must(access.ready === false && access.grantsPermission === false && access.problems.some((p) => p.includes('host-reported')), 'reported principal is never witnessed access');
+const invalidReport = await rpc('tools/call', { name: 'sources', arguments: { action: 'report', id: 'wiki', observation: { ...observation, expiresAt: undefined }, items: [{ ref: 'bad', text: 'Should never be stored.' }] } });
+must(invalidReport.result?.isError && invalidReport.result.structuredContent.field === 'observation.expiresAt', 'missing expiry names its nested field');
 const byUrl = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'https://wiki.example.com/pages/98765#retries', excerpt: 'up to 3 times' }] }); must(byUrl.ok === true && byUrl.evidence.reported === 1, `a recorded page is citable by its url: ${JSON.stringify(byUrl.problems)}`);
 const invented = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:12345' }] }); must(invented.ok === false && invented.problems.some((p) => p.problem.includes('names nothing this project holds')), 'an invented item is refused');
-const list = await rpc('tools/list'); must(!list.result.tools.some((t) => t.name === 'claim_step'), 'headless tools absent from the interactive surface');
+await call('sources', { action: 'report', id: 'wiki', partial: true, items: [{ ref: '98765', url: 'https://wiki.example.com/pages/98765', updatedAt, text: 'Checkout retries each payment call up to 4 times.' }] });
+const stale = await call('check_answer', { answer: 'Checkout retries each payment call up to 3 times.', citations: [{ ref: 'wiki:98765', excerpt: 'up to 3 times' }] });
+must(stale.ok === false, 'changed bytes invalidate the old passage even with unchanged provider time');
+const history = await call('project_context', { topic: 'source_history', query: 'wiki' });
+must(history.items.filter((item) => item.kind === 'source.changed').length === 2, 'both source generations retained');
+const held = await call('work', { action: 'claim', id: sub.id, agent: 'smoke', paths: ['design.md'] });
+await call('work', { action: 'complete', id: sub.id, agent: 'smoke', token: held.claimToken, reason: 'The fixture applied no schema migration and verified the ledger round trip.' });
 child.stdin.end(); await new Promise((r) => child.on('exit', r));
-console.log('loop: bootstrap → decide ×3 → remember → work rooted in it → typed reading → resolve → start from the intake → claim/submit ×4 → status → draft held for native review (no model claimed) → a reported page cited by its url, an invented item refused: ok');
+console.log('loop: bootstrap → remember → rooted work claimed/completed → managed steps → draft held for native review → schema-led source report → reported access refused → changed bytes invalidate old citation: ok');
 DRIVER
 loop_out="$(node "$scratch/drive.mjs" "$loop_project/node_modules/.bin/construct")" || fail "the packaged loop over the MCP server failed" "$loop_out"
 echo "$loop_out"
