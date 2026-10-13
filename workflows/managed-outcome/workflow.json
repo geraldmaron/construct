@@ -4,7 +4,7 @@
   "evals": [],
   "id": "managed-outcome",
   "title": "Managed outcome with verification",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "purpose": "The general carrier for an outcome no other workflow names: plan it, do it in this session citing what was read (inside the period when one is given, from the sources the run names), verify it with the project's own checks, and hand back the deliverable with its evidence and the file it produced.",
   "activation": [
     "do this piece of work and hand it back",
@@ -174,5 +174,22 @@
   },
   "proposes": [
     "lessons"
-  ]
+  ],
+  "execution": {
+    "path": "implementation",
+    "checkpoints": [
+      "Save the first useful artifact during the first authorized write step.",
+      "Preserve partial work and unknowns before gathering or repairs exhaust their budget."
+    ],
+    "evidenceObligations": [
+      "Cite actual reads with provenance.",
+      "Run the project validation path and inspect the intended outcome."
+    ],
+    "maxGatherCalls": 12,
+    "stopWhen": [
+      "Budget exhausted: preserve partial work and remaining actions.",
+      "Required permission or essential intent is unresolved."
+    ],
+    "assurance": "independent_review"
+  }
 }

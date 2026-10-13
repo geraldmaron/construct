@@ -353,6 +353,23 @@ async function checkHost(host) {
         handback = { held: asked?.personRequired === true && relayed?.personRequired === true && relayed?.decision?.state === 'open' && still?.trust === 'challenged' };
       }
       record(host.id, 'final handback', handback?.held ? 'passed' : heldForReview ? 'untested' : 'failed', handback ? (handback.held ? 'acceptance waits in the inbox for the person; a relayed approval is refused' : 'a relayed acceptance changed the deliverable’s trust') : 'Final handback requires a native review; this static run does not manufacture a semantic receipt.');
+      // The portable path completes through the same public protocol on every host;
+      // this is structural conformance, never a native model-effectiveness claim.
+      await s.call('remember',{kind:'note',text:'Keep the kernel host-agnostic.'});
+      const retrieved=await s.call('context_search',{query:'portable kernel boundary',expansions:['kernel host agnostic'],limit:3});
+      record(host.id,'ranked local context',retrieved.items.length && retrieved.items.every(i=>i.content.trust==='data') ? 'passed':'failed','admitted context retrieved with bounded host expansion and data provenance');
+      const portableIntake=await s.call('classify_request',{kind:'manage',words:'Produce a grounded brief about the kernel boundary.',deliverable:{kind:'other',describe:'brief'},intent:{path:'artifact',outcome:'Explain the kernel boundary',acceptance:['Ground the boundary in design.md']},destination:{kind:'chat'}});
+      const portable=await s.call('start_outcome',{workflowId:'guided-outcome',intake:portableIntake.intake});
+      const po={plan:{plan:['Read design.md and explain the boundary'],assumptions:[],blockers:[]},do:{summary:'Keep the kernel host-agnostic.',findings:['Keep the kernel host-agnostic.'],changes:[],artifact:null},verify:{verification:{kind:'self_review',checks:['Compared the brief with design.md']},limits:['No independent semantic review performed']}};
+      let delivered;
+      for(let i=0;i<3;i++){
+        const claimed=await s.call('claim_work',{runId:portable.run.id});
+        if(!claimed.work)throw new Error('Portable work failed to claim');
+        if(claimed.work.step.id==='do')await s.call('checkpoint_work',{stepRunId:claimed.work.stepRunId,token:claimed.work.token,summary:'Held the design boundary',remaining:['Inspect the brief'],unknowns:[],gatherCalls:1});
+        delivered=await s.call('submit_work',{stepRunId:claimed.work.stepRunId,token:claimed.work.token,output:po[claimed.work.step.id],evidence:[{ref:'docs/design.md'}]});
+      }
+      const ps=await s.call('run_status',{runId:portable.run.id});
+      record(host.id,'portable delivery and checkpoint',delivered.run.state==='succeeded' && ps.checkpoints.length===1 && ps.delivery.state==='available' && !delivered.deliverable.verification.semanticSupportVerified ? 'passed':'failed','chat artifact delivered; checkpoint retained; structural checks distinct from independent review and user acceptance');
       // Decision relay: a fresh project with open onboarding questions, answered through decide.
       const list = await s.rpc('tools/list');
       record(host.id, 'no nested host spawn', !list.result.tools.some((t) => /spawn|launch|run_host/.test(t.name)) ? 'passed' : 'failed', 'no tool offers to start another host; the server and broker import no process spawning');

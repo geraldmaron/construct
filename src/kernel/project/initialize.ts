@@ -1,3 +1,4 @@
+import { rebuildContextIndex } from '../context/retrieval.ts';
 /**
  * kernel/project/initialize.ts — create or reconcile a project's Construct files.
  *
@@ -125,6 +126,7 @@ export function initializeProject(input: InitializeProjectInput): InitializeProj
     upsertProfile(store, { name: config.value.name, onboardingState: 'incomplete' }, input.at);
   }
 
+  rebuildContextIndex(store, input.at);
   return {
     layout,
     config: config.value,

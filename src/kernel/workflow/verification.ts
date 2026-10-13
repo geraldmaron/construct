@@ -1,4 +1,4 @@
-import { runSemanticProblems } from './semantic-review.ts';
+import { requiredSemanticContract, runSemanticProblems } from './semantic-review.ts';
 import { selectedVerifier, verifierProblems } from './verifier-contract.ts';
 import type { StateStore } from '../state/open.ts';
 import type { WorkflowStep } from '../registry/models.ts';
@@ -9,6 +9,8 @@ import { createHash } from 'node:crypto';
 import type { RefResolver } from '../project/evidence.ts';
 
 export interface ContentReceipt {
+  readonly historical?: boolean;
+  readonly snapshotId?: string;
   readonly ref: string;
   readonly digest: string | null;
   readonly provenance: string;
@@ -31,7 +33,7 @@ export interface VerificationReceipt {
 
 export function contentReceipt(ref: string, resolve?: RefResolver): ContentReceipt {
   const hit = resolve?.(ref);
-  return { ref, digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null, provenance: hit?.provenance ?? 'unresolved' };
+  return { ...(hit?.snapshotId ? { snapshotId: hit.snapshotId, historical: hit.historical } : {}), ref, digest: typeof hit?.text === 'string' ? createHash('sha256').update(hit.text).digest('hex') : null, provenance: hit?.provenance ?? 'unresolved' };
 }
 export function namedArtifactPath(value: unknown): string | null {
   if (typeof value === 'string') return value.trim() || null;
@@ -90,13 +92,13 @@ export function stalePriorEvidence(prior: readonly ContentReceipt[], subjects: r
   return [...new Set(prior.filter((entry) => {
     if (entry.digest === null || sameProducedFile(entry.ref, subjects, resolve)) return false;
     const current = contentReceipt(entry.ref, resolve);
-    return current.digest !== entry.digest || current.provenance !== entry.provenance;
+    return current.digest !== entry.digest || current.provenance !== entry.provenance || (entry.snapshotId !== undefined && current.historical !== entry.historical);
   }).map((entry) => entry.ref))];
 }
 
 /** Missing or changed content cannot inherit a receipt for previously observed bytes. */
 export function staleReceiptSubjects(receipt: VerificationReceipt, resolve: RefResolver): string[] {
-  return [...new Set([...receipt.subjects, ...receipt.evidence.filter((entry) => entry.digest !== null)].filter((subject) => subject.digest === null || contentReceipt(subject.ref, resolve).digest !== subject.digest).map((subject) => subject.ref))];
+  return [...new Set([...receipt.subjects, ...receipt.evidence.filter((entry) => entry.digest !== null)].filter((subject) => subject.digest === null || contentReceipt(subject.ref, resolve).digest !== subject.digest || (subject.snapshotId !== undefined && contentReceipt(subject.ref, resolve).historical !== subject.historical)).map((subject) => subject.ref))];
 }
 
 
@@ -166,7 +168,7 @@ export function runExecutionProblems(store: StateStore, runId: string, resolve?:
   if (!Array.isArray(frozen)) return ['run has no frozen step requirements'];
   const rows = listSteps(store, runId);
   const subjects = rows.flatMap((s) => artifactRefs(s.output));
-  return [...runSemanticProblems(store, runId, resolve), ...frozen.filter((s) => s.capabilities.includes('run_tests')).flatMap((step) => {
+  return [...(requiredSemanticContract(run)?.required === false ? [] : runSemanticProblems(store, runId, resolve)), ...frozen.filter((s) => s.capabilities.includes('run_tests')).flatMap((step) => {
     const row = rows.find((s) => s.stepId === step.id);
     if (!row || row.state !== 'succeeded') return [`${step.id}: required execution step has not succeeded`];
     return executionCheck(store, { runId, stepRunId: row.id, attempt: row.attempts, output: row.output, resolve, subjects }).problems.map((p) => `${step.id}: ${p}`);

@@ -1,4 +1,4 @@
-import { semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type NativeReviewerIdentity } from './semantic-review.ts';
+import { semanticReviewStatus, type SemanticReviewStatus, semanticContract, requiredSemanticContract, prepareSemanticReview, semanticReviewProblems, runSemanticProblems, type ReviewerIdentity } from './semantic-review.ts';
 import { freezeVerifier, type FrozenVerifier } from './verifier-contract.ts';
 /**
  * kernel/workflow/service.ts — one service runs a workflow from binding to
@@ -75,7 +75,7 @@ export interface WorkflowServiceDeps {
   readonly resolveEvidence?: RefResolver;
   readonly targetSystemFor?: (step: WorkflowStep) => string;
   readonly defaultLeaseMs?: number;
-  readonly semanticReviewer?: NativeReviewerIdentity | null;
+  readonly semanticReviewer?: ReviewerIdentity | null;
 }
 
 export interface StartInput {
@@ -892,7 +892,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
 
   /** Preserve the candidate without consuming its lease or asking for a waiver. */
   function pendingSemanticReview(run: WorkflowRun, leased: LeasedStep, step: WorkflowStep, output: Readonly<Record<string, unknown>>, evidence: readonly { ref: string; excerpt?: string }[], resolve: RefResolver | undefined, at: string, validation: readonly ValidatorResult[], sensitivity: string | null, candidateBody?: Record<string, unknown>): SubmitResult | null {
-    if (!isLastStep(run, step) || !requiredSemanticContract(run)) return null;
+    if (!isLastStep(run, step) || !requiredSemanticContract(run) || requiredSemanticContract(run)?.required === false) return null;
     const body = candidateBody ?? deliverableBody(run, output, handedTo(run, step), evidence, sensitivity, resolve);
     // Preserve the exact candidate even when a bounded review cannot be prepared.
     const draft = upsertDraft(store, { id: listDeliverables(store, run.id).find(d => d.stepRunId === leased.id)?.id ?? deps.nextId('deliverable'), runId: run.id, stepRunId: leased.id, kind: deps.workflows.get(run.workflowId)?.manifest.deliverable.kind ?? 'artifact', body, at });
@@ -1383,7 +1383,14 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
   function readingInstructions(run: WorkflowRun, step: WorkflowStep): string[] {
     const asked = askedOf(run);
     const lines: string[] = [];
-    if (requiredSemanticContract(run) && isLastStep(run, step)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
+    const executionPath = (run.bindings as { execution?: import('../registry/models.ts').WorkflowManifest['execution'] } | null)?.execution;
+    if (executionPath) {
+      lines.push(`Execution path: ${executionPath.path}. Gather at most ${executionPath.maxGatherCalls} source/tool calls before a checkpoint; reuse held evidence. ${executionPath.checkpoints.join(' ')} Stop: ${executionPath.stopWhen.join(' ')}`);
+      lines.push(`Evidence obligations: ${executionPath.evidenceObligations.join(' ')} Report the actual acceptance checks and outstanding limits; path binding is not proof of efficacy.`);
+    }
+    const intent = askedOf(run).intake?.intent;
+    if (intent) lines.push(`Frozen outcome: ${intent.outcome}. Audience: ${intent.audience ?? 'not specified'}. Acceptance: ${intent.acceptance.join('; ')}. Constraints: ${intent.constraints.join('; ')}. Prior work: ${intent.priorWork.join('; ')}. Assumptions: ${intent.assumptions.join('; ')}.`);
+    if (requiredSemanticContract(run)?.required !== false && requiredSemanticContract(run) && isLastStep(run, step)) lines.push('Managed completion requires a fresh adapter-observed semantic review of the final artifact and held sources. Read semanticReview.state and next: a rejected draft needs repair; only a passing review permits identical resubmission. An unavailable reviewer leaves the artifact unverified. A reported review or passing shell command is insufficient; do not widen permissions.');
     const destination = asked.intake?.destination;
     if (destination?.kind === 'project_file' && destination.ref) lines.push(`The person requested a local file at ${destination.ref}. A database deliverable alone does not fulfill this destination. Before the final step completes, write the file within this run's allowed project-write step and include artifact: ${JSON.stringify(destination.ref)} in that step's output. The final check requires the file to exist with held text.`);
     const p = asked.period;
@@ -1467,7 +1474,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
       step.validators.length ? `It will be checked by: ${step.validators.join(', ')}.` : '',
       ...validatorGuidance(step.validators),
       bound ? `Apply the bound method ${bound.id} for the current step. Its body is included by default; load a referenced resource only when this step needs it. Preserve already-held source text rather than rewriting it to satisfy a check.` : '',
-      bound || method ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. Explain omissions and unavailable expertise; a report does not establish execution or qualification.' : '',
+      bound || method ? 'Report applied, skipped or deferred methods under methods: [{id, disposition, why, evidence: [ref]}]. Select additional relevant methods from the catalog based on evidence, and load their bodies with skills show. For applied methods add obligations: [{obligation, section:"/outputKey", evidence:[ref]}], linking concrete output sections to their project evidence. Put professional-method references in doctrine:[ref]; doctrine informs procedure and is not project-fact support. Explain omissions and unavailable expertise; a report does not establish execution or qualification.' : '',
       method ? `Use the ${method.title} method for this step; load it with skills show (id ${method.id}) and includeBody.` : '',
       ...readingInstructions(run, step),
       ...governingInstructions(step.capabilities),
@@ -1517,7 +1524,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     if (run && (to === 'accepted' || to === 'final')) {
       const asking = listOpenDecisions(store, run.id).find((d) => d.kind === 'clarification');
       if (asking) throw new Error(`this run still has a question for the person (${asking.id}): ${asking.question}; answer it before accepting`);
-      const reviewProblems = runSemanticProblems(store, run.id, deps.resolveEvidence);
+      const reviewProblems = requiredSemanticContract(run)?.required === false ? [] : runSemanticProblems(store, run.id, deps.resolveEvidence);
       if (reviewProblems.length) throw new Error(`semantic review is not established: ${reviewProblems.join('; ')}`);
       const finalStep = listSteps(store, run.id).at(-1);
       if (requiredSemanticContract(run) && current.stepRunId !== finalStep?.id) throw new Error('only the exact final deliverable covered by semantic review may be accepted or finalized');
@@ -2040,7 +2047,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
           invocationId: key,
           workIdentity,
           workflowDigest: workflow.digest,
-          bindings: { steps: m.steps, digest: workflow.digest, version: m.version, asked, semanticContract: semanticContract({ input: given, asked }, deps.semanticReviewer ?? null) },
+          bindings: { ...(m.execution ? { execution: m.execution } : {}), steps: m.steps, digest: workflow.digest, version: m.version, asked, semanticContract: semanticContract({ input: given, asked }, deps.semanticReviewer ?? null, m.execution?.assurance !== 'structural') },
           at,
         });
         const superseding = `superseded by run ${run.id}`;

@@ -40,7 +40,8 @@
     "registry"
   ],
   "exports": {
-    ".": "./dist/kernel/index.js"
+    ".": "./dist/kernel/index.js",
+    "./reviewer": "./dist/hosts/semantic-observation.js"
   },
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",

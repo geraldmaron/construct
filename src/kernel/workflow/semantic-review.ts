@@ -22,16 +22,20 @@ export const SEMANTIC_OBLIGATIONS = [
   { id: 'uncertainty', criterion: 'Material assumptions and uncertainty are explicit, proportionate and consistent with the evidence. A bounded answer may pass while acknowledging unknowns; unsupported certainty cannot.' },
   { id: 'scope', criterion: 'The result stays within the requested action and permission boundary. Assessment now is not permission for future implementation or external action. Do not demand future-action prerequisites to deliver an answer possible now.' },
 ] as const;
-export interface NativeReviewerIdentity {
-  readonly host: 'codex'; readonly binary: string; readonly digest: string;
-  readonly version: string; readonly profile: 'codex-held-text-v1';
+export interface ReviewerIdentity {
+  readonly host: string; readonly binary?: string; readonly digest: string;
+  readonly version: string; readonly profile: string;
+  readonly isolation?: 'held_text';
 }
+export interface NativeReviewerIdentity extends ReviewerIdentity { readonly binary: string }
 export interface SemanticContract {
+  /** False permits structural delivery while semantic assurance remains separate. */
+  readonly required?: boolean;
   readonly formatVersion: 1;
   readonly id: 'managed-semantic-review';
   readonly version: '1.0.0';
   readonly request: unknown;
-  readonly reviewer: NativeReviewerIdentity | null;
+  readonly reviewer: ReviewerIdentity | null;
   readonly obligations: readonly { readonly id: string; readonly criterion: string }[];
 }
 export function canonicalReview(value: unknown): string {
@@ -41,8 +45,8 @@ export function canonicalReview(value: unknown): string {
   return `{${Object.entries(value).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonicalReview(v)}`).join(',')}}`;
 }
 export const reviewDigest = (value: unknown): string => createHash('sha256').update(canonicalReview(value)).digest('hex');
-export function semanticContract(request: unknown, reviewer: NativeReviewerIdentity | null = null): SemanticContract {
-  return { formatVersion: 1, id: 'managed-semantic-review', version: '1.0.0', request, reviewer, obligations: SEMANTIC_OBLIGATIONS };
+export function semanticContract(request: unknown, reviewer: ReviewerIdentity | null = null, required = true): SemanticContract {
+  return { ...(required ? {} : { required: false }), formatVersion: 1, id: 'managed-semantic-review', version: '1.0.0', request, reviewer, obligations: SEMANTIC_OBLIGATIONS };
 }
 export function requiredSemanticContract(run: WorkflowRun): SemanticContract | null {
   return (run.bindings as { semanticContract?: SemanticContract } | null)?.semanticContract ?? null;
@@ -52,6 +56,7 @@ interface HeldText {
 }
 export interface ReviewBundle {
   readonly formatVersion: 1; readonly runId: string; readonly stepRunId: string; readonly attempt: number;
+  readonly producerSessionId?: string | null;
   readonly contract: SemanticContract; readonly contractDigest: string;
   readonly body: unknown; readonly artifacts: readonly HeldText[]; readonly evidence: readonly HeldText[];
   readonly sourceIds: readonly string[]; readonly sourceState: unknown; readonly governing: unknown; readonly answers: unknown;
@@ -77,7 +82,7 @@ export function prepareSemanticReview(store: StateStore, input: { run: WorkflowR
   const produced = new Set(artifacts.map(a => a.content?.path).filter(Boolean));
   const evidence = held([...evidenceRefs], input.resolve).filter(e => !e.content?.path || !produced.has(e.content.path));
   const ids = [...sourceIds].sort();
-  const bundle: ReviewBundle = { formatVersion: 1, runId: input.run.id, stepRunId: input.leased.id, attempt: input.leased.token, contract, contractDigest: reviewDigest(contract), body: input.body, artifacts, evidence, sourceIds: ids, sourceState: sourceState(store, ids), governing: governing(store), answers: answers(store, input.run.id), problems: [...textProblems(artifacts), ...evidence.filter(e => e.content?.truncated).map(e => `${e.ref}: complete held text is unavailable`), ...requestedFileProblems(askedOf(input.run).intake?.destination, artifacts.map(a => a.ref), input.resolve)] };
+  const bundle: ReviewBundle = { producerSessionId: input.run.sessionId, formatVersion: 1, runId: input.run.id, stepRunId: input.leased.id, attempt: input.leased.token, contract, contractDigest: reviewDigest(contract), body: input.body, artifacts, evidence, sourceIds: ids, sourceState: sourceState(store, ids), governing: governing(store), answers: answers(store, input.run.id), problems: [...textProblems(artifacts), ...evidence.filter(e => e.content?.truncated).map(e => `${e.ref}: complete held text is unavailable`), ...requestedFileProblems(askedOf(input.run).intake?.destination, artifacts.map(a => a.ref), input.resolve)] };
   // Never silently truncate a review packet and then accept its coverage.
   if (Buffer.byteLength(canonicalReview(bundle)) > 512 * 1024) throw new Error('semantic review bundle exceeds 512 KiB; a supported bounded representation is required');
   const digest = reviewDigest(bundle);
@@ -128,6 +133,7 @@ export function semanticJudgmentProblems(bundle: ReviewBundle, value: unknown): 
 }
 export interface SemanticWitness {
   readonly preparedRef: string; readonly bundleDigest: string; readonly attempt: number;
+  readonly isolation?: 'held_text' | 'self_review';
   readonly invocation: { readonly id: string; readonly host: string; readonly hostVersion: string; readonly model: string; readonly sessionId: string | null; readonly completed: boolean; readonly exitStatus: number | null; readonly timedOut: boolean; readonly transcriptDigest: string };
   readonly judgment: unknown; readonly problems: readonly string[];
 }
@@ -136,7 +142,9 @@ function semanticWitnessProblems(bundle: ReviewBundle, witness: SemanticWitness)
   const problems: string[] = [], i = witness.invocation;
   const text = (v: unknown) => typeof v === 'string' && v.trim().length > 0;
   if (witness.attempt !== bundle.attempt || !text(i?.id) || !text(i?.sessionId) || !text(i?.hostVersion) || !text(i?.model) || i?.completed !== true || i?.exitStatus !== 0 || i?.timedOut !== false || !text(i?.transcriptDigest)) problems.push('native semantic review did not complete with an observed independent invocation');
+  if (witness.isolation === 'self_review' || (bundle.producerSessionId && i?.sessionId === bundle.producerSessionId)) problems.push('same-session review cannot establish independent semantic assurance');
   const pin = bundle.contract.reviewer;
+  if (pin?.isolation && witness.isolation !== pin.isolation) problems.push('reviewer isolation does not match the frozen contract');
   if (pin && (i?.host !== pin.host || i?.hostVersion !== pin.version)) problems.push('reviewer identity does not match the frozen host binding');
   if (!Array.isArray(witness.problems) || witness.problems.some(p => typeof p !== 'string')) problems.push('native semantic review returned malformed invocation problems');
   return problems;
@@ -161,7 +169,7 @@ export function semanticReviewProblems(store: StateStore, prepared: PreparedRevi
 /** Read-only recovery information. This projection never dispatches a reviewer,
  * changes a lease, or supplies evidence to the completion predicate. */
 export interface SemanticReviewStatus {
-  readonly state: 'unavailable' | 'not_prepared' | 'needs_review' | 'dispatched' | 'rejected' | 'review_failed' | 'stale' | 'passed' | 'cancelling' | 'stopped';
+  readonly state: 'not_required' | 'unavailable' | 'not_prepared' | 'needs_review' | 'dispatched' | 'rejected' | 'review_failed' | 'stale' | 'passed' | 'cancelling' | 'stopped';
   readonly preparedRef: string | null;
   readonly digest: string | null;
   readonly reviewRef: string | null;
@@ -184,6 +192,7 @@ export function semanticReviewStatus(store: StateStore, run: WorkflowRun, resolv
   const row = final ? store.db.prepare("SELECT id FROM activity_events WHERE kind = 'semantic.prepared' AND channel = 'kernel' AND run_id = ? AND step_run_id = ? ORDER BY id DESC LIMIT 1").get(run.id, final.id) as { id: number } | undefined : undefined;
   const prepared = row ? readPreparedReview(store, `review:${row.id}`) : null;
   const current = prepared ? { ...base, preparedRef: prepared.ref, digest: prepared.digest } : base;
+  if (contract?.required === false && !prepared) return { ...current, state: 'not_required', next: 'This path permits structural delivery. Inspect and hand back the result with semantic review unverified; report same-session checks as self_review. Independent assurance needs a separately qualified review path.' };
   if (!contract || !pin) return { ...current, state: 'unavailable', problems: [contract ? 'No supported native reviewer was bound when this run started.' : 'This run has no frozen semantic review contract.'], next: 'Semantic completion is unavailable for this run. Continue only permitted draft work, save the requested artifact and report it as unverified. Do not try another host, repeat an unsupported review command, or widen permissions. A newly supported session must re-resolve the outcome; this run cannot acquire a reviewer retroactively.' };
   if (!prepared || !final) return { ...base, state: 'not_prepared', next: 'Complete the permitted steps and save the requested artifact during the first project-write step. Submit the final candidate to prepare review. A bound reviewer profile is not proof of authentication, command permission or a completed review.' };
   const freshness = reviewFreshnessProblems(store, prepared, resolve);

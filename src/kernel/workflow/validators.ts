@@ -496,8 +496,16 @@ const VALIDATORS: Readonly<Record<string, Validator>> = {
     }
     return problems;
   },
-  evidence_refs_resolve: ({ evidence, resolvableRefs, resolve }) => {
-    if (resolve) return evidence.filter((e) => !resolve(e.ref)).map((e) => unheld(e.ref));
+  evidence_refs_resolve: ({ output, evidence, resolvableRefs, resolve }) => {
+    if (resolve) {
+      const body = output as { historicalEvidence?: readonly { ref: string; why: string }[] };
+      return evidence.flatMap(e => {
+        const hit = resolve(e.ref);
+        if (!hit) return [unheld(e.ref)];
+        if (hit.historical && !(Array.isArray(body?.historicalEvidence) && body.historicalEvidence.some(h => h?.ref === e.ref && typeof h.why === 'string' && h.why.trim()))) return [`evidence "${e.ref}" is historical; acknowledge its historical use under historicalEvidence:{ref,why}, or cite the current generation`];
+        return [];
+      });
+    }
     // Fail closed: with nothing to resolve against, an unchecked pass would read as a checked one.
     if (resolvableRefs.size === 0) return evidence.length === 0 ? [] : ['nothing was supplied to resolve evidence against, so no citation could be checked'];
     return evidence.filter((e) => !resolvableRefs.has(e.ref)).map((e) => `evidence "${e.ref}" does not resolve to anything this run may cite`);

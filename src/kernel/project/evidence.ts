@@ -51,6 +51,12 @@ export const EVIDENCE_TEXT_CAP_BYTES = 1024 * 1024;
 export type Provenance = 'witnessed' | 'reported' | 'unverified';
 
 export interface ResolvedRef {
+  /** Captured generation; historical content never asserts current freshness. */
+  readonly snapshotId?: string;
+  readonly contentDigest?: string;
+  readonly historical?: boolean;
+  readonly recordStatus?: string;
+  readonly recordOrigin?: string;
   readonly ref: string;
   readonly kind: 'file' | 'directory' | 'source' | 'item' | 'deliverable' | 'record' | 'surface' | 'web';
   readonly provenance: Provenance;
@@ -90,7 +96,7 @@ export interface EvidenceSource {
 }
 
 /** Kernel record kinds a step may cite by id. */
-export const RECORD_PREFIXES = ['statement', 'claim', 'entity', 'decision', 'run', 'drift'] as const;
+export const RECORD_PREFIXES = ['statement', 'claim', 'entity', 'decision', 'run', 'drift', 'work'] as const;
 export type RecordKind = (typeof RECORD_PREFIXES)[number];
 
 export interface ResolverInput {
@@ -128,7 +134,7 @@ export function sourceItemOf(ref: string, sourceId: string): string | null {
 
 /** Whether a resolved reference holds content Construct can check: a file, or an item whose text a recorded read holds. Empty recorded text holds nothing. */
 export function holdsContent(r: ResolvedRef | null | undefined): boolean {
-  return r !== null && r !== undefined && (r.kind === 'file' || (r.kind === 'item' && typeof r.text === 'string' && r.text.trim() !== ''));
+  return r !== null && r !== undefined && (r.kind === 'file' || ((r.kind === 'item' || r.kind === 'record') && typeof r.text === 'string' && r.text.trim() !== ''));
 }
 
 function inside(parent: string, child: string): boolean {
