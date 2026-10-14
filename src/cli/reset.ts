@@ -23,7 +23,7 @@ export const RESET_SPEC: CommandSpec = {
     { name: 'confirm', gloss: 'remove the named targets', takesValue: false },
     { name: 'include-project-files', gloss: 'also remove the committed .construct files, not only runtime state', takesValue: false },
     { name: 'keep-state', gloss: 'do not recreate state after removing', takesValue: false },
-    { name: 'force', gloss: 'remove the state even while another process has it open', takesValue: false },
+    { name: 'force', gloss: 'remove the state despite live holders or unavailable holder inspection', takesValue: false },
   ],
   readOnly: false,
 };
@@ -59,7 +59,14 @@ export function reset(args: ParsedArgs, ctx: CliContext = createContext()): numb
   }
 
   const dbPath = projectLayout(root).dbPath;
-  const holders = existsSync(dbPath) ? processesHolding(dbPath) : [];
+  const inspection = existsSync(dbPath) ? processesHolding(dbPath) : { inspected: true as const, pids: [] };
+  if (!inspection.inspected && !boolFlag(args, 'force')) {
+    throw new OperationError(
+      `cannot inspect other processes holding the state database: ${inspection.reason}`,
+      'Stop every Construct session on this project first. Restore lsof and retry, or use --force to explicitly bypass holder inspection.',
+    );
+  }
+  const holders = inspection.inspected ? inspection.pids : [];
   if (holders.length > 0 && !boolFlag(args, 'force')) {
     throw new OperationError(
       `the state database is open in ${String(holders.length)} other process(es) (pid ${holders.join(', ')}), most likely an agent session’s MCP server; removing it now would leave those sessions writing to a file that no longer exists`,
