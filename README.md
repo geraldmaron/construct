@@ -5,7 +5,7 @@ It stores admitted context and work, resolves versioned methods and workflows,
 and keeps delivery, verification, review and your acceptance separate. Your host
 provides the model, tools and sandbox.
 
-**Experimental: 3.0.0-alpha.28.** Available under npm’s `alpha` tag; `latest`
+**Experimental: 3.0.0-alpha.29.** Available under npm’s `alpha` tag; `latest`
 remains on the 2.x line. Installation and static host wiring are tested;
 broad host effectiveness, canonical native isolation and measured skill benefit
 remain unqualified. See [verification and limits](#verification-and-limits).
@@ -81,12 +81,19 @@ See the [CLI reference](docs/cli-reference.md) and
 
 ## Verification and limits
 
-The alpha.28 release passed lint, typecheck, the full test suite, packaged isolated
-smoke and static six-host conformance. Three finite native held-text controls
-accepted correct arithmetic and rejected incorrect arithmetic and an injected
-source. One ordinary native decision trial completed after a method citation
-repair; it took 218 seconds and 13 Construct calls. These observations do not
-establish general effectiveness, injection resistance or causal skill benefit.
+Alpha.29 adds source activation, permission preservation, state recovery and stable
+MCP discovery fixes. Its local regression and review evidence is recorded in the
+[remediation review](docs/internal/command-remediation/SUBAGENT-REVIEW.md) and
+[reconciliation](docs/internal/command-remediation/RECONCILIATION.md). Native
+isolation, fresh-user desktop readiness and the setup/task facade remain open.
+
+Alpha.29 passed lint, typecheck, the full test suite and packaged isolated smoke.
+Three fresh finite native held-text controls accepted correct arithmetic and
+rejected incorrect arithmetic and an injected source. Static six-host conformance
+passed with native boundaries untested. The earlier alpha.28 ordinary decision
+trial completed after a citation repair; its 218 seconds and 13 Construct calls
+remain a single historical diagnostic. These observations do not establish
+general effectiveness, injection resistance or causal skill benefit.
 
 Delegation is disabled until explicitly configured and live-verified. A saved
 standing outcome does not install a clock or executor. External sources depend
