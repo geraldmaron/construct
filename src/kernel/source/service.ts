@@ -9,6 +9,7 @@
 
 import { accessDescriptor, type AccessDescriptor } from './access.ts';
 import type { StateStore } from '../state/open.ts';
+import { toJson } from '../state/rows.ts';
 import {
   addSource,
   clearAuthority,
@@ -122,9 +123,9 @@ export interface SourceService {
   /**
    * Reconcile committed declarations into state. A local source is untouched unless the committed file declares
    * the same id with the same kind: then it becomes declared, takes the committed declaration, and keeps what was
-   * read from it.
+   * read from it. A supplier reads current declarations under the write lock.
    */
-  syncDeclarations(file: SourcesFile, at: string): SyncResult;
+  syncDeclarations(file: SourcesFile | (() => SourcesFile), at: string): SyncResult;
   /** Add a source only this checkout knows about; its locator never reaches a committed file. */
   addLocal(input: Omit<DeclaredSource, 'read' | 'write'> & { readonly read?: boolean; readonly write?: boolean }, at: string): Source;
   setLocalLocator(id: string, locator: string, at: string): Source;
@@ -168,6 +169,7 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
   function declare(d: DeclaredSource, at: string, existing: Source | null): 'added' | 'updated' | 'unchanged' {
     const problem = locatorProblem(d.kind, d.locator);
     if (problem) throw new Error(`source ${d.id}: ${problem}`);
+    if (existing && existing.kind !== d.kind) throw new Error(`source ${d.id} exists on this machine as a ${existing.kind} source; declare the ${d.kind} one under a new id`);
     if (!existing) {
       addSource(store, {
         id: d.id,
@@ -219,40 +221,49 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
   }
 
   function recordRead(id: string, received: SnapshotReport, partial: boolean, at: string, nextId: () => string, notChanged: ReadonlySet<string> = new Set()): RefreshResult {
-    let report = received;
-    if (partial && received.items) {
-      const seen = new Set(received.items.map((item) => item.externalRef));
-      const carried = (currentManifest(store, id) ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
-      const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
-      if (carried.length) report = { ...received, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
-    }
-    const { snapshot, changed } = recordSnapshot(store, {
-      id: nextId(),
-      sourceId: id,
-      digest: report.digest,
-      summary: report.summary,
-      evidenceRef: report.evidenceRef,
-      inventoryDigest: report.inventoryDigest,
-      contentDigest: report.contentDigest ?? report.digest,
-      itemCount: report.items?.length ?? 0,
-      coverage: report.coverage,
-      at,
-    });
-    // What Construct read itself becomes observed claims, each with the content it saw; a host's report is its word.
-    const source = getSource(store, id);
-    if (source && report.evidence !== 'reported' && report.items && report.items.length > 0) {
-      store.transaction(() => {
+    return store.transaction(() => {
+      let report = received;
+      if (partial && received.items) {
+        const seen = new Set(received.items.map((item) => item.externalRef));
+        const carried = (currentManifest(store, id) ?? []).filter((entry) => !seen.has(entry.ref)).map((entry) => ({ externalRef: entry.ref, kind: entry.kind, name: entry.ref, attributes: { ...entry.attributes, fingerprint: entry.fingerprint, schema: entry.schema, text: entry.text, url: entry.url, truncated: entry.truncated, updatedAt: entry.updatedAt, weak: entry.weak, via: entry.via } }));
+        const items = [...carried, ...received.items].sort((a, b) => a.externalRef.localeCompare(b.externalRef));
+        if (carried.length) report = { ...received, items, digest: `sha256:${createHash('sha256').update(canonicalSchema(items)).digest('hex')}`, coverage: { ...received.coverage, complete: false } };
+      }
+      const { snapshot, changed } = recordSnapshot(store, {
+        id: nextId(),
+        sourceId: id,
+        digest: report.digest,
+        summary: report.summary,
+        evidenceRef: report.evidenceRef,
+        inventoryDigest: report.inventoryDigest,
+        contentDigest: report.contentDigest ?? report.digest,
+        itemCount: report.items?.length ?? 0,
+        coverage: report.coverage,
+        at,
+      });
+      // What Construct read itself becomes observed claims, each with the content it saw; a host's report is its word.
+      const source = getSource(store, id);
+      if (source && report.evidence !== 'reported' && report.items && report.items.length > 0) {
         for (const item of report.items ?? []) {
           const entity =
             findEntityByRef(store, 'artifact', `source:${id}:${item.externalRef}`) ??
             addEntity(store, { id: nextId(), kind: 'artifact', name: item.name, externalRef: `source:${id}:${item.externalRef}`, attributes: item.attributes, at });
           const attributes = item.attributes as { contentDigest?: unknown; fingerprint?: unknown } | undefined;
+          const statement = `${item.name} observed in ${id}`;
+          const value = JSON.parse(toJson(item.attributes ?? item)) as unknown;
+          // A collection revision does not make every item new evidence.
+          // Compare the latest observed claim for this item, preserving A-B-A
+          // changes while avoiding duplicate claims for unchanged neighbours.
+          const previous = store.db.prepare(`SELECT statement, value_json, authority, sensitivity FROM claims
+            WHERE subject_id = ? AND source_id = ? AND claim_type = ? AND provenance = 'source'
+            ORDER BY rowid DESC LIMIT 1`).get(entity.id, id, item.kind) as { statement: string; value_json: string | null; authority: string; sensitivity: string } | undefined;
+          if (previous?.statement === statement && previous.authority === source.authorityLevel && previous.sensitivity === source.sensitivity && canonicalSchema(previous.value_json === null ? null : JSON.parse(previous.value_json)) === canonicalSchema(value)) continue;
           addClaim(store, {
             id: nextId(),
             subjectId: entity.id,
             claimType: item.kind,
-            statement: `${item.name} observed in ${id}`,
-            value: item.attributes ?? item,
+            statement,
+            value,
             sourceId: id,
             provenance: 'source',
             authority: source.authorityLevel,
@@ -266,40 +277,41 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
             at,
           });
         }
-      });
-    }
-    let changes: ItemChanges | undefined;
-    let staleDeliverables: string[] | undefined;
-    if (changed) {
-      const manifest = report.items ? toManifest(report.items) : null;
-      const before = currentManifest(store, id);
-      changes = manifest ? diffManifests(before, manifest) : undefined;
-      // In a partial read, an item not reported is unknown, not removed.
-      if (changes && partial) changes = { ...changes, removed: [] };
-      if (changes && notChanged.size > 0) changes = { ...changes, modified: changes.modified.filter((r) => !notChanged.has(r)) };
-      const firstRead = before === null;
-      recordObservation(store, {
-        id: nextId(),
-        sourceId: id,
-        kind: 'source.changed',
-        summary: `${id} changed: ${report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
-        evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, contentDigest: report.contentDigest, inventoryDigest: report.inventoryDigest, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
-        at,
-      });
-      markPremisesStale(store, id, at);
-      if (changes && !firstRead && deps.root) {
-        // Which finished work drew on this source is a question of what it cited, not of the citation policy, so
-        // a citation admitted on the host's word still counts as drawing on it.
-        const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence }, { hostReads: 'accept' });
-        staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root, previous: before }).map((f) => f.id);
       }
-    }
-    return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
+      let changes: ItemChanges | undefined;
+      let staleDeliverables: string[] | undefined;
+      if (changed) {
+        const manifest = report.items ? toManifest(report.items) : null;
+        const before = currentManifest(store, id);
+        changes = manifest ? diffManifests(before, manifest) : undefined;
+        // In a partial read, an item not reported is unknown, not removed.
+        if (changes && partial) changes = { ...changes, removed: [] };
+        if (changes && notChanged.size > 0) changes = { ...changes, modified: changes.modified.filter((r) => !notChanged.has(r)) };
+        const firstRead = before === null;
+        recordObservation(store, {
+          id: nextId(),
+          sourceId: id,
+          kind: 'source.changed',
+          summary: `${id} changed: ${report.summary}${changes && !firstRead ? ` (${describeChanges(changes)})` : ''}`,
+          evidence: { digest: report.digest, evidence: report.evidence, items: report.items?.length ?? 0, contentDigest: report.contentDigest, inventoryDigest: report.inventoryDigest, ...(partial ? { partial: true } : {}), ...(manifest ? { manifest } : {}), ...(changes && !firstRead ? { changes } : {}) },
+          at,
+        });
+        markPremisesStale(store, id, at);
+        if (changes && !firstRead && deps.root) {
+          // Which finished work drew on this source is a question of what it cited, not of the citation policy, so
+          // a citation admitted on the host's word still counts as drawing on it.
+          const resolve = projectResolver(store, deps.root, { sourceId: id, manifest, provenance: report.evidence }, { hostReads: 'accept' });
+          staleDeliverables = flagStaleDeliverables(store, { sourceId: id, changes, resolve, at, nextId, root: deps.root, previous: before }).map((f) => f.id);
+        }
+      }
+      return { sourceId: id, outcome: changed ? 'changed' : 'unchanged', snapshot, ...(changes ? { changes } : {}), ...(staleDeliverables ? { staleDeliverables } : {}) };
+    });
   }
 
   return {
-    syncDeclarations(file, at) {
+    syncDeclarations(input, at) {
       return store.transaction(() => {
+        const file = typeof input === 'function' ? input() : input;
         const added: string[] = [];
         const updated: string[] = [];
         const retired: string[] = [];
@@ -373,21 +385,28 @@ export function createSourceService(store: StateStore, deps: SourceServiceDeps):
           outcome = { outcome: 'unreachable', reason: (error as Error).message };
         }
       }
-      if (outcome.outcome === 'unreachable') {
-        setReachability(store, id, 'unreachable', at);
-        const descriptor = outcome.observation ? accessDescriptor(outcome.observation) : undefined;
+      return store.transaction(() => {
+        // Reader I/O ran outside the lock. Recheck admission before recording
+        // evidence because another session may have retired or revoked it.
+        const current = getSource(store, id);
+        if (!current || current.status !== 'active') throw new Error(`source ${id} is retired`);
+        if (!current.canRead) throw new Error(`source ${id}: read permission is disabled`);
+        if (outcome.outcome === 'unreachable') {
+          setReachability(store, id, 'unreachable', at);
+          const descriptor = outcome.observation ? accessDescriptor(outcome.observation) : undefined;
+          if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
+          // Missing scope on a failed whole-source refresh is unknown access, never
+          // a reason to reuse an older success. It invalidates read readiness only.
+          access(id, 'unreachable', at, nextId, { ...(descriptor ?? { scope: '*', operation: '*', mode: 'read', applicability: 'source' }), sessionId: outcome.sessionId ?? null, provenance: 'witnessed', reason: redact(outcome.reason) });
+          recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
+          return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
+        }
+        const descriptor = outcome.report.observation ? accessDescriptor(outcome.report.observation) : undefined;
         if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
-        // Missing scope on a failed whole-source refresh is unknown access, never
-        // a reason to reuse an older success. It invalidates read readiness only.
-        access(id, 'unreachable', at, nextId, { ...(descriptor ?? { scope: '*', operation: '*', mode: 'read', applicability: 'source' }), sessionId: outcome.sessionId ?? null, provenance: 'witnessed', reason: redact(outcome.reason) });
-        recordObservation(store, { id: nextId(), sourceId: id, kind: 'source.unreachable', summary: outcome.reason, at });
-        return { sourceId: id, outcome: 'unreachable', snapshot: null, reason: outcome.reason };
-      }
-      const descriptor = outcome.report.observation ? accessDescriptor(outcome.report.observation) : undefined;
-      if (descriptor?.mode === 'write') throw new Error('a source read cannot witness a write operation');
-      setReachability(store, id, 'reachable', at);
-      access(id, 'read', at, nextId, { ...(descriptor ?? {}), sessionId: outcome.report.sessionId ?? null, provenance: outcome.report.evidence, refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
-      return recordRead(id, outcome.report, outcome.report.coverage?.complete === false || !!outcome.report.coverage?.nextCursor, at, nextId);
+        setReachability(store, id, 'reachable', at);
+        access(id, 'read', at, nextId, { ...(descriptor ?? {}), sessionId: outcome.report.sessionId ?? null, provenance: outcome.report.evidence, refreshedRefs: (outcome.report.items ?? []).filter((item) => item.attributes?.weak !== true).map((item) => item.externalRef), partial: outcome.report.coverage?.complete === false, coverage: outcome.report.coverage ?? null });
+        return recordRead(id, outcome.report, outcome.report.coverage?.complete === false || !!outcome.report.coverage?.nextCursor, at, nextId);
+      });
     },
     reportRead(id, received, at, nextId) {
       const report = received.coverage?.complete === false || received.coverage?.nextCursor ? { ...received, partial: true } : received;
