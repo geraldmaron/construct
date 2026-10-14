@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { freshStore, clock } from '../state/support.ts';
 import { addWorkDependency, cancelWork, claimWork, completeWork, createWork, exportWork, getWork, restoreWork, supersedeWork } from '../../../src/kernel/work/service.ts';
-import { addEntity, getEntity } from '../../../src/kernel/state/graph.ts';
+import { addEntity, addRelation, getEntity } from '../../../src/kernel/state/graph.ts';
 import { admitProposedWork, fileWork, linkWork, workStructure } from '../../../src/kernel/work/structure.ts';
 
 test('completion enforces admission, unfinished dependencies, blocked and stale premises without requiring a relay claim', () => {
@@ -235,4 +235,25 @@ test('restore does not revive dependencies removed from skipped live work', () =
     assert.equal(report.conflicts.length, 1);
     assert.equal(workStructure(fx.store, getWork(fx.store, 'live')!).blockedBy.length, 0);
   } finally { fx.cleanup(); }
+});
+
+
+test('reason relation identity collisions refuse restore atomically', () => {
+  const fx = freshStore();
+  const other = freshStore();
+  try {
+    const at = clock(); let n = 0;
+    addEntity(fx.store, { id: 'reason', kind: 'metric', name: 'Metric', at: at() });
+    fileWork(fx.store, { id: 'serving', kind: 'task', title: 'Serving', serves: 'reason', byPerson: false, at: at(), nextId: () => `reason-${++n}` });
+    const dump = exportWork(fx.store, at(), null);
+    const relation = dump.graph!.reasons[0]!;
+    addEntity(other.store, { id: 'unrelated-work', kind: 'work_item', name: 'Unrelated', at: at() });
+    addEntity(other.store, { id: 'unrelated-metric', kind: 'metric', name: 'Other metric', at: at() });
+    addRelation(other.store, { id: relation.id, kind: relation.kind, fromId: 'unrelated-work', toId: 'unrelated-metric', basis: 'inferred', confidence: 1, at: at() });
+    assert.throws(() => restoreWork(other.store, dump, at()), /relation .* conflicts with its live identity/);
+    assert.equal(getWork(other.store, 'serving'), null);
+    assert.equal(getEntity(other.store, 'reason'), null, 'earlier graph imports roll back');
+    const kept = other.store.db.prepare('SELECT from_id, to_id FROM relations WHERE id = ?').get(relation.id);
+    assert.deepEqual({ ...kept }, { from_id: 'unrelated-work', to_id: 'unrelated-metric' });
+  } finally { fx.cleanup(); other.cleanup(); }
 });
