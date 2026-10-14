@@ -7,7 +7,7 @@ import { appendActivity } from '../kernel/state/activity.ts';
  * sources live in the committed sources file; local ones stay in state.
  */
 
-import { AUTHORITY_LEVELS, SENSITIVITIES, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
+import { AUTHORITY_LEVELS, SENSITIVITIES, getSource, retireSource, type AuthorityLevel, type Sensitivity } from '../kernel/state/sources.ts';
 import { RELATION_KINDS, addRelation, type RelationKind } from '../kernel/state/graph.ts';
 import { validateSourcesFile, type DeclaredSource, type SourcesFile } from '../kernel/project/sources-file.ts';
 import { writeJsonFile } from '../kernel/project/files.ts';
@@ -17,7 +17,7 @@ import { ensureSourceEntities, sourceEntity } from '../kernel/source/entities.ts
 import { hostReaders } from '../hosts/sources/readers.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
 import { createContext, openProject, requireMainCheckout, withProject, type CliContext } from './context.ts';
-import { esc, say, writeJson, UsageError, OperationError } from './output.ts';
+import { esc, say, shellWord, writeJson, UsageError, OperationError } from './output.ts';
 import { isAbsolute, resolve } from 'node:path';
 
 const group = 'Sources';
@@ -165,8 +165,19 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           if (local && local.kind !== declared.kind) throw new OperationError(`source ${id} exists on this machine as a ${local.kind} source`, `Commit it with --kind=${local.kind}, or declare this one under a new id.`);
           requireMainCheckout(project, 'source add (without --local)');
           const next = validateSourcesFile({ ...current, sources: [...current.sources, { ...declared, capabilities: { read: declared.read, write: declared.write } }] }, layout.sourcesFile);
-          writeJsonFile(layout.sourcesFile, next);
-          svc.syncDeclarations(next, at);
+          store.transaction(() => {
+            for (const d of next.sources) {
+              if (getSource(store, d.id)?.status === 'retired') {
+                throw new OperationError(`source ${d.id} was retired; declare it under a new id`,
+                  current.sources.some((s) => s.id === d.id)
+                    ? `Run construct source retire ${shellWord(d.id)} to remove its stranded declaration, then retry. No declarations were changed.`
+                    : 'Choose a new source id. No declarations were changed.');
+              }
+            }
+            svc.syncDeclarations(next, at);
+            // A failed file write rolls back registry changes as well.
+            writeJsonFile(layout.sourcesFile, next);
+          });
         }
         ensureSourceEntities(store, at, ctx.nextId);
         const r = svc.status(id, at);
@@ -184,14 +195,18 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         const { store, layout, files } = project;
         const at = ctx.now();
         const svc = createSourceService(store, { readers: readers() });
-        const source = svc.list().find((s) => s.id === id);
-        if (!source) throw new OperationError(`no active source ${id}`);
-        if (source.origin === 'declared') {
+        const source = getSource(store, id);
+        const declared = files.sources?.sources.some((s) => s.id === id);
+        if (!declared && source?.status !== 'active') throw new OperationError(`no active source ${id}`);
+        if (declared || source?.origin === 'declared') {
           requireMainCheckout(project, 'source retire of a declared source');
           const current = files.sources!;
           const next = validateSourcesFile({ ...current, sources: current.sources.filter((s) => s.id !== id) }, layout.sourcesFile);
-          writeJsonFile(layout.sourcesFile, next);
-          svc.syncDeclarations(next, at);
+          store.transaction(() => {
+            svc.syncDeclarations(next, at);
+            ensureSourceEntities(store, at, ctx.nextId);
+            writeJsonFile(layout.sourcesFile, next);
+          });
         } else {
           retireSource(store, id, at);
         }
