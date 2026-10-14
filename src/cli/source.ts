@@ -123,7 +123,18 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           say('no sources declared. `construct source add <id> --kind ... --purpose ...` declares one.');
           return 0;
         }
-        for (const r of rows) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+        say(`Sources: ${String(rows.length)} active`);
+        const groupOf = (r: typeof rows[number]) => r.source.reachability === 'unreachable' || r.freshness === 'stale' ? 'Needs attention' : r.source.reachability === 'unknown' || r.freshness === 'never_read' ? 'Not yet checked' : 'Read successfully';
+        for (const label of ['Needs attention', 'Not yet checked', 'Read successfully']) {
+          const group = rows.filter((r) => groupOf(r) === label).sort((a, b) => a.source.id.localeCompare(b.source.id));
+          if (!group.length) continue;
+          say();
+          say(`${label} (${String(group.length)})`);
+          say('ID  KIND  ORIGIN  REACHABILITY  FRESHNESS  PURPOSE');
+          for (const r of group) say(`${esc(r.source.id)}  ${r.source.kind}  ${r.source.origin}  ${r.source.reachability}  ${r.freshness}  ${esc(r.source.purpose)}`);
+        }
+        say();
+        say('Next: construct source show <id> for details; construct source refresh <id> to read it.');
         return 0;
       });
     case 'show': {
@@ -137,6 +148,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
           return 0;
         }
         say(`${esc(r.source.id)} (${r.source.kind}, ${r.source.origin})`);
+        say(`  status: ${r.source.status}`);
         say(`  purpose: ${esc(r.source.purpose)}`);
         say(`  locator: ${r.source.locator ? esc(r.source.locator) : 'none'}`);
         say(`  authority: ${r.source.authorityLevel}; settles ${r.authoritativeFor.length ? r.authoritativeFor.map(esc).join(', ') : 'nothing declared'}; must not settle ${r.notAuthoritativeFor.length ? r.notAuthoritativeFor.map(esc).join(', ') : 'nothing declared'}`);
@@ -184,6 +196,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
         if (args.json) writeJson(r);
         else {
           say(`${boolFlag(args, 'local') ? 'added local source' : 'declared source'} ${esc(id)} (${declared.kind})${boolFlag(args, 'local') ? '; it stays out of the committed file' : ` in .construct/sources.json${local ? '; what was already read from it on this machine carries over' : ''}`}`);
+          say(`Status: ${r.source.status}; reachability: ${r.source.reachability}; freshness: ${r.freshness}.`);
           say(`Next: \`construct source refresh ${esc(id)}\` reads it${declared.kind === 'directory' ? '' : ' once a reader for this kind is connected through your host'}.`);
         }
         return 0;
@@ -221,6 +234,7 @@ export async function sourceCommand(sub: string, args: ParsedArgs, ctx: CliConte
       try {
         const svc = createSourceService(project.store, { readers: readers(), root: project.root });
         if (!svc.list().some((s) => s.id === id)) throw new OperationError(`no active source ${id}`);
+        if (!args.json) say(`Reading source ${esc(id)}…`);
         const result = await svc.refresh(id, ctx.now(), () => ctx.nextId('snap'));
         if (args.json) writeJson(result);
         else if (result.outcome === 'unreachable') say(`${esc(id)}: unreachable (${esc(result.reason ?? '')})`);

@@ -304,7 +304,13 @@ export async function doctor(args: ParsedArgs, ctx: CliContext = createContext()
     writeJson({ healthy: failed === 0, checks });
     return failed === 0 ? 0 : 1;
   }
-  for (const c of checks) say(`${c.ok ? 'ok  ' : 'FAIL'} ${c.name}: ${esc(c.detail)}`);
   say(failed === 0 ? 'doctor: healthy' : `doctor: ${String(failed)} check(s) failed`);
+  for (const ok of [false, true]) {
+    const group = checks.filter((c) => c.ok === ok).sort((a, b) => a.name.localeCompare(b.name));
+    if (!group.length) continue;
+    say();
+    say(`${ok ? 'Passed' : 'Needs attention'} (${String(group.length)})`);
+    for (const c of group) say(`${c.ok ? 'ok  ' : 'FAIL'} ${c.name}: ${esc(c.detail)}`);
+  }
   return failed === 0 ? 0 : 1;
 }

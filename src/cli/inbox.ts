@@ -28,10 +28,20 @@ export async function inboxCommand(sub: string, args: ParsedArgs, ctx: CliContex
         const rows = listInbox(project.store);
         if (args.json) writeJson(rows);
         else if (rows.length === 0) say('nothing waits on you');
-        // One line per item: a decision shows its question's first line, and inbox show prints the rest.
-        else for (const d of rows) {
-          if (d.kind === 'proposal') say(`${esc(d.id)}  proposal  ${esc(d.text)}  [${d.options.join(' | ')}]`);
-          else say(`${esc(d.id)}  ${d.decisionKind}  ${esc(d.question.split('\n')[0] ?? '')}${d.options ? `  [${d.options.join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`);
+        else {
+          say(`Inbox: ${String(rows.length)} item(s) waiting on you`);
+          for (const proposal of [false, true]) {
+            const group = rows.filter((d) => (d.kind === 'proposal') === proposal);
+            if (!group.length) continue;
+            say();
+            say(`${proposal ? 'Proposals to review' : 'Decisions to answer'} (${String(group.length)})`);
+            for (const d of group) {
+              if (d.kind === 'proposal') say(`${esc(d.id)}  proposal  ${esc(d.text)}  [${d.options.map(esc).join(' | ')}]`);
+              else say(`${esc(d.id)}  ${d.decisionKind}  ${esc(d.question.split('\n')[0] ?? '')}${d.options ? `  [${d.options.map(esc).join(' | ')}]` : ''}${d.run ? `  run ${esc(d.run)}` : ''}`);
+            }
+          }
+          say();
+          say('Next: construct inbox show <id> shows the full question and choices.');
         }
         return 0;
       }
