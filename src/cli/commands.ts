@@ -137,6 +137,10 @@ export function parseArgs(spec: CommandSpec, argv: readonly string[]): ParsedArg
   if (positionals.length < required.length && flags.help !== true) {
     throw new UsageError(`missing ${required.slice(positionals.length).join(' ')}`, commandHelp(spec));
   }
+  if (positionals.length > spec.positionals.length && flags.help !== true) {
+    const extra = positionals.slice(spec.positionals.length);
+    throw new UsageError(`unexpected argument${extra.length === 1 ? '' : 's'}: ${extra.map((p) => JSON.stringify(p)).join(' ')}`, commandHelp(spec));
+  }
   return {
     flags,
     positionals,
