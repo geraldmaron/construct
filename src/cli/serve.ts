@@ -3,17 +3,23 @@
  * project and this session. A host launches it; a person rarely types it.
  */
 
+import { realpathSync } from 'node:fs';
+import { ProjectFileError, UnsupportedProjectFileError, readJsonFile } from '../kernel/project/files.ts';
+import { validateProjectConfig } from '../kernel/project/config.ts';
+import { projectFilePath } from '../kernel/project/layout.ts';
 import { hostname } from 'node:os';
 import { join, resolve } from 'node:path';
-import { INIT_NEXT, serveLazyMcp, serveMcp, serveUnboundMcp, type BindFailure } from '../hosts/mcp/server.ts';
+import { serveLazyMcp, serveMcp, type BindFailure } from '../hosts/mcp/server.ts';
 import { KNOWN_CLIENTS } from '../hosts/wiring/clients.ts';
+import { LegacyProjectError } from '../kernel/project/initialize.ts';
 import { NoProjectError } from '../kernel/project/discover.ts';
+import { StoreProjectError } from '../kernel/state/identity.ts';
 import { StateBusyError, UnsupportedStateError } from '../kernel/state/format.ts';
 import { BUSY_TIMEOUT_MS } from '../kernel/state/open.ts';
 import { endSession, registerSession } from '../kernel/state/sessions.ts';
 import { readHostIdentity } from '../hosts/identity.ts';
 import { boolFlag, stringFlag, type CommandSpec, type ParsedArgs } from './commands.ts';
-import { createContext, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
+import { createContext, initRootFor, locateProject, mainCheckoutOf, ProjectBusyError, resolveRepository, type CliContext } from './context.ts';
 import { HostRequests } from '../hosts/mcp/outbound.ts';
 import { refreshLauncher } from '../hosts/wiring/claude-local.ts';
 import { elicitationAnswerers, pluginHookFiles, projectHookFiles } from '../hosts/elicitation-hooks.ts';
@@ -41,6 +47,9 @@ export const SERVE_SPEC: CommandSpec = {
 const LAUNCH_LOCK_WAIT_MS = 1000;
 const LAZY_LOCK_WAIT_MS = 250;
 
+/** Setup repair can be observed by this connection without replacing its session. */
+const RETRY_INIT_NEXT = 'Run `construct init` in the project, then call again. This connection retries binding after repair.';
+
 /** The advice an unbound server gives, by why it could not bind. */
 export function bindFailureFor(error: unknown): BindFailure {
   if (error instanceof ProjectBusyError || error instanceof StateBusyError) return { busy: true };
@@ -48,13 +57,17 @@ export function bindFailureFor(error: unknown): BindFailure {
     const next = error.kind === 'newer'
       ? 'Upgrade Construct to the version that wrote this project’s state, then restart this MCP server. Do not reset.'
       : error.kind === 'older'
-        ? 'Run `construct migrate` in the project (it backs the store up first), then restart this MCP server.'
+        ? 'Run `construct migrate` in the project (it backs the store up first), then call again.'
         : 'Ask the person whether to run `construct reset`; it replaces this project’s state. Then restart this MCP server.';
     return { busy: false, reason: error.message.split('\n')[0]!, next };
   }
-  if (error instanceof OperationError) return { busy: false, reason: error.message, next: error.next ?? INIT_NEXT };
+  if (error instanceof ProjectFileError) return { busy: false, reason: error.message, next: 'Repair the named project file, then call again. Nothing was recorded.' };
+  if (error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError) return { busy: false, reason: error.message, next: 'Use a Construct build compatible with the project files, then restart this MCP server. Nothing was recorded.' };
+  if (error instanceof StoreProjectError) return { busy: false, reason: error.message, next: error.next };
+  if (error instanceof NoProjectError) return { busy: false, reason: error.message.split('\n')[0]!, next: RETRY_INIT_NEXT };
+  if (error instanceof OperationError) return { busy: false, reason: error.message, next: error.next ?? RETRY_INIT_NEXT };
   const reason = error instanceof Error ? error.message.split('\n')[0]! : String(error);
-  return { busy: false, reason, next: INIT_NEXT };
+  return { busy: false, reason, next: 'Inspect the reported failure and repair its cause before retrying. Nothing was recorded.' };
 }
 
 /**
@@ -89,6 +102,28 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
   const flags = { client: stringFlag(args, 'client'), headless: boolFlag(args, 'headless'), executor: stringFlag(args, 'executor') };
   const binding = bindingFor(bound, flags);
   const describe = boolFlag(args, 'describe') || args.json;
+  // Capture the intended root before retrying. A missing file is not permission
+  // to forget an identity already observed before a format or lock refusal.
+  const repository = resolveRepository(bound.cwd);
+  let intendedRoot = repository?.linked ? mainCheckoutOf(repository) ?? initRootFor(bound.cwd) : initRootFor(bound.cwd);
+  try { intendedRoot = locateProject(bound).root; } catch { /* The opener reports the actual failure below. */ }
+  intendedRoot = realpathSync(intendedRoot);
+  let projectId: string | null = null;
+  const openPinned = (timeout: number): ReturnType<typeof openBroker> => {
+    const location = locateProject(bound);
+    if (realpathSync(location.root) !== intendedRoot) throw new OperationError(
+      'The project root changed while this connection was waiting to bind.',
+      'Restart the MCP server in the intended project. Nothing was recorded.',
+    );
+    const id = readJsonFile(intendedRoot, projectFilePath(intendedRoot), validateProjectConfig)?.id ?? null;
+    if (projectId !== null && id !== projectId) throw new OperationError(
+      'The project identity changed while this connection was waiting to bind.',
+      'Restart the MCP server after checking the intended project identity. Nothing was recorded.',
+    );
+    projectId ??= id;
+    return openBroker({ ...bound, stateBusyTimeoutMs: timeout }, flags, binding, { root: intendedRoot, id: projectId });
+  };
+
   let opened: ReturnType<typeof openBroker> | null = null;
   /**
    * Record this server as a session in the project it bound. A store too busy
@@ -140,16 +175,16 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
     }
   };
   try {
-    opened = openBroker(describe ? bound : { ...bound, stateBusyTimeoutMs: LAUNCH_LOCK_WAIT_MS }, flags);
+    opened = openPinned(describe ? BUSY_TIMEOUT_MS : LAUNCH_LOCK_WAIT_MS);
     opened.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
   } catch (error) {
     if (describe) throw error;
     const failed = bindFailureFor(error);
-    if (failed.busy) {
+    if (failed.busy || error instanceof NoProjectError || error instanceof OperationError || error instanceof UnsupportedStateError || error instanceof ProjectFileError || error instanceof UnsupportedProjectFileError || error instanceof LegacyProjectError || error instanceof StoreProjectError) {
       let lazy: ReturnType<typeof openBroker> | null = null;
       try {
         await serveLazyMcp(binding.surface, () => {
-          const o = openBroker({ ...bound, stateBusyTimeoutMs: LAZY_LOCK_WAIT_MS }, flags);
+          const o = openPinned(LAZY_LOCK_WAIT_MS);
           o.project.store.db.exec(`PRAGMA busy_timeout = ${String(BUSY_TIMEOUT_MS)}`);
           lazy = o;
           register(o);
@@ -170,10 +205,6 @@ export async function serve(args: ParsedArgs, ctx: CliContext = createContext())
           done.project.store.close();
         }
       }
-      return 0;
-    }
-    if (error instanceof NoProjectError || error instanceof OperationError || error instanceof UnsupportedStateError) {
-      await serveUnboundMcp(binding.surface, failed.reason, packageVersion(), failed.next);
       return 0;
     }
     throw error;
